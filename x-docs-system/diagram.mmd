@@ -1,0 +1,26 @@
+%% x-docs-system: Documentation System Orchestrator
+%% Creates complete documentation system (MD docs + HTML) in one command
+%% Invokes x-docs-creator and x-html-builder
+
+graph TD
+    Start([Start: Create Documentation System]) --> Phase1[Phase 1: Invoke x-docs-creator<br/>via Skill tool]
+
+    Phase1 --> Phase2{x-docs-creator<br/>completed?}
+    Phase2 -->|Yes| Phase3[Phase 2: Invoke x-html-builder<br/>via Skill tool]
+    Phase2 -->|No| Error[Error: x-docs-creator failed]
+
+    Phase3 --> Phase4{x-html-builder<br/>completed?}
+    Phase4 -->|Yes| Phase5[Phase 3: Summary<br/>Display completion report]
+    Phase4 -->|No| Error
+
+    Phase5 --> End([End])
+    Error --> End
+
+    %% Styling
+    classDef action fill:#C8E6C9,stroke:#388E3C,stroke-width:2px
+    classDef decision fill:#FFE0B2,stroke:#E64A19,stroke-width:2px
+    classDef error fill:#FFCDD2,stroke:#C62828,stroke-width:2px
+
+    class Phase1,Phase3,Phase5 action
+    class Phase2,Phase4 decision
+    class Error error

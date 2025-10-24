@@ -1,0 +1,34 @@
+%% x-docs-updater: Documentation Updater
+%% Updates existing documentation based on code changes
+%% Validates SCOPE tags when updating
+
+graph TD
+    Start([Start: Update Documentation]) --> Phase1[Phase 1: Scan Changes<br/>Git diff + project files analysis]
+
+    Phase1 --> Phase2[Phase 2: Identify Affected Documents<br/>Based on code changes]
+
+    Phase2 --> HasChanges{Changes<br/>found?}
+    HasChanges -->|No| NoUpdate[No updates needed]
+    HasChanges -->|Yes| Phase3
+
+    Phase3[Phase 3: Validate SCOPE Tags<br/>Check document boundaries]
+
+    Phase3 --> Phase4[Phase 4: Update Affected Sections<br/>Preserve existing content]
+
+    Phase4 --> Phase5[Phase 5: Update Maintenance Section<br/>Last Updated + triggers]
+
+    Phase5 --> Phase6[Phase 6: Verification<br/>Check SCOPE compliance]
+
+    Phase6 --> End([End])
+    NoUpdate --> End
+
+    %% Styling
+    classDef discovery fill:#E3F2FD,stroke:#1976D2,stroke-width:2px
+    classDef processing fill:#FFF9C4,stroke:#F57C00,stroke-width:2px
+    classDef decision fill:#FFE0B2,stroke:#E64A19,stroke-width:2px
+    classDef action fill:#C8E6C9,stroke:#388E3C,stroke-width:2px
+
+    class Phase1,Phase2 discovery
+    class Phase3,Phase4,Phase5 processing
+    class HasChanges decision
+    class Phase6,NoUpdate action

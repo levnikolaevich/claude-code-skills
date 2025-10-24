@@ -1,0 +1,162 @@
+<!-- SCOPE: System Structure Visualization (Diagrams Only) -->
+<!-- INCLUDES: C4 diagrams (Context/Container/Component), Deployment diagram, brief captions -->
+<!-- EXCLUDES: Decision rationale → ADRs, Requirements → Requirements tab, API details → Technical Spec, Quality metrics → NFRs -->
+
+<h2>Architecture</h2>
+
+<section class="c4-diagrams">
+    <h3>System Context (C4 Level 1)</h3>
+    <p>High-level view of the e-commerce platform and its external dependencies.</p>
+    <div class="mermaid">
+graph TD
+    Customer[Customer]
+    Admin[Administrator]
+    PaymentGateway[Payment Gateway<br/>Stripe]
+    EmailService[Email Service<br/>SendGrid]
+
+    System[E-Commerce Platform]
+
+    Customer -->|Browse products,<br/>Place orders| System
+    Admin -->|Manage products,<br/>View analytics| System
+    System -->|Process payments| PaymentGateway
+    System -->|Send notifications| EmailService
+    </div>
+
+    <h3>Container Diagram (C4 Level 2)</h3>
+    <p>Containers within the e-commerce platform showing technologies and communication.</p>
+    <div class="mermaid">
+graph TD
+    Customer[Customer<br/>Web Browser]
+    Admin[Administrator<br/>Web Browser]
+
+    WebApp[Web Application<br/>React 18 SPA]
+    API[REST API<br/>Node.js + Express]
+    Database[(Database<br/>PostgreSQL 15)]
+    Cache[(Cache<br/>Redis)]
+
+    Customer -->|HTTPS| WebApp
+    Admin -->|HTTPS| WebApp
+    WebApp -->|JSON/HTTPS| API
+    API -->|SQL| Database
+    API -->|Cache queries| Cache
+    </div>
+
+    <h3>Component Diagram (C4 Level 3) - Optional for Technical Audiences</h3>
+    <p>Components within the REST API container showing internal structure.</p>
+    <div class="mermaid">
+graph TD
+    API[REST API Container]
+
+    AuthController[Authentication<br/>Controller]
+    ProductController[Product Catalog<br/>Controller]
+    CartController[Shopping Cart<br/>Controller]
+    OrderController[Order<br/>Controller]
+
+    AuthService[Auth Service]
+    ProductService[Product Service]
+    CartService[Cart Service]
+    OrderService[Order Service]
+
+    ProductRepo[Product<br/>Repository]
+    UserRepo[User<br/>Repository]
+    CartRepo[Cart<br/>Repository]
+    OrderRepo[Order<br/>Repository]
+
+    Database[(PostgreSQL)]
+    Cache[(Redis)]
+
+    ProductController --> ProductService
+    CartController --> CartService
+    OrderController --> OrderService
+    AuthController --> AuthService
+
+    ProductService --> ProductRepo
+    CartService --> CartRepo
+    OrderService --> OrderRepo
+    AuthService --> UserRepo
+
+    ProductRepo --> Database
+    UserRepo --> Database
+    CartRepo --> Cache
+    OrderRepo --> Database
+    </div>
+
+    <h3>Deployment Diagram</h3>
+    <p>Infrastructure and deployment architecture on AWS.</p>
+    <div class="mermaid">
+graph TD
+    subgraph "AWS Cloud"
+        subgraph "Public Subnet"
+            ALB[Application Load<br/>Balancer]
+            CloudFront[CloudFront CDN]
+        end
+
+        subgraph "Private Subnet"
+            ECS1[ECS Container 1<br/>Node.js API]
+            ECS2[ECS Container 2<br/>Node.js API]
+
+            RDS[(RDS PostgreSQL<br/>Primary)]
+            RDSReplica[(RDS PostgreSQL<br/>Read Replica)]
+
+            ElastiCache[(ElastiCache<br/>Redis)]
+        end
+
+        subgraph "Storage"
+            S3[S3 Bucket<br/>Static Assets]
+        end
+    end
+
+    CloudFront --> S3
+    ALB --> ECS1
+    ALB --> ECS2
+    ECS1 --> RDS
+    ECS2 --> RDS
+    ECS1 --> RDSReplica
+    ECS2 --> RDSReplica
+    ECS1 --> ElastiCache
+    ECS2 --> ElastiCache
+    </div>
+</section>
+
+<section class="architecture-notes">
+    <h3>Key Architecture Highlights</h3>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Aspect</th>
+                <th>Approach</th>
+                <th>Rationale</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Architecture Pattern</td>
+                <td>Modular Monolith</td>
+                <td>Clear domain boundaries (Auth, Catalog, Cart, Orders) - see ADR-001 in Requirements</td>
+            </tr>
+            <tr>
+                <td>API Design</td>
+                <td>Stateless API</td>
+                <td>Enables horizontal scaling without session affinity</td>
+            </tr>
+            <tr>
+                <td>Database Strategy</td>
+                <td>PostgreSQL with read replicas</td>
+                <td>ACID transactions + scalability through read replicas</td>
+            </tr>
+            <tr>
+                <td>Caching</td>
+                <td>Redis</td>
+                <td>Session/cart data and frequently accessed product catalog</td>
+            </tr>
+            <tr>
+                <td>Infrastructure</td>
+                <td>Docker containers</td>
+                <td>Cloud-native orchestration with Kubernetes</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <p><em>For detailed quality attributes (Performance, Security, Scalability, Maintainability), see Non-Functional Requirements in the Requirements tab.</em></p>
+</section>

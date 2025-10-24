@@ -1,0 +1,36 @@
+%% x-task-executor: Implementation Task Executor
+%% Execute implementation tasks ONLY (NOT test tasks)
+%% Todo → In Progress → To Review
+
+graph TD
+    Start([Start: Execute Implementation Task]) --> Phase1[Phase 1: Read Referenced Guides<br/>Extract guide links from Technical Approach]
+
+    Phase1 --> Phase2[Phase 2: Discovery<br/>Team ID auto-discovery]
+
+    Phase2 --> Phase3[Phase 3: Preparation<br/>Load task Todo<br/>Update status: Todo → In Progress]
+
+    Phase3 --> Phase4[Phase 4: Implementation<br/>Follow checkboxes<br/>KISS/YAGNI principles<br/>Apply guide patterns<br/>Address Existing Code Impact]
+
+    Phase4 --> Phase5[Phase 5: Quality Gates<br/>Type checking<br/>Lint]
+
+    Phase5 --> QualityPass{Quality gates<br/>pass?}
+    QualityPass -->|No| Phase4
+    QualityPass -->|Yes| Phase6
+
+    Phase6[Phase 5: Handoff<br/>Comment in Linear<br/>Update status: In Progress → To Review]
+
+    Phase6 --> AllTasksCheck{All Story tasks<br/>To Review or Done?}
+    AllTasksCheck -->|Yes| UpdateStory[Update Story status if needed]
+    AllTasksCheck -->|No| End
+    UpdateStory --> End([End])
+
+    %% Styling
+    classDef discovery fill:#E3F2FD,stroke:#1976D2,stroke-width:2px
+    classDef processing fill:#FFF9C4,stroke:#F57C00,stroke-width:2px
+    classDef decision fill:#FFE0B2,stroke:#E64A19,stroke-width:2px
+    classDef action fill:#C8E6C9,stroke:#388E3C,stroke-width:2px
+
+    class Phase1,Phase2 discovery
+    class Phase3,Phase4,Phase5 processing
+    class QualityPass,AllTasksCheck decision
+    class Phase6,UpdateStory action

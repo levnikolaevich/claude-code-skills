@@ -1,0 +1,41 @@
+%% x-task-manager: Task Manager
+%% Universal task operations (create/update/replan) with automatic decomposition
+%% Decompose-First Pattern: Build IDEAL plan → Check existing → Create or Replan
+
+graph TD
+    Start([Start: Task Manager]) --> Phase1[Phase 1: Discovery<br/>Team ID auto-discovery<br/>Parse Story ID from request]
+
+    Phase1 --> Phase2[Phase 2: Analyze & Decompose ALWAYS<br/>Load Story AC + Technical Notes<br/>Build IDEAL task plan 1-4<br/>Consumer-First ordering]
+
+    Phase2 --> Phase3{Phase 3: Check<br/>Existing Tasks?}
+
+    Phase3 -->|Count = 0| CreateMode[CREATE MODE<br/>No existing tasks]
+    Phase3 -->|Count ≥ 1| ReplanMode[REPLAN MODE<br/>Compare ideal vs existing]
+
+    CreateMode --> Generate[Generate task documents<br/>7 sections with guide links<br/>from IDEAL plan]
+    Generate --> ShowCreate[Show preview:<br/>1-4 tasks to create<br/>Consumer-First order]
+    ShowCreate --> ConfirmCreate{User<br/>confirms?}
+    ConfirmCreate -->|No| Phase2
+    ConfirmCreate -->|Yes| ExecuteCreate[Create all tasks in Linear<br/>Update kanban_board.md]
+    ExecuteCreate --> End([End: Summary])
+
+    ReplanMode --> LoadExisting[Load existing task descriptions<br/>Full 7 sections each<br/>Note current status]
+    LoadExisting --> Compare[Compare IDEAL plan vs existing<br/>Identify operations needed]
+    Compare --> Categorize[Categorize operations:<br/>KEEP UPDATE OBSOLETE CREATE]
+    Categorize --> ShowReplan[Show operations summary + diffs<br/>KEEP: no changes<br/>UPDATE: AC/approach changed<br/>OBSOLETE: Cancel state=Canceled<br/>CREATE: new tasks needed]
+    ShowReplan --> ConfirmReplan{User<br/>confirms?}
+    ConfirmReplan -->|No| Phase2
+    ConfirmReplan -->|Yes| ExecuteReplan[Execute operations:<br/>Keep/Update/Cancel/Create in Linear]
+    ExecuteReplan --> UpdateKanban[Update kanban_board.md<br/>Remove Canceled tasks<br/>Add new tasks]
+    UpdateKanban --> End
+
+    %% Styling
+    classDef discovery fill:#E3F2FD,stroke:#1976D2,stroke-width:2px
+    classDef processing fill:#FFF9C4,stroke:#F57C00,stroke-width:2px
+    classDef decision fill:#FFE0B2,stroke:#E64A19,stroke-width:2px
+    classDef action fill:#C8E6C9,stroke:#388E3C,stroke-width:2px
+
+    class Phase1,Phase2,LoadExisting discovery
+    class CreateMode,ReplanMode,Generate,Compare,Categorize processing
+    class Phase3,ConfirmCreate,ConfirmReplan decision
+    class ExecuteCreate,ExecuteReplan,UpdateKanban,End action

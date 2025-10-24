@@ -1,0 +1,71 @@
+%% x-story-executor: Story Execution Orchestrator
+%% Orchestrates child tasks through their workflow (To Review → Todo → Done)
+%% Prioritizes: Review First > Fix Rework > Execute New
+
+graph TD
+    Start([Start: Execute Story]) --> Phase1[Phase 1: Discovery<br/>Auto-discover Team ID]
+
+    Phase1 --> Phase2[Phase 2: Story + Tasks Overview<br/>Load Story FULL description<br/>❌ Tasks metadata ONLY from kanban_board.md]
+
+    Phase2 --> KanbanCheck{kanban_board.md<br/>exists?}
+    KanbanCheck -->|No| SyncLinear[Fallback: Sync with Linear<br/>Fetch tasks metadata ONLY<br/>NO descriptions!]
+    SyncLinear --> Phase3
+    KanbanCheck -->|Yes| Phase3
+
+    %% Phase 3: Task Orchestration Loop
+    subgraph Phase3_Loop [Phase 3: Task Orchestration Loop]
+        Phase3[Read kanban_board.md<br/>Count tasks by status]
+
+        Phase3 --> Priority1{Has<br/>To Review<br/>tasks?}
+        Priority1 -->|Yes| InvokeReviewer[Invoke x-task-reviewer<br/>via Skill tool]
+        InvokeReviewer --> ReloadAfterReview[Reload kanban_board.md]
+        ReloadAfterReview --> Phase3
+
+        Priority1 -->|No| Priority2{Has<br/>To Rework<br/>tasks?}
+        Priority2 -->|Yes| InvokeRework[Invoke x-task-rework<br/>via Skill tool]
+        InvokeRework --> ReloadAfterRework[Reload kanban_board.md]
+        ReloadAfterRework --> Phase3
+
+        Priority2 -->|No| Priority3{Has<br/>Todo<br/>tasks?}
+        Priority3 -->|Yes| InvokeExecutor[Invoke x-task-executor<br/>via Skill tool]
+        InvokeExecutor --> ReloadAfterExec[Reload kanban_board.md]
+        ReloadAfterExec --> Phase3
+
+        Priority3 -->|No| StopCondition[Stop Condition Met:<br/>No To Review AND<br/>No To Rework AND<br/>No Todo]
+    end
+
+    StopCondition --> Phase4
+
+    %% Phase 4: Story Status Management
+    Phase4[Phase 4: Story Status Management]
+    Phase4 --> FirstTask{First task<br/>started?}
+    FirstTask -->|Yes| UpdateStoryStatus[Update Story:<br/>Todo → In Progress<br/>Comment: Story execution started<br/>Update kanban_board.md]
+    UpdateStoryStatus --> CheckAllDone
+    FirstTask -->|No| CheckAllDone
+
+    CheckAllDone{All tasks<br/>Done?}
+    CheckAllDone -->|Yes| RecommendReviewer[Add comment:<br/>All tasks Done<br/>Ready for x-story-reviewer Pass 1<br/>❌ Do NOT invoke automatically]
+    CheckAllDone -->|No| Phase5
+    RecommendReviewer --> Phase5
+
+    %% Phase 5: Progress Reporting
+    Phase5[Phase 5: Progress Reporting<br/>Display task summary<br/>Report completion status]
+    Phase5 --> End([End])
+
+    %% Styling
+    classDef discovery fill:#E3F2FD,stroke:#1976D2,stroke-width:2px
+    classDef loop fill:#FFF9C4,stroke:#F57C00,stroke-width:2px
+    classDef decision fill:#FFE0B2,stroke:#E64A19,stroke-width:2px
+    classDef action fill:#C8E6C9,stroke:#388E3C,stroke-width:2px
+    classDef critical fill:#FFCDD2,stroke:#C62828,stroke-width:3px
+
+    class Phase1,Phase2 discovery
+    class Phase3,InvokeReviewer,InvokeRework,InvokeExecutor,ReloadAfterReview,ReloadAfterRework,ReloadAfterExec loop
+    class Priority1,Priority2,Priority3,KanbanCheck,FirstTask,CheckAllDone decision
+    class UpdateStoryStatus,RecommendReviewer action
+    class StopCondition critical
+
+    %% Notes
+    note1[CRITICAL: Phase 2 loads<br/>Task METADATA ONLY<br/>NO descriptions!<br/>Saves 10,000+ tokens]
+    note2[Loop Priority:<br/>1. To Review First<br/>2. Then To Rework<br/>3. Then Todo<br/>4. Reload after each skill]
+    note3[x-story-reviewer<br/>invoked manually<br/>by user only]

@@ -1,0 +1,2353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Commerce Platform - Documentation</title>
+
+    <!-- Mermaid.js for diagrams (v11) -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+
+    <style>
+/* ==================== CSS Variables ==================== */
+:root {
+    --primary-color: #2563eb;
+    --secondary-color: #1e40af;
+    --success-color: #10b981;
+    --warning-color: #f59e0b;
+    --danger-color: #ef4444;
+    --text-color: #1f2937;
+    --text-light: #6b7280;
+    --bg-color: #ffffff;
+    --bg-light: #f9fafb;
+    --bg-dark: #f3f4f6;
+    --border-color: #e5e7eb;
+    --code-bg: #f3f4f6;
+    --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+/* ==================== Global Styles ==================== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.6;
+    color: var(--text-color);
+    background-color: var(--bg-light);
+}
+
+/* ==================== Container ==================== */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* ==================== Header ==================== */
+.header {
+    text-align: center;
+    padding: 40px 20px;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    border-radius: 8px;
+    margin-bottom: 30px;
+    box-shadow: var(--shadow-lg);
+}
+
+.header h1 {
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    font-weight: 700;
+}
+
+.subtitle {
+    font-size: 1.1rem;
+    opacity: 0.95;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* ==================== Tabs Navigation ==================== */
+.tabs {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.tab-button {
+    flex: 1;
+    min-width: 120px;
+    padding: 12px 20px;
+    background-color: var(--bg-color);
+    border: 2px solid var(--border-color);
+    border-radius: 8px 8px 0 0;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--text-color);
+    transition: all 0.3s ease;
+}
+
+.tab-button:hover {
+    background-color: var(--bg-dark);
+    border-color: var(--primary-color);
+}
+
+.tab-button.active {
+    background-color: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+/* ==================== Tab Content ==================== */
+.content {
+    background-color: var(--bg-color);
+    border-radius: 8px;
+    padding: 40px;
+    box-shadow: var(--shadow);
+    min-height: 500px;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ==================== Typography ==================== */
+h1 {
+    font-size: 2rem;
+    color: var(--primary-color);
+    margin-bottom: 20px;
+}
+
+h2 {
+    font-size: 1.75rem;
+    color: var(--primary-color);
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 3px solid var(--primary-color);
+}
+
+h3 {
+    font-size: 1.5rem;
+    color: var(--secondary-color);
+    margin-top: 30px;
+    margin-bottom: 15px;
+}
+
+h4 {
+    font-size: 1.2rem;
+    color: var(--text-color);
+    margin-top: 20px;
+    margin-bottom: 10px;
+}
+
+p {
+    margin-bottom: 15px;
+    line-height: 1.8;
+}
+
+ul, ol {
+    margin-left: 30px;
+    margin-bottom: 15px;
+}
+
+li {
+    margin-bottom: 8px;
+}
+
+section {
+    margin-bottom: 40px;
+}
+
+/* ==================== Code Blocks ==================== */
+code {
+    background-color: var(--code-bg);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: "Monaco", "Courier New", monospace;
+    font-size: 0.9em;
+    color: var(--danger-color);
+}
+
+pre {
+    background-color: var(--code-bg);
+    padding: 15px;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin-bottom: 20px;
+    border-left: 4px solid var(--primary-color);
+}
+
+pre code {
+    background-color: transparent;
+    padding: 0;
+    color: var(--text-color);
+}
+
+/* ==================== Tables ==================== */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow);
+}
+
+thead {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+th, td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+
+tbody tr:hover {
+    background-color: var(--bg-light);
+}
+
+/* ==================== Cards ==================== */
+.card {
+    background-color: var(--bg-light);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow);
+    border-left: 4px solid var(--primary-color);
+}
+
+.card h4 {
+    margin-top: 0;
+    color: var(--primary-color);
+}
+
+/* ==================== Badges ==================== */
+.badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-right: 5px;
+}
+
+.badge-success {
+    background-color: var(--success-color);
+    color: white;
+}
+
+.badge-warning {
+    background-color: var(--warning-color);
+    color: white;
+}
+
+.badge-danger {
+    background-color: var(--danger-color);
+    color: white;
+}
+
+.badge-primary {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+/* ==================== Overview Tab Components ==================== */
+/* Role-based Navigation Cards */
+.role-navigation {
+    margin: 40px 0;
+}
+
+.role-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.role-card {
+    padding: 20px;
+    background-color: var(--bg-color);
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: var(--shadow);
+}
+
+.role-card:hover {
+    border-color: var(--primary-color);
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-2px);
+}
+
+.role-card h3 {
+    font-size: 1.1rem;
+    margin-top: 0;
+    margin-bottom: 10px;
+    color: var(--text-color);
+}
+
+.role-card p {
+    font-size: 0.9rem;
+    color: var(--text-light);
+    margin: 0;
+}
+
+/* Tech Stack Badges */
+.tech-stack-section {
+    margin: 40px 0;
+}
+
+.tech-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 15px;
+}
+
+.tech-badge {
+    padding: 8px 16px;
+    background-color: var(--bg-light);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-color);
+}
+
+/* Quick Stats */
+.quick-stats {
+    margin: 40px 0;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.stat-card {
+    padding: 20px;
+    background-color: var(--bg-light);
+    border-radius: 8px;
+    text-align: center;
+    box-shadow: var(--shadow);
+}
+
+.stat-card h3 {
+    font-size: 2rem;
+    color: var(--primary-color);
+    margin: 0 0 5px 0;
+}
+
+.stat-card p {
+    font-size: 0.9rem;
+    color: var(--text-light);
+    margin: 0;
+}
+
+/* Quick Links */
+/* ==================== Overview Tab - New Components ==================== */
+/* Stakeholders Section */
+.stakeholders-section {
+    margin: 40px 0;
+}
+
+.stakeholders-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.stakeholder-card {
+    padding: 20px;
+    background-color: var(--bg-light);
+    border-radius: 8px;
+    text-align: center;
+    box-shadow: var(--shadow);
+    border-top: 4px solid var(--primary-color);
+}
+
+.stakeholder-card h3 {
+    font-size: 1rem;
+    color: var(--text-color);
+    margin: 0 0 8px 0;
+}
+
+.stakeholder-card p {
+    font-size: 0.9rem;
+    margin: 3px 0;
+}
+
+.stakeholder-card .role {
+    color: var(--text-light);
+    font-size: 0.85rem;
+}
+
+/* Navigation Guide */
+.navigation-guide {
+    margin: 40px 0;
+}
+
+.guide-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.guide-card {
+    padding: 20px;
+    background-color: var(--bg-light);
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.guide-card:hover {
+    border-color: var(--primary-color);
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-2px);
+}
+
+.guide-card h3 {
+    font-size: 1.1rem;
+    color: var(--primary-color);
+    margin: 0 0 10px 0;
+}
+
+.guide-card p {
+    font-size: 0.9rem;
+    color: var(--text-color);
+    margin: 8px 0;
+}
+
+.guide-card .audience {
+    font-size: 0.85rem;
+    color: var(--text-light);
+    font-style: italic;
+    margin-top: 12px;
+}
+
+/* ==================== Roadmap Tab Components ==================== */
+/* Roadmap Intro */
+.roadmap-intro {
+    background-color: var(--bg-light);
+    padding: 20px;
+    border-radius: 8px;
+    border-left: 4px solid var(--primary-color);
+    margin-bottom: 30px;
+    font-size: 1rem;
+    line-height: 1.6;
+}
+
+/* Kanban Board - 5 columns layout */
+/* ==================== Epics List (Roadmap) ==================== */
+.epics-list {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    margin: 30px 0;
+}
+
+.epic-item {
+    background-color: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 24px;
+    box-shadow: var(--shadow);
+    transition: box-shadow 0.3s ease;
+}
+
+.epic-item:hover {
+    box-shadow: var(--shadow-lg);
+}
+
+.epic-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.epic-header h3 {
+    margin: 0;
+    font-size: 1.4rem;
+    color: var(--text-color);
+}
+
+.epic-description {
+    color: var(--text-light);
+    margin-bottom: 16px;
+    font-size: 1rem;
+}
+
+.epic-details {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 16px;
+    padding: 16px;
+    background-color: var(--bg-light);
+    border-radius: 6px;
+}
+
+.epic-scope h4 {
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    color: var(--text-light);
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.epic-scope ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.epic-scope li {
+    font-size: 0.9rem;
+    margin-bottom: 4px;
+}
+
+.epic-meta {
+    border-top: 1px solid var(--border-color);
+    padding-top: 12px;
+    margin-top: 12px;
+}
+
+.epic-meta p {
+    margin: 4px 0;
+    font-size: 0.9rem;
+    color: var(--text-light);
+}
+
+/* Epic Status Badges */
+.epic-status {
+    padding: 6px 12px;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.status-done {
+    background-color: #d1fae5;
+    color: #065f46;
+}
+
+.status-progress {
+    background-color: #dbeafe;
+    color: #1e40af;
+}
+
+.status-todo {
+    background-color: #f3f4f6;
+    color: #4b5563;
+}
+
+.status-backlog {
+    background-color: #fef3c7;
+    color: #92400e;
+}
+
+/* Out of Scope Items */
+.out-of-scope-items {
+    margin: 40px 0;
+}
+
+.out-of-scope-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.out-of-scope-card {
+    background-color: #fef2f2;
+    border: 2px solid #fca5a5;
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.out-of-scope-card h4 {
+    color: #dc2626;
+    margin: 0 0 8px 0;
+}
+
+.scope-reason {
+    font-size: 0.85rem;
+    color: var(--text-light);
+    margin-top: 8px;
+    font-style: italic;
+}
+
+/* Roadmap Legend */
+.roadmap-legend {
+    margin-top: 32px;
+    padding: 16px;
+    background-color: var(--bg-light);
+    border-radius: 8px;
+}
+
+.status-badges {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+    font-size: 0.9rem;
+    margin-top: 12px;
+}
+
+.progress-fill {
+    background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.5s ease;
+}
+
+/* Roadmap Legend */
+.roadmap-legend {
+    margin: 40px 0;
+    background-color: var(--bg-light);
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.roadmap-legend h3 {
+    margin-top: 0;
+    color: var(--primary-color);
+}
+
+.roadmap-legend ul {
+    margin-left: 20px;
+}
+
+.roadmap-legend li {
+    margin-bottom: 10px;
+}
+
+/* ==================== Requirements Tab Components ==================== */
+/* Priority Badges */
+.priority-must {
+    background-color: #fee2e2;
+    color: #991b1b;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+/* ADR Accordion */
+.adr-section {
+    margin: 40px 0;
+}
+
+.adr-group {
+    margin: 30px 0;
+}
+
+.adr-group h3 {
+    margin-top: 40px;
+    margin-bottom: 20px;
+}
+
+details.adr-item {
+    margin-bottom: 15px;
+    padding: 15px;
+    background-color: var(--bg-light);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+}
+
+details.adr-item summary {
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--primary-color);
+    font-size: 1.1rem;
+}
+
+details.adr-item summary:hover {
+    color: var(--secondary-color);
+}
+
+details.adr-item[open] summary {
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid var(--border-color);
+}
+
+/* Collapsible Sections */
+details {
+    margin-bottom: 15px;
+}
+
+summary {
+    cursor: pointer;
+    font-weight: 600;
+    padding: 10px;
+    background-color: var(--bg-light);
+    border-radius: 4px;
+}
+
+summary:hover {
+    background-color: var(--bg-dark);
+}
+
+/* ==================== Mermaid Diagrams ==================== */
+.mermaid {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    margin: 20px 0;
+    text-align: center;
+    border: 1px solid var(--border-color);
+}
+
+/* ==================== Blockquotes ==================== */
+blockquote {
+    margin: 20px 0;
+    padding: 15px 20px;
+    border-left: 4px solid var(--primary-color);
+    background-color: var(--bg-light);
+    font-style: italic;
+    color: var(--text-light);
+}
+
+/* ==================== Footer ==================== */
+.footer {
+    text-align: center;
+    padding: 20px;
+    margin-top: 40px;
+    color: var(--text-light);
+    font-size: 0.9rem;
+    border-top: 2px solid var(--border-color);
+}
+
+/* ==================== Responsive Design ==================== */
+@media (max-width: 768px) {
+    .header h1 {
+        font-size: 1.8rem;
+    }
+
+    .tabs {
+        flex-direction: column;
+    }
+
+    .tab-button {
+        width: 100%;
+    }
+
+    .content {
+        padding: 20px;
+    }
+
+    .epic-details {
+        grid-template-columns: 1fr;
+    }
+
+    .out-of-scope-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .role-cards {
+        grid-template-columns: 1fr;
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    table {
+        font-size: 0.9rem;
+    }
+
+    th, td {
+        padding: 8px;
+    }
+}
+
+</style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>E-Commerce Platform</h1>
+            <p class="subtitle">Modern Online Shopping Solution</p>
+        </header>
+
+        <!-- Tab Navigation -->
+        <nav class="tabs">
+            <button class="tab-button active" data-tab="overview">Overview</button>
+            <button class="tab-button" data-tab="requirements">Requirements</button>
+            <button class="tab-button" data-tab="architecture">Architecture</button>
+            <button class="tab-button" data-tab="technical_spec">Technical Spec</button>
+            <button class="tab-button" data-tab="roadmap">Roadmap</button>
+            <button class="tab-button" data-tab="guides">Guides</button>
+        </nav>
+
+        <!-- Tab Content -->
+        <main class="content">
+            <div id="overview-tab" class="tab-content active">
+                <!-- SCOPE: Project Overview & Navigation -->
+<!-- INCLUDES: Problem statement, solution approach, business value, tech stack (list only), key stakeholders, navigation guide, quick stats -->
+<!-- EXCLUDES: Detailed goals → Requirements, Architecture decisions → ADRs, Diagrams → Architecture, API details → Technical Spec, Work order → Roadmap, How-to → Guides -->
+
+<div class="project-summary">
+    <h2>Project Summary</h2>
+
+    <h3>The Problem</h3>
+    <p>Traditional e-commerce platforms struggle with scalability during peak traffic, complex payment integrations, and fragmented inventory management across multiple channels. Businesses need a unified platform that handles high concurrent loads while maintaining data consistency and security.</p>
+
+    <h3>Our Solution</h3>
+    <p>An enterprise-grade e-commerce platform built with modern web technologies and modular architecture. The system provides seamless online shopping experiences through stateless API design, robust payment processing with PCI DSS compliance, real-time inventory synchronization, and comprehensive customer analytics.</p>
+
+    <h3>Business Value</h3>
+    <ul>
+        <li><strong>Scalability:</strong> Support 10,000+ concurrent users with horizontal scaling</li>
+        <li><strong>Reliability:</strong> 99.9% uptime SLA with automated failover</li>
+        <li><strong>Speed to Market:</strong> Modular architecture enables rapid feature delivery</li>
+        <li><strong>Cost Efficiency:</strong> Optimized infrastructure reduces operational costs by 30%</li>
+    </ul>
+</div>
+
+<div class="tech-stack-section">
+    <h2>Technology Stack</h2>
+    <div class="tech-badges">
+        <span class="tech-badge">React 18</span>
+        <span class="tech-badge">Node.js</span>
+        <span class="tech-badge">PostgreSQL</span>
+        <span class="tech-badge">Redis</span>
+        <span class="tech-badge">Docker</span>
+        <span class="tech-badge">TypeScript</span>
+    </div>
+</div>
+
+<div class="stakeholders-section">
+    <h2>Key Stakeholders</h2>
+    <div class="stakeholders-grid">
+        <div class="stakeholder-card">
+            <h3>Project Owner</h3>
+            <p>John Smith</p>
+            <p class="role">Business Sponsor</p>
+        </div>
+        <div class="stakeholder-card">
+            <h3>Lead Architect</h3>
+            <p>Jane Doe</p>
+            <p class="role">Technical Lead</p>
+        </div>
+        <div class="stakeholder-card">
+            <h3>Development Lead</h3>
+            <p>Alex Johnson</p>
+            <p class="role">Engineering Manager</p>
+        </div>
+        <div class="stakeholder-card">
+            <h3>Product Manager</h3>
+            <p>Sarah Williams</p>
+            <p class="role">Product Strategy</p>
+        </div>
+    </div>
+</div>
+
+<div class="quick-stats">
+    <h2>Project Quick Facts</h2>
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h3>In Progress</h3>
+            <p>Project Status</p>
+        </div>
+        <div class="stat-card">
+            <h3>7</h3>
+            <p>Total Epics</p>
+        </div>
+        <div class="stat-card">
+            <h3>Cloud</h3>
+            <p>Deployment Model</p>
+        </div>
+        <div class="stat-card">
+            <h3>Web + Mobile</h3>
+            <p>Target Platforms</p>
+        </div>
+    </div>
+</div>
+
+<div class="navigation-guide">
+    <h2>Documentation Guide</h2>
+    <div class="guide-grid">
+        <div class="guide-card">
+            <h3>📋 Requirements</h3>
+            <p>What we're building and why - functional requirements, non-functional constraints, and architecture decisions (ADRs)</p>
+            <p class="audience"><strong>For:</strong> Product Owners, Business Analysts, Architects</p>
+        </div>
+        <div class="guide-card">
+            <h3>🏗️ Architecture</h3>
+            <p>How the system is designed - C4 diagrams showing context, containers, components, and deployment infrastructure</p>
+            <p class="audience"><strong>For:</strong> Architects, Technical Leads, DevOps Engineers</p>
+        </div>
+        <div class="guide-card">
+            <h3>⚙️ Technical Spec</h3>
+            <p>How to interact with the system - API documentation, data models, schemas, and infrastructure configuration</p>
+            <p class="audience"><strong>For:</strong> Developers, QA Engineers, Integration Teams</p>
+        </div>
+        <div class="guide-card">
+            <h3>🗺️ Roadmap</h3>
+            <p>Work order and scope boundaries - Kanban board showing epic progress, dependencies, and what's in/out of scope</p>
+            <p class="audience"><strong>For:</strong> Stakeholders, Project Managers, Executives</p>
+        </div>
+        <div class="guide-card">
+            <h3>📚 Guides</h3>
+            <p>How to perform practical tasks - step-by-step guides for installation, development, deployment, and integration</p>
+            <p class="audience"><strong>For:</strong> Developers, DevOps Engineers, New Team Members</p>
+        </div>
+    </div>
+</div>
+
+            </div>
+
+            <div id="requirements-tab" class="tab-content">
+                <!-- SCOPE: Functional/Non-Functional Requirements & Architecture Decisions -->
+<!-- INCLUDES: FRs (what we build), NFRs (constraints), ADRs (why we decided), Success criteria -->
+<!-- EXCLUDES: Business context → Overview, System structure → Architecture, API contracts → Technical Spec, Implementation steps → Guides -->
+
+<h2>Requirements</h2>
+
+<section class="functional-requirements">
+    <h3>Functional Requirements</h3>
+
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Priority</th>
+                <th>Requirement</th>
+                <th>Acceptance Criteria</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>FR-AUTH-001</td>
+                <td><span class="priority-must">MUST</span></td>
+                <td><strong>User Registration and Login</strong><br>
+                    Users must be able to register with email/password and login to access personalized features</td>
+                <td>
+                    <ul>
+                        <li>Email validation (RFC 5322 compliant)</li>
+                        <li>Password strength requirements (min 8 chars, uppercase, lowercase, number)</li>
+                        <li>JWT token-based authentication</li>
+                    </ul>
+                </td>
+            </tr>
+            <tr>
+                <td>FR-CATALOG-001</td>
+                <td><span class="priority-must">MUST</span></td>
+                <td><strong>Product Catalog Display</strong><br>
+                    System must display product catalog with search, filters, and pagination</td>
+                <td>
+                    <ul>
+                        <li>Full-text search across product names and descriptions</li>
+                        <li>Filter by category, price range, availability</li>
+                        <li>Paginate results (20 items per page)</li>
+                    </ul>
+                </td>
+            </tr>
+            <tr>
+                <td>FR-CART-001</td>
+                <td><span class="priority-must">MUST</span></td>
+                <td><strong>Shopping Cart Management</strong><br>
+                    Users must be able to add/remove products to/from cart</td>
+                <td>
+                    <ul>
+                        <li>Add product with quantity selection</li>
+                        <li>Update quantities in cart</li>
+                        <li>Remove items from cart</li>
+                        <li>Cart persists across sessions (logged-in users)</li>
+                    </ul>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</section>
+
+<section class="non-functional-requirements">
+    <h3>Non-Functional Requirements</h3>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Category</th>
+                <th>ID</th>
+                <th>Requirement</th>
+                <th>Target</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td rowspan="3">Performance</td>
+                <td>NFR-PERF-001</td>
+                <td>Page load time</td>
+                <td>< 2 seconds (95th percentile)</td>
+            </tr>
+            <tr>
+                <td>NFR-PERF-002</td>
+                <td>API response time</td>
+                <td>< 200ms (average)</td>
+            </tr>
+            <tr>
+                <td>NFR-PERF-003</td>
+                <td>Concurrent users</td>
+                <td>10,000+ concurrent users</td>
+            </tr>
+            <tr>
+                <td rowspan="3">Security</td>
+                <td>NFR-SEC-001</td>
+                <td>Traffic encryption</td>
+                <td>HTTPS (TLS 1.3+)</td>
+            </tr>
+            <tr>
+                <td>NFR-SEC-002</td>
+                <td>JWT tokens</td>
+                <td>15min expiry + refresh tokens</td>
+            </tr>
+            <tr>
+                <td>NFR-SEC-003</td>
+                <td>Input validation</td>
+                <td>Prevent XSS, SQL injection</td>
+            </tr>
+            <tr>
+                <td rowspan="2">Scalability</td>
+                <td>NFR-SCALE-001</td>
+                <td>Horizontal scaling</td>
+                <td>Docker + Kubernetes</td>
+            </tr>
+            <tr>
+                <td>NFR-SCALE-002</td>
+                <td>Database connection pooling</td>
+                <td>Max 100 connections</td>
+            </tr>
+            <tr>
+                <td rowspan="2">Reliability</td>
+                <td>NFR-REL-001</td>
+                <td>Uptime SLA</td>
+                <td>99.9% (< 8.76 hours downtime/year)</td>
+            </tr>
+            <tr>
+                <td>NFR-REL-002</td>
+                <td>Automated health checks</td>
+                <td>Every 30 seconds</td>
+            </tr>
+        </tbody>
+    </table>
+</section>
+
+<section class="adr-section">
+    <h3>📋 Architecture Decision Records</h3>
+
+    <div class="adr-group">
+        <h4>🎯 Strategic Decisions</h4>
+
+        <details class="adr-item">
+            <summary>ADR-001: Microservices vs Monolith Architecture</summary>
+            <p><strong>Date:</strong> 2025-09-15 | <strong>Status:</strong> Accepted | <strong>Category:</strong> Strategic</p>
+
+            <h4>Context</h4>
+            <p>Need to choose architecture pattern for e-commerce platform considering team size, scaling requirements, and deployment complexity.</p>
+
+            <h4>Decision</h4>
+            <p>Use <strong>modular monolith</strong> architecture with clear domain boundaries.</p>
+
+            <h4>Rationale</h4>
+            <ul>
+                <li>Small team (5 developers) - microservices overhead too high</li>
+                <li>Faster time to market with simplified deployment</li>
+                <li>Clear module boundaries allow future microservices extraction</li>
+            </ul>
+
+            <h4>Alternatives Considered</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Alternative</th>
+                        <th>Pros</th>
+                        <th>Cons</th>
+                        <th>Rejection Reason</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Microservices</td>
+                        <td>Independent scaling, technology diversity</td>
+                        <td>Operational complexity, team overhead</td>
+                        <td>Team too small, premature optimization</td>
+                    </tr>
+                    <tr>
+                        <td>Traditional monolith</td>
+                        <td>Simplest to build</td>
+                        <td>Difficult to scale, tight coupling</td>
+                        <td>No clear boundaries for future evolution</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h4>Consequences</h4>
+            <p><strong>Positive:</strong></p>
+            <ul>
+                <li>Faster development and deployment</li>
+                <li>Easier testing and debugging</li>
+                <li>Lower infrastructure costs</li>
+            </ul>
+            <p><strong>Negative:</strong></p>
+            <ul>
+                <li>Cannot scale individual modules independently</li>
+                <li>Requires discipline to maintain module boundaries</li>
+            </ul>
+        </details>
+    </div>
+
+    <div class="adr-group">
+        <h4>🔧 Technical Decisions</h4>
+
+        <details class="adr-item">
+            <summary>ADR-002: Database Choice - PostgreSQL vs MongoDB</summary>
+            <p><strong>Date:</strong> 2025-09-18 | <strong>Status:</strong> Accepted | <strong>Category:</strong> Technical</p>
+
+            <h4>Context</h4>
+            <p>Need to select database for e-commerce transactional data considering ACID requirements, scalability, and query complexity.</p>
+
+            <h4>Decision</h4>
+            <p>Use <strong>PostgreSQL 15.x</strong> as primary database.</p>
+
+            <h4>Rationale</h4>
+            <ul>
+                <li>Strong ACID guarantees for transactions (orders, payments)</li>
+                <li>JSON support for flexible product attributes</li>
+                <li>Excellent performance for complex queries</li>
+            </ul>
+
+            <h4>Alternatives Considered</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Alternative</th>
+                        <th>Pros</th>
+                        <th>Cons</th>
+                        <th>Rejection Reason</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>MongoDB</td>
+                        <td>Schema flexibility, horizontal scaling</td>
+                        <td>Weak transaction support, complex queries difficult</td>
+                        <td>E-commerce requires strong ACID for financial data</td>
+                    </tr>
+                    <tr>
+                        <td>MySQL</td>
+                        <td>Widely adopted, good performance</td>
+                        <td>Limited JSON support, fewer features</td>
+                        <td>PostgreSQL offers better feature set</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h4>Consequences</h4>
+            <p><strong>Positive:</strong></p>
+            <ul>
+                <li>Data integrity guaranteed for financial transactions</li>
+                <li>Rich ecosystem and tooling</li>
+            </ul>
+            <p><strong>Negative:</strong></p>
+            <ul>
+                <li>Vertical scaling limitations (mitigated by read replicas)</li>
+                <li>Schema migrations require careful planning</li>
+            </ul>
+        </details>
+    </div>
+</section>
+
+<section class="success-criteria">
+    <h3>Success Criteria</h3>
+    <ul>
+        <li>✅ MVP handles 1,000+ daily active users</li>
+        <li>✅ 99.5% uptime in first 3 months</li>
+        <li>✅ Average checkout time < 3 minutes</li>
+        <li>✅ 85%+ test coverage (E2E + Integration + Unit)</li>
+        <li>✅ Zero critical security vulnerabilities</li>
+    </ul>
+</section>
+
+            </div>
+
+            <div id="architecture-tab" class="tab-content">
+                <!-- SCOPE: System Structure Visualization (Diagrams Only) -->
+<!-- INCLUDES: C4 diagrams (Context/Container/Component), Deployment diagram, brief captions -->
+<!-- EXCLUDES: Decision rationale → ADRs, Requirements → Requirements tab, API details → Technical Spec, Quality metrics → NFRs -->
+
+<h2>Architecture</h2>
+
+<section class="c4-diagrams">
+    <h3>System Context (C4 Level 1)</h3>
+    <p>High-level view of the e-commerce platform and its external dependencies.</p>
+    <div class="mermaid">
+graph TD
+    Customer[Customer]
+    Admin[Administrator]
+    PaymentGateway[Payment Gateway<br/>Stripe]
+    EmailService[Email Service<br/>SendGrid]
+
+    System[E-Commerce Platform]
+
+    Customer -->|Browse products,<br/>Place orders| System
+    Admin -->|Manage products,<br/>View analytics| System
+    System -->|Process payments| PaymentGateway
+    System -->|Send notifications| EmailService
+    </div>
+
+    <h3>Container Diagram (C4 Level 2)</h3>
+    <p>Containers within the e-commerce platform showing technologies and communication.</p>
+    <div class="mermaid">
+graph TD
+    Customer[Customer<br/>Web Browser]
+    Admin[Administrator<br/>Web Browser]
+
+    WebApp[Web Application<br/>React 18 SPA]
+    API[REST API<br/>Node.js + Express]
+    Database[(Database<br/>PostgreSQL 15)]
+    Cache[(Cache<br/>Redis)]
+
+    Customer -->|HTTPS| WebApp
+    Admin -->|HTTPS| WebApp
+    WebApp -->|JSON/HTTPS| API
+    API -->|SQL| Database
+    API -->|Cache queries| Cache
+    </div>
+
+    <h3>Component Diagram (C4 Level 3) - Optional for Technical Audiences</h3>
+    <p>Components within the REST API container showing internal structure.</p>
+    <div class="mermaid">
+graph TD
+    API[REST API Container]
+
+    AuthController[Authentication<br/>Controller]
+    ProductController[Product Catalog<br/>Controller]
+    CartController[Shopping Cart<br/>Controller]
+    OrderController[Order<br/>Controller]
+
+    AuthService[Auth Service]
+    ProductService[Product Service]
+    CartService[Cart Service]
+    OrderService[Order Service]
+
+    ProductRepo[Product<br/>Repository]
+    UserRepo[User<br/>Repository]
+    CartRepo[Cart<br/>Repository]
+    OrderRepo[Order<br/>Repository]
+
+    Database[(PostgreSQL)]
+    Cache[(Redis)]
+
+    ProductController --> ProductService
+    CartController --> CartService
+    OrderController --> OrderService
+    AuthController --> AuthService
+
+    ProductService --> ProductRepo
+    CartService --> CartRepo
+    OrderService --> OrderRepo
+    AuthService --> UserRepo
+
+    ProductRepo --> Database
+    UserRepo --> Database
+    CartRepo --> Cache
+    OrderRepo --> Database
+    </div>
+
+    <h3>Deployment Diagram</h3>
+    <p>Infrastructure and deployment architecture on AWS.</p>
+    <div class="mermaid">
+graph TD
+    subgraph "AWS Cloud"
+        subgraph "Public Subnet"
+            ALB[Application Load<br/>Balancer]
+            CloudFront[CloudFront CDN]
+        end
+
+        subgraph "Private Subnet"
+            ECS1[ECS Container 1<br/>Node.js API]
+            ECS2[ECS Container 2<br/>Node.js API]
+
+            RDS[(RDS PostgreSQL<br/>Primary)]
+            RDSReplica[(RDS PostgreSQL<br/>Read Replica)]
+
+            ElastiCache[(ElastiCache<br/>Redis)]
+        end
+
+        subgraph "Storage"
+            S3[S3 Bucket<br/>Static Assets]
+        end
+    end
+
+    CloudFront --> S3
+    ALB --> ECS1
+    ALB --> ECS2
+    ECS1 --> RDS
+    ECS2 --> RDS
+    ECS1 --> RDSReplica
+    ECS2 --> RDSReplica
+    ECS1 --> ElastiCache
+    ECS2 --> ElastiCache
+    </div>
+</section>
+
+<section class="architecture-notes">
+    <h3>Key Architecture Highlights</h3>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Aspect</th>
+                <th>Approach</th>
+                <th>Rationale</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Architecture Pattern</td>
+                <td>Modular Monolith</td>
+                <td>Clear domain boundaries (Auth, Catalog, Cart, Orders) - see ADR-001 in Requirements</td>
+            </tr>
+            <tr>
+                <td>API Design</td>
+                <td>Stateless API</td>
+                <td>Enables horizontal scaling without session affinity</td>
+            </tr>
+            <tr>
+                <td>Database Strategy</td>
+                <td>PostgreSQL with read replicas</td>
+                <td>ACID transactions + scalability through read replicas</td>
+            </tr>
+            <tr>
+                <td>Caching</td>
+                <td>Redis</td>
+                <td>Session/cart data and frequently accessed product catalog</td>
+            </tr>
+            <tr>
+                <td>Infrastructure</td>
+                <td>Docker containers</td>
+                <td>Cloud-native orchestration with Kubernetes</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <p><em>For detailed quality attributes (Performance, Security, Scalability, Maintainability), see Non-Functional Requirements in the Requirements tab.</em></p>
+</section>
+
+            </div>
+
+            <div id="technical_spec-tab" class="tab-content">
+                <!-- SCOPE: API Documentation & Technical Reference -->
+<!-- INCLUDES: API endpoints (methods, parameters, responses), Data models (schemas, ER diagrams), Infrastructure configuration, Deployment setup, Integration specifications -->
+<!-- EXCLUDES: Technology decisions → ADRs in Requirements, Business requirements → Requirements tab, System diagrams → Architecture, Work order → Roadmap, How-to tutorials → Guides -->
+
+<h2>Technical Specification</h2>
+
+<section class="tech-stack">
+    <h3>Technology Stack</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Category</th>
+                <th>Technology</th>
+                <th>Version</th>
+                <th>Purpose</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Frontend</td>
+                <td>React</td>
+                <td>18.2</td>
+                <td>UI framework for SPA</td>
+            </tr>
+            <tr>
+                <td>Frontend</td>
+                <td>TypeScript</td>
+                <td>5.2</td>
+                <td>Type-safe JavaScript</td>
+            </tr>
+            <tr>
+                <td>Backend</td>
+                <td>Node.js</td>
+                <td>20.x</td>
+                <td>Runtime environment</td>
+            </tr>
+            <tr>
+                <td>Backend</td>
+                <td>Express</td>
+                <td>4.18</td>
+                <td>REST API framework</td>
+            </tr>
+            <tr>
+                <td>Database</td>
+                <td>PostgreSQL</td>
+                <td>15.x</td>
+                <td>Primary transactional database</td>
+            </tr>
+            <tr>
+                <td>Cache</td>
+                <td>Redis</td>
+                <td>7.x</td>
+                <td>Session & cart caching</td>
+            </tr>
+            <tr>
+                <td>Infrastructure</td>
+                <td>Docker</td>
+                <td>24.x</td>
+                <td>Containerization</td>
+            </tr>
+            <tr>
+                <td>Infrastructure</td>
+                <td>AWS ECS</td>
+                <td>-</td>
+                <td>Container orchestration</td>
+            </tr>
+            <tr>
+                <td>DevOps</td>
+                <td>GitHub Actions</td>
+                <td>-</td>
+                <td>CI/CD pipeline</td>
+            </tr>
+        </tbody>
+    </table>
+</section>
+
+<section class="api-reference">
+    <h3>API Endpoints</h3>
+
+    <h4>Authentication</h4>
+    <table>
+        <thead>
+            <tr>
+                <th>Endpoint</th>
+                <th>Method</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><code>/api/auth/register</code></td>
+                <td>POST</td>
+                <td>Register new user</td>
+            </tr>
+            <tr>
+                <td><code>/api/auth/login</code></td>
+                <td>POST</td>
+                <td>Login and get JWT token</td>
+            </tr>
+            <tr>
+                <td><code>/api/auth/refresh</code></td>
+                <td>POST</td>
+                <td>Refresh JWT token</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h4>Products</h4>
+    <table>
+        <thead>
+            <tr>
+                <th>Endpoint</th>
+                <th>Method</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><code>/api/products</code></td>
+                <td>GET</td>
+                <td>List all products (paginated)</td>
+            </tr>
+            <tr>
+                <td><code>/api/products/:id</code></td>
+                <td>GET</td>
+                <td>Get product details</td>
+            </tr>
+            <tr>
+                <td><code>/api/products</code></td>
+                <td>POST</td>
+                <td>Create new product (admin only)</td>
+            </tr>
+            <tr>
+                <td><code>/api/products/:id</code></td>
+                <td>PUT</td>
+                <td>Update product (admin only)</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h4>Shopping Cart</h4>
+    <table>
+        <thead>
+            <tr>
+                <th>Endpoint</th>
+                <th>Method</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><code>/api/cart</code></td>
+                <td>GET</td>
+                <td>Get current user's cart</td>
+            </tr>
+            <tr>
+                <td><code>/api/cart/items</code></td>
+                <td>POST</td>
+                <td>Add item to cart</td>
+            </tr>
+            <tr>
+                <td><code>/api/cart/items/:id</code></td>
+                <td>PUT</td>
+                <td>Update item quantity</td>
+            </tr>
+            <tr>
+                <td><code>/api/cart/items/:id</code></td>
+                <td>DELETE</td>
+                <td>Remove item from cart</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h4>Authentication</h4>
+    <p><strong>Method:</strong> JWT Bearer Token</p>
+    <pre><code>Authorization: Bearer &lt;token&gt;</code></pre>
+    <p>Token expires in 15 minutes. Use <code>/api/auth/refresh</code> with refresh token to get new access token.</p>
+
+    <h4>Error Codes</h4>
+    <table>
+        <thead>
+            <tr>
+                <th>Code</th>
+                <th>Message</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>400</td>
+                <td>Bad Request</td>
+                <td>Invalid request payload</td>
+            </tr>
+            <tr>
+                <td>401</td>
+                <td>Unauthorized</td>
+                <td>Missing or invalid JWT token</td>
+            </tr>
+            <tr>
+                <td>403</td>
+                <td>Forbidden</td>
+                <td>Insufficient permissions</td>
+            </tr>
+            <tr>
+                <td>404</td>
+                <td>Not Found</td>
+                <td>Resource not found</td>
+            </tr>
+            <tr>
+                <td>500</td>
+                <td>Internal Server Error</td>
+                <td>Unexpected server error</td>
+            </tr>
+        </tbody>
+    </table>
+</section>
+
+<section class="data-models">
+    <h3>Data Models</h3>
+
+    <h4>Entity Relationship Diagram</h4>
+    <div class="mermaid">
+erDiagram
+    USER ||--o{ ORDER : places
+    USER ||--o{ CART : has
+    CART ||--|{ CART_ITEM : contains
+    PRODUCT ||--o{ CART_ITEM : "in"
+    PRODUCT ||--o{ ORDER_ITEM : "in"
+    ORDER ||--|{ ORDER_ITEM : contains
+    ORDER ||--|| PAYMENT : has
+
+    USER {
+        uuid id PK
+        string email
+        string password_hash
+        string first_name
+        string last_name
+        timestamp created_at
+    }
+
+    PRODUCT {
+        uuid id PK
+        string name
+        text description
+        decimal price
+        int stock_quantity
+        string category
+        timestamp created_at
+    }
+
+    CART {
+        uuid id PK
+        uuid user_id FK
+        timestamp updated_at
+    }
+
+    CART_ITEM {
+        uuid id PK
+        uuid cart_id FK
+        uuid product_id FK
+        int quantity
+    }
+
+    ORDER {
+        uuid id PK
+        uuid user_id FK
+        decimal total_amount
+        string status
+        timestamp created_at
+    }
+
+    ORDER_ITEM {
+        uuid id PK
+        uuid order_id FK
+        uuid product_id FK
+        int quantity
+        decimal price_at_purchase
+    }
+
+    PAYMENT {
+        uuid id PK
+        uuid order_id FK
+        string payment_method
+        string status
+        string transaction_id
+        timestamp created_at
+    }
+    </div>
+
+    <h4>Data Dictionary</h4>
+    <table>
+        <thead>
+            <tr>
+                <th>Entity</th>
+                <th>Key Attributes</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>USER</td>
+                <td>email (unique), password_hash</td>
+                <td>Customer accounts</td>
+            </tr>
+            <tr>
+                <td>PRODUCT</td>
+                <td>name, price, stock_quantity</td>
+                <td>Product catalog items</td>
+            </tr>
+            <tr>
+                <td>CART</td>
+                <td>user_id</td>
+                <td>Shopping cart (1 per user)</td>
+            </tr>
+            <tr>
+                <td>ORDER</td>
+                <td>user_id, status, total_amount</td>
+                <td>Customer orders</td>
+            </tr>
+            <tr>
+                <td>PAYMENT</td>
+                <td>order_id, transaction_id, status</td>
+                <td>Payment transactions</td>
+            </tr>
+        </tbody>
+    </table>
+</section>
+
+<section class="testing-strategy">
+    <h3>Testing Strategy</h3>
+    <p><strong>Risk-Based Testing approach</strong> - prioritize tests by business impact:</p>
+
+    <h4>Test Pyramid</h4>
+    <ul>
+        <li><strong>E2E Tests (2-5 per Story):</strong> Critical user flows (checkout, payment, registration)</li>
+        <li><strong>Integration Tests (3-8 per Story):</strong> API endpoints, database interactions</li>
+        <li><strong>Unit Tests (5-15 per Story):</strong> Business logic, validators, utilities</li>
+    </ul>
+
+    <p><strong>Total:</strong> 10-28 tests per Story (max)</p>
+
+    <h4>Priority Matrix</h4>
+    <p>Test scenarios with <strong>Priority ≥ 15</strong> MUST be tested:</p>
+    <pre><code>Priority = Business Impact (1-5) × Probability (1-5)</code></pre>
+
+    <h4>Test Focus</h4>
+    <ul>
+        <li>✅ Test OUR code (business logic, API endpoints)</li>
+        <li>❌ Skip framework code (Express middleware already tested)</li>
+        <li>❌ Skip trivial getters/setters (no business logic)</li>
+    </ul>
+</section>
+
+            </div>
+
+            <div id="roadmap-tab" class="tab-content">
+                <!-- SCOPE: Work Order & Scope Boundaries (NO Dates/Budgets) -->
+<!-- INCLUDES: Epic list with scope (in/out), dependencies, success criteria, status -->
+<!-- EXCLUDES: Specific dates/deadlines, Budget/costs, Team assignments, Individual tasks/stories, Implementation details → Technical Spec -->
+
+<h2>Roadmap</h2>
+
+<p class="roadmap-intro">This roadmap shows the <strong>work order</strong> and <strong>scope boundaries</strong> for our project. Epics are organized by dependencies, with clear scope definition for each.</p>
+
+<section class="epics-list">
+    <!-- Epic 1: Done -->
+    <div class="epic-item">
+        <div class="epic-header">
+            <h3>Epic 1: User Management</h3>
+            <span class="epic-status status-done">Done</span>
+        </div>
+        <p class="epic-description">User registration, authentication, profile management, and session handling</p>
+
+        <div class="epic-details">
+            <div class="epic-scope">
+                <h4>In Scope</h4>
+                <ul>
+                    <li>JWT authentication</li>
+                    <li>Email/password registration</li>
+                    <li>Password reset flow</li>
+                    <li>User profile CRUD operations</li>
+                    <li>Session management</li>
+                </ul>
+            </div>
+            <div class="epic-scope">
+                <h4>Out of Scope</h4>
+                <ul>
+                    <li>Social login (OAuth)</li>
+                    <li>Multi-factor authentication</li>
+                    <li>Single sign-on (SSO)</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="epic-meta">
+            <p><strong>Dependencies:</strong> None (Foundation epic)</p>
+            <p><strong>Success Criteria:</strong> JWT authentication, < 2s login time, Password reset flow</p>
+            <p><strong>Progress:</strong> 6/6 stories completed (100%)</p>
+        </div>
+    </div>
+
+    <!-- Epic 2: Done -->
+    <div class="epic-item">
+        <div class="epic-header">
+            <h3>Epic 2: Product Catalog</h3>
+            <span class="epic-status status-done">Done</span>
+        </div>
+        <p class="epic-description">Product listing, search, filters, and pagination</p>
+
+        <div class="epic-details">
+            <div class="epic-scope">
+                <h4>In Scope</h4>
+                <ul>
+                    <li>Full-text search across product names and descriptions</li>
+                    <li>Category filters</li>
+                    <li>Price range filters</li>
+                    <li>Pagination (20 items/page)</li>
+                    <li>Product detail pages</li>
+                    <li>1000+ SKUs support</li>
+                </ul>
+            </div>
+            <div class="epic-scope">
+                <h4>Out of Scope</h4>
+                <ul>
+                    <li>AI-powered recommendations</li>
+                    <li>Visual search</li>
+                    <li>Product reviews</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="epic-meta">
+            <p><strong>Dependencies:</strong> Epic 1 (User Management for admin features)</p>
+            <p><strong>Success Criteria:</strong> Full-text search, 1000+ SKUs, < 1s search response</p>
+            <p><strong>Progress:</strong> 8/8 stories completed (100%)</p>
+        </div>
+    </div>
+
+    <!-- Epic 3: In Progress -->
+    <div class="epic-item">
+        <div class="epic-header">
+            <h3>Epic 3: Shopping Cart</h3>
+            <span class="epic-status status-progress">In Progress</span>
+        </div>
+        <p class="epic-description">Cart management with session persistence and inventory validation</p>
+
+        <div class="epic-details">
+            <div class="epic-scope">
+                <h4>In Scope</h4>
+                <ul>
+                    <li>Add/remove items from cart</li>
+                    <li>Update quantities</li>
+                    <li>Cart persistence across sessions</li>
+                    <li>Real-time inventory validation</li>
+                    <li>Cart subtotal calculation</li>
+                </ul>
+            </div>
+            <div class="epic-scope">
+                <h4>Out of Scope</h4>
+                <ul>
+                    <li>Wishlist functionality</li>
+                    <li>Share cart</li>
+                    <li>Save for later</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="epic-meta">
+            <p><strong>Dependencies:</strong> Epic 2 (Product Catalog)</p>
+            <p><strong>Success Criteria:</strong> Cart persists across sessions, real-time inventory sync, < 500ms cart operations</p>
+            <p><strong>Progress:</strong> 3/8 stories completed (37%)</p>
+        </div>
+    </div>
+
+    <!-- Epic 4: In Progress -->
+    <div class="epic-item">
+        <div class="epic-header">
+            <h3>Epic 4: Admin Dashboard</h3>
+            <span class="epic-status status-progress">In Progress</span>
+        </div>
+        <p class="epic-description">Product management, inventory control, and analytics dashboard</p>
+
+        <div class="epic-details">
+            <div class="epic-scope">
+                <h4>In Scope</h4>
+                <ul>
+                    <li>Product CRUD operations</li>
+                    <li>Bulk product import (CSV)</li>
+                    <li>Inventory management</li>
+                    <li>Role-based access control</li>
+                    <li>Real-time analytics dashboard</li>
+                    <li>Sales reports</li>
+                </ul>
+            </div>
+            <div class="epic-scope">
+                <h4>Out of Scope</h4>
+                <ul>
+                    <li>Customer support tickets</li>
+                    <li>Email campaigns</li>
+                    <li>Advanced BI reports</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="epic-meta">
+            <p><strong>Dependencies:</strong> Epic 1 (User Management), Epic 2 (Product Catalog)</p>
+            <p><strong>Success Criteria:</strong> Role-based access control, bulk product import, real-time analytics</p>
+            <p><strong>Progress:</strong> 2/7 stories completed (28%)</p>
+        </div>
+    </div>
+
+    <!-- Epic 5: Todo -->
+    <div class="epic-item">
+        <div class="epic-header">
+            <h3>Epic 5: Payment Gateway</h3>
+            <span class="epic-status status-todo">Todo</span>
+        </div>
+        <p class="epic-description">Integrate Stripe for secure payment processing with PCI DSS compliance</p>
+
+        <div class="epic-details">
+            <div class="epic-scope">
+                <h4>In Scope</h4>
+                <ul>
+                    <li>Stripe payment integration</li>
+                    <li>Credit/debit card payments</li>
+                    <li>Digital wallets (Apple Pay, Google Pay)</li>
+                    <li>PCI DSS compliance</li>
+                    <li>Payment error handling</li>
+                    <li>Refund processing</li>
+                </ul>
+            </div>
+            <div class="epic-scope">
+                <h4>Out of Scope</h4>
+                <ul>
+                    <li>Cryptocurrency payments</li>
+                    <li>Buy now, pay later (BNPL)</li>
+                    <li>Invoice payments</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="epic-meta">
+            <p><strong>Dependencies:</strong> Epic 3 (Shopping Cart)</p>
+            <p><strong>Success Criteria:</strong> PCI DSS compliant, < 3s checkout time, support 5+ payment methods</p>
+            <p><strong>Progress:</strong> 0/5 stories planned</p>
+        </div>
+    </div>
+
+    <!-- Epic 6: Todo -->
+    <div class="epic-item">
+        <div class="epic-header">
+            <h3>Epic 6: Order Management</h3>
+            <span class="epic-status status-todo">Todo</span>
+        </div>
+        <p class="epic-description">Order processing, tracking, and fulfillment workflows</p>
+
+        <div class="epic-details">
+            <div class="epic-scope">
+                <h4>In Scope</h4>
+                <ul>
+                    <li>Order creation and confirmation</li>
+                    <li>Real-time order tracking</li>
+                    <li>Email notifications</li>
+                    <li>Order history</li>
+                    <li>Automated fulfillment workflows</li>
+                    <li>Cancellation and refund flows</li>
+                </ul>
+            </div>
+            <div class="epic-scope">
+                <h4>Out of Scope</h4>
+                <ul>
+                    <li>Advanced shipping integrations</li>
+                    <li>Returns management portal</li>
+                    <li>International shipping</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="epic-meta">
+            <p><strong>Dependencies:</strong> Epic 5 (Payment Gateway)</p>
+            <p><strong>Success Criteria:</strong> Real-time order tracking, automated fulfillment notifications, < 1min order confirmation</p>
+            <p><strong>Progress:</strong> 0/6 stories planned</p>
+        </div>
+    </div>
+
+    <!-- Epic 7: Backlog -->
+    <div class="epic-item">
+        <div class="epic-header">
+            <h3>Epic 7: Advanced Analytics</h3>
+            <span class="epic-status status-backlog">Backlog</span>
+        </div>
+        <p class="epic-description">Customer behavior analytics and recommendations engine</p>
+
+        <div class="epic-details">
+            <div class="epic-scope">
+                <h4>In Scope</h4>
+                <ul>
+                    <li>Customer behavior tracking</li>
+                    <li>Product recommendations engine</li>
+                    <li>Conversion funnel analytics</li>
+                    <li>A/B testing framework</li>
+                    <li>Personalized user experience</li>
+                </ul>
+            </div>
+            <div class="epic-scope">
+                <h4>Out of Scope</h4>
+                <ul>
+                    <li>Machine learning models</li>
+                    <li>Predictive analytics</li>
+                    <li>Customer data platform (CDP)</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="epic-meta">
+            <p><strong>Dependencies:</strong> Epic 2 (Product Catalog), Epic 6 (Order Management)</p>
+            <p><strong>Success Criteria:</strong> 15% increase in conversion rate, personalized recommendations for 80%+ users</p>
+            <p><strong>Progress:</strong> 0/9 stories planned</p>
+        </div>
+    </div>
+</section>
+
+<section class="out-of-scope-items">
+    <h3>Out of Project Scope</h3>
+    <p>The following items are explicitly <strong>NOT included</strong> in the current project phase:</p>
+
+    <div class="out-of-scope-grid">
+        <div class="out-of-scope-card">
+            <h4>Mobile Native Apps</h4>
+            <p>iOS and Android native applications</p>
+            <p class="scope-reason"><strong>Reason:</strong> Focus on responsive web first, native apps planned for Phase 2</p>
+        </div>
+
+        <div class="out-of-scope-card">
+            <h4>Multi-Currency Support</h4>
+            <p>International payments and currency conversion</p>
+            <p class="scope-reason"><strong>Reason:</strong> Current scope limited to USD, internationalization in future release</p>
+        </div>
+
+        <div class="out-of-scope-card">
+            <h4>Social Commerce Integration</h4>
+            <p>Social media selling and live shopping features</p>
+            <p class="scope-reason"><strong>Reason:</strong> Not in MVP scope, evaluate after core features stable</p>
+        </div>
+
+        <div class="out-of-scope-card">
+            <h4>B2B Wholesale Portal</h4>
+            <p>Bulk ordering and wholesale pricing for business customers</p>
+            <p class="scope-reason"><strong>Reason:</strong> B2C focus first, B2B features separate project phase</p>
+        </div>
+    </div>
+</section>
+
+<section class="roadmap-legend">
+    <h3>Status Legend</h3>
+    <div class="status-badges">
+        <span class="epic-status status-done">Done</span> Completed and deployed
+        <span class="epic-status status-progress">In Progress</span> Currently being developed
+        <span class="epic-status status-todo">Todo</span> Approved and ready to start
+        <span class="epic-status status-backlog">Backlog</span> Under evaluation
+    </div>
+</section>
+
+            </div>
+
+            <div id="guides-tab" class="tab-content">
+                <!-- SCOPE: How-To Guides (Practical Task Instructions) -->
+<!-- INCLUDES: Step-by-step guides (Installation, Development, Deployment, Integration), Prerequisites, Verification steps, Troubleshooting, Best practices -->
+<!-- EXCLUDES: Conceptual explanations → Requirements/Architecture, API reference → Technical Spec, What/Why → Requirements, System design → Architecture, Work planning → Roadmap -->
+
+<h2>Guides & Resources</h2>
+
+<section class="getting-started">
+    <h3>Getting Started</h3>
+
+    <h4>Prerequisites</h4>
+    <ul>
+        <li>Node.js 20.x or higher</li>
+        <li>PostgreSQL 15.x</li>
+        <li>Redis 7.x (optional for development)</li>
+        <li>Docker (optional)</li>
+    </ul>
+
+    <h4>Installation</h4>
+    <pre><code>git clone https://github.com/example/ecommerce-platform.git
+cd ecommerce-platform
+npm install
+cp .env.example .env
+# Edit .env with your database credentials
+npm run db:migrate
+npm run dev</code></pre>
+
+    <h4>Verification</h4>
+    <p>After starting the server, verify installation:</p>
+    <ul>
+        <li>✅ Server running at <code>http://localhost:3000</code></li>
+        <li>✅ API health check: <code>curl http://localhost:3000/api/health</code></li>
+        <li>✅ Database migrations applied: <code>npm run db:status</code></li>
+    </ul>
+</section>
+
+<section class="how-to-guides">
+    <h3>How-To Guides</h3>
+
+    <div class="card">
+        <h4>How to Add a New Product</h4>
+        <ol>
+            <li>Login as admin: <code>POST /api/auth/login</code> with admin credentials</li>
+            <li>Get JWT token from response</li>
+            <li>Create product:
+                <pre><code>curl -X POST http://localhost:3000/api/products \
+  -H "Authorization: Bearer &lt;token&gt;" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Product Name",
+    "description": "Product Description",
+    "price": 29.99,
+    "stock_quantity": 100,
+    "category": "Electronics"
+  }'</code></pre>
+            </li>
+            <li>Verify product created: <code>GET /api/products/:id</code></li>
+        </ol>
+    </div>
+
+    <div class="card">
+        <h4>How to Test API Endpoints</h4>
+        <ol>
+            <li>Start development server: <code>npm run dev</code></li>
+            <li>Run tests:
+                <ul>
+                    <li>All tests: <code>npm test</code></li>
+                    <li>E2E tests only: <code>npm run test:e2e</code></li>
+                    <li>Integration tests: <code>npm run test:integration</code></li>
+                    <li>Unit tests: <code>npm run test:unit</code></li>
+                </ul>
+            </li>
+            <li>View coverage report: <code>npm run test:coverage</code></li>
+        </ol>
+    </div>
+
+    <div class="card">
+        <h4>How to Deploy to Production</h4>
+        <ol>
+            <li>Build Docker image: <code>docker build -t ecommerce-api .</code></li>
+            <li>Push to registry: <code>docker push ecommerce-api:latest</code></li>
+            <li>Update ECS task definition with new image</li>
+            <li>Deploy via GitHub Actions (automatic on merge to main)</li>
+            <li>Verify deployment: Check CloudWatch logs for startup</li>
+        </ol>
+    </div>
+</section>
+
+<section class="best-practices">
+    <h3>Best Practices</h3>
+
+    <h4>Code Style</h4>
+    <ul>
+        <li>Follow KISS/YAGNI/DRY principles</li>
+        <li>Use TypeScript for type safety</li>
+        <li>Keep functions small and focused (< 30 lines)</li>
+        <li>Use meaningful variable names (no single letters except loops)</li>
+    </ul>
+
+    <h4>Testing Approach</h4>
+    <ul>
+        <li>Follow Risk-Based Testing (Priority ≥ 15 scenarios MUST be tested)</li>
+        <li>E2E tests (2-5 per Story): Critical user flows</li>
+        <li>Integration tests (3-8 per Story): API endpoints</li>
+        <li>Unit tests (5-15 per Story): Business logic only</li>
+        <li>Test OUR code, not frameworks (Express already tested)</li>
+    </ul>
+
+    <h4>Design Patterns</h4>
+    <ul>
+        <li>Layered architecture: Controller → Service → Repository</li>
+        <li>Dependency Injection for testability</li>
+        <li>Repository pattern for database access</li>
+        <li>DTO (Data Transfer Objects) for API requests/responses</li>
+    </ul>
+</section>
+
+<section class="troubleshooting">
+    <h3>Troubleshooting</h3>
+
+    <h4>Database Connection Errors</h4>
+    <p><strong>Problem:</strong> "Unable to connect to PostgreSQL"</p>
+    <p><strong>Solution:</strong></p>
+    <ul>
+        <li>Check PostgreSQL is running: <code>pg_isready</code></li>
+        <li>Verify .env credentials match database</li>
+        <li>Check firewall allows port 5432</li>
+    </ul>
+
+    <h4>Port Already in Use</h4>
+    <p><strong>Problem:</strong> "Port 3000 is already in use"</p>
+    <p><strong>Solution:</strong></p>
+    <ul>
+        <li>Change PORT in .env to different port (e.g., 3001)</li>
+        <li>Or kill process using port: <code>lsof -ti:3000 | xargs kill</code></li>
+    </ul>
+
+    <h4>JWT Token Expired</h4>
+    <p><strong>Problem:</strong> "401 Unauthorized - Token expired"</p>
+    <p><strong>Solution:</strong></p>
+    <ul>
+        <li>Use refresh token: <code>POST /api/auth/refresh</code> with refresh token</li>
+        <li>Get new access token from response</li>
+        <li>Tokens expire after 15 minutes for security</li>
+    </ul>
+
+    <h4>Tests Failing Randomly</h4>
+    <p><strong>Problem:</strong> Tests pass locally but fail in CI</p>
+    <p><strong>Solution:</strong></p>
+    <ul>
+        <li>Check test isolation (no shared state between tests)</li>
+        <li>Use transactions in tests (rollback after each test)</li>
+        <li>Seed database with consistent test data</li>
+    </ul>
+</section>
+
+<section class="contributing">
+    <h3>Contributing Guidelines</h3>
+    <ol>
+        <li><strong>Fork</strong> the repository</li>
+        <li><strong>Create branch:</strong> <code>git checkout -b feature/your-feature</code></li>
+        <li><strong>Write code</strong> following style guide</li>
+        <li><strong>Write tests:</strong> All new code must have tests (85%+ coverage)</li>
+        <li><strong>Run tests:</strong> <code>npm test</code> (all must pass)</li>
+        <li><strong>Commit:</strong> <code>git commit -m "Add your feature"</code></li>
+        <li><strong>Push:</strong> <code>git push origin feature/your-feature</code></li>
+        <li><strong>Submit PR</strong> with description of changes</li>
+    </ol>
+</section>
+
+<section class="external-resources">
+    <h3>External Resources</h3>
+    <ul>
+        <li><a href="https://nodejs.org/docs" target="_blank">Node.js Documentation</a></li>
+        <li><a href="https://www.postgresql.org/docs/" target="_blank">PostgreSQL Documentation</a></li>
+        <li><a href="https://redis.io/docs/" target="_blank">Redis Documentation</a></li>
+        <li><a href="https://expressjs.com/" target="_blank">Express.js Guide</a></li>
+        <li><a href="https://react.dev/" target="_blank">React Documentation</a></li>
+        <li><a href="https://www.typescriptlang.org/docs/" target="_blank">TypeScript Handbook</a></li>
+    </ul>
+</section>
+
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>Generated on 2025-11-05 | Powered by <a href="https://github.com/anthropics/claude-code" target="_blank">Claude Code</a></p>
+        </footer>
+    </div>
+
+    <script>
+/**
+ * Presentation Scripts
+ *
+ * Features:
+ * - Tab switching with state persistence (localStorage)
+ * - Collapsible sections
+ * - Mermaid diagram initialization
+ * - Smooth scrolling
+ */
+
+document.addEventListener('DOMContentLoaded', async function() {
+    // Initialize Mermaid with manual control for tab switching
+    if (typeof mermaid !== 'undefined') {
+        mermaid.initialize({
+            startOnLoad: false, // Manual control for better tab switching
+            theme: 'default',
+            securityLevel: 'loose',
+            logLevel: 1, // Only show errors
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true
+            }
+        });
+
+        // Render diagrams in the initially active tab (only once)
+        setTimeout(async () => {
+            const activeTab = document.querySelector('.tab-content.active');
+            if (activeTab && !activeTab.dataset.mermaidRendered) {
+                try {
+                    await mermaid.run({
+                        nodes: activeTab.querySelectorAll('.mermaid'),
+                        suppressErrors: true
+                    });
+                    activeTab.dataset.mermaidRendered = 'true';
+                } catch (err) {
+                    console.error('Mermaid rendering error:', err);
+                }
+            }
+        }, 100);
+    }
+
+    // Tab Switching
+    const tabButtons = document.querySelectorAll('.tab-button');
+    const tabPanes = document.querySelectorAll('.tab-content');
+
+    // Load saved tab from localStorage
+    const savedTab = localStorage.getItem('activeTab') || 'overview';
+    switchTab(savedTab);
+
+    tabButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const tabName = this.getAttribute('data-tab');
+            switchTab(tabName);
+        });
+    });
+
+    async function switchTab(tabName) {
+        // Update buttons
+        tabButtons.forEach(btn => {
+            btn.classList.remove('active');
+            if (btn.getAttribute('data-tab') === tabName) {
+                btn.classList.add('active');
+            }
+        });
+
+        // Update panes
+        tabPanes.forEach(pane => {
+            pane.classList.remove('active');
+            if (pane.id === `${tabName}-tab`) {
+                pane.classList.add('active');
+            }
+        });
+
+        // Save to localStorage
+        localStorage.setItem('activeTab', tabName);
+
+        // Render Mermaid diagrams in newly activated tab (only once per tab)
+        if (typeof mermaid !== 'undefined') {
+            const activeTab = document.getElementById(`${tabName}-tab`);
+            if (activeTab && !activeTab.dataset.mermaidRendered) {
+                setTimeout(async () => {
+                    try {
+                        await mermaid.run({
+                            nodes: activeTab.querySelectorAll('.mermaid'),
+                            suppressErrors: true
+                        });
+                        activeTab.dataset.mermaidRendered = 'true';
+                    } catch (err) {
+                        console.error('Mermaid rendering error on tab switch:', err);
+                    }
+                }, 50);
+            }
+        }
+
+        // Scroll to top
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // Make switchTab available globally for inline onclick handlers
+    window.switchTab = switchTab;
+
+    // Search functionality
+    const searchInput = document.getElementById('search');
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            const query = this.value.toLowerCase();
+            // Basic search implementation - can be enhanced
+            if (query.length > 2) {
+                console.log('Searching for:', query);
+                // TODO: Implement search across all tabs
+            }
+        });
+    }
+
+    // Collapsible sections (details/summary elements)
+    document.querySelectorAll('details').forEach(detail => {
+        detail.addEventListener('toggle', function() {
+            if (this.open) {
+                // Scroll into view when expanded
+                this.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        });
+    });
+});
+
+</script>
+</body>
+</html>

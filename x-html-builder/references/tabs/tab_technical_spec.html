@@ -1,0 +1,352 @@
+<!-- SCOPE: API Documentation & Technical Reference -->
+<!-- INCLUDES: API endpoints (methods, parameters, responses), Data models (schemas, ER diagrams), Infrastructure configuration, Deployment setup, Integration specifications -->
+<!-- EXCLUDES: Technology decisions → ADRs in Requirements, Business requirements → Requirements tab, System diagrams → Architecture, Work order → Roadmap, How-to tutorials → Guides -->
+
+<h2>Technical Specification</h2>
+
+<section class="tech-stack">
+    <h3>Technology Stack</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Category</th>
+                <th>Technology</th>
+                <th>Version</th>
+                <th>Purpose</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Frontend</td>
+                <td>React</td>
+                <td>18.2</td>
+                <td>UI framework for SPA</td>
+            </tr>
+            <tr>
+                <td>Frontend</td>
+                <td>TypeScript</td>
+                <td>5.2</td>
+                <td>Type-safe JavaScript</td>
+            </tr>
+            <tr>
+                <td>Backend</td>
+                <td>Node.js</td>
+                <td>20.x</td>
+                <td>Runtime environment</td>
+            </tr>
+            <tr>
+                <td>Backend</td>
+                <td>Express</td>
+                <td>4.18</td>
+                <td>REST API framework</td>
+            </tr>
+            <tr>
+                <td>Database</td>
+                <td>PostgreSQL</td>
+                <td>15.x</td>
+                <td>Primary transactional database</td>
+            </tr>
+            <tr>
+                <td>Cache</td>
+                <td>Redis</td>
+                <td>7.x</td>
+                <td>Session & cart caching</td>
+            </tr>
+            <tr>
+                <td>Infrastructure</td>
+                <td>Docker</td>
+                <td>24.x</td>
+                <td>Containerization</td>
+            </tr>
+            <tr>
+                <td>Infrastructure</td>
+                <td>AWS ECS</td>
+                <td>-</td>
+                <td>Container orchestration</td>
+            </tr>
+            <tr>
+                <td>DevOps</td>
+                <td>GitHub Actions</td>
+                <td>-</td>
+                <td>CI/CD pipeline</td>
+            </tr>
+        </tbody>
+    </table>
+</section>
+
+<section class="api-reference">
+    <h3>API Endpoints</h3>
+
+    <h4>Authentication</h4>
+    <table>
+        <thead>
+            <tr>
+                <th>Endpoint</th>
+                <th>Method</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><code>/api/auth/register</code></td>
+                <td>POST</td>
+                <td>Register new user</td>
+            </tr>
+            <tr>
+                <td><code>/api/auth/login</code></td>
+                <td>POST</td>
+                <td>Login and get JWT token</td>
+            </tr>
+            <tr>
+                <td><code>/api/auth/refresh</code></td>
+                <td>POST</td>
+                <td>Refresh JWT token</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h4>Products</h4>
+    <table>
+        <thead>
+            <tr>
+                <th>Endpoint</th>
+                <th>Method</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><code>/api/products</code></td>
+                <td>GET</td>
+                <td>List all products (paginated)</td>
+            </tr>
+            <tr>
+                <td><code>/api/products/:id</code></td>
+                <td>GET</td>
+                <td>Get product details</td>
+            </tr>
+            <tr>
+                <td><code>/api/products</code></td>
+                <td>POST</td>
+                <td>Create new product (admin only)</td>
+            </tr>
+            <tr>
+                <td><code>/api/products/:id</code></td>
+                <td>PUT</td>
+                <td>Update product (admin only)</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h4>Shopping Cart</h4>
+    <table>
+        <thead>
+            <tr>
+                <th>Endpoint</th>
+                <th>Method</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><code>/api/cart</code></td>
+                <td>GET</td>
+                <td>Get current user's cart</td>
+            </tr>
+            <tr>
+                <td><code>/api/cart/items</code></td>
+                <td>POST</td>
+                <td>Add item to cart</td>
+            </tr>
+            <tr>
+                <td><code>/api/cart/items/:id</code></td>
+                <td>PUT</td>
+                <td>Update item quantity</td>
+            </tr>
+            <tr>
+                <td><code>/api/cart/items/:id</code></td>
+                <td>DELETE</td>
+                <td>Remove item from cart</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h4>Authentication</h4>
+    <p><strong>Method:</strong> JWT Bearer Token</p>
+    <pre><code>Authorization: Bearer &lt;token&gt;</code></pre>
+    <p>Token expires in 15 minutes. Use <code>/api/auth/refresh</code> with refresh token to get new access token.</p>
+
+    <h4>Error Codes</h4>
+    <table>
+        <thead>
+            <tr>
+                <th>Code</th>
+                <th>Message</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>400</td>
+                <td>Bad Request</td>
+                <td>Invalid request payload</td>
+            </tr>
+            <tr>
+                <td>401</td>
+                <td>Unauthorized</td>
+                <td>Missing or invalid JWT token</td>
+            </tr>
+            <tr>
+                <td>403</td>
+                <td>Forbidden</td>
+                <td>Insufficient permissions</td>
+            </tr>
+            <tr>
+                <td>404</td>
+                <td>Not Found</td>
+                <td>Resource not found</td>
+            </tr>
+            <tr>
+                <td>500</td>
+                <td>Internal Server Error</td>
+                <td>Unexpected server error</td>
+            </tr>
+        </tbody>
+    </table>
+</section>
+
+<section class="data-models">
+    <h3>Data Models</h3>
+
+    <h4>Entity Relationship Diagram</h4>
+    <div class="mermaid">
+erDiagram
+    USER ||--o{ ORDER : places
+    USER ||--o{ CART : has
+    CART ||--|{ CART_ITEM : contains
+    PRODUCT ||--o{ CART_ITEM : "in"
+    PRODUCT ||--o{ ORDER_ITEM : "in"
+    ORDER ||--|{ ORDER_ITEM : contains
+    ORDER ||--|| PAYMENT : has
+
+    USER {
+        uuid id PK
+        string email
+        string password_hash
+        string first_name
+        string last_name
+        timestamp created_at
+    }
+
+    PRODUCT {
+        uuid id PK
+        string name
+        text description
+        decimal price
+        int stock_quantity
+        string category
+        timestamp created_at
+    }
+
+    CART {
+        uuid id PK
+        uuid user_id FK
+        timestamp updated_at
+    }
+
+    CART_ITEM {
+        uuid id PK
+        uuid cart_id FK
+        uuid product_id FK
+        int quantity
+    }
+
+    ORDER {
+        uuid id PK
+        uuid user_id FK
+        decimal total_amount
+        string status
+        timestamp created_at
+    }
+
+    ORDER_ITEM {
+        uuid id PK
+        uuid order_id FK
+        uuid product_id FK
+        int quantity
+        decimal price_at_purchase
+    }
+
+    PAYMENT {
+        uuid id PK
+        uuid order_id FK
+        string payment_method
+        string status
+        string transaction_id
+        timestamp created_at
+    }
+    </div>
+
+    <h4>Data Dictionary</h4>
+    <table>
+        <thead>
+            <tr>
+                <th>Entity</th>
+                <th>Key Attributes</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>USER</td>
+                <td>email (unique), password_hash</td>
+                <td>Customer accounts</td>
+            </tr>
+            <tr>
+                <td>PRODUCT</td>
+                <td>name, price, stock_quantity</td>
+                <td>Product catalog items</td>
+            </tr>
+            <tr>
+                <td>CART</td>
+                <td>user_id</td>
+                <td>Shopping cart (1 per user)</td>
+            </tr>
+            <tr>
+                <td>ORDER</td>
+                <td>user_id, status, total_amount</td>
+                <td>Customer orders</td>
+            </tr>
+            <tr>
+                <td>PAYMENT</td>
+                <td>order_id, transaction_id, status</td>
+                <td>Payment transactions</td>
+            </tr>
+        </tbody>
+    </table>
+</section>
+
+<section class="testing-strategy">
+    <h3>Testing Strategy</h3>
+    <p><strong>Risk-Based Testing approach</strong> - prioritize tests by business impact:</p>
+
+    <h4>Test Pyramid</h4>
+    <ul>
+        <li><strong>E2E Tests (2-5 per Story):</strong> Critical user flows (checkout, payment, registration)</li>
+        <li><strong>Integration Tests (3-8 per Story):</strong> API endpoints, database interactions</li>
+        <li><strong>Unit Tests (5-15 per Story):</strong> Business logic, validators, utilities</li>
+    </ul>
+
+    <p><strong>Total:</strong> 10-28 tests per Story (max)</p>
+
+    <h4>Priority Matrix</h4>
+    <p>Test scenarios with <strong>Priority ≥ 15</strong> MUST be tested:</p>
+    <pre><code>Priority = Business Impact (1-5) × Probability (1-5)</code></pre>
+
+    <h4>Test Focus</h4>
+    <ul>
+        <li>✅ Test OUR code (business logic, API endpoints)</li>
+        <li>❌ Skip framework code (Express middleware already tested)</li>
+        <li>❌ Skip trivial getters/setters (no business logic)</li>
+    </ul>
+</section>

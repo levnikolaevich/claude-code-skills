@@ -1,0 +1,46 @@
+%% x-story-verifier: Story Verifier
+%% Auto-fix and approve Stories against industry standards
+%% Backlog → Todo (ALWAYS approve after 15 auto-fixes: п.0a 0b 1-13 14)
+
+graph TD
+    Start([Start: Verify Story]) --> Phase1[Phase 1: Discovery<br/>Team ID + project docs]
+
+    Phase1 --> Phase2[Phase 2: Story + Tasks Overview<br/>Load Story + Tasks metadata<br/>ID title status labels NO descriptions]
+
+    Phase2 --> Phase3[Phase 3: Standards & Critical Solution Review]
+
+    subgraph Standards [Standards Compliance - Priority 1]
+        S1[Check industry standards FIRST<br/>OAuth 2.0 REST RFCs]
+        S1 --> S2[Challenge approach<br/>Research best practices]
+        S2 --> S3[Check existing guides<br/>Auto-create if missing via x-guide-creator]
+    end
+
+    Phase3 --> S1
+    S3 --> Phase4
+
+    Phase4[Phase 4: Comprehensive Auto-Fix<br/>15 Verification Criteria п.0a 0b 1-13 14]
+
+    subgraph Fixes [Auto-Fix ALL Issues]
+        F1[п.0a: Story Structure 8 sections]
+        F1 --> F2[п.0b: Tasks Structure 7 sections EACH sequential]
+        F2 --> F3[п.1-13: All other criteria<br/>Story statement AC Test Strategy<br/>YAGNI KISS Guide Links Consumer-First etc.]
+        F3 --> F4[п.14: Industry Standards Compliance]
+    end
+
+    Phase4 --> F1
+    F4 --> Phase5
+
+    Phase5[Phase 5: ALWAYS Approve → Todo<br/>Update Story + ALL Tasks to Todo<br/>Update kanban_board.md<br/>Approval comment + optional warning]
+
+    Phase5 --> Phase6[Phase 6: Summary Table<br/>Story ✅ ALWAYS Approved + changes + guides + warnings<br/>Tasks table with changes]
+
+    Phase6 --> End([End])
+
+    %% Styling
+    classDef discovery fill:#E3F2FD,stroke:#1976D2,stroke-width:2px
+    classDef processing fill:#FFF9C4,stroke:#F57C00,stroke-width:2px
+    classDef action fill:#C8E6C9,stroke:#388E3C,stroke-width:2px
+
+    class Phase1,Phase2 discovery
+    class Phase3,S1,S2,S3,Phase4,F1,F2,F3,F4 processing
+    class Phase5,Phase6 action

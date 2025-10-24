@@ -1,0 +1,180 @@
+<!-- SCOPE: How-To Guides (Practical Task Instructions) -->
+<!-- INCLUDES: Step-by-step guides (Installation, Development, Deployment, Integration), Prerequisites, Verification steps, Troubleshooting, Best practices -->
+<!-- EXCLUDES: Conceptual explanations → Requirements/Architecture, API reference → Technical Spec, What/Why → Requirements, System design → Architecture, Work planning → Roadmap -->
+
+<h2>Guides & Resources</h2>
+
+<section class="getting-started">
+    <h3>Getting Started</h3>
+
+    <h4>Prerequisites</h4>
+    <ul>
+        <li>Node.js 20.x or higher</li>
+        <li>PostgreSQL 15.x</li>
+        <li>Redis 7.x (optional for development)</li>
+        <li>Docker (optional)</li>
+    </ul>
+
+    <h4>Installation</h4>
+    <pre><code>git clone https://github.com/example/ecommerce-platform.git
+cd ecommerce-platform
+npm install
+cp .env.example .env
+# Edit .env with your database credentials
+npm run db:migrate
+npm run dev</code></pre>
+
+    <h4>Verification</h4>
+    <p>After starting the server, verify installation:</p>
+    <ul>
+        <li>✅ Server running at <code>http://localhost:3000</code></li>
+        <li>✅ API health check: <code>curl http://localhost:3000/api/health</code></li>
+        <li>✅ Database migrations applied: <code>npm run db:status</code></li>
+    </ul>
+</section>
+
+<section class="how-to-guides">
+    <h3>How-To Guides</h3>
+
+    <div class="card">
+        <h4>How to Add a New Product</h4>
+        <ol>
+            <li>Login as admin: <code>POST /api/auth/login</code> with admin credentials</li>
+            <li>Get JWT token from response</li>
+            <li>Create product:
+                <pre><code>curl -X POST http://localhost:3000/api/products \
+  -H "Authorization: Bearer &lt;token&gt;" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Product Name",
+    "description": "Product Description",
+    "price": 29.99,
+    "stock_quantity": 100,
+    "category": "Electronics"
+  }'</code></pre>
+            </li>
+            <li>Verify product created: <code>GET /api/products/:id</code></li>
+        </ol>
+    </div>
+
+    <div class="card">
+        <h4>How to Test API Endpoints</h4>
+        <ol>
+            <li>Start development server: <code>npm run dev</code></li>
+            <li>Run tests:
+                <ul>
+                    <li>All tests: <code>npm test</code></li>
+                    <li>E2E tests only: <code>npm run test:e2e</code></li>
+                    <li>Integration tests: <code>npm run test:integration</code></li>
+                    <li>Unit tests: <code>npm run test:unit</code></li>
+                </ul>
+            </li>
+            <li>View coverage report: <code>npm run test:coverage</code></li>
+        </ol>
+    </div>
+
+    <div class="card">
+        <h4>How to Deploy to Production</h4>
+        <ol>
+            <li>Build Docker image: <code>docker build -t ecommerce-api .</code></li>
+            <li>Push to registry: <code>docker push ecommerce-api:latest</code></li>
+            <li>Update ECS task definition with new image</li>
+            <li>Deploy via GitHub Actions (automatic on merge to main)</li>
+            <li>Verify deployment: Check CloudWatch logs for startup</li>
+        </ol>
+    </div>
+</section>
+
+<section class="best-practices">
+    <h3>Best Practices</h3>
+
+    <h4>Code Style</h4>
+    <ul>
+        <li>Follow KISS/YAGNI/DRY principles</li>
+        <li>Use TypeScript for type safety</li>
+        <li>Keep functions small and focused (< 30 lines)</li>
+        <li>Use meaningful variable names (no single letters except loops)</li>
+    </ul>
+
+    <h4>Testing Approach</h4>
+    <ul>
+        <li>Follow Risk-Based Testing (Priority ≥ 15 scenarios MUST be tested)</li>
+        <li>E2E tests (2-5 per Story): Critical user flows</li>
+        <li>Integration tests (3-8 per Story): API endpoints</li>
+        <li>Unit tests (5-15 per Story): Business logic only</li>
+        <li>Test OUR code, not frameworks (Express already tested)</li>
+    </ul>
+
+    <h4>Design Patterns</h4>
+    <ul>
+        <li>Layered architecture: Controller → Service → Repository</li>
+        <li>Dependency Injection for testability</li>
+        <li>Repository pattern for database access</li>
+        <li>DTO (Data Transfer Objects) for API requests/responses</li>
+    </ul>
+</section>
+
+<section class="troubleshooting">
+    <h3>Troubleshooting</h3>
+
+    <h4>Database Connection Errors</h4>
+    <p><strong>Problem:</strong> "Unable to connect to PostgreSQL"</p>
+    <p><strong>Solution:</strong></p>
+    <ul>
+        <li>Check PostgreSQL is running: <code>pg_isready</code></li>
+        <li>Verify .env credentials match database</li>
+        <li>Check firewall allows port 5432</li>
+    </ul>
+
+    <h4>Port Already in Use</h4>
+    <p><strong>Problem:</strong> "Port 3000 is already in use"</p>
+    <p><strong>Solution:</strong></p>
+    <ul>
+        <li>Change PORT in .env to different port (e.g., 3001)</li>
+        <li>Or kill process using port: <code>lsof -ti:3000 | xargs kill</code></li>
+    </ul>
+
+    <h4>JWT Token Expired</h4>
+    <p><strong>Problem:</strong> "401 Unauthorized - Token expired"</p>
+    <p><strong>Solution:</strong></p>
+    <ul>
+        <li>Use refresh token: <code>POST /api/auth/refresh</code> with refresh token</li>
+        <li>Get new access token from response</li>
+        <li>Tokens expire after 15 minutes for security</li>
+    </ul>
+
+    <h4>Tests Failing Randomly</h4>
+    <p><strong>Problem:</strong> Tests pass locally but fail in CI</p>
+    <p><strong>Solution:</strong></p>
+    <ul>
+        <li>Check test isolation (no shared state between tests)</li>
+        <li>Use transactions in tests (rollback after each test)</li>
+        <li>Seed database with consistent test data</li>
+    </ul>
+</section>
+
+<section class="contributing">
+    <h3>Contributing Guidelines</h3>
+    <ol>
+        <li><strong>Fork</strong> the repository</li>
+        <li><strong>Create branch:</strong> <code>git checkout -b feature/your-feature</code></li>
+        <li><strong>Write code</strong> following style guide</li>
+        <li><strong>Write tests:</strong> All new code must have tests (85%+ coverage)</li>
+        <li><strong>Run tests:</strong> <code>npm test</code> (all must pass)</li>
+        <li><strong>Commit:</strong> <code>git commit -m "Add your feature"</code></li>
+        <li><strong>Push:</strong> <code>git push origin feature/your-feature</code></li>
+        <li><strong>Submit PR</strong> with description of changes</li>
+    </ol>
+</section>
+
+<section class="external-resources">
+    <h3>External Resources</h3>
+    <ul>
+        <li><a href="https://nodejs.org/docs" target="_blank">Node.js Documentation</a></li>
+        <li><a href="https://www.postgresql.org/docs/" target="_blank">PostgreSQL Documentation</a></li>
+        <li><a href="https://redis.io/docs/" target="_blank">Redis Documentation</a></li>
+        <li><a href="https://expressjs.com/" target="_blank">Express.js Guide</a></li>
+        <li><a href="https://react.dev/" target="_blank">React Documentation</a></li>
+        <li><a href="https://www.typescriptlang.org/docs/" target="_blank">TypeScript Handbook</a></li>
+    </ul>
+</section>

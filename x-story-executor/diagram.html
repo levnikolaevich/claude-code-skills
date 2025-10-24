@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>x-story-executor - State Diagram</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        h1 {
+            color: #333;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 1.2em;
+            font-weight: 300;
+        }
+
+        .diagram-container {
+            background: #f9f9f9;
+            border-radius: 8px;
+            padding: 30px;
+            margin: 20px 0;
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #1976d2;
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .info-box h3 {
+            color: #1976d2;
+            margin-bottom: 10px;
+        }
+
+        .info-box ul {
+            margin-left: 20px;
+        }
+
+        .info-box li {
+            margin: 8px 0;
+            color: #555;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 2px solid #e0e0e0;
+            color: #999;
+            font-size: 0.9em;
+        }
+
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+            margin: 20px 0;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .legend-color {
+            width: 30px;
+            height: 30px;
+            border-radius: 4px;
+            border: 2px solid #333;
+        }
+
+        .color-discovery { background: #E3F2FD; }
+        .color-loop { background: #FFF9C4; }
+        .color-decision { background: #FFE0B2; }
+        .color-action { background: #C8E6C9; }
+        .color-critical { background: #FFCDD2; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔄 x-story-executor</h1>
+            <p class="subtitle">Story Execution Orchestrator - State Diagram</p>
+        </header>
+
+        <div class="info-box">
+            <h3>📋 Workflow Overview</h3>
+            <ul>
+                <li><strong>Purpose:</strong> Orchestrate Story execution by managing child tasks through their workflow</li>
+                <li><strong>Priority Order:</strong> To Review → To Rework → Todo</li>
+                <li><strong>Key Feature:</strong> Lazy loading (metadata only in Phase 2, saves 10,000+ tokens)</li>
+                <li><strong>Stop Condition:</strong> No more tasks in To Review, To Rework, or Todo states</li>
+            </ul>
+        </div>
+
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color color-discovery"></div>
+                <span>Discovery/Preparation</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color color-loop"></div>
+                <span>Loop/Processing</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color color-decision"></div>
+                <span>Decision Point</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color color-action"></div>
+                <span>Action/Update</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color color-critical"></div>
+                <span>Critical (Stop Condition)</span>
+            </div>
+        </div>
+
+        <div class="diagram-container">
+            <div class="mermaid">
+graph TD
+    Start([Start: Execute Story]) --> Phase1[Phase 1: Discovery<br/>Auto-discover Team ID]
+
+    Phase1 --> Phase2[Phase 2: Story + Tasks Overview<br/>Load Story FULL description<br/>❌ Tasks metadata ONLY from kanban_board.md]
+
+    Phase2 --> KanbanCheck{kanban_board.md<br/>exists?}
+    KanbanCheck -->|No| SyncLinear[Fallback: Sync with Linear<br/>Fetch tasks metadata ONLY<br/>NO descriptions!]
+    SyncLinear --> Phase3
+    KanbanCheck -->|Yes| Phase3
+
+    %% Phase 3: Task Orchestration Loop
+    subgraph Phase3_Loop [Phase 3: Task Orchestration Loop]
+        Phase3[Read kanban_board.md<br/>Count tasks by status]
+
+        Phase3 --> Priority1{Has<br/>To Review<br/>tasks?}
+        Priority1 -->|Yes| InvokeReviewer[Invoke x-task-reviewer<br/>via Skill tool]
+        InvokeReviewer --> ReloadAfterReview[Reload kanban_board.md]
+        ReloadAfterReview --> Phase3
+
+        Priority1 -->|No| Priority2{Has<br/>To Rework<br/>tasks?}
+        Priority2 -->|Yes| InvokeRework[Invoke x-task-rework<br/>via Skill tool]
+        InvokeRework --> ReloadAfterRework[Reload kanban_board.md]
+        ReloadAfterRework --> Phase3
+
+        Priority2 -->|No| Priority3{Has<br/>Todo<br/>tasks?}
+        Priority3 -->|Yes| InvokeExecutor[Invoke x-task-executor<br/>via Skill tool]
+        InvokeExecutor --> ReloadAfterExec[Reload kanban_board.md]
+        ReloadAfterExec --> Phase3
+
+        Priority3 -->|No| StopCondition[Stop Condition Met:<br/>No To Review AND<br/>No To Rework AND<br/>No Todo]
+    end
+
+    StopCondition --> Phase4
+
+    %% Phase 4: Story Status Management
+    Phase4[Phase 4: Story Status Management]
+    Phase4 --> FirstTask{First task<br/>started?}
+    FirstTask -->|Yes| UpdateStoryStatus[Update Story:<br/>Todo → In Progress<br/>Comment: Story execution started<br/>Update kanban_board.md]
+    UpdateStoryStatus --> CheckAllDone
+    FirstTask -->|No| CheckAllDone
+
+    CheckAllDone{All tasks<br/>Done?}
+    CheckAllDone -->|Yes| RecommendReviewer[Add comment:<br/>All tasks Done<br/>Ready for x-story-reviewer Pass 1<br/>❌ Do NOT invoke automatically]
+    CheckAllDone -->|No| Phase5
+    RecommendReviewer --> Phase5
+
+    %% Phase 5: Progress Reporting
+    Phase5[Phase 5: Progress Reporting<br/>Display task summary<br/>Report completion status]
+    Phase5 --> End([End])
+
+    %% Styling
+    classDef discovery fill:#E3F2FD,stroke:#1976D2,stroke-width:2px
+    classDef loop fill:#FFF9C4,stroke:#F57C00,stroke-width:2px
+    classDef decision fill:#FFE0B2,stroke:#E64A19,stroke-width:2px
+    classDef action fill:#C8E6C9,stroke:#388E3C,stroke-width:2px
+    classDef critical fill:#FFCDD2,stroke:#C62828,stroke-width:3px
+
+    class Phase1,Phase2 discovery
+    class Phase3,InvokeReviewer,InvokeRework,InvokeExecutor,ReloadAfterReview,ReloadAfterRework,ReloadAfterExec loop
+    class Priority1,Priority2,Priority3,KanbanCheck,FirstTask,CheckAllDone decision
+    class UpdateStoryStatus,RecommendReviewer action
+    class StopCondition critical
+            </div>
+        </div>
+
+        <div class="info-box">
+            <h3>⚠️ Critical Rules</h3>
+            <ul>
+                <li><strong>Phase 2 - ABSOLUTE PROHIBITION:</strong> NEVER load full Task descriptions (saves 10,000+ tokens)</li>
+                <li><strong>Loop Mechanism:</strong> Reload kanban_board.md after every skill invocation to get fresh state</li>
+                <li><strong>Priority Enforcement:</strong> Always process To Review first, then To Rework, then Todo</li>
+                <li><strong>Manual Review:</strong> x-story-reviewer is NOT invoked automatically - user controls when to test</li>
+            </ul>
+        </div>
+
+        <footer>
+            <p>Generated for x-story-executor skill | Version 2.6.0</p>
+            <p>Diagram format: Mermaid.js | Last updated: 2025-11-08</p>
+        </footer>
+    </div>
+
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'default',
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true,
+                curve: 'basis'
+            }
+        });
+    </script>
+</body>
+</html>

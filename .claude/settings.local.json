@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__Ref",
+      "mcp__context7",
+      "WebSearch",
+      "Web Fetch(url:*)",
+      "Read",
+      "Skill",
+      "Bash",
+      "Bash(node build-presentation.js:*)",
+      "Bash(ls:*)"
+    ],
+    "deny": [],
+    "ask": []
+  },
+  "outputStyle": "Explanatory"
+}

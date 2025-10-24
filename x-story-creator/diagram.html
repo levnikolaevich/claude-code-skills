@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>x-story-creator - State Diagram</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; background: white; border-radius: 12px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); padding: 40px; }
+        header { text-align: center; margin-bottom: 40px; padding-bottom: 20px; border-bottom: 2px solid #e0e0e0; }
+        h1 { color: #333; font-size: 2.5em; margin-bottom: 10px; }
+        .subtitle { color: #666; font-size: 1.2em; font-weight: 300; }
+        .diagram-container { background: #f9f9f9; border-radius: 8px; padding: 30px; margin: 20px 0; overflow-x: auto; }
+        .mermaid { display: flex; justify-content: center; }
+        .info-box { background: #e3f2fd; border-left: 4px solid #1976d2; padding: 15px 20px; margin: 20px 0; border-radius: 4px; }
+        .info-box h3 { color: #1976d2; margin-bottom: 10px; }
+        .info-box ul { margin-left: 20px; }
+        .info-box li { margin: 8px 0; color: #555; }
+        footer { text-align: center; margin-top: 40px; padding-top: 20px; border-top: 2px solid #e0e0e0; color: #999; font-size: 0.9em; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📖 x-story-creator</h1>
+            <p class="subtitle">User Story Creator - State Diagram</p>
+        </header>
+        <div class="info-box">
+            <h3>📋 Overview</h3>
+            <ul>
+                <li><strong>Purpose:</strong> Create User Stories in "As a/I want/So that" format + Given-When-Then AC</li>
+                <li><strong>Modes:</strong> Single Mode (1 Story) or Batch Mode (5-10 Stories from Epic)</li>
+                <li><strong>Package Validation:</strong> Blocks if outdated package or missing guide</li>
+            </ul>
+        </div>
+        <div class="diagram-container">
+            <div class="mermaid">
+graph TD
+    Start([Start: Create Story]) --> ModeDetect{Mode detection:<br/>Singular vs Plural?}
+    ModeDetect -->|Singular| SingleMode[Single Mode:<br/>Create ONE Story]
+    ModeDetect -->|Plural| BatchMode[Batch Mode:<br/>Create 5-10 Stories from Epic]
+    SingleMode --> S_Phase1[Phase 1: Discovery<br/>Team ID + Epic + Next Story Number]
+    S_Phase1 --> S_Phase2[Phase 2: Planning Dialog<br/>6 questions: persona, capability,<br/>value, Epic, AC, app type]
+    S_Phase2 --> PackageCheck1{Package<br/>mentioned?}
+    PackageCheck1 -->|Yes| S_Validate[Phase 3: Package Validation<br/>Check version, guide exists]
+    PackageCheck1 -->|No| S_Phase4
+    S_Validate --> PackageOK1{Valid &<br/>guide exists?}
+    PackageOK1 -->|No| BlockSingle[BLOCK: Fix package/guide first]
+    PackageOK1 -->|Yes| S_Phase4
+    S_Phase4[Phase 4: Generation<br/>Story with Given-When-Then AC<br/>+ Test Strategy]
+    S_Phase4 --> S_Confirm{User<br/>confirms?}
+    S_Confirm -->|Yes| S_Create[Phase 5: Create Linear Issue<br/>with label user-story]
+    S_Confirm -->|No| S_Phase2
+    S_Create --> End
+    BatchMode --> B_Phase1[Phase 1: Discovery<br/>Team ID + Epic + Next Story Number]
+    B_Phase1 --> B_Phase2[Phase 2: Epic Analysis<br/>Identify 5-10 stories]
+    B_Phase2 --> PackageCheck2{Packages<br/>mentioned?}
+    PackageCheck2 -->|Yes| B_Validate[Phase 3: Package Validation<br/>Check all packages]
+    PackageCheck2 -->|No| B_Phase4
+    B_Validate --> PackageOK2{All valid &<br/>guides exist?}
+    PackageOK2 -->|No| BlockBatch[BLOCK: Fix packages/guides first]
+    PackageOK2 -->|Yes| B_Phase4
+    B_Phase4[Phase 4: Batch Generation<br/>5-10 Stories with AC]
+    B_Phase4 --> B_Confirm{User<br/>confirms?}
+    B_Confirm -->|Yes| B_Create[Phase 5: Batch Create<br/>Linear Issues]
+    B_Confirm -->|No| B_Phase2
+    B_Create --> End
+    BlockSingle --> End([End])
+    BlockBatch --> End
+    classDef discovery fill:#E3F2FD,stroke:#1976D2,stroke-width:2px
+    classDef dialog fill:#FFF9C4,stroke:#F57C00,stroke-width:2px
+    classDef decision fill:#FFE0B2,stroke:#E64A19,stroke-width:2px
+    classDef action fill:#C8E6C9,stroke:#388E3C,stroke-width:2px
+    classDef error fill:#FFCDD2,stroke:#C62828,stroke-width:2px
+    class S_Phase1,B_Phase1,B_Phase2 discovery
+    class S_Phase2,S_Validate,B_Validate,S_Phase4,B_Phase4 dialog
+    class ModeDetect,PackageCheck1,PackageCheck2,PackageOK1,PackageOK2,S_Confirm,B_Confirm decision
+    class S_Create,B_Create action
+    class BlockSingle,BlockBatch error
+            </div>
+        </div>
+        <footer>
+            <p>x-story-creator | Mermaid.js</p>
+        </footer>
+    </div>
+    <script>
+        mermaid.initialize({ startOnLoad: true, theme: 'default', flowchart: { useMaxWidth: true, htmlLabels: true, curve: 'basis' } });
+    </script>
+</body>
+</html>

@@ -1,0 +1,37 @@
+%% x-guide-creator: Guide Creator
+%% Research and create minimal project guides (6 sections, 300-500 words)
+%% AUTO-RESEARCH via MCP Ref + Context7
+
+graph TD
+    Start([Start: Create Guide]) --> Phase0[Phase 0: Research & Discovery<br/>AUTO-RESEARCH automated]
+
+    subgraph Research [Automated Research]
+        R1[Search library docs<br/>MCP Ref + Context7]
+        R1 --> R2[Search framework patterns<br/>Best practices]
+        R2 --> R3[Analyze findings<br/>Extract principle + do/don't patterns]
+    end
+
+    Phase0 --> R1
+    R3 --> Phase1
+
+    Phase1[Phase 1: Pattern Analysis<br/>Identify core principle]
+
+    Phase1 --> Phase2[Phase 2: Guide Generation<br/>6 sections 300-500 words<br/>NO ADR concepts]
+
+    Phase2 --> Phase3[Phase 3: Confirmation & Storage<br/>Save to docs/guides/<br/>Return guide path for linking]
+
+    Phase3 --> UserConfirm{User confirms?}
+    UserConfirm -->|Yes| Save[Save guide file]
+    UserConfirm -->|No| Phase2
+    Save --> End([End])
+
+    %% Styling
+    classDef discovery fill:#E3F2FD,stroke:#1976D2,stroke-width:2px
+    classDef processing fill:#FFF9C4,stroke:#F57C00,stroke-width:2px
+    classDef decision fill:#FFE0B2,stroke:#E64A19,stroke-width:2px
+    classDef action fill:#C8E6C9,stroke:#388E3C,stroke-width:2px
+
+    class Phase0,R1,R2,R3 discovery
+    class Phase1,Phase2 processing
+    class UserConfirm decision
+    class Phase3,Save action

@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>x-story-reviewer - State Diagram</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; background: white; border-radius: 12px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); padding: 40px; }
+        header { text-align: center; margin-bottom: 40px; padding-bottom: 20px; border-bottom: 2px solid #e0e0e0; }
+        h1 { color: #333; font-size: 2.5em; margin-bottom: 10px; }
+        .subtitle { color: #666; font-size: 1.2em; font-weight: 300; }
+        .diagram-container { background: #f9f9f9; border-radius: 8px; padding: 30px; margin: 20px 0; overflow-x: auto; }
+        .mermaid { display: flex; justify-content: center; }
+        .info-box { background: #e3f2fd; border-left: 4px solid #1976d2; padding: 15px 20px; margin: 20px 0; border-radius: 4px; }
+        .info-box h3 { color: #1976d2; margin-bottom: 10px; }
+        .info-box ul { margin-left: 20px; }
+        .info-box li { margin: 8px 0; color: #555; }
+        footer { text-align: center; margin-top: 40px; padding-top: 20px; border-top: 2px solid #e0e0e0; color: #999; font-size: 0.9em; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔍 x-story-reviewer</h1>
+            <p class="subtitle">Story Reviewer - State Diagram</p>
+        </header>
+        <div class="info-box">
+            <h3>📋 Overview</h3>
+            <ul>
+                <li><strong>Purpose:</strong> Two-pass review - Pass 1 (manual testing + create test task) + Pass 2 (verify tests + Story Done)</li>
+                <li><strong>Pass 1:</strong> Regression check → Manual testing → Code quality → Invoke x-story-finalizer OR create refactoring task</li>
+                <li><strong>Pass 2:</strong> Test verification (10-28 tests, Priority ≥15) → Mark Story Done</li>
+            </ul>
+        </div>
+        <div class="diagram-container">
+            <div class="mermaid">
+graph TD
+    Start([Start: Review Story]) --> Phase1[Phase 1: Discovery<br/>Team ID]
+    Phase1 --> Phase2[Phase 2: Preparation<br/>Determine pass 1 or 2]
+    Phase2 --> PassCheck{Which pass?}
+    PassCheck -->|Pass 1| P1_Phase3[Phase 3: Regression Check<br/>Run existing tests]
+    P1_Phase3 --> RegressionPass{All pass?}
+    RegressionPass -->|No| RegressionFail[⚠️ Create fix task STOP]
+    RegressionPass -->|Yes| P1_Phase4
+    P1_Phase4[Phase 4: Manual Testing<br/>curl/puppeteer]
+    P1_Phase4 --> P1_Phase5[Phase 5: Linear Comment<br/>Format v1.0]
+    P1_Phase5 --> P1_Phase6[Phase 6: Code Quality]
+    P1_Phase6 --> P1_Verdict{Verdict?}
+    P1_Verdict -->|Path A: passed| CheckTestTask{Test task<br/>exists?}
+    CheckTestTask -->|Yes & Done| Pass2Entry[Pass 2]
+    CheckTestTask -->|Yes & NOT Done| ReportStatus[Report status Exit]
+    CheckTestTask -->|NOT exists| InvokeFinalizer[Invoke x-story-finalizer]
+    InvokeFinalizer --> End
+    P1_Verdict -->|Path B: issues| CreateRefactoring[Create refactoring task]
+    PassCheck -->|Pass 2| Pass2Entry
+    Pass2Entry --> P2_Phase8[Phase 8: Test Verification<br/>All tests pass 2-5 E2E 3-8 Integration<br/>5-15 Unit 10-28 total Priority ≥15<br/>NO performance/load tests<br/>Infrastructure updated]
+    P2_Phase8 --> P2_Verdict{Verdict?}
+    P2_Verdict -->|Pass| StoryDone[Story Done]
+    P2_Verdict -->|Fail| CreateFixTasks[Create fix tasks]
+    RegressionFail --> End([End])
+    ReportStatus --> End
+    CreateRefactoring --> End
+    StoryDone --> End
+    CreateFixTasks --> End
+    classDef discovery fill:#E3F2FD,stroke:#1976D2,stroke-width:2px
+    classDef processing fill:#FFF9C4,stroke:#F57C00,stroke-width:2px
+    classDef decision fill:#FFE0B2,stroke:#E64A19,stroke-width:2px
+    classDef action fill:#C8E6C9,stroke:#388E3C,stroke-width:2px
+    classDef error fill:#FFCDD2,stroke:#C62828,stroke-width:2px
+    class Phase1,Phase2 discovery
+    class P1_Phase3,P1_Phase4,P1_Phase5,P1_Phase6,P2_Phase8 processing
+    class PassCheck,RegressionPass,P1_Verdict,CheckTestTask,P2_Verdict decision
+    class InvokeFinalizer,StoryDone,ReportStatus action
+    class RegressionFail,CreateRefactoring,CreateFixTasks error
+            </div>
+        </div>
+        <footer>
+            <p>x-story-reviewer | Two-pass: Pass 1 (manual test + finalizer) + Pass 2 (test verify + Done)</p>
+        </footer>
+    </div>
+    <script>
+        mermaid.initialize({ startOnLoad: true, theme: 'default', flowchart: { useMaxWidth: true, htmlLabels: true, curve: 'basis' } });
+    </script>
+</body>
+</html>

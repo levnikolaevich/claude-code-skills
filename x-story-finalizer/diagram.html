@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>x-story-finalizer - State Diagram</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; background: white; border-radius: 12px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); padding: 40px; }
+        header { text-align: center; margin-bottom: 40px; padding-bottom: 20px; border-bottom: 2px solid #e0e0e0; }
+        h1 { color: #333; font-size: 2.5em; margin-bottom: 10px; }
+        .subtitle { color: #666; font-size: 1.2em; font-weight: 300; }
+        .diagram-container { background: #f9f9f9; border-radius: 8px; padding: 30px; margin: 20px 0; overflow-x: auto; }
+        .mermaid { display: flex; justify-content: center; }
+        .info-box { background: #e3f2fd; border-left: 4px solid #1976d2; padding: 15px 20px; margin: 20px 0; border-radius: 4px; }
+        .info-box h3 { color: #1976d2; margin-bottom: 10px; }
+        .info-box ul { margin-left: 20px; }
+        .info-box li { margin: 8px 0; color: #555; }
+        footer { text-align: center; margin-top: 40px; padding-top: 20px; border-top: 2px solid #e0e0e0; color: #999; font-size: 0.9em; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎯 x-story-finalizer</h1>
+            <p class="subtitle">Story Finalizer Task Creator - State Diagram</p>
+        </header>
+        <div class="info-box">
+            <h3>📋 Overview</h3>
+            <ul>
+                <li><strong>Purpose:</strong> Create final Story task after manual testing passes (invoked by x-story-reviewer Pass 1)</li>
+                <li><strong>Output:</strong> Comprehensive task with 11 sections: E2E-first Risk-Based Testing (Priority ≥15, excludes performance/load)</li>
+                <li><strong>Risk Priority:</strong> Business Impact × Probability, Priority ≥15 MUST be tested</li>
+            </ul>
+        </div>
+        <div class="diagram-container">
+            <div class="mermaid">
+graph TD
+    Start([Start: Create Story Finalizer Task<br/>Invoked by x-story-reviewer Pass 1]) --> Phase1[Phase 1: Discovery<br/>Team ID + Parent Story]
+    Phase1 --> Phase2[Phase 2: Load Manual Test Results<br/>Parse Linear comment Format v1.0]
+    Phase2 --> Phase3[Phase 3: Story + Tasks Analysis<br/>Study tests + analyze Done tasks]
+    Phase3 --> Phase4[Phase 4: Risk-Based Test Planning]
+    subgraph RiskPlanning [Risk-Based Testing]
+        Risk1[Step 1: Risk Assessment<br/>Priority = Impact × Probability]
+        Risk1 --> Risk2[Step 2: E2E 2-5 Priority ≥15]
+        Risk2 --> Risk3[Step 3: Unit 5-15 Priority ≥15]
+        Risk3 --> Risk4[Step 4: Integration 3-8 Priority ≥15]
+        Risk4 --> Risk5[Step 5: Validate 10-28 total]
+    end
+    Phase4 --> Risk1
+    Risk5 --> Phase5
+    Phase5[Phase 5: Impact Analysis]
+    subgraph Impact [4 Impact Areas]
+        Impact1[Existing Tests]
+        Impact2[Infrastructure]
+        Impact3[Documentation]
+        Impact4[Legacy Cleanup]
+    end
+    Phase5 --> Impact1
+    Impact1 --> Impact2
+    Impact2 --> Impact3
+    Impact3 --> Impact4
+    Impact4 --> Phase6
+    Phase6[Phase 6: Generate Task<br/>11 sections]
+    Phase6 --> Confirm{Confirm?}
+    Confirm -->|Yes| Create[Phase 7: Create Linear Issue]
+    Confirm -->|No| Phase6
+    Create --> End([End])
+    classDef discovery fill:#E3F2FD,stroke:#1976D2,stroke-width:2px
+    classDef analysis fill:#FFF9C4,stroke:#F57C00,stroke-width:2px
+    classDef decision fill:#FFE0B2,stroke:#E64A19,stroke-width:2px
+    classDef action fill:#C8E6C9,stroke:#388E3C,stroke-width:2px
+    class Phase1,Phase2,Phase3 discovery
+    class Phase4,Risk1,Risk2,Risk3,Risk4,Risk5,Phase5,Impact1,Impact2,Impact3,Impact4,Phase6 analysis
+    class Confirm decision
+    class Create action
+            </div>
+        </div>
+        <footer>
+            <p>x-story-finalizer | Mermaid.js</p>
+        </footer>
+    </div>
+    <script>
+        mermaid.initialize({ startOnLoad: true, theme: 'default', flowchart: { useMaxWidth: true, htmlLabels: true, curve: 'basis' } });
+    </script>
+</body>
+</html>

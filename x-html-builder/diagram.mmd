@@ -1,0 +1,35 @@
+%% x-html-builder: Interactive HTML Presentation Builder
+%% Builds HTML from project documentation with 6 tabs
+%% Uses Mermaid v11, table-based structure, English language
+
+graph TD
+    Start([Start: Build HTML Presentation]) --> Phase1[Phase 1: Read Source Documents<br/>Requirements, Architecture, Tech Spec, README, ADRs, Guides]
+
+    Phase1 --> Phase2[Phase 2: Parse Documentation<br/>Extract sections, diagrams, links]
+
+    Phase2 --> Phase3[Phase 3: Build Tab 1 Overview<br/>Landing page with project summary]
+
+    Phase3 --> Phase4[Phase 4: Build Tab 2 Requirements<br/>FRs + NFRs + ADRs list]
+
+    Phase4 --> Phase5[Phase 5: Build Tab 3 Architecture<br/>C4 diagrams from Mermaid]
+
+    Phase5 --> Phase6[Phase 6: Build Tab 4 Technical Spec<br/>API + Data Model + Infrastructure]
+
+    Phase6 --> Phase7[Phase 7: Build Tab 5 Roadmap<br/>Kanban-style epic progress]
+
+    Phase7 --> Phase8[Phase 8: Build Tab 6 Guides<br/>How-to guides by category]
+
+    Phase8 --> Phase9[Phase 9: Generate Final HTML<br/>Combine all tabs + CSS + JS]
+
+    Phase9 --> Phase10[Phase 10: Save Output<br/>Write to docs/project/presentation.html]
+
+    Phase10 --> End([End])
+
+    %% Styling
+    classDef discovery fill:#E3F2FD,stroke:#1976D2,stroke-width:2px
+    classDef processing fill:#FFF9C4,stroke:#F57C00,stroke-width:2px
+    classDef action fill:#C8E6C9,stroke:#388E3C,stroke-width:2px
+
+    class Phase1,Phase2 discovery
+    class Phase3,Phase4,Phase5,Phase6,Phase7,Phase8,Phase9 processing
+    class Phase10 action

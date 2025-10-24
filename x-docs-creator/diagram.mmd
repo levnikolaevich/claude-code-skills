@@ -1,0 +1,49 @@
+%% x-docs-creator: Project Documentation Creator
+%% Generates 4 MD documents + ADRs + kanban_board.md + optional HTML
+%% 9 phases with interactive dialog and auto-research
+
+graph TD
+    Start([Start: Create Project Documentation]) --> Phase1[Phase 1: Project Type Detection<br/>Identify project type]
+
+    Phase1 --> Phase2[Phase 2: Copy Reference Templates<br/>Lean templates to docs/project/]
+
+    Phase2 --> HasMaterials{User has<br/>existing materials?}
+    HasMaterials -->|Yes| Phase3[Phase 3: Material Analysis<br/>Glob + Read existing files]
+    HasMaterials -->|No| Phase4
+    Phase3 --> Phase4
+
+    Phase4[Phase 4: Requirements Document<br/>Q1-Q4, Q14-Q17<br/>batches of 4 questions]
+
+    Phase4 --> Phase5[Phase 5: Architecture Document<br/>Q5-Q8, Q9-Q13]
+
+    Phase5 --> AutoResearch{Auto-research<br/>enabled?}
+    AutoResearch -->|Yes| Research[MCP Ref + WebSearch<br/>for Q9, Q11-Q13]
+    AutoResearch -->|No| Phase6
+    Research --> Phase6
+
+    Phase6[Phase 6: Technical Specification<br/>Compile Q8, Q9-Q17]
+
+    Phase6 --> Phase7[Phase 7: ADRs<br/>Q18-Q19<br/>Generate 3-5 ADRs]
+
+    Phase7 --> Phase8[Phase 8: Summary & Next Steps<br/>Display completion summary]
+
+    Phase8 --> GenerateKanban{Generate<br/>kanban_board.md?}
+    GenerateKanban -->|Yes| Phase9[Phase 9: Generate Kanban Board<br/>with Linear configuration]
+    GenerateKanban -->|No| Phase10Check
+    Phase9 --> Phase10Check
+
+    Phase10Check{Generate<br/>HTML presentation?}
+    Phase10Check -->|Yes| Phase10[Phase 10: Invoke x-html-builder<br/>via Skill tool<br/>Optional]
+    Phase10Check -->|No| End
+    Phase10 --> End([End])
+
+    %% Styling
+    classDef discovery fill:#E3F2FD,stroke:#1976D2,stroke-width:2px
+    classDef dialog fill:#FFF9C4,stroke:#F57C00,stroke-width:2px
+    classDef decision fill:#FFE0B2,stroke:#E64A19,stroke-width:2px
+    classDef action fill:#C8E6C9,stroke:#388E3C,stroke-width:2px
+
+    class Phase1,Phase2,Phase3 discovery
+    class Phase4,Phase5,Phase6,Phase7,Research dialog
+    class HasMaterials,AutoResearch,GenerateKanban,Phase10Check decision
+    class Phase8,Phase9,Phase10 action

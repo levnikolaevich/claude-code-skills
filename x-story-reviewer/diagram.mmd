@@ -1,0 +1,58 @@
+%% x-story-reviewer: Story Reviewer
+%% Two-pass review: Pass 1 (manual testing) + Pass 2 (test verification)
+%% Pass 1 → x-story-finalizer, Pass 2 → Story Done
+
+graph TD
+    Start([Start: Review Story]) --> Phase1[Phase 1: Discovery<br/>Team ID auto-discovery]
+
+    Phase1 --> Phase2[Phase 2: Preparation<br/>Determine pass: Pass 1 or Pass 2<br/>based on test task existence]
+
+    Phase2 --> PassCheck{Which pass?}
+
+    %% Pass 1 Path
+    PassCheck -->|Pass 1| P1_Phase3[Phase 3: Regression Check<br/>Read tests/README.md<br/>Run ALL existing tests]
+
+    P1_Phase3 --> RegressionPass{All tests<br/>pass?}
+    RegressionPass -->|No| RegressionFail[⚠️ Regression detected<br/>Create fix task<br/>STOP Pass 1]
+    RegressionPass -->|Yes| P1_Phase4
+
+    P1_Phase4[Phase 4: Manual Functional Testing<br/>curl/puppeteer test each AC<br/>Document results]
+
+    P1_Phase4 --> P1_Phase5[Phase 5: Linear Comment<br/>Format v1.0: AC + Results +<br/>Edge Cases + Errors + Integration]
+
+    P1_Phase5 --> P1_Phase6[Phase 6: Code Quality Analysis<br/>DRY/KISS/YAGNI violations<br/>Architecture issues]
+
+    P1_Phase6 --> P1_Verdict{Verdict?}
+    P1_Verdict -->|Path A: AC passed + no issues| CheckTestTask{Test task<br/>exists?}
+    CheckTestTask -->|Yes & Done| Pass2Entry[Continue to Pass 2]
+    CheckTestTask -->|Yes & NOT Done| ReportStatus[Report test task status<br/>Exit]
+    CheckTestTask -->|NOT exists| InvokeFinalizer[Invoke x-story-finalizer<br/>via Skill tool]
+    InvokeFinalizer --> End
+    P1_Verdict -->|Path B: Issues found| CreateRefactoring[Create ONE refactoring task<br/>all issues together]
+
+    %% Pass 2 Path
+    PassCheck -->|Pass 2| Pass2Entry
+    Pass2Entry --> P2_Phase8[Phase 8: Test Verification<br/>All tests pass 2-5 E2E 3-8 Integration<br/>5-15 Unit 10-28 total Priority ≥15<br/>NO performance/load tests<br/>Infrastructure updated]
+
+    P2_Phase8 --> P2_Verdict{Verdict?}
+    P2_Verdict -->|Pass| StoryDone[Mark Story Done<br/>Update kanban_board.md<br/>Cleanup Done section]
+    P2_Verdict -->|Fail| CreateFixTasks[Create fix tasks<br/>Story remains current state]
+
+    RegressionFail --> End([End])
+    ReportStatus --> End
+    CreateRefactoring --> End
+    StoryDone --> End
+    CreateFixTasks --> End
+
+    %% Styling
+    classDef discovery fill:#E3F2FD,stroke:#1976D2,stroke-width:2px
+    classDef processing fill:#FFF9C4,stroke:#F57C00,stroke-width:2px
+    classDef decision fill:#FFE0B2,stroke:#E64A19,stroke-width:2px
+    classDef action fill:#C8E6C9,stroke:#388E3C,stroke-width:2px
+    classDef error fill:#FFCDD2,stroke:#C62828,stroke-width:2px
+
+    class Phase1,Phase2 discovery
+    class P1_Phase3,P1_Phase4,P1_Phase5,P1_Phase6,P2_Phase8 processing
+    class PassCheck,RegressionPass,P1_Verdict,CheckTestTask,P2_Verdict decision
+    class InvokeFinalizer,StoryDone,ReportStatus action
+    class RegressionFail,CreateRefactoring,CreateFixTasks error

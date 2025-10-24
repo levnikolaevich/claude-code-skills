@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>x-story-verifier - State Diagram</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; background: white; border-radius: 12px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); padding: 40px; }
+        header { text-align: center; margin-bottom: 40px; padding-bottom: 20px; border-bottom: 2px solid #e0e0e0; }
+        h1 { color: #333; font-size: 2.5em; margin-bottom: 10px; }
+        .subtitle { color: #666; font-size: 1.2em; font-weight: 300; }
+        .diagram-container { background: #f9f9f9; border-radius: 8px; padding: 30px; margin: 20px 0; overflow-x: auto; }
+        .mermaid { display: flex; justify-content: center; }
+        .info-box { background: #e3f2fd; border-left: 4px solid #1976d2; padding: 15px 20px; margin: 20px 0; border-radius: 4px; }
+        .info-box h3 { color: #1976d2; margin-bottom: 10px; }
+        .info-box ul { margin-left: 20px; }
+        .info-box li { margin: 8px 0; color: #555; }
+        footer { text-align: center; margin-top: 40px; padding-top: 20px; border-top: 2px solid #e0e0e0; color: #999; font-size: 0.9em; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>✅ x-story-verifier</h1>
+            <p class="subtitle">Story Verifier - State Diagram</p>
+        </header>
+        <div class="info-box">
+            <h3>📋 Overview</h3>
+            <ul>
+                <li><strong>Purpose:</strong> Auto-fix and approve Stories (8 sections) and Tasks (7 sections) against industry standards</li>
+                <li><strong>Verdict:</strong> ALWAYS approves after auto-fixing ALL 15 verification criteria (no "Needs Work" path)</li>
+                <li><strong>State Transition:</strong> Backlog → Todo (Story + ALL Tasks)</li>
+            </ul>
+        </div>
+        <div class="diagram-container">
+            <div class="mermaid">
+graph TD
+    Start([Start: Verify Story]) --> Phase1[Phase 1: Discovery<br/>Team ID + project docs]
+    Phase1 --> Phase2[Phase 2: Story + Tasks Overview<br/>Load metadata NO descriptions]
+    Phase2 --> Phase3[Phase 3: Standards Review]
+    subgraph Standards [Standards Compliance - Priority 1]
+        S1[Check industry standards<br/>OAuth 2.0 REST RFCs]
+        S1 --> S2[Challenge approach<br/>Research best practices]
+        S2 --> S3[Check guides<br/>Auto-create via x-guide-creator]
+    end
+    Phase3 --> S1
+    S3 --> Phase4
+    Phase4[Phase 4: Auto-Fix<br/>15 Criteria п.0a 0b 1-13 14]
+    subgraph Fixes [Auto-Fix ALL]
+        F1[п.0a: Story 8 sections]
+        F1 --> F2[п.0b: Tasks 7 sections EACH]
+        F2 --> F3[п.1-13: All other criteria]
+        F3 --> F4[п.14: Standards Compliance]
+    end
+    Phase4 --> F1
+    F4 --> Phase5
+    Phase5[Phase 5: ALWAYS Approve<br/>Story + Tasks → Todo<br/>Update kanban]
+    Phase5 --> Phase6[Phase 6: Summary Table<br/>✅ ALWAYS Approved]
+    Phase6 --> End([End])
+    classDef discovery fill:#E3F2FD,stroke:#1976D2,stroke-width:2px
+    classDef processing fill:#FFF9C4,stroke:#F57C00,stroke-width:2px
+    classDef action fill:#C8E6C9,stroke:#388E3C,stroke-width:2px
+    class Phase1,Phase2 discovery
+    class Phase3,S1,S2,S3,Phase4,F1,F2,F3,F4 processing
+    class Phase5,Phase6 action
+            </div>
+        </div>
+        <footer>
+            <p>x-story-verifier | NO "Needs Work" path - ALWAYS auto-fixes and approves</p>
+        </footer>
+    </div>
+    <script>
+        mermaid.initialize({ startOnLoad: true, theme: 'default', flowchart: { useMaxWidth: true, htmlLabels: true, curve: 'basis' } });
+    </script>
+</body>
+</html>

@@ -1,0 +1,306 @@
+<!-- SCOPE: Work Order & Scope Boundaries (NO Dates/Budgets) -->
+<!-- INCLUDES: Epic list with scope (in/out), dependencies, success criteria, status -->
+<!-- EXCLUDES: Specific dates/deadlines, Budget/costs, Team assignments, Individual tasks/stories, Implementation details → Technical Spec -->
+
+<h2>Roadmap</h2>
+
+<p class="roadmap-intro">This roadmap shows the <strong>work order</strong> and <strong>scope boundaries</strong> for our project. Epics are organized by dependencies, with clear scope definition for each.</p>
+
+<section class="epics-list">
+    <!-- Epic 1: Done -->
+    <div class="epic-item">
+        <div class="epic-header">
+            <h3>Epic 1: User Management</h3>
+            <span class="epic-status status-done">Done</span>
+        </div>
+        <p class="epic-description">User registration, authentication, profile management, and session handling</p>
+
+        <div class="epic-details">
+            <div class="epic-scope">
+                <h4>In Scope</h4>
+                <ul>
+                    <li>JWT authentication</li>
+                    <li>Email/password registration</li>
+                    <li>Password reset flow</li>
+                    <li>User profile CRUD operations</li>
+                    <li>Session management</li>
+                </ul>
+            </div>
+            <div class="epic-scope">
+                <h4>Out of Scope</h4>
+                <ul>
+                    <li>Social login (OAuth)</li>
+                    <li>Multi-factor authentication</li>
+                    <li>Single sign-on (SSO)</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="epic-meta">
+            <p><strong>Dependencies:</strong> None (Foundation epic)</p>
+            <p><strong>Success Criteria:</strong> JWT authentication, < 2s login time, Password reset flow</p>
+            <p><strong>Progress:</strong> 6/6 stories completed (100%)</p>
+        </div>
+    </div>
+
+    <!-- Epic 2: Done -->
+    <div class="epic-item">
+        <div class="epic-header">
+            <h3>Epic 2: Product Catalog</h3>
+            <span class="epic-status status-done">Done</span>
+        </div>
+        <p class="epic-description">Product listing, search, filters, and pagination</p>
+
+        <div class="epic-details">
+            <div class="epic-scope">
+                <h4>In Scope</h4>
+                <ul>
+                    <li>Full-text search across product names and descriptions</li>
+                    <li>Category filters</li>
+                    <li>Price range filters</li>
+                    <li>Pagination (20 items/page)</li>
+                    <li>Product detail pages</li>
+                    <li>1000+ SKUs support</li>
+                </ul>
+            </div>
+            <div class="epic-scope">
+                <h4>Out of Scope</h4>
+                <ul>
+                    <li>AI-powered recommendations</li>
+                    <li>Visual search</li>
+                    <li>Product reviews</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="epic-meta">
+            <p><strong>Dependencies:</strong> Epic 1 (User Management for admin features)</p>
+            <p><strong>Success Criteria:</strong> Full-text search, 1000+ SKUs, < 1s search response</p>
+            <p><strong>Progress:</strong> 8/8 stories completed (100%)</p>
+        </div>
+    </div>
+
+    <!-- Epic 3: In Progress -->
+    <div class="epic-item">
+        <div class="epic-header">
+            <h3>Epic 3: Shopping Cart</h3>
+            <span class="epic-status status-progress">In Progress</span>
+        </div>
+        <p class="epic-description">Cart management with session persistence and inventory validation</p>
+
+        <div class="epic-details">
+            <div class="epic-scope">
+                <h4>In Scope</h4>
+                <ul>
+                    <li>Add/remove items from cart</li>
+                    <li>Update quantities</li>
+                    <li>Cart persistence across sessions</li>
+                    <li>Real-time inventory validation</li>
+                    <li>Cart subtotal calculation</li>
+                </ul>
+            </div>
+            <div class="epic-scope">
+                <h4>Out of Scope</h4>
+                <ul>
+                    <li>Wishlist functionality</li>
+                    <li>Share cart</li>
+                    <li>Save for later</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="epic-meta">
+            <p><strong>Dependencies:</strong> Epic 2 (Product Catalog)</p>
+            <p><strong>Success Criteria:</strong> Cart persists across sessions, real-time inventory sync, < 500ms cart operations</p>
+            <p><strong>Progress:</strong> 3/8 stories completed (37%)</p>
+        </div>
+    </div>
+
+    <!-- Epic 4: In Progress -->
+    <div class="epic-item">
+        <div class="epic-header">
+            <h3>Epic 4: Admin Dashboard</h3>
+            <span class="epic-status status-progress">In Progress</span>
+        </div>
+        <p class="epic-description">Product management, inventory control, and analytics dashboard</p>
+
+        <div class="epic-details">
+            <div class="epic-scope">
+                <h4>In Scope</h4>
+                <ul>
+                    <li>Product CRUD operations</li>
+                    <li>Bulk product import (CSV)</li>
+                    <li>Inventory management</li>
+                    <li>Role-based access control</li>
+                    <li>Real-time analytics dashboard</li>
+                    <li>Sales reports</li>
+                </ul>
+            </div>
+            <div class="epic-scope">
+                <h4>Out of Scope</h4>
+                <ul>
+                    <li>Customer support tickets</li>
+                    <li>Email campaigns</li>
+                    <li>Advanced BI reports</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="epic-meta">
+            <p><strong>Dependencies:</strong> Epic 1 (User Management), Epic 2 (Product Catalog)</p>
+            <p><strong>Success Criteria:</strong> Role-based access control, bulk product import, real-time analytics</p>
+            <p><strong>Progress:</strong> 2/7 stories completed (28%)</p>
+        </div>
+    </div>
+
+    <!-- Epic 5: Todo -->
+    <div class="epic-item">
+        <div class="epic-header">
+            <h3>Epic 5: Payment Gateway</h3>
+            <span class="epic-status status-todo">Todo</span>
+        </div>
+        <p class="epic-description">Integrate Stripe for secure payment processing with PCI DSS compliance</p>
+
+        <div class="epic-details">
+            <div class="epic-scope">
+                <h4>In Scope</h4>
+                <ul>
+                    <li>Stripe payment integration</li>
+                    <li>Credit/debit card payments</li>
+                    <li>Digital wallets (Apple Pay, Google Pay)</li>
+                    <li>PCI DSS compliance</li>
+                    <li>Payment error handling</li>
+                    <li>Refund processing</li>
+                </ul>
+            </div>
+            <div class="epic-scope">
+                <h4>Out of Scope</h4>
+                <ul>
+                    <li>Cryptocurrency payments</li>
+                    <li>Buy now, pay later (BNPL)</li>
+                    <li>Invoice payments</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="epic-meta">
+            <p><strong>Dependencies:</strong> Epic 3 (Shopping Cart)</p>
+            <p><strong>Success Criteria:</strong> PCI DSS compliant, < 3s checkout time, support 5+ payment methods</p>
+            <p><strong>Progress:</strong> 0/5 stories planned</p>
+        </div>
+    </div>
+
+    <!-- Epic 6: Todo -->
+    <div class="epic-item">
+        <div class="epic-header">
+            <h3>Epic 6: Order Management</h3>
+            <span class="epic-status status-todo">Todo</span>
+        </div>
+        <p class="epic-description">Order processing, tracking, and fulfillment workflows</p>
+
+        <div class="epic-details">
+            <div class="epic-scope">
+                <h4>In Scope</h4>
+                <ul>
+                    <li>Order creation and confirmation</li>
+                    <li>Real-time order tracking</li>
+                    <li>Email notifications</li>
+                    <li>Order history</li>
+                    <li>Automated fulfillment workflows</li>
+                    <li>Cancellation and refund flows</li>
+                </ul>
+            </div>
+            <div class="epic-scope">
+                <h4>Out of Scope</h4>
+                <ul>
+                    <li>Advanced shipping integrations</li>
+                    <li>Returns management portal</li>
+                    <li>International shipping</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="epic-meta">
+            <p><strong>Dependencies:</strong> Epic 5 (Payment Gateway)</p>
+            <p><strong>Success Criteria:</strong> Real-time order tracking, automated fulfillment notifications, < 1min order confirmation</p>
+            <p><strong>Progress:</strong> 0/6 stories planned</p>
+        </div>
+    </div>
+
+    <!-- Epic 7: Backlog -->
+    <div class="epic-item">
+        <div class="epic-header">
+            <h3>Epic 7: Advanced Analytics</h3>
+            <span class="epic-status status-backlog">Backlog</span>
+        </div>
+        <p class="epic-description">Customer behavior analytics and recommendations engine</p>
+
+        <div class="epic-details">
+            <div class="epic-scope">
+                <h4>In Scope</h4>
+                <ul>
+                    <li>Customer behavior tracking</li>
+                    <li>Product recommendations engine</li>
+                    <li>Conversion funnel analytics</li>
+                    <li>A/B testing framework</li>
+                    <li>Personalized user experience</li>
+                </ul>
+            </div>
+            <div class="epic-scope">
+                <h4>Out of Scope</h4>
+                <ul>
+                    <li>Machine learning models</li>
+                    <li>Predictive analytics</li>
+                    <li>Customer data platform (CDP)</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="epic-meta">
+            <p><strong>Dependencies:</strong> Epic 2 (Product Catalog), Epic 6 (Order Management)</p>
+            <p><strong>Success Criteria:</strong> 15% increase in conversion rate, personalized recommendations for 80%+ users</p>
+            <p><strong>Progress:</strong> 0/9 stories planned</p>
+        </div>
+    </div>
+</section>
+
+<section class="out-of-scope-items">
+    <h3>Out of Project Scope</h3>
+    <p>The following items are explicitly <strong>NOT included</strong> in the current project phase:</p>
+
+    <div class="out-of-scope-grid">
+        <div class="out-of-scope-card">
+            <h4>Mobile Native Apps</h4>
+            <p>iOS and Android native applications</p>
+            <p class="scope-reason"><strong>Reason:</strong> Focus on responsive web first, native apps planned for Phase 2</p>
+        </div>
+
+        <div class="out-of-scope-card">
+            <h4>Multi-Currency Support</h4>
+            <p>International payments and currency conversion</p>
+            <p class="scope-reason"><strong>Reason:</strong> Current scope limited to USD, internationalization in future release</p>
+        </div>
+
+        <div class="out-of-scope-card">
+            <h4>Social Commerce Integration</h4>
+            <p>Social media selling and live shopping features</p>
+            <p class="scope-reason"><strong>Reason:</strong> Not in MVP scope, evaluate after core features stable</p>
+        </div>
+
+        <div class="out-of-scope-card">
+            <h4>B2B Wholesale Portal</h4>
+            <p>Bulk ordering and wholesale pricing for business customers</p>
+            <p class="scope-reason"><strong>Reason:</strong> B2C focus first, B2B features separate project phase</p>
+        </div>
+    </div>
+</section>
+
+<section class="roadmap-legend">
+    <h3>Status Legend</h3>
+    <div class="status-badges">
+        <span class="epic-status status-done">Done</span> Completed and deployed
+        <span class="epic-status status-progress">In Progress</span> Currently being developed
+        <span class="epic-status status-todo">Todo</span> Approved and ready to start
+        <span class="epic-status status-backlog">Backlog</span> Under evaluation
+    </div>
+</section>

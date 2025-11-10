@@ -1,0 +1,42 @@
+{
+  "name": "agile-linear-workflow",
+  "version": "1.0.0",
+  "description": "Complete Agile workflow automation for Linear: 17 production-ready skills covering documentation, epic/story/task management, execution, and quality validation with Risk-Based Testing",
+
+  "author": {
+    "name": "Lev Nikolaevich",
+    "email": "levnikolaevich.com@gmail.com",
+    "url": "https://github.com/levnikolaevich"
+  },
+
+  "homepage": "https://github.com/levnikolaevich/claude-code-skills",
+  "repository": "https://github.com/levnikolaevich/claude-code-skills",
+  "license": "MIT",
+
+  "keywords": [
+    "agile",
+    "linear",
+    "workflow",
+    "automation",
+    "project-management",
+    "documentation",
+    "epic",
+    "story",
+    "task",
+    "testing",
+    "risk-based-testing",
+    "architecture-decision-records",
+    "adr",
+    "kanban",
+    "scrum",
+    "sprint",
+    "backlog",
+    "user-stories"
+  ],
+
+  "categories": [
+    "productivity",
+    "development",
+    "documentation"
+  ]
+}

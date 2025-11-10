@@ -136,7 +136,44 @@ Before you begin, ensure you have:
 
 ### Installation
 
-**Step 1: Clone the Repository**
+This plugin can be installed in three ways. Choose the method that best fits your needs:
+
+#### Method 1: Plugin Marketplace (Recommended ⭐)
+
+**Best for:** Teams, automatic updates, easiest installation
+
+```bash
+# Step 1: Add the marketplace
+/plugin marketplace add levnikolaevich/claude-code-skills
+
+# Step 2: Install the plugin
+/plugin install agile-linear-workflow@agile-linear-workflow-marketplace
+
+# Step 3: Verify installation
+/skills
+```
+
+**Benefits:**
+- ✅ Automatic updates via `/plugin update`
+- ✅ One command installation
+- ✅ Guaranteed compatibility
+- ✅ Version management
+
+#### Method 2: Direct Plugin Installation
+
+**Best for:** Quick setup without marketplace
+
+```bash
+# Step 1: Install plugin directly from GitHub
+/plugin add levnikolaevich/claude-code-skills
+
+# Step 2: Verify installation
+/skills
+```
+
+#### Method 3: Git Clone (Manual Installation)
+
+**Best for:** Developers, contributors, custom modifications
 
 Choose the appropriate command for your operating system:
 
@@ -155,9 +192,7 @@ git clone https://github.com/levnikolaevich/claude-code-skills.git %USERPROFILE%
 git clone https://github.com/levnikolaevich/claude-code-skills.git $env:USERPROFILE\.claude\skills
 ```
 
-**Step 2: Verify Installation**
-
-Open Claude Code and check that skills are loaded:
+**Verify Installation:**
 ```bash
 # In Claude Code, type:
 /skills
@@ -165,7 +200,32 @@ Open Claude Code and check that skills are loaded:
 
 You should see all 17 skills listed and available for use.
 
-**Step 3: (Optional) Configure Linear Integration**
+---
+
+### Updating
+
+**If installed via Plugin (Method 1 or 2):**
+```bash
+# Update to latest version
+/plugin update agile-linear-workflow
+```
+
+**If installed via Git Clone (Method 3):**
+```bash
+# Navigate to skills directory
+cd ~/.claude/skills                    # macOS/Linux
+cd %USERPROFILE%\.claude\skills       # Windows (CMD)
+cd $env:USERPROFILE\.claude\skills    # Windows (PowerShell)
+
+# Pull latest changes
+git pull origin master
+```
+
+---
+
+### Configuration (Optional)
+
+**Linear Integration:**
 
 If you want to use Linear integration features:
 1. Create a Linear API key at [linear.app/settings/api](https://linear.app/settings/api)

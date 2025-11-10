@@ -1,0 +1,69 @@
+{
+  "name": "agile-linear-workflow-marketplace",
+  "version": "1.0.0",
+  "description": "Official marketplace for Agile Linear Workflow plugin - complete end-to-end automation for software development teams using Linear",
+
+  "owner": {
+    "name": "Lev Nikolaevich",
+    "email": "levnikolaevich.com@gmail.com",
+    "url": "https://github.com/levnikolaevich"
+  },
+
+  "pluginRoot": "./",
+
+  "plugins": [
+    {
+      "name": "agile-linear-workflow",
+      "source": "./",
+      "version": "1.0.0",
+      "description": "Complete Agile workflow automation for Linear: 17 production-ready skills covering documentation, epic/story/task management, execution, and quality validation with Risk-Based Testing",
+
+      "author": {
+        "name": "Lev Nikolaevich",
+        "url": "https://github.com/levnikolaevich"
+      },
+
+      "homepage": "https://github.com/levnikolaevich/claude-code-skills",
+      "repository": "https://github.com/levnikolaevich/claude-code-skills",
+      "license": "MIT",
+
+      "keywords": [
+        "agile",
+        "linear",
+        "workflow",
+        "automation",
+        "project-management",
+        "documentation",
+        "epic",
+        "story",
+        "task",
+        "testing",
+        "risk-based-testing",
+        "architecture-decision-records",
+        "adr",
+        "kanban",
+        "scrum",
+        "sprint",
+        "backlog",
+        "user-stories"
+      ],
+
+      "categories": [
+        "productivity",
+        "development",
+        "documentation"
+      ],
+
+      "skills": {
+        "count": 17,
+        "categories": {
+          "pre-planning": 5,
+          "planning": 4,
+          "execution": 5,
+          "validation": 2,
+          "documentation": 1
+        }
+      }
+    }
+  ]
+}

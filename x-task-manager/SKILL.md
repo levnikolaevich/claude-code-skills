@@ -1,6 +1,6 @@
 ---
 name: x-task-manager
-description: Universal task operations (create/update/replan) with automatic decomposition. Analyzes Story, builds optimal task plan (1-4 tasks), then creates or replans existing tasks. Auto-discovers team ID. For implementation tasks only (NOT test tasks).
+description: Universal task operations (create/update/replan) with automatic decomposition. Analyzes Story, builds optimal task plan (1-6 tasks), then creates or replans existing tasks. Auto-discovers team ID. For implementation tasks only (NOT test tasks).
 ---
 
 # Linear Task Manager
@@ -24,7 +24,7 @@ This skill should be used when:
 ## When NOT to Use
 
 Do NOT use if:
-- Story doesn't exist → Use x-story-creator first
+- Story doesn't exist → Use x-story-manager first
 - Need to create test tasks → Use x-story-finalizer after manual testing
 - Story is vague → Refine Story AC and Technical Notes first
 - Task is trivial (< 1 hour) → Create directly in Linear manually
@@ -65,8 +65,8 @@ Parses request for:
 3. **Build OPTIMAL Task Plan** "in mind":
    - **Simple Story** (1-2 AC, single endpoint): 1 task (3-5 hours)
    - **Medium Story** (3-4 AC, multiple layers): 2-3 tasks (6-15 hours)
-   - **Complex Story** (5+ AC, multiple integrations): 3-4 tasks (9-20 hours)
-   - **Max 4 tasks per Story** (enforced)
+   - **Complex Story** (5+ AC, multiple integrations): 3-6 tasks (12-30 hours)
+   - **Max 6 tasks per Story** (enforced)
 
 4. **Apply Consumer-First Ordering**:
    - API endpoint → Service → Repository → Database
@@ -521,11 +521,11 @@ Before completing work, verify ALL checkpoints:
 ## Best Practices
 
 ### Task Decomposition
-- **Automatic Decomposition**: Skill determines optimal count (1-4) based on Story complexity
+- **Automatic Decomposition**: Skill determines optimal count (1-6) based on Story complexity
   - Simple (1-2 AC) → 1 task (3-5h)
   - Medium (3-4 AC) → 2-3 tasks (6-15h)
-  - Complex (5+ AC) → 3-4 tasks (9-20h)
-  - **Max 4 tasks per Story** (12-20 hours total)
+  - Complex (5+ AC) → 3-6 tasks (12-30h)
+  - **Max 6 tasks per Story** (12-30 hours total)
 - **Consumer-First Ordering**: API → Service → Repository → Database
 - **Task Size**: Optimal 3-5 hours (fits in 1-2 work sessions)
 

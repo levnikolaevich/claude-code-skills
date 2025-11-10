@@ -416,7 +416,7 @@ Before adding new tests, update existing tests that might have broken due to log
 
 ## Legacy Code Cleanup
 
-**Костыли/Hacks to Remove:**
+**Workarounds/Hacks to Remove:**
 
 ### [File/Module 1]: [Legacy Code Item]
 

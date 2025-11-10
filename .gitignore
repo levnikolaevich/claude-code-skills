@@ -1,0 +1,94 @@
+# Environment Files
+.env
+.env.local
+.env.*.local
+*.env
+.envrc
+
+# IDE and Editor Files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.sublime-project
+*.sublime-workspace
+
+# OS-Specific Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# Node.js / JavaScript
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+.npm
+.yarn-integrity
+
+# Build Artifacts
+dist/
+build/
+*.bundle.js
+*.min.js
+*.map
+
+# Logs
+*.log
+logs/
+*.log.*
+
+# Temporary Files
+*.tmp
+*.temp
+*.bak
+*.old
+*.cache
+.cache/
+
+# Coverage and Testing
+coverage/
+.nyc_output/
+*.lcov
+
+# Private Notes and Documentation
+PRIVATE.md
+TODO_PRIVATE.md
+notes/
+private/
+
+# Claude Code Specific
+.claude/settings.local.json
+
+# Git-related
+*.orig
+
+# Compiled Python (if using Python tooling)
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Distribution / Packaging
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+.eggs/
+wheels/
+
+# Backup files
+*~
+*.swp
+*.swo
+*.swn
+.*.sw*

@@ -281,7 +281,7 @@ Auto-discovers project configuration:
   * **Step 2:** Implement New Tests E2E→Integration→Unit (Sections 3-5, Priority ≥15)
   * **Step 3:** Update Infrastructure (Section 9: package.json, Dockerfile, compose)
   * **Step 4:** Update Documentation (Section 10: tests/README.md, CHANGELOG.md)
-  * **Step 5:** Cleanup Legacy Code (Section 11: костыли, backward compat)
+  * **Step 5:** Cleanup Legacy Code (Section 11: workarounds, backward compat)
   * **Step 6:** Final Verification (all tests pass, 10-28 total)
 - Test task transitions: **Todo → In Progress → To Review**
 

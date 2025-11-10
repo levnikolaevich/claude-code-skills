@@ -281,7 +281,7 @@ docs/tasks/
 
 ## Integration with Project Workflow
 
-x-docs-creator → [optional: x-html-builder] → x-epic-creator → x-story-creator → x-task-manager → x-task-executor → x-task-reviewer → x-story-finalizer → x-test-executor → x-task-reviewer → Story Done
+x-docs-creator → [optional: x-html-builder] → x-epic-creator → x-story-manager → x-task-manager → x-task-executor → x-task-reviewer → x-story-finalizer → x-test-executor → x-task-reviewer → Story Done
 
 **Dependencies**: x-html-builder reads MD docs from docs/project/, epic-creator uses requirements.md, task-creator uses architecture.md + technical_specification.md
 

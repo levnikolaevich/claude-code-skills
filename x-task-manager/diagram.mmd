@@ -5,7 +5,7 @@
 graph TD
     Start([Start: Task Manager]) --> Phase1[Phase 1: Discovery<br/>Team ID auto-discovery<br/>Parse Story ID from request]
 
-    Phase1 --> Phase2[Phase 2: Analyze & Decompose ALWAYS<br/>Load Story AC + Technical Notes<br/>Build IDEAL task plan 1-4<br/>Consumer-First ordering]
+    Phase1 --> Phase2[Phase 2: Analyze & Decompose ALWAYS<br/>Load Story AC + Technical Notes<br/>Build IDEAL task plan 1-6<br/>Consumer-First ordering]
 
     Phase2 --> Phase3{Phase 3: Check<br/>Existing Tasks?}
 
@@ -13,7 +13,7 @@ graph TD
     Phase3 -->|Count ≥ 1| ReplanMode[REPLAN MODE<br/>Compare ideal vs existing]
 
     CreateMode --> Generate[Generate task documents<br/>7 sections with guide links<br/>from IDEAL plan]
-    Generate --> ShowCreate[Show preview:<br/>1-4 tasks to create<br/>Consumer-First order]
+    Generate --> ShowCreate[Show preview:<br/>1-6 tasks to create<br/>Consumer-First order]
     ShowCreate --> ConfirmCreate{User<br/>confirms?}
     ConfirmCreate -->|No| Phase2
     ConfirmCreate -->|Yes| ExecuteCreate[Create all tasks in Linear<br/>Update kanban_board.md]

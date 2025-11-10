@@ -1,6 +1,6 @@
 %% x-story-verifier: Story Verifier
 %% Auto-fix and approve Stories against industry standards
-%% Backlog → Todo (ALWAYS approve after 15 auto-fixes: п.0a 0b 1-13 14)
+%% Backlog → Todo (ALWAYS approve after 15 auto-fixes: #0a 0b 1-13 14)
 
 graph TD
     Start([Start: Verify Story]) --> Phase1[Phase 1: Discovery<br/>Team ID + project docs]
@@ -12,19 +12,29 @@ graph TD
     subgraph Standards [Standards Compliance - Priority 1]
         S1[Check industry standards FIRST<br/>OAuth 2.0 REST RFCs]
         S1 --> S2[Challenge approach<br/>Research best practices]
-        S2 --> S3[Check existing guides<br/>Auto-create if missing via x-guide-creator]
+        S2 --> S3{Guide exists<br/>in docs/guides/?}
+
+        S3 -->|YES| S4[Reference existing guide]
+        S3 -->|NO| S5{Pattern type?}
+
+        S5 -->|Architectural<br/>reusable| S6[Auto-create guide<br/>via x-guide-creator<br/>MCP Ref + Context7]
+        S5 -->|Technical<br/>one-off| S7[Recommend ADR]
+
+        S4 --> S8[Insert guide links<br/>Story Technical Notes<br/>Phase 4 #13]
+        S6 --> S8
+        S7 --> S8
     end
 
     Phase3 --> S1
-    S3 --> Phase4
+    S8 --> Phase4
 
-    Phase4[Phase 4: Comprehensive Auto-Fix<br/>15 Verification Criteria п.0a 0b 1-13 14]
+    Phase4[Phase 4: Comprehensive Auto-Fix<br/>15 Verification Criteria #0a 0b 1-13 14]
 
     subgraph Fixes [Auto-Fix ALL Issues]
-        F1[п.0a: Story Structure 8 sections]
-        F1 --> F2[п.0b: Tasks Structure 7 sections EACH sequential]
-        F2 --> F3[п.1-13: All other criteria<br/>Story statement AC Test Strategy<br/>YAGNI KISS Guide Links Consumer-First etc.]
-        F3 --> F4[п.14: Industry Standards Compliance]
+        F1[#0a: Story Structure 8 sections]
+        F1 --> F2[#0b: Tasks Structure 7 sections EACH sequential]
+        F2 --> F3[#1-13: All other criteria<br/>Story statement AC Test Strategy<br/>YAGNI KISS Guide Links Consumer-First etc.]
+        F3 --> F4[#14: Industry Standards Compliance]
     end
 
     Phase4 --> F1

@@ -44,7 +44,7 @@ Auto-discovers Team ID from `docs/tasks/kanban_board.md` and project documentati
    - ⚠️ **Request metadata ONLY:** ID, title, status, labels (NO description)
    - Purpose: Validate task breakdown before loading full descriptions
 5. **Validate task breakdown:**
-   - Check count (3-4 implementation tasks ONLY)
+   - Check count (1-4 implementation tasks ONLY)
    - ⚠️ **Test task MUST NOT exist** (created later by x-story-finalizer after manual testing)
    - Verify NO label "tests" on any tasks (if found → will be removed in Phase 4)
    - Confirm logical order and naming
@@ -75,7 +75,7 @@ Auto-discovers Team ID from `docs/tasks/kanban_board.md` and project documentati
 
 1. **Step 3.0: Check industry standards FIRST (BEFORE guides):**
    - Question: "Does relevant industry standard exist for this Story domain?"
-   - Common standards: OAuth 2.0 (RFC 6749), REST API design, OpenAPI 3.x, WebSocket (RFC 6455), JSON (RFC 8259)
+   - **Examples of common standards:** OAuth 2.0 (RFC 6749), REST API design, OpenAPI 3.x, WebSocket (RFC 6455), JSON (RFC 8259)
    - If standard exists:
      * Research via MCP Ref (`ref_search_documentation`) or WebSearch
      * Verify Story Technical Notes and Tasks comply with standard
@@ -213,7 +213,7 @@ Auto-discovers Team ID from `docs/tasks/kanban_board.md` and project documentati
      - Update kanban_board.md with new tasks (add to Backlog section under Story)
      - Add comment to Story: "Missing implementation tasks created via x-task-manager"
    - **Auto-fix if too large/small:**
-     - **Story too large (> 4 tasks):** Add TODO placeholder: "_TODO: Consider splitting into multiple Stories_"
+     - **Story too large (> 6 tasks):** Add TODO placeholder: "_TODO: Consider splitting into multiple Stories_"
      - **Task too granular (< 3h):** Add TODO placeholder in Task: "_TODO: Consider combining with related tasks_"
      - **Task too large (> 8h):** Add TODO placeholder in Task: "_TODO: Consider decomposing into smaller tasks (3-5h each)_"
      - Update Linear issues
@@ -284,7 +284,7 @@ Auto-discovers Team ID from `docs/tasks/kanban_board.md` and project documentati
      - Add comment: "Solution updated to comply with [Standard Name] [RFC/Spec Number]"
    - **Rule:** If KISS/YAGNI conflicts with standard → Standard wins (integration, security, maintainability > short-term simplicity)
 
-**Result:** ALL 15 verification criteria are auto-fixed. Story always ready for approval.
+**Result:** ALL 16 verification criteria are auto-fixed. Story always ready for approval.
 
 See `references/verification_checklist.md` for complete checklist.
 
@@ -371,13 +371,13 @@ Review story US003 - optimize solution if better approach exists
 ## Best Practices
 
 1. **Trust auto-discovery:** Let skill find project structure
-2. **Sequential task validation:** Load task metadata first (Phase 2), then fetch full descriptions one by one (Phase 4 п.2) to avoid truncation and token waste
+2. **Sequential task validation:** Load task metadata first (Phase 2), then fetch full descriptions one by one (Phase 4 #2) to avoid truncation and token waste
 3. **Critical mindset:** Don't accept proposed approach blindly - question if it's truly optimal
 4. **Dual validation:** Check against BOTH 2025 industry standards AND project-specific architecture
 5. **Modern practices first:** Prefer 2025 industry standards over legacy/custom patterns
 6. **Bold corrections:** Rewrite Story/Tasks if significantly better solution exists - don't just leave comments
 7. **Always fix and approve:** Auto-fix ALL issues in Phase 4, never leave Story in Backlog with feedback - ALWAYS approve and transition to Todo after fixes applied
-8. **Task creation delegation:** ALWAYS use Skill tool to invoke x-task-manager for creating missing tasks (Phase 4 п.9). NEVER create tasks directly via Linear API (`mcp__linear-server__create_issue`) in x-story-verifier. x-task-manager ensures proper task structure, automatic decomposition, and Consumer-First ordering.
+8. **Task creation delegation:** ALWAYS use Skill tool to invoke x-task-manager for creating missing tasks (Phase 4 #9). NEVER create tasks directly via Linear API (`mcp__linear-server__create_issue`) in x-story-verifier. x-task-manager ensures proper task structure, automatic decomposition, and Consumer-First ordering.
 9. **Verify at Story level:** Check architectural approach, not implementation details
 10. **Test Strategy in Story:** Story must have Test Strategy section with Risk-Based Testing (2-5 E2E, 3-8 Integration, 5-15 Unit, 10-28 total, Priority ≥15)
 11. **Final test task planned:** Story Implementation Tasks should include final test task
@@ -404,7 +404,7 @@ Before completing work, verify ALL checkpoints:
 - [ ] Story.id (UUID) extracted from Story object for parentId filter
 - [ ] Child Tasks metadata loaded from Linear using Story.id (UUID) as parentId (ID, title, status, labels - NO full descriptions yet)
 - [ ] Task breakdown validated:
-  - Count: 3-8 implementation tasks + 0-1 test task (within allowed range)
+  - Count: 1-4 implementation tasks + 0-1 test task (within allowed range)
   - Label "tests" present on test tasks only
   - Logical order and naming verified
 - [ ] Epic context identified from Story's project field
@@ -434,7 +434,7 @@ Before completing work, verify ALL checkpoints:
   - ❌ YAGNI/KISS violations → Replaced with simplified approach
   - ❌ Outdated solution → Replaced with 2025 best practices
 
-**✅ Story Structure Validated (Phase 4 п.1):**
+**✅ Story Structure Validated (Phase 4 #1):**
 - [ ] Story description parsed into sections
 - [ ] Compared with story_template_universal.md (8 required sections):
   1. Story statement (As a/I want/So that)
@@ -454,7 +454,7 @@ Before completing work, verify ALL checkpoints:
 - [ ] Language preserved (EN/RU, no translation)
 - [ ] Skip fix if: Story Done/Canceled or older than 30 days
 
-**✅ All Tasks Structure Validated (Phase 4 п.2 - Sequential Validation):**
+**✅ All Tasks Structure Validated (Phase 4 #2 - Sequential Validation):**
 - [ ] FOR EACH task sequentially (one at a time):
   - Full description fetched from Linear
   - Description parsed into sections
@@ -475,7 +475,7 @@ Before completing work, verify ALL checkpoints:
   - Skip fix if: Task Done/Canceled or older than 30 days
 - [ ] All child Tasks validated (no Task skipped)
 
-**✅ Solution Optimized (Phase 4 п.3, if applicable):**
+**✅ Solution Optimized (Phase 4 #3, if applicable):**
 - [ ] If better solution identified in Phase 3:
   - Story Technical Notes rewritten with improved approach
   - Tasks updated with optimized implementation plan
@@ -484,7 +484,7 @@ Before completing work, verify ALL checkpoints:
   - Comment added: "Solution optimized per 2025 best practices"
   - Language preserved (EN/RU)
 
-**✅ Guide Links Inserted (Phase 4 п.4):**
+**✅ Guide Links Inserted (Phase 4 #4):**
 - [ ] "Related Guides:" subsection added to Story Technical Notes section
 - [ ] All guide links inserted in format: `[Guide XX: Pattern Name](../../guides/XX-pattern.md)`
   - Auto-created guides from Phase 3
@@ -493,31 +493,31 @@ Before completing work, verify ALL checkpoints:
 - [ ] Links accessible for x-task-manager to read when generating implementation tasks
 
 **✅ All 16 Verification Criteria Auto-Fixed (Phase 4):**
-- [ ] п.1 Story Structure Format: Template compliance (8 sections, proper order)
-- [ ] п.2 Tasks Structure Format: Sequential validation, template compliance (7 sections each)
-- [ ] п.3 Story Statement: As a/I want/So that format clarified
-- [ ] п.4 Acceptance Criteria: Given/When/Then format, 3-5 AC covering main flows
-- [ ] п.5 Solution Optimization: Better approach applied if identified, 2025 best practices
-- [ ] п.6 Library & Version: Current stable versions, outdated packages updated
-- [ ] п.7 Test Strategy: Risk-Based Testing added (2-5 E2E, 3-8 Integration, 5-15 Unit, 10-28 total, Priority ≥15)
-- [ ] п.8 Documentation Integration: Standalone doc tasks removed, docs integrated into implementation
-- [ ] п.9 Story Size & Task Granularity:
+- [ ] #1 Story Structure Format: Template compliance (8 sections, proper order)
+- [ ] #2 Tasks Structure Format: Sequential validation, template compliance (7 sections each)
+- [ ] #3 Story Statement: As a/I want/So that format clarified
+- [ ] #4 Acceptance Criteria: Given/When/Then format, 3-5 AC covering main flows
+- [ ] #5 Solution Optimization: Better approach applied if identified, 2025 best practices
+- [ ] #6 Library & Version: Current stable versions, outdated packages updated
+- [ ] #7 Test Strategy: Risk-Based Testing added (2-5 E2E, 3-8 Integration, 5-15 Unit, 10-28 total, Priority ≥15)
+- [ ] #8 Documentation Integration: Standalone doc tasks removed, docs integrated into implementation
+- [ ] #9 Story Size & Task Granularity:
   - If task count < 3 → x-task-manager invoked via Skill tool, missing implementation tasks created (1-4 total, auto-decomposed)
   - Task metadata reloaded to include newly created tasks
   - kanban_board.md updated with new tasks (Backlog section)
   - TODO placeholders added if too large/small (> 4 tasks, > 8h or < 3h per task)
-- [ ] п.10 Test Task Cleanup:
+- [ ] #10 Test Task Cleanup:
   - Test tasks identified (label "tests" OR title contains "test"/"tests"/"comprehensive"/"final")
   - Test tasks deleted from Linear (state = Canceled) with comment explaining removal
   - Test tasks removed from kanban_board.md (Backlog section)
   - Test task mentions removed from Story "Implementation Tasks" section
   - Comment added to Story explaining test task removal
-- [ ] п.11 YAGNI Violations: Premature features moved to future scope
-- [ ] п.12 KISS Violations: Over-engineered solutions simplified (within standard boundaries)
-- [ ] п.13 Guide Links Insertion: Auto-created and existing guides linked in Story Technical Notes
-- [ ] п.14 Consumer-First Principle: Task order corrected (Consumer → Service → Provider)
-- [ ] п.15 Code Quality Fundamentals: Configuration management requirements added, TODO placeholders for hardcoded values
-- [ ] п.16 Industry Standards Compliance: RFC/protocol compliance verified, non-standard solutions rewritten (OAuth 2.0, REST, OpenAPI), standard wins when KISS conflicts
+- [ ] #11 YAGNI Violations: Premature features moved to future scope
+- [ ] #12 KISS Violations: Over-engineered solutions simplified (within standard boundaries)
+- [ ] #13 Guide Links Insertion: Auto-created and existing guides linked in Story Technical Notes
+- [ ] #14 Consumer-First Principle: Task order corrected (Consumer → Service → Provider)
+- [ ] #15 Code Quality Fundamentals: Configuration management requirements added, TODO placeholders for hardcoded values
+- [ ] #16 Industry Standards Compliance: RFC/protocol compliance verified, non-standard solutions rewritten (OAuth 2.0, REST, OpenAPI), standard wins when KISS conflicts
 
 **✅ Always Approve Applied (Phase 5):**
 - [ ] **ALWAYS Approve → Todo** (no "Needs Work" path exists)
@@ -546,5 +546,5 @@ Before completing work, verify ALL checkpoints:
 
 ---
 
-**Version:** 9.3.0 (Story task limit reduced to max 4 tasks)
-**Last Updated:** 2025-11-09
+**Version:** 9.3.1 (Fixed verification criteria count and task limits)
+**Last Updated:** 2025-11-10

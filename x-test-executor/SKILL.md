@@ -16,7 +16,7 @@ This skill should be used when executing Story Finalizer test task (status = Tod
 - **Section 5:** Unit Tests (5-15 max, Priority ≥15 complex business logic)
 - **Section 9:** Infrastructure Changes (package.json, Dockerfile, compose)
 - **Section 10:** Documentation Updates (README, tests/README, CHANGELOG)
-- **Section 11:** Legacy Code Cleanup (костыли, backward compat, deprecated patterns)
+- **Section 11:** Legacy Code Cleanup (workarounds, backward compat, deprecated patterns)
 
 **Note:** For implementation tasks (without test logic), use **x-task-executor** skill instead.
 
@@ -124,7 +124,7 @@ Auto-discovers project configuration:
 
 **Step 5: Cleanup Legacy Code (Section 11)**
 - Load Section 11 "Legacy Code Cleanup" from task description
-- Remove костыли/hacks (with justification from task)
+- Remove workarounds/hacks (with justification from task)
 - Remove backward compatibility code (if safe per task analysis)
 - Remove deprecated patterns (replace with new patterns from this Story)
 - Remove dead code (unused functions, commented-out blocks)
@@ -178,7 +178,7 @@ Before completing work, verify ALL checkpoints:
   - No test duplication: Each test adds unique business value
 - [ ] **Step 3:** Infrastructure updated (Section 9: package.json, Dockerfile, compose, test configs)
 - [ ] **Step 4:** Documentation updated (Section 10: tests/README.md, README.md, CHANGELOG.md)
-- [ ] **Step 5:** Legacy code removed (Section 11: костыли, backward compat, deprecated patterns)
+- [ ] **Step 5:** Legacy code removed (Section 11: workarounds, backward compat, deprecated patterns)
 - [ ] **Step 6:** Final verification (all tests pass, infra works, docs complete)
 
 **✅ Risk-Based Testing Compliance:**

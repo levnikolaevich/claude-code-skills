@@ -103,8 +103,8 @@ Standard colors across all diagrams:
 
 **Planning:**
 6. `x-epic-creator/` - Decompose scope/initiative into 3-7 Epics (Linear Projects) through interactive dialog. Batch Mode only. (v3.0.0)
-7. `x-story-creator/` - Create User Stories in "As a/I want/So that" format + Given-When-Then AC. Supports Single Mode (one Story) and Batch Mode (Epic → 5-10 Stories)
-8. `x-task-manager/` - Universal task operations (create/update/replan) with automatic decomposition. Analyzes Story, builds optimal task plan (1-4 tasks), then creates or replans existing tasks (KEEP/UPDATE/OBSOLETE/CREATE). Decompose-First Pattern. Reads guide links from Story Technical Notes. (v5.0.0)
+7. `x-story-manager/` - Universal Story operations (create/replan) with automatic Epic decomposition. Analyzes Epic, builds IDEAL Story plan (5-10 Stories), then creates or replans existing Stories (KEEP/UPDATE/OBSOLETE/CREATE). Decompose-First Pattern with Epic extraction (parse Epic structure, ask user only for gaps). (v7.0.0)
+8. `x-task-manager/` - Universal task operations (create/replan) with automatic Story decomposition. Analyzes Story, builds optimal task plan (1-6 tasks), then creates or replans existing tasks (KEEP/UPDATE/OBSOLETE/CREATE). Decompose-First Pattern. Reads guide links from Story Technical Notes. (v5.0.0)
 9. `x-story-finalizer/` - Create final Story task after manual testing passes. Invoked by x-story-reviewer Pass 1. Generates comprehensive task with 11 sections: tests (E2E-first Risk-Based), existing test fixes, infrastructure updates, documentation updates, legacy code cleanup (NO dialog). **Excludes performance/load testing** (see x-story-finalizer/references/risk_based_testing_guide.md)
 
 **Execution:**
@@ -200,7 +200,7 @@ Linear API reference located in `x-epic-creator/references/linear_integration.md
 - **KISS:** Simplest solution that works (within standard boundaries)
 - **DRY:** Do not duplicate code
 - **Consumer-First:** Consumer first (API endpoint), then provider (Repository)
-- **Task Granularity:** Optimal task size 3-5 hours development time (atomic, testable units that fit in 1-2 work sessions with clear testing boundaries). Too small (< 3h) → combine with related work. Too large (> 8h) → decompose further. **Story limit: max 4 tasks (12-20 hours total)**. Rationale: Easy to estimate, track, and review; reduces scope creep and context switching.
+- **Task Granularity:** Optimal task size 3-5 hours development time (atomic, testable units that fit in 1-2 work sessions with clear testing boundaries). Too small (< 3h) → combine with related work. Too large (> 8h) → decompose further. **Story limit: max 6 tasks (12-30 hours total)**. Rationale: Easy to estimate, track, and review; reduces scope creep and context switching.
 - **Value-Based Testing:** Prioritize by business risk (money/security/data). Test critical paths, not coverage metrics. Limits: 2-5 E2E, 3-8 Integration, 5-15 Unit per Story (10-28 total max, all tests in Story's final task). **See:** x-story-finalizer/references/risk_based_testing_guide.md for complete methodology
 - **No Legacy Code:** When refactoring existing code (identified in task's "Existing Code Impact" section), remove backward compatibility shims, workarounds, and deprecated patterns. Clean codebase > supporting old implementations. Rationale: Technical debt compounds; addressing it immediately prevents future maintenance burden.
 
@@ -260,21 +260,28 @@ Creator skills support different decomposition approaches:
 - Interactive dialog for each Epic
 - Use when starting new initiative
 
-### x-story-creator (Single + Batch Mode)
-- **Single Mode**: Create ONE Story from goal/requirement
-- **Batch Mode**: Decompose Epic → 5-10 Stories
-- Mode detected by request phrasing (singular vs plural)
+### x-story-manager (Universal Auto-Decomposition)
+- **No mode selection needed** - automatic decomposition with Epic extraction
+- Always analyzes Epic and builds IDEAL Story plan (5-10 Stories)
+- Then checks existing Stories:
+  - No Stories → Create all from plan
+  - Has Stories → Replan (KEEP/UPDATE/OBSOLETE/CREATE)
+- Optimal Story count determined by Epic complexity:
+  - Simple (1-3 features) → 3-5 Stories
+  - Medium (4-7 features) → 6-8 Stories
+  - Complex (8+ features) → 8-10 Stories
+- Epic extraction: Parse Epic structure for Q1-Q6, ask user only for missing info
 
 ### x-task-manager (Universal Auto-Decomposition)
 - **No mode selection needed** - automatic decomposition
-- Always analyzes Story and builds IDEAL plan (1-4 tasks)
+- Always analyzes Story and builds IDEAL plan (1-6 tasks)
 - Then checks existing tasks:
   - No tasks → Create all from plan
   - Has tasks → Replan (KEEP/UPDATE/OBSOLETE/CREATE)
 - Optimal task count determined by Story complexity:
   - Simple (1-2 AC) → 1 task
   - Medium (3-4 AC) → 2-3 tasks
-  - Complex (5+ AC) → 3-4 tasks
+  - Complex (5+ AC) → 3-6 tasks
 - Consumer-First ordering applied automatically
 
 ### Complete Decomposition Flow
@@ -287,15 +294,17 @@ Creator skills support different decomposition approaches:
    - Example: "E-commerce platform" → "User Management", "Product Catalog", "Shopping Cart", "Payment", "Order Management"
    - **Note:** Always Batch Mode (no Single Mode)
 
-2. **Epic → Stories** (x-story-creator Batch Mode)
+2. **Epic → Stories** (x-story-manager)
    - Input: Epic number (e.g., Epic 7)
-   - Output: 5-10 User Stories (functional capabilities)
+   - Output: 5-10 User Stories automatically decomposed based on Epic complexity
+   - Automatically determines optimal count: Simple (1-3 features) → 3-5 Stories, Medium (4-7 features) → 6-8 Stories, Complex (8+ features) → 8-10 Stories
    - Example: "User Management Epic" → "Register user", "Login with email", "Reset password", "Update profile", "Manage sessions"
+   - If Stories already exist → Replan mode (KEEP/UPDATE/OBSOLETE/CREATE)
 
 3. **Story → Tasks** (x-task-manager)
    - Input: Story number (e.g., US004)
-   - Output: 1-4 Implementation Tasks automatically decomposed based on Story complexity (test task created later by x-story-finalizer after manual testing)
-   - Automatically determines optimal count: Simple (1-2 AC) → 1 task, Medium (3-4 AC) → 2-3 tasks, Complex (5+ AC) → 3-4 tasks
+   - Output: 1-6 Implementation Tasks automatically decomposed based on Story complexity (test task created later by x-story-finalizer after manual testing)
+   - Automatically determines optimal count: Simple (1-2 AC) → 1 task, Medium (3-4 AC) → 2-3 tasks, Complex (5+ AC) → 3-6 tasks
    - Example: "Login Story" → "Implement login endpoint" (4h), "Add session management" (3h), "Create login UI" (5h)
    - If tasks already exist → Replan mode (KEEP/UPDATE/OBSOLETE/CREATE)
 
@@ -303,7 +312,7 @@ Creator skills support different decomposition approaches:
 
 **Key Differences:**
 - **x-epic-creator:** Always Batch Mode (scope → 3-7 Epics)
-- **x-story-creator:** Single/Batch Mode (user chooses via phrasing)
+- **x-story-manager:** Universal Auto-Decomposition (NO mode selection, automatic replan, Epic extraction)
 - **x-task-manager:** Universal Auto-Decomposition (NO mode selection, automatic replan)
 
 ## Skill Workflows
@@ -320,11 +329,20 @@ Creator skills support different decomposition approaches:
    - Update kanban_board.md (increment by 1)
    - Move to next domain
 
-### 2. Creating Story (x-story-creator)
+### 2. Managing Stories (x-story-manager)
 1. **Discovery:** Auto-discover Team ID + Epic + Next Story Number
-2. **Planning Dialog:** 6 questions (persona, capability, value, Epic, AC, application type)
-3. **Generation:** Story with Given-When-Then AC + Test Strategy (Risk-Based Testing)
-4. **Confirmation:** "confirm" → creates Linear Issue with label "user-story"
+2. **Extract from Epic:** Parse Epic structure for Q1-Q6 (persona, capability, value, AC, app type)
+3. **Gather Missing:** Ask user only for information not found in Epic
+4. **Build IDEAL Plan:** Analyze Epic Scope → Build IDEAL Story plan (5-10 Stories)
+5. **Check Existing:** Query Linear for existing Stories in Epic
+6. **CREATE MODE** (if no Stories):
+   - Generate Story documents (8 sections) from IDEAL plan
+   - Show preview → User confirms → Create in Linear
+7. **REPLAN MODE** (if Stories exist):
+   - Load existing Stories
+   - Compare IDEAL vs existing
+   - Categorize operations (KEEP/UPDATE/OBSOLETE/CREATE)
+   - Show replan summary with diffs → User confirms → Execute operations
 
 ### 3. Managing Tasks (x-task-manager)
 1. **Discovery:** Auto-discover Team ID + Parent Story
@@ -356,7 +374,7 @@ Creator skills support different decomposition approaches:
    - Existing Tests: Identify tests affected by logic changes
    - Infrastructure: Determine packages, Docker, configs to update
    - Documentation: Find docs requiring updates (README, tests/README, CHANGELOG)
-   - Legacy Cleanup: Identify костыли, backward compat, deprecated patterns to remove
+   - Legacy Cleanup: Identify workarounds, backward compat, deprecated patterns to remove
 6. **Generation:** Comprehensive story finalizer task (11 sections) with E2E (2-5), Integration (3-8), Unit (5-15), test fixes, infra, docs, cleanup
 7. **Confirmation:** "confirm" → creates Linear Issue as Story's final task
 
@@ -380,7 +398,7 @@ Creator skills support different decomposition approaches:
    - **Step 2:** Implement new tests E2E→Integration→Unit (Sections 3-5) - Priority ≥15, 2-5 E2E, 3-8 Integration, 5-15 Unit
    - **Step 3:** Update infrastructure (Section 9) - package.json, Docker, configs
    - **Step 4:** Update documentation (Section 10) - README, tests/README, CHANGELOG
-   - **Step 5:** Cleanup legacy code (Section 11) - костыли, backward compat, deprecated patterns
+   - **Step 5:** Cleanup legacy code (Section 11) - workarounds, backward compat, deprecated patterns
    - **Step 6:** Final verification - all tests pass, infra works, docs complete
 3. **Quality Gates:** Type checking, lint, all existing tests pass, all new tests pass (10-28 total), all Priority ≥15 scenarios tested, infrastructure works, documentation complete, legacy cleanup safe
 4. **Handoff:** ⚙️ [EXECUTOR] Story finalizer task complete. 6 steps executed. All quality gates passed. Ready for review. → Comment in Linear → In Progress → To Review
@@ -407,19 +425,19 @@ Creator skills support different decomposition approaches:
    - If guide missing → Auto-create via x-guide-creator (guide-creator researches best practices automatically)
    - Save guide paths for linking
 4. **Comprehensive Auto-Fix (ALL 14 Verification Criteria):**
-   - **п.1-2:** Story structure (8 sections), Tasks structure (7 sections EACH Task sequentially)
-   - **п.3:** Story statement (As a/I want/So that format clarified)
-   - **п.4:** Acceptance Criteria (Given/When/Then format, 3-5 AC)
-   - **п.5:** Solution optimization (2025 best practices)
-   - **п.6:** Library & version (current stable versions)
-   - **п.7:** Test Strategy (Risk-Based Testing: 2-5 E2E, 3-8 Integration, 5-15 Unit, 10-28 total, Priority ≥15)
-   - **п.8:** Documentation integration (remove standalone doc tasks, integrate into implementation)
-   - **п.9:** Story size & task granularity (TODO placeholders if too large/small)
-   - **п.10:** YAGNI violations (move premature features to future scope)
-   - **п.11:** KISS violations (simplify over-engineered solutions)
-   - **п.12:** Guide Links Insertion (auto-created and existing guides in Story Technical Notes "Related Guides:")
-   - **п.13:** Consumer-First Principle (reorder tasks: Consumer → Service → Provider)
-   - **п.14:** Code Quality Fundamentals (TODO placeholders for hardcoded values, magic numbers)
+   - **#1-2:** Story structure (8 sections), Tasks structure (7 sections EACH Task sequentially)
+   - **#3:** Story statement (As a/I want/So that format clarified)
+   - **#4:** Acceptance Criteria (Given/When/Then format, 3-5 AC)
+   - **#5:** Solution optimization (2025 best practices)
+   - **#6:** Library & version (current stable versions)
+   - **#7:** Test Strategy (Risk-Based Testing: 2-5 E2E, 3-8 Integration, 5-15 Unit, 10-28 total, Priority ≥15)
+   - **#8:** Documentation integration (remove standalone doc tasks, integrate into implementation)
+   - **#9:** Story size & task granularity (TODO placeholders if too large/small)
+   - **#10:** YAGNI violations (move premature features to future scope)
+   - **#11:** KISS violations (simplify over-engineered solutions)
+   - **#12:** Guide Links Insertion (auto-created and existing guides in Story Technical Notes "Related Guides:")
+   - **#13:** Consumer-First Principle (reorder tasks: Consumer → Service → Provider)
+   - **#14:** Code Quality Fundamentals (TODO placeholders for hardcoded values, magic numbers)
 5. **ALWAYS Approve → Todo:**
    - Update Story status to "Todo" in Linear
    - Update ALL child Tasks status to "Todo" in Linear
@@ -472,11 +490,11 @@ Creator skills support different decomposition approaches:
 
 ## Important Details
 
-### Structural Validation of Stories and Tasks (checklist п.0a + п.0b)
+### Structural Validation of Stories and Tasks (checklist #0a + #0b)
 x-story-verifier checks compliance with Story and Task templates, and automatically fixes:
-- **Story (п.0a):** Verifies 8 Story sections per story_template_universal.md (including Test Strategy)
-- **Tasks (п.0b):** Sequential validation - verifies 7 sections for EACH Task one by one per task_template_universal.md (including Existing Code Impact)
-- **Performance:** Loads task metadata first (Phase 2), then fetches full description for ONE task at a time (Phase 4 п.2) to avoid token waste and truncation
+- **Story (#0a):** Verifies 8 Story sections per story_template_universal.md (including Test Strategy)
+- **Tasks (#0b):** Sequential validation - verifies 7 sections for EACH Task one by one per task_template_universal.md (including Existing Code Impact)
+- **Performance:** Loads task metadata first (Phase 2), then fetches full description for ONE task at a time (Phase 4 step 2) to avoid token waste and truncation
 - Adds missing sections with placeholders
 - Reorders sections to match template
 - Updates Story + each Task in Linear via `mcp__linear-server__update_issue()`

@@ -302,7 +302,7 @@ Generates complete task per `test_task_template.md`:
 8. **Existing Tests to Fix/Update:** From Step 1 analysis (affected tests + why + fixes needed)
 9. **Infrastructure Changes:** From Step 2 analysis (packages, Docker, configs)
 10. **Documentation Updates:** From Step 3 analysis (tests/README, main README, CHANGELOG, etc.)
-11. **Legacy Code Cleanup:** From Step 4 analysis (костыли, backward compat, deprecated patterns, dead code)
+11. **Legacy Code Cleanup:** From Step 4 analysis (workarounds, backward compat, deprecated patterns, dead code)
 
 Shows preview for review.
 

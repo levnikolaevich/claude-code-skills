@@ -151,7 +151,7 @@ docs/project/
 
 1. **x-docs-system** (this skill) - Create complete documentation system
 2. **x-epic-creator** - Decompose scope into Epics (Linear Projects)
-3. **x-story-creator** - Create User Stories for each Epic
+3. **x-story-manager** - Create User Stories for each Epic (automatic decomposition + replan)
 4. **x-task-manager** - Break down Stories into implementation tasks (automatic decomposition + replan)
 5. **x-story-verifier** - Verify Stories before development
 6. **x-story-executor** - Orchestrate Story implementation
@@ -283,7 +283,7 @@ Before completing work, verify ALL checkpoints:
   - "Run x-epic-creator to decompose scope into Epics"
   - "Share documentation with technical stakeholders"
   - "Run x-adr-creator skill to add more ADRs later (if needed)"
-- [ ] Integration workflow mentioned (x-docs-system → x-epic-creator → x-story-creator → ...)
+- [ ] Integration workflow mentioned (x-docs-system → x-epic-creator → x-story-manager → ...)
 
 **✅ Error Handling (if applicable):**
 - [ ] If any skill failed:

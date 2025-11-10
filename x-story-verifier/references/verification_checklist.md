@@ -255,7 +255,7 @@ Fetch via MCP Ref: install + core + 2-3 examples
 ❌ "Custom authentication flow instead of OAuth 2.0" (reinventing standard, integration issues)
 ❌ "Non-RESTful API design (e.g., GET /api/deleteUser)" (violates REST principles)
 
-**Standards to check:**
+**Common standards to check (examples - not exhaustive):**
 - **OAuth 2.0:** RFC 6749 compliance (unified /token endpoint, grant_type parameter, standard flows)
 - **REST API:** RESTful principles (resource-based URLs, proper HTTP methods, status codes)
 - **OpenAPI:** API documentation follows OpenAPI 3.x specification
@@ -275,7 +275,7 @@ Fetch via MCP Ref: install + core + 2-3 examples
 ❌ "Proprietary" protocols when standard protocol available
 ❌ Non-compliant API design (e.g., mixing REST and RPC styles)
 
-**Auto-fix actions (п.15):**
+**Auto-fix actions (#15):**
 - Research RFC/standard via MCP Ref or WebSearch
 - Rewrite Story Technical Notes to comply with standard
 - Update Tasks with standard-compliant implementation
@@ -310,7 +310,7 @@ Fetch via MCP Ref: install + core + 2-3 examples
 
 **Result:** ALL criteria auto-fixed → ALWAYS Approve → Todo
 **Note:** No "Keep in Backlog" path exists - all issues auto-fixed before approval
-**Hierarchy:** Industry Standards (п.15) checked BEFORE KISS/YAGNI (п.11/п.10)
+**Hierarchy:** Industry Standards (#15) checked BEFORE KISS/YAGNI (#11/#10)
 
 ---
 
@@ -375,5 +375,5 @@ Fetch via MCP Ref: install + core + 2-3 examples
 
 ---
 
-**Version:** 6.1.0 (Added п.15 Industry Standards Compliance)
+**Version:** 6.1.0 (Added #15 Industry Standards Compliance)
 **Last Updated:** 2025-11-08

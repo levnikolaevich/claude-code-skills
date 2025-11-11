@@ -34,25 +34,37 @@ All business logic implemented across Story Tasks:
 | [Scenario from manual testing] | [1-5] | [1-5] | [1-25] | E2E/Integration/Unit/SKIP | [Reason for decision] |
 | [Scenario from manual testing] | [1-5] | [1-5] | [1-25] | E2E/Integration/Unit/SKIP | [Reason for decision] |
 
-**Test Limits:** 2-5 E2E, 3-8 Integration, 5-15 Unit per Story (10-28 total max)
+**Test Limits:** 2-5 E2E (baseline 2), 0-8 Integration, 0-15 Unit per Story (**realistic goal: 2-7 total**, hard limit: 28)
+
+**Minimum Viable Testing Philosophy:**
+- Start with 2 baseline E2E tests per endpoint (positive + negative)
+- Add tests #3+ ONLY with critical justification: "Why does this test OUR business logic (not framework/library/database)?"
+- Auto-trim to 7 tests if plan exceeds realistic goal (keep 2 baseline E2E + top 5 Priority)
 
 **Principles:**
 - ✅ Prioritize by business risk (money, security, data corruption) over coverage metrics
-- ✅ Test OUR code only (not frameworks/libraries/external systems)
-- ✅ Anti-Duplication: If E2E covers logic, SKIP unit test
+- ✅ Test OUR code ONLY (not frameworks/libraries/external systems/database queries)
+- ✅ Anti-Duplication: If 2 baseline E2E cover logic, SKIP unit test
+- ✅ Anti-Framework: If testing Prisma/Express/bcrypt behavior → SKIP
 - ✅ Fast feedback: Unit (ms) → Integration (seconds) → E2E (tens of seconds)
 - ✅ Focus on critical paths (Priority ≥15), not blanket coverage
 
 **Decision Criteria:**
-- Priority ≥15 → MUST test
-- Priority 9-14 → SHOULD test if not already covered
+- Priority ≥15 → MUST test (if tests OUR logic)
+- Priority 9-14 → SHOULD test if not already covered AND tests OUR logic
 - Priority ≤8 → SKIP (manual testing sufficient)
 
 ---
 
 ## E2E Tests (2-5 max)
 
-Test complete user journeys through the system. **ONLY Priority ≥15 scenarios from manual testing.**
+**BASELINE (ALWAYS): 2 E2E tests per endpoint**
+- Test 1: Positive scenario (happy path validating main AC)
+- Test 2: Negative scenario (critical error handling)
+
+**ADDITIONAL (Tests 3-5): ONLY if Priority ≥15 AND critical justification provided**
+
+Test complete user journeys through the system. Each test beyond baseline 2 MUST justify: "Why does this test OUR business logic (not framework/library/database)?"
 
 **Type:** [API E2E / UI E2E] *(depending on application type)*
 
@@ -97,18 +109,26 @@ Test complete user journeys through the system. **ONLY Priority ≥15 scenarios 
 - ✅ This E2E test is necessary because: [Reason]
 
 ### Standards
-- [ ] Maximum 5 E2E tests per Story
+- [ ] **BASELINE: 2 E2E tests per endpoint (positive + negative) - ALWAYS**
+- [ ] **ADDITIONAL: Tests 3-5 ONLY with critical justification**
+- [ ] Maximum 5 E2E tests per Story (hard limit)
 - [ ] All scenarios Priority ≥15
+- [ ] **Each test beyond baseline 2 has documented justification: "Why does this test OUR business logic?"**
 - [ ] E2E tests run in < 2 minutes total
 - [ ] Test against stable environment (staging/test)
 - [ ] Based on ACTUAL manual testing results (not theoretical scenarios)
 - [ ] Clean up test data after execution
+- [ ] **No tests for framework/library/database behavior** (trust Prisma/Express/PostgreSQL)
 
 ---
 
-## Integration Tests (3-8 max)
+## Integration Tests (0-8 max)
 
-Test OUR business logic with REAL internal dependencies. **ONLY Priority ≥15 interactions NOT fully covered by E2E.**
+**DEFAULT: 0 Integration tests** (2 baseline E2E tests cover full stack by default)
+
+**ADD ONLY if:** E2E doesn't cover interaction completely AND Priority ≥15 AND critical justification provided
+
+Test OUR business logic with REAL internal dependencies. **ONLY Priority ≥15 interactions NOT fully covered by 2 baseline E2E.** Each integration test MUST justify: "Why does this test OUR integration logic (not framework/library behavior)?"
 
 ### [Integration Point 1]: [Layer Interaction] (Priority [XX])
 
@@ -154,24 +174,34 @@ Test OUR business logic with REAL internal dependencies. **ONLY Priority ≥15 i
 - ✅ Adds value because: [Reason]
 
 ### Standards
-- [ ] Maximum 8 integration tests per Story
+- [ ] **DEFAULT: 0 Integration tests** (2 baseline E2E cover full stack)
+- [ ] Maximum 8 integration tests per Story (hard limit)
 - [ ] All scenarios Priority ≥15
+- [ ] **Each integration test has documented justification: "Why does this test OUR integration logic?"**
 - [ ] Use test database (not production)
 - [ ] Clean up after each test (rollback/truncate)
 - [ ] All integration tests run in < 30 seconds total
-- [ ] Skip if E2E already validates end-to-end
+- [ ] Skip if 2 baseline E2E already validate end-to-end
+- [ ] **No tests for framework/library integrations** (Prisma client, TypeORM, Express app behavior)
 
 ---
 
-## Unit Tests (5-15 max)
+## Unit Tests (0-15 max)
 
-Test individual components in isolation with all dependencies mocked. **ONLY complex business logic with Priority ≥15.**
+**DEFAULT: 0 Unit tests** (2 baseline E2E tests cover simple logic by default)
 
-**SKIP unit tests for:**
-- ❌ Simple CRUD operations (already covered by E2E)
-- ❌ Framework code (Express middleware, React hooks)
-- ❌ Getters/setters
-- ❌ Trivial conditionals (`if (user) return user.name`)
+**ADD ONLY for:** Complex business logic with Priority ≥15 AND critical justification provided
+
+Test individual components in isolation with all dependencies mocked. **ONLY complex business logic with Priority ≥15.** Each unit test MUST justify: "Why does this test OUR complex business logic (not library/framework/database behavior)?"
+
+**MANDATORY SKIP - DO NOT create unit tests for:**
+- ❌ Simple CRUD operations (already covered by 2 baseline E2E)
+- ❌ Framework code (Express middleware, React hooks, FastAPI dependencies)
+- ❌ Library functions (bcrypt hashing, jsonwebtoken signing, axios requests)
+- ❌ Database queries (Prisma findMany, TypeORM query builder, SQL joins)
+- ❌ Getters/setters or simple property access
+- ❌ Trivial conditionals (`if (user) return user.name`, `status === 'active'`)
+- ❌ Pass-through functions (wrappers without logic)
 - ❌ Performance/load testing (throughput, latency, stress tests, scalability)
 
 ### [Component/Module Name 1]: [Complex Business Logic Function] (Priority [XX])
@@ -214,12 +244,15 @@ Test individual components in isolation with all dependencies mocked. **ONLY com
 - ✅ Not covered by E2E because: [Reason]
 
 ### Standards
-- [ ] Maximum 15 unit tests per Story
+- [ ] **DEFAULT: 0 Unit tests** (2 baseline E2E cover simple logic)
+- [ ] Maximum 15 unit tests per Story (hard limit)
+- [ ] **Each unit test has documented justification: "Why does this test OUR complex business logic?"**
 - [ ] All tests run in < 5 seconds total
 - [ ] No external dependencies (DB, filesystem, network)
 - [ ] Each test independent (can run in any order)
-- [ ] Only test complex business logic (Priority ≥15)
-- [ ] Skip if E2E already exercises all branches
+- [ ] Only test complex business logic (Priority ≥15): financial calculations, security algorithms, complex business rules
+- [ ] Skip if 2 baseline E2E already exercise all branches
+- [ ] **No tests for library/framework/database behavior** (bcrypt, jwt, Prisma, axios)
 
 ## Critical Path Coverage
 
@@ -250,29 +283,35 @@ Test individual components in isolation with all dependencies mocked. **ONLY com
 
 **Coverage Expectations:**
 - Coverage % is a metric, NOT a goal
-- 60% coverage with all Priority ≥15 scenarios tested → **ACCEPTABLE**
+- 40% coverage with 2 baseline E2E + Priority ≥15 scenarios tested → **ACCEPTABLE**
+- 60% coverage with all Priority ≥15 scenarios tested → **EXCELLENT**
+- 90% coverage but includes framework/library tests → **UNACCEPTABLE** (remove framework tests)
 - 90% coverage but payment flow not tested → **UNACCEPTABLE**
 
 **Acceptance Criteria:**
 - [ ] **Given** All Priority ≥15 scenarios identified **When** tests executed **Then** all scenarios PASS
-- [ ] **Given** Test limits (2-5 E2E, 3-8 Integration, 5-15 Unit) **When** validation **Then** within limits (10-28 total)
+- [ ] **Given** Test limits (2-5 E2E, 0-8 Integration, 0-15 Unit) **When** validation **Then** within realistic goal 2-7 (hard limit: 28)
 - [ ] **Given** Tests duplicate logic **When** review **Then** consolidate or remove duplication
-- [ ] **Given** Scenario has Priority ≤8 **When** review **Then** skip test (manual testing sufficient)
+- [ ] **Given** Scenario has Priority ≤14 **When** review **Then** skip test (manual testing sufficient)
+- [ ] **Given** Test validates framework/library/database **When** review **Then** remove test (not OUR code)
 
 ---
 
 ## Definition of Done
 
-- [ ] All E2E tests implemented and passing (2-5 max, all Priority ≥15)
-- [ ] All integration tests implemented and passing (3-8 max, all Priority ≥15)
-- [ ] All unit tests implemented and passing (5-15 max, all Priority ≥15)
-- [ ] **Total tests: 10-28** (within enforced limit)
+- [ ] **2 baseline E2E tests implemented and passing (positive + negative) - ALWAYS**
+- [ ] All additional E2E tests implemented and passing (0-3 additional, all Priority ≥15 with justification)
+- [ ] All integration tests implemented and passing (0-8 max, all Priority ≥15 with justification)
+- [ ] All unit tests implemented and passing (0-15 max, all Priority ≥15 with justification)
+- [ ] **Total tests: 2-7 (realistic goal) or 2-28 (hard limit)**
+- [ ] **Each test beyond baseline 2 has documented justification: "Why does this test OUR business logic?"**
 - [ ] All Priority ≥15 scenarios from manual testing covered
 - [ ] No flaky tests (all tests pass consistently on multiple runs)
 - [ ] Test execution time acceptable (Unit <5s, Integration <30s, E2E <2min)
-- [ ] All tests validate OUR code (not frameworks/libraries)
+- [ ] **All tests validate OUR code ONLY (not frameworks/libraries/database queries)**
+- [ ] **No tests for Prisma/Express/bcrypt/jwt/axios/PostgreSQL behavior**
 - [ ] Anti-duplication verified: each test adds unique business value
-- [ ] Skipped scenarios documented with Priority justification (Priority ≤8)
+- [ ] Skipped scenarios documented with Priority justification (Priority ≤14 or framework/library behavior)
 - [ ] Documentation updated (tests/README.md if needed)
 
 ---

@@ -1,6 +1,7 @@
 %% x-story-finalizer: Story Finalizer Task Creator
 %% Creates final Story task after manual testing passes (invoked by x-story-reviewer Pass 1)
-%% Generates comprehensive task with 11 sections: E2E-first Risk-Based Testing (Priority ≥15)
+%% Minimum Viable Testing: 2 baseline E2E + 0-5 additional with critical justification (realistic goal: 2-7 total)
+%% Generates comprehensive task with 11 sections: E2E-first Risk-Based Testing (Priority ≥15, tests OUR logic ONLY)
 %% Excludes performance/load testing - see references/risk_based_testing_guide.md
 
 graph TD
@@ -12,12 +13,18 @@ graph TD
 
     Phase3 --> Phase4[Phase 4: Risk-Based Test Planning]
 
-    subgraph RiskPlanning [Risk-Based Testing]
+    subgraph RiskPlanning [Minimum Viable Testing - Risk-Based]
         Risk1[Step 1: Risk Assessment<br/>Priority = Business Impact × Probability]
-        Risk1 --> Risk2[Step 2: E2E Test Selection<br/>2-5 tests Priority ≥15]
-        Risk2 --> Risk3[Step 3: Unit Test Selection<br/>5-15 tests Priority ≥15]
-        Risk3 --> Risk4[Step 4: Integration Test Selection<br/>3-8 tests Priority ≥15]
-        Risk4 --> Risk5[Step 5: Validation<br/>10-28 total no duplication]
+        Risk1 --> Risk2[Step 2: E2E Test Selection<br/>2 baseline ALWAYS + 0-3 additional Priority ≥15]
+        Risk2 --> Risk2_5{Step 2.5: Critical Justification<br/>Tests OUR business logic?<br/>Not framework/library/database?}
+        Risk2_5 -->|Pass| Risk3[Step 3: Unit Test Selection<br/>0-15 tests ONLY complex logic Priority ≥15]
+        Risk2_5 -->|Fail| Risk2
+        Risk3 --> Risk3_5{Critical Justification<br/>Tests OUR logic?}
+        Risk3_5 -->|Pass| Risk4[Step 4: Integration Test Selection<br/>0-8 tests ONLY if E2E doesn't cover Priority ≥15]
+        Risk3_5 -->|Fail| Risk3
+        Risk4 --> Risk4_5{Critical Justification<br/>Tests OUR logic?}
+        Risk4_5 -->|Pass| Risk5[Step 5: Validation<br/>2-7 realistic goal max 28 auto-trim]
+        Risk4_5 -->|Fail| Risk4
     end
 
     Phase4 --> Risk1

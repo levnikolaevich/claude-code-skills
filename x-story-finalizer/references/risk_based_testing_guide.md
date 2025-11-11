@@ -22,6 +22,46 @@ This guide replaces the traditional Test Pyramid (70/20/10 ratio) with a **Value
 4. **Integration tests catch real bugs** - Unit tests catch edge cases in isolation
 5. **E2E tests validate user value** - Only E2E proves the feature actually works end-to-end
 
+## Minimum Viable Testing Philosophy
+
+### Start Minimal, Justify Additions
+
+**Baseline for every Story:**
+- **2 E2E tests** per endpoint: Positive scenario (happy path) + Negative scenario (critical error)
+- **0 Integration tests** (E2E covers full stack by default)
+- **0 Unit tests** (E2E covers simple logic by default)
+
+**Realistic goal: 2-7 tests per Story** (not 10-28!)
+
+**Additional tests ONLY with critical justification:**
+- Test #3 and beyond: Each requires documented answer to "Why does this test OUR business logic (not framework/library/database)?"
+- Priority ≥15 required for all additional tests
+- Auto-trim to 7 tests if plan exceeds realistic goal
+
+### Critical Justification Questions
+
+Before adding ANY test beyond 2 baseline E2E, answer:
+
+1. ❓ **Does this test OUR business logic?**
+   - ✅ YES: Tax calculation with country-specific rules (OUR algorithm)
+   - ❌ NO: bcrypt hashing (library behavior)
+   - ❌ NO: Prisma query execution (framework behavior)
+   - ❌ NO: PostgreSQL LIKE operator (database behavior)
+
+2. ❓ **Is this already covered by 2 baseline E2E tests?**
+   - ✅ NO: E2E doesn't exercise all branches of complex calculation
+   - ❌ YES: E2E test validates full flow end-to-end
+
+3. ❓ **Priority ≥15?**
+   - ✅ YES: Money, security, data integrity
+   - ❌ NO: Skip, manual testing sufficient
+
+4. ❓ **Unique business value?**
+   - ✅ YES: Tests different scenario than existing tests
+   - ❌ NO: Duplicate coverage
+
+**If ANY answer is ❌ NO → SKIP this test**
+
 ## Risk Priority Matrix
 
 ### Calculation Formula
@@ -82,30 +122,44 @@ ELSE Priority ≤8 → SKIP (manual testing sufficient)
 ### Step 3: Choose Test Level
 
 **E2E Test (2-5 max per Story):**
-- User completes critical business flow from UI to database
+- **BASELINE (ALWAYS): 2 E2E tests per endpoint**
+  - Test 1: Positive scenario (happy path validating main AC)
+  - Test 2: Negative scenario (critical error handling)
+- **ADDITIONAL (3-5): ONLY if Priority ≥15 AND justified**
+  - Critical edge case from manual testing
+  - Second endpoint (if Story implements multiple endpoints)
 - **Examples:**
   - User registers → receives email → confirms → can login
   - User adds product → proceeds to checkout → pays → sees confirmation
   - User uploads file → sees progress → file appears in list
 
-**Integration Test (3-8 max per Story):**
-- Multiple components interact with real dependencies (database, Redis, external service)
+**Integration Test (0-8 max per Story):**
+- **DEFAULT: 0 Integration tests** (2 E2E tests cover full stack by default)
+- **ADD ONLY if:** E2E doesn't cover interaction completely AND Priority ≥15 AND justified
 - **Examples:**
-  - API endpoint → Service → Repository → PostgreSQL (real DB)
-  - Service calls external payment API with test credentials
-  - Webhook receiver → queue → background worker
+  - Transaction rollback on error (E2E tests happy path only)
+  - Concurrent request handling (E2E tests single request)
+  - External API error scenarios (500, timeout) with Priority ≥15
+- **MANDATORY SKIP:**
+  - ❌ Simple pass-through calls (E2E already validates end-to-end)
+  - ❌ Testing framework integrations (Prisma client, TypeORM repository, Express app)
+  - ❌ Testing database query execution (database engine behavior)
 
-**Unit Test (5-15 max per Story):**
-- **ONLY for business logic with high complexity:**
-  - Financial calculations (tax, discount, currency conversion)
-  - Security logic (password validation, permission checks)
-  - Complex algorithms (sorting, filtering, scoring)
-- **DO NOT unit test:**
-  - Simple CRUD operations already covered by E2E
-  - Framework code (Express middleware, React hooks)
-  - Getters/setters
-  - Trivial conditionals (`if (user) return user.name`)
-  - Performance/load testing (benchmarks, stress tests, scalability validation)
+**Unit Test (0-15 max per Story):**
+- **DEFAULT: 0 Unit tests** (2 E2E tests cover simple logic by default)
+- **ADD ONLY for complex business logic with Priority ≥15:**
+  - Financial calculations (tax, discount, currency conversion) **WITH COMPLEX RULES**
+  - Security algorithms (password strength, permission matrix) **WITH CUSTOM LOGIC**
+  - Complex business algorithms (scoring, matching, ranking) **WITH MULTIPLE FACTORS**
+- **MANDATORY SKIP - DO NOT create unit tests for:**
+  - ❌ Simple CRUD operations (already covered by E2E)
+  - ❌ Framework code (Express middleware, React hooks, FastAPI dependencies)
+  - ❌ Library functions (bcrypt hashing, jsonwebtoken signing, axios requests)
+  - ❌ Database queries (Prisma findMany, TypeORM query builder, SQL joins)
+  - ❌ Getters/setters or simple property access
+  - ❌ Trivial conditionals (`if (user) return user.name`, `status === 'active'`)
+  - ❌ Pass-through functions (wrappers without logic)
+  - ❌ Performance/load testing (benchmarks, stress tests, scalability validation)
 
 ### Step 4: Anti-Duplication Check
 
@@ -129,14 +183,16 @@ Before writing ANY test, verify:
 
 ## Test Limits Per Story
 
-### Enforced Maximums
+### Enforced Limits with Realistic Goals
 
-| Test Type | Minimum | Maximum | Purpose |
-|-----------|---------|---------|---------|
-| **E2E** | 2 | 5 | Validate critical user flows work end-to-end |
-| **Integration** | 3 | 8 | Verify component interactions with real dependencies |
-| **Unit** | 5 | 15 | Test complex business logic in isolation |
-| **TOTAL** | 10 | 28 | Practical maintainability limit |
+| Test Type | Minimum | Realistic Goal | Maximum | Purpose |
+|-----------|---------|----------------|---------|---------|
+| **E2E** | 2 | 2 | 5 | Baseline: positive + negative per endpoint |
+| **Integration** | 0 | 0-2 | 8 | ONLY if E2E doesn't cover interaction |
+| **Unit** | 0 | 0-3 | 15 | ONLY complex business logic (financial/security/algorithms) |
+| **TOTAL** | 2 | **2-7** | 28 | Start minimal, add only with justification |
+
+**Key Change:** Test limits are now CEILINGS (maximum allowed), NOT targets to fill. Start with 2 E2E tests, add more only with critical justification.
 
 ### Rationale for Limits
 
@@ -232,9 +288,116 @@ test('Unit: Bulk discount applied when quantity > 100', ...);
 - "Payment flow is critical (Priority 25) but only has 1 E2E test"
 - "We have 60% coverage but all critical paths tested - DONE"
 
+### Anti-Pattern 5: "Testing framework integration"
+
+**Bad:**
+```javascript
+// Testing Express framework behavior
+test('Express middleware chain works', () => {
+  // Testing Express.js, not OUR code
+});
+
+// Testing Prisma client behavior
+test('Prisma findMany returns array', () => {
+  // Testing Prisma, not OUR code
+});
+
+// Testing React hook behavior
+test('useState triggers rerender', () => {
+  // Testing React, not OUR code
+});
+```
+
+**Why bad:** Frameworks have thousands of tests. Trust the framework, test OUR business logic that USES the framework.
+
+**Good:**
+```javascript
+// Test OUR business logic that uses framework
+test('E2E: User can create order', () => {
+  // Tests OUR endpoint logic (which happens to use Express + Prisma)
+  // But we're validating OUR business rules, not framework behavior
+});
+```
+
+### Anti-Pattern 6: "Testing database query syntax"
+
+**Bad:**
+```javascript
+// Testing database query execution
+test('findByEmail() returns user from database', () => {
+  await prisma.user.findUnique({ where: { email: 'test@example.com' }});
+  // Testing Prisma query builder, not OUR logic
+});
+
+// Testing SQL JOIN behavior
+test('getUserWithOrders() joins tables correctly', () => {
+  // Testing PostgreSQL JOIN semantics, not OUR logic
+});
+```
+
+**Why bad:** Database engines have extensive test suites. We're testing PostgreSQL/MySQL, not our code.
+
+**Good:**
+```javascript
+// E2E test already validates query works
+test('E2E: User can view order history', () => {
+  // Implicitly validates that JOIN query works correctly
+  // We test the USER OUTCOME, not the database mechanism
+});
+
+// Unit test ONLY for complex query construction logic
+test('buildSearchQuery() with multiple filters generates correct WHERE clause', () => {
+  // ONLY if we have complex query building logic with business rules
+  // NOT testing database execution, testing OUR query builder logic
+});
+```
+
+### Anti-Pattern 7: "Testing library behavior"
+
+**Bad:**
+```javascript
+// Testing bcrypt library
+test('bcrypt hashes password correctly', () => {
+  const hash = await bcrypt.hash('password', 10);
+  const valid = await bcrypt.compare('password', hash);
+  expect(valid).toBe(true);
+  // Testing bcrypt library, not OUR code
+});
+
+// Testing jsonwebtoken library
+test('JWT token is valid', () => {
+  const token = jwt.sign({ userId: 1 }, SECRET);
+  const decoded = jwt.verify(token, SECRET);
+  // Testing jsonwebtoken library, not OUR code
+});
+
+// Testing axios library
+test('axios makes HTTP request', () => {
+  await axios.get('https://api.example.com');
+  // Testing axios library, not OUR code
+});
+```
+
+**Why bad:** Libraries are already tested by their maintainers. We're duplicating their test suite.
+
+**Good:**
+```javascript
+// E2E test validates full authentication flow
+test('E2E: User can login and access protected endpoint', () => {
+  // Implicitly validates that bcrypt comparison works
+  // AND that JWT token generation/validation works
+  // But we test the USER FLOW, not library internals
+});
+
+// Unit test ONLY for custom password rules (OUR business logic)
+test('validatePasswordStrength() requires 12+ chars with special symbols', () => {
+  // Testing OUR custom password policy, not bcrypt itself
+});
+```
+
 ## Practical Examples
 
-### Example 1: User Login Story
+### Example 1: User Login Story (Minimal Approach)
 
 **Acceptance Criteria:**
 1. User can login with valid credentials → JWT token returned
@@ -245,36 +408,47 @@ test('Unit: Bulk discount applied when quantity > 100', ...);
 
 | Scenario | Business Impact | Probability | Priority | Test Type |
 |----------|-----------------|-------------|----------|-----------|
-| Valid login works | 4 (core flow) | 3 (standard auth) | **12** | E2E |
-| Invalid credentials rejected | 5 (security) | 3 | **15** | E2E |
-| Rate limiting works | 5 (security, brute force) | 4 (concurrency) | **20** | E2E |
-| SQL injection attempt blocked | 5 (security breach) | 2 (Prisma escapes) | 10 | Integration |
-| JWT token format valid | 4 (breaks API calls) | 2 (library tested) | 8 | SKIP |
-| Password hashing uses bcrypt | 5 (security) | 1 (copy-paste code) | 5 | SKIP |
+| Valid login works | 4 (core flow) | 3 (standard auth) | **12** | E2E (baseline) |
+| Invalid credentials rejected | 5 (security) | 3 | **15** | E2E (baseline) |
+| Rate limiting works | 5 (security, brute force) | 4 (concurrency) | **20** | SKIP - E2E negative covers auth error |
+| SQL injection attempt blocked | 5 (security breach) | 2 (Prisma escapes) | 10 | SKIP - framework behavior |
+| JWT token format valid | 4 (breaks API calls) | 2 (library tested) | 8 | SKIP - library behavior |
+| Password hashing uses bcrypt | 5 (security) | 1 (copy-paste code) | 5 | SKIP - library behavior |
+| Custom password strength rules | 5 (security policy) | 4 (complex regex) | **20** | Unit (OUR logic) |
 
-**Test Plan:**
+**Test Plan (Minimum Viable Testing):**
 
-**E2E Tests (3):**
-1. User enters valid email/password → 200 OK + JWT token → token works for API call
-2. User enters invalid password → 401 Unauthorized → clear error message
-3. User fails login 5 times → 6th attempt returns 429 Too Many Requests
+**E2E Tests (2 baseline):**
+1. **Positive:** User enters valid email/password → 200 OK + JWT token → token works for protected API call
+2. **Negative:** User enters invalid password → 401 Unauthorized → clear error message shown
 
-**Integration Tests (2):**
-1. Login endpoint with SQL injection payload → properly escaped → 401 (not 500)
-2. Rate limiter increments Redis counter correctly for concurrent requests
+**Integration Tests (0):**
+- None needed - 2 baseline E2E tests cover full stack (endpoint → service → database)
 
-**Unit Tests (1):**
-1. `validatePasswordStrength()` - complex regex validation with 5 edge cases
+**Unit Tests (1 - OUR business logic only):**
+1. `validatePasswordStrength()` - OUR custom regex (12+ chars, special symbols, numbers) with 5 edge cases
 
-**Total: 6 tests (within 10-28 limit)**
+**Total: 3 tests (within realistic goal 2-7)**
+
+**What changed from 6 → 3 tests:**
+- ❌ E2E rate limiting test - REMOVED (Priority 20 but tests Redis library, not OUR logic)
+- ❌ Integration SQL injection test - REMOVED (testing Prisma escaping, not OUR code)
+- ❌ Integration rate limiter test - REMOVED (testing Redis counter, not OUR code)
+
+**Why 3 tests sufficient:**
+- 2 baseline E2E cover all Acceptance Criteria (valid login + error handling)
+- 1 Unit test covers OUR custom password policy (not library behavior)
+- Rate limiting, SQL escaping, JWT generation = framework/library behavior (trust the library)
 
 **Avoided tests (with rationale):**
-- ❌ Unit test `hashPassword()` - trivial bcrypt call, Priority 5
-- ❌ Unit test `generateJWT()` - library function, tested by library
-- ❌ Unit test `validateEmail()` format - covered by E2E test that rejects invalid email
-- ❌ Integration test JWT token decoding - covered by E2E test that uses token
+- ❌ Unit test `hashPassword()` - bcrypt library behavior, Priority 5
+- ❌ Unit test `generateJWT()` - jsonwebtoken library behavior, Priority 8
+- ❌ Unit test `validateEmail()` format - covered by E2E negative test
+- ❌ Integration test JWT token decoding - jsonwebtoken library behavior
+- ❌ Integration test rate limiting - Redis library behavior
+- ❌ Integration test SQL injection - Prisma library behavior
 
-### Example 2: Product Search Story
+### Example 2: Product Search Story (Minimal Approach)
 
 **Acceptance Criteria:**
 1. User can search products by name → results displayed
@@ -285,38 +459,51 @@ test('Unit: Bulk discount applied when quantity > 100', ...);
 
 | Scenario | Business Impact | Probability | Priority | Test Type |
 |----------|-----------------|-------------|----------|-----------|
-| Search returns correct results | 4 (core feature) | 3 (SQL query) | **12** | E2E |
-| Category filter works | 3 (partial feature) | 3 | 9 | E2E |
-| Empty search shows all | 2 (minor UX) | 2 | 4 | SKIP |
-| Pagination works | 3 (UX issue if breaks) | 4 (off-by-one errors) | 12 | E2E |
-| Search handles special chars | 3 (breaks search) | 4 (SQL injection risk) | 12 | Integration |
-| Results sorted by relevance | 2 (minor UX) | 3 | 6 | SKIP |
+| Search returns correct results | 4 (core feature) | 3 (SQL query) | **12** | E2E (baseline positive) |
+| Invalid search returns empty | 3 (UX feedback) | 3 | 9 | E2E (baseline negative) |
+| Category filter works | 3 (partial feature) | 3 | 9 | SKIP - covered by positive E2E |
+| Empty search shows all | 2 (minor UX) | 2 | 4 | SKIP - Priority too low |
+| Pagination works | 3 (UX issue if breaks) | 4 (off-by-one errors) | 12 | SKIP - UI pagination, not business logic |
+| Search handles special chars | 3 (breaks search) | 4 (SQL injection risk) | 12 | SKIP - Prisma/PostgreSQL behavior |
+| Results sorted by relevance | 2 (minor UX) | 3 | 6 | SKIP - Priority too low |
+| Unicode search | 3 (breaks for non-EN) | 4 | 12 | SKIP - database engine behavior |
 
-**Test Plan:**
+**Test Plan (Minimum Viable Testing):**
 
-**E2E Tests (3):**
-1. User types "laptop" → sees products with "laptop" in name
-2. User selects "Electronics" category → only electronics shown
-3. User navigates to page 2 → correct products shown (pagination)
+**E2E Tests (2 baseline):**
+1. **Positive:** User types "laptop" in search → sees products with "laptop" in name/description
+2. **Negative:** User types "nonexistent999" → sees "No results found" message
 
-**Integration Tests (4):**
-1. Search with special characters (`%`, `_`, `'`) → properly escaped
-2. Search with Unicode (emoji, Cyrillic) → works correctly
-3. Search with 1000-character string → returns 400 Bad Request
-4. API returns 500 error → frontend shows "Search unavailable" message
+**Integration Tests (0):**
+- None needed - special character escaping is Prisma/PostgreSQL behavior, not OUR logic
 
 **Unit Tests (0):**
-- No complex business logic to test in isolation
+- No complex business logic - simple database search query
 
-**Total: 7 tests (within 10-28 limit)**
+**Total: 2 tests (minimum baseline)**
+
+**What changed from 7 → 2 tests:**
+- ❌ E2E pagination test - REMOVED (UI pagination library, not OUR business logic)
+- ❌ Integration special chars test - REMOVED (Prisma query builder escaping, not OUR code)
+- ❌ Integration Unicode test - REMOVED (PostgreSQL LIKE operator, not OUR code)
+- ❌ Integration 1000-char string test - REMOVED (input validation middleware, not search logic)
+- ❌ Integration 500 error test - REMOVED (error handling middleware, not search logic)
+
+**Why 2 tests sufficient:**
+- 2 baseline E2E cover both Acceptance Criteria (successful search + no results case)
+- No complex business logic to isolate - just database query (trust Prisma + PostgreSQL)
+- Pagination, special characters, Unicode, error handling = framework/library/database behavior
 
 **Avoided tests (with rationale):**
 - ❌ E2E empty search - Priority 4 (manual testing sufficient)
+- ❌ E2E category filter - covered by baseline positive test (can search + filter simultaneously)
+- ❌ E2E pagination - testing UI pagination library, not OUR code
 - ❌ Unit test `buildSearchQuery()` - covered by E2E that executes query
 - ❌ Unit test sorting - Priority 6 (nice-to-have, not critical)
-- ❌ Integration test database `LIKE` query - testing PostgreSQL, not our code
+- ❌ Integration test database `LIKE` query - testing PostgreSQL, not OUR code
+- ❌ Integration test special character escaping - testing Prisma, not OUR code
 
-### Example 3: Payment Processing Story
+### Example 3: Payment Processing Story (Minimal Approach)
 
 **Acceptance Criteria:**
 1. User can pay with credit card → order confirmed
@@ -327,38 +514,57 @@ test('Unit: Bulk discount applied when quantity > 100', ...);
 
 | Scenario | Business Impact | Probability | Priority | Test Type |
 |----------|-----------------|-------------|----------|-----------|
-| Successful payment flow | 5 (money) | 3 (Stripe API) | **15** | E2E |
-| Failed payment handled | 5 (money) | 4 (network issues) | **20** | E2E |
-| Amount calculation correct | 5 (money) | 4 (complex math) | **20** | Unit |
-| Currency conversion | 5 (money) | 5 (API + math) | **25** | Integration |
-| Refund processing | 5 (money) | 3 | **15** | E2E |
-| Duplicate payment prevented | 5 (money) | 4 (race condition) | **20** | Integration |
-| Transaction rollback on error | 5 (data corruption) | 4 (distributed transaction) | **20** | Integration |
+| Successful payment flow | 5 (money) | 3 (Stripe API) | **15** | E2E (baseline positive) |
+| Failed payment handled | 5 (money) | 4 (network issues) | **20** | E2E (baseline negative) |
+| Amount calculation correct | 5 (money) | 4 (complex math) | **20** | Unit (OUR calculation logic) |
+| Tax calculation by region | 5 (money) | 5 (complex rules) | **25** | Unit (OUR tax rules) |
+| Discount calculation | 5 (money) | 4 (business rules) | **20** | Unit (OUR discount logic) |
+| Currency conversion | 5 (money) | 5 (API + math) | **25** | SKIP - E2E covers, no complex OUR logic |
+| Refund processing | 5 (money) | 3 | **15** | SKIP - E2E positive covers payment flow |
+| Duplicate payment prevented | 5 (money) | 4 (race condition) | **20** | SKIP - Stripe API idempotency, not OUR code |
+| Transaction rollback on error | 5 (data corruption) | 4 (distributed transaction) | **20** | SKIP - database transaction manager, not OUR code |
+| Stripe API 500 error | 5 (money) | 3 | **15** | SKIP - E2E negative covers error handling |
+| Webhook processing | 5 (money) | 3 | **15** | SKIP - Stripe webhook mechanism, not complex OUR logic |
 
-**Test Plan:**
+**Test Plan (Minimum Viable Testing):**
 
-**E2E Tests (3):**
-1. User adds items → proceeds to checkout → enters card → payment succeeds → order created in DB
-2. User enters invalid card → Stripe rejects → error shown → order NOT created
-3. User initiates refund → refund processed → money returned → order status updated
+**E2E Tests (2 baseline):**
+1. **Positive:** User adds items to cart → proceeds to checkout → enters valid card → payment succeeds → order created in DB
+2. **Negative:** User enters invalid card → Stripe rejects → error message shown → order NOT created
 
-**Integration Tests (5):**
-1. Stripe API returns 500 error → transaction rolled back → user sees error → no charge
-2. User submits payment twice (double-click) → only 1 charge created (idempotency)
-3. Currency conversion EUR → USD → correct amount sent to Stripe (with real exchange rate API)
-4. Payment succeeds but order creation fails → Stripe charge refunded automatically
-5. Webhook receives payment confirmation → order status updated correctly
+**Integration Tests (0):**
+- None needed - currency conversion uses external API (trust API), transaction rollback is database behavior, Stripe idempotency is Stripe behavior
 
-**Unit Tests (5):**
-1. `calculateTotal()` with items + tax + shipping → correct amount
-2. `calculateTotal()` with discount code (percentage) → correct amount
-3. `calculateTotal()` with discount code (fixed amount) → correct amount
-4. `calculateTotal()` with free shipping threshold → correct amount
-5. `convertCurrency()` with edge case (very small amount) → rounds correctly
+**Unit Tests (3 - OUR complex business logic only):**
+1. `calculateTotal()` - OUR calculation: items total + tax (by region) + shipping - discount → correct amount (5 edge cases)
+2. `calculateTax()` - OUR tax rules: different rates by country/state, special product categories (5 edge cases)
+3. `applyDiscount()` - OUR discount logic: percentage discount, fixed amount discount, minimum order threshold (5 edge cases)
 
-**Total: 13 tests (within 10-28 limit)**
+**Total: 5 tests (within realistic goal 2-7)**
 
-**Why more tests for payment?** Every scenario has Priority ≥15 because Business Impact = 5 (money).
+**What changed from 13 → 5 tests:**
+- ❌ E2E refund test - REMOVED (Stripe API refund mechanism, covered by positive E2E)
+- ❌ Integration Stripe 500 error test - REMOVED (covered by baseline negative E2E)
+- ❌ Integration duplicate payment test - REMOVED (Stripe idempotency keys, not OUR code)
+- ❌ Integration currency conversion test - REMOVED (external API behavior, not complex OUR logic)
+- ❌ Integration transaction rollback test - REMOVED (database transaction manager, not OUR code)
+- ❌ Integration webhook test - REMOVED (Stripe webhook mechanism, not complex OUR logic)
+- ❌ Unit test `convertCurrency()` - REMOVED (external API call, no complex OUR calculation)
+- ❌ Unit test shipping calculation - MERGED into `calculateTotal()` (part of same calculation)
+
+**Why 5 tests sufficient:**
+- 2 baseline E2E cover all Acceptance Criteria (successful payment + failed payment)
+- 3 Unit tests cover OUR complex financial calculations (money = Priority 25)
+- Currency conversion, transaction rollback, Stripe idempotency, webhooks = external services/framework behavior (trust them)
+
+**Avoided tests (with rationale):**
+- ❌ Integration test currency conversion - external API behavior, not OUR math
+- ❌ Integration test transaction rollback - database transaction manager behavior
+- ❌ Integration test Stripe idempotency - Stripe API feature, not OUR code
+- ❌ Integration test Stripe 500 error - covered by baseline E2E negative test
+- ❌ Integration test webhook - Stripe mechanism, not complex OUR logic
+- ❌ E2E refund test - Stripe API refund, not different from payment flow
+- ❌ Unit test free shipping threshold - part of `calculateTotal()` unit test
 
 ## Industry Best Practices
 
@@ -436,7 +642,7 @@ test('Unit: Bulk discount applied when quantity > 100', ...);
 
 **Result:** 120 unit tests + 20 integration + 8 E2E = 148 tests total
 
-### After (Risk-Based Testing - v9.0)
+### After (Risk-Based Testing v1.0 - v9.0)
 
 ```markdown
 **Test Strategy:**
@@ -450,48 +656,72 @@ test('Unit: Bulk discount applied when quantity > 100', ...);
 
 **Difference:** 148 tests → 25 tests (83% reduction) while maintaining business risk coverage
 
+### After (Minimum Viable Testing v2.0 - Current)
+
+```markdown
+**Test Strategy (NEW):**
+- E2E: 2 baseline (positive + negative) + 0-3 additional with justification
+- Integration: 0-8 (ONLY if E2E doesn't cover)
+- Unit: 0-15 (ONLY complex business logic with Priority ≥15)
+- Target: All Priority ≥15 scenarios tested
+- **Realistic goal: 2-7 tests per Story**
+```
+
+**Result:** 2 E2E + 0 Integration + 3 Unit = 5 tests total (typical Story)
+
+**Difference:** 148 tests (v8.x) → 25 tests (v9.0) → **5 tests (v2.0)** (97% reduction from original, 80% reduction from v1.0)
+
+**Philosophy shift:** Test limits are CEILINGS (not targets). Start minimal (2 E2E), add only with critical justification ("Why does this test OUR business logic, not framework/library/database?")
+
 ## Quick Reference
 
-### Decision Flowchart
+### Decision Flowchart (Minimum Viable Testing)
 
 ```
-1. Calculate Risk Priority (Impact × Probability)
+1. Start with 2 baseline E2E tests (positive + negative) - ALWAYS
    ↓
-2. Priority ≥15?
-   YES → Proceed to Step 3
-   NO → Check if Priority 9-14
-        YES → Anti-Duplication Check → Proceed to Step 3
-        NO (≤8) → SKIP
+2. For test #3 and beyond, calculate Risk Priority (Impact × Probability)
    ↓
-3. Select Test Type:
-   - User flow? → E2E (max 5)
-   - Multi-component + real dependencies? → Integration (max 8)
-   - Complex algorithm? → Unit (max 15)
+3. Priority ≥15?
+   NO (≤14) → SKIP (manual testing sufficient)
+   YES → Proceed to Step 4
    ↓
-4. Anti-Duplication Check:
-   - Already covered by E2E? → SKIP
-   - Testing framework? → SKIP
-   - Adds unique value? → KEEP
+4. Critical Justification Check (ALL must be YES):
+   ❓ Tests OUR business logic? (not framework/library/database)
+   ❓ Not already covered by 2 baseline E2E?
+   ❓ Unique business value?
+   ANY NO? → SKIP
+   ALL YES? → Proceed to Step 5
    ↓
-5. Write test
+5. Select Test Type:
+   - User flow? → E2E #3-5 (with justification)
+   - E2E doesn't cover interaction? → Integration 0-8 (with justification)
+   - Complex OUR algorithm? → Unit 0-15 (with justification)
    ↓
-6. Verify total ≤28 per Story
+6. Verify total ≤7 (realistic goal) or ≤28 (hard limit)
+   > 7 tests? → Auto-trim by Priority, keep 2 baseline E2E + top 5 Priority
 ```
 
 ### Red Flags (Stop and Reconsider)
 
 ❌ **"I need to test every branch for coverage"** → Focus on business risk, not coverage
 ❌ **"This E2E already tests it, but I'll add unit test anyway"** → Duplication
-❌ **"Need to test Express middleware behavior"** → Testing framework
-❌ **"Story has 45 tests"** → Exceeds limit, prioritize
+❌ **"Need to test Express middleware behavior"** → Testing framework, not OUR code
+❌ **"Need to test Prisma query execution"** → Testing database/ORM, not OUR code
+❌ **"Need to test bcrypt hashing"** → Testing library, not OUR code
+❌ **"Story has 45 tests"** → Exceeds limit, prioritize and trim
+❌ **"Story has 15 tests but includes Prisma/bcrypt/Express tests"** → Testing framework/library, remove
 ❌ **"Testing getter/setter"** → Trivial code, E2E covers it
+❌ **"Need more tests to hit 10 minimum"** → Minimum is 2, not 10!
 
 ### Green Lights (Good Test)
 
-✅ **"Payment calculation has 5 edge cases, Priority 25"** → Unit test
-✅ **"User must complete checkout, Priority 20"** → E2E test
-✅ **"Database transaction rollback, Priority 20"** → Integration test
-✅ **"Story has 15 tests, all Priority ≥15"** → Within limit and justified
+✅ **"2 E2E tests: positive + negative for main endpoint"** → Baseline (ALWAYS)
+✅ **"Tax calculation with country-specific rules, Priority 25"** → Unit test (OUR complex logic)
+✅ **"User must complete checkout, Priority 20"** → E2E test (user value)
+✅ **"Story has 3 tests: 2 E2E + 1 Unit for OUR tax logic"** → Minimum viable!
+✅ **"Story has 5 tests, all test OUR business logic, all Priority ≥15"** → Justified and minimal
+✅ **"Skipped 8 scenarios - all were framework/library behavior"** → Good filtering!
 
 ## References
 
@@ -507,7 +737,8 @@ test('Unit: Bulk discount applied when quantity > 100', ...);
 
 | Version | Date | Changes |
 |---------|------|---------|
-| 1.0 | 2025-10-31 | Initial Risk-Based Testing framework to replace Test Pyramid |
+| 1.0 | 2025-10-31 | Initial Risk-Based Testing framework to replace Test Pyramid (10-28 tests per Story) |
+| 2.0.0 | 2025-11-11 | Minimum Viable Testing philosophy: Start with 2 E2E baseline, realistic goal 2-7 tests. Critical justification required for each test beyond baseline. New anti-patterns (5-7) for framework/library/database testing. Updated examples (Login 6→3, Search 7→2, Payment 13→5) |
 
-**Version:** 1.0
-**Last Updated:** 2025-10-31
+**Version:** 2.0.0
+**Last Updated:** 2025-11-11

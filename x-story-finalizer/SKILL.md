@@ -122,79 +122,146 @@ Priority = Business Impact (1-5) × Probability of Failure (1-5)
 
 **Step 2: E2E Test Selection (2-5 tests max)**
 
-1. **Identify critical user flows** (Priority ≥15):
-   - From PASSED AC in manual testing results
-   - Focus on complete user journeys (UI → API → DB or API call → response)
+**Minimum Viable Testing Philosophy: Start with 2 E2E tests per endpoint, add more ONLY with critical justification**
+
+1. **BASELINE (ALWAYS - 2 E2E tests per endpoint):**
+   - **Positive scenario:** Happy path validating main AC (from manual testing PASSED)
+   - **Negative scenario:** Critical error handling (validation failure, auth error, not found)
+
 2. **Determine E2E type:**
    - API: Use HTTP client (requests, axios, fetch) with full request from manual test results
    - UI: Use browser automation (Playwright, Selenium) with full interaction flow
-3. **Plan 2-5 E2E tests maximum:**
-   - Happy path (main user journey) - typically 1-2 tests
-   - Critical edge cases (Priority ≥15 from manual testing) - typically 1-2 tests
-   - Error handling (Priority ≥15 from error table) - typically 0-1 test
-4. **Document exact steps** from manual test results:
+
+3. **ADDITIONAL E2E (3-5) - ONLY if Priority ≥15 AND justification provided:**
+   - Critical edge case from manual testing (Priority ≥15)
+   - Critical error scenario from manual testing (Priority ≥15)
+   - (RARE) Second endpoint if Story implements multiple endpoints
+
+4. **Critical Justification Check (for tests 3-5):**
+   - ✅ **Tests OUR business logic?** (not framework/library/database)
+   - ✅ **Priority ≥15?** (money, security, data integrity)
+   - ✅ **Not already covered by 2 baseline E2E?**
+   - ✅ **Unique business value?** (not duplicate coverage)
+   - ❌ If ANY answer is NO → SKIP this test
+
+5. **Document exact steps** from manual test results:
    - Copy curl commands or puppeteer code as test base
    - Use actual inputs/outputs from manual testing
 
 **Anti-Duplication Rule:** If 2 E2E tests cover same flow, keep only highest Priority
 
-**Step 3: Unit Test Selection (5-15 tests max)**
+**Anti-Framework Rule:** If test validates framework behavior (Express routing, Prisma query, React hooks) → SKIP
 
-1. **Identify complex business logic** (Priority ≥15):
-   - Financial calculations (tax, discount, currency conversion)
-   - Security logic (password validation, permission checks)
-   - Complex algorithms (sorting, filtering, scoring)
-2. **SKIP unit tests for:**
-   - Simple CRUD operations (already covered by E2E)
-   - Framework code (Express middleware, React hooks)
-   - Getters/setters
-   - Trivial conditionals (`if (user) return user.name`)
-   - Performance/load testing (throughput, latency, stress tests, scalability - requires dedicated infrastructure and tools)
-3. **One test per unique business scenario:**
+**Step 3: Unit Test Selection (0-15 tests max)**
+
+**Default: 0 Unit tests** (2 E2E tests cover simple logic already)
+
+**Add Unit test ONLY for complex business logic with Priority ≥15 AND each test requires justification:**
+
+1. **ONLY test complex business logic** (Priority ≥15):
+   - **Financial calculations:** Tax computation with country-specific rules, currency conversion with rates, discount calculation with business rules
+   - **Security algorithms:** Password strength validation (custom rules), permission matrix calculation, token generation with custom logic
+   - **Complex business algorithms:** Scoring/ranking with multiple factors, matching algorithm with weights, data transformation with business rules
+
+2. **MANDATORY SKIP - DO NOT create unit tests for:**
+   - ❌ Simple CRUD operations (already covered by E2E)
+   - ❌ Framework code (Express middleware, React hooks, FastAPI dependencies)
+   - ❌ Library functions (bcrypt hashing, jsonwebtoken signing, axios requests)
+   - ❌ Database queries (Prisma findMany, TypeORM query builder, SQL joins)
+   - ❌ Getters/setters or simple property access
+   - ❌ Trivial conditionals (`if (user) return user.name`, `status === 'active'`)
+   - ❌ Pass-through functions (wrappers without logic)
+   - ❌ Performance/load testing (throughput, latency, stress tests, scalability)
+
+3. **Critical Justification Check (for EACH unit test):**
+   - ✅ **Tests OUR complex business logic?** (not library/framework/database)
+   - ✅ **Priority ≥15?** (financial/security/critical algorithm)
+   - ✅ **Not already covered by 2 E2E tests?** (E2E doesn't exercise all branches)
+   - ✅ **Unique business scenario?** (not duplicate of other unit test)
+   - ❌ If ANY answer is NO → SKIP this unit test
+
+4. **One test per unique business scenario:**
    - Happy path for complex function
-   - Edge cases discovered in manual testing (Priority ≥9)
+   - Edge cases discovered in manual testing (Priority ≥15 only)
    - Error conditions with Business Impact ≥4
-4. **List dependencies to mock:**
+
+5. **List dependencies to mock:**
    - External services, databases, filesystem
 
 **Anti-Duplication Rule:** If E2E test already exercises this logic with all branches, SKIP unit test
 
-**Step 4: Integration Test Selection (3-8 tests max)**
+**Anti-Framework Rule:** If test validates bcrypt/jwt/axios/Prisma behavior → SKIP (test library, not our code)
+
+**Step 4: Integration Test Selection (0-8 tests max)**
+
+**Default: 0 Integration tests** (2 E2E tests cover full stack already)
+
+**Add Integration test ONLY if E2E doesn't cover interaction completely AND Priority ≥15:**
 
 1. **Identify layer interactions** from E2E flows (Priority ≥15):
    - API → Service → Repository → DB
    - Service → External API (payment, email)
    - Service → Queue → Background worker
+
 2. **Plan integration points:**
    - Real dependencies: DB, filesystem, internal services
    - Mock dependencies: External APIs, payment, email
-3. **Focus on interactions NOT fully covered by E2E:**
-   - Transaction rollback on error
-   - Concurrent request handling
-   - External API error scenarios (500, timeout)
-4. **SKIP integration tests for:**
-   - Simple pass-through calls (E2E already validates)
-   - Testing framework integrations (Prisma, TypeORM)
-   - Performance/load testing (separate performance test suite with dedicated tools)
+
+3. **Add Integration test ONLY for interactions NOT fully covered by 2 E2E:**
+   - Transaction rollback on error (E2E tests happy path only)
+   - Concurrent request handling (E2E tests single request)
+   - External API error scenarios (500, timeout) if Priority ≥15
+
+4. **MANDATORY SKIP - DO NOT create integration tests for:**
+   - ❌ Simple pass-through calls (E2E already validates end-to-end)
+   - ❌ Testing framework integrations (Prisma client, TypeORM repository, Express app)
+   - ❌ Testing database query execution (database engine behavior)
+   - ❌ Testing library integrations (axios interceptors, Redis client)
+   - ❌ Performance/load testing (separate performance test suite with dedicated tools)
+
+5. **Critical Justification Check (for EACH integration test):**
+   - ✅ **Tests OUR integration logic?** (not framework/library integration)
+   - ✅ **Priority ≥15?** (critical interaction failure)
+   - ✅ **Not already covered by 2 E2E tests?** (E2E doesn't test this interaction path)
+   - ✅ **Unique interaction scenario?** (not duplicate)
+   - ❌ If ANY answer is NO → SKIP this integration test
 
 **Anti-Duplication Rule:** If E2E test covers integration point end-to-end, SKIP separate integration test
 
-**Step 5: Validation**
+**Anti-Framework Rule:** If test validates Prisma/TypeORM/Express integration → SKIP (test framework, not our code)
 
-1. **Check test limits:**
-   - E2E: 2-5 ✓
-   - Integration: 3-8 ✓
-   - Unit: 5-15 ✓
-   - **Total: 10-28 tests** ✓
-2. **Ensure no duplication:**
+**Step 5: Validation and Auto-Trimming**
+
+1. **Check test limits (HARD LIMITS):**
+   - E2E: 2-5 ✓ (baseline 2, additional 0-3)
+   - Integration: 0-8 ✓ (default 0, add only if justified)
+   - Unit: 0-15 ✓ (default 0, add only for complex business logic)
+   - **Total: 2-28 tests** ✓
+   - **REALISTIC GOAL: 2-7 tests per Story** (not 10-28!)
+
+2. **Auto-trim if exceeding realistic goal (>7 tests):**
+   - Keep 2 baseline E2E tests (positive + negative) - ALWAYS
+   - Sort remaining tests by Priority (descending)
+   - Keep top Priority tests until reaching 7 total
+   - Document trimmed tests: "Scenario X (Priority Y) skipped - covered by manual testing"
+
+3. **Ensure no duplication:**
    - Each test validates unique business value
    - No overlap between E2E/Integration/Unit
-3. **Verify Priority ≥15 scenarios covered:**
-   - All PASSED AC from manual testing → E2E tests
-   - All Priority ≥15 edge cases → Unit or Integration tests
-4. **Document skipped scenarios:**
-   - List scenarios with Priority ≤8 (manual testing sufficient)
-   - Explain why coverage <80% is acceptable (focus on business risk)
+   - If 2 tests cover same scenario → keep only higher Priority
+
+4. **Verify Priority ≥15 scenarios covered:**
+   - All PASSED AC from manual testing → covered by 2 baseline E2E
+   - All Priority ≥15 edge cases → Unit or Integration tests (if not covered by E2E)
+
+5. **Document skipped scenarios:**
+   - List scenarios with Priority ≤14 (manual testing sufficient)
+   - List trimmed scenarios (Priority <15 or duplicates)
+   - Explain why 2-7 tests acceptable (focus on business risk, not coverage %)
+
+6. **Final justification check:**
+   - For EACH test beyond 2 baseline E2E: documented justification why it tests OUR business logic
+   - If any test lacks justification → REMOVE from plan
 
 ### Phase 5: Generation and Impact Analysis (Automated)
 
@@ -283,22 +350,24 @@ Generates complete task per `test_task_template.md`:
 
 1. **Context:** Story goal + implemented features + manual test results summary
 2. **Risk Priority Matrix:** Table with all scenarios, Business Impact, Probability, Priority, Test Type decision
-3. **E2E Tests (2-5 max):** Based on Priority ≥15 scenarios from manual testing
+3. **E2E Tests (2-5 max):** Baseline 2 (positive/negative) + additional 0-3 with Priority ≥15
    - Each scenario with Priority score
    - Exact steps documented (from curl/puppeteer results)
    - Expected outcomes (verified during manual testing)
-   - Anti-duplication notes (what other tests cover)
-4. **Integration Tests (3-8 max):** Layer interactions with Priority ≥15
+   - Justification for each test beyond baseline 2 (why it tests OUR business logic)
+4. **Integration Tests (0-8 max):** ONLY if E2E doesn't cover interaction AND Priority ≥15
    - Integration points with risk assessment
    - Real vs mocked dependencies
-   - Scenarios NOT fully covered by E2E
-5. **Unit Tests (5-15 max):** Complex business logic with Priority ≥15
-   - Functions requiring unit tests (financial, security, algorithms)
-   - Edge cases from manual testing (Priority ≥9)
+   - Scenarios NOT fully covered by 2 baseline E2E
+   - Justification for each test (why it tests OUR integration logic)
+5. **Unit Tests (0-15 max):** ONLY complex business logic with Priority ≥15
+   - Functions requiring unit tests (financial, security, complex algorithms)
+   - Edge cases from manual testing (Priority ≥15 only)
    - Mocked dependencies
-   - Skipped scenarios (already covered by E2E)
+   - Justification for each test (why it tests OUR business logic, not library/framework)
+   - Skipped scenarios (already covered by 2 baseline E2E)
 6. **Critical Path Coverage:** What MUST be tested vs what can be skipped
-7. **Definition of Done:** All tests pass, all Priority ≥15 scenarios tested, total tests 10-28, no flaky tests
+7. **Definition of Done:** All tests pass, all Priority ≥15 scenarios tested, **realistic goal: 2-7 tests** (max 28), no flaky tests, each test beyond baseline 2 has documented justification
 8. **Existing Tests to Fix/Update:** From Step 1 analysis (affected tests + why + fixes needed)
 9. **Infrastructure Changes:** From Step 2 analysis (packages, Docker, configs)
 10. **Documentation Updates:** From Step 3 analysis (tests/README, main README, CHANGELOG, etc.)
@@ -335,20 +404,21 @@ Before completing work, verify ALL checkpoints:
 
 **✅ Risk-Based Test Plan Generated:**
 - [ ] Risk Priority Matrix calculated for all scenarios (Business Impact × Probability)
-- [ ] E2E tests (2-5): Cover all Priority ≥15 AC from manual testing
-- [ ] Integration tests (3-8): Cover Priority ≥15 layer interactions NOT in E2E
-- [ ] Unit tests (5-15): Cover Priority ≥15 complex business logic (financial, security, algorithms)
-- [ ] Total tests within limits: 10-28 tests (enforced)
+- [ ] E2E tests (2-5): Baseline 2 (positive/negative) + additional 0-3 with Priority ≥15 AND justification
+- [ ] Integration tests (0-8): ONLY if E2E doesn't cover AND Priority ≥15 AND justification provided
+- [ ] Unit tests (0-15): ONLY complex business logic with Priority ≥15 AND justification for each test
+- [ ] **Total tests: 2-7 realistic goal** (hard limit: 2-28) - auto-trimmed if exceeds 7
 - [ ] No test duplication: Each test adds unique business value
+- [ ] No framework/library testing: Each test validates OUR business logic only
 
 **✅ Story Finalizer Task Description Complete (11 sections):**
 - [ ] Section 1 - Context: Story link, why final task needed
 - [ ] Section 2 - Risk Priority Matrix: All scenarios with calculated Priority (Impact × Probability)
-- [ ] Section 3 - E2E Tests (2-5 max): Scenarios with Priority ≥15, based on ACTUAL manual testing (curl/puppeteer)
-- [ ] Section 4 - Integration Tests (3-8 max): Layer interactions with Priority ≥15
-- [ ] Section 5 - Unit Tests (5-15 max): Complex business logic with Priority ≥15
+- [ ] Section 3 - E2E Tests (2-5 max): Baseline 2 + additional 0-3 with Priority ≥15 AND justification, based on ACTUAL manual testing
+- [ ] Section 4 - Integration Tests (0-8 max): ONLY if E2E doesn't cover AND Priority ≥15 AND justification
+- [ ] Section 5 - Unit Tests (0-15 max): ONLY complex business logic with Priority ≥15 AND justification for EACH test
 - [ ] Section 6 - Critical Path Coverage: What MUST be tested (Priority ≥15) vs what skipped (≤14)
-- [ ] Section 7 - Definition of Done: All tests pass, Priority ≥15 scenarios tested, total 10-28, no flaky tests
+- [ ] Section 7 - Definition of Done: All tests pass, Priority ≥15 scenarios tested, **realistic goal 2-7 tests** (max 28), no flaky tests, each test beyond baseline 2 justified
 - [ ] Section 8 - Existing Tests to Fix/Update: Affected tests + reasons + required fixes
 - [ ] Section 9 - Infrastructure Changes: Packages, Docker, configs to update
 - [ ] Section 10 - Documentation Updates: tests/README, README, CHANGELOG, other docs
@@ -390,18 +460,19 @@ Skill tool, command: "x-story-finalizer", Story ID: US001
 1. Discovery → Team "API", Story: US001
 2. Load Manual Test Results → Parse Linear comment (3 scenarios PASSED, 2 edge cases, 1 error scenario)
 3. Analysis → Story + 5 Done implementation Tasks
-4. Risk-Based Test Planning:
+4. Risk-Based Test Planning with Minimum Viable Testing:
    - Calculate Priority for each scenario (Business Impact × Probability)
-   - E2E: 3 tests (Priority ≥15 scenarios from manual testing)
-   - Integration: 4 tests (layer interactions with Priority ≥15)
-   - Unit: 8 tests (complex business logic with Priority ≥15)
-   - Total: 15 tests (within 10-28 limit)
+   - E2E: 2 baseline tests (positive + negative for main endpoint) + 1 additional (critical edge case with Priority 20)
+   - Integration: 0 tests (2 baseline E2E cover full stack)
+   - Unit: 2 tests (tax calculation + discount logic with Priority ≥15)
+   - **Total: 5 tests (within realistic goal 2-7)**
+   - Auto-trim: Skipped 3 scenarios with Priority ≤14 (manual testing sufficient)
 5. Impact Analysis:
    - Existing Tests: 2 test files need updates (mock responses changed)
    - Infrastructure: Add Playwright for UI E2E tests
    - Documentation: Update tests/README.md, main README.md
    - Legacy Cleanup: Remove deprecated API v1 compatibility shim
-6. Generation → Complete story finalizer task (11 sections) with Risk Priority Matrix
+6. Generation → Complete story finalizer task (11 sections) with Risk Priority Matrix + justification for each test beyond baseline 2
 7. Confirmation → Creates final Task with parentId=US001, label "tests"
 
 ## Reference Files
@@ -412,11 +483,15 @@ Skill tool, command: "x-story-finalizer", Story ID: US001
 
 ## Best Practices
 
-**Risk-Based Testing:** Prioritize by Business Impact × Probability (not coverage metrics). Test limits: 2-5 E2E, 3-8 Integration, 5-15 Unit (10-28 total max). E2E-first from ACTUAL manual testing results. All Priority ≥15 scenarios MUST be tested.
+**Minimum Viable Testing Philosophy:** Start with 2 E2E tests per endpoint (positive + negative). Add more tests ONLY with critical justification. **Realistic goal: 2-7 tests per Story** (not 10-28). Each test beyond baseline 2 MUST justify: "Why does this test OUR business logic (not framework/library/database)?"
 
-**Anti-Duplication:** Each test validates unique business value. If E2E covers it, SKIP unit test. Test OUR code only (not frameworks/libraries). Focus on complex business logic (financial, security, algorithms). Skip trivial code (CRUD, getters/setters, simple conditionals).
+**Risk-Based Testing:** Prioritize by Business Impact × Probability (not coverage metrics). Test limits: 2-5 E2E (baseline 2 + additional 0-3), 0-8 Integration (default 0), 0-15 Unit (default 0). E2E-first from ACTUAL manual testing results. Priority ≥15 scenarios covered by tests, Priority ≤14 covered by manual testing.
+
+**Anti-Duplication:** Each test validates unique business value. If 2 baseline E2E cover it, SKIP unit test. Test OUR code only (not frameworks/libraries/database queries). Focus on complex business logic ONLY (financial calculations, security algorithms, complex business rules). MANDATORY SKIP: CRUD, getters/setters, trivial conditionals, framework code, library functions, database queries.
+
+**Auto-Trim:** If test plan exceeds 7 tests → auto-trim to 7 by Priority. Keep 2 baseline E2E always, trim lowest Priority tests. Document trimmed scenarios: "Covered by manual testing".
 
 ---
 
-**Version:** 4.1.0 (Configuration management analysis)
-**Last Updated:** 2025-11-07
+**Version:** 4.0.0
+**Last Updated:** 2025-11-11

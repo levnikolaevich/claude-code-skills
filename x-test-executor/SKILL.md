@@ -20,6 +20,11 @@ This skill should be used when executing Story Finalizer test task (status = Tod
 
 **Note:** For implementation tasks (without test logic), use **x-task-executor** skill instead.
 
+⚠️ **CRITICAL RULE - Single Task Updates:**
+- ✅ Update status for ONLY the selected task (the one passed as parameter)
+- ❌ NEVER update status for multiple tasks at once
+- ❌ NEVER update status for all test tasks
+
 ## How It Works
 
 ### Phase 1: Discovery (Automated)
@@ -40,8 +45,8 @@ Auto-discovers project configuration:
    - If task has parentId → Read parent User Story COMPLETELY (no truncation)
    - Understand acceptance criteria, context, test strategy from BOTH
 3. **Create TodoWrite** todos with full workflow:
-   - Update status to "In Progress" (Linear)
-   - Update kanban_board.md (Todo → In Progress)
+   - Update ONLY the selected task's status to "In Progress" (Linear via update_issue with task ID)
+   - Update kanban_board.md (Todo → In Progress) for ONLY the selected task
    - **Step 1:** Fix Existing Tests (Section 8)
    - **Step 2:** Implement New Tests E2E→Integration→Unit (Sections 3-5, Priority ≥15)
    - **Step 3:** Update Infrastructure (Section 9)
@@ -51,8 +56,8 @@ Auto-discovers project configuration:
    - Quality gates: type checking, linting, all existing tests pass, all new tests pass
    - Update task description with completed checkboxes (replace `- [ ]` with `- [x]`)
    - Add test summary comment
-   - Update status to "To Review" (Linear)
-   - Update kanban_board.md (In Progress → To Review)
+   - Update ONLY the selected task's status to "To Review" (Linear via update_issue with task ID)
+   - Update kanban_board.md (In Progress → To Review) for ONLY the selected task
 4. **Study Project Test Infrastructure:**
    Before implementation, understand testing setup:
    - Read tests/README.md (commands, setup, test requirements)
@@ -211,6 +216,11 @@ Before completing work, verify ALL checkpoints:
 - [ ] CHANGELOG.md updated:
   - Test coverage documented (X E2E, Y Integration, Z Unit)
   - Priority ≥15 scenarios noted
+
+**✅ CRITICAL: Single Task Update Verified:**
+- [ ] Verified via Linear: ONLY the selected task (input task ID) status was updated
+- [ ] Verified via Linear: NO other tasks in the Story were updated
+- [ ] Verified via kanban_board.md: ONLY one task line moved between sections
 
 **✅ Linear Updated:**
 - [ ] Task description updated: All checkboxes marked [x] (replaced `- [ ]` with `- [x]` via update_issue)

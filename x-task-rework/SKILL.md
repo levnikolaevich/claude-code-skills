@@ -11,6 +11,11 @@ Fix issues in tasks (To Rework → In Progress → To Review) based on review fe
 
 This skill should be used when fixing issues in task (status = To Rework) after review feedback.
 
+⚠️ **CRITICAL RULE - Single Task Updates:**
+- ✅ Update status for ONLY the selected task (the one passed as parameter)
+- ❌ NEVER update status for multiple tasks at once
+- ❌ NEVER update status for all To Rework tasks
+
 ## How It Works
 
 ### Phase 1: Discovery (Automated)
@@ -28,8 +33,8 @@ Auto-discovers Team ID and project configuration from `docs/tasks/kanban_board.m
 2. **Read review feedback:** Load all comments with Must-fix items
 3. **Identify scope:** Code, tests, documentation, architecture, and Existing Code Impact items
 4. **Track progress:** Create TodoWrite todos with full workflow:
-   - Update status to "In Progress" (Linear)
-   - Update kanban_board.md (To Rework → In Progress):
+   - Update ONLY the selected task's status to "In Progress" (Linear via update_issue with task ID)
+   - Update kanban_board.md (To Rework → In Progress) for ONLY the selected task:
      * Find Task in parent Story section under "### To Rework"
      * Remove task line: `    - [LINEAR_ID: EP#_## Task Title](link)` (4-space indent)
      * Add task line to same Story section under "### In Progress"
@@ -38,13 +43,13 @@ Auto-discovers Team ID and project configuration from `docs/tasks/kanban_board.m
    - Complete Existing Code Impact tasks (refactoring, existing tests, documentation)
    - Quality gates: type checking, linting, [for test tasks] re-run tests + check coverage ≥80%
    - Add rework summary comment
-   - Update status to "To Review" (Linear)
-   - Update kanban_board.md (In Progress → To Review):
+   - Update ONLY the selected task's status to "To Review" (Linear via update_issue with task ID)
+   - Update kanban_board.md (In Progress → To Review) for ONLY the selected task:
      * Find Task in parent Story section under "### In Progress"
      * Remove task line from In Progress
      * Add task line to same Story section under "### To Review"
-5. **Execute first todo:** Update status to "In Progress" in Linear
-6. **Execute second todo:** Update kanban_board.md with hierarchical task movement (Epic → Story → Task preserved)
+5. **Execute first todo:** Update ONLY the selected task's status to "In Progress" in Linear
+6. **Execute second todo:** Update kanban_board.md with hierarchical task movement for ONLY the selected task (Epic → Story → Task preserved)
 
 ### Phase 3: Implementation
 
@@ -111,6 +116,11 @@ Before completing work, verify ALL checkpoints:
 - [ ] Linting: Code style compliant
 - [ ] **For test tasks:** All tests pass, test limits verified (10-28), Priority ≥15 scenarios tested
 - [ ] All quality gates that failed in review now pass
+
+**✅ CRITICAL: Single Task Update Verified:**
+- [ ] Verified via Linear: ONLY the selected task (input task ID) status was updated
+- [ ] Verified via Linear: NO other tasks in the Story were updated
+- [ ] Verified via kanban_board.md: ONLY one task line moved between sections
 
 **✅ Linear Updated:**
 - [ ] Fixes comment added to Linear:

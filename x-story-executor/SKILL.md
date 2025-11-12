@@ -76,6 +76,12 @@ Auto-discovers Team ID and project configuration from `docs/tasks/kanban_board.m
 
 ### Phase 3: Task Orchestration Loop
 
+⚠️ **DELEGATION RESPONSIBILITY:**
+- x-story-executor ONLY invokes executor skills with task ID parameter
+- x-story-executor does NOT update task status directly
+- Executor skills (x-task-executor, x-test-executor, x-task-rework) are SOLELY responsible for updating their selected task status
+- Each executor MUST update ONLY the task ID passed to it (NOT all tasks in the Story)
+
 **Orchestrate tasks in priority order:**
 
 **Priority 1: Review First (To Review → Done/Rework)**

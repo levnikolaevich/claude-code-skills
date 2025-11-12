@@ -1,5 +1,8 @@
 # Task Title
 <!-- Task Size Guideline: Optimal 3-5 hours development time (atomic, testable unit). Too small < 3h → combine with related work. Too large > 8h → decompose further. -->
+<!-- SCOPE: Implementation tasks ONLY. DO NOT create new tests in this task.
+     New tests (E2E/Integration/Unit) are created separately by x-story-finalizer after manual testing passes.
+     This task may update existing tests if implementation changes break them. -->
 
 **Epic:** [Epic N - Epic Name](link) *(optional)*
 **User Story:** [USXXX Story Name](link) *(parent task - this task will have parentId=USXXX)*
@@ -77,8 +80,16 @@
 ### Refactoring Required
 - `path/to/file` - What needs refactoring and why
 
-### Tests to Update
-- `tests/path/test_file` - Existing tests requiring updates
+### Tests to Update (ONLY Existing Tests Affected by This Task)
+**SCOPE:** ONLY list existing tests that break due to implementation changes (refactoring, logic updates).
+DO NOT create new tests here. New tests are created by x-story-finalizer after manual testing.
+
+**Examples of valid updates:**
+- Mock/stub changes when function signatures change
+- Assertion updates when return values change
+- Test data updates when validation logic changes
+
+- `tests/path/test_file` - Why this existing test needs updates
 
 ### Documentation to Update
 - `docs/file.md` - Existing docs to update
@@ -89,7 +100,8 @@
 
 - [ ] All acceptance criteria met
 - [ ] All existing code refactored (no backward compatibility / legacy code left)
-- [ ] All existing tests updated
+- [ ] All existing tests updated (if any were affected by implementation changes)
+- [ ] NO new tests created (new tests are in Story's final test task by x-story-finalizer)
 - [ ] Documentation updated
 - [ ] Code reviewed
 

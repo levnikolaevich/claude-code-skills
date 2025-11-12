@@ -179,6 +179,7 @@ Auto-discovers Team ID from `docs/tasks/kanban_board.md` and project documentati
      - Replace outdated library versions with current stable
      - Update Story Technical Notes with correct package versions
      - Update Tasks with correct import/usage examples
+     - Replace custom helpers with library built-in methods where available
      - Update Linear issues
      - Add comment: "Libraries updated to current stable versions"
 

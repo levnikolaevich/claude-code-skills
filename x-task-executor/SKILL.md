@@ -17,6 +17,12 @@ This skill should be used when executing approved implementation task (status = 
 
 **NOT for test tasks:** Use x-test-executor for Story Finalizer test tasks (11 sections with Fix Existing Tests, Infrastructure, Documentation, Legacy Cleanup)
 
+⚠️ **CRITICAL RULE - Single Task Updates:**
+- ✅ Update status for ONLY the selected task (the one passed as parameter)
+- ❌ NEVER update status for multiple tasks at once
+- ❌ NEVER update status for all Todo tasks
+- ❌ NEVER update status for all tasks in the Story
+
 ## How It Works
 
 ### Phase 1: Read Referenced Guides (Automated)
@@ -54,8 +60,8 @@ Auto-discovers project configuration:
    - If no ID → List Todo tasks and ask user to choose
 2. **Validate context:** Check dependencies, library versions, recent completed tasks
 3. **Track progress:** Create TodoWrite todos with full workflow:
-   - Update status to "In Progress" (Linear)
-   - Update kanban_board.md (Todo → In Progress):
+   - Update ONLY the selected task's status to "In Progress" (Linear via update_issue with task ID)
+   - Update kanban_board.md (Todo → In Progress) for ONLY the selected task:
      * Find Task in parent Story section under "### Todo"
      * Remove task line: `    - [LINEAR_ID: EP#_## Task Title](link)` (4-space indent)
      * Add task line to same Story section under "### In Progress"
@@ -66,8 +72,8 @@ Auto-discovers project configuration:
    - Quality gates: type checking, linting
    - Update task description with completed checkboxes (replace `- [ ]` with `- [x]`)
    - Add implementation summary comment
-   - Update status to "To Review" (Linear)
-   - Update kanban_board.md (In Progress → To Review):
+   - Update ONLY the selected task's status to "To Review" (Linear via update_issue with task ID)
+   - Update kanban_board.md (In Progress → To Review) for ONLY the selected task:
      * Find Task in parent Story section under "### In Progress"
      * Remove task line from In Progress
      * Add task line to same Story section under "### To Review"
@@ -108,10 +114,10 @@ Auto-discovers project configuration:
 **Commands:** See project documentation for specific quality commands.
 
 **Linear update:**
-1. Update task description: Replace all `- [ ]` with `- [x]` to mark checkboxes completed (via `update_issue`)
+1. Update **this task's** description: Replace all `- [ ]` with `- [x]` to mark checkboxes completed (via `update_issue`)
 2. Add summary comment: What was done, key decisions, challenges
-3. Move task: "In Progress" → "To Review"
-4. Update kanban_board.md (In Progress → To Review):
+3. Move **ONLY this task**: "In Progress" → "To Review"
+4. Update kanban_board.md (In Progress → To Review) for **ONLY this task**:
    - Find Task in parent Story section under "### In Progress"
    - Remove task line: `    - [LINEAR_ID: EP#_## Task Title](link)`
    - Add task line to same Story section under "### To Review"
@@ -154,6 +160,11 @@ Before completing work, verify ALL checkpoints:
 - [ ] STRUCTURE.md updated (if new components added)
 - [ ] ARCHITECTURE.md updated (if architectural changes)
 - [ ] tests/README.md updated (for test tasks: new test commands, setup instructions)
+
+**✅ CRITICAL: Single Task Update Verified:**
+- [ ] Verified via Linear: ONLY the selected task (input task ID) status was updated
+- [ ] Verified via Linear: NO other tasks in the Story were updated
+- [ ] Verified via kanban_board.md: ONLY one task line moved between sections
 
 **✅ Linear Updated:**
 - [ ] Task description updated: All checkboxes marked [x] (replaced `- [ ]` with `- [x]` via update_issue)

@@ -154,6 +154,12 @@ No existing tasks found. Create all tasks from Phase 2 IDEAL plan.
    - **Documentation to Update**:
      - List docs requiring updates
 
+   **CRITICAL: Tests to Update Section**
+   - ONLY list existing tests affected by refactoring/logic changes
+   - DO NOT include test creation phrases ("write tests", "add unit tests", "create E2E tests")
+   - Test creation is x-story-finalizer's responsibility after manual testing
+   - Valid updates: Mock changes, assertion fixes, test data updates
+
    **7. Definition of Done**:
    - [ ] All acceptance criteria met
    - [ ] All existing code refactored (no backward compatibility / legacy code left)
@@ -187,6 +193,23 @@ No existing tasks found. Create all tasks from Phase 2 IDEAL plan.
 
    Type "confirm" to create all tasks in Linear.
    ```
+
+2.5. **Validate No Test Creation**:
+   - Scan all generated task descriptions for test creation phrases:
+     - "write tests", "create tests", "add tests"
+     - "unit tests", "E2E tests", "integration tests" (unless prefixed with "update existing")
+   - If detected → STOP and show ERROR:
+     ```
+     ❌ ERROR: Test creation detected in task descriptions.
+     Implementation tasks MUST NOT include new test creation.
+
+     Found in: [Task ID] - "[Phrase with test creation]"
+
+     Reminder: x-story-finalizer creates all new tests after manual testing.
+
+     Please regenerate task plan without test creation.
+     ```
+   - If no test creation detected → Proceed to preview
 
 3. **User Confirmation**:
    - User reviews preview
@@ -412,8 +435,11 @@ Before completing work, verify ALL checkpoints:
 - [ ] Existing Code Impact: Refactoring + Tests + Docs to update
 - [ ] Definition of Done: Completion checklist
 
-**✅ NO Tests Included:**
-- [ ] Verified tasks contain NO test implementation (tests in Story's final test task only)
+**✅ NO Test Creation Included:**
+- [ ] Verified task descriptions contain NO new test creation
+- [ ] Verified "Tests to Update" section ONLY lists existing tests (not new test creation)
+- [ ] Verified no phrases like: "write tests", "create tests", "add unit tests", "implement E2E tests"
+- [ ] Reminder: All new tests (E2E/Integration/Unit) are in Story's final test task by x-story-finalizer
 
 **Output**: Linear Issue URLs + operation summary + next steps
 

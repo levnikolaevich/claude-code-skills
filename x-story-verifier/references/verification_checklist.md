@@ -129,10 +129,12 @@ For each Task with structure violations:
 ✅ "Follow web framework security patterns" (verified via MCP Ref)
 ❌ "Use custom token implementation" (library exists, reinventing wheel)
 ❌ "Implement custom session management" (framework has built-in)
+❌ "Implement helper for email validation when library has validator.isEmail()" (library provides method, reinventing)
+❌ "Use library 3.0.0-beta when stable 2.5.x exists" (bleeding edge, not production-ready)
 
 **Process:**
 1. Search MCP Ref for library documentation matching Story domain
-2. Verify latest stable versions for Story's technology stack
+2. Verify latest stable versions with production track record (prefer LTS, avoid bleeding edge)
 3. Check if well-known libraries solve Story goal
 4. Confirm Story architectural approach matches 2025 best practices
 5. Verify package compatibility with project framework and language version
@@ -144,6 +146,8 @@ For each Task with structure violations:
 ❌ No guide for external package in `docs/guides/`
 ❌ Tasks don't describe package usage algorithm
 ❌ Package limitations not mentioned in Technical Notes
+❌ Tasks implement custom helpers for functionality library already provides via built-in methods
+❌ Tasks use bleeding edge versions (alpha/beta/RC) instead of proven stable releases
 
 **Tools:** MCP Ref (`ref_search_documentation`), WebSearch (if needed)
 

@@ -16,33 +16,45 @@ graph TD
     RegressionPass -->|No| RegressionFail[⚠️ Regression detected<br/>Create fix task<br/>STOP Pass 1]
     RegressionPass -->|Yes| P1_Phase4
 
-    P1_Phase4[Phase 4: Manual Functional Testing<br/>curl/puppeteer test each AC<br/>Document results]
+    P1_Phase4[Phase 4: Manual Functional Testing<br/>Create scripts/tmp_[story_id].sh with variables<br/>Append curl commands, execute script<br/>Document results in Linear comment Format v1.0]
 
-    P1_Phase4 --> P1_Phase5[Phase 5: Linear Comment<br/>Format v1.0: AC + Results +<br/>Edge Cases + Errors + Integration]
+    P1_Phase4 --> P1_Phase5[Phase 5: Code Quality Analysis<br/>DRY/KISS/YAGNI violations<br/>Architecture issues]
 
-    P1_Phase5 --> P1_Phase6[Phase 6: Code Quality Analysis<br/>DRY/KISS/YAGNI violations<br/>Architecture issues]
+    P1_Phase5 --> P1_Phase6[Phase 6: Verdict and Next Steps]
 
     P1_Phase6 --> P1_Verdict{Verdict?}
     P1_Verdict -->|Path A: AC passed + no issues| CheckTestTask{Test task<br/>exists?}
     CheckTestTask -->|Yes & Done| Pass2Entry[Continue to Pass 2]
     CheckTestTask -->|Yes & NOT Done| ReportStatus[Report test task status<br/>Exit]
     CheckTestTask -->|NOT exists| InvokeFinalizer[Invoke x-story-finalizer<br/>via Skill tool]
-    InvokeFinalizer --> End
-    P1_Verdict -->|Path B: Issues found| CreateRefactoring[Create ONE refactoring task<br/>all issues together]
+
+    InvokeFinalizer --> NextSteps[Next steps:<br/>x-test-executor 6 steps<br/>x-task-reviewer<br/>Manual Pass 2 invocation]
+    NextSteps --> End
+
+    P1_Verdict -->|Path B: Issues found| CreateRefactoring[Create ONE refactoring task<br/>all issues together<br/>Cycle until clean]
 
     %% Pass 2 Path
     PassCheck -->|Pass 2| Pass2Entry
-    Pass2Entry --> P2_Phase8[Phase 8: Test Verification<br/>All tests pass 2-5 E2E 3-8 Integration<br/>5-15 Unit 10-28 total Priority ≥15<br/>NO performance/load tests<br/>Infrastructure updated]
+    Pass2Entry --> P2_Phase1[Pass 2 Phase 1: Prerequisites Check<br/>Load Story + tasks<br/>Verify test task status = Done<br/>Load test files]
 
-    P2_Phase8 --> P2_Verdict{Verdict?}
-    P2_Verdict -->|Pass| StoryDone[Mark Story Done<br/>Update kanban_board.md<br/>Cleanup Done section]
-    P2_Verdict -->|Fail| CreateFixTasks[Create fix tasks<br/>Story remains current state]
+    P2_Phase1 --> P2_PrereqCheck{Test task<br/>Done?}
+    P2_PrereqCheck -->|No| P2_Error[Error: Test task missing or NOT Done<br/>Exit]
+    P2_PrereqCheck -->|Yes| P2_Phase2
+
+    P2_Phase2[Pass 2 Phase 2: Test Verification<br/>All tests pass 2-5 E2E 3-8 Integration<br/>5-15 Unit 10-28 total Priority ≥15<br/>NO performance/load tests<br/>Infrastructure updated]
+
+    P2_Phase2 --> P2_Phase3[Pass 2 Phase 3: Verdict and Story Closure]
+
+    P2_Phase3 --> P2_Verdict{Verdict?}
+    P2_Verdict -->|Pass| StoryDone[Mark Story Done<br/>Update kanban_board.md<br/>Minimal cleanup]
+    P2_Verdict -->|Fail| CreateFixTasks[Create fix tasks<br/>Story remains current state<br/>Re-run Pass 2 after fixes]
 
     RegressionFail --> End([End])
     ReportStatus --> End
     CreateRefactoring --> End
     StoryDone --> End
     CreateFixTasks --> End
+    P2_Error --> End
 
     %% Styling
     classDef discovery fill:#E3F2FD,stroke:#1976D2,stroke-width:2px
@@ -52,7 +64,7 @@ graph TD
     classDef error fill:#FFCDD2,stroke:#C62828,stroke-width:2px
 
     class Phase1,Phase2 discovery
-    class P1_Phase3,P1_Phase4,P1_Phase5,P1_Phase6,P2_Phase8 processing
-    class PassCheck,RegressionPass,P1_Verdict,CheckTestTask,P2_Verdict decision
-    class InvokeFinalizer,StoryDone,ReportStatus action
-    class RegressionFail,CreateRefactoring,CreateFixTasks error
+    class P1_Phase3,P1_Phase4,P1_Phase5,P1_Phase6,P2_Phase1,P2_Phase2,P2_Phase3 processing
+    class PassCheck,RegressionPass,P1_Verdict,CheckTestTask,P2_PrereqCheck,P2_Verdict decision
+    class InvokeFinalizer,NextSteps,StoryDone,ReportStatus action
+    class RegressionFail,CreateRefactoring,CreateFixTasks,P2_Error error

@@ -36,21 +36,18 @@ graph TD
 
     StopCondition --> Phase4
 
-    %% Phase 4: Story Status Management
-    Phase4[Phase 4: Story Status Management]
+    %% Phase 4: Story Status & Progress (combined Phase 4 + 5)
+    Phase4[Phase 4: Story Status & Progress<br/>Update Story status<br/>Display progress report]
     Phase4 --> FirstTask{First task<br/>started?}
     FirstTask -->|Yes| UpdateStoryStatus[Update Story:<br/>Todo → In Progress<br/>Comment: Story execution started<br/>Update kanban_board.md]
     UpdateStoryStatus --> CheckAllDone
     FirstTask -->|No| CheckAllDone
 
     CheckAllDone{All tasks<br/>Done?}
-    CheckAllDone -->|Yes| RecommendReviewer[Add comment:<br/>All tasks Done<br/>Ready for x-story-reviewer Pass 1<br/>❌ Do NOT invoke automatically]
-    CheckAllDone -->|No| Phase5
-    RecommendReviewer --> Phase5
-
-    %% Phase 5: Progress Reporting
-    Phase5[Phase 5: Progress Reporting<br/>Display task summary<br/>Report completion status]
-    Phase5 --> End([End])
+    CheckAllDone -->|Yes| RecommendReviewer[Add comment:<br/>All tasks Done<br/>Ready for x-story-reviewer Pass 1<br/>❌ Do NOT invoke automatically<br/>Display final report]
+    CheckAllDone -->|No| ProgressReport[Display progress summary<br/>Tasks remaining status]
+    RecommendReviewer --> End([End])
+    ProgressReport --> End
 
     %% Styling
     classDef discovery fill:#E3F2FD,stroke:#1976D2,stroke-width:2px
@@ -62,7 +59,7 @@ graph TD
     class Phase1,Phase2 discovery
     class Phase3,InvokeReviewer,InvokeRework,InvokeExecutor,ReloadAfterReview,ReloadAfterRework,ReloadAfterExec loop
     class Priority1,Priority2,Priority3,KanbanCheck,FirstTask,CheckAllDone decision
-    class UpdateStoryStatus,RecommendReviewer action
+    class Phase4,UpdateStoryStatus,RecommendReviewer,ProgressReport action
     class StopCondition critical
 
     %% Notes

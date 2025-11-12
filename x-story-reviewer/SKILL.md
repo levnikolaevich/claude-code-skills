@@ -7,19 +7,30 @@ description: Review completed User Stories through manual functional testing. Pa
 
 Review completed User Stories through manual functional testing and code quality analysis.
 
-**Two passes:**
-- **Pass 1:** After impl tasks Done → Manual testing + create test/refactoring task
-- **Pass 2:** After test task Done → Verify tests + Story Done
+## Overview
 
-## When to Use This Skill
+### Two-Pass Approach
 
-**Pass 1:** All implementation tasks Done, NO test task yet
-- Trigger: Implementation tasks status = Done, test task does not exist
+**Pass 1: After Implementation Tasks Done**
+- Manual functional testing against Story AC
+- Code quality analysis (DRY/KISS/YAGNI)
+- Create test task (via x-story-finalizer) OR refactoring task
 
-**Pass 2:** Test task Done (manually invoked by user)
-- Trigger: Test task status = Done
+**Pass 2: After Test Task Done**
+- Verify tests cover all Priority ≥15 scenarios
+- Check test limits (10-28 total: 2-5 E2E, 3-8 Integration, 5-15 Unit)
+- Mark Story as Done
 
-## Why Story Review is Needed
+### When to Use This Skill
+
+**Pass 1 Trigger:**
+- All implementation tasks status = Done
+- Test task does NOT exist OR test task NOT Done
+
+**Pass 2 Trigger:**
+- Test task status = Done (manual invocation by user)
+
+### Why Story Review is Needed
 
 **Philosophy:** Test REAL working code, not plans.
 
@@ -35,34 +46,40 @@ Review completed User Stories through manual functional testing and code quality
 - Check Priority ≥15 scenarios tested and test limits (10-28 total)
 - Final approval before Story Done
 
-### Complete Workflow (Both Passes)
-
-**Pass 1 → Test Task Creation → Test Task Execution → Pass 2:**
+### Complete Workflow
 
 ```
 Implementation Tasks (Done)
          ↓
-x-story-reviewer Pass 1 (manual functional testing)
+x-story-reviewer Pass 1 (manual functional testing + code analysis)
+         ↓
+    [Path A: No issues]
          ↓
 x-story-finalizer (creates test task with 11 sections)
          ↓
-x-test-executor (executes test task: Fix Tests + New Tests + Infrastructure + Documentation + Legacy Cleanup)
+x-test-executor (Fix Tests → New Tests → Infrastructure → Docs → Cleanup)
          ↓
 x-task-reviewer (reviews test task)
          ↓
 Test task Done
          ↓
-x-story-reviewer Pass 2 (manual invocation → verify tests → Story Done)
+x-story-reviewer Pass 2 (verify tests → Story Done)
+
+    [Path B: Issues found]
+         ↓
+Create refactoring task → Execute → x-story-reviewer Pass 1 again
 ```
 
 **Critical:** Pass 2 can ONLY be invoked after test task status = Done.
 
-## How It Works
+---
 
-### Phase 1: Discovery (Automated)
+## Pass 1 Workflow
+
+### Phase 1: Discovery
 
 Auto-discovers project configuration:
-- **Team ID:** Reads `docs/tasks/readme.md`, `docs/tasks/kanban_board.md`, `docs/core/Setup.md`  → Linear Configuration (not `gh` command and NOT Github Issues)
+- **Team ID:** Reads `docs/tasks/readme.md`, `docs/tasks/kanban_board.md`, `docs/core/Setup.md` → Linear Configuration (not `gh` command and NOT Github Issues)
 - **Project Docs:** Reads `CLAUDE.md` → Links to `docs/core/`, `docs/guides/`
 - **Tracker:** Linear MCP integration
 
@@ -90,21 +107,26 @@ Auto-discovers project configuration:
 
 **Verify existing tests still pass (no regression):**
 
-1. **Read test documentation:**
-   - Check if `tests/README.md` exists
-   - If exists → Read test commands (npm test / pytest / go test / etc.)
-   - Understand test structure and setup requirements
+0. **Verify containers have latest code:**
+   - Read tests/README.md → identify test requirements
+   - Find and read docker-compose*.yml files → understand container structure
+   - Check freshness: `docker compose ps`, `docker inspect` timestamp vs `git log` in modified files
+   - If outdated/stopped → `docker compose -f <file> up --build -d` → verify services Up
+   - If fresh → continue
 
-2. **Run ALL existing project tests:**
-   - Execute test command from tests/README.md (or standard for tech stack)
-   - Capture full output (stdout + stderr)
+**Purpose:** Prevent testing stale code
 
-3. **Verify zero failures:**
+1. **Run regression tests:**
+   - Test setup already loaded (Step 0)
+   - Containers already fresh (Step 0)
+   - Execute test command → Capture full output (stdout + stderr)
+
+2. **Verify zero failures:**
    - ✅ **Expected:** All existing tests pass (0 failures)
    - ❌ **Regression detected:** Any test failures
    - Parse output for: total tests, passed, failed, skipped
 
-4. **Handle regression:**
+3. **Handle regression:**
    - If failures detected:
      * Document failed tests (test names, error messages)
      * Add comment to Story: "⚠️ Regression detected in existing tests. Implementation tasks broke X existing tests. Must fix before proceeding."
@@ -119,15 +141,32 @@ Auto-discovers project configuration:
 
 **Test real functionality against Story AC:**
 
-1. **Find application port:**
-   - Check running services: `docker-compose ps` or `ps aux | grep -E '(python|node|java)'`
-   - Identify port from output (e.g., `0.0.0.0:8000->8000/tcp` → port 8000)
-   - Extract endpoints from impl tasks (API routes added in Story)
-   - If not running: ask user to start application first
+**Steps:**
+
+0. **Setup test script (first run only):**
+   - Create `scripts/tmp_[story_id].sh`:
+     ```bash
+     #!/bin/bash
+     # Variables
+     BASE_URL="http://localhost:PORT"
+     TOKEN="Bearer xxx"
+
+     # Tests (curl commands below)
+     ```
+   - `chmod +x scripts/tmp_[story_id].sh`
+   - If exists → reuse (from previous Pass 1 after refactoring)
+
+1. **Find endpoints:**
+   - Containers already running (Phase 3 Step 0)
+   - Extract port from docker-compose ps
+   - Extract API routes from impl tasks
+   - Update BASE_URL in script with actual port
 
 2. **Test each Story AC (Given-When-Then):**
-   - **For API:** Use curl/httpie via Bash tool
-     * Example: `curl -X POST http://localhost:8000/api/endpoint -d '{"key":"value"}'`
+   - **For API:** Append curl commands to `scripts/tmp_[story_id].sh`
+     * Example: `curl -H "Authorization: $TOKEN" $BASE_URL/api/users`
+     * Execute: `./scripts/tmp_[story_id].sh`
+     * **If bugs found:** Append new curl commands, re-run script
      * Verify response status, body, headers
    - **For UI:** Use puppeteer MCP
      * Navigate to pages, click elements, verify text/state
@@ -157,7 +196,7 @@ Auto-discovers project configuration:
    - **Use emoji status indicators** (✅ PASS, ❌ FAIL, ⚠️ Not tested)
    - This structured comment will be parsed by x-story-finalizer for E2E-first test design
 
-### Phase 5: Comment Format Reference
+**Comment Format Reference:**
 
 **Template Location:** `references/manual_testing_comment_template.md`
 
@@ -185,7 +224,7 @@ Auto-discovers project configuration:
 - [ ] Integration flow validated
 - [ ] Summary with recommendation
 
-### Phase 6: Code Quality Analysis (Pass 1 only)
+### Phase 5: Code Quality Analysis
 
 **Scan for issues (DRY/KISS/YAGNI at Story level):**
 
@@ -214,97 +253,106 @@ Auto-discovers project configuration:
 
 **Collect ALL issues into single list for refactoring task.**
 
-### Phase 7: Pass 1 Verdict
+### Phase 6: Verdict and Next Steps
 
-**Determine path based on Phase 4-6 results:**
+**Determine path based on Phase 4-5 results:**
 
-**Path A: Functional Testing PASSED + No Code Quality Issues**
+#### Path A: All Tests Passed + No Code Quality Issues
 
-1. **Criteria:**
-   - All Story AC work correctly ✓ (manual testing passed)
-   - No DRY/KISS/YAGNI violations ✓
-   - Architecture clean ✓
-   - Integration between tasks works ✓
+**Criteria:**
+- All Story AC work correctly ✓ (manual testing passed)
+- No DRY/KISS/YAGNI violations ✓
+- Architecture clean ✓
+- Integration between tasks works ✓
 
-2. **Check for existing test task:**
+**Actions:**
+
+1. **Check for existing test task:**
    - Load all Story tasks (via parentId = Story.id)
    - Search for task with label "tests"
    - **If test task exists:**
      * Check test task status:
-       - **Done** → Skip to Pass 2 (Phase 8: Test Verification)
+       - **Done** → Skip to Pass 2 (see Pass 2 Workflow)
        - **In Progress / To Review / Todo** → Report to user: "Test task [TASK-ID] already exists (status: [STATUS]). Wait for completion before running x-story-reviewer again."
        - **Exit:** Do NOT create new test task
-   - **If test task does NOT exist:** Proceed to step 3
+   - **If test task does NOT exist:** Proceed to step 2
 
-3. **Actions (ONLY if no test task exists):**
-   - Add Linear comment with review summary: "✅ All AC passed, no code quality issues"
-   - **Recommendation:** Use Skill tool to invoke x-story-finalizer (command: "x-story-finalizer") to create test task
-   - x-story-finalizer reads manual test results from Linear comment (Phase 4 step 4)
-   - x-story-finalizer creates test task with E2E (based on manual tests) → Unit → Integration
-   - After x-story-finalizer completes, kanban_board.md automatically updated:
-     * New test task added to Story section in current status (usually "### Backlog" or "### Todo")
-     * Task format: `    - [LINEAR_ID: EP#_## Test Task Title](link)` (4-space indent)
-     * Epic header and Story structure preserved
-   - Story remains in current state until test task Done
+2. **Create test task (ONLY if no test task exists):**
+   - Add Linear comment: "✅ All AC passed, no code quality issues"
+   - **AUTOMATIC invocation (no user confirmation):** Invoke x-story-finalizer (Skill tool) → WAIT completion → test task created
+   - Story remains current state until test task Done
 
-**Path B: Issues Found**
+3. **Next steps after x-story-finalizer completes:**
+   - Test task created in Linear and kanban_board.md
+   - Execute test task via x-test-executor (6 steps):
+     * Step 1: Fix Existing Tests (Section 8)
+     * Step 2: Implement New Tests E2E→Integration→Unit (Sections 3-5, Priority ≥15)
+     * Step 3: Update Infrastructure (Section 9: package.json, Dockerfile, compose)
+     * Step 4: Update Documentation (Section 10: tests/README.md, CHANGELOG.md)
+     * Step 5: Cleanup Legacy Code (Section 11: workarounds, backward compat)
+     * Step 6: Final Verification (all tests pass, 10-28 total)
+   - Review test task via x-task-reviewer
+   - When test task Done → Run x-story-reviewer Pass 2 (manual invocation)
 
-1. **Criteria:**
-   - Functional bugs (AC failed during manual testing) OR
-   - Code quality issues (DRY/KISS/YAGNI/Architecture violations)
+#### Path B: Issues Found
 
-2. **Actions:**
-   - Create ONE refactoring task (all issues in single task)
+**Criteria:**
+- Functional bugs (AC failed during manual testing) OR
+- Code quality issues (DRY/KISS/YAGNI/Architecture violations)
+
+**Actions:**
+
+1. **Create ONE refactoring task (all issues in single task):**
    - Use refactoring_task_template.md from references/
    - Generate task with:
-     * Context: All problems from Phase 6 analysis
+     * Context: All problems from Phase 5 analysis
      * Refactoring Goal: Fix all issues
      * Technical Approach: Step-by-step fix plan
      * AC: All issues resolved
-     * Affected Components: From Phase 6 analysis
+     * Affected Components: From Phase 5 analysis
      * Existing Code Impact: Tests to update, docs to update
    - Create Linear Issue (parentId = Story, status = Todo)
-   - Story remains in current state until refactoring task Done
-   - After refactoring Done → run x-story-reviewer again (cycle)
+
+2. **Story remains in current state** until refactoring task Done
+
+3. **After refactoring Done:** Run x-story-reviewer Pass 1 again
+   - **Reuse test script:** `./scripts/tmp_[story_id].sh` to verify fixes
+   - Cycle until clean
 
 ---
 
-## Between Pass 1 and Pass 2: Test Task Execution Workflow
+## Pass 2 Workflow
 
-**After x-story-finalizer creates test task, the following workflow must complete before Pass 2:**
+### Phase 1: Prerequisites Check
 
-### 1. Execute Test Task (x-test-executor)
+**Verify Pass 2 can proceed:**
 
-- **x-test-executor** handles Story Finalizer test tasks with 11 sections
-- Implements 6 steps from Story Finalizer Task:
-  * **Step 1:** Fix Existing Tests (Section 8)
-  * **Step 2:** Implement New Tests E2E→Integration→Unit (Sections 3-5, Priority ≥15)
-  * **Step 3:** Update Infrastructure (Section 9: package.json, Dockerfile, compose)
-  * **Step 4:** Update Documentation (Section 10: tests/README.md, CHANGELOG.md)
-  * **Step 5:** Cleanup Legacy Code (Section 11: workarounds, backward compat)
-  * **Step 6:** Final Verification (all tests pass, 10-28 total)
-- Test task transitions: **Todo → In Progress → To Review**
+**Steps:**
 
-### 2. Review Test Task (x-task-reviewer)
+1. **Load Story and all tasks:**
+   - Read Story description
+   - Load all child tasks via parentId = Story.id
+   - Identify test task (label "tests")
 
-- Verifies test implementation quality
-- Checks test limits (2-5 E2E, 3-8 Integration, 5-15 Unit, 10-28 total)
-- Verifies Priority ≥15 scenarios covered
-- Test task transitions: **To Review → Done** (or To Rework if issues)
+2. **Verify test task status:**
+   - **If test task missing:**
+     * Error: "Test task does not exist for this Story. Run Pass 1 first."
+     * Exit without proceeding
+   - **If test task status NOT Done:**
+     * Error: "Test task status is [STATUS]. Wait for test task to complete before Pass 2."
+     * Exit without proceeding
+   - **If test task status = Done:**
+     * Proceed to Phase 2
 
-### 3. Trigger Pass 2 Manually
+3. **Load test files:**
+   - Identify test files from test task description (Sections 3-5: E2E, Integration, Unit)
+   - Load infrastructure files (package.json, Dockerfile, compose, tests/README.md)
 
-- **After test task status = Done**
-- User manually invokes x-story-reviewer again
-- Pass 2 performs final Story verification and closes Story → Done
+### Phase 2: Test Verification
 
-**Note:** x-test-executor is THE recommended tool for Story Finalizer test tasks because it includes sections 8-11 (Existing Tests Fix, Infrastructure, Documentation, Legacy Cleanup). x-task-executor is ONLY for implementation tasks.
+**Verify tests cover functionality and meet quality standards:**
 
----
-
-### Phase 8: Pass 2 Test Verification
-
-**After test task Done, verify tests cover functionality:**
+**Steps:**
 
 1. **All tests pass:**
    - Run all Story tests: E2E (2-5) + Integration (3-8) + Unit (5-15)
@@ -312,7 +360,9 @@ Auto-discovers project configuration:
    - Verify total tests 10-28 (within enforced limit per `x-story-finalizer/references/risk_based_testing_guide.md`)
 
 2. **All Priority ≥15 scenarios tested:**
-   - Verify all critical scenarios (money, security, core flows) from manual testing have tests
+   - Load manual testing comment from Pass 1 (Format v1.0)
+   - Extract Priority ≥15 scenarios (money, security, core flows)
+   - Verify all critical scenarios from manual testing have automated tests
    - Check Priority scores in test task Risk Priority Matrix
    - Confirm no Priority ≥15 scenario skipped
 
@@ -327,72 +377,56 @@ Auto-discovers project configuration:
    - No duplicate test coverage (each test adds unique value)
    - Trivial code skipped (simple CRUD, getters/setters)
 
-6. **Infrastructure updated:**
+5. **Infrastructure updated:**
    - Package files updated (package.json, requirements.txt)
    - Dockerfile/docker-compose updated if needed
    - README.md updated with setup
-   - tests/README.md updated
+   - tests/README.md updated with test commands
 
-**Verdict:**
+### Phase 3: Verdict and Story Closure
 
-- **All checks pass:**
-  * Mark Story as Done in Linear
-  * Add review summary comment
-  * kanban_board.md updates (minimal cleanup):
-    - Story header already in "### Done (Last 5 tasks)" section (tasks were moved there by x-task-reviewer)
-    - If Story header still exists in "### In Progress" (without tasks): remove it
-    - Epic header preserved in Done section with Story and all Done tasks
-    - No additional movement needed (tasks already moved by x-task-reviewer)
-- **Issues found:**
-  * Create fix tasks
-  * Story remains current state
-  * kanban_board.md unchanged
+**Apply final verdict:**
 
-**After fix tasks Done:** Re-run x-story-reviewer
+#### Verdict: Pass (All Checks Passed)
 
-## Pass 1 Checklist (Manual Testing)
+**Actions:**
 
-**Manual Functional Testing:**
-- [ ] All Story AC tested manually (API via curl or UI via puppeteer)
-- [ ] Main Scenarios: PASS/FAIL documented
-- [ ] Edge Cases: Discovered and documented
-- [ ] Error Handling: Verified and documented
-- [ ] Integration: Impl tasks work together
-- [ ] Test results added to Linear comment
+1. **Update Linear:**
+   - Mark Story status as "Done"
+   - Add review summary comment with verification results
 
-**Code Quality Analysis:**
-- [ ] No DRY violations (code duplication)
-- [ ] No KISS violations (over-engineering)
-- [ ] No YAGNI violations (unused features)
-- [ ] No architecture issues (layer violations)
-- [ ] Guides followed correctly
+2. **Update kanban_board.md (minimal cleanup):**
+   - Story header already in "### Done (Last 5 tasks)" section (tasks were moved there by x-task-reviewer)
+   - If Story header still exists in "### In Progress" (without tasks): remove it
+   - Epic header preserved in Done section with Story and all Done tasks
+   - No additional movement needed (tasks already moved by x-task-reviewer)
 
-**Pass → Path A:** Recommend x-story-finalizer to user
-**Fail → Path B:** Create refactoring task
+#### Verdict: Fail (Issues Found)
 
-## Pass 2 Checklist (Test Verification)
+**Actions:**
 
-**After test task Done:**
-- [ ] All tests pass (E2E 2-5, Integration 3-8, Unit 5-15, total 10-28)
-- [ ] All Priority ≥15 scenarios tested
-- [ ] E2E cover all Story AC (Priority ≥15)
-- [ ] Tests focus on business logic
-- [ ] No test duplication (each test adds unique value)
-- [ ] Trivial code skipped (CRUD, framework, getters/setters)
-- [ ] Infrastructure updated
+1. **Create fix tasks:**
+   - Document all issues found
+   - Create tasks for each category of issues (tests, infrastructure, etc.)
+   - Parent tasks to Story
 
-**Pass:** Story Done
-**Fail:** Create fix tasks
+2. **Story remains current state**
 
-**Reference:** See `references/story_review_checklist.md` for detailed checklist.
+3. **kanban_board.md unchanged**
+
+4. **After fix tasks Done:** Re-run x-story-reviewer Pass 2
 
 ---
 
-## Definition of Done
+## Reference
 
-Before completing work, verify ALL checkpoints depending on Pass:
+### Pass 1 Definition of Done
 
-### Pass 1 DoD (After Implementation Tasks Done)
+**✅ Containers Verified (Phase 3 Step 0):**
+- [ ] tests/README.md + docker-compose*.yml read
+- [ ] Container freshness checked (docker inspect vs git log)
+- [ ] Rebuilt if outdated: docker-compose up --build -d
+- [ ] Services verified Up
 
 **✅ Regression Check Complete (Phase 3):**
 - [ ] tests/README.md read (if exists) - test commands identified
@@ -403,9 +437,11 @@ Before completing work, verify ALL checkpoints depending on Pass:
   - ❌ Failures detected → Regression comment added to Story, fix task created, Pass 1 stopped
 
 **✅ Manual Functional Testing Complete (Phase 4):**
-- [ ] Application port identified (via docker-compose ps or ps aux)
+- [ ] Temporary test script `scripts/tmp_[story_id].sh` created with shebang + variables
+- [ ] Script executable (`chmod +x`)
+- [ ] Endpoints identified (port from docker-compose ps, routes from impl tasks)
 - [ ] All Story AC tested using:
-  - API: curl commands
+  - API: curl commands (appended to script, executed via `./scripts/tmp_[story_id].sh`)
   - UI: Puppeteer automated browser testing
 - [ ] Test results documented for each AC (PASS/FAIL with evidence)
 - [ ] Edge cases discovered and documented
@@ -432,20 +468,17 @@ Before completing work, verify ALL checkpoints depending on Pass:
 - [ ] Searched for task with label "tests"
 - [ ] **If test task EXISTS:**
   - Test task status checked (Done / In Progress / To Review / Todo)
-  - **If Done:** Skipped to Pass 2 (Phase 8: Test Verification)
+  - **If Done:** Skipped to Pass 2 (see Pass 2 Workflow)
   - **If NOT Done:** Reported to user with current status, exited without creating new task
 - [ ] **If test task does NOT exist:** Proceeded to x-story-finalizer invocation
 
 **✅ Verdict Determined (Pass 1):**
 - [ ] **Path A** (All AC PASSED + no issues):
-  - x-story-finalizer invoked via Skill tool (ONLY if no test task exists)
-  - After x-story-finalizer completes: kanban_board.md automatically updated with new test task
-  - Test task added to Story section in current status (usually "### Backlog" or "### Todo")
-  - Task format preserved: `    - [LINEAR_ID: EP#_## Test Task Title](link)` (4-space indent)
-  - Epic header and Story structure preserved
+  - x-story-finalizer invoked AUTOMATICALLY (no user confirmation, ONLY if no test task exists)
+  - After completion: test task created in kanban_board.md
 - [ ] **Path B** (Issues found): ONE refactoring task created (all issues together)
 
-### Pass 2 DoD (After Test Task Done)
+### Pass 2 Definition of Done
 
 **✅ Test Verification Complete:**
 - [ ] All tests pass (E2E 2-5, Integration 3-8, Unit 5-15, total 10-28)
@@ -470,13 +503,26 @@ Before completing work, verify ALL checkpoints depending on Pass:
     * Epic header preserved in Done section with Story and all Done tasks
 - [ ] **Fail:** Fix tasks created, Story remains current status, kanban_board.md unchanged
 
-**Output:**
-- Pass 1: Test task created (via x-story-finalizer) OR Refactoring task created
-- Pass 2: Story marked Done OR Fix tasks created
+### Best Practices
 
----
+1. **Pass 1: Test real functionality** - Use curl/puppeteer, not code review alone
+2. **Document all findings** - Add Linear comment with manual test results (Format v1.0)
+3. **Collect ALL issues** - Single refactoring task, not multiple
+4. **E2E first** - Use Skill tool to invoke x-story-finalizer, which builds tests from manual testing (Risk-Based Testing)
+5. **Pass 2: Verify Priority ≥15 scenarios** - Tests must cover critical paths (money, security, core flows)
+6. **Refactoring cycle** - x-story-reviewer → refactor → x-story-reviewer until clean
 
-## Example Usage
+### Comparison with Other Reviews
+
+| Aspect | x-story-verifier | x-task-reviewer | x-story-reviewer Pass 1 | x-story-reviewer Pass 2 |
+|--------|-------------------|-----------------|-------------------------|-------------------------|
+| **When** | BEFORE work | AFTER each task | AFTER impl tasks | AFTER test task |
+| **Scope** | Story structure | Single task | Entire Story | Tests |
+| **Checks** | Plan validity | Task code | Manual testing + code quality | Priority ≥15 scenarios + test limits |
+| **Can fail** | Yes → Backlog | Yes → To Rework | Yes → refactoring task | Yes → fix tasks |
+| **Output** | Story → Todo | Task → Done/Rework | test task OR refactoring task | Story → Done |
+
+### Example Usage
 
 **Pass 1 (after impl tasks Done):**
 ```
@@ -490,26 +536,7 @@ Review Story US004
 ```
 → Verify tests → Story Done
 
-## Best Practices
-
-1. **Pass 1: Test real functionality** - Use curl/puppeteer, not code review alone
-2. **Document all findings** - Add Linear comment with manual test results (Format v1.0 with Risk Assessment)
-3. **Collect ALL issues** - Single refactoring task, not multiple
-4. **E2E first** - Use Skill tool to invoke x-story-finalizer, which builds tests from manual testing (Risk-Based Testing)
-5. **Pass 2: Verify Priority ≥15 scenarios** - Tests must cover critical paths (money, security, core flows)
-6. **Refactoring cycle** - x-story-reviewer → refactor → x-story-reviewer until clean
-
-## Comparison with Other Reviews
-
-| Aspect | x-story-verifier | x-task-reviewer | x-story-reviewer Pass 1 | x-story-reviewer Pass 2 |
-|--------|-------------------|-------------|---------------------|---------------------|
-| **When** | BEFORE work | AFTER each task | AFTER impl tasks | AFTER test task |
-| **Scope** | Story structure | Single task | Entire Story | Tests |
-| **Checks** | Plan validity | Task code | Manual testing + code quality | Priority ≥15 scenarios + test limits |
-| **Can fail** | Yes → Backlog | Yes → To Rework | Yes → refactoring task | Yes → fix tasks |
-| **Output** | Story → Todo | Task → Done/Rework | test task OR refactoring task | Story → Done |
-
 ---
 
-**Version:** 3.5.0 (Added Phase 3: Regression Check)
-**Last Updated:** 2025-11-09
+**Version:** 4.0.0 (Restructured for clarity and removed duplication)
+**Last Updated:** 2025-11-12

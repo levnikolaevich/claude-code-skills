@@ -108,7 +108,7 @@ Standard colors across all diagrams:
 9. `x-story-finalizer/` - Create final Story task after manual testing passes. Invoked by x-story-reviewer Pass 1. Generates comprehensive task with 11 sections: tests (E2E-first Risk-Based), existing test fixes, infrastructure updates, documentation updates, legacy code cleanup (NO dialog). **Excludes performance/load testing** (see x-story-finalizer/references/risk_based_testing_guide.md)
 
 **Execution:**
-10. `x-story-executor/` - Orchestrate Story execution (Todo/In Progress → ready for x-story-reviewer). Prioritizes To Review → To Rework → Todo. Invokes x-task-reviewer, x-task-rework, x-task-executor, x-test-executor. Loads task metadata only, delegates full loading to executors/reviewers. (v2.2.0)
+10. `x-story-executor/` - Orchestrate Story execution (Todo/In Progress → ready for x-story-reviewer). Prioritizes To Review → To Rework → Todo. Invokes x-task-reviewer, x-task-rework, x-task-executor, x-test-executor. Loads task metadata only, delegates full loading to executors/reviewers. (v3.0.0)
 11. `x-task-executor/` - ⚙️ Execute implementation tasks ONLY (Todo → In Progress → To Review). KISS/YAGNI principles. Reads guide links from Task Technical Approach. NOT for test tasks. Chat output prefix: ⚙️ [EXECUTOR]. (v8.0.0)
 12. `x-test-executor/` - ⚙️ Execute Story Finalizer test tasks from x-story-finalizer (Todo → In Progress → To Review). E2E-first Risk-Based Testing (2-5 E2E, 3-8 Integration, 5-15 Unit, 10-28 total, Priority ≥15). Includes Fix Existing Tests (Section 8), Infrastructure Updates (Section 9), Documentation Updates (Section 10), Legacy Code Cleanup (Section 11). **USE THIS for test tasks from x-story-finalizer.** Chat output prefix: ⚙️ [EXECUTOR]. (v4.0.0)
 13. `x-task-reviewer/` - 🔍 Review tasks (To Review → Done/Rework) distinguishing test/implementation. Chat output prefix: 🔍 [REVIEWER]. (v7.1.0)
@@ -116,7 +116,7 @@ Standard colors across all diagrams:
 
 **Validation:**
 15. `x-story-verifier/` - **Auto-fix and approve** Stories (8 sections) and their Tasks (7 sections) against industry standards and best practices before approval (Backlog → Todo). **ALWAYS auto-fixes all 15 verification criteria** (including Industry Standards Compliance) - no "Needs Work" path exists. Checks RFC/protocol compliance BEFORE applying KISS/YAGNI. Sequential task validation (loads metadata first, then full descriptions one by one). Auto-creates guides and inserts links in Story Technical Notes. Displays summary table (Story + Tasks + guides + warnings). (v9.1.0)
-16. `x-story-reviewer/` - Two-pass review: Pass 1 (After impl tasks Done) → Manual testing + create test/refactoring task. Pass 2 (After test task Done) → Verify tests + Story Done
+16. `x-story-reviewer/` - Two-pass review: Pass 1 (6 phases: Regression check → Manual testing → Code quality → Verdict) → Create test/refactoring task. Pass 2 (3 phases: Prerequisites → Test verification → Verdict) → Story Done. (v4.0.0)
 
 **Documentation:**
 17. `x-guide-creator/` - **Research and create** minimal project guides (6 sections, 300-500 words). AUTO-RESEARCH via MCP Ref/Context7. NO ADR concepts. Returns guide path for linking. (v4.0.0 minimal format)
@@ -511,6 +511,13 @@ x-story-verifier checks compliance with Story and Task templates, and automatica
 - Skip trivial code: Simple CRUD, framework code, getters/setters already covered by E2E
 - **Performance/load testing:** Excluded from automated testing (requires dedicated infrastructure/tools)
 - **Full methodology:** See x-story-finalizer/references/risk_based_testing_guide.md
+
+**Temporary Manual Testing Scripts:**
+- **Location:** `scripts/tmp_[story_id].sh` (executable bash script)
+- **Format:** Shebang + variables (BASE_URL, TOKEN) + curl commands or test logic
+- **Created:** x-story-reviewer Pass 1 Phase 4
+- **Purpose:** Reusable testing - re-run after refactoring instead of typing commands again
+- **Deleted:** x-test-executor Step 6 (after E2E/Integration/Unit tests implemented)
 
 **Documentation:**
 - Documentation is ALWAYS integrated in the same task (NOT separate tasks)

@@ -65,29 +65,17 @@ The skill follows a 3-phase orchestration workflow:
 
 **Output**: Complete markdown documentation suite in `docs/project/`
 
+**After x-docs-creator completes:** Verify output exists → Phase 3 AUTOMATIC (no user input).
+
 ---
 
 ### Phase 3: Create HTML Presentation (Optional)
 
 **Objective**: If user approved HTML in Phase 1, invoke x-html-builder skill.
 
-**Process**:
-1. If user chose "yes" for HTML:
-   - Notify user: "Invoking x-html-builder skill..."
-   - Use **Skill tool** to invoke:
-     ```
-     command: "x-html-builder"
-     ```
-   - Wait for x-html-builder to complete all 3 phases:
-     - Phase 1: Read Documentation
-     - Phase 2: Create Modular HTML Structure
-     - Phase 3: Build Final Presentation
-   - Verify output exists:
-     - `docs/project/presentation_final.html`
-     - `docs/project/assets/` directory
-2. If user chose "no":
-   - Skip HTML generation
-   - Notify user: "Skipped HTML presentation (can run x-html-builder later)"
+**AUTOMATIC (no user input):**
+- If user chose "yes" → invoke x-html-builder → WAIT completion → verify output (`presentation_final.html` + `assets/`)
+- If "no" → skip (can run x-html-builder later) → Phase 4 immediately
 
 **Output**: Interactive HTML presentation (if enabled)
 

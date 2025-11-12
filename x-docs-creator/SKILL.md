@@ -175,7 +175,7 @@ The skill follows a 5-phase intelligent workflow combining template copying, aut
 
 ---
 
-### Phase 8: Summary and Next Steps
+### Phase 11: Summary and Next Steps
 
 **Objective**: Provide user with complete overview and next steps.
 
@@ -188,7 +188,6 @@ The skill follows a 5-phase intelligent workflow combining template copying, aut
    - `docs/project/adrs/adr-001-*.md` (3-5 files)
 
 2. Recommend next steps:
-   - **"Run x-html-builder skill"** to create interactive HTML presentation (optional)
    - "Review generated documentation"
    - "Run epic-creator to decompose scope into Epics"
    - "Share documentation with technical stakeholders"
@@ -223,6 +222,19 @@ The skill follows a 5-phase intelligent workflow combining template copying, aut
    - Notify user: "Skipped kanban_board.md (can create manually later from template)"
 
 **Output**: `docs/tasks/kanban_board.md` with Linear configuration (if enabled)
+
+---
+
+### Phase 10: Generate HTML Presentation (Optional)
+
+**Objective**: Invoke x-html-builder skill to create interactive HTML.
+
+**Process:**
+Ask user: "Generate interactive HTML presentation? (yes/no)"
+- **If yes:** Invoke x-html-builder → WAIT completion → verify output (`presentation_final.html` + `assets/`)
+- **If no:** Skip (can run x-html-builder later)
+
+**Output**: Interactive HTML presentation (if enabled)
 
 ---
 

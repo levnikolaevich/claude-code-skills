@@ -31,55 +31,64 @@
             <h3>📋 Overview</h3>
             <ul>
                 <li><strong>Purpose:</strong> Auto-fix and approve Stories (8 sections) and Tasks (7 sections) against industry standards</li>
-                <li><strong>Verdict:</strong> ALWAYS approves after auto-fixing ALL 15 verification criteria (no "Needs Work" path)</li>
+                <li><strong>Verdict:</strong> ALWAYS approves after auto-fixing ALL 16 verification criteria (no "Needs Work" path)</li>
                 <li><strong>State Transition:</strong> Backlog → Todo (Story + ALL Tasks)</li>
+                <li><strong>Structure:</strong> 4 phases (Discovery & Loading → Critical Review → Auto-Fix Groups A/B/C/D → Approve & Notify)</li>
             </ul>
         </div>
         <div class="diagram-container">
             <div class="mermaid">
 graph TD
-    Start([Start: Verify Story]) --> Phase1[Phase 1: Discovery<br/>Team ID + project docs]
-    Phase1 --> Phase2[Phase 2: Story + Tasks Overview<br/>Load metadata NO descriptions]
-    Phase2 --> Phase3[Phase 3: Standards Review]
-    subgraph Standards [Standards Compliance - Priority 1]
-        S1[Check industry standards<br/>OAuth 2.0 REST RFCs]
-        S1 --> S2[Challenge approach<br/>Research best practices]
+    Start([Start: Verify Story]) --> Phase1[Phase 1: Discovery & Loading<br/>Team ID + project docs<br/>Load Story FULL + Tasks metadata<br/>Validate task breakdown 3-8 tasks]
+
+    Phase1 --> Phase2[Phase 2: Critical Solution Review<br/>Standards Hierarchy PRIORITY 1-4]
+
+    subgraph Standards [Standards Compliance & Solution Review]
+        S1[Check industry standards FIRST<br/>OAuth 2.0 REST OpenAPI RFCs<br/>PRIORITY 1]
+        S1 --> S2[Challenge approach<br/>Best way in 2025?<br/>Research best practices]
         S2 --> S3{Guide exists<br/>in docs/guides/?}
 
         S3 -->|YES| S4[Reference existing guide]
         S3 -->|NO| S5{Pattern type?}
 
         S5 -->|Architectural<br/>reusable| S6[Auto-create guide<br/>via x-guide-creator<br/>MCP Ref + Context7]
-        S5 -->|Technical<br/>one-off| S7[Recommend ADR]
+        S5 -->|Technical<br/>one-off| S7[Note for ADR]
 
-        S4 --> S8[Insert guide links<br/>Story Technical Notes<br/>Phase 4 #13]
+        S4 --> S8[Save guide paths<br/>for Phase 3 #8]
         S6 --> S8
         S7 --> S8
     end
-    Phase3 --> S1
-    S8 --> Phase4
-    Phase4[Phase 4: Auto-Fix<br/>15 Criteria #0a 0b 1-13 14]
-    subgraph Fixes [Auto-Fix ALL]
-        F1[#0a: Story 8 sections]
-        F1 --> F2[#0b: Tasks 7 sections EACH]
-        F2 --> F3[#1-13: All other criteria]
-        F3 --> F4[#14: Standards Compliance]
+
+    Phase2 --> S1
+    S8 --> Phase3
+
+    Phase3[Phase 3: Comprehensive Auto-Fix<br/>16 Verification Criteria #1-#16]
+
+    subgraph FixGroups [Auto-Fix Groups A → B → C → D]
+        GA[Group A: Structural Fixes<br/>#1 Story Structure 8 sections<br/>#2 Tasks Structure 7 sections sequential<br/>#3 Story Statement As a/I want/So that<br/>#4 Acceptance Criteria Given/When/Then]
+        GA --> GB[Group B: Solution Optimization<br/>#5 Industry Standards RFC compliance<br/>#6 Solution 2025 best practices<br/>#7 Library & Version current stable<br/>#8 Guide Links insertion]
+        GB --> GC[Group C: Workflow Optimization<br/>#9 Test Strategy Risk-Based<br/>#10 Test Task Cleanup remove premature<br/>#11 Documentation Integration<br/>#12 Consumer-First Principle]
+        GC --> GD[Group D: Scope & Quality<br/>#13 Story Size 3-8 tasks x-task-manager<br/>#14 YAGNI Violations<br/>#15 KISS Violations<br/>#16 Code Quality config management]
     end
-    Phase4 --> F1
-    F4 --> Phase5
-    Phase5[Phase 5: ALWAYS Approve<br/>Story + Tasks → Todo<br/>Update kanban]
-    Phase5 --> Phase6[Phase 6: Summary Table<br/>✅ ALWAYS Approved]
-    Phase6 --> End([End])
+
+    Phase3 --> GA
+    GD --> Phase4
+
+    Phase4[Phase 4: Approve & Notify<br/>Story + ALL Tasks → Todo<br/>kanban_board.md ✅ APPROVED<br/>Approval comment + optional warning<br/>Summary table display]
+
+    Phase4 --> End([End: Story ALWAYS Approved])
+
     classDef discovery fill:#E3F2FD,stroke:#1976D2,stroke-width:2px
     classDef processing fill:#FFF9C4,stroke:#F57C00,stroke-width:2px
     classDef action fill:#C8E6C9,stroke:#388E3C,stroke-width:2px
-    class Phase1,Phase2 discovery
-    class Phase3,S1,S2,S3,Phase4,F1,F2,F3,F4 processing
-    class Phase5,Phase6 action
+
+    class Phase1 discovery
+    class Phase2,S1,S2,S3,Phase3,GA,GB,GC,GD processing
+    class Phase4 action
             </div>
         </div>
         <footer>
-            <p>x-story-verifier | NO "Needs Work" path - ALWAYS auto-fixes and approves</p>
+            <p>x-story-verifier v10.0.0 | 4 phases · 16 auto-fix criteria · NO "Needs Work" path - ALWAYS approves after fixes</p>
         </footer>
     </div>
     <script>

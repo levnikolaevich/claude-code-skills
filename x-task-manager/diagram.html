@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>x-task-manager - State Diagram</title>
-    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
@@ -49,11 +49,13 @@ graph TD
     Phase3 -->|Count ≥ 1| ReplanMode[REPLAN MODE<br/>Compare ideal vs existing]
 
     CreateMode --> Generate[Generate task documents<br/>7 sections with guide links<br/>from IDEAL plan]
-    Generate --> ShowCreate[Show preview:<br/>1-6 tasks to create<br/>Consumer-First order]
+    Generate --> ValidateTests[Validate NO Test Creation<br/>Scan for test phrases<br/>ERROR if found]
+    ValidateTests --> ShowCreate[Show preview:<br/>1-6 tasks to create<br/>Consumer-First order]
     ShowCreate --> ConfirmCreate{User<br/>confirms?}
     ConfirmCreate -->|No| Phase2
     ConfirmCreate -->|Yes| ExecuteCreate[Create all tasks in Linear<br/>Update kanban_board.md]
-    ExecuteCreate --> End([End: Summary])
+    ExecuteCreate --> Phase5Create[Phase 5: Post-Execution<br/>Verify operations<br/>Linear + kanban updated]
+    Phase5Create --> End([End: Summary + Next steps])
 
     ReplanMode --> LoadExisting[Load existing task descriptions<br/>Full 7 sections each<br/>Note current status]
     LoadExisting --> Compare[Compare IDEAL plan vs existing<br/>Identify operations needed]
@@ -63,7 +65,8 @@ graph TD
     ConfirmReplan -->|No| Phase2
     ConfirmReplan -->|Yes| ExecuteReplan[Execute operations:<br/>Keep/Update/Cancel/Create in Linear]
     ExecuteReplan --> UpdateKanban[Update kanban_board.md<br/>Remove Canceled tasks<br/>Add new tasks]
-    UpdateKanban --> End
+    UpdateKanban --> Phase5Replan[Phase 5: Post-Execution<br/>Verify operations<br/>Linear + kanban updated]
+    Phase5Replan --> End
 
     %% Styling
     classDef discovery fill:#E3F2FD,stroke:#1976D2,stroke-width:2px
@@ -71,10 +74,10 @@ graph TD
     classDef decision fill:#FFE0B2,stroke:#E64A19,stroke-width:2px
     classDef action fill:#C8E6C9,stroke:#388E3C,stroke-width:2px
 
-    class Phase1,Phase2,LoadExisting discovery
-    class CreateMode,ReplanMode,Generate,Compare,Categorize processing
+    class Phase1 discovery
+    class Phase2,CreateMode,ReplanMode,Generate,ValidateTests,LoadExisting,Compare,Categorize processing
     class Phase3,ConfirmCreate,ConfirmReplan decision
-    class ExecuteCreate,ExecuteReplan,UpdateKanban,End action
+    class ExecuteCreate,ExecuteReplan,UpdateKanban,Phase5Create,Phase5Replan,End action
             </div>
         </div>
         <footer>

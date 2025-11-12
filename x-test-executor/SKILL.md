@@ -141,6 +141,7 @@ Auto-discovers project configuration:
 - Infrastructure works (from Step 3)
 - Documentation complete (from Step 4)
 - Legacy code removed safely (from Step 5)
+- **Cleanup:** Delete `scripts/tmp_[story_id].sh` (manual testing script no longer needed)
 
 ### Phase 4: Quality & Handoff
 
@@ -234,6 +235,9 @@ Before completing work, verify ALL checkpoints:
   - "**Legacy Cleanup:** M items removed (Section 11)"
 - [ ] Task status changed: "In Progress" → "To Review"
 - [ ] kanban_board.md updated (In Progress → To Review)
+
+**✅ Temporary Files Cleaned:**
+- [ ] Manual testing script `scripts/tmp_[story_id].sh` deleted (tests now in codebase)
 
 **✅ Handoff Ready:**
 - [ ] Chat output prefix used: ⚙️ [EXECUTOR] for all messages

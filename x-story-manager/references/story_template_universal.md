@@ -116,6 +116,26 @@ Test complex business logic in isolation. **ONLY Priority ≥15 logic NOT covere
 - What patterns apply?
 - Any constraints?
 
+### Library Research
+
+**Primary libraries:**
+| Library | Version | Purpose | Docs |
+|---------|---------|---------|------|
+| [name] | v[X.Y.Z] | [use case for Story domain] | [official docs URL] |
+
+**Key APIs:**
+- `[method_signature]` - [purpose and when to use]
+- `[method_signature]` - [purpose and when to use]
+
+**Key constraints:**
+- [Constraint 1: e.g., no async support, memory limitations, multi-process caveats]
+- [Constraint 2: e.g., compatibility requirements, deprecated features]
+
+**Standards compliance:**
+- [Standard/RFC]: [how Story complies - brief description, e.g., "RFC 6749 OAuth 2.0 - uses authorization code flow"]
+
+**Note:** This section populated by x-story-manager Phase 0 (Library & Standards Research). Tasks reference these specifications in their Technical Approach sections.
+
 ### Integration Points
 - **External Systems**: Which external APIs/services?
 - **Internal Services**: Which app services interact?
@@ -125,6 +145,12 @@ Test complex business logic in isolation. **ONLY Priority ≥15 logic NOT covere
 - Response time targets
 - Throughput requirements
 - Security considerations
+
+### Related Guides
+- [Guide XX: Pattern Name](../guides/guide_XXX_pattern_name.md) - [when to use this pattern]
+- [Guide YY: Pattern Name](../guides/guide_YYY_pattern_name.md) - [when to use this pattern]
+
+**Note:** Guide links inserted by x-story-verifier Phase 3 (auto-creates missing guides via x-guide-creator, then links them here).
 
 ---
 
@@ -161,5 +187,5 @@ Test complex business logic in isolation. **ONLY Priority ≥15 logic NOT covere
 
 ---
 
-**Template Version:** 6.0.0 (Risk-Based Testing replaces Test Pyramid)
-**Last Updated:** 2025-10-31
+**Template Version:** 7.0.0 (Added Library Research + Related Guides subsections in Technical Notes)
+**Last Updated:** 2025-11-12

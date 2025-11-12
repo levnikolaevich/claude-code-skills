@@ -6,36 +6,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a collection of skills for Claude Code, integrated with Linear for Agile-style task management.
 
-## Skill Structure
-
-All skills follow a unified structure:
-- `SKILL.md` - Main skill file with metadata (frontmatter YAML) and description
-- `references/` - Reference templates and guides used by the skill
-
-**Template Ownership Principle:**
-- Each skill owns its templates in its own `references/` directory (Single Source of Truth)
-- Templates are NOT copied to project during setup
-- Skills use templates directly from their `references/` when generating documents
-- Example: x-adr-creator uses `x-adr-creator/references/adr_template.md` when creating ADRs
-- Example: x-guide-creator uses `x-guide-creator/references/guide_template.md` when creating guides
-
 ## Visual Documentation
 
 All skills have **state diagrams** for visualizing workflows, decision points, and state transitions.
-
-### Diagram Files
-
-Each skill directory contains:
-- `diagram.mmd` - Mermaid source file (text-based, git-friendly, editable)
-- `diagram.html` - Standalone HTML file for viewing diagram in browser
-
-### Diagram Format
-
-**Mermaid** (https://mermaid.js.org/) - chosen for:
-- ✅ Git-friendly (text format, easy diffs)
-- ✅ Native GitHub/GitLab rendering
-- ✅ Easy to edit and maintain
-- ✅ Can convert to PNG/SVG if needed
 
 ### Diagram Types by Workflow
 
@@ -63,34 +36,7 @@ Each skill directory contains:
 **5. Single-Path Auto-Fix** (`graph TD` linear, no branching):
 - x-story-verifier (ALWAYS approve after 16 auto-fixes)
 
-### Color Coding
-
-Standard colors across all diagrams:
-- **Discovery/Preparation:** `#E3F2FD` (light blue) - initial setup phases
-- **Loop/Processing:** `#FFF9C4` (light yellow) - active work, iterations
-- **Decision Points:** `#FFE0B2` (light orange) - conditional branches, choices
-- **Actions/Updates:** `#C8E6C9` (light green) - state changes, updates
-- **Critical/Stop:** `#FFCDD2` (light red) - stop conditions, critical rules
-
-### How to View Diagrams
-
-**Option 1: HTML file (easiest)**
-- Double-click `diagram.html` in skill folder
-- Opens in default browser with rendered diagram
-
-**Option 2: Online editor**
-- Copy `diagram.mmd` content
-- Paste into https://mermaid.live/
-- View/edit/export as PNG/SVG
-
-**Option 3: VS Code**
-- Install extension: "Markdown Preview Mermaid Support"
-- Open `diagram.mmd`
-- Press `Ctrl+Shift+V` for preview
-
-**Option 4: GitHub/GitLab**
-- View `.mmd` files directly in repository
-- Diagrams render automatically in markdown
+> **Note:** For diagram files, viewing instructions, and color coding, see [Visual Documentation](README.md#-visual-documentation) in README.md.
 
 ### Available Skills
 
@@ -103,8 +49,8 @@ Standard colors across all diagrams:
 
 **Planning:**
 6. `x-epic-creator/` - Decompose scope/initiative into 3-7 Epics (Linear Projects) through interactive dialog. Batch Mode only. (v3.0.0)
-7. `x-story-manager/` - Universal Story operations (create/replan) with automatic Epic decomposition. Analyzes Epic, builds IDEAL Story plan (5-10 Stories), then creates or replans existing Stories (KEEP/UPDATE/OBSOLETE/CREATE). Decompose-First Pattern with Epic extraction (parse Epic structure, ask user only for gaps). (v7.0.0)
-8. `x-task-manager/` - Universal task operations (create/replan) with automatic Story decomposition. Analyzes Story, builds optimal task plan (1-6 tasks), then creates or replans existing tasks (KEEP/UPDATE/OBSOLETE/CREATE). Decompose-First Pattern. Reads guide links from Story Technical Notes. (v5.0.0)
+7. `x-story-manager/` - Universal Story operations (create/replan) with automatic Epic decomposition. **Phase 0: Library & Standards Research** via MCP Context7 + Ref (library versions, key APIs, RFC compliance) → IDEAL Story plan (5-10 Stories) → creates or replans existing Stories (KEEP/UPDATE/OBSOLETE/CREATE). Decompose-First Pattern with Epic extraction. (v8.0.0)
+8. `x-task-manager/` - Universal task operations (create/replan) with automatic Story decomposition. Analyzes Story, builds optimal task plan (1-6 tasks), then creates or replans existing tasks (KEEP/UPDATE/OBSOLETE/CREATE). Decompose-First Pattern. Reads guide links from Story Technical Notes. (v5.1.0)
 9. `x-story-finalizer/` - Create final Story task after manual testing passes. Invoked by x-story-reviewer Pass 1. Generates comprehensive task with 11 sections: tests (E2E-first Risk-Based), existing test fixes, infrastructure updates, documentation updates, legacy code cleanup (NO dialog). **Excludes performance/load testing** (see x-story-finalizer/references/risk_based_testing_guide.md)
 
 **Execution:**
@@ -115,7 +61,7 @@ Standard colors across all diagrams:
 14. `x-task-rework/` - Fix tasks after review (To Rework → In Progress → To Review)
 
 **Validation:**
-15. `x-story-verifier/` - **Auto-fix and approve** Stories (8 sections) and their Tasks (7 sections) against industry standards and best practices before approval (Backlog → Todo). **ALWAYS auto-fixes all 15 verification criteria** (including Industry Standards Compliance) - no "Needs Work" path exists. Checks RFC/protocol compliance BEFORE applying KISS/YAGNI. Sequential task validation (loads metadata first, then full descriptions one by one). Auto-creates guides and inserts links in Story Technical Notes. Displays summary table (Story + Tasks + guides + warnings). (v9.1.0)
+15. `x-story-verifier/` - **Auto-fix and approve** Stories (8 sections) and their Tasks (7 sections) against industry standards and best practices before approval (Backlog → Todo). **ALWAYS auto-fixes all 15 verification criteria** (including Industry Standards Compliance) - no "Needs Work" path exists. Checks RFC/protocol compliance BEFORE applying KISS/YAGNI. Sequential task validation (loads metadata first, then full descriptions one by one). Auto-creates guides and inserts links in Story Technical Notes. Displays summary table (Story + Tasks + guides + warnings). (v10.0.0)
 16. `x-story-reviewer/` - Two-pass review: Pass 1 (6 phases: Regression check → Manual testing → Code quality → Verdict) → Create test/refactoring task. Pass 2 (3 phases: Prerequisites → Test verification → Verdict) → Story Done. (v4.0.0)
 
 **Documentation:**
@@ -125,6 +71,8 @@ Standard colors across all diagrams:
 
 ### Task Hierarchy
 - **Epic** (Linear Project) → **User Story** (Linear Issue with label "user-story", parentId=null) → **Task** (Linear Issue with parentId=Story ID)
+
+> **Note:** See [Task Hierarchy](README.md#-key-concepts) in README.md for visual representation.
 
 ### Configuration Auto-Discovery
 All skills automatically find settings from `docs/tasks/kanban_board.md`:
@@ -204,16 +152,18 @@ Linear API reference located in `x-epic-creator/references/linear_integration.md
 - **Value-Based Testing:** Prioritize by business risk (money/security/data). Test critical paths, not coverage metrics. Limits: 2-5 E2E, 3-8 Integration, 5-15 Unit per Story (10-28 total max, all tests in Story's final task). **See:** x-story-finalizer/references/risk_based_testing_guide.md for complete methodology
 - **No Legacy Code:** When refactoring existing code (identified in task's "Existing Code Impact" section), remove backward compatibility shims, workarounds, and deprecated patterns. Clean codebase > supporting old implementations. Rationale: Technical debt compounds; addressing it immediately prevents future maintenance burden.
 
+> **Note:** See [Development Principles](README.md#-key-concepts) in README.md for user-friendly summary.
+
 ### Task Templates
 
 **Epic Template:** `x-epic-creator/references/epic_template_universal.md`
 - Goal, Scope (In/Out), Success Criteria, Risks, Phases
 
-**Story Template:** `x-story-creator/references/story_template_universal.md`
-- 8 sections: Story statement (As a/I want/So that), Context, AC (Given-When-Then), Test Strategy, Implementation Tasks, Technical Notes, DoD
+**Story Template:** `x-story-manager/references/story_template_universal.md`
+- 8 sections: Story statement (As a/I want/So that), Context, AC (Given-When-Then), Test Strategy, Implementation Tasks, Technical Notes (including **Library Research** table from Phase 0: versions, key APIs, constraints, RFC compliance), DoD
 
 **Task Template:** `x-task-manager/references/task_template_universal.md`
-- 7 required sections: Context, Implementation Plan, Technical Approach, AC, Affected Components, Existing Code Impact, DoD
+- 7 required sections: Context, Implementation Plan, **Technical Approach** (Recommended Solution with library v[X.Y.Z], Key APIs with signatures, Implementation Pattern with pseudocode, Known Limitations, Alternatives), AC, Affected Components, Existing Code Impact, DoD
 
 **Story Finalizer Task Template:** `x-story-finalizer/references/test_task_template.md`
 - 11 sections: Context, Risk Priority Matrix, E2E Tests (2-5 max), Integration Tests (3-8 max), Unit Tests (5-15 max), Critical Path Coverage, DoD, Existing Tests to Fix/Update, Infrastructure Changes, Documentation Updates, Legacy Code Cleanup
@@ -296,9 +246,10 @@ Creator skills support different decomposition approaches:
 
 2. **Epic → Stories** (x-story-manager)
    - Input: Epic number (e.g., Epic 7)
-   - Output: 5-10 User Stories automatically decomposed based on Epic complexity
+   - **Phase 0:** Research libraries/standards via MCP Context7 + Ref (15-20 min) → Library Research table (versions, key APIs, constraints, RFC compliance)
+   - Output: 5-10 User Stories automatically decomposed based on Epic complexity (each Story includes Library Research in Technical Notes)
    - Automatically determines optimal count: Simple (1-3 features) → 3-5 Stories, Medium (4-7 features) → 6-8 Stories, Complex (8+ features) → 8-10 Stories
-   - Example: "User Management Epic" → "Register user", "Login with email", "Reset password", "Update profile", "Manage sessions"
+   - Example: "User Management Epic" → Phase 0 researches OAuth 2.0 RFC 6749, authlib v1.3+ → Stories: "Register user", "Login with email", "Reset password", "Update profile", "Manage sessions"
    - If Stories already exist → Replan mode (KEEP/UPDATE/OBSOLETE/CREATE)
 
 3. **Story → Tasks** (x-task-manager)
@@ -594,4 +545,25 @@ All skills and templates have versions and last update dates at end of file:
 
 **IMPORTANT:** Do NOT add **Changes:** section in SKILL.md files and here. Git history tracks all changes.
 
-**Last Updated:** 2025-11-08
+## Maintenance After Changes
+
+**When making changes to skills, ALWAYS update these files:**
+
+1. **Update skill version** in `{skill}/SKILL.md` (at end of file)
+2. **Update version in CLAUDE.md** in "Available Skills" section (lines 95-122)
+3. **Update version in README.md** in feature tables (lines 30-70)
+4. **Update CHANGELOG.md** with changes following [Keep a Changelog](https://keepachangelog.com/) format:
+   - Add new version section `## [X.Y.Z] - YYYY-MM-DD`
+   - Categorize changes: Added / Changed / Deprecated / Removed / Fixed / Security
+   - Be specific: skill names, version changes, key features
+5. **Update Last Updated date** in CLAUDE.md (below)
+
+**Example CHANGELOG entry:**
+```markdown
+## [1.0.1] - 2025-11-12
+
+### Changed
+- **x-story-executor v2.6.0 → v3.0.0** - Critical task loading rules, automatic loop restart
+```
+
+**Last Updated:** 2025-11-12

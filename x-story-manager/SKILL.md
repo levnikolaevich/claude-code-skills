@@ -25,6 +25,89 @@ This skill should be used when:
 
 ## How It Works
 
+### Phase 0: Library & Standards Research (Automated)
+
+**Objective:** Research libraries, API specifications, and industry standards BEFORE Story generation to ensure implementation tasks contain concrete technical details.
+
+**Why this phase:** Prevents situations where tasks lack specific API methods, library versions, or best practices (e.g., slowapi implementation using outdated patterns).
+
+**Auto-discovers research scope:**
+
+1. **Identify libraries from Epic:**
+   - Parse Epic Technical Notes for mentioned libraries/frameworks
+   - Parse Epic Scope In for technology keywords (authentication, rate limiting, payments, etc.)
+   - Identify Story domain from Epic goal statement
+
+2. **Research libraries (MCP Context7):**
+   - For each library mentioned in Epic Technical Notes:
+     - Call `mcp__context7__resolve-library-id(libraryName="[library]")` → Get Context7-compatible library ID
+     - Call `mcp__context7__get-library-docs(context7CompatibleLibraryID="[id]", topic="[Story domain]", tokens=3000)` → Get latest documentation
+   - Extract from documentation:
+     - **Latest stable version** (prefer LTS, avoid beta/RC/bleeding edge)
+     - **Key API methods** (2-5 most relevant for Story domain) - method names and signatures
+     - **Configuration parameters** (initialization, setup requirements)
+     - **Known limitations** (async support, storage backends, multi-process caveats)
+     - **Deprecations** (deprecated methods to avoid)
+
+3. **Research best practices (MCP Ref):**
+   - For each library + Story domain combination:
+     - Call `mcp__Ref__ref_search_documentation(query="[library] [domain] best practices 2025")`
+     - Call `mcp__Ref__ref_search_documentation(query="[domain] industry standards RFC")`
+   - Extract from results:
+     - **Industry standards** (RFC/spec references: OAuth 2.0, REST, OpenAPI, WebSocket)
+     - **Common patterns** (do/don't examples, anti-patterns to avoid)
+     - **Integration approaches** (middleware, dependency injection, decorators)
+     - **Security considerations** (OWASP compliance, vulnerability mitigation)
+
+4. **Check existing guides:**
+   - Scan `docs/guides/` directory for relevant pattern guides
+   - Match guides to Story domain (e.g., rate limiting, authentication, caching)
+   - Collect guide paths for linking in Technical Notes
+
+5. **Compile Research Summary:**
+   Structure research results for insertion into Story Technical Notes:
+
+   ```markdown
+   ## Library Research
+   **Primary libraries:**
+   | Library | Version | Purpose | Docs |
+   |---------|---------|---------|------|
+   | [name] | v[X.Y.Z] | [use case for Story domain] | [official docs URL] |
+
+   **Key APIs:**
+   - `[method_signature]` - [purpose and when to use]
+   - `[method_signature]` - [purpose and when to use]
+
+   **Key constraints:**
+   - [Limitation 1: e.g., no async support in v0.1.9] - [workaround if any]
+   - [Limitation 2: e.g., in-memory storage doesn't persist] - [solution: Redis backend]
+
+   **Standards compliance:**
+   - [Standard/RFC name]: [how Story should comply - brief description]
+   ```
+
+**Output:** Research Summary stored for use in Phase 6a/6b (Story generation - Library Research subsection in Technical Notes)
+
+**Time-box:** 15-20 minutes maximum per Epic (research is cached for all Stories in Epic)
+
+**Skip conditions:**
+- Epic has NO libraries mentioned in Technical Notes → Skip research, proceed to Phase 1
+- Story domain is trivial CRUD operation with well-known libraries (FastAPI, SQLAlchemy) → Skip research
+- Epic explicitly states "research not needed" → Skip research
+
+**Tools used:**
+- `mcp__context7__resolve-library-id()` - Get library ID
+- `mcp__context7__get-library-docs()` - Get latest API documentation
+- `mcp__Ref__ref_search_documentation()` - Search best practices and standards
+- `Glob` - Scan docs/guides/ for existing guides
+
+**Important notes:**
+- Research is done ONCE per Epic, results reused for all Stories (5-10 Stories benefit from single research)
+- Focus on KEY APIs only (2-5 methods), not exhaustive documentation
+- Prefer official docs and RFC standards over blog posts
+- If library not found in Context7/Ref → Use WebSearch as fallback
+- Research Summary is inserted in EVERY Story's Technical Notes (Library Research subsection)
+
 ### Phase 1: Discovery (Automated)
 
 Auto-discovers configuration from `docs/tasks/kanban_board.md`:
@@ -134,7 +217,7 @@ list_issues(project=Epic.id, label="user-story")
      - Acceptance Criteria (Given-When-Then, 3-5 AC)
      - Test Strategy (Risk-Based Testing: 2-5 E2E, 3-8 Integration, 5-15 Unit, 10-28 total)
      - Implementation Tasks (placeholder: "Tasks will be created via x-task-manager after Story verification")
-     - Technical Notes (architecture, integrations, guide links)
+     - Technical Notes (architecture, integrations, **Library Research from Phase 0**, guide links)
      - Definition of Done
      - Revision History
 
@@ -286,6 +369,14 @@ Next Steps:
 
 Before completing work, verify ALL checkpoints:
 
+**✅ Research Complete (Phase 0):**
+- [ ] Libraries identified from Epic Technical Notes
+- [ ] Research performed via MCP Context7 (library versions, key APIs, limitations)
+- [ ] Best practices researched via MCP Ref (industry standards, patterns)
+- [ ] Existing guides checked in docs/guides/
+- [ ] Research Summary compiled (Library Research table + Key APIs + Constraints + Standards)
+- [ ] OR Phase 0 skipped (trivial CRUD, no libraries mentioned, or explicit skip)
+
 **✅ Discovery Complete:**
 - [ ] Team ID loaded from kanban_board.md
 - [ ] Epic number parsed from request
@@ -345,12 +436,13 @@ Before completing work, verify ALL checkpoints:
 ```
 
 **Process:**
+0. Research → Epic mentions "OAuth 2.0", research via Context7 + Ref → OAuth 2.0 RFC 6749, library recommendations (authlib, oauthlib)
 1. Discovery → Team "API", Epic 7, Next Story: US004
 2. Extract from Epic → Persona: API client, Value: secure API access
 3. Gather Missing → Ask about AC specifics (Epic had high-level features)
 4. Build IDEAL → 5 Stories: "Register client", "Request token", "Validate token", "Refresh token", "Revoke token"
 5. Check Existing → Count = 0 → CREATE MODE
-6. Create Mode → Generate 5 Stories, show preview, user confirms, create in Linear
+6. Create Mode → Generate 5 Stories (with Library Research from Phase 0), show preview, user confirms, create in Linear
 7. Post-Execution → US004-US008 created
 
 **REPLAN MODE (Requirements Changed):**
@@ -359,12 +451,13 @@ Before completing work, verify ALL checkpoints:
 ```
 
 **Process:**
+0. Research → Epic mentions "OAuth 2.0 scopes", research via Context7 + Ref → RFC 6749 Section 3.3 (scope parameter), best practices for scope management
 1. Discovery → Team "API", Epic 7 (already has US004-US008)
 2. Extract from Epic → New requirements: removed custom formats, added scopes
 3. Gather Missing → Epic had all info needed
 4. Build IDEAL → 5 Stories: "Register client", "Request token", "Validate token", "Refresh token", "Manage scopes"
 5. Check Existing → Count = 5 → REPLAN MODE
-6. Replan Mode → Compare: KEEP 4 Stories, OBSOLETE "Custom formats" (US008), CREATE "Manage scopes" (US009)
+6. Replan Mode → Compare: KEEP 4 Stories, OBSOLETE "Custom formats" (US008), CREATE "Manage scopes" (US009 with Library Research)
 7. Post-Execution → US008 canceled, US009 created
 
 ## Reference Files
@@ -375,16 +468,18 @@ Before completing work, verify ALL checkpoints:
 
 ## Best Practices
 
+- **Research-First:** Always perform Phase 0 research (libraries, APIs, standards) before Story generation - prevents implementation rework due to missing technical details
 - **Decompose-First:** Always build IDEAL plan before checking existing - prevents anchoring to suboptimal structure
 - **Epic extraction:** Try to extract all planning info from Epic before asking user - reduces user input burden
 - **One capability per Story:** Each Story should have clear, focused persona + capability + value
 - **Testable AC:** Use Given-When-Then format, 3-5 AC per Story, specific criteria ("<200ms" not "fast")
 - **Test Strategy:** Include Risk-Based Testing section - guides final test task creation via x-story-finalizer
+- **Library Research:** Include Library Research table in ALL Story Technical Notes - tasks will reference these specs
 - **Status respect:** Never auto-update Stories In Progress/Done - show warnings instead
 - **Preserve history:** Use state="Canceled" for obsolete Stories, never delete
 - **User confirmation:** Always show preview/summary and require "confirm" before operations
 
 ---
 
-**Version:** 7.0.0 (Universal operations with Decompose-First pattern + Epic extraction)
-**Last Updated:** 2025-11-10
+**Version:** 8.0.0 (Added Phase 0: Library & Standards Research with MCP Context7 + Ref)
+**Last Updated:** 2025-11-12

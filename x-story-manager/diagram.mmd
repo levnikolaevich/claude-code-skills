@@ -3,7 +3,14 @@
 %% Decompose-First Pattern: Build IDEAL plan → Check existing → Create or Replan
 
 graph TD
-    Start([Start: Story Manager]) --> Phase1[Phase 1: Discovery<br/>Team ID auto-discovery<br/>Parse Epic ID from request<br/>Load Epic description]
+    Start([Start: Story Manager]) --> Phase0[Phase 0: Library & Standards Research<br/>Parse Epic Technical Notes for libraries<br/>Research via MCP Context7 + Ref<br/>Compile Research Summary]
+
+    Phase0 --> SkipCheck{Skip<br/>conditions?}
+    SkipCheck -->|Trivial CRUD / No libs| Phase1
+    SkipCheck -->|Research needed| DoResearch[Do Research:<br/>Context7: versions, APIs, limitations<br/>Ref: best practices, RFC standards<br/>Time-box: 15-20 min]
+    DoResearch --> Phase1
+
+    Phase1[Phase 1: Discovery<br/>Team ID auto-discovery<br/>Parse Epic ID from request<br/>Load Epic description]
 
     Phase1 --> Phase2[Phase 2: Extract from Epic<br/>Q1-Q6: Parse Epic structure<br/>Persona, capability, value, AC, app type]
 
@@ -42,7 +49,7 @@ graph TD
     classDef decision fill:#FFE0B2,stroke:#E64A19,stroke-width:2px
     classDef action fill:#C8E6C9,stroke:#388E3C,stroke-width:2px
 
-    class Phase1,Phase2,LoadExisting discovery
+    class Phase0,DoResearch,Phase1,Phase2,LoadExisting discovery
     class CreateMode,ReplanMode,Generate,Compare,Categorize,GatherMissing,Phase4 processing
-    class Phase3,Phase5,ConfirmCreate,ConfirmReplan decision
+    class SkipCheck,Phase3,Phase5,ConfirmCreate,ConfirmReplan decision
     class ExecuteCreate,ExecuteReplan,UpdateKanban,End action

@@ -42,15 +42,15 @@ This repository contains **17 production-ready skills** for [Claude Code](https:
 | Skill | Purpose | Version | Diagrams |
 |:------|:--------|:-------:|:--------:|
 | **[x-epic-creator](x-epic-creator/)** | Decompose scope into 3-7 Linear Projects (Epics) with business goals, success criteria, and phased strategy through interactive dialog. Auto-discovers team ID. | 4.0.0 | ✅ |
-| **[x-story-manager](x-story-manager/)** | Universal Story operations (create/replan) with automatic Epic decomposition. Builds IDEAL Story plan (5-10 Stories), then creates or replans existing Stories (KEEP/UPDATE/OBSOLETE/CREATE). | 7.0.0 | ✅ |
-| **[x-task-manager](x-task-manager/)** | Universal task operations (create/update/replan) with automatic decomposition. Analyzes Story, builds optimal task plan (1-6 tasks), then creates or replans existing tasks. For implementation tasks only. | 5.0.0 | ✅ |
+| **[x-story-manager](x-story-manager/)** | Universal Story operations (create/replan) with automatic Epic decomposition. Phase 0: Library & Standards Research via MCP Context7 + Ref → IDEAL Story plan (5-10 Stories) → creates or replans existing Stories (KEEP/UPDATE/OBSOLETE/CREATE). | 8.0.0 | ✅ |
+| **[x-task-manager](x-task-manager/)** | Universal task operations (create/update/replan) with automatic decomposition. Analyzes Story, builds optimal task plan (1-6 tasks), then creates or replans existing tasks. For implementation tasks only. | 5.1.0 | ✅ |
 | **[x-story-finalizer](x-story-finalizer/)** | Create final Story task after manual testing passes. Generates comprehensive test task with 11 sections: E2E/Integration/Unit tests (Risk-Based), test fixes, infrastructure updates, documentation, and legacy cleanup. | 4.1.0 | ✅ |
 
 ### Execution Skills (5)
 
 | Skill | Purpose | Version | Diagrams |
 |:------|:--------|:-------:|:--------:|
-| **[x-story-executor](x-story-executor/)** | Orchestrate Story execution (Todo/In Progress → ready for review). Prioritizes To Review → To Rework → Todo. Invokes task reviewers, executors, and rework handlers. Auto-discovers team ID. | 2.6.0 | ✅ |
+| **[x-story-executor](x-story-executor/)** | Orchestrate Story execution (Todo/In Progress → ready for review). Prioritizes To Review → To Rework → Todo. Invokes task reviewers, executors, and rework handlers. Auto-discovers team ID. | 3.0.0 | ✅ |
 | **[x-task-executor](x-task-executor/)** | ⚙️ Execute implementation tasks ONLY (Todo → In Progress → To Review). Uses KISS/YAGNI principles, reads guide links, runs type checking and linting. NOT for test tasks. | 10.0.0 | ✅ |
 | **[x-test-executor](x-test-executor/)** | ⚙️ Execute Story Finalizer test tasks (Todo → In Progress → To Review). E2E-first Risk-Based Testing (2-5 E2E, 3-8 Integration, 5-15 Unit). Includes test fixes, infrastructure, docs, and legacy cleanup. | 4.0.0 | ✅ |
 | **[x-task-reviewer](x-task-reviewer/)** | 🔍 Review completed tasks for To Review → Done/Rework transition. Distinguishes test/implementation tasks. Checks architecture, docs, security, quality, and test coverage. | 7.3.0 | ✅ |
@@ -60,14 +60,49 @@ This repository contains **17 production-ready skills** for [Claude Code](https:
 
 | Skill | Purpose | Version | Diagrams |
 |:------|:--------|:-------:|:--------:|
-| **[x-story-verifier](x-story-verifier/)** | Critically review Stories and Tasks against 2025 industry standards before approval (Backlog → Todo). ALWAYS auto-fixes all 15 verification criteria - no "Needs Work" path exists. Auto-creates guides and validates structure. | 9.3.0 | ✅ |
-| **[x-story-reviewer](x-story-reviewer/)** | Review completed User Stories through manual functional testing. Two-pass workflow: Pass 1 (test impl tasks + create test task), Pass 2 (verify tests + mark Story Done). | 3.5.0 | ✅ |
+| **[x-story-verifier](x-story-verifier/)** | Critically review Stories and Tasks against 2025 industry standards before approval (Backlog → Todo). ALWAYS auto-fixes all 15 verification criteria - no "Needs Work" path exists. Auto-creates guides and validates structure. | 10.0.0 | ✅ |
+| **[x-story-reviewer](x-story-reviewer/)** | Review completed User Stories through manual functional testing. Two-pass workflow: Pass 1 (6 phases: Regression check → Manual testing → Code quality → Verdict) → Create test/refactoring task. Pass 2 (3 phases: Prerequisites → Test verification → Verdict) → Story Done. | 4.0.0 | ✅ |
 
 ### Documentation Skills (1)
 
 | Skill | Purpose | Version | Diagrams |
 |:------|:--------|:-------:|:--------:|
 | **[x-guide-creator](x-guide-creator/)** | Research and create minimal project guides (6 sections, 300-500 words) documenting reusable patterns. AUTO-RESEARCH via MCP Ref/Context7. Returns guide path for linking. | 4.0.0 | ✅ |
+
+---
+
+## 📥 Installation
+
+**Prerequisites:** [Claude Code CLI](https://claude.ai/code) installed
+
+Choose your installation method:
+
+**Method 1: Plugin Marketplace (Recommended)**
+```bash
+/plugin marketplace add levnikolaevich/claude-code-skills
+/plugin install agile-linear-workflow@agile-linear-workflow-marketplace
+/skills  # Verify installation
+```
+
+**Method 2: Direct Plugin**
+```bash
+/plugin add levnikolaevich/claude-code-skills
+/skills  # Verify installation
+```
+
+**Method 3: Git Clone**
+```bash
+# macOS/Linux
+git clone https://github.com/levnikolaevich/claude-code-skills.git ~/.claude/skills
+
+# Windows
+git clone https://github.com/levnikolaevich/claude-code-skills.git %USERPROFILE%\.claude\skills
+
+# Verify
+/skills
+```
+
+> 📖 For detailed setup, updates, and configuration, see [Advanced Setup](#-advanced-setup) section below.
 
 ---
 
@@ -125,115 +160,6 @@ All diagrams follow consistent color scheme:
 
 ---
 
-## 📥 Getting Started
-
-### Prerequisites
-
-Before you begin, ensure you have:
-- **Claude Code CLI** - Install from [claude.ai/code](https://claude.ai/code)
-- **Git** - For cloning the repository
-- **Linear Account** (optional) - For task management integration
-
-### Installation
-
-This plugin can be installed in three ways. Choose the method that best fits your needs:
-
-#### Method 1: Plugin Marketplace (Recommended ⭐)
-
-**Best for:** Teams, automatic updates, easiest installation
-
-```bash
-# Step 1: Add the marketplace
-/plugin marketplace add levnikolaevich/claude-code-skills
-
-# Step 2: Install the plugin
-/plugin install agile-linear-workflow@agile-linear-workflow-marketplace
-
-# Step 3: Verify installation
-/skills
-```
-
-**Benefits:**
-- ✅ Automatic updates via `/plugin update`
-- ✅ One command installation
-- ✅ Guaranteed compatibility
-- ✅ Version management
-
-#### Method 2: Direct Plugin Installation
-
-**Best for:** Quick setup without marketplace
-
-```bash
-# Step 1: Install plugin directly from GitHub
-/plugin add levnikolaevich/claude-code-skills
-
-# Step 2: Verify installation
-/skills
-```
-
-#### Method 3: Git Clone (Manual Installation)
-
-**Best for:** Developers, contributors, custom modifications
-
-Choose the appropriate command for your operating system:
-
-**macOS / Linux:**
-```bash
-git clone https://github.com/levnikolaevich/claude-code-skills.git ~/.claude/skills
-```
-
-**Windows (Command Prompt):**
-```cmd
-git clone https://github.com/levnikolaevich/claude-code-skills.git %USERPROFILE%\.claude\skills
-```
-
-**Windows (PowerShell):**
-```powershell
-git clone https://github.com/levnikolaevich/claude-code-skills.git $env:USERPROFILE\.claude\skills
-```
-
-**Verify Installation:**
-```bash
-# In Claude Code, type:
-/skills
-```
-
-You should see all 17 skills listed and available for use.
-
----
-
-### Updating
-
-**If installed via Plugin (Method 1 or 2):**
-```bash
-# Update to latest version
-/plugin update agile-linear-workflow
-```
-
-**If installed via Git Clone (Method 3):**
-```bash
-# Navigate to skills directory
-cd ~/.claude/skills                    # macOS/Linux
-cd %USERPROFILE%\.claude\skills       # Windows (CMD)
-cd $env:USERPROFILE\.claude\skills    # Windows (PowerShell)
-
-# Pull latest changes
-git pull origin master
-```
-
----
-
-### Configuration (Optional)
-
-**Linear Integration:**
-
-If you want to use Linear integration features:
-1. Create a Linear API key at [linear.app/settings/api](https://linear.app/settings/api)
-2. Configure your team ID in `docs/tasks/kanban_board.md` (generated by x-docs-creator)
-3. Skills will auto-discover configuration when needed
-
----
-
 ## 💡 Usage
 
 ### Quick Start Example
@@ -272,6 +198,54 @@ x-story-executor
 ```
 
 For detailed usage of each skill, see [CLAUDE.md](CLAUDE.md).
+
+---
+
+## 🔧 Advanced Setup
+
+### Prerequisites
+
+Before installation, ensure you have:
+
+- **Claude Code CLI** - Install from [claude.ai/code](https://claude.ai/code)
+- **Git** - Required for Method 3 (Git Clone) installation
+- **Linear Account** (optional) - For task management integration features
+  - Create API key at [linear.app/settings/api](https://linear.app/settings/api)
+  - Configure team ID in `docs/tasks/kanban_board.md` (auto-generated by x-docs-creator)
+
+### Updating
+
+**For Plugin installations (Method 1 or 2):**
+```bash
+/plugin update agile-linear-workflow
+```
+
+**For Git Clone installation (Method 3):**
+```bash
+# Navigate to skills directory
+cd ~/.claude/skills                    # macOS/Linux
+cd %USERPROFILE%\.claude\skills       # Windows CMD
+cd $env:USERPROFILE\.claude\skills    # Windows PowerShell
+
+# Pull latest changes
+git pull origin master
+```
+
+### Configuration
+
+**Linear Integration (Optional):**
+
+Skills automatically discover configuration from `docs/tasks/kanban_board.md`:
+- Team ID
+- Next Epic Number
+- Next Story Number
+
+To set up:
+1. Run `x-docs-creator` skill to generate `docs/tasks/kanban_board.md`
+2. Add your Linear API key to environment or Claude Code settings
+3. Skills will auto-discover and use configuration when needed
+
+**No setup required** - skills work independently without Linear integration.
 
 ---
 

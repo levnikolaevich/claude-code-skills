@@ -5,6 +5,55 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2025-11-12
+
+### Added
+
+- **Phase 0: Library & Standards Research in x-story-manager v8.0.0** - Automated research via MCP Context7 (library versions, key APIs, limitations) + MCP Ref (best practices, RFC standards) BEFORE Story generation to prevent implementation rework
+- **Library Research subsection in story_template_universal.md v7.0.0** - Primary libraries table (name, version, purpose, docs), Key APIs, Key constraints, Standards compliance
+- **Related Guides subsection in story_template_universal.md v7.0.0** - Guide links inserted by x-story-verifier (auto-creates missing guides)
+- **Expanded Technical Approach in task_template_universal.md v6.0.0** - Added subsections: Recommended Solution (library v[X.Y.Z], docs URL, standards compliance), Key APIs (method signatures, configuration), Implementation Pattern (pseudocode, integration points), Known Limitations (workarounds), Alternatives Considered
+
+### Changed
+
+- **x-story-manager v7.0.0 → v8.0.0** - Added Phase 0 research workflow (15-20 min time-boxed), Research Summary inserted in ALL Story Technical Notes, updated Definition of Done, Example Usage includes Phase 0
+- **x-story-verifier verification_checklist.md Check #6** - Now validates Library Research table presence (populated by x-story-manager Phase 0), auto-fixes missing/outdated research via MCP Context7 + Ref
+- **task_template_universal.md v5.1.0 → v6.0.0** - Technical Approach expanded from ~50 words to 200-300 words with library versions, key API signatures, pseudocode patterns, known limitations
+- **story_template_universal.md v6.0.0 → v7.0.0** - Added Library Research + Related Guides subsections in Technical Notes
+
+### Updated
+
+- **CLAUDE.md** - Updated x-story-manager description (v8.0.0, Phase 0 mention), Task Templates section (expanded Technical Approach details), Complete Decomposition Flow (Phase 0 in Epic → Stories), Last Updated date
+- **README.md** - Updated x-story-manager version (7.0.0 → 8.0.0), added Phase 0 description
+- **x-story-manager workflow diagrams** - Added Phase 0 (Library & Standards Research) node with Skip conditions decision, updated Overview section (diagram.mmd + diagram.html)
+
+---
+
+## [1.0.1] - 2025-11-12
+
+### Added
+
+- **Temporary Manual Testing Scripts workflow** - x-story-reviewer creates `scripts/tmp_[story_id].sh` for reusable manual testing (deleted by x-test-executor after E2E/Integration/Unit tests implemented)
+
+### Changed
+
+- **x-story-executor v2.6.0 → v3.0.0** - Critical task loading rules, automatic loop restart, delegation responsibility clarifications
+- **x-story-reviewer v3.5.0 → v4.0.0** - Two-pass structure detailed: Pass 1 (6 phases: Regression → Manual testing → Code quality → Verdict), Pass 2 (3 phases: Prerequisites → Test verification → Verdict)
+- **x-story-verifier v9.3.1 → v10.0.0** - Major restructuring (1077 lines), principle consolidation, improved clarity
+- **x-task-manager v5.0.0 → v5.1.0** - Consolidated principles, improved documentation (630 lines restructured)
+- **x-test-executor v4.0.0** - Added cleanup of temporary testing scripts in Step 6
+- **x-docs-creator v5.5.0** - Clarified HTML presentation as optional in Phase 10
+- **x-docs-system v1.0.2** - Improved x-docs-creator and x-html-builder interaction description
+
+### Updated
+
+- All workflow diagrams (diagram.html + diagram.mmd) for affected skills
+- README.md skill version table (4 skills updated)
+- CLAUDE.md Available Skills versions (2 skills updated)
+- CLAUDE.md Testing and Documentation section (added Temporary Manual Testing Scripts)
+
+---
+
 ## [1.0.0] - 2025-11-10
 
 ### Added

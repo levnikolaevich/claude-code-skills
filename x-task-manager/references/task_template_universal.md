@@ -40,19 +40,54 @@
 
 ## Technical Approach
 
-**Recommended:** [Approach name]
+### Recommended Solution
+**Library/Framework:** [name] v[version] ([stability: LTS/stable/beta])
+**Documentation:** [official docs URL]
 
-**Why this approach:**
-- Reason 1
-- Reason 2
+**Standards compliance:** [RFC/spec if applicable, e.g., RFC 6749 for OAuth 2.0]
 
-**Patterns Used:**
-- Pattern 1
-- Pattern 2
+### Key APIs
+**Primary methods:**
+- `[method_signature]` - [purpose and when to use]
+- `[method_signature]` - [purpose and when to use]
+- `[method_signature]` - [purpose and when to use]
 
-**Alternatives Considered:**
-- Alternative 1: Why rejected
-- Alternative 2: Why rejected
+**Configuration:**
+- `[parameter]`: [value/type] - [purpose and impact]
+- `[parameter]`: [value/type] - [purpose and impact]
+
+### Implementation Pattern
+**Core logic:**
+```pseudocode
+[High-level pseudocode showing main integration flow]
+[Focus on HOW to integrate library/API, not full business logic]
+[5-10 lines maximum - this is a guide, not implementation]
+```
+
+**Integration points:**
+- **Where:** [file/module path where integration happens]
+- **How:** [dependency injection / direct import / middleware / decorator / etc.]
+- **When:** [startup / request handler / background task / etc.]
+
+### Why This Approach
+- [Reason 1: Standards compliance or industry best practice reference]
+- [Reason 2: Performance/Security/Maintainability/Team familiarity benefit]
+
+### Patterns Used
+- [Pattern 1] - [purpose in this context]
+- [Pattern 2] - [purpose in this context]
+
+### Known Limitations
+- [Limitation 1: e.g., no async support, memory constraints] - [workaround or mitigation if any]
+- [Limitation 2: e.g., compatibility issue, deprecated feature] - [impact on implementation]
+
+### Alternatives Considered
+- **Alternative 1:** [name] - [why rejected: outdated/over-engineered/non-standard/lacking feature]
+- **Alternative 2:** [name] - [why rejected: performance/complexity/compatibility]
+
+---
+
+**SCOPE NOTE:** This Technical Approach should be 200-300 words max. Focus on KEY APIs (2-5 methods) and integration points, NOT exhaustive API documentation. This specification guides implementation without prescribing every detail. Executor discovers full implementation specifics during execution.
 
 ---
 
@@ -107,5 +142,5 @@ DO NOT create new tests here. New tests are created by x-story-finalizer after m
 
 ---
 
-**Template Version:** 5.1.0 (Task size guideline)
-**Last Updated:** 2025-11-07
+**Template Version:** 6.0.0 (Expanded Technical Approach with library versions, key APIs, pseudocode, limitations)
+**Last Updated:** 2025-11-12

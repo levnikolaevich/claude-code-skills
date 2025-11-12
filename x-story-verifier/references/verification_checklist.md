@@ -123,37 +123,52 @@ For each Task with structure violations:
 - Add context reference: "Related to previous Story [US00X]"
 
 ### 6. Library & Version Research (Story Level)
-**Check:** Story uses latest stable libraries and current architectural practices
+**Check:** Story Technical Notes contain Library Research table populated by x-story-manager Phase 0
 
-✅ "Use authentication library 1.3+" (current stable version)
-✅ "Follow web framework security patterns" (verified via MCP Ref)
-❌ "Use custom token implementation" (library exists, reinventing wheel)
-❌ "Implement custom session management" (framework has built-in)
-❌ "Implement helper for email validation when library has validator.isEmail()" (library provides method, reinventing)
-❌ "Use library 3.0.0-beta when stable 2.5.x exists" (bleeding edge, not production-ready)
+✅ Library Research subsection present in Technical Notes
+✅ Library Research table filled with: Library name, Version (v[X.Y.Z]), Purpose, Docs URL
+✅ Key APIs listed (2-5 method signatures with purpose)
+✅ Key constraints documented (async support, memory limitations, multi-process caveats, compatibility)
+✅ Standards compliance documented (RFC/spec references if applicable, e.g., "RFC 6749 OAuth 2.0")
+✅ Latest stable versions specified (prefer LTS, avoid alpha/beta/RC)
+✅ Tasks reference library specs from Story (not duplicating research)
 
-**Process:**
-1. Search MCP Ref for library documentation matching Story domain
-2. Verify latest stable versions with production track record (prefer LTS, avoid bleeding edge)
-3. Check if well-known libraries solve Story goal
-4. Confirm Story architectural approach matches 2025 best practices
-5. Verify package compatibility with project framework and language version
-6. Check if guide exists in `docs/guides/` for each external package
-7. Validate Tasks describe correct usage algorithm and limitations
+❌ Library Research subsection missing → **Auto-fix:** Research via MCP Context7 + Ref, populate table, update Story in Linear
+❌ Library Research table empty or incomplete → **Auto-fix:** Research and fill missing fields
+❌ Outdated library versions (> 6 months old stable release) → **Auto-fix:** Update to current stable via MCP Context7
+❌ Missing Key APIs → **Auto-fix:** Research via MCP Context7 and add 2-5 key methods
+❌ Missing constraints/limitations → **Auto-fix:** Research via MCP Ref and add known issues
+❌ Bleeding edge versions (alpha/beta/RC) when stable exists → **Auto-fix:** Downgrade to latest stable
+❌ Tasks implement custom helpers when library provides built-in methods → **Auto-fix:** Update Task Technical Approach to use library methods
+❌ No guide for external package in `docs/guides/` → **Flag for guide creation** (handled by Phase 3)
 
-**Red Flags:**
-❌ Package incompatible with project framework version
-❌ No guide for external package in `docs/guides/`
-❌ Tasks don't describe package usage algorithm
-❌ Package limitations not mentioned in Technical Notes
-❌ Tasks implement custom helpers for functionality library already provides via built-in methods
-❌ Tasks use bleeding edge versions (alpha/beta/RC) instead of proven stable releases
+**NOTE:** Library research should be performed in x-story-manager Phase 0. This check validates it happened and updates if needed. If Library Research subsection is completely missing, it indicates Phase 0 was skipped (rare case).
 
-**Tools:** MCP Ref (`ref_search_documentation`), WebSearch (if needed)
+**Auto-fix actions (#6):**
+1. **If Library Research table missing:**
+   - Research via `mcp__context7__resolve-library-id()` + `mcp__context7__get-library-docs()`
+   - Research via `mcp__Ref__ref_search_documentation()` for best practices and standards
+   - Populate full table (libraries, versions, purpose, docs, key APIs, constraints, standards)
+   - Update Story description in Linear via `mcp__linear-server__update_issue()`
+   - Add comment in Linear: "Library research added (Phase 0 was skipped initially)"
 
-**Critical packages:** Save to `docs/manuals/{package}-{major.minor}.md`
-(ORM/Framework/State/Testing only, skip utils/formatters)
-Fetch via MCP Ref: install + core + 2-3 examples
+2. **If versions outdated:**
+   - Research latest stable via MCP Context7
+   - Update version numbers in table
+   - Update Story description in Linear
+   - Add comment: "Library versions updated to 2025 standards"
+
+3. **If Key APIs or constraints missing:**
+   - Research via MCP Context7 (library docs) + MCP Ref (best practices)
+   - Add missing sections to table
+   - Update Story description in Linear
+   - Add comment: "Library technical details completed"
+
+**Tools:**
+- MCP Context7: `mcp__context7__resolve-library-id()`, `mcp__context7__get-library-docs()`
+- MCP Ref: `mcp__Ref__ref_search_documentation()`
+- WebSearch (fallback if library not in Context7/Ref)
+- Linear: `mcp__linear-server__update_issue()` for Story updates
 
 ### 7. Tests Integration (Story Level)
 **Check:** Story has Test Strategy section, final Task dedicated to tests

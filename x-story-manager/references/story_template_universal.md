@@ -78,7 +78,7 @@ Tasks created separately (parentId → this Story):
 
 **Approach:** Risk-Based Testing with enforced limits (2-5 E2E, 3-8 Integration, 5-15 Unit per Story)
 
-**Reference:** See `x-story-finalizer/references/risk_based_testing_guide.md` for complete Risk-Based Testing methodology.
+**Reference:** See `x-test-coordinator/references/risk_based_testing_guide.md` for complete Risk-Based Testing methodology.
 
 ### E2E Tests (2-5 max)
 Test complete user journeys. **ONLY Priority ≥15 scenarios** (money, security, core flows):

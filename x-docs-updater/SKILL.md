@@ -1,6 +1,6 @@
 ---
 name: x-docs-updater
-description: Updates existing project documentation based on code changes. Automatically scans git diff and project files to identify changes, then updates only affected sections in requirements, architecture, technical specs, and ADRs. Recommends running x-html-builder to update HTML presentation. Preserves existing content while adding new information.
+description: Updates project docs when code changes. Scans git diff to identify changes, updates affected sections in requirements/architecture/specs/ADRs while preserving existing content. Run x-html-builder after.
 ---
 
 # Project Documentation Updater
@@ -20,7 +20,7 @@ Use this skill when:
 
 ## How It Works
 
-The skill follows a 5-phase workflow: scan changes → analyze impact → confirm (if needed) → update documents → recommend HTML rebuild.
+The skill follows a 4-phase workflow: scan changes → analyze impact → confirm (if needed) → update documents & recommend HTML rebuild.
 
 ### Phase 1: Scan Project Changes
 
@@ -172,9 +172,11 @@ AMBIGUOUS CHANGES (need clarification):
 
 ---
 
-### Phase 4: Update Documents
+### Phase 4: Update Documents & Recommend HTML Rebuild
 
-**Objective**: Update affected documentation sections while preserving existing content.
+**Objective**: Update affected documentation sections while preserving existing content, then recommend HTML rebuild if presentation exists.
+
+**Step 1: Update Documents**
 
 **Process**:
 
@@ -234,9 +236,7 @@ For each affected document:
 
 **Output**: Updated MD documents in `docs/project/`
 
----
-
-### Phase 5: HTML Presentation Recommendation
+**Step 2: Recommend HTML Rebuild (if HTML presentation exists)**
 
 **Objective**: Recommend rebuilding HTML presentation after MD updates.
 
@@ -452,8 +452,8 @@ This skill maintains compliance with:
 
 ---
 
-**Version:** 2.1.0 (HTML Responsibility Separation)
-**Last Updated:** 2025-01-31
+**Version:** 3.0.0 (Simplified workflow from 5 phases to 4 by grouping Phase 4 (Update Documents) + Phase 5 (HTML Recommendation) into Phase 4: Update Documents & Recommend HTML Rebuild with 2 steps, following Progressive Disclosure Pattern)
+**Last Updated:** 2025-11-14
 
 **Dependencies**:
 - Requires existing documentation in `docs/project/` (created by x-docs-creator skill)

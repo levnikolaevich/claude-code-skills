@@ -1,6 +1,6 @@
 ---
 name: x-story-manager
-description: Universal Story operations (create/replan) with automatic Epic decomposition. Decompose-First Pattern - Build IDEAL plan ALWAYS, then check existing and create or replan. Auto-discovers team ID and Epic.
+description: Handles Story create/replan via Epic decomposition. Decompose-First Pattern: builds IDEAL plan, then creates or replans. Auto-discovers team/Epic.
 ---
 
 # Linear Story Manager
@@ -216,7 +216,7 @@ list_issues(project=Epic.id, label="user-story")
      - Context
      - Acceptance Criteria (Given-When-Then, 3-5 AC)
      - Test Strategy (Risk-Based Testing: 2-5 E2E, 3-8 Integration, 5-15 Unit, 10-28 total)
-     - Implementation Tasks (placeholder: "Tasks will be created via x-task-manager after Story verification")
+     - Implementation Tasks (placeholder: "Tasks will be created via x-task-coordinator after Story verification")
      - Technical Notes (architecture, integrations, **Library Research from Phase 0**, guide links)
      - Definition of Done
      - Revision History
@@ -340,8 +340,8 @@ Stories created:
 - US008: Revoke token (link)
 
 Next Steps:
-1. Run x-story-verifier to validate Stories before approval
-2. Use x-task-manager to create tasks for each Story
+1. Run x-story-validator to validate Stories before approval
+2. Use x-task-coordinator to create tasks for each Story
 ```
 
 **REPLAN MODE:**
@@ -359,8 +359,8 @@ Operations executed:
 
 Next Steps:
 1. Review warnings for Stories in progress
-2. Run x-story-verifier on updated/created Stories
-3. Use x-task-manager to create/replan tasks
+2. Run x-story-validator on updated/created Stories
+3. Use x-task-coordinator to create/replan tasks
 ```
 
 ---
@@ -473,7 +473,7 @@ Before completing work, verify ALL checkpoints:
 - **Epic extraction:** Try to extract all planning info from Epic before asking user - reduces user input burden
 - **One capability per Story:** Each Story should have clear, focused persona + capability + value
 - **Testable AC:** Use Given-When-Then format, 3-5 AC per Story, specific criteria ("<200ms" not "fast")
-- **Test Strategy:** Include Risk-Based Testing section - guides final test task creation via x-story-finalizer
+- **Test Strategy:** Include Risk-Based Testing section - guides final test task creation via x-test-coordinator
 - **Library Research:** Include Library Research table in ALL Story Technical Notes - tasks will reference these specs
 - **Status respect:** Never auto-update Stories In Progress/Done - show warnings instead
 - **Preserve history:** Use state="Canceled" for obsolete Stories, never delete

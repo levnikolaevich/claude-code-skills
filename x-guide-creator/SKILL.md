@@ -1,6 +1,6 @@
 ---
 name: x-guide-creator
-description: Creates minimal project guides (6 sections, 300-500 words) documenting reusable patterns. AUTO-RESEARCH via MCP Ref/Context7. Use when new pattern discovered. Returns guide path for linking.
+description: Creates minimal project guides (6 sections, 300-500 words) documenting reusable patterns. AUTO-RESEARCH via MCP Ref/Context7. Used when new pattern discovered. Returns guide path for linking.
 ---
 
 # Guide Creator Skill
@@ -187,7 +187,7 @@ Before completing work, verify ALL checkpoints:
 - [ ] Path format correct for linking in Linear or other documents
 - [ ] Success message displayed: "✓ Guide created: docs/guides/NN-pattern-name.md"
 
-**Output:** Guide file path `docs/guides/NN-pattern-name.md` for linking by caller tools (e.g., x-story-verifier)
+**Output:** Guide file path `docs/guides/NN-pattern-name.md` for linking by caller tools (e.g., x-story-validator)
 
 ---
 

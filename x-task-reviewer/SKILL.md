@@ -1,6 +1,6 @@
 ---
 name: x-task-reviewer
-description: This skill should be used when reviewing completed tasks for To Review → Done/Rework transition. Auto-discovers project configuration. Works with Linear.
+description: Reviews completed tasks for To Review → Done/Rework transition. Auto-discovers project configuration.
 ---
 
 # Task Review Skill
@@ -59,7 +59,7 @@ Auto-discovers project configuration:
    - Verify test limits (2-5 E2E, 3-8 Integration, 5-15 Unit, 10-28 total)
    - Ensures Phase 3.2 checks align with project standards
 
-**Reference:** For test tasks, see `x-story-finalizer/references/test_task_template.md` for 11-section Story Finalizer structure and `x-story-finalizer/references/risk_based_testing_guide.md` for Risk Priority methodology and test limits.
+**Reference:** For test tasks, see `x-test-coordinator/references/test_task_template.md` for 11-section Story Finalizer structure and `x-test-coordinator/references/risk_based_testing_guide.md` for Risk Priority methodology and test limits.
 
 ### Phase 3: Review Checklist
 

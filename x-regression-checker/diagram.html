@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>x-regression-checker Workflow</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+    <link rel="stylesheet" href="../shared/css/diagram.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🧪 x-regression-checker Workflow</h1>
+            <p class="subtitle">Linear Workflow - Worker v1.0.0</p>
+        </header>
+        <div class="info-box">
+        <h3>Overview</h3>
+        <p><strong>Purpose:</strong> Run existing test suite to verify no regressions introduced by implementation changes.</p>
+        <p><strong>Type:</strong> Linear Workflow (4 sequential phases)</p>
+        <p><strong>Single Responsibility:</strong> ONLY runs tests and reports results - does NOT create tasks or change statuses.</p>
+    </div>
+
+    <div class="mermaid">
+graph TD
+    Start([START]) --> Phase1[Phase 1: Discovery<br/>Auto-detect framework<br/>Locate test directories]
+
+    Phase1 --> Phase2[Phase 2: Run Tests<br/>Execute test suite<br/>5-minute timeout]
+
+    Phase2 --> Phase3[Phase 3: Parse Results<br/>Extract statistics<br/>Identify failed tests]
+
+    Phase3 --> Phase4[Phase 4: Report Results<br/>Add Linear comment<br/>Return JSON verdict]
+
+    Phase4 --> End([END:<br/>JSON verdict returned])
+
+    classDef phase fill:#E3F2FD,stroke:#1976D2,stroke-width:2px
+    classDef endpoint fill:#C8E6C9,stroke:#388E3C,stroke-width:2px
+
+    class Phase1,Phase2,Phase3,Phase4 phase
+    class Start,End endpoint
+    </div>
+
+    <h2>Phase Descriptions</h2>
+
+    <div class="phase-description">
+        <div class="phase-title">Phase 1: Discovery</div>
+        <ul>
+            <li>Auto-detect test framework (pytest/jest/vitest/go test)</li>
+            <li>Locate test directories (tests/, test/, __tests__/)</li>
+            <li>Count test files</li>
+        </ul>
+    </div>
+
+    <div class="phase-description">
+        <div class="phase-title">Phase 2: Run Tests</div>
+        <ul>
+            <li>Construct framework-specific test command</li>
+            <li>Execute via Bash tool with 5-minute timeout</li>
+            <li>Capture stdout/stderr output</li>
+        </ul>
+    </div>
+
+    <div class="phase-description">
+        <div class="phase-title">Phase 3: Parse Results</div>
+        <ul>
+            <li>Parse output based on framework</li>
+            <li>Extract: total tests, passed, failed counts</li>
+            <li>Identify failed test names with file:line references</li>
+            <li>Calculate execution time</li>
+        </ul>
+    </div>
+
+    <div class="phase-description">
+        <div class="phase-title">Phase 4: Report Results</div>
+        <ul>
+            <li>Determine verdict (PASS if failed=0, else FAIL)</li>
+            <li>Format Linear comment with results</li>
+            <li>Add comment to Story in Linear</li>
+            <li>Return JSON verdict with all fields</li>
+        </ul>
+    </div>
+
+    <h2>Output Format</h2>
+    <pre style="background: #F5F5F5; padding: 15px; border-radius: 4px; overflow-x: auto;">
+{
+  "verdict": "PASS" | "FAIL",
+  "framework": "pytest" | "jest" | "vitest" | "go test",
+  "total_tests": 127,
+  "passed": 125,
+  "failed": 2,
+  "failed_tests": [
+    "tests/auth/test_login.py::test_expired_token",
+    "tests/api/test_rate_limit.py::test_burst_limit"
+  ],
+  "execution_time": "12.5s",
+  "linear_comment_id": "abc123"
+}
+    </pre>
+
+    <h2>Key Characteristics</h2>
+    <ul>
+        <li><strong>Atomic Worker:</strong> Single responsibility - runs tests only</li>
+        <li><strong>Framework Agnostic:</strong> Auto-detects pytest/jest/vitest/go test</li>
+        <li><strong>Timeout Protection:</strong> 5-minute maximum execution time</li>
+        <li><strong>Structured Output:</strong> JSON verdict for programmatic consumption</li>
+        <li><strong>Linear Integration:</strong> Adds formatted comment with results</li>
+    </ul>
+
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'default',
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true,
+                curve: 'basis'
+            }
+        });
+    </script>
+        <footer>
+            <p>x-regression-checker v1.0.0 | Worker Pattern | Mermaid.js</p>
+        </footer>
+    </div>
+    <script>
+        mermaid.initialize({ startOnLoad: true, theme: 'default', flowchart: { useMaxWidth: true, htmlLabels: true, curve: 'basis' } });
+    </script>
+</body>
+</html>

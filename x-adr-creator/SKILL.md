@@ -1,6 +1,6 @@
 ---
 name: x-adr-creator
-description: Creates minimal Architecture Decision Records (ADRs) through 5-question dialog. Categorizes as Strategic (business, patterns) or Technical (frameworks, infra). Nygard format with 7 sections (~300-500 words). Use after x-docs-creator creates project structure.
+description: Creates minimal ADRs via 5-question dialog. Categorizes as Strategic (business/patterns) or Technical (frameworks/infra). Nygard format, 7 sections (~300-500 words). Used after x-docs-creator.
 ---
 
 # ADR Creator
@@ -16,7 +16,7 @@ This skill should be used when:
 - Documenting architecture decisions during development
 
 **Prerequisites:**
-- `docs/project/adrs/` directory must exist (created by x-docs-creator)
+- `docs/adrs/` directory must exist (created by x-docs-creator)
 
 **Do NOT use this skill:**
 - When creating initial project documentation → use [x-docs-creator](../x-docs-creator/SKILL.md) instead
@@ -24,17 +24,19 @@ This skill should be used when:
 
 ## How It Works
 
-The skill follows a 5-phase workflow with streamlined interactive dialog:
+The skill follows a 4-phase workflow with streamlined interactive dialog:
 
-### Phase 1: ADR Number Detection
+### Phase 1: Discovery & Dialog
 
-**Objective**: Automatically detect the next ADR number.
+**Objective**: Automatically detect next ADR number and gather all information through streamlined questions.
+
+**Step 1: ADR Number Detection** (Automated)
 
 **Process**:
-1. Use **Glob** tool to find existing ADRs in `docs/project/adrs/`:
+1. Use **Glob** tool to find existing ADRs in `docs/adrs/`:
    ```
    pattern: "adr-*.md"
-   path: "docs/project/adrs/"
+   path: "docs/adrs/"
    ```
 2. Parse ADR numbers from filenames (e.g., `adr-003-database.md` → 3)
 3. Calculate next number: `max(existing_numbers) + 1`
@@ -43,9 +45,7 @@ The skill follows a 5-phase workflow with streamlined interactive dialog:
 
 **Output**: Next ADR number (e.g., ADR-004)
 
----
-
-### Phase 2: Interactive Dialog (5 Questions)
+**Step 2: Interactive Dialog** (5 Questions)
 
 **Objective**: Gather all information needed for the ADR through streamlined questions.
 
@@ -102,7 +102,7 @@ For each alternative, provide:
 
 ---
 
-### Phase 3: Generate ADR
+### Phase 2: Generate ADR
 
 **Objective**: Create the ADR file from template using gathered information.
 
@@ -110,7 +110,7 @@ For each alternative, provide:
 1. Construct filename: `adr-{number:03d}-{title-slug}.md`
    - Example: `adr-004-postgresql-database.md`
    - Title slug: lowercase, hyphens, no special chars
-2. Copy template: `x-adr-creator/references/adr_template.md` → `docs/project/adrs/adr-{number}-{slug}.md`
+2. Copy template: `x-adr-creator/references/adr_template.md` → `docs/adrs/adr-{number}-{slug}.md`
 3. Use **Edit tool** to replace ALL placeholders:
    - `{{NUMBER}}` → ADR number (e.g., "004")
    - `{{TITLE}}` → Full decision title
@@ -127,13 +127,13 @@ For each alternative, provide:
    - `{{ALT_2_NAME}}`, `{{ALT_2_PROS}}`, `{{ALT_2_CONS}}`, `{{ALT_2_REJECTION}}` → Alternative 2 from Q4
    - `{{RELATED_DECISIONS}}` → Answer from Q5 Part 2
 4. Update Last Updated date: `{{DATE}}` → Current date
-5. Notify user: "ADR created: docs/project/adrs/adr-{number}-{slug}.md"
+5. Notify user: "ADR created: docs/adrs/adr-{number}-{slug}.md"
 
-**Output**: New ADR file in `docs/project/adrs/`
+**Output**: New ADR file in `docs/adrs/`
 
 ---
 
-### Phase 4: Update Documentation Hub (Optional)
+### Phase 3: Update Documentation Hub (Optional)
 
 **Objective**: Update README.md to include link to new ADR.
 
@@ -161,17 +161,17 @@ For each alternative, provide:
 
 ---
 
-### Phase 5: Summary
+### Phase 4: Summary
 
 **Objective**: Confirm success and provide next steps.
 
 **Process**:
 1. Show created file:
-   - Path: `docs/project/adrs/adr-{number}-{slug}.md`
+   - Path: `docs/adrs/adr-{number}-{slug}.md`
    - Size: ~2-3 KB
    - Status: {status}
 2. Recommend next steps:
-   - "Review ADR content in docs/project/adrs/adr-{number}-{slug}.md"
+   - "Review ADR content in docs/adrs/adr-{number}-{slug}.md"
    - "Update architecture.md Section 9 (Architecture Decisions) to reference this ADR"
    - "Share ADR with team for review"
    - "If decision is Proposed, update status to Accepted once approved"
@@ -185,7 +185,7 @@ For each alternative, provide:
 Before completing work, verify ALL checkpoints:
 
 **✅ ADR File Created:**
-- [ ] File created in correct location: `docs/project/adrs/adr-{number}-{slug}.md`
+- [ ] File created in correct location: `docs/adrs/adr-{number}-{slug}.md`
 - [ ] Filename format correct: `adr-NNN-slug-with-dashes.md` (e.g., `adr-001-frontend-framework.md`)
 - [ ] ADR number sequential (no gaps in numbering)
 
@@ -369,7 +369,7 @@ We will use PostgreSQL 16 as our primary database.
 
 ## Error Handling
 
-**If `docs/project/adrs/` doesn't exist:**
+**If `docs/adrs/` doesn't exist:**
 - Error: "ADR directory not found. Please run x-docs-creator first."
 - Suggest: "Run x-docs-creator or x-docs-system to create initial structure"
 
@@ -393,5 +393,5 @@ We will use PostgreSQL 16 as our primary database.
 
 ---
 
-**Version:** 3.0.0 (ADR Categorization)
-**Last Updated:** 2025-11-05
+**Version:** 5.0.0 (Simplified workflow from 5 phases to 4 by grouping Phase 1 (ADR Number Detection) + Phase 2 (Interactive Dialog) into Phase 1: Discovery & Dialog with 2 steps, following Progressive Disclosure Pattern)
+**Last Updated:** 2025-11-14

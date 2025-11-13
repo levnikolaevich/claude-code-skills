@@ -1,6 +1,6 @@
 ---
 name: x-docs-system
-description: Orchestrator skill that creates complete documentation system by invoking specialized skills (x-docs-creator + x-html-builder + x-adr-creator). This skill should be used when starting new project and need full documentation suite at once.
+description: Creates complete doc system via x-docs-creator + x-html-builder + x-adr-creator. Used when starting new project and need full documentation suite at once.
 ---
 
 # Documentation System Creator (Orchestrator)
@@ -42,42 +42,28 @@ The skill follows a 3-phase orchestration workflow:
 
 ### Phase 2: Create Markdown Documentation
 
-**Objective**: Invoke x-docs-creator skill to generate all MD files.
+**Invocation:** `Skill(skill: "x-docs-creator")` → AUTOMATIC
 
-**Process**:
-1. Notify user: "Invoking x-docs-creator skill..."
-2. Use **Skill tool** to invoke:
-   ```
-   command: "x-docs-creator"
-   ```
-3. Wait for x-docs-creator to complete all 5 phases:
-   - Phase 1: Project Type Detection
-   - Phase 2: Copy Reference Templates
-   - Phase 3: Automatic Material Analysis (Optional)
-   - Phase 4: Sequential Document Creation (Requirements → Architecture → Technical Spec → ADRs)
-   - Phase 5: Summary and Next Steps
-4. Verify output exists:
-   - `docs/project/README.md`
-   - `docs/project/requirements.md`
-   - `docs/project/architecture.md`
-   - `docs/project/technical_specification.md`
-   - `docs/project/adrs/` (3-5 ADR files)
+**What it does:** Generates documentation via interactive discovery (19 technical questions in 5 categories)
 
-**Output**: Complete markdown documentation suite in `docs/project/`
+**Expected output:**
+- `docs/project/README.md` (navigation hub)
+- `docs/project/requirements.md`, `architecture.md`, `technical_specification.md`
+- `docs/project/adrs/*.md` (3-5 ADR files)
 
-**After x-docs-creator completes:** Verify output exists → Phase 3 AUTOMATIC (no user input).
+**After completion:** Verify output exists → Phase 3 AUTOMATIC
 
 ---
 
 ### Phase 3: Create HTML Presentation (Optional)
 
-**Objective**: If user approved HTML in Phase 1, invoke x-html-builder skill.
+**Condition:** If user approved HTML in Phase 1
 
-**AUTOMATIC (no user input):**
-- If user chose "yes" → invoke x-html-builder → WAIT completion → verify output (`presentation_final.html` + `assets/`)
-- If "no" → skip (can run x-html-builder later) → Phase 4 immediately
+**Invocation:** `Skill(skill: "x-html-builder")` → AUTOMATIC (no user input)
 
-**Output**: Interactive HTML presentation (if enabled)
+**Expected output:** `presentation_final.html` + `assets/` directory
+
+**Skip:** If "no" → run x-html-builder later manually
 
 ---
 
@@ -140,10 +126,10 @@ docs/project/
 1. **x-docs-system** (this skill) - Create complete documentation system
 2. **x-epic-creator** - Decompose scope into Epics (Linear Projects)
 3. **x-story-manager** - Create User Stories for each Epic (automatic decomposition + replan)
-4. **x-task-manager** - Break down Stories into implementation tasks (automatic decomposition + replan)
-5. **x-story-verifier** - Verify Stories before development
-6. **x-story-executor** - Orchestrate Story implementation
-7. **x-story-reviewer** - Review completed Stories
+4. **x-task-coordinator** - Break down Stories into implementation tasks (automatic decomposition + replan)
+5. **x-story-validator** - Verify Stories before development
+6. **x-story-coordinator** - Orchestrate Story implementation
+7. **x-story-quality-coordinator** - Review completed Stories
 
 ---
 
@@ -289,5 +275,5 @@ Before completing work, verify ALL checkpoints:
 
 ---
 
-**Version:** 1.0.2
-**Last Updated:** 2025-01-31
+**Version:** 1.1.0
+**Last Updated:** 2025-11-14

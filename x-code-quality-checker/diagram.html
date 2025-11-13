@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>x-code-quality-checker Workflow</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+    <link rel="stylesheet" href="../shared/css/diagram.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔎 x-code-quality-checker Workflow</h1>
+            <p class="subtitle">Linear Workflow - Worker v1.0.0</p>
+        </header>
+        <div class="info-box">
+        <h3>Overview</h3>
+        <p><strong>Purpose:</strong> Analyze code quality of Done implementation tasks for DRY/KISS/YAGNI/Architecture violations and guide compliance.</p>
+        <p><strong>Type:</strong> Linear Workflow (5 sequential phases)</p>
+        <p><strong>Single Responsibility:</strong> ONLY analyzes code quality and reports issues - does NOT create tasks or change statuses.</p>
+        <p><strong>Fail Fast:</strong> Phase 4 Step 1 in x-story-coordinator - checks quality BEFORE testing to catch refactoring needs early.</p>
+    </div>
+
+    <div class="mermaid">
+graph TD
+    Start([START]) --> Phase1[Phase 1: Discovery<br/>Load Story<br/>Discover guides<br/>Extract guide links]
+
+    Phase1 --> Phase2[Phase 2: Load Done Tasks<br/>Query implementation tasks<br/>Filter out test tasks<br/>Identify affected files]
+
+    Phase2 --> Phase3[Phase 3: Analyze Changes<br/>Extract git diffs<br/>Read file contents<br/>Parse AST]
+
+    Phase3 --> Phase4[Phase 4: Check Violations<br/>Check 1: DRY duplicates<br/>Check 2: KISS complexity<br/>Check 3: YAGNI unused<br/>Check 4: Architecture layers<br/>Check 5: Guide compliance]
+
+    Phase4 --> Phase5[Phase 5: Report Results<br/>Categorize by severity<br/>Linear comment<br/>Return JSON verdict]
+
+    Phase5 --> End([END:<br/>JSON verdict + issues])
+
+    classDef phase fill:#E3F2FD,stroke:#1976D2,stroke-width:2px
+    classDef endpoint fill:#C8E6C9,stroke:#388E3C,stroke-width:2px
+
+    class Phase1,Phase2,Phase3,Phase4,Phase5 phase
+    class Start,End endpoint
+    </div>
+
+    <h2>Phase Descriptions</h2>
+
+    <div class="phase-description">
+        <div class="phase-title">Phase 1: Discovery</div>
+        <ul>
+            <li>Load Story from Linear via MCP</li>
+            <li>Extract Story.id (UUID) for parentId filter</li>
+            <li>Discover available guides in docs/guides/</li>
+            <li>Parse Story Technical Notes for guide links</li>
+        </ul>
+    </div>
+
+    <div class="phase-description">
+        <div class="phase-title">Phase 2: Load Done Implementation Tasks</div>
+        <ul>
+            <li>Query Linear for Story's child tasks with state="Done"</li>
+            <li>Filter OUT test tasks (label "tests" or title contains "test")</li>
+            <li>Extract affected files from task "Affected Components" section</li>
+        </ul>
+    </div>
+
+    <div class="phase-description">
+        <div class="phase-title">Phase 3: Analyze Code Changes</div>
+        <ul>
+            <li>Extract git diffs for each task (git diff main...[branch])</li>
+            <li>Read file contents via Read tool</li>
+            <li>Parse AST (Abstract Syntax Tree) for code structure</li>
+            <li>Identify functions, classes, imports, complexity metrics</li>
+        </ul>
+    </div>
+
+    <div class="phase-description">
+        <div class="phase-title">Phase 4: Check Violations (5 checks)</div>
+        <ul>
+            <li><strong>Check 1: DRY</strong> - Duplicate code blocks, functions, validation logic</li>
+            <li><strong>Check 2: KISS</strong> - High cyclomatic complexity (>10), deep nesting, long functions</li>
+            <li><strong>Check 3: YAGNI</strong> - Unused code, premature abstraction, over-engineering</li>
+            <li><strong>Check 4: Architecture</strong> - Layer violations, circular dependencies, domain logic in wrong layer</li>
+            <li><strong>Check 5: Guide Compliance</strong> - Code doesn't follow recommended patterns from guides</li>
+        </ul>
+    </div>
+
+    <div class="phase-description">
+        <div class="phase-title">Phase 5: Report Results</div>
+        <ul>
+            <li>Categorize issues by severity (HIGH/MEDIUM/LOW)</li>
+            <li>Determine verdict (PASS if no HIGH/MEDIUM issues)</li>
+            <li>Format Linear comment with categorized issues</li>
+            <li>Add comment to Story</li>
+            <li>Return JSON verdict with detailed issue list</li>
+        </ul>
+    </div>
+
+    <h2>Violation Types</h2>
+
+    <div class="violation-type">
+        <div class="violation-title">1. DRY (Don't Repeat Yourself)</div>
+        <p><strong>Detects:</strong> Duplicate functions, code blocks, validation logic, error handling patterns</p>
+        <p><strong>Example:</strong> Same validation function in 3 different files</p>
+        <p><strong>Fix:</strong> Extract to shared utility module</p>
+        <p><strong>Severity:</strong> HIGH if >2 duplicates, MEDIUM if 2 duplicates</p>
+    </div>
+
+    <div class="violation-type">
+        <div class="violation-title">2. KISS (Keep It Simple)</div>
+        <p><strong>Detects:</strong> High cyclomatic complexity (>10), deep nesting (>4 levels), long functions (>50 lines)</p>
+        <p><strong>Example:</strong> Function with 5 nested if statements</p>
+        <p><strong>Fix:</strong> Simplify with early returns, extract helper functions</p>
+        <p><strong>Severity:</strong> HIGH if complexity >15, MEDIUM if >10</p>
+    </div>
+
+    <div class="violation-type">
+        <div class="violation-title">3. YAGNI (You Aren't Gonna Need It)</div>
+        <p><strong>Detects:</strong> Unused functions, premature abstraction, over-engineering</p>
+        <p><strong>Example:</strong> Interface with only one implementation</p>
+        <p><strong>Fix:</strong> Remove unused code, simplify abstraction</p>
+        <p><strong>Severity:</strong> MEDIUM (doesn't break functionality, adds maintenance burden)</p>
+    </div>
+
+    <div class="violation-type">
+        <div class="violation-title">4. Architecture Violations</div>
+        <p><strong>Detects:</strong> Layer violations (controller → repository, skipping service), circular dependencies</p>
+        <p><strong>Example:</strong> Controller imports Repository directly instead of Service</p>
+        <p><strong>Fix:</strong> Follow layer hierarchy: Controller → Service → Repository</p>
+        <p><strong>Severity:</strong> HIGH (breaks architecture, creates coupling)</p>
+    </div>
+
+    <div class="violation-type">
+        <div class="violation-title">5. Guide Compliance Violations</div>
+        <p><strong>Detects:</strong> Code doesn't follow recommended patterns from project guides</p>
+        <p><strong>Example:</strong> Custom JWT implementation instead of authlib (Guide 01 recommendation)</p>
+        <p><strong>Fix:</strong> Use recommended library/pattern from guide</p>
+        <p><strong>Severity:</strong> HIGH if security/critical, MEDIUM otherwise</p>
+    </div>
+
+    <h2>Output Format</h2>
+    <pre style="background: #F5F5F5; padding: 15px; border-radius: 4px; overflow-x: auto;">
+{
+  "verdict": "PASS" | "ISSUES_FOUND",
+  "story_id": "US001",
+  "tasks_analyzed": 3,
+  "issues": [
+    {
+      "type": "DRY",
+      "severity": "HIGH",
+      "file": "src/auth/service.py",
+      "line": 42,
+      "description": "Duplicate validation logic in 3 places",
+      "suggestion": "Extract to shared validator function"
+    }
+  ],
+  "summary": {
+    "dry_violations": 2,
+    "kiss_violations": 1,
+    "yagni_violations": 0,
+    "architecture_violations": 1,
+    "guide_violations": 1,
+    "total_issues": 5,
+    "high_severity": 3,
+    "medium_severity": 2,
+    "low_severity": 0
+  },
+  "linear_comment_id": "abc123"
+}
+    </pre>
+
+    <h2>Key Characteristics</h2>
+    <ul>
+        <li><strong>Atomic Worker:</strong> Single responsibility - code analysis only</li>
+        <li><strong>Fail Fast:</strong> Runs FIRST in Phase 4 (before testing) to catch refactoring needs early</li>
+        <li><strong>AST-Based:</strong> Uses Abstract Syntax Tree parsing for accurate code analysis</li>
+        <li><strong>Multi-Dimensional:</strong> Checks 5 violation types (DRY/KISS/YAGNI/Architecture/Guide Compliance)</li>
+        <li><strong>Severity Categorization:</strong> Issues ranked HIGH/MEDIUM/LOW for prioritization</li>
+        <li><strong>Guide Integration:</strong> Validates code follows project-specific patterns</li>
+    </ul>
+
+    <h2>Complexity Metrics</h2>
+    <p><strong>Cyclomatic Complexity Thresholds:</strong></p>
+    <ul>
+        <li>1-5: Simple, low risk</li>
+        <li>6-10: Moderate complexity</li>
+        <li>11-15: Complex, needs refactoring (MEDIUM severity)</li>
+        <li>16+: Very complex, high risk (HIGH severity)</li>
+    </ul>
+
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'default',
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true,
+                curve: 'basis'
+            }
+        });
+    </script>
+        <footer>
+            <p>x-code-quality-checker v1.0.0 | Worker Pattern | Mermaid.js</p>
+        </footer>
+    </div>
+    <script>
+        mermaid.initialize({ startOnLoad: true, theme: 'default', flowchart: { useMaxWidth: true, htmlLabels: true, curve: 'basis' } });
+    </script>
+</body>
+</html>

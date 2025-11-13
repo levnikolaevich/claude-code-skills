@@ -1,6 +1,6 @@
 ---
 name: x-html-builder
-description: Build interactive HTML presentation from project documentation with 6 tabs - Overview, Requirements (FRs/NFRs/ADRs), Architecture (C4 diagrams), Technical Spec (API/data), Roadmap (Epic list), and Guides. Uses Mermaid v11, table-based structure, English language. Works with x-docs-creator output.
+description: Builds interactive HTML from project docs with 6 tabs (Overview, Requirements, Architecture/C4, Tech Spec, Roadmap, Guides). Uses Mermaid v11, table structure. Works with x-docs-creator output.
 ---
 
 # HTML Presentation Builder

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>x-story-validator - State Diagram</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="stylesheet" href="../shared/css/diagram.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>✅ x-story-validator</h1>
+            <p class="subtitle">Story Verifier - State Diagram</p>
+        </header>
+        <div class="info-box">
+            <h3>📋 Overview</h3>
+            <ul>
+                <li><strong>Purpose:</strong> Auto-fix and approve Stories (8 sections) and Tasks (7 sections) against industry standards</li>
+                <li><strong>Verdict:</strong> ALWAYS approves after auto-fixing ALL 16 verification criteria (no "Needs Work" path)</li>
+                <li><strong>State Transition:</strong> Backlog → Todo (Story + ALL Tasks)</li>
+                <li><strong>Structure:</strong> 4 phases (Discovery & Loading → Critical Review → Auto-Fix Groups A/B/C/D → Approve & Notify)</li>
+            </ul>
+        </div>
+        <div class="diagram-container">
+            <div class="mermaid">
+graph TD
+    Start([Start: Verify Story]) --> Phase1[Phase 1: Discovery & Loading<br/>Team ID + project docs<br/>Load Story FULL + Tasks metadata<br/>Validate task breakdown 3-8 tasks]
+
+    Phase1 --> Phase2[Phase 2: Critical Solution Review<br/>Standards Hierarchy PRIORITY 1-4]
+
+    subgraph Standards [Standards Compliance & Solution Review]
+        S1[Check industry standards FIRST<br/>OAuth 2.0 REST OpenAPI RFCs<br/>PRIORITY 1]
+        S1 --> S2[Challenge approach<br/>Best way in 2025?<br/>Research best practices]
+        S2 --> S3{Documentation<br/>gaps detected?}
+
+        S3 -->|None| S9[Continue to Phase 3]
+        S3 -->|Pattern<br/>trigger| S6[Auto-create Guide<br/>x-guide-creator<br/>HOW to implement]
+        S3 -->|Package+version<br/>trigger| S7[Auto-create Manual<br/>x-manual-creator<br/>HOW to use library]
+        S3 -->|Decision<br/>trigger| S8[Auto-create ADR<br/>x-adr-creator<br/>WHY we decided]
+
+        S6 --> S10[Save doc paths<br/>for Phase 3 #13]
+        S7 --> S10
+        S8 --> S10
+        S9 --> Phase3
+        S10 --> Phase3
+    end
+
+    Phase2 --> S1
+
+    Phase3[Phase 3: Comprehensive Auto-Fix<br/>16 Verification Criteria #1-#16]
+
+    subgraph FixGroups [Auto-Fix Groups A → B → C → D]
+        GA[Group A: Structural Fixes<br/>#1 Story Structure 8 sections<br/>#2 Tasks Structure 7 sections sequential<br/>#3 Story Statement As a/I want/So that<br/>#4 Acceptance Criteria Given/When/Then]
+        GA --> GB[Group B: Solution Optimization<br/>#5 Industry Standards RFC compliance<br/>#6 Solution 2025 best practices<br/>#7 Library & Version current stable<br/>#13 Documentation Links insertion]
+        GB --> GC[Group C: Workflow Optimization<br/>#9 Test Strategy Risk-Based<br/>#10 Test Task Cleanup remove premature<br/>#11 Documentation Integration<br/>#12 Consumer-First Principle]
+        GC --> GD[Group D: Scope & Quality<br/>#13 Story Size 3-8 tasks x-task-manager<br/>#14 YAGNI Violations<br/>#15 KISS Violations<br/>#16 Code Quality config management]
+    end
+
+    Phase3 --> GA
+    GD --> Phase4
+
+    Phase4[Phase 4: Approve & Notify<br/>Story + ALL Tasks → Todo<br/>kanban_board.md ✅ APPROVED<br/>Approval comment + optional warning<br/>Summary table display]
+
+    Phase4 --> End([End: Story ALWAYS Approved])
+
+    classDef discovery fill:#E3F2FD,stroke:#1976D2,stroke-width:2px
+    classDef processing fill:#FFF9C4,stroke:#F57C00,stroke-width:2px
+    classDef action fill:#C8E6C9,stroke:#388E3C,stroke-width:2px
+
+    class Phase1 discovery
+    class Phase2,S1,S2,S3,Phase3,GA,GB,GC,GD processing
+    class Phase4 action
+            </div>
+        </div>
+        <footer>
+            <p>x-story-validator v10.0.0 | 4 phases · 16 auto-fix criteria · NO "Needs Work" path - ALWAYS approves after fixes</p>
+        </footer>
+    </div>
+    <script>
+        mermaid.initialize({ startOnLoad: true, theme: 'default', flowchart: { useMaxWidth: true, htmlLabels: true, curve: 'basis' } });
+    </script>
+</body>
+</html>

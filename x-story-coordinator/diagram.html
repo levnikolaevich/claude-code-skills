@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>x-story-coordinator - State Diagram</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="stylesheet" href="../shared/css/diagram.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔄 x-story-coordinator</h1>
+            <p class="subtitle">Story Execution Orchestrator - State Diagram</p>
+        </header>
+
+        <div class="info-box">
+            <h3>📋 Workflow Overview</h3>
+            <ul>
+                <li><strong>Purpose:</strong> Orchestrate complete Story execution from tasks through quality gates to Story Done (FULL AUTOMATION)</li>
+                <li><strong>Priority Order:</strong> 🔴 To Review → 🟡 To Rework → 🟢 Todo (Phase 3 loop)</li>
+                <li><strong>Loop Control:</strong> Explicit LoopEntry/ReturnToLoop points with thick arrows (==>) for cycle clarity</li>
+                <li><strong>Phase 4 Delegation:</strong> x-story-quality-coordinator Pass 1 (auto-verifies new tasks) → Pass 2 (auto-invoked after test task Done) → Story Done</li>
+                <li><strong>Key Feature:</strong> Lazy loading (metadata only in Phase 2, saves 10,000+ tokens)</li>
+                <li><strong>Self-Healing:</strong> Pass 1 creates fix/refactor/test task → auto-verifies (Backlog → Todo) → loops back to Phase 3</li>
+                <li><strong>Full Automation:</strong> Todo → In Progress → To Review → Done (no manual intervention)</li>
+            </ul>
+        </div>
+
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color color-discovery"></div>
+                <span>Discovery/Preparation</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color color-loop"></div>
+                <span>Loop/Processing</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #E1BEE7; border-color: #7B1FA2;"></div>
+                <span>Loop Control (Entry/Return)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color color-decision"></div>
+                <span>Decision Point</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color color-action"></div>
+                <span>Action/Update</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color color-critical"></div>
+                <span>Critical (Stop Condition)</span>
+            </div>
+        </div>
+
+        <div class="diagram-container">
+            <div class="mermaid">
+graph TD
+    Start((Start:<br/>Execute Story)) --> Phase1[Phase 1: Discovery<br/>Auto-discover Team ID]
+
+    Phase1 --> Phase2[Phase 2: Story + Tasks Overview<br/>Load Story FULL description<br/>❌ Tasks metadata ONLY from kanban_board.md]
+
+    Phase2 --> KanbanCheck{kanban_board.md<br/>exists?}
+    KanbanCheck -->|No| SyncLinear[Fallback: Sync with Linear<br/>Fetch tasks metadata ONLY<br/>NO descriptions!]
+    SyncLinear --> LoopEntry
+    KanbanCheck -->|Yes| LoopEntry
+
+    %% Phase 3: Task Orchestration Loop
+    subgraph Phase3_Loop [⚙️ Phase 3: Task Orchestration Loop - Priority-Based (3 levels)]
+        direction TB
+
+        LoopEntry((Loop<br/>Entry)) --> Phase3
+        Phase3[Read kanban_board.md<br/>Count tasks by status]
+
+        Phase3 --> Priority0{🔴 PRIORITY 0<br/>Has To Review?}
+        Priority0 -->|Yes| InvokeReviewer[[x-task-reviewer<br/>via Skill tool]]
+        InvokeReviewer -->|Task reviewed| ReloadAfterReview[Reload state]
+        ReloadAfterReview ==> LoopEntry
+
+        Priority0 -->|No| Priority1{🟡 PRIORITY 1<br/>Has To Rework?}
+        Priority1 -->|Yes| InvokeRework[[x-task-rework<br/>via Skill tool]]
+        InvokeRework -->|Task fixed| ReloadAfterRework[Reload state]
+        ReloadAfterRework ==> LoopEntry
+
+        Priority1 -->|No| Priority2{🟢 PRIORITY 2<br/>Has Todo?}
+        Priority2 -->|Yes| InvokeExecutor[[x-task-executor<br/>or x-test-executor<br/>via Skill tool]]
+        InvokeExecutor -->|Task executed| ReloadAfterExec[Reload state]
+        ReloadAfterExec ==> LoopEntry
+
+        Priority2 -->|No| StopCondition{{Stop Condition:<br/>All Tasks Done}}
+    end
+
+    %% Phase 4: Story Review & Finalization (Delegation Pattern)
+    subgraph Phase4_Review [✅ Phase 4: Story Quality Delegation - Pass 1 & Pass 2]
+        direction TB
+
+        Phase4Start[All implementation tasks Done]
+
+        Phase4Start --> InvokePass1[Invoke x-story-quality-coordinator Pass 1<br/>via Skill tool]
+        InvokePass1 --> Pass1Execution[Pass 1 executes:<br/>Code Quality → Regression → Manual Testing]
+
+        Pass1Execution --> Pass1Verdict{Pass 1 Verdict?}
+        Pass1Verdict -->|Test task created| AutoVerifyTest[Auto-verify via x-story-validator<br/>Backlog → Todo]
+        Pass1Verdict -->|Fix/refactor task created| AutoVerifyFix[Auto-verify via x-story-validator<br/>Backlog → Todo]
+
+        AutoVerifyTest --> LoopBackTest[GOTO Phase 3<br/>Execute test task]
+        AutoVerifyFix --> LoopBackFix[GOTO Phase 3<br/>Execute fix/refactor task]
+
+        LoopBackTest -.->|Test task Done| InvokePass2
+        LoopBackFix -.->|Fix Done| InvokePass1
+
+        InvokePass2[Update Story: In Progress → To Review<br/>Invoke x-story-quality-coordinator Pass 2<br/>via Skill tool]
+        InvokePass2 --> Pass2Execution[Pass 2 executes:<br/>Test verification Priority ≥15]
+
+        Pass2Execution --> Pass2Verdict{Pass 2 Verdict?}
+        Pass2Verdict -->|PASS| StoryDone[Story status: To Review → Done<br/>Delete temp script<br/>Workflow complete]
+        Pass2Verdict -->|FAIL| CreatePass2Fix[Create fix tasks in Backlog<br/>Auto-verify → GOTO Phase 3]
+    end
+
+    StopCondition -.->|Trigger| Phase4Start
+
+    %% Self-healing: Return points
+    LoopBackTest -.-> ReturnToLoop
+    LoopBackFix -.-> ReturnToLoop
+    CreatePass2Fix -.-> ReturnToLoop
+
+    ReturnToLoop((Return to<br/>Orchestration)) ==> LoopEntry
+
+    StoryDone --> End((End))
+
+    %% Styling
+    classDef discovery fill:#E3F2FD,stroke:#1976D2,stroke-width:2px
+    classDef loop fill:#FFF9C4,stroke:#F57C00,stroke-width:2px
+    classDef decision fill:#FFE0B2,stroke:#E64A19,stroke-width:2px
+    classDef action fill:#C8E6C9,stroke:#388E3C,stroke-width:2px
+    classDef critical fill:#FFCDD2,stroke:#C62828,stroke-width:3px
+    classDef loopControl fill:#E1BEE7,stroke:#7B1FA2,stroke-width:2px
+
+    class Phase1,Phase2 discovery
+    class Phase3,InvokeReviewer,InvokeRework,InvokeExecutor,ReloadAfterReview,ReloadAfterRework,ReloadAfterExec loop
+    class Priority0,Priority1,Priority2,KanbanCheck,Pass1Verdict,Pass2Verdict decision
+    class Phase4Start,InvokePass1,Pass1Execution,InvokePass2,Pass2Execution,AutoVerifyTest,AutoVerifyFix,LoopBackTest,LoopBackFix,CreatePass2Fix,StoryDone action
+    class StopCondition critical
+    class LoopEntry,ReturnToLoop loopControl
+            </div>
+        </div>
+
+        <div class="info-box">
+            <h3>⚠️ Critical Rules</h3>
+            <ul>
+                <li><strong>Phase 2 - ABSOLUTE PROHIBITION:</strong> NEVER load full Task descriptions (saves 10,000+ tokens)</li>
+                <li><strong>Loop Mechanism:</strong> Reload kanban_board.md after every skill invocation to get fresh state</li>
+                <li><strong>Priority Enforcement:</strong> Priority 0 (To Review) → Priority 1 (To Rework) → Priority 2 (Todo)</li>
+                <li><strong>Phase 4 Automation:</strong> Full Story lifecycle executes automatically (Pass 1 → auto-verify new tasks → Pass 2 → Done)</li>
+            </ul>
+        </div>
+
+        <div class="info-box">
+            <h3>🔍 Phase 4: Story Quality Delegation (Orchestrator-Worker Pattern)</h3>
+            <ul>
+                <li><strong>Pass 1 Invocation:</strong> x-story-coordinator delegates to x-story-quality-coordinator Pass 1 (Code Quality → Regression → Manual Testing with Early Exit)</li>
+                <li><strong>Auto-Verification:</strong> New tasks (test/fix/refactor) created in Backlog are automatically verified by x-story-validator (invoked via Skill tool)</li>
+                <li><strong>Loop Back:</strong> After auto-verification moves tasks to Todo, orchestration loop continues via Priority 2 (Todo execution)</li>
+                <li><strong>Pass 2 Invocation:</strong> When test task Done, Story status updates to To Review and x-story-quality-coordinator Pass 2 is invoked automatically</li>
+                <li><strong>Story Done:</strong> Pass 2 verifies tests (Priority ≥15, 10-28 total), updates Story status to Done, workflow complete</li>
+                <li><strong>Self-Healing:</strong> Pass 2 failures create fix tasks in Backlog → x-story-validator auto-verification → loop back to Phase 3</li>
+            </ul>
+        </div>
+
+        <footer>
+            <p>x-story-coordinator v6.0.0 | Full automation: Todo → In Progress → To Review → Done (no manual intervention)</p>
+            <p>Diagram format: Mermaid.js | Orchestrator-Worker Pattern | Last updated: 2025-11-14</p>
+        </footer>
+    </div>
+
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'default',
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true,
+                curve: 'stepBefore'
+            }
+        });
+    </script>
+</body>
+</html>

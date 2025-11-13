@@ -5,21 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>x-test-executor - State Diagram</title>
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
-        .container { max-width: 1400px; margin: 0 auto; background: white; border-radius: 12px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); padding: 40px; }
-        header { text-align: center; margin-bottom: 40px; padding-bottom: 20px; border-bottom: 2px solid #e0e0e0; }
-        h1 { color: #333; font-size: 2.5em; margin-bottom: 10px; }
-        .subtitle { color: #666; font-size: 1.2em; font-weight: 300; }
-        .diagram-container { background: #f9f9f9; border-radius: 8px; padding: 30px; margin: 20px 0; overflow-x: auto; }
-        .mermaid { display: flex; justify-content: center; }
-        .info-box { background: #e3f2fd; border-left: 4px solid #1976d2; padding: 15px 20px; margin: 20px 0; border-radius: 4px; }
-        .info-box h3 { color: #1976d2; margin-bottom: 10px; }
-        .info-box ul { margin-left: 20px; }
-        .info-box li { margin: 8px 0; color: #555; }
-        footer { text-align: center; margin-top: 40px; padding-top: 20px; border-top: 2px solid #e0e0e0; color: #999; font-size: 0.9em; }
-    </style>
+    <link rel="stylesheet" href="../shared/css/diagram.css">
 </head>
 <body>
     <div class="container">
@@ -30,7 +16,7 @@
         <div class="info-box">
             <h3>📋 Overview</h3>
             <ul>
-                <li><strong>Purpose:</strong> Execute Story Finalizer test tasks from x-story-finalizer (11 sections)</li>
+                <li><strong>Purpose:</strong> Execute Story Finalizer test tasks from x-test-coordinator (11 sections)</li>
                 <li><strong>6 Steps:</strong> Fix existing tests → New tests → Infrastructure → Docs → Cleanup → Verify</li>
                 <li><strong>Testing:</strong> E2E-first Risk-Based (2-5 E2E, 3-8 Integration, 5-15 Unit, Priority ≥15)</li>
             </ul>

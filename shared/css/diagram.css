@@ -1,0 +1,160 @@
+/*
+ * Universal Diagram CSS v1.0.0
+ * Last Updated: 2025-11-13
+ * Used by: All diagram.html files across skills
+ */
+
+/* Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* CSS Variables - Theme Colors */
+:root {
+    --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --primary-color: #1976d2;
+    --text-dark: #333;
+    --text-medium: #666;
+    --text-light: #555;
+    --text-gray: #999;
+    --border-color: #e0e0e0;
+    --bg-light: #f9f9f9;
+    --bg-info: #e3f2fd;
+    --shadow-main: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+/* Global Styles */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--primary-gradient);
+    min-height: 100vh;
+    padding: 20px;
+}
+
+/* Main Container */
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 12px;
+    box-shadow: var(--shadow-main);
+    padding: 40px;
+}
+
+/* Header */
+header {
+    text-align: center;
+    margin-bottom: 40px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid var(--border-color);
+}
+
+h1 {
+    color: var(--text-dark);
+    font-size: 2.5em;
+    margin-bottom: 10px;
+}
+
+.subtitle {
+    color: var(--text-medium);
+    font-size: 1.2em;
+    font-weight: 300;
+}
+
+/* Diagram Container */
+.diagram-container {
+    background: var(--bg-light);
+    border-radius: 8px;
+    padding: 30px;
+    margin: 20px 0;
+    overflow-x: auto;
+}
+
+.mermaid {
+    display: flex;
+    justify-content: center;
+}
+
+/* Info Box */
+.info-box {
+    background: var(--bg-info);
+    border-left: 4px solid var(--primary-color);
+    padding: 15px 20px;
+    margin: 20px 0;
+    border-radius: 4px;
+}
+
+.info-box h3 {
+    color: var(--primary-color);
+    margin-bottom: 10px;
+}
+
+.info-box ul {
+    margin-left: 20px;
+}
+
+.info-box li {
+    margin: 8px 0;
+    color: var(--text-light);
+}
+
+/* Operation Box (used by x-task-replanner) */
+.operation-box {
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 12px 16px;
+    margin: 12px 0;
+}
+
+.operation-box h3 {
+    margin: 0 0 8px 0;
+    color: var(--text-dark);
+    font-size: 1.1em;
+}
+
+.operation-box p {
+    margin: 0;
+    color: var(--text-light);
+}
+
+/* Legend (optional - used by some diagrams) */
+.legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: center;
+    margin: 20px 0;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.legend-color {
+    width: 30px;
+    height: 30px;
+    border-radius: 4px;
+    border: 2px solid #333;
+}
+
+/* Legend Colors */
+.color-discovery { background: #E3F2FD; }
+.color-loop { background: #FFF9C4; }
+.color-decision { background: #FFE0B2; }
+.color-action { background: #C8E6C9; }
+.color-critical { background: #FFCDD2; }
+
+/* Footer */
+footer {
+    text-align: center;
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 2px solid var(--border-color);
+    color: var(--text-gray);
+    font-size: 0.9em;
+}

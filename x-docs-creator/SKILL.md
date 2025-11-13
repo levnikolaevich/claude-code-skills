@@ -1,6 +1,6 @@
 ---
 name: x-docs-creator
-description: Create comprehensive technical documentation (requirements, architecture, technical specs, ADRs) BEFORE x-epic-creator when starting new IT projects. Follows 2025 industry standards through 2-stage workflow: analyze materials, research best practices, interactive dialog. Generates 4 MD documents.
+description: Creates technical docs (requirements, architecture, specs, ADRs) before coding new projects. Uses 2-stage workflow: material analysis, research, dialog. Outputs 4 MD docs per 2025 standards.
 ---
 
 # Project Documentation Creator
@@ -21,163 +21,129 @@ This skill should be used **BEFORE creating Epics** when:
 
 ## How It Works
 
-The skill follows a 5-phase intelligent workflow combining template copying, automatic analysis, research, and interactive dialog:
+The skill follows a 4-phase intelligent workflow combining template copying, automatic analysis, research, and interactive dialog:
 
-### Phase 1: Project Type Detection
+### Phase 1: Setup & Discovery
 
-**Objective**: Understand project technical context.
+**Objective**: Understand project context, prepare templates, and analyze existing materials.
 
-**Process**:
-1. Ask about project type (web app, mobile app, API, microservices, desktop, etc.)
-2. Ask about project stage (new project, rewrite, enhancement)
+**Sub-steps:**
 
-**Output**: Project context understanding
+**1.1 Project Type Detection**
+- Ask about project type (web app, mobile app, API, microservices, desktop, etc.)
+- Ask about project stage (new project, rewrite, enhancement)
 
----
+**1.2 Copy Reference Templates**
+- Create output directories: `docs/project/`, `docs/project/adrs/`
+- Copy lean templates using Write tool:
+  - `references/requirements_template_lean.md` → `docs/project/requirements.md`
+  - `references/architecture_template_lean.md` → `docs/project/architecture.md`
+  - `references/technical_spec_template_lean.md` → `docs/project/technical_specification.md`
+  - `references/readme_hub_template.md` → `docs/project/README.md`
+- Notify user: "Templates copied to docs/project/"
+- **Note:** ADR template NOT copied (x-adr-creator uses its own template)
 
-### Phase 2: Copy Reference Templates
-
-**Objective**: Prepare templates for in-place editing to optimize context usage and preserve exact formatting.
-
-**Process**:
-1. Create output directories:
-   - `docs/project/`
-   - `docs/project/adrs/`
-2. Copy lean templates using Write tool:
-   - `references/requirements_template_lean.md` → `docs/project/requirements.md`
-   - `references/architecture_template_lean.md` → `docs/project/architecture.md`
-   - `references/technical_spec_template_lean.md` → `docs/project/technical_specification.md`
-   - `references/readme_hub_template.md` → `docs/project/README.md`
-3. Notify user: "Templates copied to docs/project/"
-
-**Note:** ADR template is NOT copied to project. x-adr-creator skill uses its own template from `x-adr-creator/references/adr_template.md` when creating ADRs.
-
-**Why This Phase**:
+**Why lean templates:**
 - Enables Edit tool usage (more context-efficient than Write)
-- Preserves exact template structure without "inventing" formatting
-- Lean templates contain only structure + placeholders (no examples)
-- Reduces context consumption by ~70% compared to full templates
-- **SCOPE tags included**: Each template contains SCOPE tags (first 3-5 lines) defining document boundaries and redirecting out-of-scope content
+- Preserves exact structure, reduces context by ~70%
+- **SCOPE tags included** for document boundaries
 
-**Output**: Empty template files with SCOPE tags ready for in-place editing
+**1.3 Automatic Material Analysis (Optional)**
+- Ask: "Do you have project materials to analyze?"
+- If YES: Use Glob + Read to analyze package.json, Dockerfile, docker-compose.yml, etc.
+- Extract: runtime versions, frameworks, databases, dependencies
+- Pre-populate answers for Q9, Q11, Q12
+- Report detected technologies to user
+- If NO: Skip analysis
 
----
+**Output**: Project context + empty templates with SCOPE tags + pre-populated technical data (if materials provided)
 
-### Phase 3: Automatic Material Analysis (Optional)
-
-**Objective**: Extract maximum technical information from provided project materials before asking questions.
-
-**Process**:
-1. Ask user: "Do you have project materials to analyze? (files, diagrams, docs, code)"
-2. If YES:
-   - Use **Glob** + **Read** tools to find and analyze:
-     - Package managers: `package.json`, `requirements.txt`, `go.mod`, `pom.xml`, `Gemfile`
-     - Docker: `Dockerfile`, `docker-compose.yml`, `docker-compose.test.yml`
-     - Config: `tsconfig.json`, `*.env.example`, `.nvmrc`
-     - Docs: `README.md`, architecture diagrams
-     - Code structure: `src/`, `api/`, `services/`, `tests/`
-   - Extract information:
-     - Runtime: Node 18, Python 3.11, Go 1.21
-     - Dockerfile: Multi-stage structure, base image
-     - docker-compose.yml: Services (app + db + cache), images, volumes
-     - docker-compose.test.yml: Test setup, tmpfs, hot-reload
-     - Dependencies → frameworks, databases, auth, cache
-   - Pre-populate answers for Q9, Q11, Q12 (partial)
-   - Report findings to user
-3. If NO: Skip to Phase 3
-
-**Output**: Pre-populated technical information + report of detected technologies
-
-**Reference**: See `references/automatic_analysis_guide.md` for detailed algorithms
+**Reference**: See `references/automatic_analysis_guide.md` for analysis algorithms
 
 ---
 
-### Phase 4: Requirements Document
+### Phase 2: Core Documents Generation
 
-**Objective**: Create requirements document using Edit tool.
+**Objective**: Create all technical documentation through interactive discovery and Edit tool.
 
-**Process**: **MANDATORY: Use Read tool to load `references/critical_questions.md`** before starting questions
+**MANDATORY**: Use Read tool to load `references/critical_questions.md` before starting questions
 
-**Process**:
-1. **Discovery**: Ask Q1-Q4 (Requirements) + Q14-Q17 (Quality Attributes) interactively in batches of 4
-   - Show progress: "Requirements Document: Category X of 2"
-   - Categories: Requirements (Q1-Q4), Quality (Q14-Q17)
-2. **Edit**: Use Edit tool on `docs/project/requirements.md`:
-   - Replace placeholders with answers
-   - Fill Sections 3 (Functional Requirements), 4 (Non-Functional Requirements)
-   - Generate requirement IDs (FR-XXX-001, NFR-PERF-001)
-   - Use MoSCoW prioritization (MUST/SHOULD/COULD/WON'T)
-3. **Notify**: "✓ requirements.md created"
+**Sub-steps:**
 
-**Output**: `docs/project/requirements.md` with 10 sections filled
+**2.1 Requirements Document**
+- **Discovery**: Ask Q1-Q4 (Requirements) + Q14-Q17 (Quality Attributes) in batches
+  - Show progress: "Requirements Document: Category X of 2"
+- **Edit**: Update `docs/project/requirements.md`:
+  - Replace placeholders with answers
+  - Fill Sections 3-4 (Functional & Non-Functional Requirements)
+  - Generate requirement IDs (FR-XXX-001, NFR-PERF-001), use MoSCoW prioritization
+- **Notify**: "✓ requirements.md created"
 
----
+**2.2 Architecture Document**
+- **Discovery**: Ask Q5-Q8 (Scope) + auto-research Q9, Q11-Q13 (Tech Stack) + ask Q10
+  - Show progress: "Architecture Document: Category X of 2"
+  - Auto-research: Verify 2025 versions (MCP Ref + WebSearch), patterns, frameworks, integrations
+  - Generate Dockerfile + docker-compose.yml with recommendations
+- **Edit**: Update `docs/project/architecture.md`:
+  - Replace placeholders, generate Mermaid diagrams (Business Context, Technical Context, C4)
+  - Fill Sections 4-5 (Solution Strategy, Building Blocks)
+- **Notify**: "✓ architecture.md created"
 
-### Phase 5: Architecture Document
+**2.3 Technical Specification**
+- **Discovery**: Compile data from Q8 + Q9-Q17 (already collected)
+  - No new questions (reuse from 2.1 and 2.2)
+- **Edit**: Update `docs/project/technical_specification.md`:
+  - Fill Section 2 (Technology Stack table), Section 2.2 (Docker Environment)
+  - Fill Sections 4-10 (Database, API, Integrations, Security, Performance, Testing, Deployment)
+- **Notify**: "✓ technical_specification.md created"
 
-**Process**:
-1. **Discovery**: Ask Q5-Q8 (Scope) + auto-research Q9, Q11-Q13 (Tech Stack) + ask Q10 interactively
-   - Show progress: "Architecture Document: Category X of 2"
-   - Categories: Scope (Q5-Q8), Technology (Q9-Q13)
-   - If auto-research enabled:
-     - Q9: Verify 2025 versions (MCP Ref + WebSearch)
-     - Q11: Architectural patterns based on project type
-     - Q12: Libraries and frameworks (latest versions)
-     - Q13: Integrations comparison
-     - Generate Dockerfile + docker-compose.yml
-     - Present recommendations with rationale
-   - Always ask Q10 interactively (constraints)
-2. **Edit**: Use Edit tool on `docs/project/architecture.md`:
-   - Replace placeholders with answers
-   - Generate Mermaid diagrams (Business Context, Technical Context, C4 diagrams)
-   - Fill Section 4 (Solution Strategy), Section 5 (Building Blocks)
-3. **Notify**: "✓ architecture.md created"
+**2.4 ADRs (Architecture Decision Records)**
+- **Discovery**: Ask Q18-Q19 (Technical Risks)
+- **Create ADRs**: For each key decision (Q9-Q13):
+  - Copy template → `adr-NNN-name.md`
+  - Fill Michael Nygard format: Context, Decision, Rationale, Consequences, Alternatives
+  - Generate 3-5 ADRs (frontend, backend, database, cache, API style)
+- **Notify**: "✓ 3-5 ADRs created"
 
-**Output**: `docs/project/architecture.md` with 13 sections filled + Mermaid diagrams
+**Output**:
+- `docs/project/requirements.md` (10 sections)
+- `docs/project/architecture.md` (13 sections + Mermaid diagrams)
+- `docs/project/technical_specification.md` (12 sections)
+- `docs/project/adrs/adr-001-*.md` through `adr-005-*.md`
 
----
-
-### Phase 6: Technical Specification
-
-**Process**:
-1. **Discovery**: Compile data from Q8 (Roles) + Q9-Q17 (already collected)
-   - No new questions needed (reuse from Phase 4 and Phase 5)
-2. **Edit**: Use Edit tool on `docs/project/technical_specification.md`:
-   - Replace placeholders with compiled data
-   - Fill Section 2 (Technology Stack table)
-   - Fill Section 2.2 (Docker Development Environment) with auto-generated Dockerfile + docker-compose.yml
-   - Fill Sections 4-10 (Database, API, Integrations, Security, Performance, Testing, Deployment)
-3. **Notify**: "✓ technical_specification.md created"
-
-**Output**: `docs/project/technical_specification.md` with 12 sections filled
+**Reference**: See `references/template_mappings.md` for question-to-template mappings
 
 ---
 
-### Phase 7: ADRs (Architecture Decision Records)
+### Phase 3: Integration & Presentation (Optional)
 
-**Process**:
-1. **Discovery**: Ask Q18-Q19 (Technical Risks) interactively
-   - Show progress: "ADRs: Documenting Technical Decisions"
-2. **Create ADRs**: For each key technical decision (Q9-Q13):
-   - Copy `docs/project/adrs/_template.md` → `adr-NNN-name.md`
-   - Use Edit tool to fill Michael Nygard format:
-     - Context (problem, constraints)
-     - Decision (chosen solution)
-     - Rationale (why this decision)
-     - Consequences (positive/negative)
-     - Alternatives Considered (2-3 alternatives with pros/cons/rejection reason)
-   - Generate 3-5 ADRs (frontend framework, backend framework, database, cache, API style)
-3. **Notify**: "✓ 3-5 ADRs created"
+**Objective**: Generate kanban board for Linear integration and optional HTML presentation.
 
-**Output**: `docs/project/adrs/adr-001-*.md` through `adr-005-*.md`
+**Sub-steps:**
 
-**Template Mappings**: For detailed question-to-template mappings, see `references/template_mappings.md`
+**3.1 Generate Kanban Board (Optional)**
+- Ask: "Generate kanban_board.md for Linear integration? (yes/no)"
+- If yes:
+  - Ask: Linear Team Name, UUID, Key, Workspace URL
+  - Read template: `x-docs-creator/references/kanban_board_template.md`
+  - Replace placeholders ([TEAM_NAME], [TEAM_UUID], etc.) with provided values
+  - Write `docs/tasks/kanban_board.md`
+- If no: Skip, notify user can create manually later
+
+**3.2 Generate HTML Presentation (Optional)**
+- Ask: "Generate interactive HTML presentation? (yes/no)"
+- If yes: Invoke x-html-builder → WAIT completion → verify output (`presentation_final.html` + `assets/`)
+- If no: Skip (can run x-html-builder later)
+
+**Output**:
+- `docs/tasks/kanban_board.md` with Linear configuration (if enabled)
+- Interactive HTML presentation (if enabled)
 
 ---
 
-### Phase 11: Summary and Next Steps
+### Phase 4: Finalization
 
-**Objective**: Provide user with complete overview and next steps.
+**Objective**: Provide complete overview and next steps.
 
 **Process**:
 1. List all created files with sizes:
@@ -186,6 +152,8 @@ The skill follows a 5-phase intelligent workflow combining template copying, aut
    - `docs/project/architecture.md`
    - `docs/project/technical_specification.md`
    - `docs/project/adrs/adr-001-*.md` (3-5 files)
+   - `docs/tasks/kanban_board.md` (if generated)
+   - `presentation_final.html` (if generated)
 
 2. Recommend next steps:
    - "Review generated documentation"
@@ -193,48 +161,6 @@ The skill follows a 5-phase intelligent workflow combining template copying, aut
    - "Share documentation with technical stakeholders"
 
 **Output**: Summary message with file list and recommendations
-
----
-
-### Phase 9: Generate Kanban Board (Optional)
-
-**Objective**: Generate `docs/tasks/kanban_board.md` from template with Linear configuration.
-
-**When to execute**: If user plans to use Linear for task management.
-
-**Process**:
-1. Ask user: "Generate kanban_board.md for Linear integration? (yes/no)"
-2. If user chose "yes":
-   - Ask: "Linear Team Name (e.g., 'PrompsitAPI')?"
-   - Ask: "Linear Team UUID (from Linear settings)?"
-   - Ask: "Linear Team Key (short key, e.g., 'API')?"
-   - Ask: "Linear Workspace URL (e.g., 'https://linear.app/prompsitapi')?"
-3. Read template: `x-docs-creator/references/kanban_board_template.md`
-4. Replace placeholders:
-   - `[TEAM_NAME]` → provided Team Name
-   - `[TEAM_UUID]` → provided Team UUID
-   - `[TEAM_KEY]` → provided Team Key
-   - `[WORKSPACE_URL]` → provided Workspace URL
-   - `[YYYY-MM-DD]` → current date
-5. Write file to `docs/tasks/kanban_board.md`
-6. If user chose "no":
-   - Skip kanban board generation
-   - Notify user: "Skipped kanban_board.md (can create manually later from template)"
-
-**Output**: `docs/tasks/kanban_board.md` with Linear configuration (if enabled)
-
----
-
-### Phase 10: Generate HTML Presentation (Optional)
-
-**Objective**: Invoke x-html-builder skill to create interactive HTML.
-
-**Process:**
-Ask user: "Generate interactive HTML presentation? (yes/no)"
-- **If yes:** Invoke x-html-builder → WAIT completion → verify output (`presentation_final.html` + `assets/`)
-- **If no:** Skip (can run x-html-builder later)
-
-**Output**: Interactive HTML presentation (if enabled)
 
 ---
 
@@ -293,7 +219,7 @@ docs/tasks/
 
 ## Integration with Project Workflow
 
-x-docs-creator → [optional: x-html-builder] → x-epic-creator → x-story-manager → x-task-manager → x-task-executor → x-task-reviewer → x-story-finalizer → x-test-executor → x-task-reviewer → Story Done
+x-docs-creator → [optional: x-html-builder] → x-epic-creator → x-story-manager → x-task-coordinator → x-task-executor → x-task-reviewer → test planning → x-test-executor → x-task-reviewer → Story Done
 
 **Dependencies**: x-html-builder reads MD docs from docs/project/, epic-creator uses requirements.md, task-creator uses architecture.md + technical_specification.md
 
@@ -359,5 +285,5 @@ Before completing work, verify ALL checkpoints:
 
 ---
 
-**Version:** 5.5.0
-**Last Updated:** 2025-01-31
+**Version:** 6.0.0 (Simplified workflow from 11 phases to 4 major phases by grouping related steps: Phase 1 Setup & Discovery (1-3), Phase 2 Core Documents (4-7), Phase 3 Integration & Presentation (9-10), Phase 4 Finalization (11))
+**Last Updated:** 2025-11-14

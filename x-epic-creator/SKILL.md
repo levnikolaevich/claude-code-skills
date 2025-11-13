@@ -1,6 +1,6 @@
 ---
 name: x-epic-creator
-description: Decompose scope into 3-7 Linear Projects (Epics) with business goals, success criteria, and phased strategy through interactive dialog. Use when starting new initiative requiring decomposition into logical domains with clear scope boundaries. Auto-discovers team ID and Epic number.
+description: Decomposes scope into 3-7 Epics via dialog. Creates goals, criteria, strategy per Epic. Used when starting initiatives requiring domain split. Auto-discovers team/Epic number.
 ---
 
 # Linear Epic Creator

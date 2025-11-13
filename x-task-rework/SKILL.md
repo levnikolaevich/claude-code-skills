@@ -1,6 +1,6 @@
 ---
 name: x-task-rework
-description: This skill should be used when addressing review feedback and fixing issues in tasks marked To Rework. Analyzes feedback, applies fixes following KISS/YAGNI/DRY principles, runs quality gates (type checking, linting), and submits task back To Review status. Auto-discovers project configuration. Works with Linear.
+description: Addresses review feedback, fixes To Rework tasks. Applies fixes via KISS/YAGNI/DRY, runs type checks/linting, submits to To Review. Auto-discovers config.
 ---
 
 # Task Rework Skill

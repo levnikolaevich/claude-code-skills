@@ -1,6 +1,6 @@
 ---
 name: x-task-executor
-description: Execute approved implementation tasks ONLY (Todo → In Progress → To Review). Uses KISS/YAGNI principles, reads guide links from Technical Approach, runs type checking and linting. NOT for test tasks. Chat output prefix ⚙️ [EXECUTOR].
+description: Executes implementation tasks (Todo → In Progress → To Review). Uses KISS/YAGNI, reads Technical Approach guides, runs type checks/linting. NOT for test tasks.
 ---
 
 # Implementation Task Execution Skill
@@ -122,21 +122,7 @@ Auto-discovers project configuration:
    - Remove task line: `    - [LINEAR_ID: EP#_## Task Title](link)`
    - Add task line to same Story section under "### To Review"
 
-**Story Status Update (if last task):**
-1. Read kanban_board.md to get all tasks for parent Story
-2. Check if ALL tasks in "To Review" or "Done" status:
-   - If yes:
-     * Update Story status: "In Progress" → "To Review" via Linear MCP
-     * Add comment to Story: "✅ All tasks completed and ready for review"
-     * Update kanban_board.md (Story section: In Progress → To Review):
-       - Find Story entry under "### In Progress": `  📖 [LINEAR_ID: USXXX Story Title](link)`
-       - Find Epic header above Story: `**Epic N: Epic Title**`
-       - Remove entire Epic section from "### In Progress" (Epic header + Story + all Tasks)
-       - Add entire Epic section to "### To Review" (preserve hierarchy)
-       - If Epic has other Stories still in In Progress, keep Epic in both sections
-   - If any task in "Todo" or "In Progress":
-     * Story remains "In Progress"
-     * No additional actions
+**Note:** Story status management is handled by x-story-coordinator (orchestrator), not by x-task-executor (worker). See Separation of Concerns principle.
 
 ---
 
@@ -176,19 +162,6 @@ Before completing work, verify ALL checkpoints:
   - Task line added to same Story section under "### To Review"
   - Epic header and Story structure preserved
 
-**✅ Story Status Updated (if applicable):**
-- [ ] All Story tasks checked (via kanban_board.md hierarchical parsing)
-- [ ] If ALL tasks in "To Review" or "Done":
-  - Story status updated: "In Progress" → "To Review" via Linear MCP
-  - Comment added to Story: "✅ All tasks completed and ready for review"
-  - kanban_board.md updated with hierarchical Story movement:
-    * Story entry found: `  📖 [LINEAR_ID: USXXX Story Title](link)` under "### In Progress"
-    * Epic header identified: `**Epic N: Epic Title**`
-    * Entire Epic section removed from "### In Progress" (Epic + Story + all Tasks)
-    * Entire Epic section added to "### To Review" (hierarchy preserved)
-    * If Epic has other Stories in In Progress, Epic kept in both sections
-- [ ] If any task in "Todo" or "In Progress": Story remains "In Progress" (no action)
-
 **✅ Handoff Ready:**
 - [ ] Chat output prefix used: ⚙️ [EXECUTOR] for all messages
 - [ ] Final message: "⚙️ [EXECUTOR] Implementation complete. Quality gates passed. Ready for review."
@@ -217,5 +190,5 @@ Execute task API-42
 
 ---
 
-**Version:** 10.0.0 (BREAKING: Implementation tasks ONLY, test tasks moved to x-test-executor)
-**Last Updated:** 2025-11-08
+**Version:** 10.1.0 (Removed Story status update logic - this is now x-story-coordinator's responsibility per Separation of Concerns principle)
+**Last Updated:** 2025-11-14

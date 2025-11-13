@@ -1,15 +1,15 @@
 ---
 name: x-test-executor
-description: Execute Story Finalizer test tasks from x-story-finalizer (11 sections). Risk-Based Testing (2-5 E2E, 3-8 Integration, 5-15 Unit, Priority ≥15). Includes Fix Existing Tests, Infrastructure Updates, Documentation Updates, Legacy Code Cleanup. Transitions Todo → In Progress → To Review.
+description: Executes Story Finalizer test tasks (11 sections). Risk-Based Testing: E2E/Integration/Unit (Priority ≥15). Includes test fixes, infrastructure, docs, cleanup. Todo → In Progress → To Review.
 ---
 
 # Story Finalizer Test Task Execution Skill
 
-Execute approved Story Finalizer test tasks (Todo → In Progress → To Review) created by x-story-finalizer with comprehensive 11-section structure.
+Execute approved Story Finalizer test tasks (Todo → In Progress → To Review) created by x-test-coordinator with comprehensive 11-section structure.
 
 ## When to Use This Skill
 
-This skill should be used when executing Story Finalizer test task (status = Todo, created by x-story-finalizer) with 11 sections:
+This skill should be used when executing Story Finalizer test task (status = Todo, created by x-test-coordinator) with 11 sections:
 - **Section 8:** Fix Existing Tests (update tests affected by logic changes)
 - **Section 3:** E2E Tests (2-5 max, Priority ≥15 user flows from manual testing)
 - **Section 4:** Integration Tests (3-8 max, Priority ≥15 layer interactions)
@@ -49,10 +49,8 @@ Auto-discovers project configuration:
    - Update kanban_board.md (Todo → In Progress) for ONLY the selected task
    - **Step 1:** Fix Existing Tests (Section 8)
    - **Step 2:** Implement New Tests E2E→Integration→Unit (Sections 3-5, Priority ≥15)
-   - **Step 3:** Update Infrastructure (Section 9)
-   - **Step 4:** Update Documentation (Section 10)
-   - **Step 5:** Cleanup Legacy Code (Section 11)
-   - **Step 6:** Final Verification (all tests pass, 10-28 total)
+   - **Step 3:** Update Project Files (Sections 9-11: Infrastructure, Documentation, Legacy Cleanup)
+   - **Step 4:** Final Verification (all tests pass, 10-28 total)
    - Quality gates: type checking, linting, all existing tests pass, all new tests pass
    - Update task description with completed checkboxes (replace `- [ ]` with `- [x]`)
    - Add test summary comment
@@ -70,7 +68,7 @@ Auto-discovers project configuration:
 
 ### Phase 3: Story Finalizer Task Implementation (11 Sections)
 
-**6-Step Workflow Following Task Structure:**
+**4-Step Workflow Following Task Structure:**
 
 **Step 1: Fix Existing Tests (Section 8)**
 - Load Section 8 "Existing Tests to Fix/Update" from task description
@@ -83,7 +81,7 @@ Auto-discovers project configuration:
 
 **Step 2: Implement New Tests (Sections 3-5, E2E-first Risk-Based Testing, Priority ≥15)**
 
-**Note:** Risk assessment completed by x-story-finalizer. Task contains exact scenarios with Priority scores.
+**Note:** Risk assessment completed by x-test-coordinator. Task contains exact scenarios with Priority scores.
 
 2.1. **E2E Tests (2-5 max) - FIRST:**
    - **Task contains exact scenarios** from manual testing (curl/puppeteer results)
@@ -101,9 +99,11 @@ Auto-discovers project configuration:
    - Test financial calculations, security logic, complex algorithms NOT covered by E2E
    - **SKIP:** Simple CRUD, framework code, trivial conditionals, getters/setters
 
-**Reference:** See `x-story-finalizer/references/risk_based_testing_guide.md` for complete Risk-Based Testing methodology, test limits (2-5/3-8/5-15, total 10-28 max), and test selection criteria.
+**Reference:** See `x-test-coordinator/references/risk_based_testing_guide.md` for complete Risk-Based Testing methodology, test limits (2-5/3-8/5-15, total 10-28 max), and test selection criteria.
 
-**Step 3: Update Infrastructure (Section 9)**
+**Step 3: Update Project Files (Sections 9-11: Infrastructure + Documentation + Legacy Cleanup)**
+
+**3.1. Update Infrastructure (Section 9)**
 - Load Section 9 "Infrastructure Changes" from task description
 - Update package.json (test dependencies with exact versions)
 - Update Dockerfile (test environment setup)
@@ -111,7 +111,7 @@ Auto-discovers project configuration:
 - Update test configs (jest.config.js, vitest.config.ts, pytest.ini, etc.)
 - Verify: docker-compose up, npm install succeed
 
-**Step 4: Update Documentation (Section 10)**
+**3.2. Update Documentation (Section 10)**
 - Load Section 10 "Documentation Updates" from task description
 - Update tests/README.md:
   - New test commands (npm test, npm run test:e2e, etc.)
@@ -127,7 +127,7 @@ Auto-discovers project configuration:
   - Note Priority ≥15 scenarios covered
 - Update other docs (API docs, architecture, deployment guide as needed)
 
-**Step 5: Cleanup Legacy Code (Section 11)**
+**3.3. Cleanup Legacy Code (Section 11)**
 - Load Section 11 "Legacy Code Cleanup" from task description
 - Remove workarounds/hacks (with justification from task)
 - Remove backward compatibility code (if safe per task analysis)
@@ -135,12 +135,12 @@ Auto-discovers project configuration:
 - Remove dead code (unused functions, commented-out blocks)
 - **Verify:** All tests still pass after cleanup
 
-**Step 6: Final Verification**
+**Step 4: Final Verification**
 - All existing tests pass (from Step 1)
 - All new tests pass (from Step 2)
-- Infrastructure works (from Step 3)
-- Documentation complete (from Step 4)
-- Legacy code removed safely (from Step 5)
+- Infrastructure works (from Step 3.1)
+- Documentation complete (from Step 3.2)
+- Legacy code removed safely (from Step 3.3)
 - **Cleanup:** Delete `scripts/tmp_[story_id].sh` (manual testing script no longer needed)
 
 ### Phase 4: Quality & Handoff
@@ -263,19 +263,19 @@ Implement tests for Story US001
 
 1. **Fix Existing Tests First (Step 1):** All existing tests must pass before implementing new tests
 2. **E2E First (Step 2):** Implement E2E tests first (from manual testing Priority ≥15), then Integration, then Unit
-3. **Follow task description:** All 11 sections contain specific instructions from x-story-finalizer analysis
+3. **Follow task description:** All 11 sections contain specific instructions from x-test-coordinator analysis
 4. **Test limits enforced:** 2-5 E2E, 3-8 Integration, 5-15 Unit, total 10-28 max
 5. **Priority-based:** Only Priority ≥15 scenarios (money, security, core flows)
 6. **Test OUR code:** Don't test frameworks or external libraries
 7. **Skip trivial code:** No tests for simple CRUD, framework code, getters/setters (E2E covers them)
 8. **Fast feedback:** Unit tests must be fast (<5s), Integration moderate (<30s), E2E acceptable (<2min)
-9. **Infrastructure updates (Step 3):** Use exact versions from task, verify docker-compose up works
-10. **Documentation completeness (Step 4):** Update ALL docs (tests/README, README, CHANGELOG)
-11. **Safe cleanup (Step 5):** Verify all tests still pass after removing legacy code
+9. **Infrastructure updates (Step 3.1):** Use exact versions from task, verify docker-compose up works
+10. **Documentation completeness (Step 3.2):** Update ALL docs (tests/README, README, CHANGELOG)
+11. **Safe cleanup (Step 3.3):** Verify all tests still pass after removing legacy code
 12. **No flaky tests:** All tests deterministic and stable
 13. **Chat output prefix:** Always use ⚙️ [EXECUTOR] prefix for user visibility when orchestrated
 
 ---
 
-**Version:** 4.0.0 (BREAKING: Story Finalizer 11-section workflow)
-**Last Updated:** 2025-11-08
+**Version:** 3.0.0 (Simplified workflow from 6 steps to 4 by grouping Step 3 (Infrastructure) + Step 4 (Documentation) + Step 5 (Legacy Cleanup) into Step 3: Update Project Files with 3 sub-steps, following Progressive Disclosure Pattern)
+**Last Updated:** 2025-11-14

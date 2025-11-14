@@ -209,7 +209,7 @@ Workers (Executors)
 
 **Examples in This Repository:**
 - **Level 1:** `x-story-processor` → coordinates full Story lifecycle
-- **Level 2:** `x-story-executor`, `x-task-planner` (domain orchestrators) → coordinate specific workflows, delegate to workers
+- **Level 2:** `x-story-coordinator`, `x-task-coordinator` (domain orchestrators) → coordinate specific workflows, delegate to workers
 - **Level 3:** `x-task-reviewer`, `x-task-executor`, `x-test-executor`, `x-task-creator`, `x-task-replanner` → execute work
 
 **Note:** See "3-Level Hierarchy (Industry Standard)" section below for complete structure and Microsoft Scheduler Agent Supervisor Pattern reference.
@@ -239,7 +239,7 @@ Workers (Executors)
 
 **Key Pattern:** Orchestrator reloads metadata after each worker completes, then re-evaluates priorities.
 
-**Example Flow (x-story-executor):**
+**Example Flow (x-story-coordinator):**
 Discovery → Load Tasks Metadata (ID, title, status) → Loop (Priority 1: To Review → x-task-reviewer, Priority 2: To Rework → x-task-rework, Priority 3: Todo → x-task-executor, Reload after each) → Story Review
 
 ### 3-Level Hierarchy (Industry Standard)
@@ -339,8 +339,8 @@ Orchestrator automatically creates fix tasks when quality checks fail, then rest
 |---------|-----------|---------|-----------|
 | **PDF Processing** | Read PDF, Extract tables, Create PDF, Merge PDFs | ✅ ONE skill | Same domain, same tools, used together, < 800 lines |
 | **Task Management** | Analyze story, Create tasks, Update tasks, Review tasks | ❌ SPLIT into orchestrator + workers | Different responsibilities, > 3 workflow steps, can be used independently |
-| **x-task-planner (Before)** | Decompose, Create, Replan | ❌ SPLIT | Monolithic, 470 lines, violates SRP |
-| **x-task-planner (After)** | Orchestrates task operations | ✅ Orchestrator | Delegates to x-task-creator, x-task-replanner |
+| **x-task-coordinator (Before)** | Decompose, Create, Replan | ❌ SPLIT | Monolithic, 470 lines, violates SRP |
+| **x-task-coordinator (After)** | Orchestrates task operations | ✅ Orchestrator | Delegates to x-task-creator, x-task-replanner |
 
 ---
 
@@ -362,7 +362,7 @@ Orchestrator automatically creates fix tasks when quality checks fail, then rest
 
 **Structure:** `x-{operation}-manager` (orchestrator) → `x-{operation}-creator`, `x-{operation}-updater`, `x-{operation}-deleter` (workers)
 
-**Example:** `x-task-planner` (orchestrator) → `x-task-creator`, `x-task-replanner`
+**Example:** `x-task-coordinator` (orchestrator) → `x-task-creator`, `x-task-replanner`
 
 ---
 
@@ -441,7 +441,7 @@ Phase 3: Output
 **Examples:**
 - `x-task-reviewer` - 3 verdicts (Accept/Minor Fixes/Needs Rework)
 - `x-story-reviewer` - Two-pass with different paths
-- `x-task-planner` - CREATE or REPLAN mode
+- `x-task-coordinator` - CREATE or REPLAN mode
 
 **Diagram Type:** `graph TD` with decision diamonds
 
@@ -459,7 +459,7 @@ Phase 3: Check condition
 ```
 
 **Examples:**
-- `x-story-executor` - loops through tasks by priority
+- `x-story-coordinator` - loops through tasks by priority
 - `x-epic-creator` - loops through domains
 
 **Diagram Type:** `graph TD` with loop-back arrows
@@ -481,8 +481,8 @@ Phase 5: Aggregate Results
 ```
 
 **Examples:**
-- `x-story-executor` - coordinates task workers
-- `x-task-planner` - coordinates creator/replanner
+- `x-story-coordinator` - coordinates task workers
+- `x-task-coordinator` - coordinates creator/replanner
 
 **Diagram Type:** `graph TD` with delegation nodes
 
@@ -498,7 +498,7 @@ Phase 5: Aggregate Results
 
 **Benefits:** 80-90% token reduction in orchestrator, avoids context truncation, scales to Stories with many tasks.
 
-**Example (x-story-executor):**
+**Example (x-story-coordinator):**
 ```
 Phase 2: Load Tasks Metadata (150 tokens) - ID, title, status ONLY
 Phase 3: Orchestration Loop - Delegate to worker → Worker loads FULL description → Reload metadata
@@ -677,11 +677,11 @@ Every User Story should be:
 
 ### Repository-Specific Examples
 
-**Good Orchestrators:** `x-story-executor` (280 lines), `x-task-planner` v6.0.0 (150 lines)
+**Good Orchestrators:** `x-story-coordinator` (280 lines), `x-task-coordinator` v6.0.0 (150 lines)
 
 **Good Workers:** `x-task-creator` (150 lines), `x-task-replanner` (250 lines), `x-task-executor`, `x-test-executor`
 
-**Monolithic (Before Refactoring):** `x-task-planner` v5.1.0 (470 lines, mixed CREATE/REPLAN logic)
+**Monolithic (Before Refactoring):** `x-task-coordinator` v5.1.0 (470 lines, mixed CREATE/REPLAN logic)
 
 ---
 

@@ -368,7 +368,7 @@ Problem 3:
 
 ## Summary Checklist
 
-Quick checklist for x-story-reviewer:
+Quick checklist for x-story-quality-coordinator Pass 1:
 
 - [ ] 1. Story statement fulfilled
 - [ ] 2. All Story AC satisfied

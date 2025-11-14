@@ -41,13 +41,13 @@ This skill should be used when:
 │     (Skill tool - Story quality worker)     │       │
 │                                                     │
 │   Pass 1 executes:                                  │
-│     - Regression Check                              │
-│     - Manual Functional Testing                     │
-│     - Code Quality Analysis                         │
+│     - x-code-quality-checker (Fail Fast)            │
+│     - x-regression-checker (Fail Fast)              │
+│     - x-manual-tester (Fail Fast, Format v1.0)      │
 │     - Verdict: Path A/B/C                           │
 │                                                     │
-│   Path A: Test task created (via x-test-task-       │
-│           planner → x-task-creator/replanner)       │
+│   Path A: Test task created (via x-test-coordinator │
+│           → x-task-creator/replanner)               │
 │     → GOTO Phase 3 (execute test task) ─────┘       │
 │                                                     │
 │   Path B: Refactor task created (via x-task-        │
@@ -153,7 +153,7 @@ Auto-discovers Team ID and project configuration from `docs/tasks/kanban_board.m
   3. **Detect task type from labels** (already in metadata - NO additional get_issue() call):
   4. **Use Skill tool based on task type:**
      - **IF label "tests":** `Skill(skill: "x-test-executor")` with task ID
-       - x-test-executor loads full test task description (11 sections from x-test-task-creator)
+       - x-test-executor loads full test task description (11 sections from x-test-coordinator task plan)
        - Handles Story Finalizer test task: Todo → In Progress → To Review
      - **ELSE (implementation):** `Skill(skill: "x-task-executor")` with task ID
        - x-task-executor loads full implementation task description (7 sections)

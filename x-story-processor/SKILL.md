@@ -16,7 +16,7 @@ Coordinates the complete processing pipeline for an existing Story:
 - Loads Story metadata ONLY (ID, title, status, labels - NO description)
 - **Phase 1:** Discovery (Team ID + Story ID)
 - **Phase 2:** Task Planning (delegates to x-task-coordinator)
-- **Phase 3:** Verification & Execution Loop (delegates to x-story-validator, x-story-coordinator which auto-verifies new tasks via Priority 0 and explicitly delegates x-story-quality-coordinator Pass 1 + Pass 2)
+- **Phase 3:** Verification & Execution Loop (x-story-validator prepares tasks, x-story-coordinator executes them, explicit delegation to x-story-quality-coordinator Pass 1 + Pass 2)
 - **Phase 4:** Completion Report (Story Done automatically, full pipeline automation)
 
 ### When to Use This Skill
@@ -67,12 +67,12 @@ Do NOT use if:
 **Pattern**: Orchestrator reloads metadata after each worker completes, then re-evaluates state.
 
 **Flow**:
-```
+`
 Phase 1: Discovery → Phase 2: Task Planning (x-task-coordinator) →
-Phase 3: Loop (Verify → Execute with Priority 0 auto-verify → Review Pass 1 + explicit Pass 2 delegation) →
-[If new task created] → auto-verified via Priority 0 → back to Phase 3 (x-story-coordinator) →
+Phase 3: Loop (Verify → Execute → Review Pass 1 + explicit Pass 2 delegation) →
+[If new task created] → Step 3a revalidates Backlog tasks (x-story-validator) → Step 3b executes them (x-story-coordinator) →
 [All tasks Done + test task Done] → explicit Pass 2 delegation → Story Done → Phase 4: Report
-```
+`
 
 **Key Principle**: After each worker, reload Story + Tasks metadata (NOT full descriptions) and decide next step.
 
@@ -181,8 +181,8 @@ Skill(skill: "x-story-coordinator", context: {
 ```
 
 **x-story-coordinator will**:
-- Orchestrate task execution (Priority 0: Backlog auto-verify → Priority 1: To Review → Priority 2: To Rework → Priority 3: Todo)
-- Priority 0: Auto-verify new tasks (test/fix/refactor) created in Backlog via x-story-validator (Backlog → Todo)
+- Orchestrate task execution with strict priorities: Priority 0 = To Review (x-task-reviewer), Priority 1 = To Rework (x-task-rework), Priority 2 = Todo (x-task-executor / x-test-executor)
+- Rely on Step 3a to move any fix/refactor/test tasks from Backlog to Todo before picking them up (new work always re-enters through x-story-validator)
 - Invoke x-task-reviewer, x-task-rework, x-task-executor, x-test-executor
 - When all tasks Done → Explicitly delegate to x-story-quality-coordinator Pass 1 (via Skill tool)
 - When test task Done → Explicitly delegate to x-story-quality-coordinator Pass 2 (via Skill tool) → Story Done
@@ -195,18 +195,18 @@ Skill(skill: "x-story-coordinator", context: {
 **Trigger**: x-story-coordinator explicitly delegates to x-story-quality-coordinator Pass 1 when all implementation tasks Done
 
 **x-story-quality-coordinator Pass 1 will** (Early Exit Pattern):
-- Phase 3: Code Quality Analysis (if fail → create refactoring task → auto-verify via Priority 0 → Loop back to Step 3b)
-- Phase 4: Regression Check (if fail → create fix task → auto-verify via Priority 0 → Loop back to Step 3b)
-- Phase 5: Manual Testing (if fail → create fix task → auto-verify via Priority 0 → Loop back to Step 3b)
+- Phase 3: Code Quality Analysis (if fail → create refactoring task → Step 3a re-approves Backlog → Todo → Loop back to Step 3b)
+- Phase 4: Regression Check (if fail → create fix task → Step 3a re-approves Backlog → Todo → Loop back to Step 3b)
+- Phase 5: Manual Testing (if fail → create fix task → Step 3a re-approves Backlog → Todo → Loop back to Step 3b)
 - Phase 6: Verdict
-  * **Path A**: All passed → Create test task (via x-test-coordinator) → auto-verify via Priority 0 → Loop back to Step 3b
-  * **Path B**: Issues found → Create refactoring task → auto-verify via Priority 0 → Loop back to Step 3b
+  * **Path A**: All passed → Create test task (via x-test-coordinator) → Step 3a revalidates Backlog → Todo → Loop back to Step 3b
+  * **Path B**: Issues found → Step 3a revalidates Backlog → Todo → Loop back to Step 3b
 
 **x-story-quality-coordinator Pass 2 explicit delegation**:
 - **Trigger**: x-story-coordinator detects test task Done → Updates Story status In Progress → To Review → Explicitly delegates Pass 2 (via Skill tool)
 - **Pass 2 will**: Verify tests (E2E 2-5, Integration 3-8, Unit 5-15, Priority ≥15) → Story To Review → Done
 
-**Loop Condition**: If new task created (fix/refactoring/test), x-story-coordinator auto-verifies it (Priority 0) and loops back to execution (Priority 3).
+**Loop Condition**: If new task created (fix/refactoring/test), Phase 3 restarts from Step 3a so x-story-validator approves Backlog → Todo before x-story-coordinator executes again.
 
 **Exit Condition**: Story status = "Done" (all tasks Done, test task Done, Pass 2 passed)
 
@@ -313,15 +313,15 @@ Before completing work, verify ALL checkpoints:
 
 **✅ Task Planning Completed (Phase 2):**
 - [ ] Checked if tasks exist (count ≥ 0)
-- [ ] Delegated to x-task-coordinator if count < 3
+- [ ] Delegated to x-task-coordinator to build the IDEAL plan and choose CREATE or REPLAN mode
 - [ ] Reloaded metadata after x-task-coordinator completed
 
 **✅ Verification & Execution Loop (Phase 3):**
 - [ ] Delegated to x-story-validator (Story Backlog → Todo)
-- [ ] Delegated to x-story-coordinator (orchestrates task execution with Priority 0 auto-verify)
-- [ ] x-story-coordinator auto-verified all new tasks (test/fix/refactor) created in Backlog via Priority 0
+- [ ] Delegated to x-story-coordinator (orchestrates task execution with To Review → To Rework → Todo priorities)
+- [ ] New fix/refactor/test tasks routed back through Step 3a (x-story-validator) before execution
 - [ ] x-story-coordinator auto-invoked x-story-quality-coordinator Pass 1 (Code Quality → Regression → Manual Testing)
-- [ ] Pass 1 created test task (auto-verified via Priority 0)
+- [ ] Pass 1 created test task (x-story-validator re-approved it before execution)
 - [ ] x-story-coordinator executed test task
 - [ ] x-story-coordinator auto-invoked x-story-quality-coordinator Pass 2 after test task Done
 - [ ] Pass 2 verified tests (E2E 2-5, Integration 3-8, Unit 5-15, Priority ≥15)
@@ -413,7 +413,7 @@ After x-story-processor completes:
   - x-story-coordinator: Execute 3 tasks (Priority 3: Todo)
   - x-story-coordinator: Auto-invoke x-story-quality-coordinator Pass 1
   - Pass 1: Code Quality → Regression → Manual Testing → All passed → Create test task
-  - x-story-coordinator Priority 0: Auto-verify test task (Backlog → Todo)
+  - Step 3a: x-story-validator re-approved test task (Backlog → Todo)
   - Reload metadata: Story has 4 tasks (1 test task in Todo)
 - Phase 3b (Loop): x-story-coordinator continues
   - x-story-coordinator: Execute test task (Priority 3)

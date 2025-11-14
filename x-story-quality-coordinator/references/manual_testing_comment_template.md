@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This template defines the standardized format for Linear comments created by x-story-reviewer during Pass 1 manual functional testing. The structured format ensures reliable parsing by x-test-creator for E2E-first test design.
+This template defines the standardized format for Linear comments created by x-manual-tester (invoked by x-story-quality-coordinator Pass 1). The structured format ensures reliable parsing by x-test-coordinator for E2E-first test design.
 
 ## Format Version
 
@@ -16,7 +16,7 @@ This template defines the standardized format for Linear comments created by x-s
 
 **Format Version:** 1.0
 **Story ID:** [Story identifier, e.g., US042]
-**Tested By:** x-story-reviewer
+**Tested By:** x-manual-tester
 **Date:** [YYYY-MM-DD]
 **Status:** [✅ PASSED (X/Y AC) | ❌ FAILED (X/Y AC)]
 
@@ -111,13 +111,13 @@ This template defines the standardized format for Linear comments created by x-s
 - [X/Y] error scenarios verified [✅ | ⚠️]
 - Integration flow validated [✅ | ❌]
 
-**Recommendation:** [Proceed to test task creation via x-test-creator | Create refactoring task for issues found]
+**Recommendation:** [Proceed to test task creation via x-test-coordinator | Create refactoring task for issues found]
 
 ---
 
 ### Risk Assessment for Test Planning
 
-**Purpose:** Provide Priority scores for x-test-creator to select tests based on business risk
+**Purpose:** Provide Priority scores for x-test-coordinator to select tests based on business risk
 
 | Scenario | Type | Business Impact (1-5) | Probability (1-5) | Priority | Reason |
 |----------|------|----------------------|-------------------|----------|--------|
@@ -142,7 +142,7 @@ This template defines the standardized format for Linear comments created by x-s
 
 ## Usage Instructions
 
-### For x-story-reviewer (Phase 3 Step 4)
+### For x-manual-tester (Phase 5 Step 1)
 
 1. **Copy template structure** (do NOT include this instruction section)
 2. **Fill required fields:**
@@ -168,9 +168,9 @@ This template defines the standardized format for Linear comments created by x-s
    - Note any transaction/rollback behavior
 8. **Write summary:**
    - Count passed AC vs total AC
-   - Recommend next action (x-test-creator or refactoring task)
+   - Recommend next action (x-test-coordinator or refactoring task)
 
-### For x-test-creator (Phase 2 Step 1)
+### For x-test-coordinator (Phase 2 Step 1)
 
 **Parsing strategy:**
 
@@ -205,7 +205,7 @@ This template defines the standardized format for Linear comments created by x-s
 
 **Format Version:** 1.0
 **Story ID:** US042
-**Tested By:** x-story-reviewer
+**Tested By:** x-manual-tester
 **Date:** 2025-10-31
 **Status:** ✅ PASSED (3/3 AC)
 
@@ -322,7 +322,7 @@ This template defines the standardized format for Linear comments created by x-s
 - 7/8 error scenarios verified (1 requires failure injection) ✅
 - Integration flow validated ✅
 
-**Recommendation:** Proceed to test task creation via x-test-creator
+**Recommendation:** Proceed to test task creation via x-test-coordinator
 ```
 
 ### Example 2: UI Testing with Puppeteer
@@ -332,7 +332,7 @@ This template defines the standardized format for Linear comments created by x-s
 
 **Format Version:** 1.0
 **Story ID:** US045
-**Tested By:** x-story-reviewer
+**Tested By:** x-manual-tester
 **Date:** 2025-10-31
 **Status:** ✅ PASSED (2/2 AC)
 
@@ -427,18 +427,18 @@ console.log(`Filtered to ${filteredProducts.length} electronics`);
 - 1/2 error scenarios verified ✅
 - Integration flow validated ✅
 
-**Recommendation:** Proceed to test task creation via x-test-creator
+**Recommendation:** Proceed to test task creation via x-test-coordinator
 ```
 
 ## Version History
 
 | Version | Date | Changes |
 |---------|------|---------|
-| 1.1 | 2025-10-31 | Added Risk Assessment section with Priority Matrix (Business Impact × Probability) for x-test-creator |
+| 1.1 | 2025-10-31 | Added Risk Assessment section with Priority Matrix (Business Impact × Probability) for x-test-coordinator |
 | 1.0 | 2025-10-31 | Initial structured format with AC, Test Results, Edge Cases, Errors, Integration |
 
 ## References
 
-- x-story-reviewer SKILL.md Phase 3 Step 4
-- x-test-creator SKILL.md Phase 2 Step 1
+- x-story-quality-coordinator SKILL.md Phase 5 Step 3
+- x-test-coordinator SKILL.md Phase 2 Step 1
 - Story Template (story_template_universal.md) for AC format

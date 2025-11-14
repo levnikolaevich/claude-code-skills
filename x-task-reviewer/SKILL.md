@@ -38,7 +38,7 @@ Auto-discovers project configuration:
    - If task ID provided → Fetch specific task
    - If no ID → List "To Review" tasks and ask user to choose
 2. **Determine task type:**
-   - **Test Task:** Has label "tests" OR created by x-test-creator
+   - **Test Task:** Has label "tests" OR created by x-test-coordinator
    - **Implementation Task:** All other tasks
 3. **Read task and parent story FULLY:**
    - Read task description COMPLETELY (no truncation)

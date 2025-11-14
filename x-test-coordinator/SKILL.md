@@ -21,6 +21,8 @@ This skill should be used when:
 - x-story-quality-coordinator Pass 1 completed manual testing
 - Manual test results in Linear comment (created by x-story-quality-coordinator Phase 3 step 4)
 
+**Automation:** Supports `autoApprove: true` (default when invoked by x-story-quality-coordinator) to skip manual confirmation and run unattended.
+
 ## When NOT to Use
 
 Do NOT use if:
@@ -51,7 +53,7 @@ Auto-discovers Team ID from `docs/tasks/kanban_board.md` (see CLAUDE.md "Configu
 1. Fetch Story from Linear (must have label "user-story")
 2. Extract Story.id (UUID) - ⚠️ Use UUID, NOT short ID (required for Linear API)
 3. Load manual test results comment (format: x-manual-tester Format v1.0)
-   - Search for `## 🧪 Manual Testing Results` header
+   - Search for the header containing "Manual Testing Results" (see `x-manual-tester/references/test_result_format_v1.md`)
    - If not found → ERROR: Run x-story-quality-coordinator Pass 1 first
 4. Parse sections: AC results (PASS/FAIL), Edge Cases, Error Handling, Integration flows
 5. Map to test design: PASSED AC → E2E, Edge cases → Unit, Errors → Error handling, Flows → Integration
@@ -68,7 +70,7 @@ Auto-discovers Team ID from `docs/tasks/kanban_board.md` (see CLAUDE.md "Configu
 
 ### Phase 3: Parsing Strategy for Manual Test Results
 
-**Process:** Locate Linear comment with "## 🧪 Manual Testing Results" header → Verify Format Version 1.0 → Extract structured sections (Acceptance Criteria, Test Results by AC, Edge Cases, Error Handling, Integration Testing) using regex → Validate (at least 1 PASSED AC, AC count matches Story, completeness check) → Map parsed data to test design structure
+**Process:** Locate Linear comment with the "Manual Testing Results" header described in `x-manual-tester/references/test_result_format_v1.md` → Verify Format Version 1.0 → Extract structured sections (Acceptance Criteria, Test Results by AC, Edge Cases, Error Handling, Integration Testing) using regex → Validate (at least 1 PASSED AC, AC count matches Story, completeness check) → Map parsed data to test design structure
 
 **Error Handling:** Missing comment → ERROR (run x-story-quality-coordinator Pass 1 first), Missing format version → WARNING (try legacy parsing), Required section missing → ERROR (re-run x-story-quality-coordinator), No PASSED AC → ERROR (fix implementation)
 
@@ -123,9 +125,11 @@ Shows preview for review.
 
 ### Phase 6: Confirmation & Delegation
 
-**Step 1:** User reviews generated test plan preview
+**Step 1:** Preview generated test plan (always displayed for transparency)
 
-**Step 2:** Type "confirm" to proceed
+**Step 2:** Confirmation logic:
+- **autoApprove: true** (default for x-story-quality-coordinator) → proceed automatically with no user input
+- **Manual run** → prompt user to type "confirm" after reviewing the preview
 
 **Step 3:** Check for existing test task
 
@@ -209,9 +213,9 @@ Before completing work, verify ALL checkpoints:
 - [ ] x-task-replanner: Operations executed + kanban_board.md updated
 - [ ] Linear Issue URL returned from worker
 
-**✅ User Confirmation:**
-- [ ] User reviewed generated story finalizer task before creation
-- [ ] User typed "confirm" to proceed with delegation
+**✅ Confirmation Handling:**
+- [ ] Preview displayed (automation logs still capture full plan)
+- [ ] Confirmation satisfied: autoApprove: true supplied or user typed "confirm" after manual review
 
 **Output:**
 - **CREATE MODE:** Linear Issue URL + confirmation message ("Created test task for Story US00X")
@@ -227,7 +231,7 @@ Before completing work, verify ALL checkpoints:
 
 **Invocation (by x-story-quality-coordinator via Skill tool):**
 ```
-Skill tool, command: "x-test-task-creator", Story ID: US001
+Skill(skill: "x-test-coordinator", storyId: "US001")
 ```
 
 **Execution (NO questions):**
@@ -247,7 +251,7 @@ Skill tool, command: "x-test-task-creator", Story ID: US001
    - Documentation: Update tests/README.md, main README.md
    - Legacy Cleanup: Remove deprecated API v1 compatibility shim
 6. Generation → Complete story finalizer task (11 sections) with Risk Priority Matrix + justification for each test beyond baseline 2
-7. Confirmation → Creates final Task with parentId=US001, label "tests"
+7. Confirmation / autoApprove → Creates final Task with parentId=US001, label "tests"
 
 ## Reference Files
 
@@ -257,11 +261,11 @@ Skill tool, command: "x-test-task-creator", Story ID: US001
 
 **Contents**: Risk Priority Matrix (Business Impact × Probability), test limits (E2E 2-5, Integration 0-8, Unit 0-15), decision tree, anti-patterns, test selection examples
 
-**Location**: [x-test-task-creator/references/risk_based_testing_guide.md](references/risk_based_testing_guide.md)
+**Location**: [x-test-coordinator/references/risk_based_testing_guide.md](references/risk_based_testing_guide.md)
 
-**Ownership**: x-test-task-creator (orchestrator-specific logic)
+**Ownership**: x-test-coordinator (orchestrator-specific logic)
 
-**Usage**: x-test-task-creator uses this guide in Phase 4 (Risk-Based Test Planning)
+**Usage**: x-test-coordinator uses this guide in Phase 4 (Risk-Based Test Planning)
 
 ### test_task_template.md (MOVED)
 

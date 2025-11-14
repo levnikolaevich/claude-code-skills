@@ -381,56 +381,34 @@ This skill does NOT:
 
 Before completing work, verify ALL checkpoints:
 
-**✅ Environment Setup (Phase 1):**
-- [ ] Story type detected (API/UI)
-- [ ] Application running verified
-- [ ] Base URL determined
+**Phase 1: Setup & Load**
+- [ ] Story type detected (API/UI), base URL determined
+- [ ] Application verified (health check for API, browser start for UI)
+- [ ] Story loaded from Linear, Acceptance Criteria section parsed
+- [ ] 3-5 AC in Given-When-Then format extracted, each assigned unique ID
 
-**✅ AC Loaded (Phase 2):**
-- [ ] Story loaded from Linear
-- [ ] AC section parsed
-- [ ] 3-5 AC extracted with Given-When-Then format
-- [ ] Each AC has unique ID
+**Phase 2: Test Execution**
+- [ ] All AC tested (curl for API, puppeteer for UI), actual results saved in `details`
+- [ ] Edge cases (3-5) and error handling scenarios (400/500 and other key codes) verified
+- [ ] Integration points (2-3) covered with data/processing checks
+- [ ] On puppeteer failures: capture screenshot, add path to Linear, continue other scenarios
 
-**✅ AC Tested (Phase 3):**
-- [ ] All AC tested (curl for API, puppeteer for UI)
-- [ ] Actual results captured for each AC
-- [ ] Verdicts recorded (PASS/FAIL)
-- [ ] Failure details documented (if any)
+**Phase 3: Document Results**
+- [ ] Final verdict determined (`PASS`/`FAIL`/`ERROR`), Linear comment added in Format v1.0
+- [ ] Temporary script created at `scripts/tmp_[story_id].sh` (POSIX script; run via Git Bash/WSL on Windows)
+- [ ] Script marked executable (chmod +x), path returned in final JSON
+- [ ] JSON result returned with fields: verdict, linear_comment_id, temp_script_path, details
 
-**✅ Edge Cases Tested (Phase 4):**
-- [ ] 3-5 edge cases tested
-- [ ] Results recorded (PASS/FAIL)
+**Error Handling**
+- [ ] If application not running → verdict `ERROR`, comment with instruction "Start server"
+- [ ] If AC section missing/malformed → verdict `ERROR`, comment with recommendation to fix Story
+- [ ] On puppeteer crashes → save screenshot, add path to comment, continue testing
 
-**✅ Error Handling Tested (Phase 5):**
-- [ ] Error scenarios tested (400s, 500s)
-- [ ] Error messages verified (user-friendly, no stack traces)
-- [ ] Results recorded
-
-**✅ Integration Tested (Phase 6):**
-- [ ] 2-3 integration points tested
-- [ ] Data flows verified
-- [ ] Results recorded
-
-**✅ Results Documented (Phase 7):**
-- [ ] Overall verdict determined
-- [ ] Linear comment formatted (Format v1.0)
-- [ ] Comment added to Story
-- [ ] Temporary testing script created at scripts/tmp_[story_id].sh
-- [ ] Script made executable (chmod +x)
-- [ ] JSON verdict returned with all required fields
-
-**✅ Error Handling Applied:**
-- [ ] Application not running → ERROR with warning comment
-- [ ] AC missing/malformed → ERROR with guidance comment
-- [ ] Puppeteer failures → screenshots captured + continue testing
-
-**Output:**
-- JSON verdict with detailed test results
-- Linear comment with formatted results (Format v1.0)
-- Temporary testing script for re-running tests
-- No side effects (no tasks created, no statuses changed)
-
+**Output**
+- JSON verdict with detailed results
+- Linear comment (Format v1.0)
+- Temporary script for re-running tests
+- No side effects (tasks/statuses untouched)
 ---
 
 **Version:** 2.0.0 (Simplified workflow from 7 phases to 3 by grouping related testing steps: Phase 1 Setup & Load (1-2), Phase 2 Test Execution (3-6 sub-steps: AC, edge cases, errors, integration), Phase 3 Document Results (7))

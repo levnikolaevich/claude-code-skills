@@ -52,7 +52,7 @@ This repository contains **24 production-ready skills** for [Claude Code](https:
 
 | Skill | Purpose | Version | Diagrams |
 |:------|:--------|:-------:|:--------:|
-| **[x-story-processor](x-story-processor/)** | 🔄 **Orchestrate complete Story processing workflow** from task planning to Done. Delegates to x-task-coordinator (Phase 2), x-story-validator (Phase 3a), x-story-coordinator (Phase 3b with Priority 0 auto-verify + auto Pass 2). Looping workflow until Story status = Done. Full pipeline automation: Todo → In Progress → To Review → Done. | 2.0.0 | ✅ |
+| **[x-story-processor](x-story-processor/)** | 🔄 **Orchestrate complete Story processing workflow** from task planning to Done. Delegates to x-task-coordinator (Phase 2), x-story-validator (Phase 3a), x-story-coordinator (Phase 3b with To Review → To Rework → Todo priorities) and explicitly drives x-story-quality-coordinator Pass 1 + Pass 2. Looping workflow until Story status = Done. Full pipeline automation: Todo → In Progress → To Review → Done. | 2.0.0 | ✅ |
 | **[x-story-coordinator](x-story-coordinator/)** | Orchestrate Story execution (Todo → In Progress → To Review → Done). **Priority 0: Backlog** (auto-verify new tasks before execution) → **Priority 1: To Review** → **Priority 2: To Rework** → **Priority 3: Todo**. Auto-invokes x-story-quality-coordinator Pass 1 + Pass 2 (full automation). Phase 4 delegates Story quality to x-story-quality-coordinator (Orchestrator-Worker Pattern). | 6.0.0 | ✅ |
 | **[x-task-executor](x-task-executor/)** | ⚙️ Execute implementation tasks ONLY (Todo → In Progress → To Review). Uses KISS/YAGNI principles, reads guide links, runs type checking and linting. Story status management removed (now x-story-coordinator's responsibility). NOT for test tasks. | 10.1.0 | ✅ |
 | **[x-test-executor](x-test-executor/)** | ⚙️ Execute Story Finalizer test tasks (Todo → In Progress → To Review). E2E-first Risk-Based Testing (2-5 E2E, 3-8 Integration, 5-15 Unit). Includes test fixes, infrastructure, docs, and legacy cleanup. | 4.0.0 | ✅ |
@@ -64,7 +64,7 @@ This repository contains **24 production-ready skills** for [Claude Code](https:
 | Skill | Purpose | Version | Diagrams |
 |:------|:--------|:-------:|:--------:|
 | **[x-story-validator](x-story-validator/)** | Critically review Stories and Tasks against 2025 industry standards before approval (Backlog → Todo). ALWAYS auto-fixes all 16 verification criteria. Auto-creates guides/manuals/ADRs via AUTO-RESEARCH. No "Needs Work" path exists. | 11.0.0 | ✅ |
-| **[x-story-quality-coordinator](x-story-quality-coordinator/)** | Review completed User Stories with **Early Exit Pattern**. Two-pass workflow: Pass 1 (6 phases: Discovery → Preparation → **Code Quality (FAIL FAST)** → **Regression (FAIL FAST)** → **Manual Testing (FAIL FAST)** → Verdict). Each phase can stop execution and create fix/refactor task. **Path A:** Delegates to x-test-coordinator. **Path B:** Delegates to x-task-creator with `taskType: "refactoring"`. Pass 2 (3 phases: Prerequisites → Test verification → Verdict) → Story Done. | 7.1.0 | ✅ |
+| **[x-story-quality-coordinator](x-story-quality-coordinator/)** | L2 orchestrator for Story quality. Pass 1 delegates code analysis to `x-code-quality-checker`, regression to `x-regression-checker`, manual AC verification to `x-manual-tester` (Format v1.0) with FAIL‑FAST exit at each gate; auto-creates refactor/bug tasks when any gate fails. When all gates pass, automatically runs `x-test-coordinator` (`autoApprove: true`) to create Story Finalizer test task. Pass 2 verifies automated tests (Priority ≥15, limits 10‑28) and moves Story to Done. | 7.1.0 | ✅ |
 
 ### Documentation Skills (2)
 
@@ -195,13 +195,15 @@ x-story-coordinator
 ### Typical Workflow
 
 ```
-1. x-docs-creator     → Create project documentation
-2. x-epic-creator     → Decompose scope into Epics
-3. x-story-manager    → Create Stories for an Epic
-4. x-task-coordinator     → Create Tasks for a Story
-5. x-story-validator   → Validate and approve Story
-6. x-story-coordinator   → Execute all tasks in Story
-7. x-story-quality-coordinator   → Manual testing and final verification
+1. x-docs-creator            → Create project documentation
+2. x-epic-creator            → Decompose scope into Epics
+3. x-story-manager           → Create Stories for an Epic
+4. x-task-coordinator        → Create Tasks for a Story
+5. x-story-validator         → Validate and approve Story
+6. x-story-coordinator       → Execute implementation/test tasks, loop To Review → Done
+7. x-story-quality-coordinator → Pass 1 orchestrates x-code-quality-checker → x-regression-checker → x-manual-tester; on success auto-invokes x-test-coordinator, Pass 2 approves Story
+8. x-test-coordinator        → Build Story Finalizer task (invoked automatically, manual run optional)
+9. x-test-executor           → Execute Story Finalizer task to Done
 ```
 
 For detailed usage of each skill, see [CLAUDE.md](CLAUDE.md).

@@ -74,7 +74,7 @@ Tasks created separately (parentId → this Story):
 
 ## Test Strategy
 
-**Note:** All tests implemented in final Task of this Story (created by x-test-creator after manual testing).
+**Note:** All tests implemented in final Task of this Story (created by x-test-coordinator after manual testing).
 
 **Approach:** Risk-Based Testing with enforced limits (2-5 E2E, 3-8 Integration, 5-15 Unit per Story)
 
@@ -86,7 +86,7 @@ Test complete user journeys. **ONLY Priority ≥15 scenarios** (money, security,
 - [Critical AC or Edge Case]: [Priority score] - [Full business flow]
 
 **Type:** API E2E / UI E2E (depending on application type)
-**Based on:** ACTUAL manual testing results from x-story-reviewer Pass 1
+**Based on:** ACTUAL manual testing results from x-manual-tester (delegated by x-story-quality-coordinator Pass 1)
 
 ### Integration Tests (3-8 max)
 Test layer interactions with real dependencies. **ONLY Priority ≥15 interactions NOT covered by E2E:**
@@ -103,7 +103,7 @@ Test complex business logic in isolation. **ONLY Priority ≥15 logic NOT covere
 
 **SKIP:** Simple CRUD, framework code, trivial conditionals, getters/setters
 
-**Test Limits:** 10-28 tests total per Story (enforced by x-test-creator)
+**Test Limits:** 10-28 tests total per Story (enforced by x-test-coordinator)
 
 **Focus:** Critical path coverage (all Priority ≥15 scenarios), NOT coverage percentage
 

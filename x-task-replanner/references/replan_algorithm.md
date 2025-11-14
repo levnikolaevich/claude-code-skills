@@ -1,10 +1,10 @@
 # Task Replan Algorithm
 
-Detailed comparison logic for x-task-planner REPLAN MODE. This algorithm determines which operations (KEEP/UPDATE/OBSOLETE/CREATE) to perform when existing tasks are found for a Story.
+Detailed comparison logic for x-task-coordinator REPLAN MODE. This algorithm determines which operations (KEEP/UPDATE/OBSOLETE/CREATE) to perform when existing tasks are found for a Story.
 
 ## Overview
 
-When a Story's requirements change and tasks already exist, x-task-planner compares the IDEAL task decomposition (from Phase 2) with existing tasks (from Linear) to determine the minimal set of operations needed.
+When a Story's requirements change and tasks already exist, x-task-coordinator compares the IDEAL task decomposition (from Phase 2) with existing tasks (from Linear) to determine the minimal set of operations needed.
 
 **Key Principle**: The IDEAL plan from Phase 2 is the source of truth. Existing tasks are compared against this plan.
 

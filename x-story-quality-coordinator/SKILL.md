@@ -5,7 +5,7 @@ description: Reviews completed Stories with Early Exit. Pass 1: code quality →
 
 # Story Review Skill
 
-Review completed User Stories through manual functional testing and code quality analysis.
+Review completed User Stories through coordinated quality gates (code quality, regression, manual testing) while delegating actual work to specialized worker skills.
 
 ## Overview
 
@@ -14,7 +14,7 @@ Review completed User Stories through manual functional testing and code quality
 **Pass 1: After Implementation Tasks Done** (Early Exit Pattern)
 - **Step 1:** Code quality analysis (DRY/KISS/YAGNI/Architecture) - FAIL FAST
 - **Step 2:** Regression check (existing tests pass) - FAIL FAST
-- **Step 3:** Manual functional testing against Story AC - FAIL FAST
+- **Step 3:** Manual functional testing against Story AC (delegated to `x-manual-tester`) - FAIL FAST
 - **Verdict:** Create test task (via x-test-coordinator) OR refactoring/fix task
 
 **Pass 2: After Test Task Done**
@@ -307,7 +307,7 @@ Skill(skill: "x-manual-tester", storyId: Story.id)
 
 2. **Create test task (ONLY if no test task exists):**
    - Add Linear comment: "✅ All AC passed, no code quality issues"
-   - **AUTOMATIC invocation (no user confirmation):** Invoke x-test-coordinator (Skill tool) → WAIT completion → test task created
+   - **AUTOMATIC invocation:** Invoke x-test-coordinator with `autoApprove: true` (Skill tool) → WAIT completion → test task created (no prompts)
    - Story remains current state until test task Done
 
 3. **Next steps after x-test-coordinator completes:**
@@ -459,7 +459,7 @@ If we reached Phase 6, it means all quality gates passed. Phase 6 only creates t
 **Why this skill is L2 (orchestrator, not L3 worker):**
 - Pass 1 Phase 3: Executes code quality analysis directly (Grep for DRY/KISS/YAGNI, Read files)
 - Pass 1 Phase 4: Executes regression testing directly (Bash test commands)
-- Pass 1 Phase 5: Executes manual testing directly (curl/puppeteer, Linear comments)
+- Pass 1 Phase 5: Delegates manual testing to x-manual-tester (curl/puppeteer, Linear comments captured there)
 - Pass 1 Phase 6: **Delegates to x-test-coordinator** via Skill tool (test task creation)
 - Orchestrates quality validation flow with Early Exit Pattern (fail fast at each phase)
 
@@ -513,7 +513,7 @@ If we reached Phase 6, it means all quality gates passed. Phase 6 only creates t
 
 **✅ Verdict Determined (Phase 6):**
 - [ ] **All Phase 3-4-5 passed** (Code Quality → Regression → Manual Testing)
-- [ ] x-test-coordinator invoked AUTOMATICALLY (no user confirmation, ONLY if no test task exists)
+- [ ] x-test-coordinator invoked AUTOMATICALLY with autoApprove: true (ONLY if no test task exists)
 - [ ] After completion: test task created in kanban_board.md with status Backlog
 
 **Note:** Issues (code quality/regression/functional bugs) caught by Early Exit Pattern in Phase 3/4/5, NOT in Phase 6.

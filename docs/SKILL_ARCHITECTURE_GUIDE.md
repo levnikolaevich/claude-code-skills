@@ -169,7 +169,7 @@ Target: 400-600 lines for core principles, 600-800 lines with advanced documenta
 **Good Examples:**
 - `pdf` skill - handles PDF operations only
 - `email-comms` skill - handles email composition only
-- `ln-task-executor` - executes implementation tasks only (NOT test tasks)
+- `ln-31-task-executor` - executes implementation tasks only (NOT test tasks)
 
 **Bad Examples:**
 - ❌ Skill that handles PDF processing AND email composition
@@ -208,9 +208,9 @@ Workers (Executors)
 - Easy to add new workers
 
 **Examples in This Repository:**
-- **Level 1:** `ln-story-processor` → coordinates full Story lifecycle
-- **Level 2:** `ln-story-coordinator`, `ln-task-coordinator` (domain orchestrators) → coordinate specific workflows, delegate to workers
-- **Level 3:** `ln-task-reviewer`, `ln-task-executor`, `ln-test-executor`, `ln-task-creator`, `ln-task-replanner` → execute work
+- **Level 1:** `ln-00-story-pipeline` → coordinates full Story lifecycle
+- **Level 2:** `ln-30-story-executor`, `ln-10-story-decomposer` (domain orchestrators) → coordinate specific workflows, delegate to workers
+- **Level 3:** `ln-32-task-reviewer`, `ln-31-task-executor`, `ln-34-test-executor`, `ln-11-task-creator`, `ln-12-task-replanner` → execute work
 
 **Note:** See "3-Level Hierarchy (Industry Standard)" section below for complete structure and Microsoft Scheduler Agent Supervisor Pattern reference.
 
@@ -239,8 +239,8 @@ Workers (Executors)
 
 **Key Pattern:** Orchestrator reloads metadata after each worker completes, then re-evaluates priorities.
 
-**Example Flow (ln-story-coordinator):**
-Discovery → Load Tasks Metadata (ID, title, status) → Loop (Priority 1: To Review → ln-task-reviewer, Priority 2: To Rework → ln-task-rework, Priority 3: Todo → ln-task-executor, Reload after each) → Story Review
+**Example Flow (ln-30-story-executor):**
+Discovery → Load Tasks Metadata (ID, title, status) → Loop (Priority 1: To Review → ln-32-task-reviewer, Priority 2: To Rework → ln-33-task-rework, Priority 3: Todo → ln-31-task-executor, Reload after each) → Story Review
 
 ### 3-Level Hierarchy (Industry Standard)
 
@@ -255,9 +255,9 @@ This architecture follows industry-proven pattern where:
 
 | Level | Role | Responsibilities | Data Loading | Examples |
 |-------|------|------------------|--------------|----------|
-| **Level 1** | Top Orchestrator | Coordinate full lifecycle workflows | Metadata only | `ln-story-processor` |
-| **Level 2** | Domain Orchestrator | Coordinate specific domain workflows | Metadata only | `ln-story-coordinator`, `ln-story-validator`, `ln-story-quality-coordinator`, `ln-task-coordinator`, `ln-test-coordinator` |
-| **Level 3** | Worker | Execute atomic work | FULL descriptions when needed | `ln-task-executor`, `ln-test-executor`, `ln-task-reviewer`, `ln-task-creator`, etc. |
+| **Level 1** | Top Orchestrator | Coordinate full lifecycle workflows | Metadata only | `ln-00-story-pipeline` |
+| **Level 2** | Domain Orchestrator | Coordinate specific domain workflows | Metadata only | `ln-30-story-executor`, `ln-20-story-validator`, `ln-40-story-quality-gate`, `ln-10-story-decomposer`, `ln-50-story-test-planner` |
+| **Level 3** | Worker | Execute atomic work | FULL descriptions when needed | `ln-31-task-executor`, `ln-34-test-executor`, `ln-32-task-reviewer`, `ln-11-task-creator`, etc. |
 
 **Critical Rules:**
 
@@ -301,15 +301,15 @@ This architecture follows industry-proven pattern where:
 
 | Delegating Skill | Delegated Skill | Domain Separation | Rationale |
 |------------------|-----------------|-------------------|-----------|
-| ln-story-coordinator | ln-story-quality-coordinator Pass 1 | Task execution → Story quality validation | After all tasks Done, delegate quality verification |
-| ln-story-coordinator | ln-story-quality-coordinator Pass 2 | Task execution → Final approval | After test task Done, delegate final Story approval |
+| ln-30-story-executor | ln-40-story-quality-gate Pass 1 | Task execution → Story quality validation | After all tasks Done, delegate quality verification |
+| ln-30-story-executor | ln-40-story-quality-gate Pass 2 | Task execution → Final approval | After test task Done, delegate final Story approval |
 
 **Invalid L2→L2 Examples (Violations):**
 
 | Delegating Skill | Delegated Skill | Violation | Why Invalid |
 |------------------|-----------------|-----------|-------------|
-| ln-story-coordinator | ln-story-validator | Rule 3: Domain overlap | Both manage task/story status - circular dependency risk |
-| ln-task-coordinator | ln-story-coordinator | Rule 4: Cycle risk | Creates potential loop (coordinator → coordinator) |
+| ln-30-story-executor | ln-20-story-validator | Rule 3: Domain overlap | Both manage task/story status - circular dependency risk |
+| ln-10-story-decomposer | ln-30-story-executor | Rule 4: Cycle risk | Creates potential loop (coordinator → coordinator) |
 
 **Key Insight:** L2→L2 delegation enables workflow composition while maintaining separation of concerns. Use sparingly - prefer L2→L3 delegation when possible.
 
@@ -339,8 +339,8 @@ Orchestrator automatically creates fix tasks when quality checks fail, then rest
 |---------|-----------|---------|-----------|
 | **PDF Processing** | Read PDF, Extract tables, Create PDF, Merge PDFs | ✅ ONE skill | Same domain, same tools, used together, < 800 lines |
 | **Task Management** | Analyze story, Create tasks, Update tasks, Review tasks | ❌ SPLIT into orchestrator + workers | Different responsibilities, > 3 workflow steps, can be used independently |
-| **ln-task-coordinator (Before)** | Decompose, Create, Replan | ❌ SPLIT | Monolithic, 470 lines, violates SRP |
-| **ln-task-coordinator (After)** | Orchestrates task operations | ✅ Orchestrator | Delegates to ln-task-creator, ln-task-replanner |
+| **ln-10-story-decomposer (Before)** | Decompose, Create, Replan | ❌ SPLIT | Monolithic, 470 lines, violates SRP |
+| **ln-10-story-decomposer (After)** | Orchestrates task operations | ✅ Orchestrator | Delegates to ln-11-task-creator, ln-12-task-replanner |
 
 ---
 
@@ -362,7 +362,7 @@ Orchestrator automatically creates fix tasks when quality checks fail, then rest
 
 **Structure:** `x-{operation}-manager` (orchestrator) → `x-{operation}-creator`, `x-{operation}-updater`, `x-{operation}-deleter` (workers)
 
-**Example:** `ln-task-coordinator` (orchestrator) → `ln-task-creator`, `ln-task-replanner`
+**Example:** `ln-10-story-decomposer` (orchestrator) → `ln-11-task-creator`, `ln-12-task-replanner`
 
 ---
 
@@ -377,7 +377,7 @@ Orchestrator automatically creates fix tasks when quality checks fail, then rest
 | **Rarely Used Independently** | Functions almost always used together |
 | **Small Total Size** | Combined SKILL.md < 500 lines, < 3 major workflow steps |
 
-### Example: ln-adr-creator
+### Example: ln-22-adr-creator
 
 **Functions:** Ask 5 questions → Generate ADR document (7 sections) → Create file in docs/adrs/
 
@@ -400,9 +400,9 @@ Phase 4: Output/Save
 ```
 
 **Examples:**
-- `ln-docs-creator` - generates documentation sequentially
-- `ln-html-builder` - builds HTML presentation
-- `ln-guide-creator` - creates guides
+- `ln-61-docs-creator` - generates documentation sequentially
+- `ln-62-html-builder` - builds HTML presentation
+- `ln-21-guide-creator` - creates guides
 
 **Diagram Type:** `graph TD` (top-down linear)
 
@@ -418,9 +418,9 @@ State 1 (Todo) → State 2 (In Progress) → State 3 (To Review) → State 4 (Do
 ```
 
 **Examples:**
-- `ln-task-executor` - moves tasks through states
-- `ln-test-executor` - test task lifecycle
-- `ln-task-rework` - fixes after review
+- `ln-31-task-executor` - moves tasks through states
+- `ln-34-test-executor` - test task lifecycle
+- `ln-33-task-rework` - fixes after review
 
 **Diagram Type:** `stateDiagram-v2` or `graph TD` with state nodes
 
@@ -439,9 +439,9 @@ Phase 3: Output
 ```
 
 **Examples:**
-- `ln-task-reviewer` - 3 verdicts (Accept/Minor Fixes/Needs Rework)
+- `ln-32-task-reviewer` - 3 verdicts (Accept/Minor Fixes/Needs Rework)
 - `x-story-reviewer` - Two-pass with different paths
-- `ln-task-coordinator` - CREATE or REPLAN mode
+- `ln-10-story-decomposer` - CREATE or REPLAN mode
 
 **Diagram Type:** `graph TD` with decision diamonds
 
@@ -459,8 +459,8 @@ Phase 3: Check condition
 ```
 
 **Examples:**
-- `ln-story-coordinator` - loops through tasks by priority
-- `ln-epic-creator` - loops through domains
+- `ln-30-story-executor` - loops through tasks by priority
+- `ln-70-epic-creator` - loops through domains
 
 **Diagram Type:** `graph TD` with loop-back arrows
 
@@ -481,8 +481,8 @@ Phase 5: Aggregate Results
 ```
 
 **Examples:**
-- `ln-story-coordinator` - coordinates task workers
-- `ln-task-coordinator` - coordinates creator/replanner
+- `ln-30-story-executor` - coordinates task workers
+- `ln-10-story-decomposer` - coordinates creator/replanner
 
 **Diagram Type:** `graph TD` with delegation nodes
 
@@ -498,7 +498,7 @@ Phase 5: Aggregate Results
 
 **Benefits:** 80-90% token reduction in orchestrator, avoids context truncation, scales to Stories with many tasks.
 
-**Example (ln-story-coordinator):**
+**Example (ln-30-story-executor):**
 ```
 Phase 2: Load Tasks Metadata (150 tokens) - ID, title, status ONLY
 Phase 3: Orchestration Loop - Delegate to worker → Worker loads FULL description → Reload metadata
@@ -508,7 +508,7 @@ Phase 3: Orchestration Loop - Delegate to worker → Worker loads FULL descripti
 
 **Pattern:** Load only what's needed for current step → Load additional data when required → Cache frequently accessed.
 
-**Example (ln-task-replanner):** Load IDEAL plan → Load existing tasks ONE BY ONE (Task 1 → Compare → Decision, Task 2 → Compare → Decision) → Execute operations
+**Example (ln-12-task-replanner):** Load IDEAL plan → Load existing tasks ONE BY ONE (Task 1 → Compare → Decision, Task 2 → Compare → Decision) → Execute operations
 
 **Rationale:** Prevents token overflow when comparing 10+ tasks.
 
@@ -677,11 +677,11 @@ Every User Story should be:
 
 ### Repository-Specific Examples
 
-**Good Orchestrators:** `ln-story-coordinator` (280 lines), `ln-task-coordinator` v6.0.0 (150 lines)
+**Good Orchestrators:** `ln-30-story-executor` (280 lines), `ln-10-story-decomposer` v6.0.0 (150 lines)
 
-**Good Workers:** `ln-task-creator` (150 lines), `ln-task-replanner` (250 lines), `ln-task-executor`, `ln-test-executor`
+**Good Workers:** `ln-11-task-creator` (150 lines), `ln-12-task-replanner` (250 lines), `ln-31-task-executor`, `ln-34-test-executor`
 
-**Monolithic (Before Refactoring):** `ln-task-coordinator` v5.1.0 (470 lines, mixed CREATE/REPLAN logic)
+**Monolithic (Before Refactoring):** `ln-10-story-decomposer` v5.1.0 (470 lines, mixed CREATE/REPLAN logic)
 
 ---
 
@@ -774,13 +774,13 @@ Every User Story should be:
 **Example transformation:**
 ```markdown
 ❌ Before (48 words):
-"In order to execute tasks, ln-task-executor has the ability to load the task
+"In order to execute tasks, ln-31-task-executor has the ability to load the task
 from Linear. At this point in time, the skill provides a description of the
 implementation approach. It is important to note that quality gates are run
 prior to completion."
 
 ✅ After (26 words, -46% reduction):
-"To execute tasks, ln-task-executor can load the task from Linear.
+"To execute tasks, ln-31-task-executor can load the task from Linear.
 Now, the skill describes the implementation approach.
 Quality gates run before completion."
 ```

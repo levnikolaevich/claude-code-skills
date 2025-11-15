@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ln-70-epic-creator - State Diagram</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="stylesheet" href="../shared/css/diagram.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎯 ln-70-epic-creator</h1>
+            <p class="subtitle">Epic Creator - State Diagram</p>
+        </header>
+
+        <div class="info-box">
+            <h3>📋 Workflow Overview</h3>
+            <ul>
+                <li><strong>Purpose:</strong> Decompose scope/initiative into 3-7 Epics (Linear Projects)</li>
+                <li><strong>Mode:</strong> Batch Mode only (sequential loop)</li>
+                <li><strong>Output:</strong> 3-7 Linear Projects with Epic documents</li>
+                <li><strong>Loop:</strong> FOR EACH domain, ask 5 questions, confirm, create</li>
+            </ul>
+        </div>
+
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color color-discovery"></div>
+                <span>Discovery/Analysis</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color color-loop"></div>
+                <span>Sequential Loop</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color color-decision"></div>
+                <span>Decision Point</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color color-action"></div>
+                <span>Completion</span>
+            </div>
+        </div>
+
+        <div class="diagram-container">
+            <div class="mermaid">
+graph TD
+    Start([Start: Create Epics]) --> Phase1[Phase 1: Discovery<br/>Auto-discover Team ID + Next Epic Number]
+
+    Phase1 --> Phase2[Phase 2: Scope Analysis<br/>Identify 3-7 logical domains]
+
+    Phase2 --> Phase3[Phase 3: Sequential Processing Loop<br/>FOR EACH domain]
+
+    subgraph Loop [Sequential Loop - One Epic at a Time]
+        Ask[Ask 5 questions:<br/>1. Goal<br/>2. Scope In/Out<br/>3. Success Criteria<br/>4. Risks<br/>5. Phases]
+
+        Ask --> Generate[Generate Epic markdown]
+        Generate --> Preview[Show preview to user]
+        Preview --> UserConfirm{User types<br/>'confirm'?}
+        UserConfirm -->|No| Ask
+        UserConfirm -->|Yes| CreateLinear[Create Linear Project]
+        CreateLinear --> UpdateKanban[Update kanban_board.md<br/>Increment Next Epic Number by 1]
+    end
+
+    Phase3 --> Ask
+    UpdateKanban --> MoreDomains{More domains<br/>to process?}
+    MoreDomains -->|Yes| Ask
+    MoreDomains -->|No| Complete
+
+    Complete[All Epics Created<br/>Display summary]
+    Complete --> End([End])
+
+    %% Styling
+    classDef discovery fill:#E3F2FD,stroke:#1976D2,stroke-width:2px
+    classDef loop fill:#FFF9C4,stroke:#F57C00,stroke-width:2px
+    classDef decision fill:#FFE0B2,stroke:#E64A19,stroke-width:2px
+    classDef action fill:#C8E6C9,stroke:#388E3C,stroke-width:2px
+
+    class Phase1,Phase2 discovery
+    class Phase3,Ask,Generate,Preview,CreateLinear,UpdateKanban loop
+    class UserConfirm,MoreDomains decision
+    class Complete action
+            </div>
+        </div>
+
+        <div class="info-box">
+            <h3>🔑 Key Features</h3>
+            <ul>
+                <li><strong>Sequential Loop:</strong> One Epic at a time, user confirms each before next</li>
+                <li><strong>5 Questions:</strong> Goal, Scope (In/Out), Success Criteria, Risks, Phases</li>
+                <li><strong>Auto-numbering:</strong> Increments Epic number after each creation</li>
+                <li><strong>Batch Mode only:</strong> No Single Mode - always decomposes scope into 3-7 Epics</li>
+            </ul>
+        </div>
+
+        <footer>
+            <p>Generated for ln-70-epic-creator skill | Version 3.0.0</p>
+            <p>Diagram format: Mermaid.js | Last updated: 2025-11-08</p>
+        </footer>
+    </div>
+
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'default',
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true,
+                curve: 'basis'
+            }
+        });
+    </script>
+</body>
+</html>

@@ -46,13 +46,15 @@ All skills have state diagrams in `diagram.html` files for visualizing workflows
 
 **24 skills in 5 categories:** Pre-Planning (5), Planning (6), Execution (6), Validation (2), Documentation (2), Testing & Quality (3)
 
+**Indexing:** 00 = orchestrator, 10-50 = story coordinators, 1X-5X = workers.
+
 **Key skills:**
-- **ln-docs-creator** - Create project documentation (requirements, architecture, technical specs) before coding
-- **ln-epic-creator** → **ln-story-manager** → **ln-task-coordinator** - Decompose scope into executable tasks
-- **ln-story-processor** - Full pipeline automation: task planning → verification → execution → review → Done
-- **ln-story-coordinator** - Orchestrate task execution with auto-review invocation
-- **ln-story-validator** - Auto-fix Stories/Tasks against 15 industry standard criteria
-- **ln-story-quality-coordinator** - Two-pass review with Early Exit Pattern (Code Quality → Regression → Manual Testing)
+- **ln-61-docs-creator** - Create project documentation (requirements, architecture, technical specs) before coding
+- **ln-70-epic-creator** → **ln-71-story-manager** → **ln-10-story-decomposer** - Decompose scope into executable tasks
+- **ln-00-story-pipeline** - Full pipeline automation: task planning → verification → execution → review → Done
+- **ln-30-story-executor** - Orchestrate task execution with auto-review invocation
+- **ln-20-story-validator** - Auto-fix Stories/Tasks against 15 industry standard criteria
+- **ln-40-story-quality-gate** - Two-pass review with Early Exit Pattern (Code Quality → Regression → Manual Testing)
 
 > **Note:** Complete skill list with descriptions and versions in README.md feature tables.
 
@@ -69,7 +71,7 @@ All skills automatically find settings from `docs/tasks/kanban_board.md`:
 - **Next Epic Number** - from Linear Configuration table
 - **Next Story Number** - from Epic Story Counters table
 
-**How to create:** Use ln-docs-creator skill (Phase 9-10) to generate kanban_board.md (Phase 9) and optionally HTML presentation (Phase 10).
+**How to create:** Use ln-61-docs-creator skill (Phase 9-10) to generate kanban_board.md (Phase 9) and optionally HTML presentation (Phase 10).
 
 **Important:** If file is missing, skills request data directly from user.
 
@@ -86,7 +88,7 @@ All skills automatically find settings from `docs/tasks/kanban_board.md`:
     - [LINEAR_ID: EP#_## Task Title](link)
 ```
 
-**Key Rules:** Epic → Story (📖, 2-space indent) → Tasks (-, 4-space indent). ✅ APPROVED marker added by ln-story-validator. Stories without tasks only in Backlog. Done section: max 5 tasks.
+**Key Rules:** Epic → Story (📖, 2-space indent) → Tasks (-, 4-space indent). ✅ APPROVED marker added by ln-20-story-validator. Stories without tasks only in Backlog. Done section: max 5 tasks.
 
 > **Note:** For complete format details, Epics Overview section, and visual representation, see kanban_board.md structure in README.md.
 
@@ -96,7 +98,7 @@ All skills use Linear MCP to create/update tasks:
 - `mcp__linear-server__create_issue()` - for Stories and Tasks
 - `mcp__linear-server__update_issue()` - for status and description updates
 
-Linear API reference located in `ln-epic-creator/references/linear_integration.md`.
+Linear API reference located in `ln-70-epic-creator/references/linear_integration.md`.
 
 ### Development Principles
 
@@ -108,15 +110,15 @@ Linear API reference located in `ln-epic-creator/references/linear_integration.m
 
 ### Task Templates
 
-**Epic:** ln-epic-creator/references/epic_template_universal.md (Goal, Scope, Success Criteria, Risks, Phases)
+**Epic:** ln-70-epic-creator/references/epic_template_universal.md (Goal, Scope, Success Criteria, Risks, Phases)
 
-**Story:** ln-story-manager/references/story_template_universal.md (8 sections: Statement, Context, AC, Test Strategy, Implementation Tasks, Technical Notes + Library Research, DoD)
+**Story:** ln-71-story-manager/references/story_template_universal.md (8 sections: Statement, Context, AC, Test Strategy, Implementation Tasks, Technical Notes + Library Research, DoD)
 
-**Task:** ln-task-creator/references/task_template_implementation.md (7 sections: Context, Implementation Plan, Technical Approach, AC, Affected Components, Existing Code Impact, DoD)
+**Task:** ln-11-task-creator/references/task_template_implementation.md (7 sections: Context, Implementation Plan, Technical Approach, AC, Affected Components, Existing Code Impact, DoD)
 
-**Story Finalizer Test Task:** ln-test-coordinator/references/test_task_template.md (11 sections: Context, Risk Matrix, E2E/Integration/Unit tests, Coverage, DoD, Test Fixes, Infra, Docs, Cleanup)
+**Story Finalizer Test Task:** ln-50-story-test-planner/references/test_task_template.md (11 sections: Context, Risk Matrix, E2E/Integration/Unit tests, Coverage, DoD, Test Fixes, Infra, Docs, Cleanup)
 
-**Verification Checklist:** ln-story-validator/references/verification_checklist.md
+**Verification Checklist:** ln-20-story-validator/references/verification_checklist.md
 
 ### DAG Documentation Support
 
@@ -126,7 +128,7 @@ Linear API reference located in `ln-epic-creator/references/linear_integration.m
 - **Maintenance Sections** - Update Triggers, Verification, Last Updated (in all generated docs)
 - **README Hub** - Central navigation (`docs/project/README.md`)
 
-**Supported skills:** ln-docs-creator v5.5.0, ln-html-builder v2.3.1, ln-docs-system v1.0.2, ln-docs-updater v2.0.0, ln-adr-creator v4.0.0, ln-guide-creator v4.0.0, ln-manual-creator v1.1.0
+**Supported skills:** ln-61-docs-creator v5.5.0, ln-62-html-builder v2.3.1, ln-60-docs-system v1.0.2, ln-63-docs-updater v2.0.0, ln-22-adr-creator v4.0.0, ln-21-guide-creator v4.0.0, ln-23-manual-creator v1.1.0
 
 > **Note:** Full DAG structure details and example SCOPE tags in README.md.
 
@@ -136,11 +138,11 @@ Three levels of decomposition, each with automatic CREATE/REPLAN mode:
 
 | Level | Skill | Input | Output | Mode Selection |
 |-------|-------|-------|--------|----------------|
-| **1** | ln-epic-creator | Scope/initiative | 3-7 Epics | Batch Mode only |
-| **2** | ln-story-manager | Epic number | 5-10 Stories | Auto (builds IDEAL → checks existing → CREATE/REPLAN) |
-| **3** | ln-task-coordinator | Story number | 1-6 Implementation tasks | Auto (builds IDEAL → checks existing → CREATE/REPLAN) |
+| **1** | ln-70-epic-creator | Scope/initiative | 3-7 Epics | Batch Mode only |
+| **2** | ln-71-story-manager | Epic number | 5-10 Stories | Auto (builds IDEAL → checks existing → CREATE/REPLAN) |
+| **3** | ln-10-story-decomposer | Story number | 1-6 Implementation tasks | Auto (builds IDEAL → checks existing → CREATE/REPLAN) |
 
-**Workflow:** Scope → Epics (ln-epic-creator) → Stories (ln-story-manager with Phase 0 Library Research) → Implementation Tasks (ln-task-coordinator) → Test Task (ln-test-coordinator after manual testing)
+**Workflow:** Scope → Epics (ln-70-epic-creator) → Stories (ln-71-story-manager with Phase 0 Library Research) → Implementation Tasks (ln-10-story-decomposer) → Test Task (ln-50-story-test-planner after manual testing)
 
 > **Note:** Complete flow example and optimal counts by complexity in README.md. All use Decompose-First Pattern.
 
@@ -150,24 +152,24 @@ Detailed workflows are documented in each skill's SKILL.md file. Quick reference
 
 | Skill | Purpose | Key Phases | Details |
 |-------|---------|-----------|---------|
-| ln-epic-creator | Create 3-7 Epics from scope | Discovery → Analysis → Sequential Loop | [SKILL.md](ln-epic-creator/SKILL.md) |
-| ln-story-manager | Create/replan Stories | Phase 0 Research → IDEAL Plan → CREATE/REPLAN | [SKILL.md](ln-story-manager/SKILL.md) |
-| ln-task-coordinator | Create/replan implementation tasks | Analysis → IDEAL Plan → CREATE/REPLAN | [SKILL.md](ln-task-coordinator/SKILL.md) |
-| ln-test-coordinator | Plan test task after manual testing | Risk Assessment → Impact Analysis → Delegation | [SKILL.md](ln-test-coordinator/SKILL.md) |
-| ln-task-executor | Execute implementation tasks | Read guides → Implement → Quality gates | [SKILL.md](ln-task-executor/SKILL.md) |
-| ln-test-executor | Execute Story Finalizer test tasks | 6 steps: Fix tests → New tests → Infra → Docs → Cleanup → Verify | [SKILL.md](ln-test-executor/SKILL.md) |
-| ln-task-reviewer | Review tasks | Load task + diffs → Checklist → Accept/Fixes/Rework | [SKILL.md](ln-task-reviewer/SKILL.md) |
-| ln-task-rework | Fix tasks after review | Load feedback → Fix → Quality gates → Submit | [SKILL.md](ln-task-rework/SKILL.md) |
-| ln-story-validator | Auto-fix and approve Stories | Discovery → Guide creation → 15 auto-fixes → Approve | [SKILL.md](ln-story-validator/SKILL.md) |
-| ln-story-coordinator | Orchestrate Story execution | Load tasks → Priority loop (Review/Rework/Execute) → Auto-invoke reviewer | [SKILL.md](ln-story-coordinator/SKILL.md) |
-| ln-story-quality-coordinator | Two-pass Story review | Pass 1: Testing + Quality → Test/Refactor task. Pass 2: Verify → Done | [SKILL.md](ln-story-quality-coordinator/SKILL.md) |
+| ln-70-epic-creator | Create 3-7 Epics from scope | Discovery → Analysis → Sequential Loop | [SKILL.md](ln-70-epic-creator/SKILL.md) |
+| ln-71-story-manager | Create/replan Stories | Phase 0 Research → IDEAL Plan → CREATE/REPLAN | [SKILL.md](ln-71-story-manager/SKILL.md) |
+| ln-10-story-decomposer | Create/replan implementation tasks | Analysis → IDEAL Plan → CREATE/REPLAN | [SKILL.md](ln-10-story-decomposer/SKILL.md) |
+| ln-50-story-test-planner | Plan test task after manual testing | Risk Assessment → Impact Analysis → Delegation | [SKILL.md](ln-50-story-test-planner/SKILL.md) |
+| ln-31-task-executor | Execute implementation tasks | Read guides → Implement → Quality gates | [SKILL.md](ln-31-task-executor/SKILL.md) |
+| ln-34-test-executor | Execute Story Finalizer test tasks | 6 steps: Fix tests → New tests → Infra → Docs → Cleanup → Verify | [SKILL.md](ln-34-test-executor/SKILL.md) |
+| ln-32-task-reviewer | Review tasks | Load task + diffs → Checklist → Accept/Fixes/Rework | [SKILL.md](ln-32-task-reviewer/SKILL.md) |
+| ln-33-task-rework | Fix tasks after review | Load feedback → Fix → Quality gates → Submit | [SKILL.md](ln-33-task-rework/SKILL.md) |
+| ln-20-story-validator | Auto-fix and approve Stories | Discovery → Guide creation → 15 auto-fixes → Approve | [SKILL.md](ln-20-story-validator/SKILL.md) |
+| ln-30-story-executor | Orchestrate Story execution | Load tasks → Priority loop (Review/Rework/Execute) → Auto-invoke reviewer | [SKILL.md](ln-30-story-executor/SKILL.md) |
+| ln-40-story-quality-gate | Two-pass Story review | Pass 1: Testing + Quality → Test/Refactor task. Pass 2: Verify → Done | [SKILL.md](ln-40-story-quality-gate/SKILL.md) |
 
 > **Note:** All workflows follow Orchestrator-Worker Pattern. See [SKILL_ARCHITECTURE_GUIDE.md](docs/SKILL_ARCHITECTURE_GUIDE.md) for architectural principles.
 
 ## Important Details
 
 ### Structural Validation of Stories and Tasks (checklist #0a + #0b)
-ln-story-validator checks compliance with Story and Task templates, and automatically fixes:
+ln-20-story-validator checks compliance with Story and Task templates, and automatically fixes:
 - **Story (#0a):** Verifies 8 Story sections per story_template_universal.md (including Test Strategy)
 - **Tasks (#0b):** Sequential validation - verifies 7 sections for EACH Task one by one per task_template_universal.md (including Existing Code Impact)
 - **Performance:** Loads task metadata first (Phase 2), then fetches full description for ONE task at a time (Phase 4 step 2) to avoid token waste and truncation
@@ -177,25 +179,33 @@ ln-story-validator checks compliance with Story and Task templates, and automati
 
 ### Testing and Documentation
 
-**Tests:** All tests (E2E/Integration/Unit) in Story's final test task. Value-Based Testing: 2-5 E2E, 3-8 Integration, 5-15 Unit per Story (10-28 total max). Priority ≥15 scenarios MUST be tested. See [risk_based_testing_guide.md](ln-test-coordinator/references/risk_based_testing_guide.md) for full methodology.
+**Tests:** All tests (E2E/Integration/Unit) in Story's final test task. Value-Based Testing: 2-5 E2E, 3-8 Integration, 5-15 Unit per Story (10-28 total max). Priority ≥15 scenarios MUST be tested. See [risk_based_testing_guide.md](ln-50-story-test-planner/references/risk_based_testing_guide.md) for full methodology.
 
-**Temporary Scripts:** `scripts/tmp_[story_id].sh` - Created by ln-story-quality-coordinator Pass 1, deleted by ln-test-executor Step 6.
+**Temporary Scripts:** `scripts/tmp_[story_id].sh` - Created by ln-40-story-quality-gate Pass 1, deleted by ln-34-test-executor Step 6.
 
 **Documentation:** ALWAYS integrated in the same task (NOT separate tasks). Ensures atomicity and relevance.
 
-### Code Comments (ln-task-executor)
+### Code Comments (ln-31-task-executor)
 15-20% ratio. Explain WHY (reasoning), not WHAT. NO Epic/Task IDs, NO historical notes, NO code examples. Only critical technical details (DB optimizations, API quirks, constraints).
 
-### Guide Auto-Creation (ln-story-validator Phase 3)
-Auto-creates missing guides via ln-guide-creator before approval. Links in Story Technical Notes.
+### Guide Auto-Creation (ln-20-story-validator Phase 3)
+Auto-creates missing guides via ln-21-guide-creator before approval. Links in Story Technical Notes.
 
 ### Documentation Language
 **All documentation in this repository MUST be in English** (SKILL.md, templates, comments, README, generated docs).
 
-**Exception:** Stories and Tasks in Linear can be English/Russian. ln-story-validator ALWAYS preserves original language - DO NOT translate.
+**Exception:** Stories and Tasks in Linear can be English/Russian. ln-20-story-validator ALWAYS preserves original language - DO NOT translate.
 
 ### Sequential Numbering
-**All numbering MUST be sequential without fractional numbers**: Phases/Sections/Steps: 1, 2, 3, 4 (NOT 1, 1.5, 2). Questions: Q1, Q2, Q3 (NOT Q1, Q1.5, Q2). **If inserting content:** Renumber all subsequent items.
+
+**Rule:** Phases/Sections/Steps: 1, 2, 3, 4 (NOT 1, 1.5, 2). Questions: Q1, Q2, Q3 (NOT Q1, Q1.5, Q2). **If inserting:** Renumber all subsequent items.
+
+**Exceptions:**
+
+| Case | Format | Example | When Valid |
+|------|--------|---------|------------|
+| **Conditional Branching** | Letter suffixes | Phase 4a (CREATE), Phase 4b (REPLAN), Phase 5 | Mutually exclusive paths (if-else, EITHER A OR B) |
+| **Loop Internals** | Steps inside Phase | Phase 3: Loop → Step 1 → Step 2 → Step 3 → Repeat | Cyclic workflows with repeated sub-steps |
 
 ## Working with Skill Files
 
@@ -219,8 +229,8 @@ Stored in `{skill}/references/` and used by skill for:
 
 ### Chat Prefixes
 Skills use emoji prefixes in chat output for visual differentiation when orchestrated:
-- ⚙️ [EXECUTOR] - ln-task-executor (implementation tasks), ln-test-executor (Story Finalizer test tasks)
-- 🔍 [REVIEWER] - ln-task-reviewer (task reviews)
+- ⚙️ [EXECUTOR] - ln-31-task-executor (implementation tasks), ln-34-test-executor (Story Finalizer test tasks)
+- 🔍 [REVIEWER] - ln-32-task-reviewer (task reviews)
 
 **Purpose:** Helps users track which agent/skill is working when multiple skills are invoked via Skill tool.
 
@@ -252,7 +262,7 @@ All skills and templates have versions and last update dates at end of file:
 ## [1.0.1] - 2025-11-12
 
 ### Changed
-- **ln-story-coordinator v2.6.0 → v3.0.0** - Critical task loading rules, automatic loop restart
+- **ln-30-story-executor v2.6.0 → v3.0.0** - Critical task loading rules, automatic loop restart
 ```
 
-**Last Updated:** 2025-11-14
+**Last Updated:** 2025-11-15

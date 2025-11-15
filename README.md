@@ -27,59 +27,112 @@ This repository contains **24 production-ready skills** for [Claude Code](https:
 
 ## 🚀 Features
 
-### Pre-Planning Skills (5)
+### 1. Documentation System (60-69)
+
+**ln-60-docs-system** (orchestrator) creates complete documentation system in one command.
 
 | Skill | Purpose | Version | Diagrams |
 |:------|:--------|:-------:|:--------:|
-| **[ln-docs-creator](ln-docs-creator/)** | Create comprehensive project documentation BEFORE development begins. Generates requirements, architecture, technical specs, README hub, ADR structure, and optional HTML presentation. | 6.0.0 | ✅ |
-| **[ln-html-builder](ln-html-builder/)** | Build interactive HTML presentation from project documentation with 6 tabs (Overview, Requirements+ADRs, Architecture, Technical Spec, Roadmap, Guides). Uses Mermaid v11. | 2.3.1 | ✅ |
-| **[ln-docs-system](ln-docs-system/)** | Orchestrator that creates complete documentation system (MD docs + HTML presentation) in one command. Invokes ln-docs-creator and ln-html-builder. | 1.1.0 | ✅ |
-| **[ln-docs-updater](ln-docs-updater/)** | Update existing project documentation based on code changes. Automatically scans git diff and updates only affected sections. Preserves existing content. | 3.0.0 | ✅ |
-| **[ln-adr-creator](ln-adr-creator/)** | Create minimal Architecture Decision Records (ADRs) through 5-question dialog. Categorizes as Strategic or Technical. Nygard format with 7 sections (~300-500 words). | 5.0.0 | ✅ |
+| **[ln-60-docs-system](ln-60-docs-system/)** | **Orchestrator** that creates complete documentation system (MD docs + HTML presentation) in one command. Invokes ln-61-docs-creator and ln-62-html-builder. | 1.1.0 | ✅ |
 
-### Planning Skills (6)
+**Workers:**
 
 | Skill | Purpose | Version | Diagrams |
 |:------|:--------|:-------:|:--------:|
-| **[ln-epic-creator](ln-epic-creator/)** | Decompose scope into 3-7 Linear Projects (Epics) with business goals, success criteria, and phased strategy through interactive dialog. Auto-discovers team ID. | 4.0.0 | ✅ |
-| **[ln-story-manager](ln-story-manager/)** | Universal Story operations (create/replan) with automatic Epic decomposition. Phase 0: Library & Standards Research via MCP Context7 + Ref → IDEAL Story plan (5-10 Stories) → creates or replans existing Stories (KEEP/UPDATE/OBSOLETE/CREATE). | 8.0.0 | ✅ |
-| **[ln-task-coordinator](ln-task-coordinator/)** | **Orchestrator** for task operations. Analyzes Story, builds optimal task plan (1-6 tasks, Consumer-First ordered), delegates to ln-task-creator (CREATE) or ln-task-replanner (REPLAN) with `taskType: "implementation"`. Auto-discovers team ID. For implementation tasks only. | 7.2.0 | ✅ |
-| **[ln-task-creator](ln-task-creator/)** | **Universal factory** for creating ALL 3 task types (implementation, refactoring, test). Generates task documents from templates, validates type-specific rules, creates in Linear. Invoked by orchestrators (ln-task-coordinator, ln-story-quality-coordinator, ln-test-coordinator). Owns all 3 templates. | 2.2.0 | ✅ |
-| **[ln-task-replanner](ln-task-replanner/)** | **Universal replanner** for updating ALL 3 task types (implementation, refactoring, test). Compares IDEAL plan vs existing, categorizes operations (KEEP/UPDATE/OBSOLETE/CREATE), applies type-specific validation, executes changes in Linear. Reads templates from ln-task-creator/references/. | 2.2.0 | ✅ |
-| **[ln-test-coordinator](ln-test-coordinator/)** | Create test task for Story after manual testing passes. Analyzes Story, generates comprehensive test task with 11 sections. **Delegates to ln-task-creator (CREATE) or ln-task-replanner (REPLAN)** with `taskType: "test"`. Supports existing test task updates. | 7.2.0 | ✅ |
+| **[ln-61-docs-creator](ln-61-docs-creator/)** | Create comprehensive project documentation BEFORE development begins. Generates requirements, architecture, technical specs, README hub, ADR structure, and optional HTML presentation. | 6.0.0 | ✅ |
+| **[ln-62-html-builder](ln-62-html-builder/)** | Build interactive HTML presentation from project documentation with 6 tabs (Overview, Requirements+ADRs, Architecture, Technical Spec, Roadmap, Guides). Uses Mermaid v11. | 2.3.1 | ✅ |
+| **[ln-63-docs-updater](ln-63-docs-updater/)** | Update existing project documentation based on code changes. Automatically scans git diff and updates only affected sections. Preserves existing content. | 3.0.0 | ✅ |
 
-### Execution Skills (6)
+---
 
-| Skill | Purpose | Version | Diagrams |
-|:------|:--------|:-------:|:--------:|
-| **[ln-story-processor](ln-story-processor/)** | 🔄 **Orchestrate complete Story processing workflow** from task planning to Done. Delegates to ln-task-coordinator (Phase 2), ln-story-validator (Phase 3a), ln-story-coordinator (Phase 3b with To Review → To Rework → Todo priorities) and explicitly drives ln-story-quality-coordinator Pass 1 + Pass 2. Looping workflow until Story status = Done. Full pipeline automation: Todo → In Progress → To Review → Done. | 2.0.0 | ✅ |
-| **[ln-story-coordinator](ln-story-coordinator/)** | Orchestrate Story execution (Todo → In Progress → To Review → Done). **Priority 0: Backlog** (auto-verify new tasks before execution) → **Priority 1: To Review** → **Priority 2: To Rework** → **Priority 3: Todo**. Auto-invokes ln-story-quality-coordinator Pass 1 + Pass 2 (full automation). Phase 4 delegates Story quality to ln-story-quality-coordinator (Orchestrator-Worker Pattern). | 6.0.0 | ✅ |
-| **[ln-task-executor](ln-task-executor/)** | ⚙️ Execute implementation tasks ONLY (Todo → In Progress → To Review). Uses KISS/YAGNI principles, reads guide links, runs type checking and linting. Story status management removed (now ln-story-coordinator's responsibility). NOT for test tasks. | 10.1.0 | ✅ |
-| **[ln-test-executor](ln-test-executor/)** | ⚙️ Execute Story Finalizer test tasks (Todo → In Progress → To Review). E2E-first Risk-Based Testing (2-5 E2E, 3-8 Integration, 5-15 Unit). Includes test fixes, infrastructure, docs, and legacy cleanup. | 3.0.0 | ✅ |
-| **[ln-task-reviewer](ln-task-reviewer/)** | 🔍 Review completed tasks for To Review → Done/Rework transition. Distinguishes test/implementation tasks. Checks architecture, docs, security, quality, and test coverage. | 7.3.0 | ✅ |
-| **[ln-task-rework](ln-task-rework/)** | Fix tasks marked To Rework. Analyzes feedback, applies fixes following KISS/YAGNI/DRY principles, runs quality gates (type checking, linting), and submits back To Review. | 5.1.0 | ✅ |
-
-### Validation Skills (2)
+### 2. Pre-Planning (70-79)
 
 | Skill | Purpose | Version | Diagrams |
 |:------|:--------|:-------:|:--------:|
-| **[ln-story-validator](ln-story-validator/)** | Critically review Stories and Tasks against 2025 industry standards before approval (Backlog → Todo). ALWAYS auto-fixes all 16 verification criteria. Auto-creates guides/manuals/ADRs via AUTO-RESEARCH. No "Needs Work" path exists. | 11.0.0 | ✅ |
-| **[ln-story-quality-coordinator](ln-story-quality-coordinator/)** | L2 orchestrator for Story quality. Pass 1 delegates code analysis to `ln-code-quality-checker`, regression to `ln-regression-checker`, manual AC verification to `ln-manual-tester` (Format v1.0) with FAIL‑FAST exit at each gate; auto-creates refactor/bug tasks when any gate fails. When all gates pass, automatically runs `ln-test-coordinator` (`autoApprove: true`) to create Story Finalizer test task. Pass 2 verifies automated tests (Priority ≥15, limits 10‑28) and moves Story to Done. | 7.1.0 | ✅ |
+| **[ln-70-epic-creator](ln-70-epic-creator/)** | Decompose scope into 3-7 Linear Projects (Epics) with business goals, success criteria, and phased strategy through interactive dialog. Auto-discovers team ID. | 4.0.0 | ✅ |
+| **[ln-71-story-manager](ln-71-story-manager/)** | Universal Story operations (create/replan) with automatic Epic decomposition. Phase 0: Library & Standards Research via MCP Context7 + Ref → IDEAL Story plan (5-10 Stories) → creates or replans existing Stories (KEEP/UPDATE/OBSOLETE/CREATE). | 8.0.0 | ✅ |
 
-### Documentation Skills (2)
+---
 
-| Skill | Purpose | Version | Diagrams |
-|:------|:--------|:-------:|:--------:|
-| **[ln-guide-creator](ln-guide-creator/)** | Research and create minimal project guides (6 sections, 300-500 words) documenting reusable patterns. AUTO-RESEARCH via MCP Ref/Context7. Returns guide path for linking. | 4.0.0 | ✅ |
-| **[ln-manual-creator](ln-manual-creator/)** | Create minimal Package API reference manuals (~300-500 words, OpenAPI-inspired format). AUTO-RESEARCH via MCP Context7 + Ref. Neutral, factual tone. Version-specific (package-version.md). Returns manual path for linking. | 1.1.0 | ✅ |
+### 3. Story Pipeline (00, 10-50, 1X-5X)
 
-### Testing & Quality Skills (3)
+**Top Orchestrator:**
 
 | Skill | Purpose | Version | Diagrams |
 |:------|:--------|:-------:|:--------:|
-| **[ln-regression-checker](ln-regression-checker/)** | 🧪 Run existing test suite to verify no regressions. Auto-detects framework (pytest/jest/vitest/go test). Returns JSON verdict + Linear comment. Atomic worker - does NOT create tasks or change statuses. | 1.0.0 | ✅ |
-| **[ln-manual-tester](ln-manual-tester/)** | 🎯 Perform manual functional testing of Story AC using curl (API) or puppeteer (UI). Tests main scenarios + edge cases + error handling + integration. Creates reusable temp script `scripts/tmp_[story_id].sh`. Documents results in Linear (Format v1.0). | 2.0.0 | ✅ |
-| **[ln-code-quality-checker](ln-code-quality-checker/)** | 🔎 Analyze code quality for DRY/KISS/YAGNI/Architecture violations and guide compliance. Checks git diffs of Done implementation tasks. Reports structured issues by severity (HIGH/MEDIUM/LOW). Fail Fast principle - runs FIRST in Phase 4. | 2.0.0 | ✅ |
+| **[ln-00-story-pipeline](ln-00-story-pipeline/)** | 🔄 **Top orchestrator** for complete Story processing workflow from task planning to Done. Delegates to ln-10-story-decomposer (Phase 2), ln-20-story-validator (Phase 3 Step 1), ln-30-story-executor (Phase 3 Step 2 with To Review → To Rework → Todo priorities) and explicitly drives ln-40-story-quality-gate Pass 1 + Pass 2. Looping workflow until Story status = Done. Full pipeline automation: Todo → In Progress → To Review → Done. | 2.0.0 | ✅ |
+
+#### 3.1 Task Planning (ln-10-story-decomposer)
+
+**Coordinator:**
+
+| Skill | Purpose | Version | Diagrams |
+|:------|:--------|:-------:|:--------:|
+| **[ln-10-story-decomposer](ln-10-story-decomposer/)** | **Coordinator** for task operations. Analyzes Story, builds optimal task plan (1-6 tasks, Consumer-First ordered), delegates to ln-11-task-creator (CREATE) or ln-12-task-replanner (REPLAN) with `taskType: "implementation"`. Auto-discovers team ID. For implementation tasks only. | 7.2.0 | ✅ |
+
+**Workers:**
+
+| Skill | Purpose | Version | Diagrams |
+|:------|:--------|:-------:|:--------:|
+| **[ln-11-task-creator](ln-11-task-creator/)** | **Universal factory** for creating ALL 3 task types (implementation, refactoring, test). Generates task documents from templates, validates type-specific rules, creates in Linear. Invoked by orchestrators (ln-10-story-decomposer, ln-40-story-quality-gate, ln-50-story-test-planner). Owns all 3 templates. | 2.2.0 | ✅ |
+| **[ln-12-task-replanner](ln-12-task-replanner/)** | **Universal replanner** for updating ALL 3 task types (implementation, refactoring, test). Compares IDEAL plan vs existing, categorizes operations (KEEP/UPDATE/OBSOLETE/CREATE), applies type-specific validation, executes changes in Linear. Reads templates from ln-11-task-creator/references/. | 2.2.0 | ✅ |
+
+#### 3.2 Story Validation (ln-20-story-validator)
+
+**Coordinator:**
+
+| Skill | Purpose | Version | Diagrams |
+|:------|:--------|:-------:|:--------:|
+| **[ln-20-story-validator](ln-20-story-validator/)** | **Coordinator** that critically reviews Stories and Tasks against 2025 industry standards before approval (Backlog → Todo). ALWAYS auto-fixes all 16 verification criteria. Auto-creates guides/manuals/ADRs via AUTO-RESEARCH. No "Needs Work" path exists. | 11.0.0 | ✅ |
+
+**Workers:**
+
+| Skill | Purpose | Version | Diagrams |
+|:------|:--------|:-------:|:--------:|
+| **[ln-21-guide-creator](ln-21-guide-creator/)** | Research and create minimal project guides (6 sections, 300-500 words) documenting reusable patterns. AUTO-RESEARCH via MCP Ref/Context7. Returns guide path for linking. | 4.0.0 | ✅ |
+| **[ln-22-adr-creator](ln-22-adr-creator/)** | Create minimal Architecture Decision Records (ADRs) through 5-question dialog. Categorizes as Strategic or Technical. Nygard format with 7 sections (~300-500 words). | 5.0.0 | ✅ |
+| **[ln-23-manual-creator](ln-23-manual-creator/)** | Create minimal Package API reference manuals (~300-500 words, OpenAPI-inspired format). AUTO-RESEARCH via MCP Context7 + Ref. Neutral, factual tone. Version-specific (package-version.md). Returns manual path for linking. | 1.1.0 | ✅ |
+
+#### 3.3 Story Execution (ln-30-story-executor)
+
+**Coordinator:**
+
+| Skill | Purpose | Version | Diagrams |
+|:------|:--------|:-------:|:--------:|
+| **[ln-30-story-executor](ln-30-story-executor/)** | **Coordinator** that orchestrates Story execution (Todo → In Progress → To Review → Done). **Priority 0: Backlog** (auto-verify new tasks before execution) → **Priority 1: To Review** → **Priority 2: To Rework** → **Priority 3: Todo**. Auto-invokes ln-40-story-quality-gate Pass 1 + Pass 2 (full automation). Phase 4 delegates Story quality to ln-40-story-quality-gate (Orchestrator-Worker Pattern). | 6.0.0 | ✅ |
+
+**Workers:**
+
+| Skill | Purpose | Version | Diagrams |
+|:------|:--------|:-------:|:--------:|
+| **[ln-31-task-executor](ln-31-task-executor/)** | ⚙️ Execute implementation tasks ONLY (Todo → In Progress → To Review). Uses KISS/YAGNI principles, reads guide links, runs type checking and linting. Story status management removed (now ln-30-story-executor's responsibility). NOT for test tasks. | 10.1.0 | ✅ |
+| **[ln-32-task-reviewer](ln-32-task-reviewer/)** | 🔍 Review completed tasks for To Review → Done/Rework transition. Distinguishes test/implementation tasks. Checks architecture, docs, security, quality, and test coverage. | 7.3.0 | ✅ |
+| **[ln-33-task-rework](ln-33-task-rework/)** | Fix tasks marked To Rework. Analyzes feedback, applies fixes following KISS/YAGNI/DRY principles, runs quality gates (type checking, linting), and submits back To Review. | 5.1.0 | ✅ |
+| **[ln-34-test-executor](ln-34-test-executor/)** | ⚙️ Execute Story Finalizer test tasks (Todo → In Progress → To Review). E2E-first Risk-Based Testing (2-5 E2E, 3-8 Integration, 5-15 Unit). Includes test fixes, infrastructure, docs, and legacy cleanup. | 3.0.0 | ✅ |
+
+#### 3.4 Story Quality Gate (ln-40-story-quality-gate)
+
+**Coordinator:**
+
+| Skill | Purpose | Version | Diagrams |
+|:------|:--------|:-------:|:--------:|
+| **[ln-40-story-quality-gate](ln-40-story-quality-gate/)** | **Coordinator** for Story quality. Pass 1 delegates code analysis to `ln-41-code-quality-checker`, regression to `ln-42-regression-checker`, manual AC verification to `ln-43-manual-tester` (Format v1.0) with FAIL-FAST exit at each gate; auto-creates refactor/bug tasks when any gate fails. When all gates pass, automatically runs `ln-50-story-test-planner` (`autoApprove: true`) to create Story Finalizer test task. Pass 2 verifies automated tests (Priority >=15, limits 10-28) and moves Story to Done. | 7.1.0 | ✅ |
+
+**Workers:**
+
+| Skill | Purpose | Version | Diagrams |
+|:------|:--------|:-------:|:--------:|
+| **[ln-41-code-quality-checker](ln-41-code-quality-checker/)** | 🔎 Analyze code quality for DRY/KISS/YAGNI/Architecture violations and guide compliance. Checks git diffs of Done implementation tasks. Reports structured issues by severity (HIGH/MEDIUM/LOW). Fail Fast principle - runs FIRST in Phase 4. | 2.0.0 | ✅ |
+| **[ln-42-regression-checker](ln-42-regression-checker/)** | 🧪 Run existing test suite to verify no regressions. Auto-detects framework (pytest/jest/vitest/go test). Returns JSON verdict + Linear comment. Atomic worker - does NOT create tasks or change statuses. | 1.0.0 | ✅ |
+| **[ln-43-manual-tester](ln-43-manual-tester/)** | 🎯 Perform manual functional testing of Story AC using curl (API) or puppeteer (UI). Tests main scenarios + edge cases + error handling + integration. Creates reusable temp script `scripts/tmp_[story_id].sh`. Documents results in Linear (Format v1.0). | 2.0.0 | ✅ |
+
+#### 3.5 Test Planning (ln-50-story-test-planner)
+
+**Coordinator:**
+
+| Skill | Purpose | Version | Diagrams |
+|:------|:--------|:-------:|:--------:|
+| **[ln-50-story-test-planner](ln-50-story-test-planner/)** | **Coordinator** that creates test task for Story after manual testing passes. Analyzes Story, generates comprehensive test task with 11 sections. **Delegates to ln-11-task-creator (CREATE) or ln-12-task-replanner (REPLAN)** with `taskType: "test"`. Supports existing test task updates. Uses 1X workers for task creation/replanning. | 7.2.0 | ✅ |
 
 ---
 
@@ -138,7 +191,7 @@ Each skill directory contains:
 **Open the HTML file (easiest)**
 ```bash
 # Navigate to any skill folder and open the HTML file
-cd ln-docs-creator
+cd ln-61-docs-creator
 start diagram.html  # Windows
 open diagram.html   # macOS
 xdg-open diagram.html  # Linux
@@ -150,11 +203,11 @@ xdg-open diagram.html  # Linux
 
 ### Diagram Types
 
-- **Linear Workflows** - Sequential phases (ln-docs-creator, ln-html-builder, ln-adr-creator)
-- **State Machine Workflows** - Todo → In Progress → To Review (ln-task-executor, ln-test-executor)
-- **Branching Workflows** - Multiple decision paths (ln-task-reviewer, ln-story-quality-coordinator, ln-test-coordinator)
-- **Looping Workflows** - Iterative processing (ln-story-coordinator, ln-epic-creator)
-- **Single-Path Auto-Fix** - Linear with auto-corrections (ln-story-validator)
+- **Linear Workflows** - Sequential phases (ln-61-docs-creator, ln-62-html-builder, ln-22-adr-creator)
+- **State Machine Workflows** - Todo → In Progress → To Review (ln-31-task-executor, ln-34-test-executor)
+- **Branching Workflows** - Multiple decision paths (ln-32-task-reviewer, ln-40-story-quality-gate, ln-50-story-test-planner)
+- **Looping Workflows** - Iterative processing (ln-30-story-executor, ln-70-epic-creator)
+- **Single-Path Auto-Fix** - Linear with auto-corrections (ln-20-story-validator)
 
 ### Standard Color Coding
 
@@ -174,21 +227,21 @@ All diagrams follow consistent color scheme:
 **Creating Project Documentation:**
 ```bash
 # In Claude Code, invoke the skill
-ln-docs-creator
+ln-61-docs-creator
 # Follow the interactive prompts to generate comprehensive documentation
 ```
 
 **Decomposing Epic into Stories:**
 ```bash
 # Invoke story manager with Epic number
-ln-story-manager
+ln-71-story-manager
 # Skill will analyze Epic and create/replan Stories automatically
 ```
 
 **Executing a Story:**
 ```bash
 # Invoke story executor with Story ID
-ln-story-coordinator
+ln-30-story-executor
 # Skill will orchestrate task execution, reviews, and rework
 ```
 
@@ -196,30 +249,30 @@ ln-story-coordinator
 
 **Manual Step-by-Step (Full Control):**
 ```
-1. ln-docs-creator            → Create project documentation
-2. ln-epic-creator            → Decompose scope into Epics
-3. ln-story-manager           → Create Stories for an Epic (with Phase 0 Library Research)
-4. ln-task-coordinator        → Create implementation tasks for a Story
-5. ln-story-validator         → Validate and approve Story + tasks (auto-fixes 16 criteria)
-6. ln-story-coordinator       → Execute tasks with auto-delegation to ln-story-quality-coordinator
+1. ln-61-docs-creator            → Create project documentation
+2. ln-70-epic-creator            → Decompose scope into Epics
+3. ln-71-story-manager           → Create Stories for an Epic (with Phase 0 Library Research)
+4. ln-10-story-decomposer        → Create implementation tasks for a Story
+5. ln-20-story-validator         → Validate and approve Story + tasks (auto-fixes 16 criteria)
+6. ln-30-story-executor       → Execute tasks with auto-delegation to ln-40-story-quality-gate
    ├─ Executes implementation tasks (Priority: To Review → To Rework → Todo)
-   ├─ Auto-invokes ln-story-quality-coordinator Pass 1 when all impl tasks Done
-   └─ Auto-invokes ln-story-quality-coordinator Pass 2 when test task Done
-7. ln-story-quality-coordinator (auto-invoked by ln-story-coordinator Phase 4)
-   ├─ Pass 1: ln-code-quality-checker → ln-regression-checker → ln-manual-tester (FAIL-FAST)
-   ├─ On Pass 1 success: auto-invokes ln-test-coordinator to create test task
+   ├─ Auto-invokes ln-40-story-quality-gate Pass 1 when all impl tasks Done
+   └─ Auto-invokes ln-40-story-quality-gate Pass 2 when test task Done
+7. ln-40-story-quality-gate (auto-invoked by ln-30-story-executor Phase 4)
+   ├─ Pass 1: ln-41-code-quality-checker → ln-42-regression-checker → ln-43-manual-tester (FAIL-FAST)
+   ├─ On Pass 1 success: auto-invokes ln-50-story-test-planner to create test task
    └─ Pass 2: verifies automated tests → moves Story to Done
-8. ln-test-executor           → Execute Story Finalizer test task (if not automated)
+8. ln-34-test-executor           → Execute Story Finalizer test task (if not automated)
 ```
 
-**Fully Automated (ln-story-processor):**
+**Fully Automated (ln-00-story-pipeline):**
 ```
-1. ln-docs-creator     → Create project documentation
-2. ln-epic-creator     → Decompose scope into Epics
-3. ln-story-manager    → Create Stories for an Epic (with Phase 0 Library Research)
-4. ln-story-processor  → Complete automation from task planning to Done
-   └─ Orchestrates: ln-task-coordinator → ln-story-validator → ln-story-coordinator
-                    (which auto-delegates to ln-story-quality-coordinator Pass 1 + Pass 2)
+1. ln-61-docs-creator     → Create project documentation
+2. ln-70-epic-creator     → Decompose scope into Epics
+3. ln-71-story-manager    → Create Stories for an Epic (with Phase 0 Library Research)
+4. ln-00-story-pipeline  → Complete automation from task planning to Done
+   └─ Orchestrates: ln-10-story-decomposer → ln-20-story-validator → ln-30-story-executor
+                    (which auto-delegates to ln-40-story-quality-gate Pass 1 + Pass 2)
 ```
 
 For detailed usage of each skill, see [CLAUDE.md](CLAUDE.md).
@@ -236,7 +289,7 @@ Before installation, ensure you have:
 - **Git** - Required for Method 3 (Git Clone) installation
 - **Linear Account** (optional) - For task management integration features
   - Create API key at [linear.app/settings/api](https://linear.app/settings/api)
-  - Configure team ID in `docs/tasks/kanban_board.md` (auto-generated by ln-docs-creator)
+  - Configure team ID in `docs/tasks/kanban_board.md` (auto-generated by ln-61-docs-creator)
 
 ### Updating
 
@@ -266,7 +319,7 @@ Skills automatically discover configuration from `docs/tasks/kanban_board.md`:
 - Next Story Number
 
 To set up:
-1. Run `ln-docs-creator` skill to generate `docs/tasks/kanban_board.md`
+1. Run `ln-61-docs-creator` skill to generate `docs/tasks/kanban_board.md`
 2. Add your Linear API key to environment or Claude Code settings
 3. Skills will auto-discover and use configuration when needed
 
@@ -371,7 +424,7 @@ shared/
 - Each skill owns its templates in its own `references/` directory (Single Source of Truth)
 - Templates are NOT copied to project during setup
 - Skills use templates directly from their `references/` when generating documents
-- Example: ln-adr-creator uses `ln-adr-creator/references/adr_template.md` when creating ADRs
+- Example: ln-22-adr-creator uses `ln-22-adr-creator/references/adr_template.md` when creating ADRs
 
 ---
 

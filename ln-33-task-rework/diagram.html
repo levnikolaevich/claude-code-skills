@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ln-33-task-rework - State Diagram</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="stylesheet" href="../shared/css/diagram.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔧 ln-33-task-rework</h1>
+            <p class="subtitle">Task Rework Handler - State Diagram</p>
+        </header>
+        <div class="info-box">
+            <h3>📋 Overview</h3>
+            <ul>
+                <li><strong>Purpose:</strong> Fix tasks after review (To Rework → In Progress → To Review)</li>
+                <li><strong>Input:</strong> Review feedback with Must-fix items</li>
+                <li><strong>Principles:</strong> KISS/YAGNI/DRY when applying fixes</li>
+            </ul>
+        </div>
+        <div class="diagram-container">
+            <div class="mermaid">
+graph TD
+    Start([Start: Fix Task]) --> Phase1[Phase 1: Discovery<br/>Team ID auto-discovery]
+    Phase1 --> Phase2[Phase 2: Preparation<br/>Load task To Rework<br/>Load review feedback<br/>Update: To Rework → In Progress]
+    Phase2 --> Phase3[Phase 3: Implementation<br/>Fix Must-fix items<br/>KISS/YAGNI/DRY principles]
+    Phase3 --> Phase4[Phase 4: Quality Gates<br/>Type check Lint<br/>If test: re-test Priority ≥15]
+    Phase4 --> QualityPass{Quality gates<br/>pass?}
+    QualityPass -->|No| Phase3
+    QualityPass -->|Yes| Phase5
+    Phase5[Phase 4: Submit for Re-Review<br/>Comment with fixes<br/>Update: In Progress → To Review]
+    Phase5 --> End([End])
+    classDef discovery fill:#E3F2FD,stroke:#1976D2,stroke-width:2px
+    classDef processing fill:#FFF9C4,stroke:#F57C00,stroke-width:2px
+    classDef decision fill:#FFE0B2,stroke:#E64A19,stroke-width:2px
+    classDef action fill:#C8E6C9,stroke:#388E3C,stroke-width:2px
+    class Phase1,Phase2 discovery
+    class Phase3,Phase4 processing
+    class QualityPass decision
+    class Phase5 action
+            </div>
+        </div>
+        <footer>
+            <p>ln-33-task-rework | Mermaid.js</p>
+        </footer>
+    </div>
+    <script>
+        mermaid.initialize({ startOnLoad: true, theme: 'default', flowchart: { useMaxWidth: true, htmlLabels: true, curve: 'basis' } });
+    </script>
+</body>
+</html>

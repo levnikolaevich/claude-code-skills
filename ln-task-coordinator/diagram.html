@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>x-task-manager - State Diagram</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+    <link rel="stylesheet" href="../shared/css/diagram.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔧 x-task-manager</h1>
+            <p class="subtitle">Task Manager - Orchestrator v6.1.0</p>
+        </header>
+        <div class="info-box">
+            <h3>📋 Overview</h3>
+            <ul>
+                <li><strong>Purpose:</strong> Orchestrator for task operations (create/replan) with automatic decomposition</li>
+                <li><strong>Pattern:</strong> Orchestrator v6.1.0 - Delegates to workers (ln-task-creator, ln-task-replanner) via Skill tool</li>
+                <li><strong>Decompose-First:</strong> Build IDEAL plan ALWAYS (1-6 tasks), then check existing and delegate to workers</li>
+                <li><strong>Modes:</strong> CREATE (no tasks → ln-task-creator) or REPLAN (has tasks → ln-task-replanner)</li>
+                <li><strong>Ordering:</strong> Consumer-First ordering applied automatically (API → Service → Repository → Database)</li>
+                <li><strong>Next Step:</strong> ln-story-validator ONLY (обязательная верификация перед выполнением)</li>
+            </ul>
+        </div>
+        <div class="diagram-container">
+            <div class="mermaid">
+%% x-task-manager: Task Manager (Orchestrator v6.1.0)
+%% Universal task operations (create/replan) with automatic decomposition
+%% Decompose-First Pattern: Build IDEAL plan → Check existing → Delegate to workers
+
+graph TD
+    Start([Start: x-task-manager<br/>ORCHESTRATOR]) --> Phase1[Phase 1: Discovery<br/>Auto-discover Team ID<br/>Parse Story ID from request]
+
+    Phase1 --> Phase2[Phase 2: Analyze & Decompose ALWAYS<br/>Load Story from Linear<br/>Build IDEAL task plan 1-6<br/>Extract guide links<br/>Consumer-First ordering]
+
+    Phase2 --> Phase3{Phase 3: Check<br/>Existing Tasks?<br/>Query Linear}
+
+    Phase3 -->|Count = 0| CreateMode[CREATE MODE<br/>No existing tasks]
+    Phase3 -->|Count ≥ 1| ReplanMode[REPLAN MODE<br/>Has existing tasks]
+
+    CreateMode --> Phase4a[Phase 4a: Delegate to ln-task-creator<br/>Skill tool with:<br/>taskType: "implementation"<br/>+ IDEAL plan + guide links]
+    Phase4a --> WorkerCreate[ln-task-creator WORKER:<br/>• Generate 7-section docs<br/>• Validate NO tests<br/>• Show preview<br/>• User confirms<br/>• Create in Linear<br/>• Update kanban_board.md]
+    WorkerCreate --> Phase5Create[Phase 5: Receive Summary<br/>Worker returns:<br/>Task URLs + summary]
+
+    ReplanMode --> Phase4b[Phase 4b: Delegate to ln-task-replanner<br/>Skill tool with:<br/>taskType: "implementation"<br/>+ IDEAL plan + existing IDs]
+    Phase4b --> WorkerReplan[ln-task-replanner WORKER:<br/>• Load existing tasks<br/>• Compare IDEAL vs existing<br/>• Show operations + diffs<br/>• User confirms<br/>• Execute operations<br/>• Update kanban_board.md]
+    WorkerReplan --> Phase5Replan[Phase 5: Receive Summary<br/>Worker returns:<br/>Operations summary + URLs]
+
+    Phase5Create --> End([End: Return to user<br/>Summary + Linear URLs<br/><br/>Next Step ONLY:<br/>→ ln-story-validator])
+    Phase5Replan --> End
+
+    %% Styling
+    classDef orchestrator fill:#e1f5fe,stroke:#0277bd,stroke-width:3px
+    classDef discovery fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
+    classDef processing fill:#fff9c4,stroke:#f57c00,stroke-width:2px
+    classDef decision fill:#ffe0b2,stroke:#e64a19,stroke-width:2px
+    classDef delegation fill:#e1bee7,stroke:#7b1fa2,stroke-width:2px
+    classDef worker fill:#c8e6c9,stroke:#388e3c,stroke-width:2px
+    classDef success fill:#a5d6a7,stroke:#2e7d32,stroke-width:2px
+
+    class Start orchestrator
+    class Phase1 discovery
+    class Phase2,CreateMode,ReplanMode processing
+    class Phase3 decision
+    class Phase4a,Phase4b delegation
+    class WorkerCreate,WorkerReplan worker
+    class Phase5Create,Phase5Replan,End success
+            </div>
+        </div>
+        <footer>
+            <p>x-task-manager v6.1.0 | Orchestrator Pattern | Mermaid.js</p>
+        </footer>
+    </div>
+    <script>
+        mermaid.initialize({ startOnLoad: true, theme: 'default', flowchart: { useMaxWidth: true, htmlLabels: true, curve: 'basis' } });
+    </script>
+</body>
+</html>

@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ln-story-processor Workflow Diagram</title>
+    <link rel="stylesheet" href="../shared/css/diagram.css">
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#2E7D32',
+                primaryTextColor: '#fff',
+                primaryBorderColor: '#1B5E20',
+                lineColor: '#666',
+                secondaryColor: '#00695C',
+                tertiaryColor: '#0288D1',
+                background: '#fff',
+                mainBkg: '#E8F5E9',
+                secondBkg: '#B2DFDB',
+                tertiaryBkg: '#B3E5FC',
+                loopTextColor: '#fff'
+            }
+        });
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>ln-story-processor Workflow Diagram</h1>
+        <p class="subtitle">Story Processing Orchestrator - Looping Workflow Pattern</p>
+
+        <div class="legend">
+            <h3>Color Coding:</h3>
+            <ul>
+                <li><span class="legend-box discovery"></span> Discovery (Team ID, Story ID)</li>
+                <li><span class="legend-box planning"></span> Task Planning (ln-task-coordinator)</li>
+                <li><span class="legend-box verification"></span> Verification (ln-story-validator)</li>
+                <li><span class="legend-box execution"></span> Execution (ln-story-coordinator)</li>
+                <li><span class="legend-box review"></span> Review Pass 1 (ln-story-quality-coordinator)</li>
+                <li><span class="legend-box decision"></span> Decision Points</li>
+                <li><span class="legend-box completion"></span> Completion (Report)</li>
+            </ul>
+        </div>
+
+        <div class="mermaid">
+graph TD
+    Start([User Request: Process US001]) --> Phase1[Phase 1: Discovery<br/>Load Team ID + Story metadata<br/>ID, title, status, labels ONLY]
+
+    Phase1 --> Phase2Decision{Phase 2: Task Planning<br/>Has tasks?<br/>count >= 3?}
+    Phase2Decision -->|No or < 3| Phase2[Phase 2: Task Planning<br/>ln-task-coordinator<br/>Create/Replan 1-6 tasks]
+    Phase2Decision -->|Yes >= 3| Phase3a
+    Phase2 --> Reload1[Reload Story + Tasks metadata]
+    Reload1 --> Phase3a
+
+    Phase3a[Phase 3a: Verification<br/>ln-story-validator<br/>Auto-fix + Approve Backlog → Todo]
+    Phase3a --> Reload2[Reload Story + Tasks metadata]
+
+    Reload2 --> Phase3b[Phase 3b: Execution<br/>ln-story-coordinator<br/>Priority 0: Backlog auto-verify<br/>Priority 1-3: Execute tasks]
+    Phase3b --> AutoInvoke[Auto-invoke<br/>ln-story-quality-coordinator Pass 1<br/>Early Exit Pattern]
+
+    AutoInvoke --> Pass1Decision{Pass 1 Verdict?}
+    Pass1Decision -->|All passed| CreateTestTask[Create test task<br/>via ln-test-coordinator<br/>Backlog status]
+    Pass1Decision -->|Code quality issues| CreateRefactorTask[Create refactoring task<br/>Backlog status]
+    Pass1Decision -->|Regression/testing failed| CreateFixTask[Create fix task<br/>Backlog status]
+
+    CreateTestTask --> AutoVerifyTest[Priority 0: Auto-verify<br/>via ln-story-validator<br/>Backlog → Todo]
+    CreateRefactorTask --> AutoVerifyRefactor[Priority 0: Auto-verify<br/>via ln-story-validator<br/>Backlog → Todo]
+    CreateFixTask --> AutoVerifyFix[Priority 0: Auto-verify<br/>via ln-story-validator<br/>Backlog → Todo]
+
+    AutoVerifyTest --> Reload3[Reload Story + Tasks metadata]
+    AutoVerifyRefactor --> Reload3
+    AutoVerifyFix --> Reload3
+
+    Reload3 --> LoopCheck{Story status?<br/>All tasks Done?}
+    LoopCheck -->|In Progress OR<br/>Tasks pending| Phase3b
+    LoopCheck -->|Test task Done| AutoInvokePass2[ln-story-coordinator:<br/>Update Story In Progress → To Review<br/>Auto-invoke Pass 2]
+
+    AutoInvokePass2 --> Pass2[ln-story-quality-coordinator Pass 2<br/>Verify tests: E2E 2-5<br/>Integration 3-8, Unit 5-15<br/>Priority ≥15]
+    Pass2 --> Pass2Decision{Pass 2 Verdict?}
+    Pass2Decision -->|Pass| StoryDone[Story To Review → Done<br/>Full automation complete]
+    Pass2Decision -->|Fail| CreatePass2Fix[Create fix tasks<br/>Backlog → Auto-verify → Loop]
+
+    StoryDone --> Phase4[Phase 4: Completion Report<br/>Story Done<br/>Full pipeline automation:<br/>Todo → In Progress → To Review → Done]
+    CreatePass2Fix --> Reload3
+
+    Phase4 --> End([Story Done])
+
+    classDef discoveryClass fill:#E8F5E9,stroke:#1B5E20,stroke-width:2px
+    classDef planningClass fill:#FFF3E0,stroke:#E65100,stroke-width:2px
+    classDef verificationClass fill:#E3F2FD,stroke:#0277BD,stroke-width:2px
+    classDef executionClass fill:#FCE4EC,stroke:#C2185B,stroke-width:2px
+    classDef reviewClass fill:#F3E5F5,stroke:#6A1B9A,stroke-width:2px
+    classDef decisionClass fill:#FFF9C4,stroke:#F57F17,stroke-width:2px
+    classDef completionClass fill:#C8E6C9,stroke:#2E7D32,stroke-width:3px
+    classDef reloadClass fill:#E0E0E0,stroke:#424242,stroke-width:1px
+
+    class Start,Phase1 discoveryClass
+    class Phase2Decision,Phase2 planningClass
+    class Phase3a,AutoVerifyTest,AutoVerifyRefactor,AutoVerifyFix verificationClass
+    class Phase3b,AutoInvoke,AutoInvokePass2 executionClass
+    class Pass1Decision,Pass2Decision,LoopCheck decisionClass
+    class CreateTestTask,CreateRefactorTask,CreateFixTask,CreatePass2Fix,Pass2 reviewClass
+    class Reload1,Reload2,Reload3 reloadClass
+    class StoryDone,Phase4,End completionClass
+        </div>
+
+        <div class="notes">
+            <h3>Workflow Notes:</h3>
+            <ul>
+                <li><strong>Phase 1:</strong> Discovery - Auto-discover Team ID from kanban_board.md, parse Story ID from request</li>
+                <li><strong>Phase 2:</strong> Task Planning - Delegate to ln-task-coordinator if tasks don't exist or count < 3</li>
+                <li><strong>Phase 3a:</strong> Verification - ln-story-validator auto-fixes + approves Story (Backlog → Todo)</li>
+                <li><strong>Phase 3b:</strong> Execution - ln-story-coordinator orchestrates with Priority 0 (Backlog auto-verify) → Priority 1-3 (task execution)</li>
+                <li><strong>Pass 1 (Early Exit):</strong> Code Quality → Regression → Manual Testing. Creates test/refactor/fix task in Backlog</li>
+                <li><strong>Priority 0 Auto-Verify:</strong> All new tasks (test/refactor/fix) auto-verified via ln-story-validator (Backlog → Todo) before execution</li>
+                <li><strong>Pass 2 Auto-Invocation:</strong> When test task Done, ln-story-coordinator updates Story (In Progress → To Review) and auto-invokes Pass 2</li>
+                <li><strong>Loop:</strong> After each worker, reload Story + Tasks metadata. Loop continues while tasks pending or Pass 2 creates fixes</li>
+                <li><strong>Exit Condition:</strong> Story status = "Done" (all tasks Done, test task Done, Pass 2 passed)</li>
+                <li><strong>Phase 4:</strong> Completion Report - Story Done, full pipeline automation (Todo → In Progress → To Review → Done)</li>
+            </ul>
+        </div>
+
+        <div class="footer">
+            <p><strong>Pattern:</strong> Looping Workflow (Pattern 4) with Full Automation</p>
+            <p><strong>Type:</strong> Orchestrator - delegates all work via Skill tool</p>
+            <p><strong>Key Principle:</strong> Metadata-only loading, strict delegation, Priority 0 auto-verify, auto Pass 2, full pipeline automation (Todo → Done)</p>
+            <p><strong>Version:</strong> 1.1.0 | <strong>Last Updated:</strong> 2025-11-14</p>
+        </div>
+    </div>
+</body>
+</html>

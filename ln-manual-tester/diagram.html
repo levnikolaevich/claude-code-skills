@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ln-manual-tester Workflow</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+    <link rel="stylesheet" href="../shared/css/diagram.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎯 ln-manual-tester Workflow</h1>
+            <p class="subtitle">Linear Workflow - Worker v1.0.0</p>
+        </header>
+        <div class="info-box">
+        <h3>Overview</h3>
+        <p><strong>Purpose:</strong> Perform manual functional testing of Story Acceptance Criteria using curl (API) or puppeteer (UI).</p>
+        <p><strong>Type:</strong> Linear Workflow (7 sequential phases)</p>
+        <p><strong>Single Responsibility:</strong> ONLY performs manual testing and documents results - does NOT create tasks or change statuses.</p>
+        <p><strong>Output:</strong> JSON verdict + Linear comment (Format v1.0) + temporary testing script for re-running tests.</p>
+    </div>
+
+    <div class="mermaid">
+graph TD
+    Start([START]) --> Phase1[Phase 1: Setup Environment<br/>Detect Story type API/UI<br/>Verify app running]
+
+    Phase1 --> Phase2[Phase 2: Load Story AC<br/>Parse Given-When-Then<br/>Extract 3-5 AC]
+
+    Phase2 --> Phase3[Phase 3: Test AC<br/>curl for API / puppeteer for UI<br/>Record PASS/FAIL results]
+
+    Phase3 --> Phase4[Phase 4: Test Edge Cases<br/>Invalid inputs, boundaries<br/>3-5 edge case scenarios]
+
+    Phase4 --> Phase5[Phase 5: Test Error Handling<br/>400s, 500s, validation<br/>Verify user-friendly messages]
+
+    Phase5 --> Phase6[Phase 6: Test Integration<br/>Database, APIs, auth<br/>2-3 integration points]
+
+    Phase6 --> Phase7[Phase 7: Document Results<br/>Linear comment Format v1.0<br/>Create temp script<br/>Return JSON verdict]
+
+    Phase7 --> End([END:<br/>JSON verdict + temp script])
+
+    classDef phase fill:#E3F2FD,stroke:#1976D2,stroke-width:2px
+    classDef endpoint fill:#C8E6C9,stroke:#388E3C,stroke-width:2px
+
+    class Phase1,Phase2,Phase3,Phase4,Phase5,Phase6,Phase7 phase
+    class Start,End endpoint
+    </div>
+
+    <h2>Phase Descriptions</h2>
+
+    <div class="phase-description">
+        <div class="phase-title">Phase 1: Setup Environment</div>
+        <ul>
+            <li>Detect Story type from description/labels (API vs UI)</li>
+            <li>Verify application is running (curl health endpoint or puppeteer navigate)</li>
+            <li>Determine base URL (from .env or default localhost)</li>
+        </ul>
+    </div>
+
+    <div class="phase-description">
+        <div class="phase-title">Phase 2: Load Story Acceptance Criteria</div>
+        <ul>
+            <li>Load Story from Linear via MCP</li>
+            <li>Parse AC section (Given-When-Then format)</li>
+            <li>Extract 3-5 AC with unique IDs (AC1, AC2, AC3, etc.)</li>
+        </ul>
+    </div>
+
+    <div class="phase-description">
+        <div class="phase-title">Phase 3: Test Acceptance Criteria</div>
+        <ul>
+            <li><strong>API:</strong> Use curl commands to test endpoints</li>
+            <li><strong>UI:</strong> Use puppeteer MCP to interact with page</li>
+            <li>For each AC: Execute test, capture result, compare with expected</li>
+            <li>Record verdict (PASS/FAIL) and details</li>
+        </ul>
+    </div>
+
+    <div class="phase-description">
+        <div class="phase-title">Phase 4: Test Edge Cases</div>
+        <ul>
+            <li>Parse Story edge cases section or infer from AC</li>
+            <li>Test 3-5 edge cases (empty inputs, boundaries, invalid types)</li>
+            <li>Record results (PASS/FAIL)</li>
+        </ul>
+    </div>
+
+    <div class="phase-description">
+        <div class="phase-title">Phase 5: Test Error Handling</div>
+        <ul>
+            <li>Test error scenarios (400s, 500s, validation errors)</li>
+            <li>Verify correct HTTP status codes (API)</li>
+            <li>Verify user-friendly error messages (no stack traces)</li>
+            <li>Record results</li>
+        </ul>
+    </div>
+
+    <div class="phase-description">
+        <div class="phase-title">Phase 6: Test Integration Points</div>
+        <ul>
+            <li>Identify 2-3 critical integrations from implementation tasks</li>
+            <li>Test database persistence, external APIs, auth, file storage</li>
+            <li>Verify data flows correctly</li>
+            <li>Record results</li>
+        </ul>
+    </div>
+
+    <div class="phase-description">
+        <div class="phase-title">Phase 7: Document Results</div>
+        <ul>
+            <li>Aggregate results from Phases 3-6</li>
+            <li>Determine overall verdict (PASS if all AC passed + no critical failures)</li>
+            <li>Format Linear comment (Format v1.0)</li>
+            <li>Add comment to Story</li>
+            <li>Create temporary testing script at scripts/tmp_[story_id].sh</li>
+            <li>Return JSON verdict</li>
+        </ul>
+    </div>
+
+    <h2>Output Format</h2>
+    <pre style="background: #F5F5F5; padding: 15px; border-radius: 4px; overflow-x: auto;">
+{
+  "verdict": "PASS" | "FAIL",
+  "story_type": "API" | "UI",
+  "story_id": "US001",
+  "main_scenarios": [
+    {
+      "ac_id": "AC1",
+      "result": "PASS",
+      "details": "Response 200, token valid, expires in 3600s"
+    }
+  ],
+  "edge_cases": [
+    {
+      "case": "Invalid credentials",
+      "result": "PASS",
+      "details": "Response 401, correct error message"
+    }
+  ],
+  "error_handling": [
+    {
+      "scenario": "401 Unauthorized",
+      "result": "PASS",
+      "details": "Correct status code + user-friendly message"
+    }
+  ],
+  "integration": [
+    {
+      "integration": "Database persistence",
+      "result": "PASS",
+      "details": "User record saved with correct fields"
+    }
+  ],
+  "linear_comment_id": "abc123",
+  "temp_script_path": "scripts/tmp_US001.sh"
+}
+    </pre>
+
+    <h2>Key Characteristics</h2>
+    <ul>
+        <li><strong>Atomic Worker:</strong> Single responsibility - manual testing only</li>
+        <li><strong>Dual Mode:</strong> Supports both API (curl) and UI (puppeteer) testing</li>
+        <li><strong>Comprehensive Coverage:</strong> Tests AC + edge cases + errors + integration</li>
+        <li><strong>Reusable Scripts:</strong> Creates temp bash script for re-running tests</li>
+        <li><strong>Structured Documentation:</strong> Linear comment follows Format v1.0 specification</li>
+    </ul>
+
+    <h2>Testing Patterns</h2>
+    <h3>API Testing (curl)</h3>
+    <pre style="background: #F5F5F5; padding: 15px; border-radius: 4px; overflow-x: auto;">
+curl -X POST http://localhost:8000/api/login \
+  -H "Content-Type: application/json" \
+  -d '{"email": "user@example.com", "password": "test123"}' \
+  -w "\\nHTTP Status: %{http_code}\\n"
+    </pre>
+
+    <h3>UI Testing (puppeteer)</h3>
+    <pre style="background: #F5F5F5; padding: 15px; border-radius: 4px; overflow-x: auto;">
+await page.goto('http://localhost:3000/login');
+await page.fill('[name="email"]', 'user@example.com');
+await page.fill('[name="password"]', 'test123');
+await page.click('button[type="submit"]');
+await page.waitForURL('**/dashboard');
+    </pre>
+
+    <h2>Temporary Testing Script</h2>
+    <p><strong>Purpose:</strong> Reusable bash script for re-running manual tests after refactoring/fixes.</p>
+    <p><strong>Location:</strong> <code>scripts/tmp_[story_id].sh</code></p>
+    <p><strong>Lifecycle:</strong></p>
+    <ul>
+        <li><strong>Created:</strong> ln-manual-tester Phase 7</li>
+        <li><strong>Used:</strong> Re-run after refactoring instead of typing commands again</li>
+        <li><strong>Deleted:</strong> ln-test-executor Step 6 (after E2E/Integration/Unit tests implemented)</li>
+    </ul>
+
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'default',
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true,
+                curve: 'basis'
+            }
+        });
+    </script>
+        <footer>
+            <p>ln-manual-tester v1.0.0 | Worker Pattern | Mermaid.js</p>
+        </footer>
+    </div>
+    <script>
+        mermaid.initialize({ startOnLoad: true, theme: 'default', flowchart: { useMaxWidth: true, htmlLabels: true, curve: 'basis' } });
+    </script>
+</body>
+</html>

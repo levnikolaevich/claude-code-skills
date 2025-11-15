@@ -16,39 +16,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **L2→L2 Delegation Rules** in SKILL_ARCHITECTURE_GUIDE.md
   - 5 strict rules for Level 2 orchestrator delegation with industry precedents
   - Examples: AWS Step Functions, LangGraph Multi-Agent Supervisors, Microsoft Scheduler Agent
-  - Documented in x-story-coordinator and x-story-quality-coordinator SKILL.md files
+  - Documented in ln-story-coordinator and ln-story-quality-coordinator SKILL.md files
 
 - **Story Status Responsibility Matrix** in 3 skills
   - Clear ownership for 4 Story status transitions (Backlog→Todo, Todo→In Progress, In Progress→To Review, To Review→Done)
-  - Added to: x-story-processor, x-story-coordinator, x-story-quality-coordinator
+  - Added to: ln-story-processor, ln-story-coordinator, ln-story-quality-coordinator
   - Prevents status conflicts between skills
 
 - **autoApprove Mechanism for Pipeline Automation**
-  - x-task-creator v2.0.0 → v2.1.0: Skip user confirmation when `autoApprove: true`
-  - x-task-replanner v2.0.0 → v2.1.0: Skip user confirmation when `autoApprove: true`
-  - x-task-coordinator v7.0.0 → v7.1.0: Pass `autoApprove: true` to workers
+  - ln-task-creator v2.0.0 → v2.1.0: Skip user confirmation when `autoApprove: true`
+  - ln-task-replanner v2.0.0 → v2.1.0: Skip user confirmation when `autoApprove: true`
+  - ln-task-coordinator v7.0.0 → v7.1.0: Pass `autoApprove: true` to workers
   - Enables full end-to-end Story execution without manual intervention
 
-- **IDEAL Plan Data Sources** in x-task-coordinator
+- **IDEAL Plan Data Sources** in ln-task-coordinator
   - Explicit documentation of 6 data sources for building task plans
   - Sources: Story AC, Technical Notes, Context, Complexity Analysis, Consumer-First Principle, Guide Links
   - Improves transparency and consistency in task decomposition
 
-- **Explicit Pass Parameter** in x-story-quality-coordinator
+- **Explicit Pass Parameter** in ln-story-quality-coordinator
   - Usage Examples section with manual invocation scenarios
   - Pass determination logic: explicit parameter (pass: 1|2) OR auto-detect from test task status
   - Supports both automatic and manual workflow control
 
 ### Changed (BREAKING)
 
-- **x-story-processor v1.1.0 → v2.0.0** - Removed < 3 tasks condition
-  - Always invokes x-task-coordinator regardless of task count
+- **ln-story-processor v1.1.0 → v2.0.0** - Removed < 3 tasks condition
+  - Always invokes ln-task-coordinator regardless of task count
   - Ensures consistent task structure verification and optimization
   - Added Story Status Responsibility Matrix
 
-- **x-story-coordinator v5.0.0 → v6.0.0** - Removed Priority 0 (Backlog verification)
+- **ln-story-coordinator v5.0.0 → v6.0.0** - Removed Priority 0 (Backlog verification)
   - Simplified from 4 priorities to 3 (To Review, To Rework, Todo/In Progress)
-  - x-story-validator now handles all Backlog tasks independently
+  - ln-story-validator now handles all Backlog tasks independently
   - Eliminates circular dependency between coordinator and validator
   - Added Story Status Responsibility Matrix
   - Added L2→L2 Delegation documentation
@@ -56,38 +56,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- **x-story-quality-coordinator v6.0.0 → v7.1.0** - Orchestrator-Worker Pattern refinement
+- **ln-story-quality-coordinator v6.0.0 → v7.1.0** - Orchestrator-Worker Pattern refinement
   - Phase 3-5 now use compact delegation format (removed worker internals from orchestrator)
   - Eliminated duplicate documentation with worker SKILL.md files (-58% in Phase 3-5 sections)
   - Improved token efficiency (-46 lines total: Phase 3 -9, Phase 4 -12, Phase 5 -25)
   - Enhanced maintainability (worker changes no longer require orchestrator updates)
   - Follows SKILL_ARCHITECTURE_GUIDE.md Orchestrator-Worker responsibilities table
 
-- **x-test-coordinator v7.1.0 → v7.2.0** - Orchestrator-Worker Pattern refinement
+- **ln-test-coordinator v7.1.0 → v7.2.0** - Orchestrator-Worker Pattern refinement
   - Phase 2, 4, 5 use compact format (removed worker internals, reference guide instead)
   - Eliminated duplication with risk_based_testing_guide.md (-197 lines, -40%)
   - Phase 2: 33→8 lines (-76%), Phase 4: 84→11 lines (-87%), Phase 5: 110→15 lines (-86%)
   - Enhanced maintainability (algorithm changes in guide don't require orchestrator updates)
 
-- **x-docs-system v1.0.2 → v1.1.0** - Compact worker delegation format
+- **ln-docs-system v1.0.2 → v1.1.0** - Compact worker delegation format
   - Phase 2-3 simplified (-22 lines, -63%)
   - Removed internal worker phase descriptions
   - Focus on invocation, expected output, completion flow
 
-- **x-task-coordinator v7.1.0 → v7.2.0** - Simplified worker descriptions
+- **ln-task-coordinator v7.1.0 → v7.2.0** - Simplified worker descriptions
   - Phase 4a/4b compact format (-24 lines, -80%)
   - Removed detailed bullet lists of worker internals
   - Reference worker SKILL.md for details
 
-- **x-story-quality-coordinator** - Enhanced documentation and workflow clarity
+- **ln-story-quality-coordinator** - Enhanced documentation and workflow clarity
   - Clarified Phase 3-5 execute work directly (not via delegation)
-  - Added L2→L2 Delegation section (invoked by x-story-coordinator)
+  - Added L2→L2 Delegation section (invoked by ln-story-coordinator)
   - Added Story Status Responsibility Matrix
   - Added Usage Examples with explicit pass parameter
 
 - **Documentation Optimization** - Progressive Disclosure Pattern applied to all skills
-  - Optimized x-task-replanner/SKILL.md (744→562 lines, -24.5%) - table format, inline arrows, concise terms
-  - Optimized x-task-creator/SKILL.md (656→497 lines, -24.2%) - table format, compact validation
+  - Optimized ln-task-replanner/SKILL.md (744→562 lines, -24.5%) - table format, inline arrows, concise terms
+  - Optimized ln-task-creator/SKILL.md (656→497 lines, -24.2%) - table format, compact validation
   - Optimized 24 frontmatter descriptions (average -25-30%, all now < 200 chars)
   - Applied skill-creator compliance: third-person voice, specific WHAT + WHEN, clarity > brevity
   - Added docs/SKILL_ARCHITECTURE_GUIDE.md Advanced Documentation Principles (23 new principles from 2024-2025 industry sources)
@@ -101,27 +101,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- **x-adr-creator v3.0.0 → v4.0.0** - Unified documentation structure
+- **ln-adr-creator v3.0.0 → v4.0.0** - Unified documentation structure
   - Changed path: `docs/project/adrs/` → `docs/adrs/` for consistency
   - All documentation now in `docs/` root (adrs/, guides/, manuals/)
 
-- **x-story-validator v10.0.0 → v11.0.0** - Integrated 3-type documentation system
+- **ln-story-validator v10.0.0 → v11.0.0** - Integrated 3-type documentation system
   - **Phase 2**: Auto-detects 3 doc types via triggers
-    - Guide: "pattern", "-ing" forms → HOW to implement (x-guide-creator)
-    - Manual: package+version → HOW to use library (x-manual-creator)
-    - ADR: "choose", "vs" → WHY we decided (x-adr-creator)
+    - Guide: "pattern", "-ing" forms → HOW to implement (ln-guide-creator)
+    - Manual: package+version → HOW to use library (ln-manual-creator)
+    - ADR: "choose", "vs" → WHY we decided (ln-adr-creator)
   - **Auto-creates:** Guides + Manuals + ADRs via AUTO-RESEARCH (MCP Ref/Context7)
   - **Phase 3 #13**: Renamed "Guide Links" → "Documentation Links" (links all 3 types)
   - **Phase 4**: Approval comment includes guides/manuals/ADRs paths
   - **diagram.html**: Updated flowchart with 3 documentation branches
   - **Example:** "httpx 0.24.0" → auto-creates `docs/manuals/httpx-0.24.0.md`
 
-- **x-manual-creator v1.0.0 → v1.1.0** - Integration with x-story-validator
+- **ln-manual-creator v1.0.0 → v1.1.0** - Integration with ln-story-validator
   - Now auto-invoked when package+version detected in Story Technical Notes
   - Updated integration documentation (Phase 2 auto-invocation)
-  - diagram.html: Changed "Manual invocation" → "Auto-invoked by x-story-validator"
+  - diagram.html: Changed "Manual invocation" → "Auto-invoked by ln-story-validator"
 
-**Rationale:** Unified AUTO-RESEARCH approach for all 3 documentation types (Guide/Manual/ADR). Follows Orchestrator-Worker Pattern - x-story-validator delegates to specialized Workers.
+**Rationale:** Unified AUTO-RESEARCH approach for all 3 documentation types (Guide/Manual/ADR). Follows Orchestrator-Worker Pattern - ln-story-validator delegates to specialized Workers.
 
 ---
 
@@ -133,11 +133,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 | Old Name | New Name | Version | Suffix Rationale |
 |----------|----------|---------|------------------|
-| x-story-executor | **x-story-coordinator** | v5.0.0 → v6.0.0 | Coordinates Story execution workflow |
-| x-story-verifier | **x-story-validator** | v10.0.0 → v11.0.0 | Validates against industry standards |
-| x-story-reviewer | **x-story-quality-coordinator** | v6.0.0 → v7.0.0 | Coordinates quality review workflow |
-| x-task-planner | **x-task-coordinator** | v7.0.0 → v8.0.0 | Coordinates task planning workflow |
-| x-test-task-planner | **x-test-coordinator** | v7.0.0 → v8.0.0 | Coordinates test planning workflow |
+| x-story-executor | **ln-story-coordinator** | v5.0.0 → v6.0.0 | Coordinates Story execution workflow |
+| x-story-verifier | **ln-story-validator** | v10.0.0 → v11.0.0 | Validates against industry standards |
+| x-story-reviewer | **ln-story-quality-coordinator** | v6.0.0 → v7.0.0 | Coordinates quality review workflow |
+| x-task-planner | **ln-task-coordinator** | v7.0.0 → v8.0.0 | Coordinates task planning workflow |
+| x-test-task-planner | **ln-test-coordinator** | v7.0.0 → v8.0.0 | Coordinates test planning workflow |
 
 **Impact:** All 109+ references updated across SKILL.md files, CLAUDE.md, README.md, diagram.html files, SKILL_ARCHITECTURE_GUIDE.md
 
@@ -147,7 +147,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Added to SKILL_ARCHITECTURE_GUIDE.md:**
 - New section "3-Level Hierarchy (Industry Standard)" with Microsoft [Scheduler Agent Supervisor Pattern](https://learn.microsoft.com/azure/architecture/patterns/scheduler-agent-supervisor) reference
-- Level 1 (Top Orchestrator): x-story-processor - coordinates full lifecycle
+- Level 1 (Top Orchestrator): ln-story-processor - coordinates full lifecycle
 - Level 2 (Domain Orchestrators): x-*-coordinator skills - coordinate specific domains
 - Level 3 (Workers): x-*-executor/reviewer/creator - execute atomic work
 - Table with roles, responsibilities, data loading strategy, examples
@@ -160,17 +160,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Progressive Loading Pattern for L2 Orchestrators:**
 
-**x-story-coordinator v5.0.0 → v6.0.0 (formerly x-story-executor):**
+**ln-story-coordinator v5.0.0 → v6.0.0 (formerly x-story-executor):**
 - **BREAKING:** Phase 2 now loads Story metadata ONLY (ID, title, status, labels - NO description)
 - Rationale: Level 2 Orchestrator pattern, saves 5,000+ tokens
 - Updated DoD checklist for metadata-only loading
 
-**x-story-validator v10.0.0 → v11.0.0 (formerly x-story-verifier):**
+**ln-story-validator v10.0.0 → v11.0.0 (formerly x-story-verifier):**
 - **BREAKING:** Metadata-only loading in Phase 1 (overview/coordination)
 - FULL Story description loaded in Phase 2 Step 1 when analysis begins
 - Rationale: Progressive loading pattern - load FULL context only when execution starts
 
-**x-story-quality-coordinator v6.0.0 → v7.0.0 (formerly x-story-reviewer):**
+**ln-story-quality-coordinator v6.0.0 → v7.0.0 (formerly x-story-reviewer):**
 - **BREAKING:** Metadata-only loading in Phase 2 (preparation/coordination)
 - FULL Story + Tasks descriptions loaded in Phase 3 Step 1-2 when analysis begins
 - Rationale: Progressive loading pattern - orchestrators coordinate with metadata, workers execute with FULL data
@@ -179,29 +179,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Explicit Delegation Terminology:**
 
-**x-story-quality-coordinator Pass 2 Invocation:**
+**ln-story-quality-coordinator Pass 2 Invocation:**
 - **BREAKING:** Removed "Skip to Pass 2" auto-invocation logic from Pass 1
 - Changed "auto-invoke" → "explicit delegation" throughout documentation
-- x-story-coordinator now explicitly delegates Pass 2 via Skill tool (orchestrator→orchestrator)
+- ln-story-coordinator now explicitly delegates Pass 2 via Skill tool (orchestrator→orchestrator)
 - Rationale: Clarifies that Skill tool calls are acceptable architectural pattern, internal auto-transitions are not
 
-**x-story-processor v1.1.0 → v2.0.0:**
+**ln-story-processor v1.1.0 → v2.0.0:**
 - Updated terminology: "auto-invokes" → "explicitly delegates" for Pass 1 and Pass 2
 - Clarified full pipeline automation via explicit delegation, not internal auto-transitions
 
-**x-story-coordinator v5.0.0 → v6.0.0:**
-- Updated Phase 4 documentation: "Explicit delegation" to x-story-quality-coordinator Pass 2
+**ln-story-coordinator v5.0.0 → v6.0.0:**
+- Updated Phase 4 documentation: "Explicit delegation" to ln-story-quality-coordinator Pass 2
 - Removed ambiguous "auto-invoke" terminology
 
 ### Architecture
 
 **Validator vs Verifier Terminology Clarification:**
-- **Validation** = checking against defined rules/standards (x-story-validator)
+- **Validation** = checking against defined rules/standards (ln-story-validator)
 - **Verification** = checking correctness/completeness (not used as skill suffix)
 - Rationale: "validator" better reflects systematic standards compliance checking
 
 **Microsoft Scheduler Agent Supervisor Pattern Implementation:**
-- Scheduler (L1): x-story-processor arranges workflow steps
+- Scheduler (L1): ln-story-processor arranges workflow steps
 - Agents (L2): x-*-coordinator skills encapsulate domain workflows
 - Workers (L3): x-*-executor/reviewer skills execute atomic operations
 - Minimizes Coordination: Metadata-only loading at L1+L2, FULL descriptions at L3
@@ -245,7 +245,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Rationale:** Prevent future documentation bloat - write compactly from start, not after compression
 - **Cross-references:** CLAUDE.md links to SKILL_ARCHITECTURE_GUIDE.md for detailed format examples
 
-**x-story-processor v1.0.0 - NEW Story Processing Orchestrator:**
+**ln-story-processor v1.0.0 - NEW Story Processing Orchestrator:**
 - Complete Story processing workflow orchestrator from task planning to completion
 - **Phase 1:** Discovery (Team ID + Story ID from request, metadata-only loading)
 - **Phase 2:** Task Planning (delegates to x-task-planner if count < 3)
@@ -285,7 +285,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Reduced SKILL.md from 470 to ~360 lines (-23%) by removing duplicated quality gate implementations
 - Fixed ASCII diagram, Priority 3 logic, DoD checklist
 
-**x-story-processor v1.0.0 → v1.1.0 - Full Pipeline Automation:**
+**ln-story-processor v1.0.0 → v1.1.0 - Full Pipeline Automation:**
 - Exit condition from "Story To Review" → "Story Done" (reflects x-story-executor auto Pass 2)
 - Updated Flow: Phase 3 now shows x-story-executor auto-verifies new tasks (Priority 0) and auto-invokes Pass 2
 - Phase 4: Changed from "Final Review Handoff (manual Pass 2)" → "Completion Report (Story Done automatically)"
@@ -296,7 +296,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - All 109+ references updated across CLAUDE.md, README.md, SKILL_ARCHITECTURE_GUIDE.md, and all skill files
 
 **x-test-task-planner v6.0.0 → v7.0.0 - Renamed from x-test-task-creator:**
-- **BREAKING:** Renamed to reflect orchestrator role (plans tests, delegates creation to x-task-creator)
+- **BREAKING:** Renamed to reflect orchestrator role (plans tests, delegates creation to ln-task-creator)
 - Architecture improvements: Removed 60-65% content duplication between SKILL.md and risk_based_testing_guide.md
 - Reduced SKILL.md from 615 to 553 lines (-10%)
 - Description shortened from 346 to 198 chars to fit 200 char recommended limit (-43%)
@@ -339,18 +339,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Rationale:** Reduce token consumption while preserving all critical information via references
 - **Impact:** ~10,250 token savings, faster context loading, easier maintenance
 
-**x-task-executor v10.0.0 → v10.1.0 - Separation of Concerns:**
+**ln-task-executor v10.0.0 → v10.1.0 - Separation of Concerns:**
 - **Removed:** Story status update logic from Phase 5
-- **Rationale:** Story status management is x-story-executor's responsibility (orchestrator), not x-task-executor (worker)
-- **Impact:** Eliminates conflicting status policies between x-task-executor and x-story-executor
-- **Separation of Concerns:** Workers (x-task-executor) focus on task execution, orchestrators (x-story-executor) manage Story lifecycle
+- **Rationale:** Story status management is x-story-executor's responsibility (orchestrator), not ln-task-executor (worker)
+- **Impact:** Eliminates conflicting status policies between ln-task-executor and x-story-executor
+- **Separation of Concerns:** Workers (ln-task-executor) focus on task execution, orchestrators (x-story-executor) manage Story lifecycle
 
 ### Documentation
 
 **All Changed Skills:**
 - Updated CLAUDE.md skill descriptions and versions
 - Updated README.md skill tables with new versions and descriptions
-- Updated diagram.html files for x-story-reviewer, x-story-executor, x-story-processor, x-test-task-planner
+- Updated diagram.html files for x-story-reviewer, x-story-executor, ln-story-processor, x-test-task-planner
 - Updated Last Updated dates to 2025-11-14
 
 ### Summary
@@ -369,7 +369,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-**x-manual-creator v1.0.0 - Package API Reference Manual Creator:**
+**ln-manual-creator v1.0.0 - Package API Reference Manual Creator:**
 - **NEW SKILL:** Create minimal Package API reference manuals (~300-500 words, OpenAPI-inspired format)
 - **AUTO-RESEARCH:** Fully automated via MCP Context7 + Ref (library versions, method signatures, parameters)
 - **4-Phase Workflow:**
@@ -380,21 +380,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **OpenAPI-Inspired Format:** Method signatures, parameters tables, neutral factual tone, version-specific
 - **Template:** manual_template.md with placeholders for package info, methods, configuration, limitations
 - **Visual Documentation:** diagram.html with Mermaid workflow (Linear Workflow, 4 phases)
-- **Rationale:** Complements x-guide-creator (patterns) and x-adr-creator (decisions) with API reference documentation
+- **Rationale:** Complements ln-guide-creator (patterns) and ln-adr-creator (decisions) with API reference documentation
 
 ### Changed
 
 **Documentation Skills Category:**
-- Updated skill count from 1 to 2 (x-guide-creator + x-manual-creator)
+- Updated skill count from 1 to 2 (ln-guide-creator + ln-manual-creator)
 - Total repository skills: 23 → 24
 
 **CLAUDE.md:**
 - Updated Available Skills section (23 → 24 skills, Documentation: 1 → 2)
-- Added x-manual-creator v1.0.0 to DAG Documentation Support section
+- Added ln-manual-creator v1.0.0 to DAG Documentation Support section
 
 **README.md:**
 - Updated skills badge (17 → 24)
-- Added x-manual-creator to Documentation Skills table with full description
+- Added ln-manual-creator to Documentation Skills table with full description
 
 ---
 
@@ -402,32 +402,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-**x-task-creator v1.0.0 - Universal Task Factory:**
+**ln-task-creator v1.0.0 - Universal Task Factory:**
 - Worker skill for creating ALL 3 task types (implementation, refactoring, test) based on `taskType` parameter
-- Phase 1: Template selection from x-task-creator/references/
+- Phase 1: Template selection from ln-task-creator/references/
 - Phase 2: Type-specific validation (implementation: NO test creation, refactoring: Regression Strategy, test: Priority ≥15 + limits)
 - Invoked by orchestrators (x-task-planner, x-story-reviewer, x-test-task-planner)
-- Owns all 3 product templates in x-task-creator/references/
+- Owns all 3 product templates in ln-task-creator/references/
 
-**x-task-replanner v1.0.0 - Universal Task Replanner:**
+**ln-task-replanner v1.0.0 - Universal Task Replanner:**
 - Worker skill for updating ALL 3 task types (implementation, refactoring, test)
 - Compares IDEAL plan vs existing tasks, categorizes operations (KEEP/UPDATE/OBSOLETE/CREATE)
-- Type-specific validation (same as x-task-creator)
-- Reads templates from x-task-creator/references/
+- Type-specific validation (same as ln-task-creator)
+- Reads templates from ln-task-creator/references/
 
-**x-regression-checker v1.0.0:**
+**ln-regression-checker v1.0.0:**
 - Atomic worker skill for running existing test suites
 - Auto-detects framework (pytest/jest/vitest/go test)
 - Returns JSON verdict + Linear comment
 - Single responsibility: test execution only
 
-**x-manual-tester v1.0.0:**
+**ln-manual-tester v1.0.0:**
 - Atomic worker skill for manual functional testing
 - Tests AC + edge cases + error handling + integration using curl (API) or puppeteer (UI)
 - Creates reusable temp script `scripts/tmp_[story_id].sh`
 - Documents results in Linear (Format v1.0)
 
-**x-code-quality-checker v1.0.0:**
+**ln-code-quality-checker v1.0.0:**
 - Atomic worker skill for code quality analysis
 - Checks 5 violation types (DRY/KISS/YAGNI/Architecture/Guide Compliance)
 - Reports structured issues by severity (HIGH/MEDIUM/LOW)
@@ -451,32 +451,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **x-test-task-planner v5.0.0 → v6.0.0 - Renamed from x-story-finalizer:**
 - **BREAKING:** New name clearly indicates function (test task creator)
-- Consistent with x-task-creator naming pattern
+- Consistent with ln-task-creator naming pattern
 - All 109 references updated across 29 files
 
 **x-task-planner v5.1.0 → v6.0.0 - Refactored to Orchestrator Pattern:**
-- Now delegates to x-task-creator (CREATE MODE) and x-task-replanner (REPLAN MODE)
+- Now delegates to ln-task-creator (CREATE MODE) and ln-task-replanner (REPLAN MODE)
 - Orchestrator analyzes Story, builds IDEAL task plan (1-6 tasks, Consumer-First ordered)
 - Breaking change: no longer generates task documents, creates Linear issues, or updates kanban_board.md directly
 
-**x-task-creator v1.0.0 → v2.0.0 - Universal Factory Pattern:**
+**ln-task-creator v1.0.0 → v2.0.0 - Universal Factory Pattern:**
 - Refactored to create ALL 3 task types based on `taskType` parameter
 - Breaking change: Requires `taskType` parameter
 - Owns all 3 product templates
 
-**x-task-replanner v1.0.0 → v2.0.0 - Universal Replanner:**
+**ln-task-replanner v1.0.0 → v2.0.0 - Universal Replanner:**
 - Refactored to replan ALL 3 task types
 - Breaking change: Requires `taskType` parameter
-- Reads templates from x-task-creator/references/
+- Reads templates from ln-task-creator/references/
 
 **x-story-finalizer v4.0.0 → v5.0.0:**
 - Refactored to delegate test task creation to universal factory
-- Phase 6: CREATE MODE (x-task-creator) or REPLAN MODE (x-task-replanner) with taskType: "test"
+- Phase 6: CREATE MODE (ln-task-creator) or REPLAN MODE (ln-task-replanner) with taskType: "test"
 - Breaking change: No longer creates Linear issues directly
 
 **x-story-reviewer v4.0.0 → v5.0.0:**
 - Refactored to delegate refactoring task creation to universal factory
-- Path B: CREATE MODE (x-task-creator) or REPLAN MODE (x-task-replanner) with taskType: "refactoring"
+- Path B: CREATE MODE (ln-task-creator) or REPLAN MODE (ln-task-replanner) with taskType: "refactoring"
 - Breaking change: No longer creates Linear issues directly for refactoring tasks
 
 ### Changed
@@ -492,13 +492,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Orchestrator-Worker Pattern Unified:**
 - x-task-planner now follows same pattern as x-story-executor: orchestrator coordinates, workers execute
-- Shared Resources Pattern: x-task-planner owns task_template_universal.md (shared by x-task-creator and x-task-replanner)
+- Shared Resources Pattern: x-task-planner owns task_template_universal.md (shared by ln-task-creator and ln-task-replanner)
 - Token Efficiency: Orchestrator loads only task IDs/count, workers load full descriptions when needed
 - 90.2% Performance Improvement: Industry data (2024-2025)
 
 **Universal Factory Pattern:**
-- x-task-creator now single source of truth for ALL task creation (implementation, refactoring, test)
-- Template Ownership Centralized: ALL 3 task templates in x-task-creator/references/
+- ln-task-creator now single source of truth for ALL task creation (implementation, refactoring, test)
+- Template Ownership Centralized: ALL 3 task templates in ln-task-creator/references/
 - Type-Specific Validation: Each task type has distinct validation rules
 - CREATE and REPLAN Support: All 3 task types support both modes
 
@@ -507,12 +507,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 **CLAUDE.md:**
 - Added Testing & Quality Skills section (3 new skills)
 - Updated x-task-planner to orchestrator pattern description
-- Added x-task-creator v1.0.0 (#9), x-task-replanner v1.0.0 (#10)
+- Added ln-task-creator v1.0.0 (#9), ln-task-replanner v1.0.0 (#10)
 - Updated Available Skills section
 
 **README.md:**
 - Added Testing & Quality Skills (3) table
-- Updated Planning section with x-task-creator, x-task-replanner
+- Updated Planning section with ln-task-creator, ln-task-replanner
 
 ---
 
@@ -520,7 +520,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-**Phase 0: Library & Standards Research in x-story-manager v8.0.0:**
+**Phase 0: Library & Standards Research in ln-story-manager v8.0.0:**
 - Automated research via MCP Context7 (library versions, key APIs, limitations) + MCP Ref (best practices, RFC standards) BEFORE Story generation
 - **Library Research subsection in story_template_universal.md v7.0.0:** Primary libraries table (name, version, purpose, docs), Key APIs, constraints, standards compliance
 - **Related Guides subsection in story_template_universal.md v7.0.0:** Guide links inserted by x-story-verifier (auto-creates missing guides)
@@ -528,11 +528,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Temporary Manual Testing Scripts workflow:**
 - x-story-reviewer creates `scripts/tmp_[story_id].sh` for reusable manual testing
-- Deleted by x-test-executor after E2E/Integration/Unit tests implemented
+- Deleted by ln-test-executor after E2E/Integration/Unit tests implemented
 
 ### Changed
 
-**x-story-manager v7.0.0 → v8.0.0:**
+**ln-story-manager v7.0.0 → v8.0.0:**
 - Added Phase 0 research workflow (15-20 min time-boxed)
 - Research Summary inserted in ALL Story Technical Notes
 - Updated Definition of Done, Example Usage includes Phase 0
@@ -545,12 +545,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **x-story-verifier v9.3.1 → v10.0.0:**
 - Major restructuring (1077 lines), principle consolidation, improved clarity
-- verification_checklist.md Check #6: Now validates Library Research table presence (populated by x-story-manager Phase 0)
+- verification_checklist.md Check #6: Now validates Library Research table presence (populated by ln-story-manager Phase 0)
 
 **x-task-planner v5.0.0 → v5.1.0:**
 - Consolidated principles, improved documentation (630 lines restructured)
 
-**x-test-executor v4.0.0:**
+**ln-test-executor v4.0.0:**
 - Added cleanup of temporary testing scripts in Step 6
 
 **task_template_universal.md v5.1.0 → v6.0.0:**
@@ -562,13 +562,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Updated
 
 **CLAUDE.md:**
-- Updated x-story-manager description (v8.0.0, Phase 0 mention)
+- Updated ln-story-manager description (v8.0.0, Phase 0 mention)
 - Task Templates section (expanded Technical Approach details)
 - Complete Decomposition Flow (Phase 0 in Epic → Stories)
 - Testing and Documentation section (added Temporary Manual Testing Scripts)
 
 **README.md:**
-- Updated x-story-manager version (7.0.0 → 8.0.0)
+- Updated ln-story-manager version (7.0.0 → 8.0.0)
 - Added Phase 0 description
 - Updated skill version table
 
@@ -594,31 +594,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Skills Included
 
 **Pre-Planning (5 skills):**
-- x-docs-creator v5.5.0 - Create comprehensive project documentation BEFORE development
-- x-html-builder v2.3.1 - Build interactive HTML presentation from project documentation
-- x-docs-system v1.0.2 - Orchestrator that creates complete documentation system
-- x-docs-updater v2.1.0 - Update existing project documentation based on code changes
-- x-adr-creator v3.0.0 - Create minimal Architecture Decision Records (ADRs)
+- ln-docs-creator v5.5.0 - Create comprehensive project documentation BEFORE development
+- ln-html-builder v2.3.1 - Build interactive HTML presentation from project documentation
+- ln-docs-system v1.0.2 - Orchestrator that creates complete documentation system
+- ln-docs-updater v2.1.0 - Update existing project documentation based on code changes
+- ln-adr-creator v3.0.0 - Create minimal Architecture Decision Records (ADRs)
 
 **Planning (4 skills):**
-- x-epic-creator v4.0.0 - Decompose scope/initiative into 3-7 Epics (Linear Projects)
-- x-story-manager v7.0.0 - Universal Story operations (create/replan) with automatic Epic decomposition
+- ln-epic-creator v4.0.0 - Decompose scope/initiative into 3-7 Epics (Linear Projects)
+- ln-story-manager v7.0.0 - Universal Story operations (create/replan) with automatic Epic decomposition
 - x-task-manager v5.0.0 - Universal task operations (create/replan) with automatic Story decomposition
 - x-story-finalizer v4.1.0 - Create final Story task after manual testing passes
 
 **Execution (5 skills):**
 - x-story-executor v2.6.0 - Orchestrate Story execution through task workflow
-- x-task-executor v10.0.0 - Execute implementation tasks ONLY (not test tasks)
-- x-test-executor v4.0.0 - Execute Story Finalizer test tasks with Risk-Based Testing
-- x-task-reviewer v7.3.0 - Review completed tasks for quality and correctness
-- x-task-rework v5.1.0 - Fix tasks after review feedback
+- ln-task-executor v10.0.0 - Execute implementation tasks ONLY (not test tasks)
+- ln-test-executor v4.0.0 - Execute Story Finalizer test tasks with Risk-Based Testing
+- ln-task-reviewer v7.3.0 - Review completed tasks for quality and correctness
+- ln-task-rework v5.1.0 - Fix tasks after review feedback
 
 **Validation (2 skills):**
 - x-story-verifier v9.3.1 - Auto-fix and approve Stories against industry standards before execution
 - x-story-reviewer v3.5.0 - Two-pass Story review: manual testing + test verification
 
 **Documentation (1 skill):**
-- x-guide-creator v4.0.0 - Research and create minimal project guides with best practices
+- ln-guide-creator v4.0.0 - Research and create minimal project guides with best practices
 
 ### Features
 

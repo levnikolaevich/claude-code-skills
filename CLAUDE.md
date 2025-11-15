@@ -47,12 +47,12 @@ All skills have state diagrams in `diagram.html` files for visualizing workflows
 **24 skills in 5 categories:** Pre-Planning (5), Planning (6), Execution (6), Validation (2), Documentation (2), Testing & Quality (3)
 
 **Key skills:**
-- **x-docs-creator** - Create project documentation (requirements, architecture, technical specs) before coding
-- **x-epic-creator** → **x-story-manager** → **x-task-coordinator** - Decompose scope into executable tasks
-- **x-story-processor** - Full pipeline automation: task planning → verification → execution → review → Done
-- **x-story-coordinator** - Orchestrate task execution with auto-review invocation
-- **x-story-validator** - Auto-fix Stories/Tasks against 15 industry standard criteria
-- **x-story-quality-coordinator** - Two-pass review with Early Exit Pattern (Code Quality → Regression → Manual Testing)
+- **ln-docs-creator** - Create project documentation (requirements, architecture, technical specs) before coding
+- **ln-epic-creator** → **ln-story-manager** → **ln-task-coordinator** - Decompose scope into executable tasks
+- **ln-story-processor** - Full pipeline automation: task planning → verification → execution → review → Done
+- **ln-story-coordinator** - Orchestrate task execution with auto-review invocation
+- **ln-story-validator** - Auto-fix Stories/Tasks against 15 industry standard criteria
+- **ln-story-quality-coordinator** - Two-pass review with Early Exit Pattern (Code Quality → Regression → Manual Testing)
 
 > **Note:** Complete skill list with descriptions and versions in README.md feature tables.
 
@@ -69,7 +69,7 @@ All skills automatically find settings from `docs/tasks/kanban_board.md`:
 - **Next Epic Number** - from Linear Configuration table
 - **Next Story Number** - from Epic Story Counters table
 
-**How to create:** Use x-docs-creator skill (Phase 9-10) to generate kanban_board.md (Phase 9) and optionally HTML presentation (Phase 10).
+**How to create:** Use ln-docs-creator skill (Phase 9-10) to generate kanban_board.md (Phase 9) and optionally HTML presentation (Phase 10).
 
 **Important:** If file is missing, skills request data directly from user.
 
@@ -86,7 +86,7 @@ All skills automatically find settings from `docs/tasks/kanban_board.md`:
     - [LINEAR_ID: EP#_## Task Title](link)
 ```
 
-**Key Rules:** Epic → Story (📖, 2-space indent) → Tasks (-, 4-space indent). ✅ APPROVED marker added by x-story-validator. Stories without tasks only in Backlog. Done section: max 5 tasks.
+**Key Rules:** Epic → Story (📖, 2-space indent) → Tasks (-, 4-space indent). ✅ APPROVED marker added by ln-story-validator. Stories without tasks only in Backlog. Done section: max 5 tasks.
 
 > **Note:** For complete format details, Epics Overview section, and visual representation, see kanban_board.md structure in README.md.
 
@@ -96,7 +96,7 @@ All skills use Linear MCP to create/update tasks:
 - `mcp__linear-server__create_issue()` - for Stories and Tasks
 - `mcp__linear-server__update_issue()` - for status and description updates
 
-Linear API reference located in `x-epic-creator/references/linear_integration.md`.
+Linear API reference located in `ln-epic-creator/references/linear_integration.md`.
 
 ### Development Principles
 
@@ -108,15 +108,15 @@ Linear API reference located in `x-epic-creator/references/linear_integration.md
 
 ### Task Templates
 
-**Epic:** x-epic-creator/references/epic_template_universal.md (Goal, Scope, Success Criteria, Risks, Phases)
+**Epic:** ln-epic-creator/references/epic_template_universal.md (Goal, Scope, Success Criteria, Risks, Phases)
 
-**Story:** x-story-manager/references/story_template_universal.md (8 sections: Statement, Context, AC, Test Strategy, Implementation Tasks, Technical Notes + Library Research, DoD)
+**Story:** ln-story-manager/references/story_template_universal.md (8 sections: Statement, Context, AC, Test Strategy, Implementation Tasks, Technical Notes + Library Research, DoD)
 
-**Task:** x-task-creator/references/task_template_implementation.md (7 sections: Context, Implementation Plan, Technical Approach, AC, Affected Components, Existing Code Impact, DoD)
+**Task:** ln-task-creator/references/task_template_implementation.md (7 sections: Context, Implementation Plan, Technical Approach, AC, Affected Components, Existing Code Impact, DoD)
 
-**Story Finalizer Test Task:** x-test-coordinator/references/test_task_template.md (11 sections: Context, Risk Matrix, E2E/Integration/Unit tests, Coverage, DoD, Test Fixes, Infra, Docs, Cleanup)
+**Story Finalizer Test Task:** ln-test-coordinator/references/test_task_template.md (11 sections: Context, Risk Matrix, E2E/Integration/Unit tests, Coverage, DoD, Test Fixes, Infra, Docs, Cleanup)
 
-**Verification Checklist:** x-story-validator/references/verification_checklist.md
+**Verification Checklist:** ln-story-validator/references/verification_checklist.md
 
 ### DAG Documentation Support
 
@@ -126,7 +126,7 @@ Linear API reference located in `x-epic-creator/references/linear_integration.md
 - **Maintenance Sections** - Update Triggers, Verification, Last Updated (in all generated docs)
 - **README Hub** - Central navigation (`docs/project/README.md`)
 
-**Supported skills:** x-docs-creator v5.5.0, x-html-builder v2.3.1, x-docs-system v1.0.2, x-docs-updater v2.0.0, x-adr-creator v4.0.0, x-guide-creator v4.0.0, x-manual-creator v1.1.0
+**Supported skills:** ln-docs-creator v5.5.0, ln-html-builder v2.3.1, ln-docs-system v1.0.2, ln-docs-updater v2.0.0, ln-adr-creator v4.0.0, ln-guide-creator v4.0.0, ln-manual-creator v1.1.0
 
 > **Note:** Full DAG structure details and example SCOPE tags in README.md.
 
@@ -136,11 +136,11 @@ Three levels of decomposition, each with automatic CREATE/REPLAN mode:
 
 | Level | Skill | Input | Output | Mode Selection |
 |-------|-------|-------|--------|----------------|
-| **1** | x-epic-creator | Scope/initiative | 3-7 Epics | Batch Mode only |
-| **2** | x-story-manager | Epic number | 5-10 Stories | Auto (builds IDEAL → checks existing → CREATE/REPLAN) |
-| **3** | x-task-coordinator | Story number | 1-6 Implementation tasks | Auto (builds IDEAL → checks existing → CREATE/REPLAN) |
+| **1** | ln-epic-creator | Scope/initiative | 3-7 Epics | Batch Mode only |
+| **2** | ln-story-manager | Epic number | 5-10 Stories | Auto (builds IDEAL → checks existing → CREATE/REPLAN) |
+| **3** | ln-task-coordinator | Story number | 1-6 Implementation tasks | Auto (builds IDEAL → checks existing → CREATE/REPLAN) |
 
-**Workflow:** Scope → Epics (x-epic-creator) → Stories (x-story-manager with Phase 0 Library Research) → Implementation Tasks (x-task-coordinator) → Test Task (x-test-coordinator after manual testing)
+**Workflow:** Scope → Epics (ln-epic-creator) → Stories (ln-story-manager with Phase 0 Library Research) → Implementation Tasks (ln-task-coordinator) → Test Task (ln-test-coordinator after manual testing)
 
 > **Note:** Complete flow example and optimal counts by complexity in README.md. All use Decompose-First Pattern.
 
@@ -150,24 +150,24 @@ Detailed workflows are documented in each skill's SKILL.md file. Quick reference
 
 | Skill | Purpose | Key Phases | Details |
 |-------|---------|-----------|---------|
-| x-epic-creator | Create 3-7 Epics from scope | Discovery → Analysis → Sequential Loop | [SKILL.md](x-epic-creator/SKILL.md) |
-| x-story-manager | Create/replan Stories | Phase 0 Research → IDEAL Plan → CREATE/REPLAN | [SKILL.md](x-story-manager/SKILL.md) |
-| x-task-coordinator | Create/replan implementation tasks | Analysis → IDEAL Plan → CREATE/REPLAN | [SKILL.md](x-task-coordinator/SKILL.md) |
-| x-test-coordinator | Plan test task after manual testing | Risk Assessment → Impact Analysis → Delegation | [SKILL.md](x-test-coordinator/SKILL.md) |
-| x-task-executor | Execute implementation tasks | Read guides → Implement → Quality gates | [SKILL.md](x-task-executor/SKILL.md) |
-| x-test-executor | Execute Story Finalizer test tasks | 6 steps: Fix tests → New tests → Infra → Docs → Cleanup → Verify | [SKILL.md](x-test-executor/SKILL.md) |
-| x-task-reviewer | Review tasks | Load task + diffs → Checklist → Accept/Fixes/Rework | [SKILL.md](x-task-reviewer/SKILL.md) |
-| x-task-rework | Fix tasks after review | Load feedback → Fix → Quality gates → Submit | [SKILL.md](x-task-rework/SKILL.md) |
-| x-story-validator | Auto-fix and approve Stories | Discovery → Guide creation → 15 auto-fixes → Approve | [SKILL.md](x-story-validator/SKILL.md) |
-| x-story-coordinator | Orchestrate Story execution | Load tasks → Priority loop (Review/Rework/Execute) → Auto-invoke reviewer | [SKILL.md](x-story-coordinator/SKILL.md) |
-| x-story-quality-coordinator | Two-pass Story review | Pass 1: Testing + Quality → Test/Refactor task. Pass 2: Verify → Done | [SKILL.md](x-story-quality-coordinator/SKILL.md) |
+| ln-epic-creator | Create 3-7 Epics from scope | Discovery → Analysis → Sequential Loop | [SKILL.md](ln-epic-creator/SKILL.md) |
+| ln-story-manager | Create/replan Stories | Phase 0 Research → IDEAL Plan → CREATE/REPLAN | [SKILL.md](ln-story-manager/SKILL.md) |
+| ln-task-coordinator | Create/replan implementation tasks | Analysis → IDEAL Plan → CREATE/REPLAN | [SKILL.md](ln-task-coordinator/SKILL.md) |
+| ln-test-coordinator | Plan test task after manual testing | Risk Assessment → Impact Analysis → Delegation | [SKILL.md](ln-test-coordinator/SKILL.md) |
+| ln-task-executor | Execute implementation tasks | Read guides → Implement → Quality gates | [SKILL.md](ln-task-executor/SKILL.md) |
+| ln-test-executor | Execute Story Finalizer test tasks | 6 steps: Fix tests → New tests → Infra → Docs → Cleanup → Verify | [SKILL.md](ln-test-executor/SKILL.md) |
+| ln-task-reviewer | Review tasks | Load task + diffs → Checklist → Accept/Fixes/Rework | [SKILL.md](ln-task-reviewer/SKILL.md) |
+| ln-task-rework | Fix tasks after review | Load feedback → Fix → Quality gates → Submit | [SKILL.md](ln-task-rework/SKILL.md) |
+| ln-story-validator | Auto-fix and approve Stories | Discovery → Guide creation → 15 auto-fixes → Approve | [SKILL.md](ln-story-validator/SKILL.md) |
+| ln-story-coordinator | Orchestrate Story execution | Load tasks → Priority loop (Review/Rework/Execute) → Auto-invoke reviewer | [SKILL.md](ln-story-coordinator/SKILL.md) |
+| ln-story-quality-coordinator | Two-pass Story review | Pass 1: Testing + Quality → Test/Refactor task. Pass 2: Verify → Done | [SKILL.md](ln-story-quality-coordinator/SKILL.md) |
 
 > **Note:** All workflows follow Orchestrator-Worker Pattern. See [SKILL_ARCHITECTURE_GUIDE.md](docs/SKILL_ARCHITECTURE_GUIDE.md) for architectural principles.
 
 ## Important Details
 
 ### Structural Validation of Stories and Tasks (checklist #0a + #0b)
-x-story-validator checks compliance with Story and Task templates, and automatically fixes:
+ln-story-validator checks compliance with Story and Task templates, and automatically fixes:
 - **Story (#0a):** Verifies 8 Story sections per story_template_universal.md (including Test Strategy)
 - **Tasks (#0b):** Sequential validation - verifies 7 sections for EACH Task one by one per task_template_universal.md (including Existing Code Impact)
 - **Performance:** Loads task metadata first (Phase 2), then fetches full description for ONE task at a time (Phase 4 step 2) to avoid token waste and truncation
@@ -177,22 +177,22 @@ x-story-validator checks compliance with Story and Task templates, and automatic
 
 ### Testing and Documentation
 
-**Tests:** All tests (E2E/Integration/Unit) in Story's final test task. Value-Based Testing: 2-5 E2E, 3-8 Integration, 5-15 Unit per Story (10-28 total max). Priority ≥15 scenarios MUST be tested. See [risk_based_testing_guide.md](x-test-coordinator/references/risk_based_testing_guide.md) for full methodology.
+**Tests:** All tests (E2E/Integration/Unit) in Story's final test task. Value-Based Testing: 2-5 E2E, 3-8 Integration, 5-15 Unit per Story (10-28 total max). Priority ≥15 scenarios MUST be tested. See [risk_based_testing_guide.md](ln-test-coordinator/references/risk_based_testing_guide.md) for full methodology.
 
-**Temporary Scripts:** `scripts/tmp_[story_id].sh` - Created by x-story-quality-coordinator Pass 1, deleted by x-test-executor Step 6.
+**Temporary Scripts:** `scripts/tmp_[story_id].sh` - Created by ln-story-quality-coordinator Pass 1, deleted by ln-test-executor Step 6.
 
 **Documentation:** ALWAYS integrated in the same task (NOT separate tasks). Ensures atomicity and relevance.
 
-### Code Comments (x-task-executor)
+### Code Comments (ln-task-executor)
 15-20% ratio. Explain WHY (reasoning), not WHAT. NO Epic/Task IDs, NO historical notes, NO code examples. Only critical technical details (DB optimizations, API quirks, constraints).
 
-### Guide Auto-Creation (x-story-validator Phase 3)
-Auto-creates missing guides via x-guide-creator before approval. Links in Story Technical Notes.
+### Guide Auto-Creation (ln-story-validator Phase 3)
+Auto-creates missing guides via ln-guide-creator before approval. Links in Story Technical Notes.
 
 ### Documentation Language
 **All documentation in this repository MUST be in English** (SKILL.md, templates, comments, README, generated docs).
 
-**Exception:** Stories and Tasks in Linear can be English/Russian. x-story-validator ALWAYS preserves original language - DO NOT translate.
+**Exception:** Stories and Tasks in Linear can be English/Russian. ln-story-validator ALWAYS preserves original language - DO NOT translate.
 
 ### Sequential Numbering
 **All numbering MUST be sequential without fractional numbers**: Phases/Sections/Steps: 1, 2, 3, 4 (NOT 1, 1.5, 2). Questions: Q1, Q2, Q3 (NOT Q1, Q1.5, Q2). **If inserting content:** Renumber all subsequent items.
@@ -219,8 +219,8 @@ Stored in `{skill}/references/` and used by skill for:
 
 ### Chat Prefixes
 Skills use emoji prefixes in chat output for visual differentiation when orchestrated:
-- ⚙️ [EXECUTOR] - x-task-executor (implementation tasks), x-test-executor (Story Finalizer test tasks)
-- 🔍 [REVIEWER] - x-task-reviewer (task reviews)
+- ⚙️ [EXECUTOR] - ln-task-executor (implementation tasks), ln-test-executor (Story Finalizer test tasks)
+- 🔍 [REVIEWER] - ln-task-reviewer (task reviews)
 
 **Purpose:** Helps users track which agent/skill is working when multiple skills are invoked via Skill tool.
 
@@ -252,7 +252,7 @@ All skills and templates have versions and last update dates at end of file:
 ## [1.0.1] - 2025-11-12
 
 ### Changed
-- **x-story-coordinator v2.6.0 → v3.0.0** - Critical task loading rules, automatic loop restart
+- **ln-story-coordinator v2.6.0 → v3.0.0** - Critical task loading rules, automatic loop restart
 ```
 
 **Last Updated:** 2025-11-14

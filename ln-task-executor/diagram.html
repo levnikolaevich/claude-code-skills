@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ln-task-executor - State Diagram</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="stylesheet" href="../shared/css/diagram.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>⚙️ ln-task-executor</h1>
+            <p class="subtitle">Implementation Task Executor - State Diagram</p>
+        </header>
+        <div class="info-box">
+            <h3>📋 Overview</h3>
+            <ul>
+                <li><strong>Purpose:</strong> Execute implementation tasks ONLY (NOT test tasks)</li>
+                <li><strong>State Transition:</strong> Todo → In Progress → To Review</li>
+                <li><strong>Principles:</strong> KISS/YAGNI, read guides from Technical Approach</li>
+            </ul>
+        </div>
+        <div class="diagram-container">
+            <div class="mermaid">
+graph TD
+    Start([Start: Execute Implementation Task]) --> Phase1[Phase 1: Read Referenced Guides<br/>Extract guide links from Technical Approach]
+    Phase1 --> Phase2[Phase 2: Discovery<br/>Team ID auto-discovery]
+    Phase2 --> Phase3[Phase 3: Preparation<br/>Load task Todo<br/>Update status: Todo → In Progress]
+    Phase3 --> Phase4[Phase 4: Implementation<br/>Follow checkboxes<br/>KISS/YAGNI principles<br/>Apply guide patterns<br/>Address Existing Code Impact]
+    Phase4 --> Phase5[Phase 5: Quality Gates<br/>Type checking<br/>Lint]
+    Phase5 --> QualityPass{Quality gates<br/>pass?}
+    QualityPass -->|No| Phase4
+    QualityPass -->|Yes| Phase6
+    Phase6[Phase 5: Handoff<br/>Comment in Linear<br/>Update status: In Progress → To Review]
+    Phase6 --> AllTasksCheck{All Story tasks<br/>To Review or Done?}
+    AllTasksCheck -->|Yes| UpdateStory[Update Story status if needed]
+    AllTasksCheck -->|No| End
+    UpdateStory --> End([End])
+    classDef discovery fill:#E3F2FD,stroke:#1976D2,stroke-width:2px
+    classDef processing fill:#FFF9C4,stroke:#F57C00,stroke-width:2px
+    classDef decision fill:#FFE0B2,stroke:#E64A19,stroke-width:2px
+    classDef action fill:#C8E6C9,stroke:#388E3C,stroke-width:2px
+    class Phase1,Phase2 discovery
+    class Phase3,Phase4,Phase5 processing
+    class QualityPass,AllTasksCheck decision
+    class Phase6,UpdateStory action
+            </div>
+        </div>
+        <footer>
+            <p>ln-task-executor | Chat prefix: ⚙️ [EXECUTOR]</p>
+        </footer>
+    </div>
+    <script>
+        mermaid.initialize({ startOnLoad: true, theme: 'default', flowchart: { useMaxWidth: true, htmlLabels: true, curve: 'basis' } });
+    </script>
+</body>
+</html>

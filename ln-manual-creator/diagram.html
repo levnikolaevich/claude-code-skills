@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ln-manual-creator Workflow</title>
+    <link rel="stylesheet" href="../shared/css/diagram.css">
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#4A90E2',
+                primaryTextColor: '#fff',
+                primaryBorderColor: '#2E5C8A',
+                lineColor: '#333',
+                secondaryColor: '#FDB45C',
+                tertiaryColor: '#F7464A',
+                background: '#ffffff',
+                mainBkg: '#4A90E2',
+                secondBkg: '#FDB45C',
+                tertiaryBkg: '#46BFBD',
+                textColor: '#333'
+            },
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true,
+                curve: 'basis'
+            }
+        });
+    </script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>ln-manual-creator</h1>
+            <p class="subtitle">Package API Reference Manual Creation Workflow</p>
+            <p class="description">
+                Linear Workflow for creating minimal API reference manuals through automated research.
+                4 phases: Research (auto via MCP) → Analysis → Generation → Confirmation.
+            </p>
+        </header>
+
+        <div class="legend">
+            <h3>Color Coding</h3>
+            <div class="legend-grid">
+                <div class="legend-item">
+                    <span class="legend-color discovery"></span>
+                    <span>Discovery/Research (Phase 0)</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color processing"></span>
+                    <span>Processing (Phase 1-2)</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color decision"></span>
+                    <span>Decision (Phase 3)</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color action"></span>
+                    <span>Action (Save)</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="mermaid">
+graph TD
+    Start([Start: Package + Version]) --> Phase0[Phase 0: Research & Discovery<br/>AUTO 10-15 min]
+
+    Phase0 --> Context7[Context7: Library API Docs<br/>resolve-library-id + get-library-docs]
+    Phase0 --> MCPRef[MCP Ref: Official Docs<br/>API reference search]
+
+    Context7 --> Extract[Extract Method Signatures<br/>Parameters, Return Types]
+    MCPRef --> Extract
+
+    Extract --> Phase1[Phase 1: Method Analysis<br/>Parse signatures, Generate tables]
+
+    Phase1 --> ParseSig[Parse Method Signatures]
+    ParseSig --> ParamTable[Generate Parameter Tables<br/>name | type | required | default | description]
+    ParamTable --> Examples[Extract Usage Examples]
+
+    Examples --> Phase2[Phase 2: Manual Generation<br/>Copy template + Edit placeholders]
+
+    Phase2 --> CopyTemplate[Copy manual_template.md]
+    CopyTemplate --> Replace[Replace Placeholders<br/>PACKAGE, VERSION, METHODS]
+    Replace --> GenMethods[Generate Methods Sections<br/>For each method: signature + params + example]
+    GenMethods --> Validate{Validation<br/>SCOPE tags?<br/>Neutral tone?<br/>All params documented?}
+
+    Validate -->|Pass| Preview[Show Preview<br/>Package | Version | Methods | Length]
+    Validate -->|Fail| Fix[Fix Issues]
+    Fix --> Validate
+
+    Preview --> Phase3{Phase 3: User Confirmation<br/>Type 'confirm'?}
+
+    Phase3 -->|No| Preview
+    Phase3 -->|Yes| Save[Save Manual<br/>docs/manuals/package-version.md]
+
+    Save --> Return[Return File Path<br/>For linking in tasks/stories]
+    Return --> End([End])
+
+    classDef discovery fill:#4A90E2,stroke:#2E5C8A,color:#fff
+    classDef processing fill:#FDB45C,stroke:#E09A3E,color:#333
+    classDef decision fill:#F7931E,stroke:#C87016,color:#fff
+    classDef action fill:#46BFBD,stroke:#2E8B8B,color:#fff
+
+    class Phase0,Context7,MCPRef,Extract discovery
+    class Phase1,ParseSig,ParamTable,Examples,Phase2,CopyTemplate,Replace,GenMethods,Validate,Fix,Preview processing
+    class Phase3 decision
+    class Save,Return action
+        </div>
+
+        <div class="phases">
+            <h3>Workflow Phases</h3>
+
+            <div class="phase">
+                <h4>Phase 0: Research & Discovery (10-15 min, Automated)</h4>
+                <ul>
+                    <li><strong>Context7:</strong> resolve-library-id("[package]") → get-library-docs(library_id, topic="methods")</li>
+                    <li><strong>MCP Ref:</strong> "[package] v[version] API reference" search</li>
+                    <li><strong>Extract:</strong> Method signatures, parameters, return types, exceptions, usage examples</li>
+                    <li><strong>Output:</strong> Package metadata + method list + sources (2-3 official docs)</li>
+                </ul>
+            </div>
+
+            <div class="phase">
+                <h4>Phase 1: Method Analysis</h4>
+                <ul>
+                    <li><strong>Parse Signatures:</strong> Method names, parameter lists, return types</li>
+                    <li><strong>Generate Tables:</strong> Parameters table (name | type | required | default | description)</li>
+                    <li><strong>Extract Examples:</strong> Representative usage examples from official docs</li>
+                </ul>
+            </div>
+
+            <div class="phase">
+                <h4>Phase 2: Manual Generation</h4>
+                <ul>
+                    <li><strong>Copy Template:</strong> references/manual_template.md</li>
+                    <li><strong>Replace Placeholders:</strong> {{PACKAGE_NAME}}, {{VERSION}}, {{METHODS}}, etc.</li>
+                    <li><strong>Generate Methods Sections:</strong> For each method: signature + description + parameters table + returns + raises + example</li>
+                    <li><strong>Validation:</strong> SCOPE tags, neutral tone, all params documented, official docs linked</li>
+                    <li><strong>Show Preview:</strong> Package | Version | Methods count | Word count</li>
+                </ul>
+            </div>
+
+            <div class="phase">
+                <h4>Phase 3: Confirmation & Storage</h4>
+                <ul>
+                    <li><strong>User Confirmation:</strong> Wait for "confirm" input</li>
+                    <li><strong>Save Manual:</strong> docs/manuals/[package]-[version].md (NO sequential numbering)</li>
+                    <li><strong>Return Path:</strong> File path for linking in tasks/stories</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="notes">
+            <h3>Key Characteristics</h3>
+            <ul>
+                <li><strong>AUTO-RESEARCH:</strong> Fully automated via MCP Context7 + Ref (no user questions)</li>
+                <li><strong>OpenAPI-inspired:</strong> Method signatures, parameters tables, neutral factual tone</li>
+                <li><strong>Version-specific:</strong> Filename format: package-version.md (e.g., httpx-0.24.0.md)</li>
+                <li><strong>Minimal format:</strong> 300-500 words, focus on methods we will use</li>
+                <li><strong>Integration:</strong> Auto-invoked by ln-story-validator when package+version detected</li>
+            </ul>
+        </div>
+
+        <div class="comparison">
+            <h3>When to Use</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Document Type</th>
+                        <th>Focus</th>
+                        <th>When to Create</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Guide</strong> (ln-guide-creator)</td>
+                        <td>HOW to implement (patterns, best practices)</td>
+                        <td>Auto-invoked by ln-story-validator (ad-hoc)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>ADR</strong> (ln-adr-creator)</td>
+                        <td>WHY we decided (alternatives, consequences)</td>
+                        <td>Manual (during architecture phase, rare)</td>
+                    </tr>
+                    <tr class="highlight">
+                        <td><strong>Manual</strong> (ln-manual-creator)</td>
+                        <td>WHAT API can do (methods, parameters, examples)</td>
+                        <td>Manual (after Story Done, optional)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <footer>
+            <p>Version: 1.0.0 | Last Updated: 2025-01-14</p>
+            <p>For more information, see <a href="SKILL.md">SKILL.md</a></p>
+        </footer>
+    </div>
+</body>
+</html>

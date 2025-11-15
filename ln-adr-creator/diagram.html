@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ln-adr-creator - State Diagram</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="stylesheet" href="../shared/css/diagram.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📝 ln-adr-creator</h1>
+            <p class="subtitle">Architecture Decision Record Creator - State Diagram</p>
+        </header>
+
+        <div class="info-box">
+            <h3>📋 Workflow Overview</h3>
+            <ul>
+                <li><strong>Purpose:</strong> Create minimal Architecture Decision Records (ADRs) through 5-question dialog</li>
+                <li><strong>Format:</strong> Nygard format with 7 sections (~300-500 words)</li>
+                <li><strong>Categories:</strong> Strategic (business, patterns) or Technical (frameworks, infra)</li>
+                <li><strong>Use after:</strong> ln-docs-creator creates project structure</li>
+            </ul>
+        </div>
+
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color color-discovery"></div>
+                <span>ADR Discovery</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color color-dialog"></div>
+                <span>Dialog/Generation</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color color-decision"></div>
+                <span>Decision Point</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color color-action"></div>
+                <span>Update/Summary</span>
+            </div>
+        </div>
+
+        <div class="diagram-container">
+            <div class="mermaid">
+graph TD
+    Start([Start: Create ADR]) --> Phase1[Phase 1: ADR Number Detection<br/>Glob existing ADRs<br/>Calculate next number]
+
+    Phase1 --> Phase2[Phase 2: Interactive Dialog<br/>5 questions:<br/>Q1: Decision title<br/>Q2: Category Strategic/Technical<br/>Q3: Context<br/>Q4: Considered options<br/>Q5: Decision + consequences]
+
+    Phase2 --> Phase3[Phase 3: Generate ADR<br/>7 sections Nygard format<br/>300-500 words]
+
+    Phase3 --> ReadmeExists{README.md<br/>exists?}
+    ReadmeExists -->|Yes| Phase4[Phase 4: Update Documentation Hub<br/>Add ADR link to README]
+    ReadmeExists -->|No| Phase5
+    Phase4 --> Phase5
+
+    Phase5[Phase 5: Summary<br/>Display ADR path + next steps]
+
+    Phase5 --> End([End])
+
+    %% Styling
+    classDef discovery fill:#E3F2FD,stroke:#1976D2,stroke-width:2px
+    classDef dialog fill:#FFF9C4,stroke:#F57C00,stroke-width:2px
+    classDef decision fill:#FFE0B2,stroke:#E64A19,stroke-width:2px
+    classDef action fill:#C8E6C9,stroke:#388E3C,stroke-width:2px
+
+    class Phase1 discovery
+    class Phase2,Phase3 dialog
+    class ReadmeExists decision
+    class Phase4,Phase5 action
+            </div>
+        </div>
+
+        <div class="info-box">
+            <h3>🔑 Key Features</h3>
+            <ul>
+                <li><strong>5 Questions:</strong> Title, Category, Context, Options, Decision</li>
+                <li><strong>Minimal Format:</strong> 300-500 words, 7 sections (Nygard format)</li>
+                <li><strong>Categorization:</strong> Strategic (business decisions, patterns) vs Technical (frameworks, infrastructure)</li>
+                <li><strong>Auto-numbering:</strong> Automatically detects next ADR number</li>
+            </ul>
+        </div>
+
+        <footer>
+            <p>Generated for ln-adr-creator skill | Version 3.0.0</p>
+            <p>Diagram format: Mermaid.js | Last updated: 2025-11-08</p>
+        </footer>
+    </div>
+
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'default',
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true,
+                curve: 'basis'
+            }
+        });
+    </script>
+</body>
+</html>

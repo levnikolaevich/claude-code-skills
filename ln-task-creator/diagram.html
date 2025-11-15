@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ln-task-creator - Universal Factory</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+    <link rel="stylesheet" href="../shared/css/diagram.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>ln-task-creator</h1>
+            <p class="subtitle">Universal Factory - Worker v1.0.0</p>
+        </header>
+        <div class="info-box">
+        <h2>Overview</h2>
+        <ul>
+            <li><strong>Purpose:</strong> Universal factory worker for creating ALL 3 task types (implementation, refactoring, test)</li>
+            <li><strong>Pattern:</strong> Worker v1.0.0 - Invoked by orchestrator (x-task-manager) via Skill tool with taskType parameter</li>
+            <li><strong>Templates:</strong>
+                <ul>
+                    <li><code>implementation</code> → task_template_implementation.md (7 sections)</li>
+                    <li><code>refactoring</code> → refactoring_task_template.md (7 sections)</li>
+                    <li><code>test</code> → test_task_template.md (11 sections)</li>
+                </ul>
+            </li>
+            <li><strong>Type-Specific Validation:</strong>
+                <ul>
+                    <li><code>implementation</code>: NO tests (tests in final Story task)</li>
+                    <li><code>refactoring</code>: Regression Strategy required</li>
+                    <li><code>test</code>: Priority ≥15 scenarios + Limits (2-5 E2E, 3-8 Integration, 5-15 Unit)</li>
+                </ul>
+            </li>
+            <li><strong>Input:</strong> IDEAL plan + guide links from orchestrator</li>
+            <li><strong>Output:</strong> Task URLs + summary → return to orchestrator</li>
+        </ul>
+    </div>
+
+    <div class="diagram-container">
+        <div class="mermaid">
+graph TD
+    Start([Invoked by orchestrator<br/>taskType parameter]) --> SelectTemplate{Select Template<br/>by taskType}
+
+    SelectTemplate -->|implementation| T1[task_template_implementation.md<br/>7 sections]
+    SelectTemplate -->|refactoring| T2[refactoring_task_template.md<br/>7 sections]
+    SelectTemplate -->|test| T3[test_task_template.md<br/>11 sections]
+
+    T1 --> Phase1
+    T2 --> Phase1
+    T3 --> Phase1
+
+    Phase1[Phase 1: Generate Task Documents<br/>From IDEAL plan<br/>Fill template sections]
+
+    Phase1 --> Phase2{Phase 2: Type-Specific Validation<br/>implementation: NO tests<br/>refactoring: Regression Strategy<br/>test: Priority ≥15 + Limits}
+
+    Phase2 -->|Validation failed| Error([ERROR: Stop execution<br/>Report to orchestrator])
+    Phase2 -->|Validation passed| Phase3[Phase 3: Show Preview<br/>Task summaries<br/>Total count & hours]
+
+    Phase3 --> Phase4{Phase 4: User Confirmation}
+    Phase4 -->|"confirm"| Phase5[Phase 5: Create in Linear<br/>+ Update kanban_board.md]
+    Phase4 -->|Other input| Abort([Abort: Return to orchestrator])
+
+    Phase5 --> Success([SUCCESS<br/>Return task URLs + summary])
+
+    style Start fill:#e1f5fe
+    style Success fill:#c8e6c9
+    style Error fill:#ffcdd2
+    style Abort fill:#fff9c4
+    style SelectTemplate fill:#e1bee7
+    style T1 fill:#c8e6c9
+    style T2 fill:#fff3e0
+    style T3 fill:#ffcdd2
+    style Phase2 fill:#fff3e0
+    style Phase4 fill:#fff3e0
+            </div>
+        </div>
+        <footer>
+            <p>ln-task-creator v1.0.0 | Universal Factory Pattern | Mermaid.js</p>
+        </footer>
+    </div>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'default',
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true,
+                curve: 'basis'
+            }
+        });
+    </script>
+</body>
+</html>

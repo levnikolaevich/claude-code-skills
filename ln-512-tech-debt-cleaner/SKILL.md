@@ -16,7 +16,7 @@ Automated cleanup of safe, low-risk tech debt findings from codebase audits.
 - **Apply** safe fixes: remove unused imports, delete dead code, clean commented-out blocks, remove deprecated aliases
 - **Never touch** business logic, complex refactoring, or architectural changes
 - **Create** single commit with structured summary of all changes
-- Invocable standalone or from ln-500 quality gate after PASS
+- Invocable from ln-510 quality coordinator pipeline or standalone
 
 ## Auto-Fixable Categories
 
@@ -43,14 +43,14 @@ Automated cleanup of safe, low-risk tech debt findings from codebase audits.
 
 ## When to Use
 
+- **Invoked by ln-510-quality-coordinator** Phase 3 (after ln-511 code quality check)
 - **Standalone:** After `ln-620` codebase audit completes (user triggers manually)
-- **Post-Quality-Gate:** After ln-500 PASS verdict (optional, user-triggered)
 - **Scheduled:** As periodic "garbage collection" for codebase hygiene
 
 ## Inputs
 
-- `docs/project/codebase_audit.md` — primary source (ln-620 output)
-- OR inline findings from ln-511 code quality output (if invoked from quality pipeline)
+- **Pipeline mode (ln-510):** findings from ln-511 code quality output (passed via coordinator context)
+- **Standalone mode:** `docs/project/codebase_audit.md` (ln-620 output)
 
 ## Workflow
 

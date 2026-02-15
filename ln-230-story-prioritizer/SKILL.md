@@ -31,8 +31,8 @@ Evaluate Stories using RICE scoring with market research. Generate consolidated 
 - Prioritization already exists in docs/market/
 
 **Who calls this skill:**
-- **User (manual)** - after ln-220-story-coordinator
-- **Future:** ln-200-scope-decomposer (optional Phase)
+- **ln-200-scope-decomposer** Phase 4 (optional, sequential per Epic)
+- **User (manual)** - standalone after ln-220-story-coordinator
 
 ---
 

@@ -172,7 +172,7 @@ ELSE:
 **Parallelism strategy:**
 - Phase 4a: All 4 global workers run in PARALLEL
 - Phase 4b: All N domain-aware invocations run in PARALLEL
-- Example: 3 domains → 3 ln-374 invocations in single message
+- Example: 3 domains → 3 ln-634 invocations in single message
 
 **Worker Output Contract (Unified):**
 
@@ -323,7 +323,7 @@ Each worker:
 
 ## Critical Rules
 
-- **Two-stage delegation:** Global workers (4) + Domain-aware worker (ln-374 × N domains)
+- **Two-stage delegation:** Global workers (4) + Domain-aware worker (ln-634 × N domains)
 - **Domain discovery:** Auto-detect domains from folder structure; fallback to global mode if <2 domains
 - **Parallel execution:** All workers (global + domain-aware) run in PARALLEL
 - **Domain-grouped output:** Coverage Gaps findings grouped by domain (if domain_mode="domain-aware")
@@ -342,7 +342,7 @@ Each worker:
 - Domain discovery completed (domain_mode determined)
 - contextStore built with test metadata + domain info
 - Global workers (4) invoked in PARALLEL
-- Domain-aware worker (ln-374) invoked per domain in PARALLEL
+- Domain-aware worker (ln-634) invoked per domain in PARALLEL
 - All workers completed successfully (or reported errors)
 - Results aggregated with domain grouping (if domain_mode="domain-aware")
 - Domain Coverage Summary built (if domain_mode="domain-aware")

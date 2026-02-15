@@ -1,6 +1,6 @@
 ---
 name: ln-200-scope-decomposer
-description: Orchestrates full decomposition (scope → Epics → Stories) by delegating ln-210 → ln-220. Sequential Story decomposition per Epic. Epic 0 for Infrastructure.
+description: "Orchestrates full decomposition (scope → Epics → Stories → RICE prioritization) by delegating ln-210 → ln-220 → ln-230. Sequential processing. Epic 0 for Infrastructure."
 ---
 
 > **Paths:** File paths (`shared/`, `references/`, `../ln-*`) are relative to skills repo root. If not found at CWD, locate this SKILL.md directory and go up one level for repo root.
@@ -18,7 +18,8 @@ Coordinates the complete decomposition pipeline for new initiatives:
 - **Phase 1:** Discovery (Team ID)
 - **Phase 2:** Epic Decomposition (delegates to ln-210-epic-coordinator)
 - **Phase 3:** Story Decomposition Loop (delegates to ln-220-story-coordinator per Epic, sequential)
-- **Phase 4:** Summary (total counts + next steps)
+- **Phase 4:** RICE Prioritization Loop (optional, delegates to ln-230-story-prioritizer per Epic, sequential)
+- **Phase 5:** Summary (total counts + next steps)
 
 ### When to Use This Skill
 
@@ -31,6 +32,7 @@ This skill should be used when:
 **Alternative:** For granular control, invoke coordinators manually:
 1. [ln-210-epic-coordinator](../ln-210-epic-coordinator/SKILL.md) - CREATE/REPLAN Epics
 2. [ln-220-story-coordinator](../ln-220-story-coordinator/SKILL.md) - CREATE/REPLAN Stories (once per Epic)
+3. [ln-230-story-prioritizer](../ln-230-story-prioritizer/SKILL.md) - RICE prioritization (once per Epic)
 
 ### When NOT to Use
 
@@ -49,7 +51,7 @@ Do NOT use if:
 **ln-200-scope-decomposer is a pure coordinator** - it does NOT execute work directly:
 - ✅ Discovers context (Team ID)
 - ✅ Makes routing decisions (which coordinator to invoke)
-- ✅ Delegates all work via Skill tool (ln-210, ln-220)
+- ✅ Delegates all work via Skill tool (ln-210, ln-220, ln-230)
 - ✅ Manages workflow state (Epic creation → Story loop)
 - ❌ Does NOT research project docs (ln-210 does this)
 - ❌ Does NOT generate Epic/Story documents (ln-210/ln-220 do this)
@@ -171,11 +173,47 @@ Add phases and Epic iterations to todos before starting:
 - Phase 3: Delegate to ln-220 for Epic 1 (pending)
 - Phase 3: Delegate to ln-220 for Epic 2 (pending)
 ... (one todo per Epic)
-- Phase 4: Summary (pending)
+- Phase 4: Delegate to ln-230 for Epic 0 (pending)
+- Phase 4: Delegate to ln-230 for Epic 1 (pending)
+... (one todo per Epic, optional)
+- Phase 5: Summary (pending)
 ```
 Mark each as in_progress when starting, completed when coordinator returns success.
 
-### Phase 4: Summary and Next Steps
+### Phase 4: RICE Prioritization Loop (Optional, Sequential, Delegated)
+
+**Objective:** Prioritize Stories per Epic using RICE scoring with market research.
+
+> **OPTIONAL:** Ask user "Run RICE prioritization for all Epics?" If user declines, skip to Phase 5.
+
+**Sequential Loop Logic:**
+
+```
+FOR EACH Epic (Epic 0, Epic 1, ..., Epic N):
+    1. Invoke ln-230-story-prioritizer for current Epic
+    2. Wait for completion
+    3. Verify prioritization.md created in docs/market/[epic-slug]/
+    4. Move to next Epic
+```
+
+**Invocation per Epic:**
+```
+Skill(skill: "ln-230-story-prioritizer", args: "epic=\"Epic N\"")
+```
+
+**ln-230-story-prioritizer will (per Epic):**
+- Load Stories metadata from Linear
+- Research market size and competition per Story
+- Calculate RICE score and assign Priority (P0-P3)
+- Generate docs/market/[epic-slug]/prioritization.md
+
+**Skip condition:** If Epic contains only technical/infrastructure Stories (no business value to prioritize), skip that Epic.
+
+**After each Epic:** Prioritization table saved to docs/market/[epic-slug]/prioritization.md.
+
+**Output:** Prioritization tables for all applicable Epics.
+
+### Phase 5: Summary and Next Steps
 
 **Objective:** Provide complete decomposition overview.
 
@@ -263,7 +301,12 @@ Before completing work, verify ALL checkpoints:
 - [ ] Story URLs returned for each Epic
 - [ ] All Stories visible in kanban_board.md (Backlog section)
 
-**✅ Summary Provided (Phase 4):**
+**✅ RICE Prioritization Complete (Phase 4, optional):**
+- [ ] User asked about prioritization (skip if declined)
+- [ ] Delegated to ln-230-story-prioritizer for each applicable Epic
+- [ ] Prioritization tables saved to docs/market/[epic-slug]/
+
+**✅ Summary Provided (Phase 5):**
 - [ ] Total counts displayed (Epics, Stories, breakdown per Epic)
 - [ ] kanban_board.md location shown
 - [ ] Next steps provided (validation, task creation)
@@ -282,6 +325,7 @@ Users directly: "Decompose initiative: [initiative name]" or "Create epics and s
 
 - **ln-210-epic-coordinator** (Phase 2) - CREATE mode (batch Epic creation with batch preview)
 - **ln-220-story-coordinator** (Phase 3, sequential loop) - CREATE mode per Epic (Story creation with preview)
+- **ln-230-story-prioritizer** (Phase 4, optional sequential loop) - RICE prioritization per Epic
 
 ### Downstream
 
@@ -392,6 +436,7 @@ After ln-200-scope-decomposer completes:
 - **Configuration source:** `docs/tasks/kanban_board.md` (Team ID, Next Epic Number)
 - **Epic coordinator:** `ln-210-epic-coordinator/SKILL.md`
 - **Story coordinator:** `ln-220-story-coordinator/SKILL.md`
+- **Story prioritizer:** `ln-230-story-prioritizer/SKILL.md`
 - **Numbering conventions:** `shared/references/numbering_conventions.md` (Epic 0 reserved)
 
 ---

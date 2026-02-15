@@ -10,7 +10,7 @@ description: "Worker that runs parallel external agent reviews (Codex + Gemini) 
 Runs parallel external agent reviews on code implementation, critically verifies suggestions, returns filtered improvements.
 
 ## Purpose & Scope
-- Worker in ln-510 quality coordinator pipeline (invoked by ln-511 Step 7)
+- Worker in ln-510 quality coordinator pipeline (invoked by ln-510 Phase 4)
 - Run codex-review + gemini-review as background tasks in parallel
 - Process results as they arrive (first-finished agent processed immediately)
 - Critically verify each suggestion; debate with agent if Claude disagrees
@@ -18,9 +18,9 @@ Runs parallel external agent reviews on code implementation, critically verifies
 - Health check + prompt execution in single invocation
 
 ## When to Use
-- **Invoked by ln-511-code-quality-checker** Step 7 (Agent Review)
+- **Invoked by ln-510-quality-coordinator** Phase 4 (Agent Review)
 - All implementation tasks in Story status = Done
-- Code quality analysis (Steps 1-6) already completed by ln-511
+- Code quality (ln-511) and tech debt cleanup (ln-512) already completed
 
 ## Inputs (from parent skill)
 - `storyId`: Linear Story identifier (e.g., "PROJ-123")
@@ -128,11 +128,11 @@ debate_log:
 | Both agents succeed | Aggregate verified suggestions from both |
 | One agent fails | Use successful agent's verified suggestions, log failure |
 | Both agents fail | Return `{verdict: "SKIPPED", reason: "agents failed"}` |
-| Parent skill (ln-511) | Falls back to Self-Review (native Claude) |
+| Parent skill (ln-510) | Falls back to Self-Review (native Claude) |
 
 ## Verdict Escalation
 - Findings with `area=security` or `area=correctness` -> parent skill can escalate PASS -> CONCERNS
-- This skill returns raw verified suggestions; escalation decision is made by ln-511
+- This skill returns raw verified suggestions; escalation decision is made by ln-510
 
 ## Critical Rules
 - Read-only review — agents must NOT modify project files (enforced by prompt CRITICAL CONSTRAINTS)

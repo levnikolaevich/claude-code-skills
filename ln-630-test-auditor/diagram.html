@@ -17,7 +17,7 @@
         <h3>Overview</h3>
         <p><strong>Purpose:</strong> Coordinates 5 specialized test audit workers with domain-aware coverage gap analysis.</p>
         <p><strong>Type:</strong> Orchestrator-Worker Pattern (L2 Coordinator + 5 L3 Workers)</p>
-        <p><strong>Domain Support:</strong> Auto-detects project domains; runs Coverage Gaps (ln-374) per domain.</p>
+        <p><strong>Domain Support:</strong> Auto-detects project domains; runs Coverage Gaps (ln-634) per domain.</p>
         <p><strong>Invocation:</strong> Manual - user runs when needed for test suite optimization.</p>
     </div>
 
@@ -36,9 +36,9 @@ graph TD
     Decision -->|Yes domain-aware| Phase4a
     Decision -->|No global| Phase4aGlobal[Phase 4a: Global Workers<br/>4 workers PARALLEL]
 
-    Phase4a[Phase 4a: Global Workers<br/>4 workers PARALLEL] --> Phase4b[Phase 4b: Domain-Aware<br/>ln-374 per domain<br/>PARALLEL]
+    Phase4a[Phase 4a: Global Workers<br/>4 workers PARALLEL] --> Phase4b[Phase 4b: Domain-Aware<br/>ln-634 per domain<br/>PARALLEL]
 
-    Phase4aGlobal --> Phase4bGlobal[Phase 4b: ln-374<br/>global mode]
+    Phase4aGlobal --> Phase4bGlobal[Phase 4b: ln-634<br/>global mode]
 
     Phase4b --> Phase5[Phase 5: Aggregate<br/>Group by domain<br/>Domain Coverage Summary<br/>Calculate scores]
 
@@ -81,13 +81,13 @@ graph TB
     subgraph DomainWorkers["Domain-Aware Worker (1 x N) - Per Domain"]
         direction TB
         subgraph DomainUsers["Domain: users"]
-            W4u[ln-374<br/>Coverage Gaps]
+            W4u[ln-634<br/>Coverage Gaps]
         end
         subgraph DomainOrders["Domain: orders"]
-            W4o[ln-374<br/>Coverage Gaps]
+            W4o[ln-634<br/>Coverage Gaps]
         end
         subgraph DomainPayments["Domain: payments"]
-            W4p[ln-374<br/>Coverage Gaps]
+            W4p[ln-634<br/>Coverage Gaps]
         end
     end
 
@@ -231,7 +231,7 @@ graph LR
     <h2>Key Characteristics</h2>
     <ul>
         <li><strong>Orchestrator-Worker:</strong> L2 Coordinator + 5 L3 Workers</li>
-        <li><strong>Domain-Aware:</strong> Coverage Gaps (ln-374) runs per domain</li>
+        <li><strong>Domain-Aware:</strong> Coverage Gaps (ln-634) runs per domain</li>
         <li><strong>Global Workers:</strong> Business Logic, E2E Priority, Value, Isolation</li>
         <li><strong>Parallel Execution:</strong> All workers (global + domain-aware) run in PARALLEL</li>
         <li><strong>Domain Coverage Summary:</strong> Per-domain coverage metrics</li>

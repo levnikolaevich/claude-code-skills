@@ -19,12 +19,11 @@ This skill should be used when:
 - Need to research standards and patterns BEFORE Story generation (ensures tasks follow industry best practices)
 - Epic Technical Notes mention specific standards requiring documentation (OAuth, OpenAPI, WebSocket)
 - Prevent situations where tasks use outdated patterns or violate RFC compliance
-- Reusable for ANY skill requiring standards research (ln-220-story-coordinator, ln-300-task-coordinator, ln-002-best-practices-researcher)
+- Reusable for ANY skill requiring standards research
 
 **Who calls this skill:**
-- **ln-220-story-coordinator** (Phase 3) - research for Story creation
-- **ln-300-task-coordinator** (optional) - research for complex Stories
 - **Manual** - user can invoke directly for Epic/Story research
+- Any other skill that needs standards research
 
 ## Workflow
 
@@ -277,7 +276,7 @@ What industry standards and architectural patterns apply to {story_domain}?
 
 ### Phase 7: Return Results
 
-**Return to calling skill** (ln-220, ln-310):
+**Return to calling skill:**
 
 1. **Standards Research string** (Markdown) for insertion into Story Technical Notes
 2. **File path** (string) for linking: `docs/research/rsh-{NNN}-{slug}.md`
@@ -297,8 +296,7 @@ If calling skill expects only string (backward compatibility), return Standards 
 ## Integration with Ecosystem
 
 **Called by:**
-- **ln-220-story-coordinator** (Phase 2) - research for ALL Stories in Epic
-- **ln-300-task-coordinator** (optional) - research for complex technical Stories
+- User (direct invocation) or any skill needing standards research
 
 **Dependencies:**
 - MCP Ref (ref_search_documentation) - industry standards and patterns
@@ -349,7 +347,7 @@ If calling skill expects only string (backward compatibility), return Standards 
 - Standards Research output generated in Markdown (tables + links, no code)
 - **Research saved to file:** `docs/research/rsh-{NNN}-{slug}.md` created with all required sections
 - **README updated** (if `docs/research/README.md` exists and has placeholder)
-- Output returned to calling skill (ln-220, ln-300): Standards Research string + file path
+- Output returned to calling skill: Standards Research string + file path
 
 ## Reference Files
 

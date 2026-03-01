@@ -252,7 +252,7 @@ If NO placeholders → Validation Mode
 - ✅ Length > 20 words → pass
 
 **Auto-Discovery:**
-- None needed (Epics are populated by workflow skills: ln-210, ln-220, ln-300)
+- None needed (Epics are populated by workflow skills or manual creation)
 
 **MCP Ref Hints:**
 - None needed

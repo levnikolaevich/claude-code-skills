@@ -44,7 +44,7 @@ graph TD
     P1_Phase5 --> CheckTestTask{Test task<br/>exists?}
     CheckTestTask -->|Yes & Done| Pass2Entry[Continue to Pass 2]
     CheckTestTask -->|Yes & NOT Done| ReportStatus[Report test task status<br/>Exit]
-    CheckTestTask -->|NOT exists| NoTestTask[⚠️ Test task missing<br/>Invoke ln-520-test-planner separately<br/>Exit]
+    CheckTestTask -->|NOT exists| NoTestTask[⚠️ Test task missing<br/>Create test task manually<br/>Exit]
     NoTestTask --> End
 
     %% Pass 2

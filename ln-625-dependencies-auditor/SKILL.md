@@ -13,7 +13,7 @@ Specialized worker auditing dependency management, code reuse, and security vuln
 ## Purpose & Scope
 
 - **Worker in ln-620 coordinator pipeline** (full audit mode)
-- **Worker in ln-760 security-setup pipeline** (vulnerabilities_only mode)
+- Also supports standalone vulnerabilities_only mode
 - Audit **dependencies and reuse** (Categories 7+8: Medium Priority)
 - Check outdated packages, unused deps, wheel reinvention, **CVE vulnerabilities**
 - Calculate compliance score (X/10)
@@ -29,7 +29,7 @@ Specialized worker auditing dependency management, code reuse, and security vuln
 Receives `contextStore` with tech stack, package manifest paths, codebase root, output_dir.
 
 **From ln-620 (codebase-auditor):** mode=full (default)
-**From ln-760 (security-setup):** mode=vulnerabilities_only
+**Standalone:** mode=vulnerabilities_only (CVE scan only)
 
 ## Workflow
 

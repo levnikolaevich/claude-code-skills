@@ -38,9 +38,8 @@ Research industry standards and create project documentation in one workflow.
 - Link to stack-appropriate official docs
 
 ## When to Use
-- ln-310-story-validator detects missing documentation
 - Need to document a pattern, library, or decision
-- Replaces: ln-321-guide-creator, ln-322-adr-creator, ln-323-manual-creator
+- Want to research best practices for a specific topic
 
 ## Input Parameters
 

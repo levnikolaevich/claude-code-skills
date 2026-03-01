@@ -234,19 +234,11 @@ Single hierarchical view: **Status → Epic → User Story → Tasks**
 
 | Category | Skill | Purpose |
 |----------|-------|---------|
-| **Planning** | ln-210-epic-coordinator | Decompose scope → 3-7 Epics |
-| | ln-220-story-coordinator | Decompose Epic → 5-10 Stories (with Phase 3 Library Research) |
-| | ln-300-task-coordinator | Decompose Story → 1-6 Implementation Tasks |
-| | ln-311-agent-reviewer | External agent review for Stories (Codex + Gemini) |
-| **Validation** | ln-310-story-validator | Auto-fix Stories/Tasks → Approve (Backlog → Todo) |
-| **Execution** | ln-400-story-executor | Orchestrate Story execution (delegates to ln-401/ln-404/ln-402) |
-| | ln-401-task-executor | Execute implementation tasks (Todo → In Progress → To Review) |
-| | ln-404-test-executor | Execute Story Finalizer test tasks (11 sections) |
+| **Execution** | ln-401-task-executor | Execute implementation tasks (Todo → In Progress → To Review) |
+| | ln-404-test-executor | Execute test tasks (11 sections) |
 | | ln-402-task-reviewer | Review tasks (To Review → Done/Rework) |
-| | ln-403-task-rework | Fix tasks after review (To Rework → To Review) |
-| **Quality** | Story quality gate | Quality checks, regression, test planning, verdict |
-| **Testing** | Test planner | Plan Story Finalizer test task (after manual testing) |
-| **Documentation** | ln-111-project-docs-creator | Create project docs (requirements, architecture, specs) |
+| **Quality** | ln-510-quality-coordinator | Quality checks, regression, verdict |
+| **Documentation** | ln-100-documents-pipeline | Create complete documentation system |
 | | ln-002-best-practices-researcher | Create ADRs, guides, manuals (doc_type parameter) |
 
 ---

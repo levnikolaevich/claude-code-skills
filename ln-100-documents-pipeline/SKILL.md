@@ -527,7 +527,6 @@ See full reports above for detailed findings.
 3. Recommend next steps:
    - "Review generated documentation (CLAUDE.md → docs/)"
    - "Open docs/presentation/presentation_final.html in browser"
-   - "Run ln-210-epic-coordinator to decompose scope into Epics"
    - "Share documentation with technical stakeholders"
 
 **Output**: Summary message with file list and recommendations
@@ -575,12 +574,10 @@ project_root/
 **Recommended workflow for new projects:**
 
 1. **ln-100-documents-pipeline** (this skill) - Create complete documentation system
-2. **ln-210-epic-coordinator** - Decompose scope into Epics (Linear Projects)
-3. **ln-220-story-coordinator** - Create User Stories for each Epic (automatic decomposition + replan)
-4. **ln-300-task-coordinator** - Break down Stories into implementation tasks (automatic decomposition + replan)
-5. **ln-310-story-validator** - Verify Stories before development
-6. **ln-400-story-executor** - Orchestrate Story implementation
-7. **Story quality gate** - Review completed Stories
+2. Create tasks in Linear manually or via AI
+3. **ln-401-task-executor** - Execute implementation tasks
+4. **ln-402-task-reviewer** - Review completed tasks
+5. **ln-510-quality-coordinator** - Run quality checks on completed work
 
 ---
 
@@ -723,7 +720,7 @@ Before completing work, verify ALL checkpoints:
 **✅ Summary Displayed (Phase 6):**
 - [ ] All created files listed with sizes
 - [ ] Documentation system features highlighted (SCOPE tags, Maintenance sections, README hubs, DAG structure, deduplicated content, validated links)
-- [ ] Next steps recommended (ln-210-epic-coordinator)
+- [ ] Next steps recommended
 
 **✅ Error Handling (if applicable):**
 - [ ] If any worker failed: User notified which worker failed, error message shown, manual invocation recommended, partial progress listed

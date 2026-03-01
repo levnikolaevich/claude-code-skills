@@ -25,7 +25,7 @@ Runs a single Story final test task (label "tests") through implementation/execu
 **File Mode transitions:** Todo → In Progress → To Review
 
 ## Workflow (concise)
-1) **Receive task:** Get task ID from orchestrator (ln-400); fetch full test task description (Linear: get_issue; File: Read task file); read linked guides/manuals/ADRs/research; review parent Story and manual test results if provided.
+1) **Receive task:** Get task ID from user; fetch full test task description (Linear: get_issue; File: Read task file); read linked guides/manuals/ADRs/research; review parent Story and manual test results if provided.
 1b) **Goal gate:** **MANDATORY READ:** `shared/references/goal_articulation_gate.md` — State REAL GOAL of these tests (which business behavior must be verified, not "write tests"). NOT THE GOAL: testing infrastructure or framework behavior instead of business logic. HIDDEN CONSTRAINT: which existing tests might break from implementation changes.
 2) **Read runbook:** **Read `docs/project/runbook.md`** — understand test environment setup, Docker commands, test execution prerequisites. Use exact commands from runbook.
 3) **Validate plan:** Check Priority ≤15 and test count limits; ensure focus on business flows (no infra-only tests).

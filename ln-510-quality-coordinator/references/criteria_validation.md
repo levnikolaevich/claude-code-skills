@@ -1,6 +1,6 @@
 # Criteria Validation (Phase 3)
 
-<!-- SCOPE: Story-level validation criteria for quality gate (#17, #18, Database schema). References ln-310. -->
+<!-- SCOPE: Story-level validation criteria for quality gate (#17, #18, Database schema). -->
 <!-- DO NOT add here: Task-level AC validation → ln-402, NFR dimensions → gate_levels.md -->
 
 Story-level validation checks executed in Phase 3 (after code quality, before linters).
@@ -9,7 +9,7 @@ Story-level validation checks executed in Phase 3 (after code quality, before li
 
 ## Purpose
 
-Validate Story against criteria from ln-310-story-validator that require **aggregate view** across all tasks:
+Validate Story against criteria that require **aggregate view** across all tasks:
 - Story Dependencies (criterion #18) - no forward Story deps in Epic
 - AC-Task Coverage Quality (criterion #17) - STRONG/WEAK/MISSING scoring across all AC
 - Database Creation Principle (criterion #9) - schema scope matches Story
@@ -25,7 +25,7 @@ Validate Story against criteria from ln-310-story-validator that require **aggre
 
 **Criterion:** Story N does NOT depend on Stories N+1, N+2 (sequential order)
 
-**Reference:** [ln-310-story-validator/references/dependency_validation.md](../../ln-310-story-validator/references/dependency_validation.md) criterion #18
+**Criterion #18:** No forward Story dependencies within Epic
 
 **Method:**
 1. Load Epic from Story.project
@@ -51,7 +51,7 @@ action: "Refactor Story 1.2 to use only Stories 1.1, or reorder Stories"
 
 **Criterion:** Each AC has STRONG coverage (Task mentions HTTP codes + messages + timing)
 
-**Reference:** [ln-310-story-validator/references/traceability_validation.md](../../ln-310-story-validator/references/traceability_validation.md) criterion #17 (lines 143-169)
+**Criterion #17:** Each AC has STRONG task coverage
 
 **Method:**
 1. Load Story AC section
@@ -95,7 +95,7 @@ action: "Create new Task to implement AC3 performance requirement"
 
 **Criterion:** Story creates ONLY tables it needs (incremental schema evolution)
 
-**Reference:** [ln-310-story-validator/references/workflow_validation.md](../../ln-310-story-validator/references/workflow_validation.md) criterion #9 (lines 85-103)
+**Criterion #9:** Incremental schema evolution
 
 **Method:**
 1. Load Story Statement + Technical Notes
@@ -139,9 +139,9 @@ action: "Remove Products/Orders tables from migration - they belong to future St
 4. ln-514-regression-checker (existing)
 
 **Fail Fast Logic:**
-- If Check #1 (Story Dependencies) FAIL → Report DEP- issue to ln-500, STOP
-- If Check #2 (AC Coverage) FAIL → Report BUG-/COV- issues to ln-500, STOP
-- If Check #3 (Database Creation) FAIL → Report DB- issue to ln-500, STOP
+- If Check #1 (Story Dependencies) FAIL → Report DEP- issue, STOP
+- If Check #2 (AC Coverage) FAIL → Report BUG-/COV- issues, STOP
+- If Check #3 (Database Creation) FAIL → Report DB- issue, STOP
 - If ALL checks PASS → Continue to linters
 
 ---
@@ -155,7 +155,7 @@ action: "Remove Products/Orders tables from migration - they belong to future St
 | **DB-** | Database Schema | HIGH | Task creates tables for future Stories |
 | **AC-** | AC Validation | HIGH | AC incomplete (missing error/edge cases) |
 
-**Note:** AC- prefix used by ln-500 for AC completeness/specificity validation at Story level.
+**Note:** AC- prefix used for AC completeness/specificity validation at Story level.
 
 ---
 

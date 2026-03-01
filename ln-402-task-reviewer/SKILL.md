@@ -1,6 +1,6 @@
 ---
 name: ln-402-task-reviewer
-description: "L3 Worker. Reviews task implementation for quality, code standards, test coverage. Creates [BUG] tasks for side-effect issues found outside task scope. Sets task Done or To Rework. Runs inline (Skill tool) from ln-400 main flow."
+description: "Reviews task implementation for quality, code standards, test coverage. Creates [BUG] tasks for side-effect issues found outside task scope. Sets task Done or To Rework."
 ---
 
 > **Paths:** File paths (`shared/`, `references/`, `../ln-*`) are relative to skills repo root. If not found at CWD, locate this SKILL.md directory and go up one level for repo root.
@@ -9,10 +9,10 @@ description: "L3 Worker. Reviews task implementation for quality, code standards
 
 **MANDATORY after every task execution.** Reviews a single task in To Review and decides Done vs To Rework with immediate fixes or clear rework notes.
 
-> **This skill is NOT optional.** Every task executed by ln-401/ln-403/ln-404 MUST be reviewed by ln-402 immediately. No exceptions, no batching, no skipping.
+> **This skill is NOT optional.** Every task executed by ln-401/ln-404 MUST be reviewed by ln-402 immediately. No exceptions, no batching, no skipping.
 
 ## Purpose & Scope
-- Receive task ID from orchestrator (ln-400); load full task and parent Story independently (Linear: get_issue; File: Read task file).
+- Receive task ID from user; load full task and parent Story independently (Linear: get_issue; File: Read task file).
 - Check architecture, correctness, configuration hygiene, docs, and tests.
 - For test tasks, verify risk-based limits and priority (≤15) per planner template.
 - Update only this task: accept (Done) or send back (To Rework) with explicit reasons and fix suggestions tied to best practices.
@@ -128,7 +128,7 @@ Step 8: Update & Commit
 ```
 
 ## Workflow (concise)
-1) **Receive task:** Get task ID from orchestrator (ln-400). Load full task and parent Story independently. Detect type (label "tests" -> test task, else implementation/refactor).
+1) **Receive task:** Get task ID from user. Load full task and parent Story independently. Detect type (label "tests" -> test task, else implementation/refactor).
 2) **Read context:** Full task + parent Story; load affected components/docs; review diffs if available.
 2b) **Goal gate:** **MANDATORY READ:** `shared/references/goal_articulation_gate.md` — Before reviewing, state: (1) REAL GOAL: what specific quality question must this review answer for THIS task? (2) DONE: what evidence proves quality is sufficient? (3) NOT THE GOAL: what would a surface-level rubber-stamp look like? (4) INVARIANTS: what non-obvious constraint exists (side-effects on other modules, implicit AC)?
 3) **Review checks:**
@@ -187,7 +187,7 @@ Step 8: Update & Commit
 
 ## Review Quality Score
 
-**Context:** Quantitative review result helps ln-400 orchestrator make data-driven decisions and tracks review consistency.
+**Context:** Quantitative review result tracks review consistency and informs follow-up decisions.
 
 **Formula:** `Quality Score = 100 - (20 × BLOCKER_count) - (10 × CONCERN_count) - (3 × NIT_count)`
 

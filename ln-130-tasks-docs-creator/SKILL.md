@@ -377,7 +377,7 @@ docs/
     └── kanban_board.md               # Linear integration (optional, created manually or by other skills)
 ```
 
-**Note**: Kanban board updated by ln-301-task-creator, ln-302-task-replanner, ln-400-story-executor (Epic Grouping logic).
+**Note**: Kanban board updated by task execution skills and manual edits.
 
 ---
 

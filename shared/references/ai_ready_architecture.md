@@ -2,7 +2,7 @@
 
 Single source of truth for AI-architecture concepts, detection patterns, and thresholds.
 
-**Used by:** ln-624 (Rule 10), ln-643 (Rule 6), ln-642 (Phase 3.3), ln-644 (Phase 5 cascade extension), ln-640 (Flat Orchestration pattern), ln-511 (ARCH-AI-*), ln-401 (Step 4c), ln-402 (review bullets), ln-310 (Criterion #23).
+**Used by:** ln-624 (Rule 10), ln-643 (Rule 6), ln-642 (Phase 3.3), ln-644 (Phase 5 cascade extension), ln-640 (Flat Orchestration pattern), ln-511 (ARCH-AI-*), ln-401 (Step 4c), ln-402 (review bullets).
 
 **Source:** ["Sinks, Not Pipes: Software Architecture in the Age of AI"](https://ianbull.com/posts/software-architecture) — Ian Bull, 2026.
 

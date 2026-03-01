@@ -38,11 +38,11 @@ Standard workflow for loading templates from shared repository to target project
 
 | Template | Shared Location | Used By |
 |----------|-----------------|---------|
-| `story_template.md` | `shared/templates/` | ln-221, ln-310 |
-| `task_template_implementation.md` | `shared/templates/` | ln-301, ln-302 |
-| `refactoring_task_template.md` | `shared/templates/` | ln-301, ln-302 |
-| `test_task_template.md` | `shared/templates/` | ln-301, ln-302 |
-| `epic_template_universal.md` | `shared/templates/` | ln-210 |
+| `story_template.md` | `shared/templates/` | Reference |
+| `task_template_implementation.md` | `shared/templates/` | Reference |
+| `refactoring_task_template.md` | `shared/templates/` | Reference |
+| `test_task_template.md` | `shared/templates/` | Reference |
+| `epic_template_universal.md` | `shared/templates/` | Reference |
 
 ## Rationale
 

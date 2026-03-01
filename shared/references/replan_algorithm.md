@@ -144,14 +144,9 @@ ROLLBACK if any operation fails.
 
 | Level | Items | Match Criteria | Primary Reference |
 |-------|-------|----------------|-------------------|
-| **Epic** | 3-7 Epics | Business domain, Goal | ln-210-epic-coordinator |
-| **Story** | 5-10 Stories | Persona, Capability, AC | ln-222-story-replanner |
-| **Task** | 1-6 Tasks | Goal, Implementation approach | ln-302-task-replanner |
-
-For level-specific examples and scenarios, see:
-- `ln-210-epic-coordinator/references/replan_workflow.md`
-- `ln-222-story-replanner/references/replan_algorithm_stories.md`
-- `ln-302-task-replanner/references/replan_algorithm.md`
+| **Epic** | 3-7 Epics | Business domain, Goal |
+| **Story** | 5-10 Stories | Persona, Capability, AC |
+| **Task** | 1-6 Tasks | Goal, Implementation approach |
 
 ---
 **Version:** 1.1.0

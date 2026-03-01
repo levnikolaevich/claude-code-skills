@@ -13,7 +13,7 @@ Plan Mode active when:
 
 ### Workflow A: Preview-Only (Coordinators)
 
-For skills that delegate to workers (ln-300, ln-400, etc.):
+For skills that delegate to workers:
 
 ```
 Phases 1-N: Execute normally (discovery, analysis, planning)
@@ -33,12 +33,11 @@ IDEAL Plan for Story US001:
 | 2 | Service | impl | 8h | ln-401 |
 
 Mode: CREATE (0 existing)
-Would invoke: ln-301-task-creator
 ```
 
 ### Workflow B: Interactive (Validators)
 
-For skills that modify and need approval (ln-310):
+For skills that validate and may modify:
 
 ```
 Phases 1-N: Full analysis (audit, scoring)
@@ -79,60 +78,9 @@ Before starting, add phases showing Plan Mode awareness:
 
 | Workflow | Skills |
 |----------|--------|
-| **A (Preview)** | ln-200, ln-210, ln-220, ln-300, ln-400, ln-401, ln-402 |
-| **B (Interactive)** | ln-310-story-validator |
+| **A (Preview)** | ln-401, ln-402 |
 
 ## Preview Format Standards
-
-### Story Preview (ln-221)
-```
-STORY CREATION PREVIEW for Epic 7: OAuth Authentication
-
-Will create 5 Stories:
-
-| # | ID | Title | Persona | Value | AC | Hours | Tests |
-|---|-----|-------|---------|-------|----|----|------|
-| 1 | US004 | Register OAuth client | Developer | API access | 4 | 12h | 18 |
-| 2 | US005 | Request access token | API client | Authenticate | 5 | 18h | 24 |
-
-Total: 5 Stories, 62h, 90 tests
-Standards Research: OAuth 2.0 (RFC 6749), PKCE (RFC 7636)
-
-Type "confirm" to create.
-```
-
-### Task Preview (ln-301)
-```
-TASK CREATION PREVIEW for Story US001
-
-Will create 4 Tasks:
-
-| # | ID | Title | Approach | Hours | Components |
-|---|-----|-------|----------|-------|------------|
-| 1 | T001 | Create Users table | Migration + Prisma | 3h | db/migrations |
-| 2 | T002 | Implement UserService | CRUD + validation | 5h | services/ |
-| 3 | T003 | Create API endpoints | Express routes | 4h | routes/ |
-| 4 | T004 | Add validation | Zod schemas | 2h | schemas/ |
-
-Total: 4 Tasks, 14h
-Order: Foundation-First (DB → Service → API → Validation)
-
-Type "confirm" to create.
-```
-
-### Epic Preview (ln-210)
-```
-EPIC BATCH PREVIEW (6 Epics)
-
-| # | Index | Title | Scope In | Success Criteria |
-|---|-------|-------|----------|------------------|
-| 1 | Epic 0 | Infrastructure | CI/CD, Logging | 99.9% uptime |
-| 2 | Epic 1 | User Management | Registration, Auth | <2s response |
-
-Total: 6 Epics (1 Infrastructure + 5 Business)
-
-Type "confirm" to create.
-```
 
 ### Review Preview (ln-402)
 ```
@@ -156,22 +104,6 @@ Files to review:
 | 10 | Side-effects | Pre-existing bugs in touched files |
 
 Expected output: Done/To Rework + Issues list
-```
-
-### Replan Preview (ln-222, ln-302)
-```
-REPLAN PREVIEW for [Entity]
-
-| Operation | Item | Change |
-|-----------|------|--------|
-| KEEP | US002 | (unchanged) |
-| UPDATE | US003 | +AC3, Technical Notes |
-| OBSOLETE | US004 | Feature removed |
-| CREATE | US006 | New requirement |
-
-⚠️ WARNINGS: US005 is In Progress - will KEEP
-
-Type "confirm" to execute.
 ```
 
 ## Confirmation Pattern

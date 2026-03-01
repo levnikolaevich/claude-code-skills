@@ -73,10 +73,9 @@ docs/tasks/epics/
 
 | Skill | Uses For |
 |-------|----------|
-| ln-300-task-coordinator | Check existing tasks, detect mode |
-| ln-301-task-creator | Create tasks in correct storage |
-| ln-302-task-replanner | Load/update/cancel tasks |
-| ln-400-story-executor | Load task metadata |
+| ln-401-task-executor | Load task, update status |
+| ln-402-task-reviewer | Load task for review |
+| ln-404-test-executor | Load test task, update status |
 
 ## Usage
 

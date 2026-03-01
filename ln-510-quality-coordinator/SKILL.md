@@ -1,13 +1,13 @@
 ---
 name: ln-510-quality-coordinator
-description: "Coordinates code quality checks: ln-511 code quality, ln-512 tech debt cleanup, ln-513 agent review, ln-514 regression. Sequential pipeline, returns results to ln-500."
+description: "Coordinates code quality checks: ln-511 code quality, ln-512 tech debt cleanup, ln-513 agent review, ln-514 regression. Sequential pipeline, produces standalone quality verdict."
 ---
 
 > **Paths:** File paths (`shared/`, `references/`, `../ln-*`) are relative to skills repo root. If not found at CWD, locate this SKILL.md directory and go up one level for repo root.
 
 # Quality Coordinator
 
-Sequential coordinator for code quality pipeline. Invokes 4 workers in index order (511 -> 512 -> 513 -> 514) and returns aggregated results to ln-500.
+Sequential coordinator for code quality pipeline. Invokes 4 workers in index order (511 -> 512 -> 513 -> 514) and produces a standalone quality verdict.
 
 ## Purpose & Scope
 - Invoke ln-511-code-quality-checker (metrics, MCP Ref, static analysis)
@@ -16,12 +16,11 @@ Sequential coordinator for code quality pipeline. Invokes 4 workers in index ord
 - Run Criteria Validation (Story dependencies, AC-Task Coverage, DB Creation Principle)
 - Run linters from tech_stack.md
 - Invoke ln-514-regression-checker (test suite after all changes)
-- Return aggregated quality results to ln-500-story-quality-gate
-- **No verdict determination** — ln-500 decides final Gate verdict
+- Produce standalone quality verdict (PASS / CONCERNS / FAIL)
 
 ## When to Use
-- **Invoked by ln-500-story-quality-gate** Phase 2
-- All implementation tasks in Story status = Done
+- Invoke directly when all implementation tasks in a Story are Done
+- Use as a standalone quality gate for completed work
 
 ## Workflow
 
@@ -32,7 +31,7 @@ Sequential coordinator for code quality pipeline. Invokes 4 workers in index ord
 
 **Fast-track mode:** When invoked with `--fast-track` flag (readiness 10/10), run Phase 2 with `--skip-mcp-ref` (metrics + static only, no MCP Ref), skip Phase 3 (ln-512), Phase 4 (ln-513). Run Phase 5 (criteria), Phase 6 (linters), Phase 7 (ln-514).
 
-**Input:** Story ID from ln-500-story-quality-gate
+**Input:** Story ID from user
 
 ### Phase 2: Code Quality (delegate to ln-511 — ALWAYS runs)
 
@@ -44,7 +43,7 @@ Sequential coordinator for code quality pipeline. Invokes 4 workers in index ord
    - Full: ln-511 runs code metrics, MCP Ref validation (OPT/BP/PERF), static analysis
    - Fast-track: ln-511 runs code metrics + static analysis only (skips OPT-, BP-, PERF- MCP Ref checks)
    - Returns verdict (PASS/CONCERNS/ISSUES_FOUND) + code_quality_score + issues list
-2) **If ln-511 returns ISSUES_FOUND** -> aggregate issues, continue (ln-500 decides action)
+2) **If ln-511 returns ISSUES_FOUND** -> aggregate issues, continue (verdict determined in Phase 8)
 
 **Invocation:**
 ```
@@ -116,12 +115,17 @@ Skill(skill: "ln-513-agent-reviewer", args: "{storyId}")
 Skill(skill: "ln-514-regression-checker", args: "{storyId}")
 ```
 
-### Phase 8: Return Results
+### Phase 8: Verdict & Report
 
-Return aggregated results to ln-500:
+Determine standalone verdict from aggregated results:
+
+**Verdict rules:**
+- **PASS**: All phases passed, code_quality_score >= 80, no high-severity issues
+- **CONCERNS**: code_quality_score 60-79, or medium-severity issues present
+- **FAIL**: Any regression failure, code_quality_score < 60, or high-severity blockers
 
 ```yaml
-quality_check: PASS | CONCERNS | ISSUES_FOUND
+verdict: PASS | CONCERNS | FAIL
 code_quality_score: {0-100}
 agent_review: CODE_ACCEPTABLE | SUGGESTIONS | SKIPPED
 criteria_validation: PASS | FAIL
@@ -143,7 +147,7 @@ issues:
 - Criteria Validation (Story deps, AC coverage, DB schema) (pending)
 - Run linters from tech_stack.md (pending)
 - Invoke ln-514-regression-checker (pending)
-- Return results to ln-500 (pending)
+- Determine verdict (pending)
 ```
 
 ## Worker Invocation (MANDATORY)
@@ -162,13 +166,11 @@ issues:
 - Running agent reviews directly instead of invoking ln-513
 - Auto-fixing code directly instead of invoking ln-512
 - Marking steps as completed without invoking the actual skill
-- Determining final verdict (that's ln-500's responsibility)
 
 ## Critical Rules
-- Return all results to ln-500; do NOT determine verdict
+- Determine standalone verdict (PASS / CONCERNS / FAIL) based on aggregated results
 - Single source of truth: rely on Linear metadata for tasks
 - Language preservation in comments (EN/RU)
-- Do not create tasks or change statuses; ln-500 decides next actions
 
 ## Definition of Done
 - ln-511 invoked (ALWAYS — full or `--skip-mcp-ref` in fast-track), code quality score returned
@@ -177,14 +179,12 @@ issues:
 - Criteria Validation completed (3 checks)
 - Linters executed
 - ln-514 invoked, regression results returned
-- Aggregated results returned to ln-500
+- Standalone verdict determined (PASS / CONCERNS / FAIL)
 
 ## Reference Files
 - Criteria Validation: `references/criteria_validation.md`
 - Gate levels: `references/gate_levels.md`
 - Workers: `../ln-511-code-quality-checker/SKILL.md`, `../ln-512-tech-debt-cleaner/SKILL.md`, `../ln-513-agent-reviewer/SKILL.md`, `../ln-514-regression-checker/SKILL.md`
-- Caller: `../ln-500-story-quality-gate/SKILL.md`
-- Test planning (separate coordinator): `../ln-520-test-planner/SKILL.md`
 - Tech stack/linters: `docs/project/tech_stack.md`
 
 ---

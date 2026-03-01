@@ -2,11 +2,9 @@
 """
 Story Validator Hook (UserPromptSubmit)
 
-Validates Story structure before execution (ln-400, ln-401).
+Validates Story structure before execution (ln-401, ln-404).
 Exit code 2 = hard block (invalid Story)
 Exit code 0 = allow (valid or not a Story execution request)
-
-Validation criteria from ln-310-story-validator skill.
 """
 
 import json
@@ -17,16 +15,14 @@ from pathlib import Path
 
 # Patterns that trigger Story validation
 TRIGGER_PATTERNS = [
-    r'\bln-400\b',
     r'\bln-401\b',
-    r'\bln-403\b',
     r'\bln-404\b',
     r'(?i)execute\s+story',
     r'(?i)run\s+story',
     r'(?i)start\s+story',
 ]
 
-# Required Story sections (from ln-310)
+# Required Story sections
 REQUIRED_SECTIONS = [
     'Overview',
     'Context',
@@ -212,7 +208,7 @@ def main():
             print(f"  {i}. {violation}", file=sys.stderr)
 
         print("\n" + "-" * 60, file=sys.stderr)
-        print("Run ln-310-story-validator to auto-fix these issues.", file=sys.stderr)
+        print("Fix these Story structure issues before proceeding.", file=sys.stderr)
         print("=" * 60, file=sys.stderr)
 
         sys.exit(2)  # Hard block

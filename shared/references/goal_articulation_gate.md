@@ -39,7 +39,7 @@ If your REAL GOAL statement does not name the **primary subject** (the thing bei
 ## When to Use
 
 - **Every start:** Use this gate before execution, review, analysis, or decomposition
-- **Rework tasks (ln-403):** Combine with 5 Whys (`problem_solving.md`) to ensure root cause is articulated alongside the rework goal
+- **Rework tasks:** Combine with 5 Whys (`problem_solving.md`) to ensure root cause is articulated alongside the rework goal
 
 ## Usage in SKILL.md
 

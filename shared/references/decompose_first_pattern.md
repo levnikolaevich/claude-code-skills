@@ -44,11 +44,11 @@ Phase N+2: DETECT MODE
 
 ## Level-Specific Counts
 
-| Level | IDEAL Count | Coordinator |
-|-------|-------------|-------------|
-| Epic | 3-7 Epics | ln-210-epic-coordinator |
-| Story | 5-10 Stories per Epic | ln-220-story-coordinator |
-| Task | 1-6 Tasks per Story | ln-300-task-coordinator |
+| Level | IDEAL Count |
+|-------|-------------|
+| Epic | 3-7 Epics |
+| Story | 5-10 Stories per Epic |
+| Task | 1-6 Tasks per Story |
 
 ## Usage
 

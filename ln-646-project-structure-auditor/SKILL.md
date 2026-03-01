@@ -20,8 +20,8 @@ L3 Worker that audits the physical directory structure of a project against fram
 
 **Out of Scope** (owned by other workers):
 - Code-level layer boundary violations (import analysis) -> ln-642-layer-boundary-auditor
-- Platform artifact cleanup (removal) -> ln-724-artifact-cleaner
-- Structure migration (creation/movement of directories) -> ln-720-structure-migrator
+- Platform artifact cleanup (removal) -> manual cleanup
+- Structure migration (creation/movement of directories) -> manual migration
 - Dependency vulnerability scanning -> ln-625-dependencies-auditor
 
 ## Input (from ln-640)
@@ -40,7 +40,7 @@ L3 Worker that audits the physical directory structure of a project against fram
 
 ### Phase 1: Detect Tech Stack
 
-**MANDATORY READ:** Load `../ln-700-project-bootstrap/references/stack_detection.md` -- use Detection Algorithm, Frontend Detection, Backend Detection, Structure Detection.
+**Stack detection:** Use the Detection Algorithm below (check package.json, *.csproj, pyproject.toml, go.mod, Cargo.toml, etc.).
 
 ```
 scan_root = scan_path IF domain_mode == "domain-aware" ELSE codebase_root
@@ -67,7 +67,7 @@ ELSE:
 
 ### Phase 2: File Hygiene Audit
 
-**MANDATORY READ:** Load `references/structure_rules.md` -- use "File Hygiene Rules" section. Also reference: `../ln-724-artifact-cleaner/references/platform_artifacts.md` (Platform Detection Matrix, Generic Prototype Artifacts).
+**MANDATORY READ:** Load `references/structure_rules.md` -- use "File Hygiene Rules" section.
 
 ```
 # Check 2.1: Build artifacts tracked in git
@@ -108,7 +108,7 @@ FOR EACH file IN Glob("{scan_root}/**/*.{zip,tar,gz,rar,exe,dll,so,dylib,jar,war
 
 ### Phase 3: Ignore File Quality
 
-**MANDATORY READ:** Load `references/structure_rules.md` -- use "Ignore File Rules" section. Also reference: `../ln-733-env-configurator/references/gitignore_secrets.template` (secrets baseline), `../ln-731-docker-generator/references/dockerignore.template` (dockerignore baseline).
+**MANDATORY READ:** Load `references/structure_rules.md` -- use "Ignore File Rules" section.
 
 ```
 # Check 3.1: .gitignore exists
@@ -357,8 +357,8 @@ Severity mapping:
 - **No false positives on conventions:** Apply framework rules ONLY for detected stack
 - **Security-first:** .env files committed = CRITICAL, missing secrets in .gitignore = HIGH
 - **Complement, not overlap:** Do NOT check import-level layer violations (owned by ln-642)
-- **Report only, never modify:** Never move/delete files (owned by ln-720/ln-724)
-- **Reuse platform detection:** Reference ln-724 patterns for platform remnants
+- **Report only, never modify:** Never move/delete files (audit only)
+- **Detect platform remnants:** Check for common platform artifacts (IDE files, build outputs, etc.)
 - **Co-location awareness:** Only flag missing co-location if project already uses the pattern (>50%)
 - **Evidence always:** Include file paths for every finding
 
@@ -380,10 +380,7 @@ Severity mapping:
 - **Worker report template:** `shared/templates/audit_worker_report_template.md`
 - **Scoring algorithm:** `shared/references/audit_scoring.md`
 - **Structure rules:** `references/structure_rules.md`
-- **Stack detection:** `../ln-700-project-bootstrap/references/stack_detection.md`
-- **Platform artifacts:** `../ln-724-artifact-cleaner/references/platform_artifacts.md`
-- **Gitignore secrets:** `../ln-733-env-configurator/references/gitignore_secrets.template`
-- **Dockerignore baseline:** `../ln-731-docker-generator/references/dockerignore.template`
+- **Structure rules:** `references/structure_rules.md`
 
 ---
 **Version:** 1.0.0

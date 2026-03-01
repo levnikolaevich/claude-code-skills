@@ -1,20 +1,20 @@
 {
-  "name": "levnikolaevich-skills-marketplace",
+  "name": "zoned-labs-dev-skills",
 
   "owner": {
-    "name": "Lev Nikolaevich",
-    "email": "levnikolaevich.com@gmail.com",
-    "url": "https://github.com/levnikolaevich"
+    "name": "Zoned Labs",
+    "url": "https://github.com/Zoned-Labs"
   },
 
   "metadata": {
-    "description": "2 plugins, 106 skills: Agile development workflow (Documentation, Planning, Execution, Quality, Audit, Orchestration) + Project Bootstrap (scaffolding, Docker, CI/CD, quality tooling).",
-    "version": "3.1.0"
+    "description": "54 skills: Documentation pipeline, execution workers, quality checks, and comprehensive audit suite. Trimmed from levnikolaevich/claude-code-skills for small-team use.",
+    "version": "4.0.0",
+    "upstream": "https://github.com/levnikolaevich/claude-code-skills"
   },
   "plugins": [
     {
-      "name": "full-development-workflow-skills",
-      "description": "73 Agile workflow skills: Documentation, Planning, Execution, Quality, Audit, Orchestration. Integrates with Linear, Context7, Ref MCP servers.",
+      "name": "zoned-labs-dev-skills",
+      "description": "54 development workflow skills: Utility/Research, Documentation pipeline, Execution workers, Quality checks, and Audit suite.",
       "source": "./",
       "strict": false,
       "skills": [
@@ -34,33 +34,14 @@
         "./ln-130-tasks-docs-creator",
         "./ln-140-test-docs-creator",
         "./ln-150-presentation-creator",
-        "./ln-200-scope-decomposer",
-        "./ln-201-opportunity-discoverer",
-        "./ln-210-epic-coordinator",
-        "./ln-220-story-coordinator",
-        "./ln-221-story-creator",
-        "./ln-222-story-replanner",
-        "./ln-230-story-prioritizer",
-        "./ln-300-task-coordinator",
-        "./ln-301-task-creator",
-        "./ln-302-task-replanner",
-        "./ln-310-story-validator",
-        "./ln-311-agent-reviewer",
-        "./ln-400-story-executor",
         "./ln-401-task-executor",
         "./ln-402-task-reviewer",
-        "./ln-403-task-rework",
         "./ln-404-test-executor",
-        "./ln-500-story-quality-gate",
         "./ln-510-quality-coordinator",
         "./ln-511-code-quality-checker",
         "./ln-512-tech-debt-cleaner",
         "./ln-513-agent-reviewer",
         "./ln-514-regression-checker",
-        "./ln-520-test-planner",
-        "./ln-521-test-researcher",
-        "./ln-522-manual-tester",
-        "./ln-523-auto-test-planner",
         "./ln-600-docs-auditor",
         "./ln-601-semantic-content-auditor",
         "./ln-610-code-comments-auditor",
@@ -90,48 +71,7 @@
         "./ln-650-persistence-performance-auditor",
         "./ln-651-query-efficiency-auditor",
         "./ln-652-transaction-correctness-auditor",
-        "./ln-653-runtime-performance-auditor",
-        "./ln-1000-pipeline-orchestrator"
-      ]
-    },
-    {
-      "name": "claude-code-bootstrap",
-      "description": "32 project bootstrap skills: CREATE new or TRANSFORM existing projects to production-ready Clean Architecture with Docker, CI/CD, linters, security scanning, verification. Works without Linear.",
-      "source": "./",
-      "strict": false,
-      "skills": [
-        "./ln-700-project-bootstrap",
-        "./ln-710-dependency-upgrader",
-        "./ln-711-npm-upgrader",
-        "./ln-712-nuget-upgrader",
-        "./ln-713-pip-upgrader",
-        "./ln-720-structure-migrator",
-        "./ln-721-frontend-restructure",
-        "./ln-722-backend-generator",
-        "./ln-723-seed-data-generator",
-        "./ln-724-artifact-cleaner",
-        "./ln-730-devops-setup",
-        "./ln-731-docker-generator",
-        "./ln-732-cicd-generator",
-        "./ln-733-env-configurator",
-        "./ln-740-quality-setup",
-        "./ln-741-linter-configurator",
-        "./ln-742-precommit-setup",
-        "./ln-743-test-infrastructure",
-        "./ln-750-commands-generator",
-        "./ln-751-command-templates",
-        "./ln-760-security-setup",
-        "./ln-761-secret-scanner",
-        "./ln-770-crosscutting-setup",
-        "./ln-771-logging-configurator",
-        "./ln-772-error-handler-setup",
-        "./ln-773-cors-configurator",
-        "./ln-774-healthcheck-setup",
-        "./ln-775-api-docs-generator",
-        "./ln-780-bootstrap-verifier",
-        "./ln-781-build-verifier",
-        "./ln-782-test-runner",
-        "./ln-783-container-launcher"
+        "./ln-653-runtime-performance-auditor"
       ]
     }
   ]

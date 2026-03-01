@@ -8,7 +8,7 @@
 |-------|---------------|---------|--------|
 | **PASS** | 90-100 | All checks pass, no issues | Story → Done |
 | **CONCERNS** | 70-89 | Minor issues, acceptable risk | Story → Done with concerns documented |
-| **FAIL** | <70 | Blocking issues found | Create fix tasks, return to ln-400 |
+| **FAIL** | <70 | Blocking issues found | Create fix tasks, rework required |
 | **WAIVED** | Any | Issues acknowledged by user | Story → Done with waiver reason |
 
 ## Quality Score Calculation

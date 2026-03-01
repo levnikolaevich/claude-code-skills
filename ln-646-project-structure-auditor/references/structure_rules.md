@@ -68,7 +68,7 @@
 
 ### Secrets Protection (always required regardless of stack)
 
-**Reference:** `../ln-733-env-configurator/references/gitignore_secrets.template`
+**Check for** these common secret patterns in .gitignore:
 
 Minimal required patterns:
 
@@ -83,7 +83,7 @@ Minimal required patterns:
 
 ### .dockerignore Baseline (if Dockerfile exists)
 
-**Reference:** `../ln-731-docker-generator/references/dockerignore.template`
+**Check for** these common .dockerignore entries:
 
 Required entries: `node_modules`, `.git`, `.env`, `*.log`, `dist`, `tests`, `docs`
 

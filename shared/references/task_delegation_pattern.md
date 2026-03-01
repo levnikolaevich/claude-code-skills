@@ -197,7 +197,7 @@ Workers for this skill:
 
 ## Execution Workers (Non-Audit)
 
-For ln-401, ln-403, ln-404 execution workers:
+For ln-401, ln-404 execution workers:
 
 **Input:** Task ID only (worker loads full context independently)
 

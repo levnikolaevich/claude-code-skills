@@ -1,12 +1,8 @@
 # Creation Quality Checklist
 
-Prevention checklist for content creators (ln-220/221, ln-300/301). Maps to ln-310 validation criteria — following these rules prevents penalty points at validation stage.
-
-For full validation rules and auto-fix logic, see `ln-310-story-validator/references/` (7 validation files).
+Prevention checklist for content creators. Following these rules ensures quality at creation time.
 
 ## Story Creation Checklist
-
-For ln-220-story-coordinator and ln-221-story-creator.
 
 | # | Criterion | Penalty | Rule |
 |---|-----------|---------|------|
@@ -27,7 +23,7 @@ For ln-220-story-coordinator and ln-221-story-creator.
 
 ## Task Creation Checklist
 
-For ln-300-task-coordinator and ln-301-task-creator.
+For task creation.
 
 | # | Criterion | Penalty | Rule |
 |---|-----------|---------|------|
@@ -43,7 +39,7 @@ For ln-300-task-coordinator and ln-301-task-creator.
 
 ## Validation-Only Criteria
 
-These 4 criteria are handled by ln-310 during validation, NOT by creators:
+These 4 criteria are handled during validation, NOT by creators:
 
 | # | Criterion | Why validation-only |
 |---|-----------|---------------------|

@@ -197,7 +197,7 @@ When updating documentation:
 | **Standards** | [documentation_standards.md](documentation_standards.md) | ln-111-project-docs-creator, ln-121-structure-validator |
 | **Project** | [requirements.md](project/requirements.md), [architecture.md](project/architecture.md), [technical_specification.md](project/technical_specification.md) | ln-111-project-docs-creator, ln-122-content-updater |
 | **Reference** | [ADRs](reference/adrs/), [Guides](reference/guides/), [Manuals](reference/manuals/) | ln-002-best-practices-researcher |
-| **Tasks** | [kanban_board.md](tasks/kanban_board.md), [README.md](tasks/README.md) | ln-210-epic-coordinator, ln-220-story-coordinator, ln-300-task-coordinator |
+| **Tasks** | [kanban_board.md](tasks/kanban_board.md), [README.md](tasks/README.md) | ln-130-tasks-docs-creator |
 
 ---
 

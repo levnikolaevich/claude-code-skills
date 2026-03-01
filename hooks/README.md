@@ -79,7 +79,7 @@ Copy hooks configuration to `~/.claude/settings.json` (global) or `.claude/setti
 
 ### 2. Story Validator (UserPromptSubmit)
 
-**Triggers on:** Prompts containing `ln-400`, `ln-401`, `execute story`
+**Triggers on:** Prompts containing `ln-401`, `ln-404`, `execute story`
 
 **Validates:**
 - 8 required sections (Overview, Context, Requirements, etc.)

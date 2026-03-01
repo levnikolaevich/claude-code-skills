@@ -1,17 +1,16 @@
 # CLAUDE.md
 
-<!-- SCOPE: Repository rules and AI agent instructions ONLY. ~140 lines index. Detailed guides in docs/. -->
-<!-- DO NOT add here: public documentation -> README.md, architecture patterns -> docs/SKILL_ARCHITECTURE_GUIDE.md, skill workflows -> individual SKILL.md files -->
+<!-- SCOPE: Repository rules and AI agent instructions ONLY. -->
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Repository
 
-This is a collection of skills for Claude Code, integrated with Linear for Agile-style task management.
+Zoned Labs fork of [levnikolaevich/claude-code-skills](https://github.com/levnikolaevich/claude-code-skills), trimmed from 106 to 54 skills for a small team. Enterprise planning/decomposition skills removed; docs pipeline, execution workers, quality checks, and full audit suite retained.
 
 > [!WARNING]
 
-> Before starting any work with skills in this repository, **ALWAYS read** [docs/SKILL_ARCHITECTURE_GUIDE.md](docs/SKILL_ARCHITECTURE_GUIDE.md) for industry best practices (2024-2026): Orchestrator-Worker Pattern, Single Responsibility Principle, Token Efficiency, Subagents vs Agent Teams, Task Decomposition guidelines, and Red Flags to avoid. For Agent Teams runtime patterns (hooks, heartbeat, crash recovery, Windows): [docs/AGENT_TEAMS_PLATFORM_GUIDE.md](docs/AGENT_TEAMS_PLATFORM_GUIDE.md).
+> Before starting any work with skills in this repository, **ALWAYS read** [docs/SKILL_ARCHITECTURE_GUIDE.md](docs/SKILL_ARCHITECTURE_GUIDE.md) for industry best practices: Orchestrator-Worker Pattern, Single Responsibility Principle, Token Efficiency, and Red Flags to avoid.
 
 ## Documentation Levels
 
@@ -33,29 +32,27 @@ All skills have `diagram.html` (embedded Mermaid) + `shared/css/diagram.css`. Se
 
 ## Available Skills
 
-**106 skills** in 9 categories (0XX Shared/Research, 1XX Documentation, 2XX Planning, 3XX Task Management, 4XX Execution, 5XX Quality, 6XX Audit, 7XX Bootstrap, 10XX Orchestration). See [README.md](README.md#-features) for complete list.
+**54 skills** in 5 categories:
 
-**Key workflow:** ln-700-project-bootstrap -> ln-100-documents-pipeline -> ln-201-opportunity-discoverer (optional) -> ln-200-scope-decomposer -> **ln-1000-pipeline-orchestrator** (or manually: ln-400-story-executor -> ln-500-story-quality-gate)
+| Category | Skills | Examples |
+|----------|--------|----------|
+| **0XX Shared/Research** | 5 | ln-001, ln-002, ln-003, ln-004, ln-005 |
+| **1XX Documentation** | 13 | ln-100 through ln-150, ln-600, ln-601, ln-610 |
+| **4XX Execution** | 3 | ln-401, ln-402, ln-404 |
+| **5XX Quality** | 5 | ln-510 through ln-514 |
+| **6XX Audit** | 28 | ln-620 through ln-653 |
+
+**Key workflow:** ln-100-documents-pipeline -> create tasks in Linear -> ln-401-task-executor -> ln-402-task-reviewer -> ln-510-quality-coordinator
 
 ## Key Concepts
 
 ### Configuration Auto-Discovery
 All skills automatically find settings from `docs/tasks/kanban_board.md`: Team ID, Next Epic Number, Next Story Number. Create via ln-130-tasks-docs-creator or ln-100-documents-pipeline. If missing, skills request data from user.
 
-### Task Hierarchy, Kanban Board, Development Principles, Task Templates, DAG Support
-See [README.md](README.md#-key-concepts) for detailed structure, principles, and template references.
-
-## Decomposition Workflow
-
-Four levels: Scope -> Epics (ln-210) -> Stories (ln-220) -> RICE Prioritization (ln-230) -> Tasks (ln-300). See [README.md](README.md#-key-concepts) for complete flow.
-
-## Skill Workflows
-
-All 106 skills documented in [README.md](README.md#-features) with workflows in each SKILL.md. Follow Orchestrator-Worker Pattern per [SKILL_ARCHITECTURE_GUIDE.md](docs/SKILL_ARCHITECTURE_GUIDE.md).
+### Task Hierarchy, Kanban Board, Development Principles
+See [README.md](README.md) for detailed structure and references.
 
 ## Important Details
-
-**Structural Validation:** ln-310-story-validator auto-fixes Stories/Tasks against template compliance.
 
 **Testing:** Risk-Based Testing (2-5 E2E, 3-8 Integration, 5-15 Unit, Priority >=15). See [risk_based_testing_guide.md](shared/references/risk_based_testing_guide.md).
 
@@ -63,19 +60,17 @@ All 106 skills documented in [README.md](README.md#-features) with workflows in 
 
 **Documentation Language:** All docs in English except Stories/Tasks in Linear (can be English/Russian).
 
-**Sequential Numbering:** Phases/Sections/Steps: 1, 2, 3, 4 (NOT 1, 1.5, 2). Exceptions: Phase 4a (CREATE), 4b (REPLAN).
+**Sequential Numbering:** Phases/Sections/Steps: 1, 2, 3, 4 (NOT 1, 1.5, 2).
 
-**File References in Skills:** MUST use `**MANDATORY READ:** Load {file}` pattern. Passive references (`See`, `Per`, `Follows`) are NOT followed by agents. Group multiple references into ONE `**MANDATORY READ:**` at section start.
+**File References in Skills:** MUST use `**MANDATORY READ:** Load {file}` pattern. Passive references (`See`, `Per`, `Follows`) are NOT followed by agents.
 
-**Path Resolution:** File paths in SKILL.md (`shared/`, `references/`, `../ln-*`) are relative to skills repo root, NOT target project. Every SKILL.md with file references includes a `> **Paths:**` note after frontmatter.
+**Path Resolution:** File paths in SKILL.md (`shared/`, `references/`, `../ln-*`) are relative to skills repo root, NOT target project.
 
 ## Working with Skill Files
 
 **SKILL.md Metadata:** YAML frontmatter with `name` and `description`. If `description` contains colons (`:`), wrap in double quotes.
 
 **Reference Files:** Stored in `{skill}/references/` — templates, integration guides, checklists, structure templates.
-
-**Questions Files:** Format for validation questions in skills. See [docs/QUESTIONS_FORMAT.md](docs/QUESTIONS_FORMAT.md).
 
 ## Versioning
 
@@ -91,9 +86,7 @@ All skills have versions at end of file: `**Version:** X.Y.Z` + `**Last Updated:
 
 **When user explicitly requests version update:**
 1. Update skill version in `{skill}/SKILL.md`
-2. Update version in CLAUDE.md "Available Skills" section
-3. Update version in README.md feature tables
-4. Update CHANGELOG.md — one summary paragraph per date (`## YYYY-MM-DD`), no duplicate dates
-5. Update Last Updated date below
+2. Update CHANGELOG.md — one summary paragraph per date (`## YYYY-MM-DD`), no duplicate dates
+3. Update Last Updated date below
 
-**Last Updated:** 2026-02-15
+**Last Updated:** 2026-03-01

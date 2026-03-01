@@ -12,6 +12,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## 2026-03-01
+
+**Zoned Labs Fork: Trimmed from 106 to 54 skills.** Removed 52 enterprise skills: Planning (ln-200 through ln-230), Task Management (ln-300 through ln-311), Orchestrators (ln-400, ln-403, ln-500, ln-520-523, ln-1000), and entire Bootstrap plugin (ln-700 through ln-783). Retained: Utility/Research (5), Docs Pipeline (13), Execution Workers (3), Quality Workers (5), Audit Suite (28). Consolidated to single plugin (zoned-labs-dev-skills). Updated all cross-references in kept skills. ln-510-quality-coordinator now produces standalone verdict (was delegating to removed ln-500). ln-401/ln-402/ln-404 accept task IDs from user directly (was from removed ln-400 orchestrator).
+
+---
+
 ## 2026-02-13
 
 New skill: ln-1000-pipeline-orchestrator (L0 Meta-Orchestrator). Reads kanban board, user selects ONE Story, drives it through 4-stage pipeline (ln-300 task planning -> ln-310 validation -> ln-400 execution -> ln-500 quality gate) via Claude Code Agent Teams. Single Story per run, user-confirmed merge to develop on quality gate PASS. Includes 6 reference files: message_protocol.md (formal lead<->worker message contract with regex parsing), worker_health_contract.md (3-step crash detection + respawn), pipeline_states.md (state machine with guards), worker_prompts.md (4 stage templates), kanban_parser.md (task presence detection), and 4 Mermaid diagrams. New 10XX Orchestration category. Total skills: 100 -> 101.

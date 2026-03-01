@@ -1,7 +1,7 @@
 # Risk-Based Testing Guide
 
 <!-- SCOPE: Risk-Based Testing philosophy and limits ONLY. Contains prioritization rules, test counts (10-28 per Story), Kent Beck principle. -->
-<!-- DO NOT add here: Examples → risk_based_testing_examples.md, test planning logic → ln-523-auto-test-planner SKILL.md -->
+<!-- DO NOT add here: Examples → risk_based_testing_examples.md -->
 
 ## Purpose
 

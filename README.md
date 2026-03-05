@@ -480,6 +480,12 @@ Yes — create symlinks/junctions to the plugin directory, or use `ln-004-agent-
 | **Issues** | [GitHub Issues](https://github.com/levnikolaevich/claude-code-skills/issues) |
 | **Contributing** | [CONTRIBUTING.md](CONTRIBUTING.md) |
 
+## Related Projects
+
+| Project | Description |
+|---------|-------------|
+| [**Product Manager Skills**](https://github.com/Digidai/product-manager-skills) | Senior PM agent with 6 knowledge domains, 12 templates, 30+ frameworks — discovery, strategy, delivery, SaaS metrics, PM career coaching, AI product craft |
+
 ## Research & Influences
 
 Papers, docs, and methodologies studied and implemented in the skill architecture.

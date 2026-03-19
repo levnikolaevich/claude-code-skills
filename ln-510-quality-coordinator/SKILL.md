@@ -97,7 +97,7 @@ Skill(skill: "ln-512-tech-debt-cleaner", args: "{storyId}")
 
 4a) **Health Check** (per shared workflow "Step: Health Check"):
     - Read `docs/environment_state.json` → exclude agents with `disabled: true`
-    - Run `python shared/agents/agent_runner.py --health-check` for remaining agents
+    - Run `node shared/agents/agent_runner.mjs --health-check` for remaining agents
     - If 0 agents → agent review SKIPPED, go to Phase 5
 4b) **Get references:** `get_issue(storyId)` + `list_issues(parent=storyId, status=Done)` (exclude test tasks)
 4c) **Build prompt:** Assemble from `shared/agents/prompt_templates/review_base.md` + `modes/code.md` (per shared workflow "Step: Build Prompt"), replace `{story_ref}`, `{task_refs}`. Save to `.agent-review/{identifier}_codereview_prompt.md`

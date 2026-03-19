@@ -46,7 +46,7 @@ PostToolUse:Bash hook. On exit_code != 0: save full stderr+stdout to `logs/error
 PreToolUse:Bash hook. `systemMessage`-only (no blocking, no modification). Pattern-matches Bash commands to recommend relevant skills. Example: `npm test` → "For test analysis, consider ln-513/ln-514". Script: `hooks/skill-suggest.sh` (~40 lines).
 
 **Pattern 13 (Hook Health Check):**
-Integrated into ln-005 environment scanner. Validates: JSON syntax of hooks.json, script file existence, dependency availability (python3, jq). See `shared/references/hook_health_check.md`.
+Integrated into ln-005 environment scanner. Validates: JSON syntax of hooks.json, script file existence, dependency availability (node). See `shared/references/hook_health_check.md`.
 
 ## 4. Skills Modernization
 

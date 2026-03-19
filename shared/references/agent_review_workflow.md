@@ -38,7 +38,7 @@ IF file not exists: proceed with all agents (no exclusions)
 
 **2. Probe remaining agents:**
 ```
-python shared/agents/agent_runner.py --health-check
+node shared/agents/agent_runner.mjs --health-check
 ```
 
 - If 0 agents available (after disabled exclusions) -> return `{verdict: "SKIPPED", reason: "no agents available"}`
@@ -89,12 +89,12 @@ Assemble the review prompt from base template + mode-specific content:
 a) Launch BOTH agents as background Bash tasks (`run_in_background=true`):
 
 ```
-python shared/agents/agent_runner.py --agent codex-review \
+node shared/agents/agent_runner.mjs --agent codex-review \
   --prompt-file .agent-review/codex/{identifier}_{review_type}_prompt.md \
   --output-file .agent-review/codex/{identifier}_{review_type}_result.md \
   --cwd {cwd}
 
-python shared/agents/agent_runner.py --agent gemini-review \
+node shared/agents/agent_runner.mjs --agent gemini-review \
   --prompt-file .agent-review/gemini/{identifier}_{review_type}_prompt.md \
   --output-file .agent-review/gemini/{identifier}_{review_type}_result.md \
   --cwd {cwd}
@@ -102,7 +102,7 @@ python shared/agents/agent_runner.py --agent gemini-review \
 
 **Heartbeat monitoring (while agents work):**
 - After launching agents, output to chat: `"Agents launched: codex-review + gemini-review. Continuing with foreground work..."`
-- `agent_runner.py` writes process-level heartbeat to `.agent-review/{agent}/heartbeat.json` every 30s (independent of agent behavior). Fields: `pid`, `alive`, `elapsed_seconds`, `log_size_bytes`, `updated_at`.
+- `agent_runner.mjs` writes process-level heartbeat to `.agent-review/{agent}/heartbeat.json` every 30s (independent of agent behavior). Fields: `pid`, `alive`, `elapsed_seconds`, `log_size_bytes`, `updated_at`.
 - Agent stdout streams to `.agent-review/{agent}/{identifier}_{review_type}.log` in real time. Read log tail for detailed progress.
 - Between foreground phases, Read `heartbeat.json` for each agent and output status: `"[Heartbeat] codex-review: alive, 63s, log 489KB"`
 - Agents may also write their own `heartbeat.json` with `step`/`detail` fields (per prompt instruction) — this supplements the runner's process-level heartbeat.
@@ -111,7 +111,7 @@ python shared/agents/agent_runner.py --agent gemini-review \
 - When each agent completes, immediately output: `"Agent {name} completed ({duration}s). {N} suggestions found."` Then proceed to parse results.
 
 b) When first agent completes (background task notification):
-   - Result file is already written by agent_runner.py -- do NOT write or rewrite it
+   - Result file is already written by agent_runner.mjs -- do NOT write or rewrite it
    - Read `.agent-review/{agent}/{identifier}_{review_type}_result.md`
    - The result file contains the agent's full review report (markdown analysis + `## Structured Data` with JSON) wrapped in metadata markers
    - Parse JSON from `## Structured Data` section (```json block) between `<!-- AGENT_REVIEW_RESULT -->` / `<!-- END_AGENT_REVIEW_RESULT -->` markers
@@ -172,13 +172,13 @@ After collecting results from all agents, verify no orphaned processes remain:
 1. Read `.agent-review/{agent}/heartbeat.json` for each completed agent — extract `pid`
 2. Run verification per agent:
 ```
-python shared/agents/agent_runner.py --verify-dead {pid}
+node shared/agents/agent_runner.mjs --verify-dead {pid}
 ```
 3. Expected: exit code 0, `{"pid": N, "status": "DEAD"}`
 4. If exit code 1 (process alive after cleanup attempt): log warning `"WARNING: Agent PID {pid} still alive after cleanup"` — continue, do not block workflow
 5. Display: `"Agent cleanup: codex-review PID {pid} DEAD, gemini-review PID {pid} DEAD"`
 
-**Note:** `agent_runner.py` kills process trees automatically on both completion and timeout. This step is a safety net — it should always find processes dead. If it doesn't, `--verify-dead` will attempt a second tree kill.
+**Note:** `agent_runner.mjs` kills process trees automatically on both completion and timeout. This step is a safety net — it should always find processes dead. If it doesn't, `--verify-dead` will attempt a second tree kill.
 
 ## Step: Save Review Summary
 
@@ -212,7 +212,7 @@ Entry format (per `shared/references/agent_review_memory.md`):
 - Log all attempts for user visibility (agent name, duration, suggestion count)
 - **Persist** per-agent prompts in `.agent-review/{agent}/`, results and challenge artifacts in `.agent-review/{agent}/` -- do NOT delete
 - Ensure `.agent-review/.gitignore` exists before creating files (only create if `.agent-review/` is new)
-- **HARD TIMEOUT (30 min default):** `agent_runner.py` kills the agent process after `hard_timeout_seconds` (configurable in registry, override via `--timeout`). Agents are prompted to finish within 25 minutes; 30 min provides headroom. On timeout, runner writes `timeout` heartbeat and returns `success: false`. **TaskStop is still FORBIDDEN** for agent background tasks — the runner handles timeout internally.
+- **HARD TIMEOUT (30 min default):** `agent_runner.mjs` kills the agent process after `hard_timeout_seconds` (configurable in registry, override via `--timeout`). Agents are prompted to finish within 25 minutes; 30 min provides headroom. On timeout, runner writes `timeout` heartbeat and returns `success: false`. **TaskStop is still FORBIDDEN** for agent background tasks — the runner handles timeout internally.
 - **CRITICAL VERIFICATION:** Do NOT trust agent suggestions blindly. Claude MUST independently verify each suggestion and debate if disagreeing. Accept only after verification.
 
 ## Definition of Done
@@ -274,6 +274,6 @@ debate_log:
 - **Prompt template (challenge):** `shared/agents/prompt_templates/challenge_review.md`
 - **Challenge schema:** `shared/agents/schemas/challenge_review_schema.json`
 - **Agent registry:** `shared/agents/agent_registry.json`
-- **Agent runner:** `shared/agents/agent_runner.py`
+- **Agent runner:** `shared/agents/agent_runner.mjs`
 - **Agent review memory (write-only):** `shared/references/agent_review_memory.md` — defines review_history.md format (human audit trail)
 - **Meta-analysis protocol:** `shared/references/meta_analysis_protocol.md`

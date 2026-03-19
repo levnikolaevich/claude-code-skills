@@ -544,9 +544,9 @@ claude-code-skills/                      # MARKETPLACE
 |
 |-- hooks/                             # AUTOMATED VALIDATION HOOKS
 |   |-- hooks.json                     # Hook configuration (copy to settings.json)
-|   |-- secret-scanner.py              # PreToolUse: blocks commits with secrets
-|   |-- story-validator.py             # UserPromptSubmit: validates Story before execution
-|   |-- code-quality.py                # PostToolUse: DRY/KISS/YAGNI checks
+|   |-- secret-scanner.mjs             # PreToolUse: blocks commits with secrets
+|   |-- story-validator.mjs            # UserPromptSubmit: validates Story before execution
+|   |-- code-quality.mjs               # PostToolUse: DRY/KISS/YAGNI checks
 |
 |-- docs/
 |   |-- architecture/                  # Skill patterns & delegation runtime

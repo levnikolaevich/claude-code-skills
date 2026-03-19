@@ -117,7 +117,7 @@ ln-1000 Lead
 |--------|--------|
 | **Input** | Story in Backlog (tasks exist), task metadata |
 | **What happens** | Parallel: Codex + Gemini review in background. Foreground: 27-criteria audit, MCP Ref research, auto-fix. Then merge + debate agent findings |
-| **External agents** | Codex CLI and Gemini CLI (not Claude subagents — separate processes via `agent_runner.py`) |
+| **External agents** | Codex CLI and Gemini CLI (not Claude subagents — separate processes via `agent_runner.mjs`) |
 | **Output to Lead** | "Stage 1 COMPLETE. Verdict: GO/NO-GO. Readiness: {X}. Agents: codex(2/3),gemini(1/2)" |
 | **Effort** | medium |
 | **Duration** | 5-15 min (agents run in parallel with audit) |

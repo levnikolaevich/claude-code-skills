@@ -6,9 +6,9 @@ Automated validation hooks for Claude Code. These hooks run automatically during
 
 | Hook | Event | Purpose |
 |------|-------|---------|
-| **secret-scanner.py** | PreToolUse (Bash) | Blocks commits containing secrets |
-| **story-validator.py** | UserPromptSubmit | Validates Story structure before execution |
-| **code-quality.py** | PostToolUse (Edit/Write) | Reports DRY/KISS/YAGNI violations |
+| **secret-scanner.mjs** | PreToolUse (Bash) | Blocks commits containing secrets |
+| **story-validator.mjs** | UserPromptSubmit | Validates Story structure before execution |
+| **code-quality.mjs** | PostToolUse (Edit/Write) | Reports DRY/KISS/YAGNI violations |
 
 ## Installation
 
@@ -34,7 +34,7 @@ Copy hooks configuration to `~/.claude/settings.json` (global) or `.claude/setti
         "matcher": "Bash",
         "hooks": [{
           "type": "command",
-          "command": "python3 /your/path/to/hooks/secret-scanner.py",
+          "command": "node /your/path/to/hooks/secret-scanner.mjs",
           "timeout": 30
         }]
       }
@@ -43,7 +43,7 @@ Copy hooks configuration to `~/.claude/settings.json` (global) or `.claude/setti
       {
         "hooks": [{
           "type": "command",
-          "command": "python3 /your/path/to/hooks/story-validator.py",
+          "command": "node /your/path/to/hooks/story-validator.mjs",
           "timeout": 10
         }]
       }
@@ -53,7 +53,7 @@ Copy hooks configuration to `~/.claude/settings.json` (global) or `.claude/setti
         "matcher": "Edit|Write",
         "hooks": [{
           "type": "command",
-          "command": "python3 /your/path/to/hooks/code-quality.py",
+          "command": "node /your/path/to/hooks/code-quality.mjs",
           "timeout": 15
         }]
       }
@@ -109,10 +109,10 @@ Copy hooks configuration to `~/.claude/settings.json` (global) or `.claude/setti
 
 ## Customization
 
-Edit the Python scripts to customize:
-- `SECRET_PATTERNS` in secret-scanner.py
-- `REQUIRED_SECTIONS` in story-validator.py
-- `MAX_FUNCTION_LINES`, `MAX_FUNCTION_PARAMS` in code-quality.py
+Edit the Node.js scripts to customize:
+- `SECRET_PATTERNS` in secret-scanner.mjs
+- `REQUIRED_SECTIONS` in story-validator.mjs
+- `MAX_FUNCTION_LINES`, `MAX_FUNCTION_PARAMS` in code-quality.mjs
 
 ## Disabling Hooks
 

@@ -1,6 +1,6 @@
 # Agent Delegation Pattern
 
-Standard pattern for skills delegating work to external CLI AI agents (Codex, Gemini) via `shared/agents/agent_runner.py`.
+Standard pattern for skills delegating work to external CLI AI agents (Codex, Gemini) via `shared/agents/agent_runner.mjs`.
 
 ## When to Use
 
@@ -42,16 +42,16 @@ All modes assembled with `review_base.md` + mode file per "Step: Build Prompt" i
 
 ```bash
 # Short prompt
-python shared/agents/agent_runner.py --agent codex --prompt "Review this plan..."
+node shared/agents/agent_runner.mjs --agent codex --prompt "Review this plan..."
 
 # Large context via file with output (recommended)
-python shared/agents/agent_runner.py --agent codex-review --prompt-file prompt.md --output-file result.md --cwd /project
+node shared/agents/agent_runner.mjs --agent codex-review --prompt-file prompt.md --output-file result.md --cwd /project
 
 # Resume session for debate (challenge/follow-up rounds only)
-python shared/agents/agent_runner.py --agent codex-review --resume-session abc-123 --prompt-file challenge.md --output-file result.md --cwd /project
+node shared/agents/agent_runner.mjs --agent codex-review --resume-session abc-123 --prompt-file challenge.md --output-file result.md --cwd /project
 
 # Health check
-python shared/agents/agent_runner.py --health-check
+node shared/agents/agent_runner.mjs --health-check
 ```
 
 ## Runner Output Contract
@@ -119,7 +119,7 @@ External agents run in non-interactive mode (`exec` / `-p`) with tool access for
 
 ## Agent Timeout Policy
 
-**Hard timeout (30 min default).** `agent_runner.py` kills the agent process after `hard_timeout_seconds` (configurable per agent in registry, override via `--timeout` CLI flag). Agents are prompted to finish within 25 minutes; 30 min provides headroom for long analyses. The runner writes process-level `heartbeat.json` every 30s and streams stdout to a log file for real-time visibility. On both timeout and normal completion, the runner kills the entire process tree (not just the immediate child) to prevent orphaned Codex/Gemini sub-processes. On Unix this uses `os.killpg()` (process group via `os.setsid`); on Windows — `taskkill /T /F /PID`.
+**Hard timeout (30 min default).** `agent_runner.mjs` kills the agent process after `hard_timeout_seconds` (configurable per agent in registry, override via `--timeout` CLI flag). Agents are prompted to finish within 25 minutes; 30 min provides headroom for long analyses. The runner writes process-level `heartbeat.json` every 30s and streams stdout to a log file for real-time visibility. On both timeout and normal completion, the runner kills the entire process tree (not just the immediate child) to prevent orphaned Codex/Gemini sub-processes. On Windows — `taskkill /T /F /PID`; on Unix — process group kill.
 
 | Condition | Action |
 |-----------|--------|
@@ -172,7 +172,7 @@ Phase 8: REPORT
 
 **HARD RULES:**
 1. **Check `docs/environment_state.json` disabled flags BEFORE running health-check.** Disabled agents are never probed.
-2. **ALWAYS execute the EXACT command** `python shared/agents/agent_runner.py --health-check` — no modifications, no substitutions.
+2. **ALWAYS execute the EXACT command** `node shared/agents/agent_runner.mjs --health-check` — no modifications, no substitutions.
 3. **Do NOT invent alternative checks** (e.g., `where`, `which`, `--version`, PATH lookup). ONLY the command above is valid.
 4. **Only command output determines availability.** Do NOT reason about file existence, environment, or installation — run the command and read its output.
 5. **If command fails** (file not found, import error, any exception) → treat as "all agents unavailable" → return SKIPPED verdict.
@@ -196,7 +196,7 @@ Prompt ------+                                                                  
 ```
 
 **Rules:**
-1. Launch BOTH agents as background Bash tasks (`run_in_background=true`) via `agent_runner.py` — ALL modes, including Plan Mode (agents are external OS processes, not affected by Claude Code plan mode)
+1. Launch BOTH agents as background Bash tasks (`run_in_background=true`) via `agent_runner.mjs` — ALL modes, including Plan Mode (agents are external OS processes, not affected by Claude Code plan mode)
 2. Both agents receive identical prompt, run simultaneously with `--output-file`
 3. When first agent completes (background task notification): read result file, proceed to Critical Verification
 4. When second agent completes: read result file, verify, merge with first batch
@@ -306,7 +306,7 @@ Standard steps before launching agents (performed inside agent review workers):
 ├── codex/
 │   ├── arch-proposal_contextreview_prompt.md        # Per-agent prompt (differs by {focus_hint})
 │   ├── arch-proposal_session.json                   # Session tracking for debate resume
-│   ├── arch-proposal_contextreview_result.md        # Result (written by agent_runner.py)
+│   ├── arch-proposal_contextreview_result.md        # Result (written by agent_runner.mjs)
 │   ├── PROJ-123_storyreview_prompt.md
 │   ├── PROJ-123_session.json
 │   ├── PROJ-123_storyreview_result.md

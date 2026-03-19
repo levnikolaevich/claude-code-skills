@@ -9,7 +9,7 @@ Report format for ln-514-test-log-analyzer. Posted as PR comment; parsed by ln-5
 
 **Analyzer:** ln-514-test-log-analyzer v1.0.0
 **Source:** {N} services, {M} log entries (mode: {docker|file|loki}, period: {window})
-**Script:** `scripts/analyze_test_logs.py`
+**Script:** `scripts/analyze_test_logs.mjs`
 ```
 
 ## 2. Signals Table

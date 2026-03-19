@@ -70,7 +70,7 @@
 | codex | {{CODEX_STATUS}} | {{CODEX_COMMENT}} |
 | gemini | {{GEMINI_STATUS}} | {{GEMINI_COMMENT}} |
 
-**Detection:** Run `codex --version` and `gemini --version` via Bash. Exit 0 → `available`. Health check: `python shared/agents/agent_runner.py --health`.
+**Detection:** Run `codex --version` and `gemini --version` via Bash. Exit 0 → `available`. Health check: `node shared/agents/agent_runner.mjs --health`.
 
 **Troubleshooting:**
 

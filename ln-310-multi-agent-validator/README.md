@@ -60,7 +60,7 @@ Timeline ───────────────────────�
 
 Phase 2                           Phases 3-4 (foreground)           Phase 5
 ┌────────────────────┐  ┌───────────────────────────────────┐  ┌─────────────┐
-│ agent_runner.py    │  │                                   │  │ Process-as- │
+│ agent_runner.mjs   │  │                                   │  │ Process-as- │
 │ --health-check     │  │  mode=story:                      │  │ arrive:     │
 │                    │  │    Research + 28 criteria audit    │  │             │
 │ Build prompt from  │  │    Display penalty points         │  │ 1st agent → │
@@ -86,8 +86,8 @@ Phase 2                           Phases 3-4 (foreground)           Phase 5
 ```
 Claude                           Codex CLI                    Gemini CLI
   │                                 │                             │
-  ├─ agent_runner.py ──────────────→│ LAUNCHED                    │
-  ├─ agent_runner.py ──────────────→│                             │ LAUNCHED
+  ├─ agent_runner.mjs ─────────────→│ LAUNCHED                    │
+  ├─ agent_runner.mjs ─────────────→│                             │ LAUNCHED
   │                                 │                             │
   │  ◄── foreground work ──►        │ reviewing...                │ reviewing...
   │                                 │                             │

@@ -52,9 +52,9 @@ List which hook events have registered hooks:
 
 ```
 Hook Events:
-  PreToolUse (Bash): 1 hook — secret-scanner.py
-  PostToolUse (Edit|Write): 1 hook — code-quality.py
-  UserPromptSubmit: 1 hook — story-validator.py
+  PreToolUse (Bash): 1 hook — secret-scanner.mjs
+  PostToolUse (Edit|Write): 1 hook — code-quality.mjs
+  UserPromptSubmit: 1 hook — story-validator.mjs
   PostToolUse (Bash): none
 ```
 
@@ -66,7 +66,7 @@ Hook Health Check:
 |-------------|--------|---------------------------|
 | hooks.json  | ok     | 3 events, 3 hooks         |
 | Scripts     | ok     | 3/3 found                 |
-| Dependencies| ok     | python3 3.12, jq 1.7      |
+| Dependencies| ok     | node 22.x                 |
 ```
 
 If any check fails, show `ISSUE` status with actionable detail.

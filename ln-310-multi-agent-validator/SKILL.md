@@ -68,7 +68,7 @@ Initialize: `agents_launched = UNSET`. MUST be set to `true` or `SKIPPED` in Pha
 
 > **BLOCKING GATE:** If you find yourself reasoning about skipping agents due to task simplicity, small scope, or "already reviewed" — STOP. Return to the start of Phase 2. The ONLY valid exit without launching is: health_check returned 0 agents.
 
-1) **Health Check** (all modes): Read `docs/environment_state.json` → exclude disabled. Run `python shared/agents/agent_runner.py --health-check`. 0 available → `agents_launched = SKIPPED`
+1) **Health Check** (all modes): Read `docs/environment_state.json` → exclude disabled. Run `node shared/agents/agent_runner.mjs --health-check`. 0 available → `agents_launched = SKIPPED`
 2) **Prepare references:**
    - mode=story: Story/Task URLs (linear) or file paths (file)
    - mode=context: resolve identifier (default: `review_YYYYMMDD_HHMMSS`), materialize context if from chat → `.agent-review/context/{id}_context.md`
@@ -177,7 +177,7 @@ Mark each `[x]` when verified. ALL must be checked. If ANY unchecked → go back
 **All modes:**
 - [ ] tools_config loaded, task_provider extracted (Phase 0)
 - [ ] Metadata loaded — not skimmed (Phase 1)
-- [ ] `agent_runner.py --health-check` executed (Phase 2)
+- [ ] `agent_runner.mjs --health-check` executed (Phase 2)
 - [ ] Agents launched as background tasks OR SKIPPED: 0 agents (Phase 2)
   > ⛔ If unchecked AND environment_state.json showed ≥1 available agent → CRITICAL VIOLATION. Do NOT return results. Return to Phase 2.
 - [ ] Prompt file saved to `.agent-review/` OR passed inline in Plan Mode (Phase 2)

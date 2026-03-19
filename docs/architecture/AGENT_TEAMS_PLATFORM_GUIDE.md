@@ -95,7 +95,7 @@ Pipeline state persisted to `.pipeline/state.json` after each stage completion. 
 
 ### Codex CLI Performance on Windows
 
-Codex uses PowerShell for shell commands (hardcoded). `agent_runner.py` auto-detects Windows and adds performance hint to prompt, directing Codex to prefer built-in file tools over shell commands.
+Codex uses PowerShell for shell commands (hardcoded). `agent_runner.mjs` auto-detects Windows and adds performance hint to prompt, directing Codex to prefer built-in file tools over shell commands.
 
 ## 7. Worktree Isolation
 

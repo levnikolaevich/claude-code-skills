@@ -57,7 +57,7 @@ If missing → Block: "context.md incomplete — run profiler and researcher fir
 ### Step 2: Agent Health Check
 
 ```
-python shared/agents/agent_runner.py --health-check
+node shared/agents/agent_runner.mjs --health-check
 ```
 
 - 0 agents available → `agents_launched = SKIPPED`, proceed with own feasibility check only
@@ -88,13 +88,13 @@ Replace default `{focus_areas}` in prompt with:
 Launch BOTH agents as background Bash tasks:
 
 ```bash
-python shared/agents/agent_runner.py \
+node shared/agents/agent_runner.mjs \
   --agent codex-review \
   --prompt-file .agent-review/codex/{id}_optimization_review_prompt.md \
   --output-file .agent-review/codex/{id}_optimization_review.md \
   --cwd {project_root}
 
-python shared/agents/agent_runner.py \
+node shared/agents/agent_runner.mjs \
   --agent gemini-review \
   --prompt-file .agent-review/gemini/{id}_optimization_review_prompt.md \
   --output-file .agent-review/gemini/{id}_optimization_review.md \

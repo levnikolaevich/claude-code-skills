@@ -8,7 +8,7 @@ license: MIT
 
 # Test Log Analyzer
 
-Two-layer analysis of application logs. Python script handles collection and quantitative analysis; AI handles classification, quality assessment, and fix recommendations.
+Two-layer analysis of application logs. Node.js script handles collection and quantitative analysis; AI handles classification, quality assessment, and fix recommendations.
 
 ## Inputs
 
@@ -40,7 +40,7 @@ If no `args` — use defaults (last 1h, no expected errors).
 
 Read target project files if they exist: `docs/project/infrastructure.md`, `docs/project/runbook.md`
 
-1) Check if `scripts/analyze_test_logs.py` exists in target project. If missing, copy from `references/analyze_test_logs.py`.
+1) Check if `scripts/analyze_test_logs.mjs` exists in target project. If missing, copy from `references/analyze_test_logs.mjs`.
 2) Detect log source mode (auto-detection priority: docker → file → loki):
 
 | Mode | Detection | Source |
@@ -49,7 +49,7 @@ Read target project files if they exist: `docs/project/infrastructure.md`, `docs
 | `file` | `.log` files exist, or `tests/manual/results/` has output | File paths from infrastructure.md or `*.log` glob |
 | `loki` | `LOKI_URL` env var or `tools_config.md` observability section | Loki HTTP query_range API |
 
-3) Run script: `python scripts/analyze_test_logs.py --mode {detected} [options]`
+3) Run script: `node scripts/analyze_test_logs.mjs --mode {detected} [options]`
 4) If no log sources found → return `NO_LOG_SOURCES` status, skip to Phase 5.
 
 **Level-based error detection (CRITICAL):**
@@ -62,7 +62,7 @@ When constructing Loki queries or grep commands to scan for errors, ALWAYS filte
 | Key=value (`level=ERROR msg=...`) | `level=ERROR` or `level=FATAL` | `\|~ "(?i)error"` |
 | Docker logs (local) | `grep -E '\| ERROR \| \| CRITICAL '` | `grep -iE 'error\|exception'` |
 
-The `analyze_test_logs.py` script handles this correctly via structured regex parsers. These rules apply to **ad-hoc Loki/grep queries** constructed during analysis.
+The `analyze_test_logs.mjs` script handles this correctly via structured regex parsers. These rules apply to **ad-hoc Loki/grep queries** constructed during analysis.
 
 ### Phase 2: 4-Category Error Classification
 
@@ -195,7 +195,7 @@ Log quality/format issues are INFORMATIONAL — do not affect quality verdict. O
 ## Reference Files
 - **Error taxonomy:** `references/error_taxonomy.md`
 - **Output format:** `references/log_analysis_output_format.md`
-- **Analysis script:** `references/analyze_test_logs.py`
+- **Analysis script:** `references/analyze_test_logs.mjs`
 
 ---
 **Version:** 1.0.0

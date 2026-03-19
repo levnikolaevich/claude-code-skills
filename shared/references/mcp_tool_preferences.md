@@ -1,24 +1,44 @@
-# MCP Tool Preferences
+# Tool Preferences for Code Editing
 
-When MCP servers provide enhanced versions of standard tools, prefer them for code files.
+Enhanced editing tools for code files. Two options available — use whichever is detected.
 
-## hashline-edit (hash-based file editing)
+## Option 1: hashline.mjs (bundled CLI tool)
 
-**Detection:** `ToolSearch("+hashline-edit")` at start of execution. If unavailable, use standard tools — no error.
+**Detection:** Check if `shared/tools/hashline.mjs` exists relative to skills repo root.
 
-**When available, prefer for CODE files** (.ts, .py, .js, .go, .rs, .java, etc.):
+**Usage via Bash tool:**
 
-| Standard Tool | hashline-edit Replacement | Why |
-|---------------|--------------------------|-----|
-| `Read` | `mcp__hashline-edit__read_file` | Hash-prefixed lines enable verified edits |
-| `Edit` | `mcp__hashline-edit__edit_file` | Atomic validation prevents corruption on large files |
-| `Write` | `mcp__hashline-edit__write_file` | Consistent interface with hash verification |
-| `Grep` | `mcp__hashline-edit__grep` | Results include LINE:HASH refs for direct editing |
+```bash
+# Read with hash anchors
+node shared/tools/hashline.mjs read <file> [--offset N] [--limit N]
+# Output: LINE:HASH|content (e.g., "42:b1c2|const x = 5;")
 
-**DO NOT use hashline-edit for:** JSON configs, small YAML, markdown docs, .md files (overkill — standard tools are fine).
+# Edit with hash verification (rejects if file changed since read)
+node shared/tools/hashline.mjs edit <file> --edits-file <json-path>
+# Edits JSON: [{"anchor": "42:b1c2", "text": "const x = 10;"}]
 
-**Fallback:** If hashline-edit MCP becomes unavailable mid-session (e.g., after context compaction), re-run `ToolSearch("+hashline-edit")` to reload. If still unavailable, use standard tools.
+# Search with hash refs
+node shared/tools/hashline.mjs grep <pattern> [path] [--glob "*.ts"]
+```
+
+**Workflow:** read -> note anchors -> edit by anchor -> hash mismatch = retry read.
+
+## Option 2: hashline-edit MCP (external server)
+
+**Detection:** `ToolSearch("+hashline-edit")` — if MCP server installed.
+
+| Standard Tool | hashline-edit MCP | Why |
+|---------------|-------------------|-----|
+| `Read` | `mcp__hashline-edit__read_file` | Hash-prefixed lines |
+| `Edit` | `mcp__hashline-edit__edit_file` | Atomic hash-verified edits |
+| `Grep` | `mcp__hashline-edit__grep` | Results with LINE:HASH refs |
+
+## When to Use
+
+- **USE for CODE files** (.ts, .js, .py, .go, .rs, .java, etc.) — precision matters
+- **DO NOT use for:** JSON configs, small YAML, markdown, .md files — standard tools are fine
+- **Fallback:** If neither available, use standard Read/Edit tools. No error.
 
 ---
-**Version:** 1.0.0
+**Version:** 2.0.0
 **Last Updated:** 2026-03-19

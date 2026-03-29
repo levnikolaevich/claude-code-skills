@@ -1,5 +1,7 @@
 # Claude Code Skills
 
+[![SafeSkill 30/100](https://img.shields.io/badge/SafeSkill-30%2F100_Blocked-red)](https://safeskill.dev/scan/levnikolaevich-claude-code-skills)
+
 ![Version](https://img.shields.io/badge/version-2026.03.27-blue)
 ![Skills](https://img.shields.io/badge/skills-129-green)
 ![License](https://img.shields.io/badge/license-MIT-green)

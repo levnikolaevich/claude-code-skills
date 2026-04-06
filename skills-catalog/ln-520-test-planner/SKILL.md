@@ -30,7 +30,7 @@ Runtime-backed test-planning coordinator. The runtime owns skip/reuse gates, wor
 
 ## Runtime Contract
 
-**MANDATORY READ:** Load `shared/references/coordinator_runtime_contract.md`, `shared/references/test_planning_runtime_contract.md`, `shared/references/test_planning_summary_contract.md`
+**MANDATORY READ:** Load `shared/references/coordinator_runtime_contract.md`, `shared/references/test_planning_runtime_contract.md`, `shared/references/test_planning_summary_contract.md`, `shared/references/test_planning_worker_runtime_contract.md`, `shared/references/task_plan_worker_runtime_contract.md`
 
 Runtime family: `test-planning-runtime`
 
@@ -47,8 +47,9 @@ Phases:
 7. `PHASE_6_SELF_CHECK`
 
 Worker summary contract:
-- `ln-521`, `ln-522`, `ln-523` may receive `summaryArtifactPath`
-- each worker writes or returns `test-planning-worker` summary envelope
+- `ln-521`, `ln-522`, `ln-523` receive deterministic child `runId` plus exact `summaryArtifactPath`
+- checkpoint child runtime metadata before waiting for the artifact
+- each worker writes a `test-planning-worker` summary envelope before terminal outcome
 - ln-520 consumes worker summaries, not free-text worker prose
 
 ## When to Use
@@ -102,9 +103,12 @@ ln-520-test-planner (Orchestrator)
    - If found → skip to Phase 3
 
 2) **If no research:**
-   - **Use Skill tool to invoke `ln-521-test-researcher`**
+   - Compute deterministic child run inputs for `ln-521`
+   - Start `test-planning-worker-runtime` and checkpoint `child_run` before delegation
+   - **Invoke `ln-521-test-researcher` via managed worker run**
    - Pass: Story ID
    - Wait for completion
+   - Read only the resulting `test-planning-worker` artifact
    - Verify research comment created
 
 ### Phase 3: Manual Testing Delegation
@@ -117,9 +121,12 @@ ln-520-test-planner (Orchestrator)
    - If found with all AC passed → skip to Phase 4
 
 2) **If manual testing needed:**
-   - **Use Skill tool to invoke `ln-522-manual-tester`**
+   - Compute deterministic child run inputs for `ln-522`
+   - Start `test-planning-worker-runtime` and checkpoint `child_run` before delegation
+   - **Invoke `ln-522-manual-tester` via managed worker run**
    - Pass: Story ID
    - Wait for completion
+   - Read only the resulting `test-planning-worker` artifact
    - Verify results comment created
 
 3) **If any AC failed:**
@@ -129,9 +136,12 @@ ln-520-test-planner (Orchestrator)
 ### Phase 4: Auto Test Planning Delegation
 
 1) **Invoke auto test planner:**
-   - **Use Skill tool to invoke `ln-523-auto-test-planner`**
+   - Compute deterministic child run inputs for `ln-523`
+   - Start `test-planning-worker-runtime` and checkpoint `child_run` before delegation
+   - **Invoke `ln-523-auto-test-planner` via managed worker run**
    - Pass: Story ID
    - Wait for completion
+   - Read only the resulting `test-planning-worker` artifact
 
 2) **Verify results:**
    - Test task created in Linear (or updated if existed)
@@ -152,21 +162,27 @@ Write `.hex-skills/runtime-artifacts/runs/{run_id}/story-tests/{story_id}.json` 
 
 ## Worker Invocation (MANDATORY)
 
-> **CRITICAL:** All delegations use Agent tool with `subagent_type: "general-purpose"` for context isolation.
+> **CRITICAL:** All delegations use Agent tool with `subagent_type: "general-purpose"` for context isolation, but every managed worker run must be prepared through `test-planning-worker-runtime` first.
 
 | Phase | Worker | Purpose |
 |-------|--------|---------|
-| 2 | ln-521-test-researcher | Research real-world problems |
-| 3 | ln-522-manual-tester | Manual AC testing via bash scripts |
-| 4 | ln-523-auto-test-planner | Plan E2E/Integration/Unit tests |
+| 2 | ln-521-test-researcher | Runtime-backed managed Agent call; artifact is the only completion signal |
+| 3 | ln-522-manual-tester | Runtime-backed managed Agent call; artifact is the only completion signal |
+| 4 | ln-523-auto-test-planner | Runtime-backed managed Agent call; artifact is the only completion signal |
 
 **Prompt template:**
-```
+```text
 Agent(description: "[Phase N] test planning via ln-52X",
      prompt: "Execute test planning worker.
 
-Step 1: Invoke worker:
-  Skill(skill: \"ln-52X-{worker}\")
+Step 1: Start worker runtime:
+  node shared/scripts/test-planning-worker-runtime/cli.mjs start --skill {worker} --story {storyId} --manifest-file .hex-skills/test-planning/{worker}--{storyId}_manifest.json --run-id {childRunId} --summary-artifact-path .hex-skills/runtime-artifacts/runs/{parent_run_id}/test-planning-worker/{worker}--{storyId}.json
+
+Step 2: Checkpoint child metadata:
+  node shared/scripts/test-planning-runtime/cli.mjs checkpoint --story {storyId} --phase PHASE_N --payload '{\"child_run\":{\"worker\":\"{worker}\",\"run_id\":\"{childRunId}\",\"summary_artifact_path\":\".hex-skills/runtime-artifacts/runs/{parent_run_id}/test-planning-worker/{worker}--{storyId}.json\"}}'
+
+Step 3: Invoke worker:
+  Skill(skill: \"ln-52X-{worker}\", args: \"{storyId} --run-id {childRunId} --summary-artifact-path .hex-skills/runtime-artifacts/runs/{parent_run_id}/test-planning-worker/{worker}--{storyId}.json\")
 
 CONTEXT:
 Story: {storyId}",
@@ -174,7 +190,7 @@ Story: {storyId}",
 ```
 
 **Anti-Patterns:**
-- ❌ Direct Skill tool invocation without Agent wrapper
+- ❌ Direct Agent invocation without child runtime start + `child_run` checkpoint
 - ❌ Running web searches directly (delegate to ln-521)
 - ❌ Creating bash test scripts directly (delegate to ln-522)
 - ❌ Creating test tasks directly (delegate to ln-523)
@@ -185,10 +201,10 @@ Story: {storyId}",
 ```
 - Resolve Story and prerequisites (pending)
 - Check or reuse research state (pending)
-- Invoke ln-521 or skip deterministically (pending)
+- Start ln-521 child runtime, checkpoint metadata, or skip deterministically (pending)
 - Check or reuse manual testing state (pending)
-- Invoke ln-522 or skip deterministically (pending)
-- Invoke ln-523 and verify test-task result (pending)
+- Start ln-522 child runtime, checkpoint metadata, or skip deterministically (pending)
+- Start ln-523 child runtime, checkpoint metadata, and verify test-task result (pending)
 - Write story-tests summary artifact (pending)
 - Report final planning outcome (pending)
 ```
@@ -200,6 +216,7 @@ Story: {storyId}",
 - **Fail-fast:** If manual testing fails, stop pipeline and report
 - **Skip detection:** Check for existing comments before invoking workers
 - **Single responsibility:** Each worker does one thing well
+- Every managed worker run must start through `test-planning-worker-runtime` before the Agent wrapper invokes the worker.
 
 ## Definition of Done
 
@@ -207,6 +224,7 @@ Story: {storyId}",
 - [ ] Research phase: ln-521 invoked OR existing comment found
 - [ ] Manual testing phase: ln-522 invoked OR existing results found
 - [ ] Auto test planning phase: ln-523 invoked
+- [ ] Child test-planning runtimes started and checkpointed before every managed worker invoke
 - [ ] Test task created/updated in Linear
 - [ ] Summary prepared with phase results and test task URL
 - [ ] Story-test summary artifact written to the shared location

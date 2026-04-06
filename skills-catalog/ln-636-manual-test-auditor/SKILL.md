@@ -15,12 +15,11 @@ Specialized worker auditing manual test scripts for quality and best-practice co
 
 ## Purpose & Scope
 
-- **Worker in ln-630 coordinator pipeline**
 - Audit **Manual Test Quality** (Category 7: Medium Priority)
 - Evaluate bash test scripts in `tests/manual/` against quality dimensions
 - Calculate compliance score (X/10)
 
-## Inputs (from Coordinator)
+## Inputs
 
 **MANDATORY READ:** Load `shared/references/audit_worker_core_contract.md`.
 
@@ -46,7 +45,7 @@ Manual test metadata includes: `suite_dir`, `has_expected_dir`, `harness_sourced
    - Does the project not use a shared harness at all? If no `test_harness.sh` exists, harness adoption check is N/A
 4) **Collect Findings:** Record violations with severity, location (file:line), effort, recommendation
 5) **Calculate Score:** Count violations by severity, calculate compliance score (X/10)
-6) **Write Report:** Build full markdown report in memory per `shared/templates/audit_worker_report_template.md`, write to `{output_dir}/636-manual-test-quality.md` in single Write call
+6) **Write Report:** Build full markdown report in memory per `shared/templates/audit_worker_report_template.md`, write to `{output_dir}/ln-636--global.md` in single Write call
 7) **Return Summary:** Return minimal summary to coordinator (see Output Format)
 
 ## Audit Rules
@@ -178,15 +177,15 @@ Manual test metadata includes: `suite_dir`, `has_expected_dir`, `harness_sourced
 
 **MANDATORY READ:** Load `shared/references/audit_worker_core_contract.md` and `shared/templates/audit_worker_report_template.md`.
 
-If summaryArtifactPath is present, write JSON summary per shared/references/audit_summary_contract.md. Compact text output is fallback only.
+Write JSON summary per `shared/references/audit_summary_contract.md`. In managed mode the caller passes both `runId` and `summaryArtifactPath`; in standalone mode the worker generates its own run-scoped artifact path per shared contract.
 
-Write report to `{output_dir}/636-manual-test-quality.md` with `category: "Manual Test Quality"` and checks: harness_adoption, golden_file_completeness, config_sourcing, fail_fast_compliance, template_compliance, idempotency, documentation.
+Write report to `{output_dir}/ln-636--global.md` with `category: "Manual Test Quality"` and checks: harness_adoption, golden_file_completeness, config_sourcing, fail_fast_compliance, template_compliance, idempotency, documentation.
 
 Return summary per `shared/references/audit_summary_contract.md`.
 
-Legacy compact text output is allowed only when `summaryArtifactPath` is absent:
+When `summaryArtifactPath` is absent, write the standalone runtime summary under `.hex-skills/runtime-artifacts/runs/{run_id}/audit-worker/{worker}--{identifier}.json` and optionally echo the same summary in structured output.
 ```
-Report written: .hex-skills/runtime-artifacts/runs/{run_id}/audit-report/636-manual-test-quality.md
+Report written: .hex-skills/runtime-artifacts/runs/{run_id}/audit-report/ln-636--global.md
 Score: X.X/10 | Issues: N (C:N H:N M:N L:N)
 ```
 
@@ -210,7 +209,7 @@ Score: X.X/10 | Issues: N (C:N H:N M:N L:N)
 - [ ] Layer 2 context analysis applied (setup/utility exclusions)
 - [ ] Findings collected with severity, location, effort, recommendation
 - [ ] Score calculated using penalty algorithm
-- [ ] Report written to `{output_dir}/636-manual-test-quality.md` (atomic single Write call)
+- [ ] Report written to `{output_dir}/ln-636--global.md` (atomic single Write call)
 - [ ] Summary written per contract
 
 ## Reference Files

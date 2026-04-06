@@ -31,7 +31,7 @@ docs/
 
 | Plugin | Description |
 |--------|-------------|
-| [agile-workflow](plugins/agile-workflow.md) | Scope decomposition, Story and Task management, execution, quality gates, pipeline orchestration |
+| [agile-workflow](plugins/agile-workflow.md) | Scope decomposition, artifact-first coordinators, stateful workers, quality gates, pipeline orchestration |
 | [codebase-audit-suite](plugins/codebase-audit-suite.md) | Security, code quality, architecture, tests, persistence, performance audits |
 | [documentation-pipeline](plugins/documentation-pipeline.md) | Auto-detect project type and generate complete documentation |
 | [project-bootstrap](plugins/project-bootstrap.md) | Create or transform projects to Clean Architecture with Docker and CI/CD |

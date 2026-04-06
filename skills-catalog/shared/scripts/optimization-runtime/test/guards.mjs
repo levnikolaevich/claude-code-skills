@@ -13,161 +13,238 @@ import { PHASES } from "../lib/phases.mjs";
 
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
 const cliPath = join(__dirname, "..", "cli.mjs");
-const projectRoot = mkdtempSync(join(tmpdir(), "optimization-guards-"));
-const manifestPath = join(projectRoot, "manifest.json");
 
-writeFileSync(manifestPath, JSON.stringify({
-    slug: "guard-test",
-    target: "src/test.py::fn",
-    observed_metric: { type: "response_time", value: 5000, unit: "ms" },
-    cycle_config: { max_cycles: 1, plateau_threshold: 5 },
-    execution_mode: "execute",
-}, null, 2));
+function childRun(worker, identifier, runId) {
+    return {
+        worker,
+        identifier,
+        run_id: runId,
+        phase_context: identifier,
+    };
+}
+
+function workerSummary(runId, worker, identifier, payload) {
+    return {
+        schema_version: "1.0.0",
+        summary_kind: "optimization-worker",
+        run_id: runId,
+        identifier,
+        producer_skill: worker,
+        produced_at: new Date().toISOString(),
+        payload: {
+            status: "completed",
+            worker,
+            ...payload,
+        },
+    };
+}
+
+function coordinatorSummary(runId, identifier, payload) {
+    return {
+        schema_version: "1.0.0",
+        summary_kind: "optimization-coordinator",
+        run_id: runId,
+        identifier,
+        producer_skill: "ln-810",
+        produced_at: new Date().toISOString(),
+        payload: {
+            status: "completed",
+            ...payload,
+        },
+    };
+}
+
+function createRuntime() {
+    const root = mkdtempSync(join(tmpdir(), "optimization-guards-"));
+    const manifestPath = join(root, "manifest.json");
+    writeFileSync(manifestPath, JSON.stringify({
+        slug: "guard-test",
+        target: "src/test.py::fn",
+        observed_metric: { type: "response_time", value: 5000, unit: "ms" },
+        cycle_config: { max_cycles: 1, plateau_threshold: 5 },
+        execution_mode: "execute",
+    }, null, 2));
+
+    const run = (args, options = {}) => {
+        try {
+            return JSON.parse(execFileSync("node", [cliPath, ...args], {
+                cwd: root,
+                encoding: "utf8",
+                stdio: ["ignore", "pipe", "pipe"],
+            }));
+        } catch (error) {
+            if (options.allowFailure) {
+                return JSON.parse(error.stdout || error.stderr);
+            }
+            throw error;
+        }
+    };
+
+    const started = run(["start", "--project-root", root, "--slug", "guard-test", "--manifest-file", manifestPath]);
+    return { root, run, runtimeRunId: started.run_id };
+}
+
+function destroyRuntime(root) {
+    try {
+        rmSync(root, { recursive: true, force: true });
+    } catch {}
+}
 
 let passed = 0;
 let failed = 0;
-
-function run(args, options = {}) {
-    try {
-        return JSON.parse(execFileSync("node", [cliPath, ...args], {
-            cwd: projectRoot,
-            encoding: "utf8",
-            stdio: ["ignore", "pipe", "pipe"],
-        }));
-    } catch (error) {
-        if (options.allowFailure) {
-            return JSON.parse(error.stdout || error.stderr);
-        }
-        throw error;
-    }
-}
 
 function expect(name, result, expectedOk) {
     const ok = result.ok === expectedOk;
     if (ok) {
         passed++;
         process.stdout.write(`  PASS: ${name}\n`);
-    } else {
-        failed++;
-        process.stdout.write(`  FAIL: ${name} (expected ok=${expectedOk}, got ok=${result.ok}, error=${result.error})\n`);
+        return;
     }
+    failed++;
+    process.stdout.write(`  FAIL: ${name} (expected ok=${expectedOk}, got ok=${result.ok}, error=${result.error})\n`);
 }
 
-const S = "--slug";
-const SV = "guard-test";
-const P = "--project-root";
+let runtimeOne;
+let runtimeTwo;
 
 try {
-    run(["start", P, projectRoot, S, SV, "--manifest-file", manifestPath]);
+    runtimeOne = createRuntime();
+    const { root, run } = runtimeOne;
 
-    // Fast-forward to WRONG_TOOL_GATE
-    run(["checkpoint", P, projectRoot, S, SV, "--phase", PHASES.PREFLIGHT]);
-    run(["advance", P, projectRoot, S, SV, "--to", PHASES.PARSE_INPUT]);
-    run(["checkpoint", P, projectRoot, S, SV, "--phase", PHASES.PARSE_INPUT, "--payload", "{\"target_metric\":{\"value\":500}}"]);
-    run(["advance", P, projectRoot, S, SV, "--to", PHASES.PROFILE]);
-    run(["checkpoint", P, projectRoot, S, SV, "--phase", PHASES.PROFILE]);
-    run(["advance", P, projectRoot, S, SV, "--to", PHASES.WRONG_TOOL_GATE]);
+    run(["checkpoint", "--project-root", root, "--slug", "guard-test", "--phase", PHASES.PREFLIGHT]);
+    run(["advance", "--project-root", root, "--slug", "guard-test", "--to", PHASES.PARSE_INPUT]);
+    run(["checkpoint", "--project-root", root, "--slug", "guard-test", "--phase", PHASES.PARSE_INPUT, "--payload", "{\"target_metric\":{\"value\":500}}"]);
+    run(["advance", "--project-root", root, "--slug", "guard-test", "--to", PHASES.PROFILE]);
+    run(["checkpoint", "--project-root", root, "--slug", "guard-test", "--phase", PHASES.PROFILE, "--payload", JSON.stringify({
+        child_run: childRun("ln-811", "ln-811--guard-test--cycle-1", "child-profile-1"),
+    })]);
+    run(["record-worker-result", "--project-root", root, "--slug", "guard-test", "--payload", JSON.stringify(
+        workerSummary("child-profile-1", "ln-811", "ln-811--guard-test--cycle-1", { cycle: 1 }),
+    )]);
+    run(["advance", "--project-root", root, "--slug", "guard-test", "--to", PHASES.WRONG_TOOL_GATE]);
 
-    // TEST 1: RESEARCH blocked with BLOCK verdict
-    run(["checkpoint", P, projectRoot, S, SV, "--phase", PHASES.WRONG_TOOL_GATE, "--payload", JSON.stringify({ gate_verdict: OPTIMIZATION_GATE_VERDICTS.BLOCK })]);
-    const t1 = run(["advance", P, projectRoot, S, SV, "--to", PHASES.RESEARCH], { allowFailure: true });
+    run(["checkpoint", "--project-root", root, "--slug", "guard-test", "--phase", PHASES.WRONG_TOOL_GATE, "--payload", JSON.stringify({
+        gate_verdict: OPTIMIZATION_GATE_VERDICTS.BLOCK,
+    })]);
+    const t1 = run(["advance", "--project-root", root, "--slug", "guard-test", "--to", PHASES.RESEARCH], { allowFailure: true });
     expect("RESEARCH blocked with BLOCK verdict", t1, false);
 
-    // TEST 2: AGGREGATE allowed from WRONG_TOOL_GATE with BLOCK
-    const t2 = run(["advance", P, projectRoot, S, SV, "--to", PHASES.AGGREGATE]);
+    const t2 = run(["advance", "--project-root", root, "--slug", "guard-test", "--to", PHASES.AGGREGATE]);
     expect("AGGREGATE allowed from WRONG_TOOL_GATE with BLOCK", t2, true);
 
-    // Go back — start fresh for PROCEED path
-    rmSync(projectRoot, { recursive: true, force: true });
-    const projectRoot2 = mkdtempSync(join(tmpdir(), "optimization-guards2-"));
-    const manifestPath2 = join(projectRoot2, "manifest.json");
-    writeFileSync(manifestPath2, JSON.stringify({
-        slug: "guard-test", target: "src/test.py::fn",
-        observed_metric: { type: "response_time", value: 5000, unit: "ms" },
-        cycle_config: { max_cycles: 1, plateau_threshold: 5 },
-        execution_mode: "execute",
-    }, null, 2));
+    runtimeTwo = createRuntime();
+    const { root: root2, run: run2, runtimeRunId } = runtimeTwo;
 
-    const run2 = (args, options = {}) => {
-        try {
-            return JSON.parse(execFileSync("node", [cliPath, ...args], { cwd: projectRoot2, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }));
-        } catch (error) {
-            if (options.allowFailure) { return JSON.parse(error.stdout || error.stderr); }
-            throw error;
-        }
-    };
+    run2(["checkpoint", "--project-root", root2, "--slug", "guard-test", "--phase", PHASES.PREFLIGHT]);
+    run2(["advance", "--project-root", root2, "--slug", "guard-test", "--to", PHASES.PARSE_INPUT]);
+    run2(["checkpoint", "--project-root", root2, "--slug", "guard-test", "--phase", PHASES.PARSE_INPUT, "--payload", "{\"target_metric\":{\"value\":500}}"]);
+    run2(["advance", "--project-root", root2, "--slug", "guard-test", "--to", PHASES.PROFILE]);
+    run2(["checkpoint", "--project-root", root2, "--slug", "guard-test", "--phase", PHASES.PROFILE, "--payload", JSON.stringify({
+        child_run: childRun("ln-811", "ln-811--guard-test--cycle-1", "child-profile-1"),
+    })]);
+    run2(["record-worker-result", "--project-root", root2, "--slug", "guard-test", "--payload", JSON.stringify(
+        workerSummary("child-profile-1", "ln-811", "ln-811--guard-test--cycle-1", { cycle: 1 }),
+    )]);
+    run2(["advance", "--project-root", root2, "--slug", "guard-test", "--to", PHASES.WRONG_TOOL_GATE]);
 
-    run2(["start", P, projectRoot2, S, SV, "--manifest-file", manifestPath2]);
-    run2(["checkpoint", P, projectRoot2, S, SV, "--phase", PHASES.PREFLIGHT]);
-    run2(["advance", P, projectRoot2, S, SV, "--to", PHASES.PARSE_INPUT]);
-    run2(["checkpoint", P, projectRoot2, S, SV, "--phase", PHASES.PARSE_INPUT, "--payload", "{\"target_metric\":{\"value\":500}}"]);
-    run2(["advance", P, projectRoot2, S, SV, "--to", PHASES.PROFILE]);
-    run2(["checkpoint", P, projectRoot2, S, SV, "--phase", PHASES.PROFILE]);
-    run2(["advance", P, projectRoot2, S, SV, "--to", PHASES.WRONG_TOOL_GATE]);
-
-    // TEST 3: RESEARCH allowed with PROCEED verdict
-    run2(["checkpoint", P, projectRoot2, S, SV, "--phase", PHASES.WRONG_TOOL_GATE, "--payload", JSON.stringify({ gate_verdict: OPTIMIZATION_GATE_VERDICTS.PROCEED })]);
-    const t3 = run2(["advance", P, projectRoot2, S, SV, "--to", PHASES.RESEARCH]);
+    run2(["checkpoint", "--project-root", root2, "--slug", "guard-test", "--phase", PHASES.WRONG_TOOL_GATE, "--payload", JSON.stringify({
+        gate_verdict: OPTIMIZATION_GATE_VERDICTS.PROCEED,
+    })]);
+    const t3 = run2(["advance", "--project-root", root2, "--slug", "guard-test", "--to", PHASES.RESEARCH]);
     expect("RESEARCH allowed with PROCEED verdict", t3, true);
 
-    // TEST 4: AGGREGATE blocked from RESEARCH with hypotheses > 0
-    run2(["checkpoint", P, projectRoot2, S, SV, "--phase", PHASES.RESEARCH, "--payload", "{\"hypotheses_count\":3}"]);
-    const t4 = run2(["advance", P, projectRoot2, S, SV, "--to", PHASES.AGGREGATE], { allowFailure: true });
+    run2(["checkpoint", "--project-root", root2, "--slug", "guard-test", "--phase", PHASES.RESEARCH, "--payload", JSON.stringify({
+        hypotheses_count: 3,
+        child_run: childRun("ln-812", "ln-812--guard-test--cycle-1", "child-research-1"),
+    })]);
+    run2(["record-worker-result", "--project-root", root2, "--slug", "guard-test", "--payload", JSON.stringify(
+        workerSummary("child-research-1", "ln-812", "ln-812--guard-test--cycle-1", { cycle: 1 }),
+    )]);
+    const t4 = run2(["advance", "--project-root", root2, "--slug", "guard-test", "--to", PHASES.AGGREGATE], { allowFailure: true });
     expect("AGGREGATE blocked from RESEARCH with hypotheses", t4, false);
 
-    // Fast-forward through SET_TARGET → WRITE_CONTEXT
-    run2(["advance", P, projectRoot2, S, SV, "--to", PHASES.SET_TARGET]);
-    run2(["checkpoint", P, projectRoot2, S, SV, "--phase", PHASES.SET_TARGET, "--payload", "{\"target_metric\":{\"value\":500}}"]);
-    run2(["advance", P, projectRoot2, S, SV, "--to", PHASES.WRITE_CONTEXT]);
+    run2(["advance", "--project-root", root2, "--slug", "guard-test", "--to", PHASES.SET_TARGET]);
+    run2(["checkpoint", "--project-root", root2, "--slug", "guard-test", "--phase", PHASES.SET_TARGET, "--payload", "{\"target_metric\":{\"value\":500}}"]);
+    run2(["advance", "--project-root", root2, "--slug", "guard-test", "--to", PHASES.WRITE_CONTEXT]);
 
-    // TEST 5: VALIDATE_PLAN blocked without context_file
-    run2(["checkpoint", P, projectRoot2, S, SV, "--phase", PHASES.WRITE_CONTEXT]);
-    const t5 = run2(["advance", P, projectRoot2, S, SV, "--to", PHASES.VALIDATE_PLAN], { allowFailure: true });
+    run2(["checkpoint", "--project-root", root2, "--slug", "guard-test", "--phase", PHASES.WRITE_CONTEXT]);
+    const t5 = run2(["advance", "--project-root", root2, "--slug", "guard-test", "--to", PHASES.VALIDATE_PLAN], { allowFailure: true });
     expect("VALIDATE_PLAN blocked without context_file", t5, false);
 
-    // Fix context_file
-    run2(["checkpoint", P, projectRoot2, S, SV, "--phase", PHASES.WRITE_CONTEXT, "--payload", "{\"context_file\":\"ctx.md\"}"]);
-
-    // TEST 6: VALIDATE_PLAN allowed with context_file
-    const t6 = run2(["advance", P, projectRoot2, S, SV, "--to", PHASES.VALIDATE_PLAN]);
+    run2(["checkpoint", "--project-root", root2, "--slug", "guard-test", "--phase", PHASES.WRITE_CONTEXT, "--payload", "{\"context_file\":\"ctx.md\"}"]);
+    const t6 = run2(["advance", "--project-root", root2, "--slug", "guard-test", "--to", PHASES.VALIDATE_PLAN]);
     expect("VALIDATE_PLAN allowed with context_file", t6, true);
 
-    // TEST 7: EXECUTE blocked with NO_GO verdict
-    run2(["record-worker-result", P, projectRoot2, S, SV, "--worker", "ln-813", "--payload", JSON.stringify({ verdict: OPTIMIZATION_VALIDATION_VERDICTS.NO_GO })]);
-    run2(["checkpoint", P, projectRoot2, S, SV, "--phase", PHASES.VALIDATE_PLAN, "--payload", JSON.stringify({ validation_verdict: OPTIMIZATION_VALIDATION_VERDICTS.NO_GO })]);
-    const t7 = run2(["advance", P, projectRoot2, S, SV, "--to", PHASES.EXECUTE], { allowFailure: true });
+    run2(["checkpoint", "--project-root", root2, "--slug", "guard-test", "--phase", PHASES.VALIDATE_PLAN, "--payload", JSON.stringify({
+        validation_verdict: OPTIMIZATION_VALIDATION_VERDICTS.NO_GO,
+        child_run: childRun("ln-813", "ln-813--guard-test--cycle-1", "child-validate-1"),
+    })]);
+    run2(["record-worker-result", "--project-root", root2, "--slug", "guard-test", "--payload", JSON.stringify(
+        workerSummary("child-validate-1", "ln-813", "ln-813--guard-test--cycle-1", {
+            verdict: OPTIMIZATION_VALIDATION_VERDICTS.NO_GO,
+            cycle: 1,
+        }),
+    )]);
+    const t7 = run2(["advance", "--project-root", root2, "--slug", "guard-test", "--to", PHASES.EXECUTE], { allowFailure: true });
     expect("EXECUTE blocked with NO_GO verdict", t7, false);
 
-    // Fix: GO verdict
-    run2(["checkpoint", P, projectRoot2, S, SV, "--phase", PHASES.VALIDATE_PLAN, "--payload", JSON.stringify({ validation_verdict: OPTIMIZATION_VALIDATION_VERDICTS.GO })]);
-    run2(["advance", P, projectRoot2, S, SV, "--to", PHASES.EXECUTE]);
+    run2(["checkpoint", "--project-root", root2, "--slug", "guard-test", "--phase", PHASES.VALIDATE_PLAN, "--payload", JSON.stringify({
+        validation_verdict: OPTIMIZATION_VALIDATION_VERDICTS.GO,
+        child_run: childRun("ln-813", "ln-813--guard-test--cycle-1", "child-validate-1"),
+    })]);
+    run2(["advance", "--project-root", root2, "--slug", "guard-test", "--to", PHASES.EXECUTE]);
 
-    // TEST 8: CYCLE_BOUNDARY blocked without execution_result
-    run2(["checkpoint", P, projectRoot2, S, SV, "--phase", PHASES.EXECUTE]);
-    const t8 = run2(["advance", P, projectRoot2, S, SV, "--to", PHASES.CYCLE_BOUNDARY], { allowFailure: true });
-    expect("CYCLE_BOUNDARY blocked without execution_result", t8, false);
+    run2(["checkpoint", "--project-root", root2, "--slug", "guard-test", "--phase", PHASES.EXECUTE, "--payload", JSON.stringify({
+        child_run: childRun("ln-814", "ln-814--guard-test--cycle-1", "child-execute-1"),
+    })]);
+    const t8 = run2(["advance", "--project-root", root2, "--slug", "guard-test", "--to", PHASES.CYCLE_BOUNDARY], { allowFailure: true });
+    expect("CYCLE_BOUNDARY blocked without ln-814 summary", t8, false);
 
-    // Fix and complete cycle
-    run2(["checkpoint", P, projectRoot2, S, SV, "--phase", PHASES.EXECUTE, "--payload", "{\"execution_result\":{\"target_met\":true}}"]);
-    run2(["advance", P, projectRoot2, S, SV, "--to", PHASES.CYCLE_BOUNDARY]);
-    run2(["checkpoint", P, projectRoot2, S, SV, "--phase", PHASES.CYCLE_BOUNDARY, "--payload", "{\"stop_reason\":\"TARGET_MET\",\"final_result\":\"TARGET_MET\"}"]);
+    run2(["record-worker-result", "--project-root", root2, "--slug", "guard-test", "--payload", JSON.stringify(
+        workerSummary("child-execute-1", "ln-814", "ln-814--guard-test--cycle-1", {
+            target_met: true,
+            cycle: 1,
+        }),
+    )]);
+    run2(["advance", "--project-root", root2, "--slug", "guard-test", "--to", PHASES.CYCLE_BOUNDARY]);
+    run2(["checkpoint", "--project-root", root2, "--slug", "guard-test", "--phase", PHASES.CYCLE_BOUNDARY, "--payload", "{\"stop_reason\":\"TARGET_MET\",\"final_result\":\"TARGET_MET\"}"]);
 
-    // TEST 9: PROFILE blocked with stop_reason (cannot start new cycle)
-    const t9 = run2(["advance", P, projectRoot2, S, SV, "--to", PHASES.PROFILE], { allowFailure: true });
+    const t9 = run2(["advance", "--project-root", root2, "--slug", "guard-test", "--to", PHASES.PROFILE], { allowFailure: true });
     expect("PROFILE blocked after stop_reason", t9, false);
 
-    // TEST 10: DONE blocked without report_ready
-    run2(["advance", P, projectRoot2, S, SV, "--to", PHASES.AGGREGATE]);
-    run2(["checkpoint", P, projectRoot2, S, SV, "--phase", PHASES.AGGREGATE]);
-    run2(["advance", P, projectRoot2, S, SV, "--to", PHASES.REPORT]);
-    run2(["checkpoint", P, projectRoot2, S, SV, "--phase", PHASES.REPORT, "--payload", "{\"final_result\":\"TARGET_MET\"}"]);
-    const t10 = run2(["complete", P, projectRoot2, S, SV], { allowFailure: true });
+    run2(["advance", "--project-root", root2, "--slug", "guard-test", "--to", PHASES.AGGREGATE]);
+    run2(["checkpoint", "--project-root", root2, "--slug", "guard-test", "--phase", PHASES.AGGREGATE]);
+    run2(["advance", "--project-root", root2, "--slug", "guard-test", "--to", PHASES.REPORT]);
+    run2(["checkpoint", "--project-root", root2, "--slug", "guard-test", "--phase", PHASES.REPORT, "--payload", "{\"final_result\":\"TARGET_MET\"}"]);
+    const t10 = run2(["complete", "--project-root", root2, "--slug", "guard-test"], { allowFailure: true });
     expect("DONE blocked without report_ready", t10, false);
 
-    rmSync(projectRoot2, { recursive: true, force: true });
+    run2(["checkpoint", "--project-root", root2, "--slug", "guard-test", "--phase", PHASES.REPORT, "--payload", "{\"report_ready\":true,\"final_result\":\"TARGET_MET\"}"]);
+    const t11 = run2(["complete", "--project-root", root2, "--slug", "guard-test"], { allowFailure: true });
+    expect("DONE blocked without coordinator summary", t11, false);
+
+    run2(["record-summary", "--project-root", root2, "--slug", "guard-test", "--payload", JSON.stringify(
+        coordinatorSummary(runtimeRunId, "guard-test", {
+            final_result: "TARGET_MET",
+            cycle_count: 1,
+            stop_reason: "TARGET_MET",
+            report_ready: true,
+            execution_mode: "execute",
+            target_met: true,
+        }),
+    )]);
+    const t12 = run2(["complete", "--project-root", root2, "--slug", "guard-test"]);
+    expect("DONE allowed after coordinator summary", t12, true);
 
     process.stdout.write(`\noptimization-runtime guards: ${passed} passed, ${failed} failed\n`);
-    if (failed > 0) process.exit(1);
+    if (failed > 0) {
+        process.exit(1);
+    }
 } finally {
-    try { rmSync(projectRoot, { recursive: true, force: true }); } catch {}
+    if (runtimeOne) {
+        destroyRuntime(runtimeOne.root);
+    }
+    if (runtimeTwo) {
+        destroyRuntime(runtimeTwo.root);
+    }
 }

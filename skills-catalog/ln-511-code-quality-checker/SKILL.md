@@ -211,24 +211,18 @@ Formula: `Code Quality Score = 100 - metric_penalties - issue_penalties`
 
 ## Runtime Summary Artifact
 
-**MANDATORY READ:** Load `shared/references/quality_summary_contract.md`
+**MANDATORY READ:** Load `shared/references/quality_summary_contract.md`, `shared/references/quality_worker_runtime_contract.md`
 
-Accept optional `summaryArtifactPath`.
+Runtime profile:
+- family: `quality-worker`
+- worker: `ln-511`
+- summary kind: `quality-worker`
+- payload fields used by coordinators: `worker`, `status`, `verdict`, `score`, `issues`, `warnings`
 
-Summary kind:
-- `quality-worker`
-
-Required payload semantics:
-- `worker = "ln-511"`
-- `status`
-- `verdict`
-- `score`
-- `issues`
-- `warnings`
-
-Write the summary to the provided artifact path or return the same envelope in structured output.
-
-**Standalone default (no coordinator):** Generate `run_id` = `standalone-ln-511-{YYYYMMDD}-{short_hash}`, write summary JSON to `.hex-skills/runtime-artifacts/runs/{run_id}/quality-worker/ln-511.json`. NEVER write artifacts to the project root directory.
+Invocation rules:
+- standalone: omit `runId` and `summaryArtifactPath`
+- managed: pass both `runId` and exact `summaryArtifactPath`
+- always write the validated summary before terminal outcome
 
 ## Definition of Done
 

@@ -8,22 +8,30 @@ const TRANSITIONS = new Map([
 
     [`${PHASES.STAGE_0}->${PHASES.STAGE_1}`, (state, checkpoints) => {
         const checkpoint = checkpoints?.[PHASES.STAGE_0]?.payload;
+        const summary = state.stage_summaries?.stage_0?.payload;
         if (!checkpoint || checkpoint.stage !== 0) {
             return { ok: false, error: "Stage 0 checkpoint missing", recovery: "Run ln-300 first" };
+        }
+        if (!summary || summary.stage !== 0 || summary.status !== "completed") {
+            return { ok: false, error: "Stage 0 coordinator summary missing", recovery: "Record ln-300 stage artifact" };
         }
         return { ok: true };
     }],
 
     [`${PHASES.STAGE_1}->${PHASES.STAGE_2}`, (state, checkpoints) => {
         const checkpoint = checkpoints?.[PHASES.STAGE_1]?.payload;
+        const summary = state.stage_summaries?.stage_1?.payload;
         if (!checkpoint || checkpoint.stage !== 1) {
             return { ok: false, error: "Stage 1 checkpoint missing", recovery: "Run ln-310 first" };
         }
-        if (checkpoint.verdict !== "GO") {
-            return { ok: false, error: `Verdict is ${checkpoint.verdict}, not GO`, recovery: "Fix validation issues" };
+        if (!summary || summary.stage !== 1 || summary.status !== "completed") {
+            return { ok: false, error: "Stage 1 coordinator summary missing", recovery: "Record ln-310 stage artifact" };
         }
-        if (checkpoint.readiness != null && checkpoint.readiness < 5) {
-            return { ok: false, error: `Readiness ${checkpoint.readiness} < 5`, recovery: "Improve story quality" };
+        if (summary.verdict !== "GO") {
+            return { ok: false, error: `Verdict is ${summary.verdict}, not GO`, recovery: "Fix validation issues" };
+        }
+        if (summary.readiness_score != null && summary.readiness_score < 5) {
+            return { ok: false, error: `Readiness ${summary.readiness_score} < 5`, recovery: "Improve story quality" };
         }
         return { ok: true };
     }],
@@ -38,25 +46,40 @@ const TRANSITIONS = new Map([
 
     [`${PHASES.STAGE_2}->${PHASES.STAGE_3}`, (state, checkpoints) => {
         const checkpoint = checkpoints?.[PHASES.STAGE_2]?.payload;
+        const summary = state.stage_summaries?.stage_2?.payload;
         if (!checkpoint || checkpoint.stage !== 2) {
             return { ok: false, error: "Stage 2 checkpoint missing", recovery: "Run ln-400 first" };
+        }
+        if (!summary || summary.stage !== 2 || summary.status !== "completed") {
+            return { ok: false, error: "Stage 2 coordinator summary missing", recovery: "Record ln-400 stage artifact" };
+        }
+        if (summary.story_status !== "To Review") {
+            return { ok: false, error: `Story status ${summary.story_status} is not To Review`, recovery: "Finish execution stage" };
         }
         return { ok: true };
     }],
 
     [`${PHASES.STAGE_3}->${PHASES.DONE}`, (state, checkpoints) => {
         const checkpoint = checkpoints?.[PHASES.STAGE_3]?.payload;
+        const summary = state.stage_summaries?.stage_3?.payload;
         if (!checkpoint || checkpoint.stage !== 3) {
             return { ok: false, error: "Stage 3 checkpoint missing", recovery: "Run ln-500 first" };
         }
         const validVerdicts = ["PASS", "CONCERNS", "WAIVED"];
-        if (!validVerdicts.includes(checkpoint.verdict)) {
-            return { ok: false, error: `Verdict ${checkpoint.verdict} not in ${validVerdicts.join(",")}`, recovery: "Quality gate must pass" };
+        if (!summary || summary.stage !== 3 || summary.status !== "completed") {
+            return { ok: false, error: "Stage 3 coordinator summary missing", recovery: "Record ln-500 stage artifact" };
+        }
+        if (!validVerdicts.includes(summary.verdict)) {
+            return { ok: false, error: `Verdict ${summary.verdict} not in ${validVerdicts.join(",")}`, recovery: "Quality gate must pass" };
         }
         return { ok: true };
     }],
 
     [`${PHASES.STAGE_3}->${PHASES.STAGE_2}`, state => {
+        const summary = state.stage_summaries?.stage_3?.payload;
+        if (!summary || summary.verdict !== "FAIL") {
+            return { ok: false, error: "Stage 3 FAIL summary missing", recovery: "Record failing ln-500 stage artifact before rework loop" };
+        }
         if (state.quality_cycles >= 2) {
             return { ok: false, error: "Quality cycle limit reached (2)", recovery: "Escalate to user" };
         }
@@ -90,14 +113,26 @@ export function computeResumeAction(state, checkpoints) {
     if (!checkpoints?.[state.phase]) {
         return `Invoke Skill for ${state.phase} and write its checkpoint`;
     }
+    if (state.phase === PHASES.STAGE_0 && !state.stage_summaries?.stage_0) {
+        return "Read ln-300 coordinator artifact and record stage summary";
+    }
     if (state.phase === PHASES.STAGE_0) {
         return "Advance to STAGE_1 and invoke ln-310";
+    }
+    if (state.phase === PHASES.STAGE_1 && !state.stage_summaries?.stage_1) {
+        return "Read ln-310 coordinator artifact and record stage summary";
     }
     if (state.phase === PHASES.STAGE_1) {
         return "Advance to STAGE_2 and invoke ln-400";
     }
+    if (state.phase === PHASES.STAGE_2 && !state.stage_summaries?.stage_2) {
+        return "Read ln-400 coordinator artifact and record stage summary";
+    }
     if (state.phase === PHASES.STAGE_2) {
         return "Advance to STAGE_3 and invoke ln-500";
+    }
+    if (state.phase === PHASES.STAGE_3 && !state.stage_summaries?.stage_3) {
+        return "Read ln-500 coordinator artifact and record stage summary";
     }
     if (state.phase === PHASES.STAGE_3) {
         return "Complete pipeline";

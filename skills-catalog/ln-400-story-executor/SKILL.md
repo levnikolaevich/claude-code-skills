@@ -43,8 +43,9 @@ Runtime CLI:
 node shared/scripts/story-execution-runtime/cli.mjs start --story {storyId} --manifest-file .hex-skills/story-execution/manifest.json
 node shared/scripts/story-execution-runtime/cli.mjs status
 node shared/scripts/story-execution-runtime/cli.mjs checkpoint --phase PHASE_3_SELECT_WORK --payload '{...}'
-node shared/scripts/story-execution-runtime/cli.mjs record-task --task-id {taskId} --payload '{...}'
+node shared/scripts/story-execution-runtime/cli.mjs record-worker --task-id {taskId} --payload '{...}'
 node shared/scripts/story-execution-runtime/cli.mjs record-group --group-id {groupId} --payload '{...}'
+node shared/scripts/story-execution-runtime/cli.mjs record-stage-summary --story {storyId} --payload '{...}'
 node shared/scripts/story-execution-runtime/cli.mjs advance --to PHASE_4_TASK_EXECUTION
 ```
 
@@ -113,42 +114,48 @@ Used for:
 
 Flow:
 
-1. Execute the worker.
-2. Read the worker summary artifact from `.hex-skills/runtime-artifacts/runs/{run_id}/task-status/{task_id}.json`.
-3. Run immediate review when required.
-4. Read the latest review summary artifact for the same task.
-5. Record runtime task result with `record-task`.
-6. Checkpoint `PHASE_4_TASK_EXECUTION`.
-7. Advance to `PHASE_6_VERIFY_STATUSES`.
+1. Compute executor `childRunId = {parent_run_id}--{worker}--{taskId}`.
+2. Compute executor artifact path `.hex-skills/runtime-artifacts/runs/{parent_run_id}/task-status/{taskId}--{worker}.json`.
+3. Materialize executor manifest at `.hex-skills/story-execution/{worker}--{taskId}_manifest.json`.
+4. Start `task-worker-runtime` and checkpoint executor `child_run` metadata before invocation.
+5. Execute the worker through Agent or Skill with `--run-id` and `--summary-artifact-path`.
+6. Read the executor summary artifact from `.hex-skills/runtime-artifacts/runs/{parent_run_id}/task-status/{taskId}--{worker}.json`.
+7. When review is required, repeat the same runtime-backed sequence for `ln-402`.
+8. Read the latest `ln-402` review summary artifact for the same task from `.hex-skills/runtime-artifacts/runs/{parent_run_id}/task-status/{taskId}--ln-402.json`.
+9. Record worker artifacts with `record-worker`.
+10. Checkpoint `PHASE_4_TASK_EXECUTION`.
+11. Advance to `PHASE_6_VERIFY_STATUSES`.
 
 ### Phase 5: Group Execution
 
 Used only for `Todo` groups with more than one task.
 
-1. Spawn all group executors in parallel via Agent tool.
-2. Wait for all executors to finish.
-3. Read each task summary artifact.
-4. Review each task sequentially via `ln-402`.
-5. Record group summary with `record-group`.
-6. Checkpoint `PHASE_5_GROUP_EXECUTION`.
-7. Advance to `PHASE_6_VERIFY_STATUSES`.
+1. For each task, compute worker-specific child `runId`, artifact path, and manifest path.
+2. Start one `task-worker-runtime` per executor and checkpoint all child metadata before spawning Agents.
+3. Spawn all group executors in parallel via Agent tool.
+4. Wait for all executors to finish.
+5. Read each executor summary artifact.
+6. Start one `ln-402` runtime per task, review each task sequentially, and read the latest review artifact for every task.
+7. Record each worker artifact with `record-worker`, then record the group summary with `record-group`.
+8. Checkpoint `PHASE_5_GROUP_EXECUTION`.
+9. Advance to `PHASE_6_VERIFY_STATUSES`.
 
 ### Phase 6: Verify Statuses
 
 1. Re-read task metadata from source of truth.
 2. Refresh `processable_counts`.
-3. Validate that every task touched in this run has a machine-readable latest summary.
+3. Validate that every task touched in this run has a latest `ln-402` machine-readable summary.
 4. If any worker leaves an unexpected transition, pause runtime.
 5. If any task hits `To Rework` for the third consecutive time, pause runtime with escalation reason.
 6. Checkpoint `PHASE_6_VERIFY_STATUSES`.
 7. If processable work remains -> advance back to `PHASE_3_SELECT_WORK`.
 8. If no processable work remains -> advance to `PHASE_6B_SCENARIO_VALIDATION`.
 
-### Phase 6b: Scenario Validation
+### Scenario Validation
 
 Runs once when all tasks are Done. Delegates to an external agent to trace the user scenario end-to-end against implemented code. The executor has completion bias after shepherding tasks through implementation — an external agent has no investment in the story being done.
 
-1. Load the Story ACs and the traceability table (from `.hex-skills/task-planning/{identifier}_traceability.md`). If the traceability artifact is missing, reconstruct an equivalent trace from the Story ACs and task Implementation Plans — do not fail Phase 6b solely because the planner artifact is absent.
+1. Load the Story ACs and the traceability table (from `.hex-skills/task-planning/{identifier}_traceability.md`). If the traceability artifact is missing, reconstruct an equivalent trace from the Story ACs and task Implementation Plans — do not fail scenario validation solely because the planner artifact is absent.
 2. Run agent health check. If an agent is available (prefer `gemini-review`, fallback `codex-review`):
    a. Build validation prompt from `shared/agents/prompt_templates/scenario_validator.md`
    b. Fill with: Story ACs, traceability table, architecture context, project root path (agent reads code directly)
@@ -188,6 +195,14 @@ Checkpoint `PHASE_6B_SCENARIO_VALIDATION` with:
    - `story_transition_done=true`
    - `story_final_status="To Review"`
    - `final_result="READY_FOR_GATE"`
+5. Write Stage 2 coordinator artifact with:
+   - `summary_kind=pipeline-stage`
+   - `stage=2`
+   - `story_id`
+   - `status=completed`
+   - `final_result="READY_FOR_GATE"`
+   - `story_status="To Review"`
+   - `warnings`
 
 ### Phase 8: Self-Check
 
@@ -196,10 +211,11 @@ Build final checklist from runtime state, not memory:
 - [ ] Config checkpoint exists
 - [ ] Discovery checkpoint exists
 - [ ] Worktree checkpoint exists and `worktree_ready=true`
-- [ ] Every executed task has a summary artifact
+- [ ] Every executed task has a latest `ln-402` summary artifact
 - [ ] Every processed group has a recorded runtime result
 - [ ] Rework loop guard did not trip
 - [ ] Story moved to `To Review`
+- [ ] Stage 2 coordinator artifact recorded
 
 Checkpoint `PHASE_8_SELF_CHECK` with `pass=true|false`.
 Complete runtime only after `pass=true`.
@@ -216,9 +232,11 @@ Complete runtime only after `pass=true`.
 Executors and reworkers run isolated:
 
 ```javascript
+node shared/scripts/task-worker-runtime/cli.mjs start --skill {worker} --task-id {taskId} --manifest-file .hex-skills/story-execution/{worker}--{taskId}_manifest.json --run-id {childRunId} --summary-artifact-path .hex-skills/runtime-artifacts/runs/{parent_run_id}/task-status/{taskId}--{worker}.json
+node shared/scripts/story-execution-runtime/cli.mjs checkpoint --phase PHASE_4_TASK_EXECUTION --payload '{"child_run":{"worker":"{worker}","task_id":"{taskId}","run_id":"{childRunId}","summary_artifact_path":".hex-skills/runtime-artifacts/runs/{parent_run_id}/task-status/{taskId}--{worker}.json"}}'
 Agent(
   description: "Execute task {taskId}",
-  prompt: "Execute task worker.\n\nStep 1: Invoke worker:\n  Skill(skill: \"{worker}\")\n\nCONTEXT:\nTask ID: {taskId}",
+  prompt: "Execute task worker.\n\nStep 1: Invoke worker:\n  Skill(skill: \"{worker}\", args: \"{taskId} --run-id {childRunId} --summary-artifact-path .hex-skills/runtime-artifacts/runs/{parent_run_id}/task-status/{taskId}--{worker}.json\")\n\nCONTEXT:\nTask ID: {taskId}",
   subagent_type: "general-purpose"
 )
 ```
@@ -226,7 +244,9 @@ Agent(
 Reviewer runs inline:
 
 ```javascript
-Skill(skill: "ln-402-task-reviewer", args: "{taskId}")
+node shared/scripts/task-worker-runtime/cli.mjs start --skill ln-402 --task-id {taskId} --manifest-file .hex-skills/story-execution/ln-402--{taskId}_manifest.json --run-id {reviewRunId} --summary-artifact-path .hex-skills/runtime-artifacts/runs/{parent_run_id}/task-status/{taskId}--ln-402.json
+node shared/scripts/story-execution-runtime/cli.mjs checkpoint --phase PHASE_4_TASK_EXECUTION --payload '{"child_run":{"worker":"ln-402","task_id":"{taskId}","run_id":"{reviewRunId}","summary_artifact_path":".hex-skills/runtime-artifacts/runs/{parent_run_id}/task-status/{taskId}--ln-402.json"}}'
+Skill(skill: "ln-402-task-reviewer", args: "{taskId} --run-id {reviewRunId} --summary-artifact-path .hex-skills/runtime-artifacts/runs/{parent_run_id}/task-status/{taskId}--ln-402.json")
 ```
 
 ## TodoWrite format (mandatory)
@@ -236,7 +256,8 @@ Skill(skill: "ln-402-task-reviewer", args: "{taskId}")
 - Load Story/task metadata (pending)
 - Setup or detect worktree (pending)
 - Select next task/group (pending)
-- Execute task/group (pending)
+- Start child runtime(s) and checkpoint child metadata (pending)
+- Execute task/group with managed transport inputs (pending)
 - Review task results immediately (pending)
 - Re-read statuses and record checkpoint (pending)
 - Validate user scenario end-to-end (pending)
@@ -250,6 +271,9 @@ Skill(skill: "ln-402-task-reviewer", args: "{taskId}")
 - Never batch reviews.
 - Never move Story to `Done`.
 - Every worker outcome must be read from summary JSON, not from prose-only chat.
+- `record-worker` is the primary runtime ingestion path for worker outcomes.
+- Every managed worker run must be started through `task-worker-runtime` before invocation.
+- `ln-1000` consumes the Stage 2 coordinator artifact, not free-text stage output.
 - Reviews remain sequential even when execution groups are parallel.
 - `ln-402` remains the only worker that can accept a task as `Done`.
 

@@ -3,6 +3,7 @@
 Machine-readable summaries for the `ln-510` family.
 
 Envelope: `shared/references/coordinator_summary_contract.md`
+Runtime family: `shared/references/quality_worker_runtime_contract.md`
 
 ## Worker Summary
 

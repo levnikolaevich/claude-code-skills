@@ -75,8 +75,8 @@ try {
     writeFileSync(invalidSummaryPath, JSON.stringify({
         schema_version: "1.0.0",
         summary_kind: "audit-worker",
-        run_id: "demo",
-        identifier: "ln-611-global",
+        run_id: "demo--ln-611--global",
+        identifier: "global",
         producer_skill: "ln-611",
         produced_at: "2026-03-27T10:00:00Z",
         payload: {
@@ -100,6 +100,19 @@ try {
 
     if (invalidSummary.ok !== false || !String(invalidSummary.error || "").includes("audit worker summary")) {
         throw new Error("Expected invalid audit worker status to be rejected");
+    }
+
+    const invalidCoordinatorSummary = run([
+        "record-summary",
+        "--project-root", projectRoot,
+        "--skill", "ln-610",
+        "--identifier", "full",
+        "--payload",
+        "{\"schema_version\":\"1.0.0\",\"summary_kind\":\"audit-coordinator\",\"run_id\":\"wrong-run\",\"identifier\":\"full\",\"producer_skill\":\"ln-610\",\"produced_at\":\"2026-04-06T00:00:00Z\",\"payload\":{\"status\":\"completed\",\"final_result\":\"AUDIT_COMPLETE\",\"report_path\":\"docs/project/docs_audit.md\",\"worker_count\":0,\"issues_total\":0,\"severity_counts\":{\"critical\":0,\"high\":0,\"medium\":0,\"low\":0},\"warnings\":[]}}",
+    ], { allowFailure: true });
+
+    if (invalidCoordinatorSummary.ok !== false || !String(invalidCoordinatorSummary.error || "").includes("run_id")) {
+        throw new Error("Expected invalid audit coordinator summary run_id to be rejected");
     }
 
     process.stdout.write("audit-runtime negative passed\n");

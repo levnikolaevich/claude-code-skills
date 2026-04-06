@@ -48,10 +48,29 @@ function expect(name, result, expectedOk) {
     }
 }
 
+function taskSummary(runId, taskId, producerSkill, fromStatus, toStatus, overrides = {}) {
+    return {
+        schema_version: "1.0.0",
+        summary_kind: "task-status",
+        run_id: runId,
+        identifier: taskId,
+        producer_skill: producerSkill,
+        produced_at: "2026-04-06T00:00:00Z",
+        payload: {
+            worker: producerSkill,
+            status: "completed",
+            from_status: fromStatus,
+            to_status: toStatus,
+            warnings: [],
+            ...overrides,
+        },
+    };
+}
+
 const P = "--project-root";
 
 try {
-    run(["start", P, projectRoot, "--story", "G-1", "--manifest-file", manifestPath]);
+    const started = run(["start", P, projectRoot, "--story", "G-1", "--manifest-file", manifestPath]);
     run(["checkpoint", P, projectRoot, "--phase", PHASES.CONFIG]);
     run(["advance", P, projectRoot, "--to", PHASES.DISCOVERY]);
     run(["checkpoint", P, projectRoot, "--phase", PHASES.DISCOVERY]);
@@ -81,9 +100,18 @@ try {
     const t4 = run(["advance", P, projectRoot, "--to", PHASES.TASK_EXECUTION]);
     expect("TASK_EXECUTION allowed with current_task_id", t4, true);
 
-    // Fast-forward to VERIFY_STATUSES
-    run(["record-task", P, projectRoot, "--task-id", "T-1", "--payload", JSON.stringify({ worker: "ln-401", result: "done", from_status: TASK_BOARD_STATUSES.TODO, to_status: TASK_BOARD_STATUSES.DONE })]);
+    // TEST 4b: VERIFY_STATUSES blocked without ln-402 review artifact
+    run(["record-worker", P, projectRoot, "--task-id", "T-1", "--payload", JSON.stringify(
+        taskSummary(started.run_id, "T-1", "ln-401", TASK_BOARD_STATUSES.TODO, TASK_BOARD_STATUSES.TO_REVIEW, { result: "review_handoff" }),
+    )]);
     run(["checkpoint", P, projectRoot, "--phase", PHASES.TASK_EXECUTION]);
+    const t4b = run(["advance", P, projectRoot, "--to", PHASES.VERIFY_STATUSES], { allowFailure: true });
+    expect("VERIFY_STATUSES blocked without ln-402 review artifact", t4b, false);
+
+    // Fix: add ln-402 review outcome
+    run(["record-worker", P, projectRoot, "--task-id", "T-1", "--payload", JSON.stringify(
+        taskSummary(started.run_id, "T-1", "ln-402", TASK_BOARD_STATUSES.TO_REVIEW, TASK_BOARD_STATUSES.DONE, { result: "accepted", score: 96 }),
+    )]);
     run(["advance", P, projectRoot, "--to", PHASES.VERIFY_STATUSES]);
 
     // TEST 5: STORY_TO_REVIEW blocked from VERIFY_STATUSES (must go through SCENARIO_VALIDATION)
@@ -111,6 +139,11 @@ try {
     run(["checkpoint", P, projectRoot, "--phase", PHASES.SELF_CHECK, "--payload", JSON.stringify({ pass: true, final_result: "READY_FOR_GATE" })]);
     const t7 = run(["complete", P, projectRoot], { allowFailure: true });
     expect("DONE blocked without story_transition_done", t7, false);
+
+    // TEST 8: DONE blocked without Stage 2 coordinator artifact
+    run(["checkpoint", P, projectRoot, "--phase", PHASES.STORY_TO_REVIEW, "--payload", JSON.stringify({ story_transition_done: true, final_result: "READY_FOR_GATE" })]);
+    const t8 = run(["complete", P, projectRoot], { allowFailure: true });
+    expect("DONE blocked without Stage 2 coordinator artifact", t8, false);
 
     process.stdout.write(`\nstory-execution-runtime guards: ${passed} passed, ${failed} failed\n`);
     if (failed > 0) process.exit(1);

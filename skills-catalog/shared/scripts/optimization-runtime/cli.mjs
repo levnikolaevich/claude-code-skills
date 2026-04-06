@@ -10,6 +10,7 @@ import {
     pauseRun,
     readJsonFile,
     recordCycle,
+    recordSummary,
     recordWorkerResult,
     resolveRunId,
     runtimePaths,
@@ -83,11 +84,24 @@ function markPhase(state, phase, status, extra = {}) {
     };
 }
 
+function childRunKey(childRun) {
+    const identifier = childRun?.identifier || childRun?.phase_context || childRun?.run_id || "child";
+    return `${childRun?.worker || "worker"}--${identifier}`;
+}
+
 function applyCheckpointToState(state, phase, payload) {
     const nextState = {
         ...state,
         phases: markPhase(state, phase, payload.phase_status || OPTIMIZATION_CHECKPOINT_STATUSES.COMPLETED),
     };
+
+    if ([PHASES.PROFILE, PHASES.RESEARCH, PHASES.VALIDATE_PLAN, PHASES.EXECUTE].includes(phase)
+        && payload.child_run && typeof payload.child_run === "object") {
+        nextState.child_runs = {
+            ...(nextState.child_runs || {}),
+            [childRunKey(payload.child_run)]: payload.child_run,
+        };
+    }
 
     if (phase === PHASES.PARSE_INPUT) {
         nextState.target = payload.target || nextState.target;
@@ -218,15 +232,20 @@ async function main() {
     }
 
     if (command === "record-worker-result") {
-        if (!values.worker) {
-            fail("record-worker-result requires --worker");
-        }
         const payload = readPayload(values, readJsonFile);
         const { runId } = resolveRun(projectRoot);
-        const result = recordWorkerResult(projectRoot, runId, {
-            ...payload,
-            worker: values.worker,
-        });
+        const result = recordWorkerResult(projectRoot, runId, payload);
+        if (!result.ok) {
+            failResult(result);
+        }
+        output(result);
+        return;
+    }
+
+    if (command === "record-summary") {
+        const payload = readPayload(values, readJsonFile);
+        const { runId } = resolveRun(projectRoot);
+        const result = recordSummary(projectRoot, runId, payload);
         if (!result.ok) {
             failResult(result);
         }
@@ -269,7 +288,7 @@ async function main() {
         return;
     }
 
-    fail("Unknown command. Use: start, status, advance, checkpoint, record-worker-result, record-cycle, pause, complete");
+    fail("Unknown command. Use: start, status, advance, checkpoint, record-worker-result, record-summary, record-cycle, pause, complete");
 }
 
 main().catch(error => fail(error.message));

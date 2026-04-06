@@ -189,22 +189,18 @@ Log quality/format issues are INFORMATIONAL — do not affect quality verdict. O
 
 ## Runtime Summary Artifact
 
-**MANDATORY READ:** Load `shared/references/quality_summary_contract.md`
+**MANDATORY READ:** Load `shared/references/quality_summary_contract.md`, `shared/references/quality_worker_runtime_contract.md`
 
-Accept optional `summaryArtifactPath`.
+Runtime profile:
+- family: `quality-worker`
+- worker: `ln-514`
+- summary kind: `quality-worker`
+- payload fields used by coordinators: `worker`, `status`, `verdict`, `issues`, `warnings`, `artifact_path`
 
-Summary kind:
-- `quality-worker`
-
-Required payload semantics:
-- `worker = "ln-514"`
-- `status`
-- `verdict`
-- `issues`
-- `warnings`
-- `artifact_path`
-
-Write the summary to the provided artifact path or return the same envelope in structured output.
+Invocation rules:
+- standalone: omit `runId` and `summaryArtifactPath`
+- managed: pass both `runId` and exact `summaryArtifactPath`
+- always write the validated summary before terminal outcome
 
 ## Definition of Done
 

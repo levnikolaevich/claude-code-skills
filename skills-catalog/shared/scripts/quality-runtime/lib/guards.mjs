@@ -24,6 +24,14 @@ function hasWorker(state, worker) {
     return Boolean(state.worker_results?.[worker]);
 }
 
+function childRunMessage(state, worker, suffix) {
+    const childRun = state.child_runs?.[worker];
+    if (!childRun?.run_id) {
+        return null;
+    }
+    return `Check child runtime ${childRun.run_id} for ${worker}${suffix}`;
+}
+
 export function validateTransition(manifest, state, checkpoints, toPhase) {
     const allowed = ALLOWED_TRANSITIONS.get(state.phase);
     if (!allowed || !allowed.has(toPhase)) {
@@ -66,16 +74,20 @@ export function computeResumeAction(manifest, state, checkpoints) {
         return `Complete ${state.phase} and write its checkpoint`;
     }
     if (state.phase === PHASES.CODE_QUALITY && !hasWorker(state, "ln-511")) {
-        return "Record ln-511 worker summary before cleanup";
+        return childRunMessage(state, "ln-511", " or record its worker summary before cleanup")
+            || "Record ln-511 worker summary before cleanup";
     }
     if (state.phase === PHASES.CLEANUP && !hasWorker(state, "ln-512")) {
-        return "Record ln-512 worker summary before agent review";
+        return childRunMessage(state, "ln-512", " or record its worker summary before agent review")
+            || "Record ln-512 worker summary before agent review";
     }
     if (state.phase === PHASES.REGRESSION && !hasWorker(state, "ln-513")) {
-        return "Record ln-513 worker summary before log analysis";
+        return childRunMessage(state, "ln-513", " or record its worker summary before log analysis")
+            || "Record ln-513 worker summary before log analysis";
     }
     if (state.phase === PHASES.LOG_ANALYSIS && !hasWorker(state, "ln-514")) {
-        return "Record ln-514 worker summary before finalization";
+        return childRunMessage(state, "ln-514", " or record its worker summary before finalization")
+            || "Record ln-514 worker summary before finalization";
     }
     if (state.phase === PHASES.SELF_CHECK && !state.self_check_passed) {
         return `Fix self-check failures, then checkpoint ${PHASES.SELF_CHECK} with pass=true`;

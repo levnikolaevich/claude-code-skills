@@ -76,7 +76,7 @@ ln-100-documents-pipeline     # Generate documentation
 **Full Agile workflow** (Linear or File Mode — auto-detected):
 ```bash
 ln-200-scope-decomposer    # Scope -> Epics -> Stories
-ln-1000-pipeline-orchestrator  # Full pipeline: tasks → validation → execution → quality gate
+ln-1000-pipeline-orchestrator  # Artifact-driven pipeline: tasks → validation → execution → quality gate
 ```
 
 **Manual step-by-step** (if you prefer control over each stage):
@@ -96,7 +96,7 @@ ln-100-documents-pipeline       # 1. Documentation
          ↓
 ln-200-scope-decomposer         # 2. Scope -> Epics -> Stories
          ↓
-ln-1000-pipeline-orchestrator   # 3. Full pipeline: 300 → 310 → 400 → 500 → Done
+ln-1000-pipeline-orchestrator   # 3. Full artifact-driven pipeline: 300 → 310 → 400 → 500 → Done
 ```
 
 ---
@@ -263,7 +263,7 @@ A plugin for [Claude Code](https://claude.ai/code) that provides production-read
 <details>
 <summary><b>How does it automate the Agile workflow?</b></summary>
 
-Skills form a complete pipeline: `ln-700` bootstraps the project → `ln-100` generates documentation → `ln-200` decomposes scope into Epics and Stories → `ln-400` executes tasks with automated review loops → `ln-500` runs quality gates before marking Done. Each stage is fully automated with human approval checkpoints.
+Skills form a complete pipeline: `ln-700` bootstraps the project → `ln-100` generates documentation → `ln-200` decomposes scope into Epics and Stories → `ln-1000` drives `ln-300 -> ln-310 -> ln-400 -> ln-500` through coordinator stage artifacts. Task-plan, execution, quality, and test-planning workers are stateful and resumable, while coordinators make decisions only from machine-readable artifacts.
 
 </details>
 
@@ -324,7 +324,7 @@ Add the marketplace once, then install only what you need.
 <details>
 <summary><b>Can I run individual skills without the full pipeline?</b></summary>
 
-Yes. Most skills work standalone — just invoke them directly (e.g., `/ln-620-codebase-auditor` for a full code audit). Pipeline orchestrators (`ln-1000`, `ln-400`) coordinate other skills but aren't required. Audit skills (`ln-6XX`) and bootstrap skills (`ln-7XX`) are fully self-contained.
+Yes. Most skills work standalone — just invoke them directly (e.g., `/ln-620-codebase-auditor` for a full code audit). Pipeline orchestrators (`ln-1000`, `ln-400`, `ln-510`, `ln-520`) coordinate other skills but are not required, and their workers remain standalone-capable. In managed runs, coordinators pass deterministic `runId` and exact `summaryArtifactPath`; in standalone runs, workers create their own runtime state and summary path.
 
 </details>
 
@@ -352,7 +352,7 @@ No — it augments human review. Multi-model cross-checking (Claude + Codex + Ge
 <details>
 <summary><b>How does it maintain context across large codebases?</b></summary>
 
-Through the Orchestrator-Worker pattern. Instead of feeding the entire codebase into one prompt, L1 orchestrators decompose work into focused tasks, L2 coordinators manage scope, and L3 workers execute with minimal, targeted context. Each skill loads only the files it needs, keeping token usage efficient.
+Through the Orchestrator-Worker pattern plus persisted runtime state. Instead of feeding the entire codebase into one prompt, orchestrators advance stages from coordinator artifacts, coordinators consume worker artifacts, and workers execute with minimal, targeted context. Each layer loads only the files it needs and can resume from checkpoints instead of replaying long chat history.
 
 </details>
 
@@ -373,7 +373,7 @@ Custom prompts are ad-hoc and context-free. Claude Code Skills provides coordina
 <details>
 <summary><b>What is the Orchestrator-Worker pattern?</b></summary>
 
-A 4-level hierarchy: L0 meta-orchestrator (`ln-1000-pipeline-orchestrator`) drives the pipeline via sequential Skill() calls, L1 orchestrators (e.g., `ln-400-story-executor`) manage Story lifecycle, L2 coordinators (e.g., `ln-220-story-coordinator`) handle mid-level scope, and L3 workers (e.g., `ln-221-story-creator`) execute specific tasks. Each level has single responsibility and loads only the context it needs. See [SKILL_ARCHITECTURE_GUIDE.md](docs/architecture/SKILL_ARCHITECTURE_GUIDE.md).
+A 4-level hierarchy: L0 orchestrator (`ln-1000-pipeline-orchestrator`) advances the pipeline from coordinator stage artifacts, L1 coordinators (for example `ln-300`, `ln-400`, `ln-510`, `ln-520`) manage one domain workflow, and L3 workers execute bounded responsibilities with their own runtime state. Dependency direction stays one-way: orchestrators know coordinator artifacts, coordinators know worker artifacts, and workers do not know their parent hierarchy. See [SKILL_ARCHITECTURE_GUIDE.md](docs/architecture/SKILL_ARCHITECTURE_GUIDE.md).
 
 </details>
 
@@ -422,32 +422,32 @@ claude-code-skills/                      # MARKETPLACE
 |   |-- ln-230-story-prioritizer/      # RICE prioritization + market research
 |
 |-- ln-3XX-*/                          # TASK MANAGEMENT
-|   |-- ln-300-task-coordinator/       # Decomposes Story into 1-8 implementation tasks
-|   |   |-- ln-301-task-creator/       # Universal factory (impl/refactor/test)
-|   |   |-- ln-302-task-replanner/     # Updates when plan changes
+|   |-- ln-300-task-coordinator/       # Artifact-first task planning coordinator
+|   |   |-- ln-301-task-creator/       # Stateful task-plan worker (create)
+|   |   |-- ln-302-task-replanner/     # Stateful task-plan worker (replan)
 |   |-- ln-310-multi-agent-validator/   # 20 criteria (8 groups), penalty points system + inline agent review
 |
 |-- ln-4XX-*/                          # EXECUTION
-|   |-- ln-400-story-executor/         # Full automation: tasks -> Done
-|   |-- ln-401-task-executor/          # Execute implementation tasks
-|   |-- ln-402-task-reviewer/          # Review completed tasks
-|   |-- ln-403-task-rework/            # Fix tasks marked To Rework
-|   |-- ln-404-test-executor/          # Execute test tasks (E2E-first)
+|   |-- ln-400-story-executor/         # Artifact-first execution coordinator
+|   |-- ln-401-task-executor/          # Stateful implementation worker
+|   |-- ln-402-task-reviewer/          # Stateful review worker and final task outcome
+|   |-- ln-403-task-rework/            # Stateful rework worker
+|   |-- ln-404-test-executor/          # Stateful test execution worker
 |
 |-- ln-5XX-*/                          # QUALITY
 |   |-- ln-500-story-quality-gate/     # Thin orchestrator: verdict + Quality Score
-|   |-- ln-510-quality-coordinator/    # Code quality checks coordinator
-|   |   |-- ln-511-code-quality-checker/  # DRY/KISS/YAGNI violations
-|   |   |-- ln-512-tech-debt-cleaner/    # Automated safe tech debt cleanup
-|   |   |-- ln-513-regression-checker/    # Run existing test suite
-|   |   |-- ln-514-test-log-analyzer/    # Classify errors + assess log quality
-|   |-- ln-520-test-planner/           # Test planning coordinator
-|   |   |-- ln-521-test-researcher/    # Research real-world problems
-|   |   |-- ln-522-manual-tester/      # Manual functional testing
-|   |   |-- ln-523-auto-test-planner/  # Plan E2E/Integration/Unit tests
+|   |-- ln-510-quality-coordinator/    # Artifact-first quality coordinator
+|   |   |-- ln-511-code-quality-checker/  # Stateful quality worker
+|   |   |-- ln-512-tech-debt-cleaner/    # Stateful autofix worker
+|   |   |-- ln-513-regression-checker/    # Stateful regression worker
+|   |   |-- ln-514-test-log-analyzer/    # Stateful log-analysis worker
+|   |-- ln-520-test-planner/           # Artifact-first test-planning coordinator
+|   |   |-- ln-521-test-researcher/    # Stateful research worker
+|   |   |-- ln-522-manual-tester/      # Stateful manual-testing worker
+|   |   |-- ln-523-auto-test-planner/  # Stateful automated test-planning worker
 |
 |-- ln-10XX-*/                           # ORCHESTRATION
-|   |-- ln-1000-pipeline-orchestrator/   # L0 Meta: kanban → 4-stage pipeline (300→310→400→500) via Skill()
+|   |-- ln-1000-pipeline-orchestrator/   # L0 Meta: coordinator artifacts drive the 4-stage pipeline
 |
 |  └──────────────────────────────────────────────┘
 |  ┌─ Plugin: documentation-pipeline ──────────────┐

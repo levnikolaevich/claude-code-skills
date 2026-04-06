@@ -6,7 +6,11 @@ import {
     resolveTrackedPath,
 } from "../../coordinator-runtime/lib/core.mjs";
 import { REVIEW_AGENT_STATUSES } from "../../coordinator-runtime/lib/runtime-constants.mjs";
-import { reviewAgentRecordSchema } from "../../coordinator-runtime/lib/schemas.mjs";
+import {
+    pipelineStageCoordinatorSummarySchema,
+    reviewAgentRecordSchema,
+} from "../../coordinator-runtime/lib/schemas.mjs";
+import { writeRuntimeArtifactJson } from "../../coordinator-runtime/lib/artifacts.mjs";
 import { assertSchema } from "../../coordinator-runtime/lib/validate.mjs";
 import { PHASES } from "./phases.mjs";
 
@@ -71,6 +75,7 @@ const reviewStore = createRuntimeStore({
             final_result: null,
             final_verdict: null,
             agents: {},
+            stage_summary: null,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
         };
@@ -121,6 +126,34 @@ export function registerAgent(projectRoot, runId, agentRecord) {
             },
         },
     }));
+}
+
+export function recordStageSummary(projectRoot, runId, summary) {
+    const run = loadRun(projectRoot, runId);
+    if (!run) {
+        return { ok: false, error: "Run not found" };
+    }
+    if (summary?.run_id !== runId) {
+        return { ok: false, error: `Stage summary run_id must match runtime run_id (${runId})` };
+    }
+    const validation = assertSchema(pipelineStageCoordinatorSummarySchema, summary, "pipeline stage coordinator summary");
+    if (!validation.ok) {
+        return validation;
+    }
+    return updateState(projectRoot, runId, state => {
+        const artifactIdentifier = `${summary.identifier}-stage-${summary.payload.stage}`;
+        const artifactPath = writeRuntimeArtifactJson(projectRoot, runId, summary.summary_kind, artifactIdentifier, summary);
+        return {
+            ...state,
+            stage_summary: {
+                ...summary,
+                payload: {
+                    ...summary.payload,
+                    artifact_path: artifactPath,
+                },
+            },
+        };
+    });
 }
 
 export {

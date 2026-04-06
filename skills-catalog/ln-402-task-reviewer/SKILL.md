@@ -258,9 +258,12 @@ Step 9: Update & Commit
 
 ## Runtime Summary Artifact
 
-**MANDATORY READ:** Load `shared/references/coordinator_summary_contract.md`
+**MANDATORY READ:** Load `shared/references/coordinator_summary_contract.md`, `shared/references/worker_runtime_contract.md`, `shared/references/task_worker_runtime_contract.md`
 
-Write `.hex-skills/runtime-artifacts/runs/{run_id}/task-status/{task_id}.json` with the final review transition before finishing.
+Shared contract:
+- emit `summary_kind=task-status`
+- standalone mode omits `runId` and `summaryArtifactPath`
+- managed mode passes both `runId` and exact `summaryArtifactPath` before the worker writes its validated review outcome
 
 ## Definition of Done
 - [ ] Steps 1-9 completed: task resolved, context loaded, review checks passed, AC validated, side-effect bugs created, mechanical verification passed, decision applied.

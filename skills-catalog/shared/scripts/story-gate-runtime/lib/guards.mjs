@@ -23,8 +23,22 @@ function hasCheckpoint(checkpoints, phase) {
     return Boolean(checkpoints?.[phase]);
 }
 
+function childRunMessage(state, worker, suffix) {
+    const childRun = state.child_runs?.[worker];
+    if (!childRun?.run_id) {
+        return null;
+    }
+    return `Check child runtime ${childRun.run_id} for ${worker}${suffix}`;
+}
+
 function verdictAllowsFinalization(verdict) {
     return STORY_GATE_VERDICT_LIST.includes(verdict);
+}
+
+function hasCompletedStage3Summary(state) {
+    return state.stage_summary?.summary_kind === "pipeline-stage"
+        && state.stage_summary?.payload?.stage === 3
+        && state.stage_summary?.payload?.status === "completed";
 }
 
 export function validateTransition(manifest, state, checkpoints, toPhase) {
@@ -61,6 +75,9 @@ export function validateTransition(manifest, state, checkpoints, toPhase) {
         if (!state.story_final_status) {
             return { ok: false, error: "Final Story status not recorded" };
         }
+        if (!hasCompletedStage3Summary(state)) {
+            return { ok: false, error: "Stage 3 coordinator artifact not recorded" };
+        }
     }
 
     return { ok: true };
@@ -77,7 +94,14 @@ export function computeResumeAction(manifest, state, checkpoints) {
         return `Complete ${state.phase} and write its checkpoint`;
     }
     if (state.phase === PHASES.QUALITY_CHECKS && !state.quality_summary) {
-        return "Persist ln-510 summary, then checkpoint PHASE_3_QUALITY_CHECKS";
+        return childRunMessage(state, "ln-510", " or record its coordinator summary before test planning")
+            || "Persist ln-510 summary, then checkpoint PHASE_3_QUALITY_CHECKS";
+    }
+    if (state.phase === PHASES.TEST_PLANNING
+        && !state.test_planner_invoked
+        && !STORY_GATE_PRE_VERIFICATION_ALLOWED_TEST_STATUS_LIST.includes(state.test_task_status || "")) {
+        return childRunMessage(state, "ln-520", " or record its coordinator summary before test verification")
+            || "Record ln-520 summary or reused terminal test state before test verification";
     }
     if (state.phase === PHASES.TEST_VERIFICATION && !STORY_GATE_COMPLETED_TEST_STATUS_LIST.includes(state.test_task_status || "")) {
         return "Wait for the test task to finish, then resume PHASE_5_TEST_VERIFICATION";
@@ -87,6 +111,9 @@ export function computeResumeAction(manifest, state, checkpoints) {
     }
     if (state.phase === PHASES.FINALIZATION && !state.story_final_status) {
         return "Record Story status/finalization result and checkpoint PHASE_7_FINALIZATION";
+    }
+    if (state.phase === PHASES.SELF_CHECK && !hasCompletedStage3Summary(state)) {
+        return "Record the Stage 3 coordinator artifact before completion";
     }
     if (state.phase === PHASES.SELF_CHECK && !state.self_check_passed) {
         return "Fix self-check failures, then checkpoint PHASE_8_SELF_CHECK with pass=true";

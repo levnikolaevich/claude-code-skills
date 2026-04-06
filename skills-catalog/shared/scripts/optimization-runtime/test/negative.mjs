@@ -12,6 +12,31 @@ const __dirname = fileURLToPath(new URL(".", import.meta.url));
 const cliPath = join(__dirname, "..", "cli.mjs");
 const projectRoot = mkdtempSync(join(tmpdir(), "optimization-runtime-negative-"));
 
+function childRun(worker, identifier, runId) {
+    return {
+        worker,
+        identifier,
+        run_id: runId,
+        phase_context: identifier,
+    };
+}
+
+function workerSummary(runId, worker, identifier, payload) {
+    return {
+        schema_version: "1.0.0",
+        summary_kind: "optimization-worker",
+        run_id: runId,
+        identifier,
+        producer_skill: worker,
+        produced_at: new Date().toISOString(),
+        payload: {
+            status: "completed",
+            worker,
+            ...payload,
+        },
+    };
+}
+
 function run(args, options = {}) {
     try {
         return JSON.parse(execFileSync("node", [cliPath, ...args], {
@@ -38,13 +63,25 @@ try {
     }, null, 2));
 
     run(["start", "--project-root", projectRoot, "--slug", "neg-test", "--manifest-file", manifestPath]);
+    const cycleOneProfileId = "ln-811--neg-test--cycle-1";
+    const cycleOneResearchId = "ln-812--neg-test--cycle-1";
+    const cycleOneValidateId = "ln-813--neg-test--cycle-1";
+    const cycleOneExecuteId = "ln-814--neg-test--cycle-1";
 
     // Fast-forward to WRONG_TOOL_GATE
     run(["checkpoint", "--project-root", projectRoot, "--slug", "neg-test", "--phase", PHASES.PREFLIGHT]);
     run(["advance", "--project-root", projectRoot, "--slug", "neg-test", "--to", PHASES.PARSE_INPUT]);
     run(["checkpoint", "--project-root", projectRoot, "--slug", "neg-test", "--phase", PHASES.PARSE_INPUT, "--payload", "{\"target_metric\":{\"value\":500,\"unit\":\"ms\"}}"]);
     run(["advance", "--project-root", projectRoot, "--slug", "neg-test", "--to", PHASES.PROFILE]);
-    run(["checkpoint", "--project-root", projectRoot, "--slug", "neg-test", "--phase", PHASES.PROFILE]);
+    run(["checkpoint", "--project-root", projectRoot, "--slug", "neg-test", "--phase", PHASES.PROFILE, "--payload", JSON.stringify({
+        child_run: childRun("ln-811", cycleOneProfileId, "child-profile-1"),
+    })]);
+    run(["record-worker-result", "--project-root", projectRoot, "--slug", "neg-test", "--payload", JSON.stringify(
+        workerSummary("child-profile-1", "ln-811", cycleOneProfileId, {
+            baseline: { wall_time_ms: 5000 },
+            cycle: 1,
+        }),
+    )]);
     run(["advance", "--project-root", projectRoot, "--slug", "neg-test", "--to", PHASES.WRONG_TOOL_GATE]);
 
     // TEST 1: BLOCK verdict should prevent RESEARCH
@@ -69,15 +106,42 @@ try {
         "--payload", JSON.stringify({ gate_verdict: OPTIMIZATION_GATE_VERDICTS.PROCEED }),
     ]);
     run(["advance", "--project-root", projectRoot, "--slug", "neg-test", "--to", PHASES.RESEARCH]);
-    run(["checkpoint", "--project-root", projectRoot, "--slug", "neg-test", "--phase", PHASES.RESEARCH, "--payload", "{\"hypotheses_count\":1}"]);
+    run(["checkpoint", "--project-root", projectRoot, "--slug", "neg-test", "--phase", PHASES.RESEARCH, "--payload", JSON.stringify({
+        hypotheses_count: 1,
+        child_run: childRun("ln-812", cycleOneResearchId, "child-research-1"),
+    })]);
+    run(["record-worker-result", "--project-root", projectRoot, "--slug", "neg-test", "--payload", JSON.stringify(
+        workerSummary("child-research-1", "ln-812", cycleOneResearchId, {
+            hypotheses: ["H1"],
+            cycle: 1,
+        }),
+    )]);
     run(["advance", "--project-root", projectRoot, "--slug", "neg-test", "--to", PHASES.SET_TARGET]);
     run(["checkpoint", "--project-root", projectRoot, "--slug", "neg-test", "--phase", PHASES.SET_TARGET, "--payload", "{\"target_metric\":{\"value\":500}}"]);
     run(["advance", "--project-root", projectRoot, "--slug", "neg-test", "--to", PHASES.WRITE_CONTEXT]);
     run(["checkpoint", "--project-root", projectRoot, "--slug", "neg-test", "--phase", PHASES.WRITE_CONTEXT, "--payload", "{\"context_file\":\"ctx.md\"}"]);
     run(["advance", "--project-root", projectRoot, "--slug", "neg-test", "--to", PHASES.VALIDATE_PLAN]);
-    run(["checkpoint", "--project-root", projectRoot, "--slug", "neg-test", "--phase", PHASES.VALIDATE_PLAN, "--payload", "{\"validation_verdict\":\"GO\"}"]);
+    run(["checkpoint", "--project-root", projectRoot, "--slug", "neg-test", "--phase", PHASES.VALIDATE_PLAN, "--payload", JSON.stringify({
+        validation_verdict: "GO",
+        child_run: childRun("ln-813", cycleOneValidateId, "child-validate-1"),
+    })]);
+    run(["record-worker-result", "--project-root", projectRoot, "--slug", "neg-test", "--payload", JSON.stringify(
+        workerSummary("child-validate-1", "ln-813", cycleOneValidateId, {
+            verdict: "GO",
+            cycle: 1,
+        }),
+    )]);
     run(["advance", "--project-root", projectRoot, "--slug", "neg-test", "--to", PHASES.EXECUTE]);
-    run(["checkpoint", "--project-root", projectRoot, "--slug", "neg-test", "--phase", PHASES.EXECUTE, "--payload", "{\"execution_result\":{\"target_met\":true}}"]);
+    run(["checkpoint", "--project-root", projectRoot, "--slug", "neg-test", "--phase", PHASES.EXECUTE, "--payload", JSON.stringify({
+        execution_result: { target_met: true },
+        child_run: childRun("ln-814", cycleOneExecuteId, "child-execute-1"),
+    })]);
+    run(["record-worker-result", "--project-root", projectRoot, "--slug", "neg-test", "--payload", JSON.stringify(
+        workerSummary("child-execute-1", "ln-814", cycleOneExecuteId, {
+            target_met: true,
+            cycle: 1,
+        }),
+    )]);
     run(["advance", "--project-root", projectRoot, "--slug", "neg-test", "--to", PHASES.CYCLE_BOUNDARY]);
     run(["checkpoint", "--project-root", projectRoot, "--slug", "neg-test", "--phase", PHASES.CYCLE_BOUNDARY, "--payload", "{\"stop_reason\":\"TARGET_MET\"}"]);
     run(["advance", "--project-root", projectRoot, "--slug", "neg-test", "--to", PHASES.AGGREGATE]);

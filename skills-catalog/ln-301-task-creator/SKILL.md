@@ -13,15 +13,8 @@ license: MIT
 
 Standalone-first worker for task creation. It creates tasks from an already approved plan and returns a stable summary contract.
 
-## MANDATORY READ
-
-Load these before execution:
-- `shared/references/coordinator_summary_contract.md`
-- `shared/references/environment_state_contract.md`
-- `shared/references/storage_mode_detection.md`
-- `shared/references/template_loading_pattern.md`
-- `shared/references/creation_quality_checklist.md`
-- `shared/references/destructive_operation_safety.md`
+**MANDATORY READ:** Load `shared/references/coordinator_summary_contract.md` and `shared/references/task_plan_worker_runtime_contract.md`
+**MANDATORY READ:** Load `shared/references/environment_state_contract.md`, `shared/references/storage_mode_detection.md`, `shared/references/template_loading_pattern.md`, `shared/references/creation_quality_checklist.md`, and `shared/references/destructive_operation_safety.md`
 
 ## Inputs
 
@@ -37,22 +30,37 @@ Coordinator context (passed in ADD/CREATE mode):
 - `discoveryContext` — architecture, tech stack, key files, integration points from coordinator Phase 1
 - `tasksToCreate` — specific tasks to create (ADD mode). Worker writes the 7-section document, does not decide whether tasks are needed.
 
-Optional transport inputs:
-- `runId`
-- `summaryArtifactPath`
+Transport inputs:
+- standalone: omit `runId` and `summaryArtifactPath`
+- managed: pass both `runId` and `summaryArtifactPath`
 
-If `runId` is not provided, generate a standalone `run_id` before emitting the summary envelope.
+## Runtime
+
+Runtime family: `task-plan-worker-runtime`
+
+Phase profile:
+1. `PHASE_0_CONFIG`
+2. `PHASE_1_LOAD_INPUTS`
+3. `PHASE_2_LOAD_CONTEXT`
+4. `PHASE_3_GENERATE_TASK_DOCS`
+5. `PHASE_4_VALIDATE_TASKS`
+6. `PHASE_5_CONFIRM_OR_AUTOAPPROVE`
+7. `PHASE_6_APPLY_CREATE`
+8. `PHASE_7_UPDATE_KANBAN`
+9. `PHASE_8_WRITE_SUMMARY`
+10. `PHASE_9_SELF_CHECK`
+
+Summary artifact rules:
+- emit `summary_kind=task-plan`
+- standalone runs generate their own `run_id` and write the default worker-family artifact path
+- managed runs require both `runId` and `summaryArtifactPath` and must write the summary to the exact provided path
+- always write the validated summary artifact before terminal outcome
 
 ## Output Contract
 
-Always build a structured summary envelope:
-- `schema_version`
-- `summary_kind=task-plan`
-- `run_id`
-- `identifier`
-- `producer_skill=ln-301`
-- `produced_at`
-- `payload`
+Always build a structured `task-plan` summary envelope per:
+- `shared/references/coordinator_summary_contract.md`
+- `shared/references/task_plan_worker_runtime_contract.md`
 
 Payload fields:
 - `mode`
@@ -66,11 +74,7 @@ Payload fields:
 - `dry_warnings_count`
 - `warnings`
 
-If `summaryArtifactPath` is provided:
-- write the same JSON summary to that path
-
-If `summaryArtifactPath` is not provided:
-- return the same summary in structured output only
+Always write the validated summary before terminal outcome.
 
 ## Workflow
 
@@ -101,7 +105,7 @@ If `summaryArtifactPath` is not provided:
 - [ ] Tasks created in provider-specific storage
 - [ ] kanban updated
 - [ ] Structured summary returned
-- [ ] Summary artifact written when `summaryArtifactPath` is provided
+- [ ] Summary artifact written to the managed or standalone runtime path
 
 ---
 **Version:** 3.0.0

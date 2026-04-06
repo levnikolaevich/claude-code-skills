@@ -10,7 +10,8 @@ import {
     pauseRun,
     readJsonFile,
     recordGroup,
-    recordTask,
+    recordStageSummary,
+    recordWorker,
     resolveRunId,
     runtimePaths,
     saveState,
@@ -208,20 +209,13 @@ async function main() {
         return;
     }
 
-    if (command === "record-task") {
+    if (command === "record-worker") {
         if (!values["task-id"]) {
-            fail("record-task requires --task-id");
+            fail("record-worker requires --task-id");
         }
         const payload = readPayload(values, readJsonFile);
         const { runId } = resolveRun(projectRoot);
-        const result = recordTask(projectRoot, runId, {
-            ...payload,
-            task_id: values["task-id"],
-            worker: values.worker || payload.worker,
-            result: values.result || payload.result,
-            from_status: values["from-status"] || payload.from_status,
-            to_status: values["to-status"] || payload.to_status,
-        });
+        const result = recordWorker(projectRoot, runId, values["task-id"], payload);
         if (!result.ok) {
             failResult(result);
         }
@@ -239,6 +233,17 @@ async function main() {
             ...payload,
             group_id: values["group-id"],
         });
+        if (!result.ok) {
+            failResult(result);
+        }
+        output(result);
+        return;
+    }
+
+    if (command === "record-stage-summary") {
+        const payload = readPayload(values, readJsonFile);
+        const { runId } = resolveRun(projectRoot);
+        const result = recordStageSummary(projectRoot, runId, payload);
         if (!result.ok) {
             failResult(result);
         }
@@ -270,7 +275,7 @@ async function main() {
         return;
     }
 
-    fail("Unknown command. Use: start, status, advance, checkpoint, record-task, record-group, pause, complete");
+    fail("Unknown command. Use: start, status, advance, checkpoint, record-worker, record-group, record-stage-summary, pause, complete");
 }
 
 main().catch(error => fail(error.message));

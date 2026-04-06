@@ -45,6 +45,7 @@ node shared/scripts/story-gate-runtime/cli.mjs start --story {storyId} --manifes
 node shared/scripts/story-gate-runtime/cli.mjs status
 node shared/scripts/story-gate-runtime/cli.mjs record-quality --payload '{...}'
 node shared/scripts/story-gate-runtime/cli.mjs record-test-status --payload '{...}'
+node shared/scripts/story-gate-runtime/cli.mjs record-stage-summary --story {storyId} --payload '{...}'
 node shared/scripts/story-gate-runtime/cli.mjs checkpoint --phase PHASE_6_VERDICT --payload '{...}'
 node shared/scripts/story-gate-runtime/cli.mjs advance --to PHASE_7_FINALIZATION
 ```
@@ -90,13 +91,22 @@ node shared/scripts/story-gate-runtime/cli.mjs advance --to PHASE_7_FINALIZATION
 
 ### Phase 3: Quality Checks
 
-1. Invoke `ln-510-quality-coordinator`:
-   - full mode: `Skill(skill: "ln-510-quality-coordinator", args: "{storyId}")`
-   - fast-track: `Skill(skill: "ln-510-quality-coordinator", args: "{storyId} --fast-track")`
-2. Read `.hex-skills/runtime-artifacts/runs/{run_id}/story-quality/{story_id}.json`.
-3. Record the summary with `record-quality`.
-4. Checkpoint `PHASE_3_QUALITY_CHECKS`.
-5. If the quality summary already implies hard FAIL, you may jump directly to `PHASE_6_VERDICT`.
+1. Compute:
+   - `childRunId = {parent_run_id}--ln-510--{storyId}`
+   - `childSummaryArtifactPath = .hex-skills/runtime-artifacts/runs/{parent_run_id}/story-quality/{storyId}.json`
+2. Materialize child manifest and start child coordinator runtime:
+   - `node shared/scripts/quality-runtime/cli.mjs start --story {storyId} --manifest-file .hex-skills/story-gate/ln-510--{storyId}_manifest.json --run-id {childRunId}`
+3. Checkpoint `PHASE_3_QUALITY_CHECKS` with:
+   - `child_run.worker=ln-510`
+   - `child_run.run_id={childRunId}`
+   - `child_run.summary_artifact_path={childSummaryArtifactPath}`
+   - `child_run.phase_context=quality_checks`
+4. Invoke `ln-510-quality-coordinator` with managed transport inputs:
+   - full mode: `Skill(skill: "ln-510-quality-coordinator", args: "{storyId} --run-id {childRunId} --summary-artifact-path {childSummaryArtifactPath}")`
+   - fast-track: `Skill(skill: "ln-510-quality-coordinator", args: "{storyId} --fast-track --run-id {childRunId} --summary-artifact-path {childSummaryArtifactPath}")`
+5. Read child `story-quality` artifact only, then `record-quality`.
+6. Checkpoint `PHASE_3_QUALITY_CHECKS` with the recorded quality summary.
+7. If the quality summary already implies hard FAIL, you may jump directly to `PHASE_6_VERDICT`.
 
 ### Phase 4: Test Planning
 
@@ -104,9 +114,21 @@ node shared/scripts/story-gate-runtime/cli.mjs advance --to PHASE_7_FINALIZATION
    - no test task -> invoke `ln-520`
    - fast-track -> invoke simplified `ln-520`
    - test task already exists and is terminal (`Done | SKIPPED | VERIFIED`) -> checkpoint as reused
-2. Read `.hex-skills/runtime-artifacts/runs/{run_id}/story-tests/{story_id}.json`.
-3. Record test planner result with `record-test-status`.
-4. Checkpoint `PHASE_4_TEST_PLANNING`.
+2. When invoking `ln-520`, compute:
+   - `childRunId = {parent_run_id}--ln-520--{storyId}`
+   - `childSummaryArtifactPath = .hex-skills/runtime-artifacts/runs/{parent_run_id}/story-tests/{storyId}.json`
+3. Materialize child manifest and start child coordinator runtime:
+   - `node shared/scripts/test-planning-runtime/cli.mjs start --story {storyId} --manifest-file .hex-skills/story-gate/ln-520--{storyId}_manifest.json --run-id {childRunId}`
+4. Checkpoint `PHASE_4_TEST_PLANNING` with:
+   - `child_run.worker=ln-520`
+   - `child_run.run_id={childRunId}`
+   - `child_run.summary_artifact_path={childSummaryArtifactPath}`
+   - `child_run.phase_context=test_planning`
+5. Invoke `ln-520-test-planner` with managed transport inputs:
+   - normal mode: `Skill(skill: "ln-520-test-planner", args: "{storyId} --run-id {childRunId} --summary-artifact-path {childSummaryArtifactPath}")`
+   - simplified mode: `Skill(skill: "ln-520-test-planner", args: "{storyId} --simplified --run-id {childRunId} --summary-artifact-path {childSummaryArtifactPath}")`
+6. Read child `story-tests` artifact only, then `record-test-status`.
+7. Checkpoint `PHASE_4_TEST_PLANNING`.
 
 ### Phase 5: Test Verification
 
@@ -159,6 +181,17 @@ For `FAIL`:
 2. Checkpoint `PHASE_7_FINALIZATION` with `status=skipped_by_verdict`.
 3. Record resulting Story status and follow-up task IDs.
 
+After finalization, write a Stage 3 coordinator artifact with:
+- `summary_kind=pipeline-stage`
+- `stage=3`
+- `story_id`
+- `status=completed`
+- `final_result`
+- `story_status`
+- `verdict`
+- `quality_score`
+- `warnings`
+
 ### Phase 8: Self-Check
 
 Build final checklist from runtime state:
@@ -169,11 +202,12 @@ Build final checklist from runtime state:
 - [ ] Final verdict checkpoint exists
 - [ ] Story final status recorded
 - [ ] Branch finalization recorded or skipped by verdict
+- [ ] Stage 3 coordinator artifact recorded
 
 Checkpoint `PHASE_8_SELF_CHECK` with `pass=true|false`.
 Complete runtime only after `pass=true`.
 
-## Worker Invocation (MANDATORY)
+## Coordinator Invocation (MANDATORY)
 
 | Phase | Worker | Purpose |
 |-------|--------|---------|
@@ -181,8 +215,17 @@ Complete runtime only after `pass=true`.
 | 4 | `ln-520-test-planner` | Research/manual/auto test planning |
 
 ```javascript
-Skill(skill: "ln-510-quality-coordinator", args: "{storyId}")
-Skill(skill: "ln-520-test-planner", args: "{storyId}")
+childRunId = "{parent_run_id}--ln-510--{storyId}"
+childSummaryArtifactPath = ".hex-skills/runtime-artifacts/runs/{parent_run_id}/story-quality/{storyId}.json"
+node shared/scripts/quality-runtime/cli.mjs start --story {storyId} --manifest-file .hex-skills/story-gate/ln-510--{storyId}_manifest.json --run-id {childRunId}
+node shared/scripts/story-gate-runtime/cli.mjs checkpoint --phase PHASE_3_QUALITY_CHECKS --payload '{"child_run":{"worker":"ln-510","run_id":"{childRunId}","summary_artifact_path":"{childSummaryArtifactPath}","phase_context":"quality_checks"}}'
+Skill(skill: "ln-510-quality-coordinator", args: "{storyId} --run-id {childRunId} --summary-artifact-path {childSummaryArtifactPath}")
+
+childRunId = "{parent_run_id}--ln-520--{storyId}"
+childSummaryArtifactPath = ".hex-skills/runtime-artifacts/runs/{parent_run_id}/story-tests/{storyId}.json"
+node shared/scripts/test-planning-runtime/cli.mjs start --story {storyId} --manifest-file .hex-skills/story-gate/ln-520--{storyId}_manifest.json --run-id {childRunId}
+node shared/scripts/story-gate-runtime/cli.mjs checkpoint --phase PHASE_4_TEST_PLANNING --payload '{"child_run":{"worker":"ln-520","run_id":"{childRunId}","summary_artifact_path":"{childSummaryArtifactPath}","phase_context":"test_planning"}}'
+Skill(skill: "ln-520-test-planner", args: "{storyId} --run-id {childRunId} --summary-artifact-path {childSummaryArtifactPath}")
 ```
 
 ## TodoWrite format (mandatory)
@@ -191,11 +234,11 @@ Skill(skill: "ln-520-test-planner", args: "{storyId}")
 - Start ln-500 runtime (pending)
 - Load Story/test-task metadata (pending)
 - Decide fast-track mode (pending)
-- Invoke ln-510 and record quality summary (pending)
-- Invoke or reuse ln-520 and record test-planning summary (pending)
+- Start ln-510 child runtime, checkpoint child_run, and record quality summary (pending)
+- Start or reuse ln-520 child runtime, checkpoint child_run, and record test-planning summary (pending)
 - Verify test task readiness (pending)
 - Calculate final verdict (pending)
-- Finalize Story/branch state (pending)
+- Finalize Story/branch state and Stage 3 artifact (pending)
 - Run runtime self-check and complete (pending)
 ```
 
@@ -203,8 +246,10 @@ Skill(skill: "ln-520-test-planner", args: "{storyId}")
 
 - Runtime state is the gate orchestration SSOT.
 - `ln-510` and `ln-520` are consumed only through summary JSON artifacts.
+- Child coordinator runtime status is resume-only metadata; phase completion still depends on the recorded child artifact.
 - Test-task waiting is a deterministic pause, not an implicit stop.
 - `FAIL` is a valid terminal gate result if follow-up actions are recorded correctly.
+- `ln-1000` consumes the Stage 3 coordinator artifact, not free-text stage output.
 - Story may go to `Done` only on `PASS`, `CONCERNS`, or `WAIVED`.
 
 ## Definition of Done
@@ -216,6 +261,7 @@ Skill(skill: "ln-520-test-planner", args: "{storyId}")
 - [ ] Test verification reached terminal state or deterministic pause
 - [ ] Final verdict checkpointed with quality score and NFR results
 - [ ] Story moved to `Done` only for passing outcomes, or follow-up tasks created for `FAIL`
+- [ ] Stage 3 coordinator artifact recorded before completion
 - [ ] Self-check passed and runtime completed
 
 ## Phase 9: Meta-Analysis

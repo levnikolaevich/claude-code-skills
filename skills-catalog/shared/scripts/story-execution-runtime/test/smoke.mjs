@@ -22,6 +22,44 @@ function run(args) {
     }));
 }
 
+function taskSummary(runId, taskId, producerSkill, fromStatus, toStatus, overrides = {}) {
+    return {
+        schema_version: "1.0.0",
+        summary_kind: "task-status",
+        run_id: runId,
+        identifier: taskId,
+        producer_skill: producerSkill,
+        produced_at: "2026-04-06T00:00:00Z",
+        payload: {
+            worker: producerSkill,
+            status: "completed",
+            from_status: fromStatus,
+            to_status: toStatus,
+            warnings: [],
+            ...overrides,
+        },
+    };
+}
+
+function stageSummary(runId, storyId) {
+    return {
+        schema_version: "1.0.0",
+        summary_kind: "pipeline-stage",
+        run_id: runId,
+        identifier: storyId,
+        producer_skill: "ln-400",
+        produced_at: "2026-04-06T00:00:00Z",
+        payload: {
+            stage: 2,
+            story_id: storyId,
+            status: "completed",
+            final_result: STORY_EXECUTION_FINAL_RESULTS.READY_FOR_GATE,
+            story_status: TASK_BOARD_STATUSES.TO_REVIEW,
+            warnings: [],
+        },
+    };
+}
+
 try {
     const manifestPath = join(projectRoot, "manifest.json");
     writeFileSync(manifestPath, JSON.stringify({
@@ -63,16 +101,24 @@ try {
     ]);
     run(["advance", "--project-root", projectRoot, "--to", PHASES.TASK_EXECUTION]);
     run([
-        "record-task",
+        "record-worker",
         "--project-root", projectRoot,
         "--task-id", "T-100",
         "--payload",
-        JSON.stringify({
-            worker: "ln-401",
+        JSON.stringify(taskSummary(started.run_id, "T-100", "ln-401", TASK_BOARD_STATUSES.TODO, TASK_BOARD_STATUSES.TO_REVIEW, {
             result: "review_handoff",
-            from_status: TASK_BOARD_STATUSES.TODO,
-            to_status: TASK_BOARD_STATUSES.DONE,
-        }),
+            files_changed: ["src/example.ts"],
+        })),
+    ]);
+    run([
+        "record-worker",
+        "--project-root", projectRoot,
+        "--task-id", "T-100",
+        "--payload",
+        JSON.stringify(taskSummary(started.run_id, "T-100", "ln-402", TASK_BOARD_STATUSES.TO_REVIEW, TASK_BOARD_STATUSES.DONE, {
+            result: "accepted",
+            score: 98,
+        })),
     ]);
     run(["checkpoint", "--project-root", projectRoot, "--phase", PHASES.TASK_EXECUTION]);
     run(["advance", "--project-root", projectRoot, "--to", PHASES.VERIFY_STATUSES]);
@@ -110,6 +156,13 @@ try {
         }),
     ]);
     run(["advance", "--project-root", projectRoot, "--to", PHASES.SELF_CHECK]);
+    run([
+        "record-stage-summary",
+        "--project-root", projectRoot,
+        "--story", "PROJ-123",
+        "--payload",
+        JSON.stringify(stageSummary(started.run_id, "PROJ-123")),
+    ]);
     run([
         "checkpoint",
         "--project-root", projectRoot,

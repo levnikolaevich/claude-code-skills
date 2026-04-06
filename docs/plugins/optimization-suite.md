@@ -38,9 +38,11 @@ Three optimization tracks: Performance (profile -> research -> validate -> execu
 
 **Performance:** ln-811 (profile) -> ln-812 (research) -> ln-813 (validate) -> ln-814 (execute). Repeats until target metric is met. Each cycle measures before/after and keeps or discards changes.
 
-**Dependencies:** ln-820 -> ln-821/822/823 (one worker per package manager). Each worker handles version resolution, breaking changes, and verification.
+**Dependencies:** ln-820 -> ln-821/822/823 (one worker per package manager). The coordinator assigns deterministic child runs, each worker emits a `dependency-worker` summary, and ln-820 records the final `dependency-coordinator` summary.
 
-**Modernization:** ln-830 -> ln-831 (OSS replacement) + ln-832 (bundle optimization). Identifies custom code that can be replaced with maintained packages.
+**Modernization:** ln-830 -> ln-831 (OSS replacement) + ln-832 (bundle optimization). The coordinator assigns deterministic child runs, workers emit `modernization-worker` summaries, and ln-830 records the final `modernization-coordinator` summary.
+
+**Benchmark:** ln-840 runs the scenario suite, writes the comparison report, and emits a final `benchmark-worker` summary artifact with validity and scenario metrics.
 
 ## Quick start
 

@@ -307,7 +307,15 @@ If target metric not reached after all hypotheses:
 
 **MANDATORY READ:** Load `shared/references/coordinator_summary_contract.md`
 
-Write `.hex-skills/runtime-artifacts/runs/{run_id}/optimization-execution/{slug}.json` before finishing.
+Emit an `optimization-worker` summary envelope.
+
+Managed mode:
+- `ln-810` passes deterministic `runId` and exact `summaryArtifactPath`
+- write the summary to the provided `summaryArtifactPath`
+
+Standalone mode:
+- omit `runId` and `summaryArtifactPath`
+- write `.hex-skills/runtime-artifacts/runs/{run_id}/optimization-worker/ln-814--{identifier}.json`
 
 ## Definition of Done
 

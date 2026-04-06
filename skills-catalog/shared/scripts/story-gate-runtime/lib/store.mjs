@@ -4,9 +4,11 @@ import {
     readJsonFile,
 } from "../../coordinator-runtime/lib/core.mjs";
 import {
+    pipelineStageCoordinatorSummarySchema,
     qualitySummarySchema,
     testSummarySchema,
 } from "../../coordinator-runtime/lib/schemas.mjs";
+import { writeRuntimeArtifactJson } from "../../coordinator-runtime/lib/artifacts.mjs";
 import { assertSchema } from "../../coordinator-runtime/lib/validate.mjs";
 import { PHASES } from "./phases.mjs";
 
@@ -62,6 +64,7 @@ const gateStore = createRuntimeStore({
             decisions: [],
             fast_track: false,
             quality_summary: null,
+            child_runs: {},
             test_task_id: null,
             test_task_status: null,
             test_planner_invoked: false,
@@ -70,6 +73,7 @@ const gateStore = createRuntimeStore({
             fix_tasks_created: [],
             branch_finalized: false,
             story_final_status: null,
+            stage_summary: null,
             self_check_passed: false,
             final_result: null,
             worktree_dir: manifest.worktree_dir,
@@ -125,6 +129,34 @@ export function recordTestStatus(projectRoot, runId, testSummary) {
         test_task_status: testSummary.status || state.test_task_status,
         test_planner_invoked: state.test_planner_invoked || Boolean(testSummary.planner_invoked),
     }));
+}
+
+export function recordStageSummary(projectRoot, runId, summary) {
+    const run = loadRun(projectRoot, runId);
+    if (!run) {
+        return { ok: false, error: "Run not found" };
+    }
+    if (summary?.run_id !== runId) {
+        return { ok: false, error: `Stage summary run_id must match runtime run_id (${runId})` };
+    }
+    const validation = assertSchema(pipelineStageCoordinatorSummarySchema, summary, "pipeline stage coordinator summary");
+    if (!validation.ok) {
+        return validation;
+    }
+    return updateState(projectRoot, runId, state => {
+        const artifactIdentifier = `${summary.identifier}-stage-${summary.payload.stage}`;
+        const artifactPath = writeRuntimeArtifactJson(projectRoot, runId, summary.summary_kind, artifactIdentifier, summary);
+        return {
+            ...state,
+            stage_summary: {
+                ...summary,
+                payload: {
+                    ...summary.payload,
+                    artifact_path: artifactPath,
+                },
+            },
+        };
+    });
 }
 
 export {

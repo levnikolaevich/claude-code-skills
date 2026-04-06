@@ -27,6 +27,7 @@ Runtime contract for `ln-300`.
 - `readiness_findings`
 - `mode_detection`
 - `plan_result`
+- `child_run`
 - `verification_summary`
 - `final_result`
 - `self_check_passed`
@@ -54,5 +55,28 @@ Use shared `pending_decision` schema for:
 
 ## Worker Summaries
 
-Workers stay standalone-first and may optionally write `task-plan` summaries.
+Workers stay standalone-capable, but coordinator-invoked runs must pass both `runId` and `summaryArtifactPath`.
 Every `task-plan` summary uses the shared envelope with mandatory `run_id`; standalone workers generate one when the caller does not pass `runId`.
+The runtime may checkpoint child task-plan worker metadata in `child_run`, but phase advancement still depends on the final `task-plan` artifact.
+
+Managed delegation sequence:
+1. compute deterministic child `runId`
+2. compute exact child `summaryArtifactPath`
+3. start `task-plan-worker-runtime`
+4. checkpoint `child_run`
+5. invoke worker with both transport inputs
+6. record only the child `task-plan` artifact
+
+## Coordinator Stage Summary
+
+After `PHASE_6_VERIFY`, `ln-300` writes a `pipeline-stage` coordinator summary for Stage 0.
+
+Minimum semantics:
+- `stage = 0`
+- `story_id`
+- `status = completed`
+- `final_result`
+- `story_status`
+- `readiness_score`
+
+`ln-1000` consumes this artifact as the machine-readable completion signal for Stage 0.

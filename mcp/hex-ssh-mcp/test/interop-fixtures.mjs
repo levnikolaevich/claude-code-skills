@@ -143,6 +143,55 @@ function createConnectionArgs(port) {
     };
 }
 
+async function waitForSshReady(port, timeoutMs = 15_000) {
+    const startedAt = Date.now();
+    const privateKey = readFileSync(CLIENT_PRIVATE_KEY_PATH);
+
+    while (Date.now() - startedAt < timeoutMs) {
+        const ready = await new Promise((resolve) => {
+            const client = new ssh2.Client();
+            let settled = false;
+
+            const finish = (value) => {
+                if (settled) return;
+                settled = true;
+                try { client.end(); } catch { /* ignore close races */ }
+                resolve(value);
+            };
+
+            client.on("ready", () => {
+                client.sftp((err, sftp) => {
+                    if (err) {
+                        finish(false);
+                        return;
+                    }
+                    try { sftp.end?.(); } catch { /* ignore close races */ }
+                    finish(true);
+                });
+            });
+            client.on("error", () => finish(false));
+            client.on("close", () => finish(false));
+
+            try {
+                client.connect({
+                    host: "127.0.0.1",
+                    port,
+                    username: TEST_USER,
+                    privateKey,
+                    readyTimeout: 2_000,
+                });
+            } catch {
+                finish(false);
+            }
+        });
+
+        if (ready) return;
+        await new Promise((resolve) => setTimeout(resolve, 200));
+    }
+
+    throw new Error(`Timed out waiting for SSH readiness on 127.0.0.1:${port}`);
+}
+
 export async function isDockerConfigured() {
     try {
         const result = await runProcess("docker", ["compose", "version"], { allowFailure: true });
@@ -167,6 +216,7 @@ export async function startOpenSshFixture() {
 
     try {
         await waitForPort(port);
+        await waitForSshReady(port);
     } catch (err) {
         const logs = await runProcess("docker", ["compose", "logs", "--no-color"], {
             cwd: OPENSSH_FIXTURE_DIR,

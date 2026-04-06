@@ -14,19 +14,9 @@ license: MIT
 
 Runtime-backed task planning coordinator. The runtime owns readiness gating, pause/resume, and worker result tracking.
 
-## MANDATORY READ
-
-Load these before execution:
-- `shared/references/coordinator_runtime_contract.md`
-- `shared/references/task_planning_runtime_contract.md`
-- `shared/references/coordinator_summary_contract.md`
-- `shared/references/environment_state_contract.md`
-- `shared/references/storage_mode_detection.md`
-- `shared/references/problem_solving.md`
-- `shared/references/creation_quality_checklist.md`
-- `shared/references/mcp_tool_preferences.md`
-- `shared/references/mcp_integration_patterns.md`
-- `shared/references/agent_delegation_pattern.md` (Phase 3 external validation)
+**MANDATORY READ:** Load `shared/references/coordinator_runtime_contract.md`, `shared/references/task_planning_runtime_contract.md`, `shared/references/coordinator_summary_contract.md`, and `shared/references/task_plan_worker_runtime_contract.md`
+**MANDATORY READ:** Load `shared/references/environment_state_contract.md`, `shared/references/storage_mode_detection.md`, `shared/references/problem_solving.md`, and `shared/references/creation_quality_checklist.md`
+**MANDATORY READ:** Load `shared/references/mcp_tool_preferences.md`, `shared/references/mcp_integration_patterns.md`, and `shared/references/agent_delegation_pattern.md` for Phase 3 external validation
 
 ## Purpose
 
@@ -63,6 +53,10 @@ Phases:
 Terminal phases:
 - `DONE`
 - `PAUSED`
+
+Coordinator stage artifact:
+- write `summary_kind=pipeline-stage` after verification
+- `ln-1000` consumes this artifact as the Stage 0 completion signal
 
 ## Phase Map
 
@@ -171,7 +165,14 @@ Delegate to exactly one worker:
 - `ln-301-task-creator`
 - `ln-302-task-replanner`
 
-Workers remain standalone-capable. They may optionally write `task-plan` summary artifacts, but must always return the same structured summary even without artifact writing.
+Managed delegation sequence:
+1. Compute `childRunId = {parent_run_id}--{worker}--{storyId}`.
+2. Compute `childSummaryArtifactPath = .hex-skills/runtime-artifacts/runs/{parent_run_id}/task-plan/{worker}--{storyId}.json`.
+3. Materialize child manifest at `.hex-skills/task-planning/{worker}--{storyId}_manifest.json`.
+4. Start `task-plan-worker-runtime` with both `--run-id` and `--summary-artifact-path`.
+5. Checkpoint `child_run` metadata before invoking the worker.
+6. Invoke the worker through Skill tool with both transport inputs.
+7. Read only the final `task-plan` artifact and record it through runtime `record-plan`.
 
 Coordinator context to pass to workers:
 
@@ -179,8 +180,6 @@ Coordinator context to pass to workers:
 - `traceabilityTablePath`: path to materialized traceability table
 - `discoveryContext`: Phase 1 findings
 - In ADD mode: specify which tasks to create
-
-Record the result through runtime `record-plan`.
 
 ### Phase 6: Verify
 
@@ -193,6 +192,15 @@ Checkpoint payload:
 - `final_result`
 - `template_compliance_passed`
 
+After verification succeeds, write a Stage 0 coordinator artifact with:
+- `stage=0`
+- `story_id`
+- `status=completed`
+- `final_result`
+- `story_status`
+- `readiness_score`
+- `warnings`
+
 ### Phase 7: Self-Check
 
 Confirm:
@@ -200,6 +208,7 @@ Confirm:
 - readiness gate was respected
 - worker result was recorded
 - verification completed
+- Stage 0 coordinator artifact was recorded
 
 Checkpoint payload:
 - `pass`
@@ -218,8 +227,8 @@ Workers:
 - do not know the coordinator
 - do not read runtime state
 - remain standalone
-- may receive `summaryArtifactPath`
-- return shared summary envelope either way
+- managed runs require both `runId` and `summaryArtifactPath`
+- return the shared `task-plan` summary envelope and write the artifact before terminal outcome
 
 Expected summary kind:
 - `task-plan`
@@ -232,8 +241,11 @@ Expected summary kind:
 | 5 | `ln-302-task-replanner` | REPLAN path |
 
 ```text
-Skill(skill: "ln-301-task-creator", args: "{storyId} --ideal-plan {idealPlanJSON} --traceability {tablePath} --discovery {discoveryJSON}")
-Skill(skill: "ln-302-task-replanner", args: "{storyId} --ideal-plan {idealPlanJSON} --traceability {tablePath} --discovery {discoveryJSON}")
+node shared/scripts/task-plan-worker-runtime/cli.mjs start --skill {worker} --story {storyId} --manifest-file .hex-skills/task-planning/{worker}--{storyId}_manifest.json --run-id {childRunId} --summary-artifact-path {childSummaryArtifactPath}
+node shared/scripts/task-planning-runtime/cli.mjs checkpoint --story {storyId} --phase PHASE_5_DELEGATE --payload '{"child_run":{"worker":"{worker}","run_id":"{childRunId}","summary_artifact_path":"{childSummaryArtifactPath}"}}'
+Skill(skill: "{worker}", args: "{storyId} --ideal-plan {idealPlanJSON} --traceability {tablePath} --discovery {discoveryJSON} --run-id {childRunId} --summary-artifact-path {childSummaryArtifactPath}")
+Read {childSummaryArtifactPath}
+node shared/scripts/task-planning-runtime/cli.mjs record-plan --story {storyId} --payload '{...task-plan summary...}'
 ```
 
 ## TodoWrite format (mandatory)
@@ -241,10 +253,9 @@ Skill(skill: "ln-302-task-replanner", args: "{storyId} --ideal-plan {idealPlanJS
 ```text
 - Phase 1: Discover Story context (pending)
 - Phase 2: Build ideal task plan (pending)
-- Phase 3a: Self-score readiness (pending)
-- Phase 3b: External traceability validation (pending)
+- Phase 3: Run readiness gate (self-score + external traceability validation) (pending)
 - Phase 4: Detect mode (pending)
-- Phase 5: Delegate to worker (pending)
+- Phase 5: Start child runtime, checkpoint child metadata, and delegate to worker (pending)
 - Phase 6: Verify worker result (pending)
 - Phase 7: Self-check (pending)
 ```
@@ -266,6 +277,8 @@ Skill(skill: "ln-302-task-replanner", args: "{storyId} --ideal-plan {idealPlanJS
 - [ ] Ideal plan checkpointed
 - [ ] Readiness gate checkpointed
 - [ ] Mode detection checkpointed
+- [ ] Child task-plan runtime started with deterministic `runId`
+- [ ] Child run metadata checkpointed before delegation
 - [ ] Task-plan worker summary recorded
 - [ ] Verification checkpointed
 - [ ] Template compliance passed for all created Tasks

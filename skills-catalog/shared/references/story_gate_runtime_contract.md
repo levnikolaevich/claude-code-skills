@@ -22,6 +22,7 @@ node shared/scripts/story-gate-runtime/cli.mjs start --story PROJ-123 --manifest
 node shared/scripts/story-gate-runtime/cli.mjs status --story PROJ-123
 node shared/scripts/story-gate-runtime/cli.mjs record-quality --payload '{...}'
 node shared/scripts/story-gate-runtime/cli.mjs record-test-status --payload '{...}'
+node shared/scripts/story-gate-runtime/cli.mjs record-stage-summary --story PROJ-123 --payload '{...}'
 node shared/scripts/story-gate-runtime/cli.mjs checkpoint --phase PHASE_6_VERDICT --payload '{...}'
 node shared/scripts/story-gate-runtime/cli.mjs advance --to PHASE_7_FINALIZATION
 node shared/scripts/story-gate-runtime/cli.mjs pause --reason "..."
@@ -46,6 +47,7 @@ node shared/scripts/story-gate-runtime/cli.mjs complete
 
 - `fast_track`
 - `quality_summary`
+- `child_runs`
 - `test_task_id`
 - `test_task_status`
 - `test_planner_invoked`
@@ -54,14 +56,18 @@ node shared/scripts/story-gate-runtime/cli.mjs complete
 - `fix_tasks_created`
 - `branch_finalized`
 - `story_final_status`
+- `final_result`
+- `stage_summary`
 
 ## Guard Rules
 
-- no transition past `PHASE_3_QUALITY_CHECKS` without `ln-510` summary
+- no transition past `PHASE_3_QUALITY_CHECKS` without recorded `ln-510` summary
+- no transition past `PHASE_4_TEST_PLANNING` without recorded `ln-520` summary unless a reused test task is already terminal
 - no transition past `PHASE_5_TEST_VERIFICATION` while test task is still pending
 - `PHASE_6_VERDICT` must record terminal gate result before finalization
 - FAIL still passes through `PHASE_7_FINALIZATION`, but as `skipped_by_verdict`
-- `DONE` requires `PHASE_8_SELF_CHECK` with `pass=true` and final story state recorded
+- child runtime status is resume-only metadata; gate completion still depends on recorded child artifacts
+- `DONE` requires `PHASE_8_SELF_CHECK` with `pass=true`, final story state recorded, and Stage 3 coordinator artifact recorded
 
 ## Canonical Status Sets
 
@@ -74,3 +80,35 @@ These names are canonical for the runtime. Do not replace them with free-form al
 ## Downstream Summary Contract
 
 `ln-510` and `ln-520` must write summaries per `shared/references/coordinator_summary_contract.md`.
+
+## Managed Delegation Sequence
+
+1. compute deterministic child `run_id = {parent_run_id}--{worker}--{story_id}`
+2. compute exact child summary artifact path
+3. start the child coordinator runtime (`quality-runtime` or `test-planning-runtime`)
+4. checkpoint `child_run` metadata in `story-gate-runtime`
+5. invoke child coordinator with both `runId` and `summaryArtifactPath`
+6. read only the resulting child coordinator artifact
+7. record only the artifact payload in `story-gate-runtime`
+8. advance Stage 3 only from recorded child artifacts
+
+`child_runs` entries keep:
+- `worker`
+- `run_id`
+- `summary_artifact_path`
+- `phase_context`
+
+## Coordinator Stage Summary
+
+After `PHASE_7_FINALIZATION`, `ln-500` writes a `pipeline-stage` coordinator summary for Stage 3.
+
+Minimum semantics:
+- `stage = 3`
+- `story_id`
+- `status = completed`
+- `final_result`
+- `story_status`
+- `verdict`
+- `quality_score`
+
+`ln-1000` consumes this artifact as the machine-readable completion signal for Stage 3.

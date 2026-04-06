@@ -53,6 +53,7 @@ const qualityStore = createRuntimeStore({
             decisions: [],
             fast_track: manifest.fast_track,
             worker_results: {},
+            child_runs: {},
             review_summary: null,
             criteria_summary: null,
             linters_summary: null,

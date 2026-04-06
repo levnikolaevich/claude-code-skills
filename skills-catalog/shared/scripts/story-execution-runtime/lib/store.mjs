@@ -4,15 +4,25 @@ import {
     readJsonFile,
 } from "../../coordinator-runtime/lib/core.mjs";
 import {
+    pipelineStageCoordinatorSummarySchema,
     storyGroupRecordSchema,
-    storyTaskRecordSchema,
+    taskStatusWorkerSummarySchema,
 } from "../../coordinator-runtime/lib/schemas.mjs";
+import { writeRuntimeArtifactJson } from "../../coordinator-runtime/lib/artifacts.mjs";
 import {
     STORY_EXECUTION_GROUP_STATUSES,
     TASK_BOARD_STATUSES,
 } from "../../coordinator-runtime/lib/runtime-constants.mjs";
 import { assertSchema } from "../../coordinator-runtime/lib/validate.mjs";
 import { PHASES } from "./phases.mjs";
+
+const TASK_REVIEW_WORKER = "ln-402";
+const TASK_LEDGER_PRIORITY = Object.freeze([
+    TASK_REVIEW_WORKER,
+    "ln-403",
+    "ln-404",
+    "ln-401",
+]);
 
 const executionManifestSchema = {
     type: "object",
@@ -75,12 +85,14 @@ const executionStore = createRuntimeStore({
             },
             rework_counter_by_task: {},
             inflight_workers: {},
+            worker_results_by_task: {},
             tasks: {},
             groups: {},
             worktree_ready: false,
             worktree_dir: manifest.worktree_dir,
             branch: manifest.branch,
             story_transition_done: false,
+            stage_summary: null,
             self_check_passed: false,
             final_result: null,
             created_at: new Date().toISOString(),
@@ -103,38 +115,111 @@ export const {
     updateState,
 } = executionStore;
 
-export function recordTask(projectRoot, runId, taskRecord) {
+function selectTaskLedgerSummary(workerResultsBySkill = {}) {
+    for (const worker of TASK_LEDGER_PRIORITY) {
+        if (workerResultsBySkill[worker]) {
+            return workerResultsBySkill[worker];
+        }
+    }
+    return null;
+}
+
+function buildTaskLedgerEntry(taskId, workerResultsBySkill = {}, existingEntry = null) {
+    const selectedSummary = selectTaskLedgerSummary(workerResultsBySkill);
+    if (!selectedSummary) {
+        return existingEntry;
+    }
+    const payload = selectedSummary.payload || {};
+    return {
+        task_id: taskId,
+        worker: payload.worker || selectedSummary.producer_skill || null,
+        result: payload.result || null,
+        from_status: payload.from_status || null,
+        to_status: payload.to_status || null,
+        tests_run: payload.tests_run || [],
+        files_changed: payload.files_changed || [],
+        issues: payload.issues || [],
+        score: payload.score ?? null,
+        comment_path: payload.comment_path || null,
+        error: payload.error || null,
+        completed_at: selectedSummary.produced_at || new Date().toISOString(),
+    };
+}
+
+function isSameSummary(previousSummary, nextSummary) {
+    return previousSummary?.producer_skill === nextSummary?.producer_skill
+        && previousSummary?.produced_at === nextSummary?.produced_at
+        && previousSummary?.payload?.to_status === nextSummary?.payload?.to_status;
+}
+
+function applyReviewOutcomeToCounters(nextCounters, taskId, previousSummary, summary) {
+    if (!summary || summary.producer_skill !== TASK_REVIEW_WORKER) {
+        return nextCounters;
+    }
+    if (isSameSummary(previousSummary, summary)) {
+        return nextCounters;
+    }
+    const toStatus = summary.payload?.to_status;
+    if (toStatus === TASK_BOARD_STATUSES.TO_REWORK) {
+        return {
+            ...nextCounters,
+            [taskId]: Number(nextCounters[taskId] || 0) + 1,
+        };
+    }
+    if (toStatus === TASK_BOARD_STATUSES.DONE) {
+        return {
+            ...nextCounters,
+            [taskId]: 0,
+        };
+    }
+    return nextCounters;
+}
+
+export function recordWorker(projectRoot, runId, taskId, summary) {
     const run = loadRun(projectRoot, runId);
     if (!run) {
         return { ok: false, error: "Run not found" };
     }
-    const validation = assertSchema(storyTaskRecordSchema, taskRecord, "story task record");
+    if (summary?.run_id !== runId) {
+        return { ok: false, error: `Worker summary run_id must match runtime run_id (${runId})` };
+    }
+    if (summary?.identifier !== taskId) {
+        return { ok: false, error: `Worker summary identifier must match task_id (${taskId})` };
+    }
+    const validation = assertSchema(taskStatusWorkerSummarySchema, summary, "task-status worker summary");
     if (!validation.ok) {
         return validation;
     }
     return updateState(projectRoot, runId, state => {
-        const nextCounters = { ...state.rework_counter_by_task };
-        if (taskRecord.to_status === TASK_BOARD_STATUSES.TO_REWORK) {
-            nextCounters[taskRecord.task_id] = Number(nextCounters[taskRecord.task_id] || 0) + 1;
-        } else if (taskRecord.to_status === TASK_BOARD_STATUSES.DONE) {
-            nextCounters[taskRecord.task_id] = 0;
-        }
+        const artifactPath = writeRuntimeArtifactJson(projectRoot, runId, summary.summary_kind, summary.identifier, summary);
+        const nextSummary = {
+            ...summary,
+            payload: {
+                ...summary.payload,
+                artifact_path: artifactPath,
+            },
+        };
+        const previousTaskResults = state.worker_results_by_task?.[taskId] || {};
+        const nextTaskResults = {
+            ...previousTaskResults,
+            [nextSummary.producer_skill]: nextSummary,
+        };
+        const nextCounters = applyReviewOutcomeToCounters(
+            { ...state.rework_counter_by_task },
+            taskId,
+            previousTaskResults[TASK_REVIEW_WORKER] || null,
+            nextSummary,
+        );
         return {
             ...state,
-            current_task_id: taskRecord.task_id,
+            current_task_id: taskId,
+            worker_results_by_task: {
+                ...state.worker_results_by_task,
+                [taskId]: nextTaskResults,
+            },
             tasks: {
                 ...state.tasks,
-                [taskRecord.task_id]: {
-                    task_id: taskRecord.task_id,
-                    worker: taskRecord.worker || null,
-                    result: taskRecord.result || null,
-                    from_status: taskRecord.from_status || null,
-                    to_status: taskRecord.to_status || null,
-                    tests_run: taskRecord.tests_run || [],
-                    files_changed: taskRecord.files_changed || [],
-                    error: taskRecord.error || null,
-                    completed_at: taskRecord.completed_at || new Date().toISOString(),
-                },
+                [taskId]: buildTaskLedgerEntry(taskId, nextTaskResults, state.tasks?.[taskId] || null),
             },
             rework_counter_by_task: nextCounters,
         };
@@ -165,6 +250,34 @@ export function recordGroup(projectRoot, runId, groupRecord) {
             },
         },
     }));
+}
+
+export function recordStageSummary(projectRoot, runId, summary) {
+    const run = loadRun(projectRoot, runId);
+    if (!run) {
+        return { ok: false, error: "Run not found" };
+    }
+    if (summary?.run_id !== runId) {
+        return { ok: false, error: `Stage summary run_id must match runtime run_id (${runId})` };
+    }
+    const validation = assertSchema(pipelineStageCoordinatorSummarySchema, summary, "pipeline stage coordinator summary");
+    if (!validation.ok) {
+        return validation;
+    }
+    return updateState(projectRoot, runId, state => {
+        const artifactIdentifier = `${summary.identifier}-stage-${summary.payload.stage}`;
+        const artifactPath = writeRuntimeArtifactJson(projectRoot, runId, summary.summary_kind, artifactIdentifier, summary);
+        return {
+            ...state,
+            stage_summary: {
+                ...summary,
+                payload: {
+                    ...summary.payload,
+                    artifact_path: artifactPath,
+                },
+            },
+        };
+    });
 }
 
 export {

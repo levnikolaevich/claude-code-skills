@@ -22,7 +22,8 @@ Canonical phase/status names: `shared/references/runtime_status_catalog.md`
 ```bash
 node shared/scripts/optimization-runtime/cli.mjs start --slug align-endpoint --manifest-file <file>
 node shared/scripts/optimization-runtime/cli.mjs status --slug align-endpoint
-node shared/scripts/optimization-runtime/cli.mjs record-worker-result --worker ln-811 --payload '{...}'
+node shared/scripts/optimization-runtime/cli.mjs record-worker-result --payload '{...}'
+node shared/scripts/optimization-runtime/cli.mjs record-summary --payload '{...}'
 node shared/scripts/optimization-runtime/cli.mjs record-cycle --payload '{...}'
 node shared/scripts/optimization-runtime/cli.mjs checkpoint --phase PHASE_8_EXECUTE --payload '{...}'
 node shared/scripts/optimization-runtime/cli.mjs advance --to PHASE_9_CYCLE_BOUNDARY
@@ -55,10 +56,13 @@ node shared/scripts/optimization-runtime/cli.mjs complete
 - `cycles`
 - `phases`
 - `worker_results`
+- `child_runs`
 - `stop_reason`
 - `target_metric`
 - `context_file`
 - `report_ready`
+- `summary_recorded`
+- `summary_artifact_path`
 
 ## Guard Rules
 
@@ -66,9 +70,12 @@ node shared/scripts/optimization-runtime/cli.mjs complete
 - `PHASE_4_RESEARCH -> PHASE_10_AGGREGATE` only when no hypotheses remain
 - `PHASE_6_WRITE_CONTEXT -> PHASE_7_VALIDATE_PLAN` requires context file path
 - `PHASE_7_VALIDATE_PLAN -> PHASE_8_EXECUTE` requires `GO | GO_WITH_CONCERNS | WAIVED`
-- `PHASE_8_EXECUTE -> PHASE_9_CYCLE_BOUNDARY` requires execution summary or `skipped_by_mode` in `plan_only`
+- `PHASE_2_PROFILE -> PHASE_3_WRONG_TOOL_GATE` requires matching `ln-811` summary
+- `PHASE_4_RESEARCH -> PHASE_5_SET_TARGET` requires matching `ln-812` summary
+- `PHASE_7_VALIDATE_PLAN -> PHASE_8_EXECUTE` requires matching `ln-813` summary and `GO | GO_WITH_CONCERNS | WAIVED`
+- `PHASE_8_EXECUTE -> PHASE_9_CYCLE_BOUNDARY` requires matching `ln-814` summary or `skipped_by_mode` in `plan_only`
 - `PHASE_9_CYCLE_BOUNDARY -> PHASE_2_PROFILE` only when no stop reason is recorded
-- `DONE` requires final report checkpoint
+- `DONE` requires final report checkpoint and optimization coordinator summary
 
 ## Canonical Status Sets
 
@@ -79,4 +86,15 @@ node shared/scripts/optimization-runtime/cli.mjs complete
 
 ## Worker Summary Contract
 
-`ln-811`, `ln-812`, `ln-813`, and `ln-814` must write summaries per `shared/references/coordinator_summary_contract.md`.
+`ln-811`, `ln-812`, `ln-813`, and `ln-814` write `optimization-worker` summary envelopes.
+
+Managed mode:
+- `ln-810` checkpoints `child_run` metadata before invoking the worker
+- Worker receives deterministic `runId` and exact `summaryArtifactPath`
+- `ln-810` records the emitted worker summary envelope with `record-worker-result`
+
+Standalone mode:
+- Worker generates its own `run_id`
+- Worker writes the same `optimization-worker` summary envelope under `.hex-skills/runtime-artifacts/runs/{run_id}/optimization-worker/`
+
+`ln-810` writes an `optimization-coordinator` summary envelope before `complete`.

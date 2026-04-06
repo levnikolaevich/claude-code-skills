@@ -257,6 +257,31 @@ export const qualityWorkerPayloadSchema = {
     },
 };
 
+export const taskStatusWorkerPayloadSchema = {
+    type: "object",
+    required: ["worker", "status", "from_status", "to_status", "warnings"],
+    additionalProperties: false,
+    properties: {
+        worker: { type: "string", minLength: 1 },
+        status: { type: "string", enum: WORKER_SUMMARY_STATUS_LIST },
+        from_status: { type: "string", minLength: 1 },
+        to_status: { type: "string", minLength: 1 },
+        result: nullableStringSchema(),
+        tests_run: stringArraySchema(),
+        files_changed: stringArraySchema(),
+        issues: stringArraySchema(),
+        score: { type: ["number", "null"] },
+        comment_path: nullableStringSchema(),
+        error: nullableStringSchema(),
+        warnings: stringArraySchema(),
+        artifact_path: nullableStringSchema(),
+        metadata: {
+            type: "object",
+            additionalProperties: true,
+        },
+    },
+};
+
 export const testPlanningWorkerPayloadSchema = {
     type: "object",
     required: ["worker", "status", "warnings"],
@@ -331,6 +356,28 @@ export const scopeDecompositionPayloadSchema = {
     },
 };
 
+export const pipelineStageCoordinatorPayloadSchema = {
+    type: "object",
+    required: ["stage", "story_id", "status", "final_result", "story_status", "warnings"],
+    additionalProperties: false,
+    properties: {
+        stage: { type: "integer", minimum: 0, maximum: 3 },
+        story_id: { type: "string", minLength: 1 },
+        status: { type: "string", enum: WORKER_SUMMARY_STATUS_LIST },
+        final_result: { type: "string", minLength: 1 },
+        story_status: { type: "string", minLength: 1 },
+        verdict: nullableStringSchema(),
+        readiness_score: { type: ["number", "null"] },
+        quality_score: { type: ["number", "null"] },
+        warnings: stringArraySchema(),
+        artifact_path: nullableStringSchema(),
+        metadata: {
+            type: "object",
+            additionalProperties: true,
+        },
+    },
+};
+
 export const auditSeverityCountsSchema = {
     type: "object",
     required: ["critical", "high", "medium", "low"],
@@ -368,15 +415,213 @@ export const auditWorkerPayloadSchema = {
     },
 };
 
+export const auditCoordinatorPayloadSchema = {
+    type: "object",
+    required: ["status", "final_result", "report_path", "worker_count", "issues_total", "severity_counts", "warnings"],
+    additionalProperties: false,
+    properties: {
+        status: { type: "string", enum: WORKER_SUMMARY_STATUS_LIST },
+        final_result: { type: "string", minLength: 1 },
+        report_path: { type: "string", minLength: 1 },
+        results_log_path: nullableStringSchema(),
+        overall_score: { type: ["number", "null"] },
+        worker_count: nonNegativeIntegerSchema(),
+        issues_total: nonNegativeIntegerSchema(),
+        severity_counts: auditSeverityCountsSchema,
+        warnings: stringArraySchema(),
+        artifact_path: nullableStringSchema(),
+        metadata: {
+            type: "object",
+            additionalProperties: true,
+        },
+    },
+};
+
+export const optimizationWorkerPayloadSchema = {
+    type: "object",
+    required: ["status", "worker"],
+    additionalProperties: false,
+    properties: {
+        status: { type: "string", enum: WORKER_SUMMARY_STATUS_LIST },
+        worker: { type: "string", minLength: 1 },
+        cycle: { type: "integer", minimum: 1 },
+        phase_context: nullableStringSchema(),
+        artifact_path: nullableStringSchema(),
+        branch: { type: "string" },
+        baseline: { type: "object" },
+        performance_map: { type: "object" },
+        wrong_tool_indicators: stringArraySchema(),
+        e2e_test: { type: "object" },
+        instrumented_files: stringArraySchema(),
+        industry_benchmark: { type: "object" },
+        target_metrics: { type: "object" },
+        hypotheses: stringArraySchema(),
+        local_codebase_findings: stringArraySchema(),
+        verdict: { type: "string" },
+        corrections_applied: stringArraySchema(),
+        concerns: stringArraySchema(),
+        final: { type: "object" },
+        total_improvement_pct: { type: "number" },
+        target_met: { type: "boolean" },
+        strike_result: { type: "string" },
+        hypotheses_applied: stringArraySchema(),
+        hypotheses_removed: stringArraySchema(),
+        recorded_at: dateTimeSchema(),
+    },
+};
+
+export const optimizationCoordinatorPayloadSchema = {
+    type: "object",
+    required: ["status", "final_result", "cycle_count", "report_ready", "execution_mode"],
+    additionalProperties: false,
+    properties: {
+        status: { type: "string", enum: WORKER_SUMMARY_STATUS_LIST },
+        final_result: { type: "string", minLength: 1 },
+        cycle_count: nonNegativeIntegerSchema(),
+        stop_reason: nullableStringSchema(),
+        report_ready: { type: "boolean" },
+        execution_mode: { type: "string", minLength: 1 },
+        target_metric: { type: ["object", "null"] },
+        total_improvement_pct: { type: ["number", "null"] },
+        target_met: { type: ["boolean", "null"] },
+        summary_artifact_path: nullableStringSchema(),
+        report_path: nullableStringSchema(),
+    },
+};
+
+export const dependencyWorkerPayloadSchema = {
+    type: "object",
+    required: ["status", "worker", "package_manager"],
+    additionalProperties: false,
+    properties: {
+        status: { type: "string", enum: WORKER_SUMMARY_STATUS_LIST },
+        worker: { type: "string", minLength: 1 },
+        package_manager: { type: "string", minLength: 1 },
+        branch: nullableStringSchema(),
+        upgrades: {
+            type: "array",
+            items: {
+                type: "object",
+                required: ["package", "from", "to"],
+                additionalProperties: false,
+                properties: {
+                    package: { type: "string", minLength: 1 },
+                    from: { type: "string", minLength: 1 },
+                    to: { type: "string", minLength: 1 },
+                    breaking: { type: "boolean" },
+                },
+            },
+        },
+        warnings: stringArraySchema(),
+        errors: stringArraySchema(),
+        tests_passed: { type: "boolean" },
+        build_passed: { type: "boolean" },
+        artifact_path: nullableStringSchema(),
+    },
+};
+
+export const dependencyCoordinatorPayloadSchema = {
+    type: "object",
+    required: ["status", "final_result", "worker_count", "upgraded_packages", "verification_passed", "report_ready"],
+    additionalProperties: false,
+    properties: {
+        status: { type: "string", enum: WORKER_SUMMARY_STATUS_LIST },
+        final_result: { type: "string", minLength: 1 },
+        worker_count: nonNegativeIntegerSchema(),
+        upgraded_packages: nonNegativeIntegerSchema(),
+        failed_workers: nonNegativeIntegerSchema(),
+        verification_passed: { type: "boolean" },
+        report_ready: { type: "boolean" },
+        report_path: nullableStringSchema(),
+        artifact_path: nullableStringSchema(),
+    },
+};
+
+export const modernizationWorkerPayloadSchema = {
+    type: "object",
+    required: ["status", "worker"],
+    additionalProperties: false,
+    properties: {
+        status: { type: "string", enum: WORKER_SUMMARY_STATUS_LIST },
+        worker: { type: "string", minLength: 1 },
+        branch: nullableStringSchema(),
+        changes_applied: nonNegativeIntegerSchema(),
+        changes_discarded: nonNegativeIntegerSchema(),
+        tests_passed: { type: "boolean" },
+        build_passed: { type: "boolean" },
+        modules_replaced: nonNegativeIntegerSchema(),
+        loc_removed: nonNegativeIntegerSchema(),
+        bundle_reduction_bytes: nonNegativeIntegerSchema(),
+        warnings: stringArraySchema(),
+        errors: stringArraySchema(),
+        artifact_path: nullableStringSchema(),
+    },
+};
+
+export const modernizationCoordinatorPayloadSchema = {
+    type: "object",
+    required: ["status", "final_result", "worker_count", "verification_passed", "report_ready"],
+    additionalProperties: false,
+    properties: {
+        status: { type: "string", enum: WORKER_SUMMARY_STATUS_LIST },
+        final_result: { type: "string", minLength: 1 },
+        worker_count: nonNegativeIntegerSchema(),
+        verification_passed: { type: "boolean" },
+        report_ready: { type: "boolean" },
+        modules_replaced: nonNegativeIntegerSchema(),
+        loc_removed: nonNegativeIntegerSchema(),
+        bundle_reduction_bytes: nonNegativeIntegerSchema(),
+        report_path: nullableStringSchema(),
+        artifact_path: nullableStringSchema(),
+    },
+};
+
+export const benchmarkWorkerPayloadSchema = {
+    type: "object",
+    required: ["status", "worker", "scenarios_total", "scenarios_passed", "scenarios_failed", "activation_valid", "validity_verdict", "warnings"],
+    additionalProperties: false,
+    properties: {
+        status: { type: "string", enum: WORKER_SUMMARY_STATUS_LIST },
+        worker: { type: "string", minLength: 1 },
+        scenarios_total: nonNegativeIntegerSchema(),
+        scenarios_passed: nonNegativeIntegerSchema(),
+        scenarios_failed: nonNegativeIntegerSchema(),
+        activation_valid: { type: "boolean" },
+        validity_verdict: { type: "string", minLength: 1 },
+        report_path: nullableStringSchema(),
+        artifact_path: nullableStringSchema(),
+        scenario_ids: stringArraySchema(),
+        warnings: stringArraySchema(),
+        metrics: {
+            type: "object",
+            additionalProperties: true,
+        },
+        metadata: {
+            type: "object",
+            additionalProperties: true,
+        },
+    },
+};
+
 export const environmentWorkerSummarySchema = buildSummaryEnvelopeSchema(environmentWorkerPayloadSchema);
 export const storyPlanWorkerSummarySchema = buildSummaryEnvelopeSchema(storyPlanWorkerPayloadSchema);
 export const taskPlanWorkerSummarySchema = buildSummaryEnvelopeSchema(taskPlanWorkerPayloadSchema);
 export const qualityWorkerSummarySchema = buildSummaryEnvelopeSchema(qualityWorkerPayloadSchema);
+export const taskStatusWorkerSummarySchema = buildSummaryEnvelopeSchema(taskStatusWorkerPayloadSchema);
 export const testPlanningWorkerSummarySchema = buildSummaryEnvelopeSchema(testPlanningWorkerPayloadSchema);
 export const docsGenerationWorkerSummarySchema = buildSummaryEnvelopeSchema(docsGenerationWorkerPayloadSchema);
 export const epicPlanCoordinatorSummarySchema = buildSummaryEnvelopeSchema(epicPlanCoordinatorPayloadSchema);
 export const scopeDecompositionSummarySchema = buildSummaryEnvelopeSchema(scopeDecompositionPayloadSchema);
 export const auditWorkerSummarySchema = buildSummaryEnvelopeSchema(auditWorkerPayloadSchema);
+export const auditCoordinatorSummarySchema = buildSummaryEnvelopeSchema(auditCoordinatorPayloadSchema);
+export const pipelineStageCoordinatorSummarySchema = buildSummaryEnvelopeSchema(pipelineStageCoordinatorPayloadSchema);
+export const optimizationWorkerSummarySchema = buildSummaryEnvelopeSchema(optimizationWorkerPayloadSchema);
+export const optimizationCoordinatorSummarySchema = buildSummaryEnvelopeSchema(optimizationCoordinatorPayloadSchema);
+export const dependencyWorkerSummarySchema = buildSummaryEnvelopeSchema(dependencyWorkerPayloadSchema);
+export const dependencyCoordinatorSummarySchema = buildSummaryEnvelopeSchema(dependencyCoordinatorPayloadSchema);
+export const modernizationWorkerSummarySchema = buildSummaryEnvelopeSchema(modernizationWorkerPayloadSchema);
+export const modernizationCoordinatorSummarySchema = buildSummaryEnvelopeSchema(modernizationCoordinatorPayloadSchema);
+export const benchmarkWorkerSummarySchema = buildSummaryEnvelopeSchema(benchmarkWorkerPayloadSchema);
 
 export const environmentStateSchema = {
     type: "object",
@@ -510,23 +755,6 @@ export const reviewAgentRecordSchema = {
     },
 };
 
-export const storyTaskRecordSchema = {
-    type: "object",
-    required: ["task_id"],
-    additionalProperties: false,
-    properties: {
-        task_id: { type: "string", minLength: 1 },
-        worker: { type: "string" },
-        result: { type: "string" },
-        from_status: { type: "string" },
-        to_status: { type: "string" },
-        tests_run: stringArraySchema(),
-        files_changed: stringArraySchema(),
-        error: { type: "string" },
-        completed_at: dateTimeSchema(),
-    },
-};
-
 export const storyGroupRecordSchema = {
     type: "object",
     required: ["group_id"],
@@ -572,34 +800,7 @@ export const testSummarySchema = {
     },
 };
 
-export const optimizationWorkerResultSchema = {
-    type: "object",
-    required: ["worker"],
-    additionalProperties: false,
-    properties: {
-        worker: { type: "string", minLength: 1 },
-        branch: { type: "string" },
-        baseline: { type: "object" },
-        performance_map: { type: "object" },
-        wrong_tool_indicators: stringArraySchema(),
-        e2e_test: { type: "object" },
-        instrumented_files: stringArraySchema(),
-        industry_benchmark: { type: "object" },
-        target_metrics: { type: "object" },
-        hypotheses: stringArraySchema(),
-        local_codebase_findings: stringArraySchema(),
-        verdict: { type: "string" },
-        corrections_applied: stringArraySchema(),
-        concerns: stringArraySchema(),
-        final: { type: "object" },
-        total_improvement_pct: { type: "number" },
-        target_met: { type: "boolean" },
-        strike_result: { type: "string" },
-        hypotheses_applied: stringArraySchema(),
-        hypotheses_removed: stringArraySchema(),
-        recorded_at: dateTimeSchema(),
-    },
-};
+export const optimizationWorkerResultSchema = optimizationWorkerPayloadSchema;
 
 export const optimizationCycleSchema = {
     type: "object",

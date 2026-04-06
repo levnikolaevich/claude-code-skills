@@ -1,10 +1,14 @@
 import { resolve } from "node:path";
-import { taskPlanWorkerSummarySchema } from "../../coordinator-runtime/lib/schemas.mjs";
+import {
+    pipelineStageCoordinatorSummarySchema,
+    taskPlanWorkerSummarySchema,
+} from "../../coordinator-runtime/lib/schemas.mjs";
 import {
     createPlanningManifestSchema,
     createPlanningRuntimeStore,
     createPlanningState,
 } from "../../planning-runtime/lib/store.mjs";
+import { writeRuntimeArtifactJson } from "../../coordinator-runtime/lib/artifacts.mjs";
 import { PHASES } from "./phases.mjs";
 
 const taskPlanningStore = createPlanningRuntimeStore({
@@ -32,7 +36,9 @@ const taskPlanningStore = createPlanningRuntimeStore({
             readiness_findings: [],
             mode_detection: null,
             plan_result: null,
+            child_run: null,
             verification_summary: null,
+            stage_summary: null,
         });
     },
     pausedPhase: PHASES.PAUSED,
@@ -68,4 +74,44 @@ export function recordPlan(projectRoot, runId, summary) {
             plan_result: nextSummary,
         }),
     );
+}
+
+export function recordStageSummary(projectRoot, runId, summary) {
+    if (summary?.run_id !== runId) {
+        return { ok: false, error: `Stage summary run_id must match runtime run_id (${runId})` };
+    }
+    const validation = taskPlanningStore.recordSummary(
+        projectRoot,
+        runId,
+        summary,
+        pipelineStageCoordinatorSummarySchema,
+        "pipeline stage coordinator summary",
+        (state, nextSummary) => {
+            const artifactIdentifier = `${nextSummary.identifier}-stage-${nextSummary.payload.stage}`;
+            const artifactPath = writeRuntimeArtifactJson(
+                projectRoot,
+                runId,
+                nextSummary.summary_kind,
+                artifactIdentifier,
+                {
+                    ...nextSummary,
+                    payload: {
+                        ...nextSummary.payload,
+                        artifact_path: nextSummary.payload.artifact_path || null,
+                    },
+                },
+            );
+            return {
+                ...state,
+                stage_summary: {
+                    ...nextSummary,
+                    payload: {
+                        ...nextSummary.payload,
+                        artifact_path: artifactPath,
+                    },
+                },
+            };
+        },
+    );
+    return validation;
 }

@@ -5,8 +5,10 @@ import {
 } from "../../coordinator-runtime/lib/core.mjs";
 import {
     optimizationCycleSchema,
-    optimizationWorkerResultSchema,
+    optimizationCoordinatorSummarySchema,
+    optimizationWorkerSummarySchema,
 } from "../../coordinator-runtime/lib/schemas.mjs";
+import { writeRuntimeArtifactJson } from "../../coordinator-runtime/lib/artifacts.mjs";
 import { assertSchema } from "../../coordinator-runtime/lib/validate.mjs";
 import { PHASES } from "./phases.mjs";
 
@@ -69,11 +71,15 @@ const optimizationStore = createRuntimeStore({
             cycles: [],
             phases: {},
             worker_results: {},
+            child_runs: {},
             stop_reason: null,
             target_metric: manifest.target_metric,
             context_file: manifest.context_file,
             final_result: null,
             report_ready: false,
+            summary_recorded: false,
+            summary_artifact_path: null,
+            summary: null,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
         };
@@ -94,25 +100,68 @@ export const {
     updateState,
 } = optimizationStore;
 
-export function recordWorkerResult(projectRoot, runId, resultRecord) {
+function childRunKey(childRun) {
+    const identifier = childRun?.identifier || childRun?.phase_context || childRun?.run_id || "child";
+    return `${childRun?.worker || "worker"}--${identifier}`;
+}
+
+function workerResultKey(summary) {
+    return `${summary.producer_skill}--${summary.identifier}`;
+}
+
+export function recordWorkerResult(projectRoot, runId, summary) {
     const run = loadRun(projectRoot, runId);
     if (!run) {
         return { ok: false, error: "Run not found" };
     }
-    const validation = assertSchema(optimizationWorkerResultSchema, resultRecord, "optimization worker result");
+    const validation = assertSchema(optimizationWorkerSummarySchema, summary, "optimization worker summary");
     if (!validation.ok) {
         return validation;
+    }
+    if (summary?.run_id !== runId && !run.state.child_runs?.[childRunKey({
+        worker: summary.producer_skill,
+        identifier: summary.identifier,
+        run_id: summary.run_id,
+    })]) {
+        return { ok: false, error: `Optimization worker summary must belong to runtime ${runId} or a recorded child run` };
     }
     return updateState(projectRoot, runId, state => ({
         ...state,
         worker_results: {
             ...state.worker_results,
-            [resultRecord.worker]: {
-                ...resultRecord,
-                recorded_at: resultRecord.recorded_at || new Date().toISOString(),
-            },
+            [workerResultKey(summary)]: summary,
         },
     }));
+}
+
+export function recordSummary(projectRoot, runId, summary) {
+    const run = loadRun(projectRoot, runId);
+    if (!run) {
+        return { ok: false, error: "Run not found" };
+    }
+    if (summary?.run_id !== runId) {
+        return { ok: false, error: `Optimization coordinator summary run_id must match runtime run_id (${runId})` };
+    }
+    const validation = assertSchema(optimizationCoordinatorSummarySchema, summary, "optimization coordinator summary");
+    if (!validation.ok) {
+        return validation;
+    }
+    return updateState(projectRoot, runId, state => {
+        const artifactIdentifier = `${summary.producer_skill}--${summary.identifier}`;
+        const artifactPath = writeRuntimeArtifactJson(projectRoot, runId, summary.summary_kind, artifactIdentifier, summary);
+        return {
+            ...state,
+            summary_recorded: true,
+            summary_artifact_path: artifactPath,
+            summary: {
+                ...summary,
+                payload: {
+                    ...summary.payload,
+                    summary_artifact_path: artifactPath,
+                },
+            },
+        };
+    });
 }
 
 export function recordCycle(projectRoot, runId, cycleRecord) {

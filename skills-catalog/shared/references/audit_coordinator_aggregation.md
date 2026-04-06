@@ -9,11 +9,12 @@ Use one run-scoped artifact directory per run:
 ```text
 .hex-skills/runtime-artifacts/runs/{run_id}/audit-report/
 .hex-skills/runtime-artifacts/runs/{run_id}/audit-worker/
+.hex-skills/runtime-artifacts/runs/{run_id}/audit-coordinator/
 ```
 
 Rules:
 - Create the run-scoped directories before delegating.
-- Delete the run-scoped artifact directory after the consolidated report and results-log row are written (see Worker File Cleanup below).
+- Delete only worker artifact directories after the consolidated report, results-log row, and coordinator summary are written (see Worker File Cleanup below).
 
 ## Parse Worker Summaries First
 
@@ -22,9 +23,9 @@ Prefer JSON worker summaries for numbers:
 ```json
 {
   "summary_kind": "audit-worker",
-  "identifier": "ln-621-global",
+  "identifier": "global",
   "payload": {
-    "report_path": ".hex-skills/runtime-artifacts/runs/{run_id}/audit-report/621-security.md",
+    "report_path": ".hex-skills/runtime-artifacts/runs/{run_id}/audit-report/ln-621--global.md",
     "score": 7.5,
     "issues_total": 5,
     "severity_counts": {"critical": 0, "high": 2, "medium": 2, "low": 1}
@@ -51,7 +52,8 @@ Use file reads later for detailed findings, not for numbers you already have.
 5. Apply worker-specific or coordinator-specific post-filters.
 6. Assemble the final consolidated report.
 7. Append a results-log row (mandatory for all coordinators).
-8. Delete the current run-scoped runtime artifact directory.
+8. Write the coordinator summary artifact.
+9. Delete the current run's worker artifact directories.
 
 ## Score Handling
 
@@ -86,12 +88,13 @@ Append one row after the final score is known.
 
 ## Worker File Cleanup
 
-After the results-log row is appended, delete the current run's runtime artifact directory:
+After the results-log row is appended and the coordinator summary is written, delete only the current run's worker artifact directories:
 
 ```bash
-rm -rf .hex-skills/runtime-artifacts/runs/{run_id}
+rm -rf .hex-skills/runtime-artifacts/runs/{run_id}/audit-report
+rm -rf .hex-skills/runtime-artifacts/runs/{run_id}/audit-worker
 ```
 
-This removes run-scoped worker markdown reports and JSON summaries. Worker files are intermediate artifacts; the consolidated report and results log preserve all needed history.
+This removes run-scoped worker markdown reports and JSON summaries. The coordinator summary artifact stays in `.hex-skills/runtime-artifacts/runs/{run_id}/audit-coordinator/`.
 
 Do NOT delete `docs/project/.audit/results_log.md` — it lives outside the dated directory.

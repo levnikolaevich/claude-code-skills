@@ -10,6 +10,7 @@ import {
     pauseRun,
     readJsonFile,
     recordQuality,
+    recordStageSummary,
     recordTestStatus,
     resolveRunId,
     runtimePaths,
@@ -68,6 +69,14 @@ function resolveRun(projectRoot) {
 
 function applyCheckpointToState(state, phase, payload) {
     const nextState = { ...state };
+
+    if ([PHASES.QUALITY_CHECKS, PHASES.TEST_PLANNING].includes(phase)
+        && payload.child_run?.worker) {
+        nextState.child_runs = {
+            ...(nextState.child_runs || {}),
+            [payload.child_run.worker]: payload.child_run,
+        };
+    }
 
     if (phase === PHASES.FAST_TRACK) {
         nextState.fast_track = payload.fast_track === true;
@@ -222,6 +231,17 @@ async function main() {
         return;
     }
 
+    if (command === "record-stage-summary") {
+        const payload = readPayload(values, readJsonFile);
+        const { runId } = resolveRun(projectRoot);
+        const result = recordStageSummary(projectRoot, runId, payload);
+        if (!result.ok) {
+            failResult(result);
+        }
+        output(result);
+        return;
+    }
+
     if (command === "pause") {
         const { runId } = resolveRun(projectRoot);
         const result = pauseRun(projectRoot, runId, values.reason || "Paused");
@@ -246,7 +266,7 @@ async function main() {
         return;
     }
 
-    fail("Unknown command. Use: start, status, advance, checkpoint, record-quality, record-test-status, pause, complete");
+    fail("Unknown command. Use: start, status, advance, checkpoint, record-quality, record-test-status, record-stage-summary, pause, complete");
 }
 
 main().catch(error => fail(error.message));

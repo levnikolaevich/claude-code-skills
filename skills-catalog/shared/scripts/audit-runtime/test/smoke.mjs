@@ -60,6 +60,15 @@ try {
     run(["checkpoint", "--project-root", projectRoot, "--skill", "ln-620", "--identifier", "global", "--phase", "PHASE_1_DISCOVERY"]);
     run(["advance", "--project-root", projectRoot, "--skill", "ln-620", "--identifier", "global", "--to", "PHASE_2_DELEGATE"]);
     run([
+        "checkpoint",
+        "--project-root", projectRoot,
+        "--skill", "ln-620",
+        "--identifier", "global",
+        "--phase", "PHASE_2_DELEGATE",
+        "--payload",
+        "{\"worker_plan\":[\"ln-621--global\"],\"child_run\":{\"worker\":\"ln-621\",\"identifier\":\"global\",\"run_id\":\"ln-620-global-smoke--ln-621--global\",\"summary_artifact_path\":\".hex-skills/runtime-artifacts/runs/ln-620-global-smoke/audit-worker/ln-621--global.json\",\"phase_context\":\"delegate\"}}",
+    ]);
+    run([
         "record-worker-result",
         "--project-root", projectRoot,
         "--skill", "ln-620",
@@ -68,14 +77,14 @@ try {
         JSON.stringify({
             schema_version: "1.0.0",
             summary_kind: "audit-worker",
-            run_id: started.run_id,
-            identifier: "ln-621-global",
+            run_id: `${started.run_id}--ln-621--global`,
+            identifier: "global",
             producer_skill: "ln-621",
             produced_at: new Date().toISOString(),
             payload: {
                 status: WORKER_SUMMARY_STATUSES.COMPLETED,
                 category: "Security",
-                report_path: ".hex-skills/runtime-artifacts/runs/demo/audit-report/621-security.md",
+                report_path: ".hex-skills/runtime-artifacts/runs/demo/audit-report/ln-621--global.md",
                 score: 8.5,
                 issues_total: 1,
                 severity_counts: { critical: 0, high: 1, medium: 0, low: 0 },
@@ -83,7 +92,6 @@ try {
             },
         }),
     ]);
-    run(["checkpoint", "--project-root", projectRoot, "--skill", "ln-620", "--identifier", "global", "--phase", "PHASE_2_DELEGATE"]);
     run(["advance", "--project-root", projectRoot, "--skill", "ln-620", "--identifier", "global", "--to", "PHASE_3_AGGREGATE"]);
     run([
         "checkpoint",
@@ -133,6 +141,32 @@ try {
         "--phase", "PHASE_7_SELF_CHECK",
         "--payload",
         "{\"pass\":true,\"final_result\":\"AUDIT_COMPLETE\"}",
+    ]);
+    run([
+        "record-summary",
+        "--project-root", projectRoot,
+        "--skill", "ln-620",
+        "--identifier", "global",
+        "--payload",
+        JSON.stringify({
+            schema_version: "1.0.0",
+            summary_kind: "audit-coordinator",
+            run_id: started.run_id,
+            identifier: "global",
+            producer_skill: "ln-620",
+            produced_at: "2026-04-06T00:00:00Z",
+            payload: {
+                status: "completed",
+                final_result: "AUDIT_COMPLETE",
+                report_path: "docs/project/codebase_audit.md",
+                results_log_path: "docs/project/.audit/results_log.md",
+                overall_score: 8.5,
+                worker_count: 1,
+                issues_total: 1,
+                severity_counts: { critical: 0, high: 1, medium: 0, low: 0 },
+                warnings: [],
+            },
+        }),
     ]);
 
     const completed = run(["complete", "--project-root", projectRoot, "--skill", "ln-620", "--identifier", "global"]);

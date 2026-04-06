@@ -28,6 +28,7 @@ Canonical phase/status names: `shared/references/runtime_status_catalog.md`
 
 - `fast_track`
 - `worker_results`
+- `child_runs`
 - `review_summary`
 - `criteria_summary`
 - `linters_summary`
@@ -47,3 +48,13 @@ Canonical phase/status names: `shared/references/runtime_status_catalog.md`
 ## Worker Summaries
 
 Workers emit `quality-worker` summaries using the shared envelope.
+Managed delegation passes deterministic child `run_id` plus exact `summaryArtifactPath`, checkpoints `child_run` metadata, and advances only from the worker artifact.
+Worker runtime family: `shared/references/quality_worker_runtime_contract.md`
+
+Managed delegation sequence:
+1. compute deterministic child `run_id`
+2. compute exact child artifact path
+3. start `quality-worker-runtime`
+4. checkpoint `child_run`
+5. invoke worker with both transport inputs
+6. record only the resulting `quality-worker` artifact

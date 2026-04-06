@@ -25,7 +25,7 @@ Researches real-world problems and edge cases before test planning to ensure tes
 - Research common problems for the feature domain using Web Search, MCP Ref, Context7.
 - Analyze how competitors solve the same problem.
 - Find customer complaints and pain points from forums, StackOverflow, Reddit.
-- Post structured findings as Linear comment for downstream skills (ln-522, ln-523).
+- Post structured findings as a Linear comment for later test-planning steps.
 - No test creation or status changes.
 
 ## When to Use
@@ -151,22 +151,18 @@ _This research informs both manual tests (ln-522) and automated tests (ln-523)._
 
 ## Runtime Summary Artifact
 
-**MANDATORY READ:** Load `shared/references/test_planning_summary_contract.md`
+**MANDATORY READ:** Load `shared/references/test_planning_summary_contract.md`, `shared/references/test_planning_worker_runtime_contract.md`
 
-Accept optional `summaryArtifactPath`.
+Runtime profile:
+- family: `test-planning-worker`
+- worker: `ln-521`
+- summary kind: `test-planning-worker`
+- payload fields used by coordinators: `worker`, `status`, `warnings`, `research_comment_path`
 
-Summary kind:
-- `test-planning-worker`
-
-Required payload semantics:
-- `worker = "ln-521"`
-- `status`
-- `warnings`
-- `research_comment_path`
-
-Write the summary to the provided artifact path or return the same envelope in structured output.
-
-**Standalone default (no coordinator):** Generate `run_id` = `standalone-ln-521-{YYYYMMDD}-{short_hash}`, write summary JSON to `.hex-skills/runtime-artifacts/runs/{run_id}/test-planning-worker/ln-521.json`. NEVER write artifacts to the project root directory.
+Invocation rules:
+- standalone: omit `runId` and `summaryArtifactPath`
+- managed: pass both `runId` and exact `summaryArtifactPath`
+- always write the validated summary before terminal outcome
 
 ## Definition of Done
 

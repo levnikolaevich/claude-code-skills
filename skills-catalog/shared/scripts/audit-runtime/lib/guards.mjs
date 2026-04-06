@@ -26,6 +26,12 @@ function workerResultsCount(state) {
     return Object.keys(state.worker_results || {}).length;
 }
 
+function firstMissingWorker(state) {
+    const workerPlan = Array.isArray(state.worker_plan) ? state.worker_plan : [];
+    const workerResults = state.worker_results || {};
+    return workerPlan.find(workerIdentifier => !workerResults[workerIdentifier]) || null;
+}
+
 function skippedCheckpoint(checkpoints, phase) {
     const payload = latestPayload(checkpoints, phase);
     return payload.skipped_by_mode === true || payload.skipped === true;
@@ -86,6 +92,9 @@ export function validateTransition(manifest, state, checkpoints, toPhase) {
         if (!state.final_result) {
             return { ok: false, error: "Final result not recorded" };
         }
+        if (!state.summary_recorded) {
+            return { ok: false, error: "Audit coordinator summary must be recorded before completion" };
+        }
     }
 
     return { ok: true };
@@ -110,6 +119,11 @@ export function computeResumeAction(manifest, state, checkpoints) {
         return `Record worker summaries before advancing from ${state.phase}`;
     }
     if (state.worker_plan.length > 0 && workerResultsCount(state) < state.worker_plan.length) {
+        const missingWorker = firstMissingWorker(state);
+        const childRun = missingWorker ? state.child_runs?.[missingWorker] : null;
+        if (childRun?.run_id) {
+            return `Record ${missingWorker} summary from child run ${childRun.run_id} before advancing`;
+        }
         return `Record remaining worker summaries (${workerResultsCount(state)}/${state.worker_plan.length}) before advancing`;
     }
     if (state.phase === policy.aggregate_phase && !state.aggregation_summary) {
@@ -126,6 +140,9 @@ export function computeResumeAction(manifest, state, checkpoints) {
     }
     if (state.phase === policy.self_check_phase && !state.self_check_passed) {
         return `Fix self-check failures, then checkpoint ${state.phase} with pass=true`;
+    }
+    if (state.phase === policy.self_check_phase && !state.summary_recorded) {
+        return "Record audit coordinator summary before completion";
     }
 
     const nextPhase = nextConfiguredPhase(manifest, state.phase);

@@ -16,6 +16,99 @@ const allowedLegacyPhaseDocs = new Set([
     normalizePath(join(skillsRepoRoot, "shared/references/review_runtime_contract.md")),
 ]);
 
+const workerRuntimeWiringDocs = new Map([
+    [
+        normalizePath(join(skillsRepoRoot, "ln-300-task-coordinator/SKILL.md")),
+        [
+            "node shared/scripts/task-plan-worker-runtime/cli.mjs start",
+            "--run-id {childRunId}",
+            "--summary-artifact-path {childSummaryArtifactPath}",
+        ],
+    ],
+    [
+        normalizePath(join(skillsRepoRoot, "ln-400-story-executor/SKILL.md")),
+        [
+            "node shared/scripts/task-worker-runtime/cli.mjs start",
+            "task-status/{taskId}--{worker}.json",
+            "task-status/{taskId}--ln-402.json",
+        ],
+    ],
+    [
+        normalizePath(join(skillsRepoRoot, "ln-510-quality-coordinator/SKILL.md")),
+        [
+            "node shared/scripts/quality-worker-runtime/cli.mjs start",
+            "quality-worker/ln-511--{storyId}.json",
+            "quality-worker/ln-514--{storyId}.json",
+        ],
+    ],
+    [
+        normalizePath(join(skillsRepoRoot, "ln-520-test-planner/SKILL.md")),
+        [
+            "node shared/scripts/test-planning-worker-runtime/cli.mjs start",
+            "test-planning-worker/{worker}--{storyId}.json",
+            "child_run",
+        ],
+    ],
+    [
+        normalizePath(join(skillsRepoRoot, "ln-523-auto-test-planner/SKILL.md")),
+        [
+            "task-plan-worker-runtime",
+            "childSummaryArtifactPath = .hex-skills/runtime-artifacts/runs/{parent_run_id}/task-plan/ln-301--{storyId}.json",
+            "child `task-plan` artifact",
+        ],
+    ],
+    [
+        normalizePath(join(skillsRepoRoot, "ln-500-story-quality-gate/SKILL.md")),
+        [
+            "node shared/scripts/quality-runtime/cli.mjs start",
+            "story-quality/{storyId}.json",
+            "node shared/scripts/test-planning-runtime/cli.mjs start",
+            "story-tests/{storyId}.json",
+            "child_run",
+        ],
+    ],
+    [
+        normalizePath(join(skillsRepoRoot, "ln-610-docs-auditor/SKILL.md")),
+        [
+            "node shared/scripts/audit-worker-runtime/cli.mjs start",
+            "audit-worker/{worker}--{identifier}.json",
+            "child_run",
+        ],
+    ],
+    [
+        normalizePath(join(skillsRepoRoot, "ln-620-codebase-auditor/SKILL.md")),
+        [
+            "node shared/scripts/audit-worker-runtime/cli.mjs start",
+            "audit-worker/{worker}--{identifier}.json",
+            "child_run",
+        ],
+    ],
+    [
+        normalizePath(join(skillsRepoRoot, "ln-630-test-auditor/SKILL.md")),
+        [
+            "node shared/scripts/audit-worker-runtime/cli.mjs start",
+            "audit-worker/{worker}--{identifier}.json",
+            "child_run",
+        ],
+    ],
+    [
+        normalizePath(join(skillsRepoRoot, "ln-640-pattern-evolution-auditor/SKILL.md")),
+        [
+            "node shared/scripts/audit-worker-runtime/cli.mjs start",
+            "audit-worker/{worker}--{identifier}.json",
+            "child_run",
+        ],
+    ],
+    [
+        normalizePath(join(skillsRepoRoot, "ln-650-persistence-performance-auditor/SKILL.md")),
+        [
+            "node shared/scripts/audit-worker-runtime/cli.mjs start",
+            "audit-worker/{worker}--{identifier}.json",
+            "child_run",
+        ],
+    ],
+]);
+
 const checks = [
     {
         name: "legacy review phase alias in code or active skill docs",
@@ -77,6 +170,49 @@ const checks = [
         regex: /state\.stage/,
         message: "Use canonical runtime field `state.phase`, not `state.stage`.",
         include: filePath => isDocumentationLike(filePath),
+    },
+    {
+        name: "missing worker-runtime wiring in ln-1000 coordinator skills",
+        test(filePath, content) {
+            const requiredSnippets = workerRuntimeWiringDocs.get(normalizePath(filePath));
+            if (!requiredSnippets) {
+                return null;
+            }
+            const missing = requiredSnippets.filter(snippet => !content.includes(snippet));
+            if (missing.length === 0) {
+                return null;
+            }
+            return `Add explicit managed worker-runtime wiring snippets: ${missing.join(", ")}`;
+        },
+        include: filePath => workerRuntimeWiringDocs.has(normalizePath(filePath)),
+    },
+    {
+        name: "plain Stage 3 child coordinator invocation in ln-500",
+        test(filePath, content) {
+            if (normalizePath(filePath) !== normalizePath(join(skillsRepoRoot, "ln-500-story-quality-gate/SKILL.md"))) {
+                return null;
+            }
+            if (content.includes('Skill(skill: "ln-510-quality-coordinator", args: "{storyId}")')
+                || content.includes('Skill(skill: "ln-520-test-planner", args: "{storyId}")')) {
+                return "Replace plain ln-510/ln-520 invocation examples with managed child-run flow.";
+            }
+            return null;
+        },
+        include: filePath => normalizePath(filePath) === normalizePath(join(skillsRepoRoot, "ln-500-story-quality-gate/SKILL.md")),
+    },
+    {
+        name: "reverse-coupled audit worker contract wording",
+        regex: /\*\*Worker in ln-\d+ coordinator pipeline\*\*|invoked by ln-\d+/,
+        message: "Audit workers must stay standalone-capable and must not describe parent coordinator ownership in the public contract.",
+        include: filePath => /\/ln-6\d{2}[^/]*\/SKILL\.md$/.test(normalizePath(filePath))
+            && !/\/ln-(610|620|630|640|650)-/.test(normalizePath(filePath)),
+    },
+    {
+        name: "legacy audit summary fallback wording",
+        regex: /Legacy compact text output is allowed only when `summaryArtifactPath` is absent|If `?summaryArtifactPath`? is present, write JSON summary per /,
+        message: "Use managed-vs-standalone runtime wording from the shared audit worker contracts instead of legacy fallback prose.",
+        include: filePath => /\/ln-6\d{2}[^/]*\/SKILL\.md$/.test(normalizePath(filePath))
+            && !/\/ln-(610|620|630|640|650)-/.test(normalizePath(filePath)),
     },
 ];
 

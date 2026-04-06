@@ -68,6 +68,9 @@ export function computeResumeAction(manifest, state, checkpoints) {
         return "Record approval decision or improve the plan before mode detection";
     }
     if (state.phase === PHASES.DELEGATE && !state.plan_result) {
+        if (state.child_run?.run_id) {
+            return `Check child runtime ${state.child_run.run_id} for ${state.child_run.worker || "task-plan worker"} or record task-planning worker summary before verification`;
+        }
         return "Record task-planning worker summary before verification";
     }
     if (state.phase === PHASES.SELF_CHECK && !state.self_check_passed) {

@@ -15,13 +15,12 @@ Specialized worker auditing code complexity, method signatures, algorithms, and 
 
 ## Purpose & Scope
 
-- **Worker in ln-620 coordinator pipeline** - invoked by ln-620-codebase-auditor
 - Audit **code quality** (Categories 5+6+NEW: Medium Priority)
 - Check complexity metrics, method signature quality, algorithmic efficiency, constants management
 - Return structured findings with severity, location, effort, recommendations
 - Calculate compliance score (X/10) for Code Quality category
 
-## Inputs (from Coordinator)
+## Inputs
 
 **MANDATORY READ:** Load `shared/references/audit_worker_core_contract.md`.
 
@@ -52,7 +51,7 @@ Receives `contextStore` with: `tech_stack`, `best_practices`, `principles`, `cod
 4) **Collect findings with severity, location, effort, recommendation**
    - Tag each finding with `domain: domain_name` (if domain-aware)
 5) **Calculate score using penalty algorithm**
-6) **Write Report:** Build full markdown report in memory per `shared/templates/audit_worker_report_template.md`, write to `{output_dir}/624-quality-{domain}.md` (or `624-quality.md` in global mode) in single Write call
+6) **Write Report:** Build full markdown report in memory per `shared/templates/audit_worker_report_template.md`, write to `{output_dir}/ln-624--{domain}.md` (or `624-quality.md` in global mode) in single Write call
 7) **Return Summary:** Return minimal summary to coordinator (see Output Format)
 
 ## Audit Rules (Priority: MEDIUM)
@@ -263,15 +262,15 @@ Receives `contextStore` with: `tech_stack`, `best_practices`, `principles`, `cod
 
 **MANDATORY READ:** Load `shared/references/audit_worker_core_contract.md` and `shared/templates/audit_worker_report_template.md`.
 
-If summaryArtifactPath is present, write JSON summary per shared/references/audit_summary_contract.md. Compact text output is fallback only.
+Write JSON summary per `shared/references/audit_summary_contract.md`. In managed mode the caller passes both `runId` and `summaryArtifactPath`; in standalone mode the worker generates its own run-scoped artifact path per shared contract.
 
-Write report to `{output_dir}/624-quality-{domain}.md` (or `624-quality.md` in global mode) with `category: "Code Quality"` and checks: cyclomatic_complexity, deep_nesting, long_methods, god_classes, too_many_params, quadratic_algorithms, n_plus_one, magic_numbers, method_signatures, cascade_depth.
+Write report to `{output_dir}/ln-624--{domain}.md` (or `624-quality.md` in global mode) with `category: "Code Quality"` and checks: cyclomatic_complexity, deep_nesting, long_methods, god_classes, too_many_params, quadratic_algorithms, n_plus_one, magic_numbers, method_signatures, cascade_depth.
 
 Return summary per `shared/references/audit_summary_contract.md`.
 
-Legacy compact text output is allowed only when `summaryArtifactPath` is absent:
+When `summaryArtifactPath` is absent, write the standalone runtime summary under `.hex-skills/runtime-artifacts/runs/{run_id}/audit-worker/{worker}--{identifier}.json` and optionally echo the same summary in structured output.
 ```
-Report written: .hex-skills/runtime-artifacts/runs/{run_id}/audit-report/624-quality-orders.md
+Report written: .hex-skills/runtime-artifacts/runs/{run_id}/audit-report/ln-624--orders.md
 Score: X.X/10 | Issues: N (C:N H:N M:N L:N)
 ```
 
@@ -296,7 +295,7 @@ Score: X.X/10 | Issues: N (C:N H:N M:N L:N)
   - complexity, nesting, length, god classes, parameters, O(n^2), N+1, constants, method signatures, cascade depth
 - [ ] Findings collected with severity, location, effort, recommendation, domain
 - [ ] Score calculated
-- [ ] Report written to `{output_dir}/624-quality-{domain}.md` (atomic single Write call)
+- [ ] Report written to `{output_dir}/ln-624--{domain}.md` (atomic single Write call)
 - [ ] Summary written per contract
 
 ## Reference Files

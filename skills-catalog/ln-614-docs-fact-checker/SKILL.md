@@ -15,7 +15,6 @@ Specialized worker that extracts verifiable claims from documentation and valida
 
 ## Purpose & Scope
 
-- **Worker in ln-610 coordinator pipeline** - invoked by ln-610-docs-auditor
 - Prioritize canonical and high-claim docs, then extract verifiable claims from markdown documentation
 - Verify each claim against codebase (Grep/Glob/Read/Bash)
 - Detect **cross-document contradictions** (same fact stated differently)
@@ -23,7 +22,7 @@ Specialized worker that extracts verifiable claims from documentation and valida
 - Single invocation (not per-document) -> cross-doc checks require global view
 - Does NOT check scope alignment or structural quality
 
-## Inputs (from Coordinator)
+## Inputs
 
 **MANDATORY READ:** Load `shared/references/audit_worker_core_contract.md`, `shared/references/docs_quality_contract.md`, `shared/references/docs_quality_rules.json`, `shared/references/markdown_read_protocol.md`, `shared/references/mcp_tool_preferences.md`, and `shared/references/mcp_integration_patterns.md`.
 
@@ -166,15 +165,15 @@ Calculate score using penalty formula. Write report.
 
 **MANDATORY READ:** Load `shared/references/audit_worker_core_contract.md` and `shared/templates/audit_worker_report_template.md`.
 
-If summaryArtifactPath is present, write JSON summary per shared/references/audit_summary_contract.md. Compact text output is fallback only.
+Write JSON summary per `shared/references/audit_summary_contract.md`. In managed mode the caller passes both `runId` and `summaryArtifactPath`; in standalone mode the worker generates its own run-scoped artifact path per shared contract.
 
-Write report to `{output_dir}/614-fact-checker.md` with `category: "Fact Accuracy"` and checks: path_claims, version_claims, count_claims, endpoint_claims, config_claims, command_claims, entity_claims, line_ref_claims, cross_doc.
+Write report to `{output_dir}/ln-614--global.md` with `category: "Fact Accuracy"` and checks: path_claims, version_claims, count_claims, endpoint_claims, config_claims, command_claims, entity_claims, line_ref_claims, cross_doc.
 
 Return summary per `shared/references/audit_summary_contract.md`.
 
-Legacy compact text output is allowed only when `summaryArtifactPath` is absent:
+When `summaryArtifactPath` is absent, write the standalone runtime summary under `.hex-skills/runtime-artifacts/runs/{run_id}/audit-worker/{worker}--{identifier}.json` and optionally echo the same summary in structured output.
 ```
-Report written: .hex-skills/runtime-artifacts/runs/{run_id}/audit-report/614-fact-checker.md
+Report written: .hex-skills/runtime-artifacts/runs/{run_id}/audit-report/ln-614--global.md
 Score: X.X/10 | Issues: N (C:N H:N M:N L:N)
 ```
 
@@ -205,7 +204,7 @@ Score: X.X/10 | Issues: N (C:N H:N M:N L:N)
 - [ ] Cross-document consistency checked
 - [ ] False positives filtered via Layer 2 reasoning
 - [ ] Score calculated using penalty algorithm
-- [ ] Report written to `{output_dir}/614-fact-checker.md` (atomic single Write call)
+- [ ] Report written to `{output_dir}/ln-614--global.md` (atomic single Write call)
 - [ ] Summary written per contract
 
 ## Reference Files

@@ -11,6 +11,7 @@ import {
     loadRun,
     pauseRun,
     readJsonFile,
+    recordStageSummary,
     registerAgent,
     resolveRunId,
     resolveTrackedPath,
@@ -259,6 +260,17 @@ async function main() {
         return;
     }
 
+    if (command === "record-stage-summary") {
+        const payload = readPayload(values, readJsonFile);
+        const { runId } = resolveRun(projectRoot);
+        const result = recordStageSummary(projectRoot, runId, payload);
+        if (!result.ok) {
+            failResult(result);
+        }
+        output(result);
+        return;
+    }
+
     if (command === "sync-agent") {
         const { runId, run } = resolveRun(projectRoot);
         const agentNames = values.agent ? [values.agent] : Object.keys(run.state.agents || {});
@@ -312,7 +324,7 @@ async function main() {
         return;
     }
 
-    fail("Unknown command. Use: start, status, advance, checkpoint, register-agent, sync-agent, pause, complete");
+    fail("Unknown command. Use: start, status, advance, checkpoint, register-agent, record-stage-summary, sync-agent, pause, complete");
 }
 
 main().catch(error => fail(error.message));

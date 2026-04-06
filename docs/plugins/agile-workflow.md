@@ -14,7 +14,7 @@
 
 ## What it does
 
-Automates the full Agile delivery cycle. Runtime-backed coordinators decompose scope into Epics, Stories, and 1-8 tasks, delegate to standalone workers that return machine-readable summaries, and drive execution through validation and 4-level quality gates. Integrates with Linear or works standalone with markdown files.
+Automates the full Agile delivery cycle. Coordinators advance only from machine-readable artifacts, while task-plan, execution, quality, and test-planning workers keep their own runtime state and stay standalone-capable. Integrates with Linear or works standalone with markdown files.
 
 ## Skills
 
@@ -27,26 +27,26 @@ Automates the full Agile delivery cycle. Runtime-backed coordinators decompose s
 | ln-221-story-creator | Create Story documents, validate INVEST |
 | ln-222-story-replanner | Replan Stories when requirements change |
 | ln-230-story-prioritizer | RICE prioritization with market research |
-| ln-300-task-coordinator | Runtime-backed task planning coordinator (1-8 tasks) |
-| ln-301-task-creator | Create implementation, refactoring, test tasks |
-| ln-302-task-replanner | Update tasks when plan changes |
+| ln-300-task-coordinator | Artifact-first task planning coordinator (1-8 tasks) |
+| ln-301-task-creator | Stateful task-plan worker for task creation |
+| ln-302-task-replanner | Stateful task-plan worker for replanning |
 | ln-310-multi-agent-validator | Parallel review via Codex + Gemini agents |
-| ln-400-story-executor | Orchestrate Story tasks to Done |
-| ln-401-task-executor | Execute implementation tasks |
-| ln-402-task-reviewer | Review completed tasks for quality |
-| ln-403-task-rework | Fix tasks marked To Rework |
-| ln-404-test-executor | Execute test tasks (E2E-first priority) |
+| ln-400-story-executor | Artifact-first execution coordinator |
+| ln-401-task-executor | Stateful implementation worker |
+| ln-402-task-reviewer | Stateful review worker and final task outcome |
+| ln-403-task-rework | Stateful rework worker |
+| ln-404-test-executor | Stateful test execution worker |
 | ln-500-story-quality-gate | 4-level gate (PASS/CONCERNS/FAIL/WAIVED) |
-| ln-510-quality-coordinator | Code quality checks coordinator |
-| ln-511-code-quality-checker | DRY/KISS/YAGNI scoring with MCP validation |
-| ln-512-tech-debt-cleaner | Safe auto-fixes at >=90% confidence |
-| ln-513-regression-checker | Run existing test suite for regressions |
-| ln-514-test-log-analyzer | Classify errors, assess log quality |
-| ln-520-test-planner | Test planning coordinator |
-| ln-521-test-researcher | Research real-world problems before testing |
-| ln-522-manual-tester | Manual testing via executable bash scripts |
-| ln-523-auto-test-planner | Risk-based automated test planning |
-| ln-1000-pipeline-orchestrator | Autonomous 4-stage pipeline orchestrator |
+| ln-510-quality-coordinator | Artifact-first quality coordinator |
+| ln-511-code-quality-checker | Stateful quality worker |
+| ln-512-tech-debt-cleaner | Stateful autofix worker |
+| ln-513-regression-checker | Stateful regression worker |
+| ln-514-test-log-analyzer | Stateful log-analysis worker |
+| ln-520-test-planner | Artifact-first test-planning coordinator |
+| ln-521-test-researcher | Stateful research worker |
+| ln-522-manual-tester | Stateful manual-testing worker |
+| ln-523-auto-test-planner | Stateful automated test-planning worker |
+| ln-1000-pipeline-orchestrator | Autonomous pipeline orchestrator over coordinator artifacts |
 
 ## How it works
 
@@ -56,7 +56,7 @@ ln-200 (scope) -> ln-300 (tasks) -> ln-310 (validate)
     -> ln-500 (quality gate)
 ```
 
-`ln-220` and `ln-300` keep project-scoped runtime state for pause/resume and verification, while `ln-221/222/301/302` remain standalone workers that can also write run-scoped coordination artifacts when asked. `ln-1000` orchestrates all stages autonomously. Multi-agent validation (`ln-310`) runs Codex and Gemini in parallel for independent review before execution begins.
+`ln-220`, `ln-300`, `ln-400`, `ln-510`, and `ln-520` keep coordinator runtime state and checkpoint child worker runs for resume. `ln-221/222`, `ln-301/302`, `ln-401..404`, `ln-511..514`, and `ln-521..523` remain standalone-capable workers with their own run-scoped state and summaries. `ln-1000` advances only from coordinator stage artifacts, while multi-agent validation (`ln-310`) still runs Codex and Gemini in parallel before execution begins.
 
 ## Quick start
 

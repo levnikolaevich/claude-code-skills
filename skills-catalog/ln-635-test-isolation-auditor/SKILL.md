@@ -16,13 +16,12 @@ Specialized worker auditing test isolation and detecting anti-patterns.
 
 ## Purpose & Scope
 
-- **Worker in ln-630 coordinator pipeline**
 - Audit **Test Isolation** (Category 5: Medium Priority)
 - Audit **Anti-Patterns** (Category 6: Medium Priority)
 - Check determinism (no flaky tests)
 - Calculate compliance score (X/10)
 
-## Inputs (from Coordinator)
+## Inputs
 
 **MANDATORY READ:** Load `shared/references/audit_worker_core_contract.md`.
 
@@ -42,7 +41,7 @@ Receives `contextStore` with: `tech_stack`, `testFilesMetadata`, `codebase_root`
 4) **Detect Anti-Patterns:** Detect 6 anti-patterns (Liar, Giant, Slow Poke, Conjoined Twins, Happy Path, Framework Tester)
 5) **Collect Findings:** Record each violation with severity, location (file:line), effort estimate (S/M/L), recommendation
 6) **Calculate Score:** Count violations by severity, calculate compliance score (X/10)
-7) **Write Report:** Build full markdown report in memory per `shared/templates/audit_worker_report_template.md`, write to `{output_dir}/635-isolation.md` in single Write call
+7) **Write Report:** Build full markdown report in memory per `shared/templates/audit_worker_report_template.md`, write to `{output_dir}/ln-635--global.md` in single Write call
 8) **Return Summary:** Return minimal summary to coordinator (see Output Format)
 
 ## Audit Rules: Test Isolation
@@ -314,15 +313,15 @@ Receives `contextStore` with: `tech_stack`, `testFilesMetadata`, `codebase_root`
 
 **MANDATORY READ:** Load `shared/references/audit_worker_core_contract.md` and `shared/templates/audit_worker_report_template.md`.
 
-If summaryArtifactPath is present, write JSON summary per shared/references/audit_summary_contract.md. Compact text output is fallback only.
+Write JSON summary per `shared/references/audit_summary_contract.md`. In managed mode the caller passes both `runId` and `summaryArtifactPath`; in standalone mode the worker generates its own run-scoped artifact path per shared contract.
 
-Write report to `{output_dir}/635-isolation.md` with `category: "Isolation & Anti-Patterns"` and checks: api_isolation, db_isolation, fs_isolation, time_isolation, random_isolation, network_isolation, flaky_tests, anti_patterns, default_value_blindness.
+Write report to `{output_dir}/ln-635--global.md` with `category: "Isolation & Anti-Patterns"` and checks: api_isolation, db_isolation, fs_isolation, time_isolation, random_isolation, network_isolation, flaky_tests, anti_patterns, default_value_blindness.
 
 Return summary per `shared/references/audit_summary_contract.md`.
 
-Legacy compact text output is allowed only when `summaryArtifactPath` is absent:
+When `summaryArtifactPath` is absent, write the standalone runtime summary under `.hex-skills/runtime-artifacts/runs/{run_id}/audit-worker/{worker}--{identifier}.json` and optionally echo the same summary in structured output.
 ```
-Report written: .hex-skills/runtime-artifacts/runs/{run_id}/audit-report/635-isolation.md
+Report written: .hex-skills/runtime-artifacts/runs/{run_id}/audit-report/ln-635--global.md
 Score: X.X/10 | Issues: N (C:N H:N M:N L:N)
 ```
 
@@ -349,7 +348,7 @@ Score: X.X/10 | Issues: N (C:N H:N M:N L:N)
   - Anti-patterns (7 checks: Liar, Giant, Slow Poke, Conjoined Twins, Happy Path, Framework Tester, Default Value Blindness)
 - [ ] Findings collected with severity, location, effort, recommendation
 - [ ] Score calculated using penalty algorithm
-- [ ] Report written to `{output_dir}/635-isolation.md` (atomic single Write call)
+- [ ] Report written to `{output_dir}/ln-635--global.md` (atomic single Write call)
 - [ ] Summary written per contract
 
 ---

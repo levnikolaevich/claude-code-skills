@@ -10,6 +10,7 @@ import {
     pauseRun,
     readJsonFile,
     recordDecision,
+    recordSummary,
     recordWorkerResult,
     resolveRunId,
     runtimePaths,
@@ -77,6 +78,14 @@ function applyCheckpointToState(run, phase, payload) {
 
     if (Array.isArray(payload.worker_plan)) {
         nextState.worker_plan = payload.worker_plan;
+    }
+    if (payload.child_run && typeof payload.child_run === "object") {
+        const childIdentifier = payload.child_run.identifier || payload.child_run.phase_context || payload.child_run.run_id || "child";
+        const childKey = `${payload.child_run.worker || "worker"}--${childIdentifier}`;
+        nextState.child_runs = {
+            ...(run.state.child_runs || {}),
+            [childKey]: payload.child_run,
+        };
     }
     if (payload.final_result) {
         nextState.final_result = payload.final_result;
@@ -197,6 +206,17 @@ async function main() {
         return;
     }
 
+    if (command === "record-summary") {
+        const payload = readPayload(values, readJsonFile);
+        const { runId } = resolveRun(projectRoot);
+        const result = recordSummary(projectRoot, runId, payload);
+        if (!result.ok) {
+            failResult(result);
+        }
+        output(result);
+        return;
+    }
+
     if (command === "pause") {
         const payload = readPayload(values, readJsonFile);
         const { runId } = resolveRun(projectRoot);
@@ -235,7 +255,7 @@ async function main() {
         return;
     }
 
-    fail("Unknown command. Use: start, status, checkpoint, record-worker-result, advance, pause, set-decision, complete");
+    fail("Unknown command. Use: start, status, checkpoint, record-worker-result, record-summary, advance, pause, set-decision, complete");
 }
 
 main().catch(error => fail(error.message));

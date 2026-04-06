@@ -13,7 +13,7 @@ Audit workers use the shared coordinator envelope:
   "schema_version": "1.0.0",
   "summary_kind": "audit-worker",
   "run_id": "ln-620-global-...",
-  "identifier": "ln-621-global",
+  "identifier": "global",
   "producer_skill": "ln-621",
   "produced_at": "2026-03-27T10:00:00Z",
   "payload": {}
@@ -25,12 +25,12 @@ Rules:
 - `run_id` is mandatory for every audit summary envelope.
 - If the caller does not pass `runId`, the worker generates a standalone `run_id` before emitting the summary.
 - `identifier` must be stable inside the run.
-- Use domain or target suffixes when one worker runs multiple times in the same coordinator.
+- Use the domain or target only. Worker disambiguation belongs in the artifact filename, not the envelope identifier.
 
 Examples:
-- `ln-612-docs-readme`
-- `ln-623-users`
-- `ln-641-job-processing`
+- `docs-readme`
+- `users`
+- `job-processing`
 
 ## Payload
 
@@ -40,7 +40,7 @@ Required payload fields:
 {
   "status": "completed",
   "category": "Security",
-  "report_path": ".hex-skills/runtime-artifacts/runs/<run_id>/audit-report/621-security.md",
+  "report_path": ".hex-skills/runtime-artifacts/runs/<run_id>/audit-report/ln-621--global.md",
   "score": 8.5,
   "issues_total": 3,
   "severity_counts": {
@@ -70,11 +70,11 @@ Optional payload fields:
 
 When the coordinator passes `summaryArtifactPath`:
 - write the JSON summary to that exact path
-- return the same summary in structured output when possible
+- use the exact managed filename, normally `{worker}--{identifier}.json`
 
 When `summaryArtifactPath` is absent:
-- return the summary in structured output
-- compact text output is allowed only as compatibility fallback
+- write the JSON summary to the standalone run-scoped path
+- optionally echo the same summary in structured output for the caller
 
 ## Relationship to Worker Markdown Reports
 
@@ -87,3 +87,8 @@ The JSON summary is not a replacement for the report. It is the transport contra
 - report location
 
 The markdown report remains the evidence artifact for findings tables and extended data blocks.
+
+## Canonical Paths
+
+- managed: `.hex-skills/runtime-artifacts/runs/{parent_run_id}/audit-worker/{worker}--{identifier}.json`
+- standalone: `.hex-skills/runtime-artifacts/runs/{run_id}/audit-worker/{worker}--{identifier}.json`

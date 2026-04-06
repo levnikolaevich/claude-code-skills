@@ -20,6 +20,14 @@ function hasWorker(state, worker) {
     return Boolean(state.worker_results?.[worker]);
 }
 
+function childRunMessage(state, worker, suffix) {
+    const childRun = state.child_runs?.[worker];
+    if (!childRun?.run_id) {
+        return null;
+    }
+    return `Check child runtime ${childRun.run_id} for ${worker}${suffix}`;
+}
+
 export function validateTransition(manifest, state, checkpoints, toPhase) {
     const allowed = ALLOWED_TRANSITIONS.get(state.phase);
     if (!allowed || !allowed.has(toPhase)) {
@@ -59,13 +67,16 @@ export function computeResumeAction(manifest, state, checkpoints) {
         return `Complete ${state.phase} and write its checkpoint`;
     }
     if (state.phase === PHASES.RESEARCH && !state.simplified && !hasWorker(state, "ln-521")) {
-        return "Record ln-521 worker summary before manual testing";
+        return childRunMessage(state, "ln-521", " or record its worker summary before manual testing")
+            || "Record ln-521 worker summary before manual testing";
     }
     if (state.phase === PHASES.MANUAL_TESTING && !state.simplified && !hasWorker(state, "ln-522")) {
-        return "Record ln-522 worker summary before auto-test planning";
+        return childRunMessage(state, "ln-522", " or record its worker summary before auto-test planning")
+            || "Record ln-522 worker summary before auto-test planning";
     }
     if (state.phase === PHASES.AUTO_TEST_PLANNING && !hasWorker(state, "ln-523")) {
-        return "Record ln-523 worker summary before finalization";
+        return childRunMessage(state, "ln-523", " or record its worker summary before finalization")
+            || "Record ln-523 worker summary before finalization";
     }
     if (state.phase === PHASES.SELF_CHECK && !state.self_check_passed) {
         return `Fix self-check failures, then checkpoint ${PHASES.SELF_CHECK} with pass=true`;

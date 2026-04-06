@@ -63,6 +63,13 @@ function resolveRun(projectRoot) {
 
 function applyCheckpointToState(state, phase, payload) {
     const nextState = { ...state };
+    if ([PHASES.RESEARCH, PHASES.MANUAL_TESTING, PHASES.AUTO_TEST_PLANNING].includes(phase)
+        && payload.child_run?.worker) {
+        nextState.child_runs = {
+            ...(nextState.child_runs || {}),
+            [payload.child_run.worker]: payload.child_run,
+        };
+    }
     if (phase === PHASES.RESEARCH) {
         nextState.research_status = payload.research_status || nextState.research_status;
     }

@@ -11,6 +11,7 @@ import {
     readJsonFile,
     recordDecision,
     recordPlan,
+    recordStageSummary,
     resolveRunId,
     runtimePaths,
     saveState,
@@ -81,6 +82,9 @@ function applyCheckpointToState(state, phase, payload) {
     }
     if (phase === PHASES.MODE_DETECTION) {
         nextState.mode_detection = payload.mode_detection || payload.mode || null;
+    }
+    if (phase === PHASES.DELEGATE && payload.child_run && typeof payload.child_run === "object") {
+        nextState.child_run = payload.child_run;
     }
     if (phase === PHASES.VERIFY) {
         nextState.verification_summary = payload.verification_summary || payload.summary || payload;
@@ -165,6 +169,17 @@ async function main() {
         return;
     }
 
+    if (command === "record-stage-summary") {
+        const payload = readPayload(values, readJsonFile);
+        const { runId } = resolveRun(projectRoot);
+        const result = recordStageSummary(projectRoot, runId, payload);
+        if (!result.ok) {
+            failResult(result);
+        }
+        output(result);
+        return;
+    }
+
     if (command === "set-decision") {
         const payload = readPayload(values, readJsonFile);
         const { runId } = resolveRun(projectRoot);
@@ -189,7 +204,7 @@ async function main() {
         return;
     }
 
-    fail("Unknown command. Use: start, status, advance, checkpoint, record-plan, set-decision, pause, complete");
+    fail("Unknown command. Use: start, status, advance, checkpoint, record-plan, record-stage-summary, set-decision, pause, complete");
 }
 
 main().catch(error => fail(error.message));

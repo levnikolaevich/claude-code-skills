@@ -33,11 +33,11 @@ function expect(name, result, expectedOk) {
 function workerSummary(producer, category) {
     return JSON.stringify({
         schema_version: "1.0.0", summary_kind: "audit-worker",
-        run_id: "guards-test", identifier: `${producer}-global`,
+        run_id: `guards-test--${producer}--global`, identifier: "global",
         producer_skill: producer, produced_at: "2026-03-30T00:00:00Z",
         payload: {
             status: WORKER_SUMMARY_STATUSES.COMPLETED, category,
-            report_path: `.hex-skills/runtime-artifacts/runs/guards-test/${producer}.md`,
+            report_path: `.hex-skills/runtime-artifacts/runs/guards-test/audit-report/${producer}--global.md`,
             score: 8, issues_total: 0,
             severity_counts: { critical: 0, high: 0, medium: 0, low: 0 },
             warnings: [],
@@ -69,34 +69,36 @@ try {
     }, null, 2));
 
     run(["start", P, projectRoot, S, "ln-620", I, "full", "--manifest-file", manifestPath]);
+    const runId = run(["status", P, projectRoot, S, "ln-620", I, "full"]).runtime.run_id;
     run(["checkpoint", P, projectRoot, S, "ln-620", I, "full", "--phase", "PHASE_0_CONFIG"]);
     run(["advance", P, projectRoot, S, "ln-620", I, "full", "--to", "PHASE_1_DISCOVERY"]);
     run(["checkpoint", P, projectRoot, S, "ln-620", I, "full", "--phase", "PHASE_1_DISCOVERY",
-        "--payload", JSON.stringify({ worker_plan: ["ln-621", "ln-623"] })]);
+        "--payload", JSON.stringify({ worker_plan: ["ln-621--global", "ln-623--global"] })]);
     run(["advance", P, projectRoot, S, "ln-620", I, "full", "--to", "PHASE_2_DELEGATE"]);
-    run(["checkpoint", P, projectRoot, S, "ln-620", I, "full", "--phase", "PHASE_2_DELEGATE"]);
+    run(["checkpoint", P, projectRoot, S, "ln-620", I, "full", "--phase", "PHASE_2_DELEGATE",
+        "--payload", JSON.stringify({ child_run: {
+            worker: "ln-621",
+            identifier: "global",
+            run_id: "guards-test--ln-621--global",
+            summary_artifact_path: ".hex-skills/runtime-artifacts/runs/guards-test/audit-worker/ln-621--global.json",
+            phase_context: "delegate",
+        } })]);
 
-    // TEST 1: AGGREGATE blocked without worker summaries
     const t1 = run(["advance", P, projectRoot, S, "ln-620", I, "full", "--to", "PHASE_3_AGGREGATE"], { allowFailure: true });
     expect("AGGREGATE blocked without worker summaries", t1, false);
 
-    // Record only 1 of 2 workers
     run(["record-worker-result", P, projectRoot, S, "ln-620", I, "full",
         "--payload-file", (() => { const p = join(projectRoot, "w1.json"); writeFileSync(p, workerSummary("ln-621", "Security")); return p; })()]);
 
-    // TEST 2: AGGREGATE blocked with partial workers (1/2)
     const t2 = run(["advance", P, projectRoot, S, "ln-620", I, "full", "--to", "PHASE_3_AGGREGATE"], { allowFailure: true });
     expect("AGGREGATE blocked with 1/2 workers", t2, false);
 
-    // Fix: record second worker
     run(["record-worker-result", P, projectRoot, S, "ln-620", I, "full",
         "--payload-file", (() => { const p = join(projectRoot, "w2.json"); writeFileSync(p, workerSummary("ln-623", "Code Quality")); return p; })()]);
 
-    // TEST 3: AGGREGATE allowed with all workers
     const t3 = run(["advance", P, projectRoot, S, "ln-620", I, "full", "--to", "PHASE_3_AGGREGATE"]);
     expect("AGGREGATE allowed with 2/2 workers", t3, true);
 
-    // Fast-forward through AGGREGATE → REPORT → RESULTS_LOG → CLEANUP
     run(["checkpoint", P, projectRoot, S, "ln-620", I, "full", "--phase", "PHASE_3_AGGREGATE",
         "--payload", "{\"aggregation_summary\":{\"total\":2}}"]);
     run(["advance", P, projectRoot, S, "ln-620", I, "full", "--to", "PHASE_4_REPORT"]);
@@ -110,17 +112,39 @@ try {
         "--payload", "{\"cleanup_completed\":true}"]);
     run(["advance", P, projectRoot, S, "ln-620", I, "full", "--to", "PHASE_7_SELF_CHECK"]);
 
-    // TEST 4: DONE blocked without final_result
     run(["checkpoint", P, projectRoot, S, "ln-620", I, "full", "--phase", "PHASE_7_SELF_CHECK",
         "--payload", "{\"pass\":true}"]);
     const t4 = run(["complete", P, projectRoot, S, "ln-620", I, "full"], { allowFailure: true });
     expect("DONE blocked without final_result", t4, false);
 
-    // TEST 5: DONE allowed with final_result
     run(["checkpoint", P, projectRoot, S, "ln-620", I, "full", "--phase", "PHASE_7_SELF_CHECK",
         "--payload", "{\"pass\":true,\"final_result\":\"AUDIT_COMPLETE\"}"]);
-    const t5 = run(["complete", P, projectRoot, S, "ln-620", I, "full"]);
-    expect("DONE allowed with final_result", t5, true);
+    const t5 = run(["complete", P, projectRoot, S, "ln-620", I, "full"], { allowFailure: true });
+    expect("DONE blocked without coordinator summary", t5, false);
+
+    run(["record-summary", P, projectRoot, S, "ln-620", I, "full",
+        "--payload",
+        JSON.stringify({
+            schema_version: "1.0.0",
+            summary_kind: "audit-coordinator",
+            run_id: runId,
+            identifier: "full",
+            producer_skill: "ln-620",
+            produced_at: "2026-04-06T00:00:00Z",
+            payload: {
+                status: "completed",
+                final_result: "AUDIT_COMPLETE",
+                report_path: "docs/project/audit.md",
+                results_log_path: "docs/project/.audit/results_log.md",
+                overall_score: 8.0,
+                worker_count: 2,
+                issues_total: 0,
+                severity_counts: { critical: 0, high: 0, medium: 0, low: 0 },
+                warnings: [],
+            },
+        })]);
+    const t6 = run(["complete", P, projectRoot, S, "ln-620", I, "full"]);
+    expect("DONE allowed with coordinator summary", t6, true);
 
     process.stdout.write(`\naudit-runtime guards: ${passed} passed, ${failed} failed\n`);
     if (failed > 0) process.exit(1);

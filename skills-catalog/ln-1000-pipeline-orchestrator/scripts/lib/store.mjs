@@ -1,6 +1,8 @@
 import { resolve } from "node:path";
 import { computeResumeAction } from "./guards.mjs";
 import { createRuntimeStore } from "../../../shared/scripts/coordinator-runtime/lib/core.mjs";
+import { pipelineStageCoordinatorSummarySchema } from "../../../shared/scripts/coordinator-runtime/lib/schemas.mjs";
+import { assertSchema } from "../../../shared/scripts/coordinator-runtime/lib/validate.mjs";
 import { PHASES } from "./phases.mjs";
 
 const pipelineManifestSchema = {
@@ -69,6 +71,7 @@ const pipelineStore = createRuntimeStore({
             worktree_dir: manifest.worktree_dir,
             branch_name: manifest.branch_name,
             stage_timestamps: {},
+            stage_summaries: {},
             git_stats: {},
             readiness_scores: {},
             infra_issues: [],
@@ -134,6 +137,28 @@ export function saveCheckpoint(projectRoot, storyId, checkpoint) {
     }
     const phase = `STAGE_${checkpoint.stage}`;
     return checkpointPhase(projectRoot, runId, phase, checkpoint);
+}
+
+export function recordStageSummary(projectRoot, storyId, summary) {
+    const runId = resolveRunId(projectRoot, "ln-1000", null, storyId);
+    if (!runId) {
+        return { ok: false, error: "No active pipeline run found" };
+    }
+    const run = loadRun(projectRoot, runId);
+    if (!run) {
+        return { ok: false, error: "Run not found" };
+    }
+    const validation = assertSchema(pipelineStageCoordinatorSummarySchema, summary, "pipeline stage coordinator summary");
+    if (!validation.ok) {
+        return validation;
+    }
+    return updateState(projectRoot, runId, state => ({
+        ...state,
+        stage_summaries: {
+            ...(state.stage_summaries || {}),
+            [`stage_${summary.payload.stage}`]: summary,
+        },
+    }));
 }
 
 export function getStatus(projectRoot, storyId) {

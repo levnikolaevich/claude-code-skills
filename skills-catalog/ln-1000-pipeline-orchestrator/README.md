@@ -15,8 +15,8 @@ For the executable specification, read [SKILL.md](SKILL.md).
 | Level | Primitive | Used by | Purpose |
 |------|-----------|---------|---------|
 | L1 | `Skill()` | `ln-1000` lead | Stage orchestration |
-| L2 | `Skill()` or `Agent()` | Stage coordinators | Internal dispatch |
-| L3 | `Agent()` subagent | Heavy workers | Isolated implementation or analysis |
+| L2 | `Skill()` or `Agent()` | Stage coordinators | Internal dispatch plus coordinator artifact emission |
+| L3 | `Agent()` subagent | Heavy workers | Isolated implementation or analysis with worker runtime state |
 
 ### Active hierarchy
 
@@ -28,7 +28,7 @@ ln-1000
   -> Skill("ln-500-story-quality-gate")
 ```
 
-Each coordinator owns its own worker strategy. `ln-1000` never reaches into worker internals.
+Each coordinator owns its own worker strategy and emits a stage artifact. `ln-1000` never reaches into worker internals and advances only from coordinator artifacts.
 
 ## Pipeline Flow
 
@@ -58,6 +58,7 @@ Story selection
 | Coordinator autonomy | Stage coordinators choose their own workers and tool mix |
 | Isolate heavy work | Code-writing and other large tasks run in subagents |
 | Inline control | Aggregation, routing, and stage decisions stay inline |
+| Artifact-first progression | Stage completion comes from coordinator artifacts, not prose or chat memory |
 | Checkpointed recovery | Resume from persisted state, not long-lived peer sessions |
 | Single kanban writer per stage | The active coordinator owns its own state transition |
 
@@ -66,8 +67,8 @@ Story selection
 ### Stage 0: `ln-300`
 
 - Plans task breakdown for the selected story
-- Delegates task creation or replanning internally
-- Returns task-planning outcome to the lead
+- Delegates task creation or replanning to stateful task-plan workers
+- Returns a Stage 0 coordinator artifact to the lead
 
 ### Stage 1: `ln-310`
 
@@ -78,13 +79,13 @@ Story selection
 ### Stage 2: `ln-400`
 
 - Executes tasks in priority order
-- Uses isolated subagents for implementation, rework, and test execution
-- Keeps review and control flow near the coordinator
+- Uses isolated subagents with task-worker runtimes for implementation, rework, and test execution
+- Closes each task cycle from the latest `ln-402` artifact
 
 ### Stage 3: `ln-500`
 
 - Runs quality gate and final verdict logic
-- Invokes quality and test-planning coordinators as needed
+- Invokes quality and test-planning coordinators, which checkpoint child worker runs as needed
 - Finalizes story status and reporting
 
 ## Recovery and State
@@ -92,9 +93,9 @@ Story selection
 Pipeline state is persisted after each stage. Recovery reconstructs the next action from:
 
 1. persisted pipeline state
-2. current kanban or Linear truth
-3. git and worktree state
-4. stage outputs already written
+2. stage artifacts already written
+3. current kanban or Linear truth as a secondary assertion
+4. git and worktree state
 
 This design replaced the older peer-session and heartbeat model. There is no separate team lifecycle to monitor.
 
@@ -109,14 +110,14 @@ This design replaced the older peer-session and heartbeat model. There is no sep
 
 ## Verification Model
 
-After each stage, the lead performs read-only verification before advancing:
+After each stage, the lead performs read-only verification before advancing. The primary completion signal is the coordinator stage artifact, not free-text output:
 
 | Stage | Key assertions |
 |------|----------------|
-| 0 | Tasks were created or replanned correctly |
-| 1 | Story is ready to move into execution |
-| 2 | Tasks are completed and story moved to `To Review` |
-| 3 | Final verdict and resulting state are coherent |
+| 0 | Valid Stage 0 artifact from `ln-300`; kanban checked secondarily |
+| 1 | Valid Stage 1 artifact from `ln-310`; readiness/verdict checked there |
+| 2 | Valid Stage 2 artifact from `ln-400`; kanban checked secondarily |
+| 3 | Valid Stage 3 artifact from `ln-500`; verdict/state checked there |
 
 If assertions fail, the pipeline pauses or retries according to [SKILL.md](SKILL.md).
 

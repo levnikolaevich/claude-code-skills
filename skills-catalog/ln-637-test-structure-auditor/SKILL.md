@@ -22,7 +22,7 @@ Specialized worker auditing test file organization and directory structure for m
 - Verify test-to-source mapping consistency and orphaned tests
 - Calculate compliance score (X/10)
 
-## Inputs (from Coordinator)
+## Inputs
 
 **MANDATORY READ:** Load `shared/references/audit_worker_core_contract.md`.
 
@@ -41,7 +41,7 @@ Receives `contextStore` with: `tech_stack`, `testFilesMetadata` (ALL types -- bo
 5) **Context Analysis (Layer 2 -- MANDATORY):** For each candidate finding, apply Layer 2 filters (see each check)
 6) **Collect Findings:** Record violations with severity, location, effort, recommendation
 7) **Calculate Score:** Count violations by severity, calculate compliance score (X/10)
-8) **Write Report:** Build full markdown report in memory per `shared/templates/audit_worker_report_template.md`, write to `{output_dir}/637-test-structure.md` in single Write call
+8) **Write Report:** Build full markdown report in memory per `shared/templates/audit_worker_report_template.md`, write to `{output_dir}/ln-637--global.md` in single Write call
 9) **Return Summary:** Return minimal summary to coordinator (see Output Format)
 
 ## Audit Rules
@@ -182,15 +182,15 @@ tests/auth/test_login.py, tests/auth/test_tokens.py, tests/users/test_crud.py, .
 
 **MANDATORY READ:** Load `shared/references/audit_worker_core_contract.md` and `shared/templates/audit_worker_report_template.md`.
 
-If summaryArtifactPath is present, write JSON summary per shared/references/audit_summary_contract.md. Compact text output is fallback only.
+Write JSON summary per `shared/references/audit_summary_contract.md`. In managed mode the caller passes both `runId` and `summaryArtifactPath`; in standalone mode the worker generates its own run-scoped artifact path per shared contract.
 
-Write report to `{output_dir}/637-test-structure.md` with `category: "Test Structure"` and checks: layout_pattern, test_source_mapping, flat_dir_growth, domain_grouping, colocation_consistency.
+Write report to `{output_dir}/ln-637--global.md` with `category: "Test Structure"` and checks: layout_pattern, test_source_mapping, flat_dir_growth, domain_grouping, colocation_consistency.
 
 Return summary per `shared/references/audit_summary_contract.md`.
 
-Legacy compact text output is allowed only when `summaryArtifactPath` is absent:
+When `summaryArtifactPath` is absent, write the standalone runtime summary under `.hex-skills/runtime-artifacts/runs/{run_id}/audit-worker/{worker}--{identifier}.json` and optionally echo the same summary in structured output.
 ```
-Report written: .hex-skills/runtime-artifacts/runs/{run_id}/audit-report/637-test-structure.md
+Report written: .hex-skills/runtime-artifacts/runs/{run_id}/audit-report/ln-637--global.md
 Score: X.X/10 | Issues: N (C:N H:N M:N L:N)
 ```
 
@@ -218,7 +218,7 @@ Score: X.X/10 | Issues: N (C:N H:N M:N L:N)
 - [ ] Flat directory growth signals identified with specific grouping suggestions
 - [ ] Findings collected with severity, location, effort, recommendation
 - [ ] Score calculated using penalty algorithm
-- [ ] Report written to `{output_dir}/637-test-structure.md` (atomic single Write call)
+- [ ] Report written to `{output_dir}/ln-637--global.md` (atomic single Write call)
 - [ ] Summary written per contract
 
 ---

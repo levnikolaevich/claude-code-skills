@@ -149,9 +149,11 @@ Detect `domain_mode` and `all_domains` with the shared pattern. This coordinator
 
 **MANDATORY READ:** Load `shared/references/task_delegation_pattern.md` and `shared/references/audit_worker_core_contract.md`.
 
-#### Phase 4a: Global Workers (PARALLEL)
+#### Global Workers (PARALLEL)
 
 **Global workers** scan entire test suite (not domain-aware):
+
+Managed summary artifact pattern: `.hex-skills/runtime-artifacts/runs/{parent_run_id}/audit-worker/{worker}--{identifier}.json`.
 
 | # | Worker | Category | What It Audits |
 |---|--------|----------|----------------|
@@ -171,23 +173,16 @@ Detect `domain_mode` and `all_domains` with the shared pattern. This coordinator
 ```javascript
 // filteredByType: automated for ln-631..635, manual for ln-636, ALL for ln-637
 FOR EACH worker IN [ln-631, ln-632, ln-633, ln-635, ln-636, ln-637]:
-  worker_context = {
-    ...contextStore,
-    testFilesMetadata: filteredByType,
-    summaryArtifactPath: ".hex-skills/runtime-artifacts/runs/{run_id}/audit-worker/" + worker + "-global.json"
-  }
-  Agent(description: "Test audit via " + worker,
-       prompt: "Execute audit worker.
-
-Step 1: Invoke worker:
-  Skill(skill: \"" + worker + "\")
-
-CONTEXT:
-" + JSON.stringify(worker_context),
-       subagent_type: "general-purpose")
+  identifier = "global"
+  childRunId = parent_run_id + "--" + worker + "--" + identifier
+  childSummaryArtifactPath = ".hex-skills/runtime-artifacts/runs/" + parent_run_id + "/audit-worker/" + worker + "--" + identifier + ".json"
+  node shared/scripts/audit-worker-runtime/cli.mjs start --skill {worker} --identifier {identifier} --manifest-file .hex-skills/audit/{worker}--{identifier}_manifest.json --run-id {childRunId} --summary-artifact-path {childSummaryArtifactPath}
+  node shared/scripts/audit-runtime/cli.mjs checkpoint --run-id {parent_run_id} --phase PHASE_4_DELEGATE --payload '{"child_run":{"worker":"{worker}","identifier":"{identifier}","run_id":"{childRunId}","summary_artifact_path":"{childSummaryArtifactPath}"}}'
+  Skill(skill: "{worker}", args: "--run-id {childRunId} --summary-artifact-path {childSummaryArtifactPath}")
+  node shared/scripts/audit-runtime/cli.mjs record-worker-result --run-id {parent_run_id} --payload-file {childSummaryArtifactPath}
 ```
 
-#### Phase 4b: Domain-Aware Worker (PARALLEL per domain)
+#### Domain-Aware Worker (PARALLEL per domain)
 
 **Domain-aware worker** runs once per domain:
 
@@ -199,41 +194,26 @@ CONTEXT:
 ```javascript
 IF domain_mode == "domain-aware":
   FOR EACH domain IN all_domains:
-    domain_context = {
-      ...contextStore,
-      domain_mode: "domain-aware",
-      current_domain: { name: domain.name, path: domain.path },
-      summaryArtifactPath: ".hex-skills/runtime-artifacts/runs/{run_id}/audit-worker/ln-634-" + domain.name + ".json"
-    }
-    Agent(description: "Test coverage " + domain.name + " via ln-634",
-         prompt: "Execute audit worker.
-
-Step 1: Invoke worker:
-  Skill(skill: \"ln-634-test-coverage-auditor\")
-
-CONTEXT:
-" + JSON.stringify(domain_context),
-         subagent_type: "general-purpose")
+    identifier = domain.name
+    childRunId = parent_run_id + "--ln-634--" + identifier
+    childSummaryArtifactPath = ".hex-skills/runtime-artifacts/runs/" + parent_run_id + "/audit-worker/ln-634--" + identifier + ".json"
+    node shared/scripts/audit-worker-runtime/cli.mjs start --skill ln-634 --identifier {identifier} --manifest-file .hex-skills/audit/ln-634--{identifier}_manifest.json --run-id {childRunId} --summary-artifact-path {childSummaryArtifactPath}
+    node shared/scripts/audit-runtime/cli.mjs checkpoint --run-id {parent_run_id} --phase PHASE_4_DELEGATE --payload '{"child_run":{"worker":"ln-634","identifier":"{identifier}","run_id":"{childRunId}","summary_artifact_path":"{childSummaryArtifactPath}"}}'
+    Skill(skill: "ln-634-test-coverage-auditor", args: "--run-id {childRunId} --summary-artifact-path {childSummaryArtifactPath}")
+    node shared/scripts/audit-runtime/cli.mjs record-worker-result --run-id {parent_run_id} --payload-file {childSummaryArtifactPath}
 ELSE:
-  // Fallback: invoke once for entire codebase (global mode)
-  worker_context = {
-    ...contextStore,
-    summaryArtifactPath: ".hex-skills/runtime-artifacts/runs/{run_id}/audit-worker/ln-634-global.json"
-  }
-  Agent(description: "Test coverage via ln-634",
-       prompt: "Execute audit worker.
-
-Step 1: Invoke worker:
-  Skill(skill: \"ln-634-test-coverage-auditor\")
-
-CONTEXT:
-" + JSON.stringify(worker_context),
-       subagent_type: "general-purpose")
+  identifier = "global"
+  childRunId = parent_run_id + "--ln-634--" + identifier
+  childSummaryArtifactPath = ".hex-skills/runtime-artifacts/runs/" + parent_run_id + "/audit-worker/ln-634--" + identifier + ".json"
+  node shared/scripts/audit-worker-runtime/cli.mjs start --skill ln-634 --identifier {identifier} --manifest-file .hex-skills/audit/ln-634--{identifier}_manifest.json --run-id {childRunId} --summary-artifact-path {childSummaryArtifactPath}
+  node shared/scripts/audit-runtime/cli.mjs checkpoint --run-id {parent_run_id} --phase PHASE_4_DELEGATE --payload '{"child_run":{"worker":"ln-634","identifier":"{identifier}","run_id":"{childRunId}","summary_artifact_path":"{childSummaryArtifactPath}"}}'
+  Skill(skill: "ln-634-test-coverage-auditor", args: "--run-id {childRunId} --summary-artifact-path {childSummaryArtifactPath}")
+  node shared/scripts/audit-runtime/cli.mjs record-worker-result --run-id {parent_run_id} --payload-file {childSummaryArtifactPath}
 ```
 
 **Parallelism strategy:**
-- Phase 4a: All 6 global workers run in PARALLEL
-- Phase 4b: All N domain-aware invocations run in PARALLEL
+- Global workers: All 6 global workers run in PARALLEL
+- Domain-aware worker: All N domain-aware invocations run in PARALLEL
 - Example: 3 domains -> 6 global + 3 ln-634 invocations in single message
 
 **Domain-aware workers** add optional fields: `domain`, `scan_path`
@@ -377,6 +357,12 @@ Each worker:
 - **Language preservation:** Report in project's language (EN/RU)
 
 ## Phase 6: Append Results Log
+
+Before appending the results log, record the coordinator runtime summary:
+
+```bash
+node shared/scripts/audit-runtime/cli.mjs record-summary --run-id {parent_run_id} --payload '{"schema_version":"1.0.0","summary_kind":"audit-coordinator","run_id":"{parent_run_id}","identifier":"{runtime_identifier}","producer_skill":"ln-630","produced_at":"{iso_timestamp}","payload":{"status":"completed","final_result":"AUDIT_COMPLETE","report_path":"docs/project/test_audit.md","worker_count":{active_worker_count},"issues_total":{issues_total},"severity_counts":{"critical":{critical_count},"high":{high_count},"medium":{medium_count},"low":{low_count}},"warnings":[]}}'
+```
 
 **MANDATORY READ:** Load `shared/references/results_log_pattern.md`
 

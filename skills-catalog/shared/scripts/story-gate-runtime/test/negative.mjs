@@ -45,7 +45,28 @@ try {
     run(["advance", "--project-root", projectRoot, "--to", PHASES.QUALITY_CHECKS]);
     run(["checkpoint", "--project-root", projectRoot, "--phase", PHASES.QUALITY_CHECKS]);
 
-    // TEST 1: VERDICT blocked without quality_summary
+    // TEST 1: TEST_PLANNING blocked with child_run metadata only
+    run([
+        "checkpoint", "--project-root", projectRoot,
+        "--phase", PHASES.QUALITY_CHECKS,
+        "--payload", JSON.stringify({
+            child_run: {
+                worker: "ln-510",
+                run_id: "gate-run--ln-510--NEG-1",
+                summary_artifact_path: ".hex-skills/runtime-artifacts/runs/gate-run/story-quality/NEG-1.json",
+                phase_context: "quality_checks",
+            },
+        }),
+    ]);
+    const blocked0 = run([
+        "advance", "--project-root", projectRoot,
+        "--to", PHASES.TEST_PLANNING,
+    ], { allowFailure: true });
+    if (blocked0.ok !== false || !String(blocked0.error || "").includes("Quality summary")) {
+        throw new Error("Expected TEST_PLANNING blocked with child_run metadata only");
+    }
+
+    // TEST 2: VERDICT blocked without quality_summary
     const blocked1 = run([
         "advance", "--project-root", projectRoot,
         "--to", PHASES.VERDICT,
@@ -75,13 +96,37 @@ try {
     run(["advance", "--project-root", projectRoot, "--to", PHASES.VERDICT]);
     run(["checkpoint", "--project-root", projectRoot, "--phase", PHASES.VERDICT]);
 
-    // TEST 2: FINALIZATION blocked without final_verdict
+    // TEST 3: FINALIZATION blocked without final_verdict
     const blocked2 = run([
         "advance", "--project-root", projectRoot,
         "--to", PHASES.FINALIZATION,
     ], { allowFailure: true });
     if (blocked2.ok !== false || !String(blocked2.error || "").includes("verdict")) {
         throw new Error("Expected FINALIZATION blocked without final_verdict");
+    }
+
+    run([
+        "checkpoint", "--project-root", projectRoot,
+        "--phase", PHASES.VERDICT,
+        "--payload", JSON.stringify({ final_result: "PASS", quality_score: 91 }),
+    ]);
+    run(["advance", "--project-root", projectRoot, "--to", PHASES.FINALIZATION]);
+    run([
+        "checkpoint", "--project-root", projectRoot,
+        "--phase", PHASES.FINALIZATION,
+        "--payload", JSON.stringify({ branch_finalized: true, story_final_status: "Done" }),
+    ]);
+    run(["advance", "--project-root", projectRoot, "--to", PHASES.SELF_CHECK]);
+    run([
+        "checkpoint", "--project-root", projectRoot,
+        "--phase", PHASES.SELF_CHECK,
+        "--payload", JSON.stringify({ pass: true, final_result: "PASS" }),
+    ]);
+    const blocked3 = run([
+        "complete", "--project-root", projectRoot,
+    ], { allowFailure: true });
+    if (blocked3.ok !== false || !String(blocked3.error || "").includes("Stage 3 coordinator artifact")) {
+        throw new Error("Expected DONE blocked without Stage 3 coordinator artifact");
     }
 
     process.stdout.write("story-gate-runtime negative passed\n");

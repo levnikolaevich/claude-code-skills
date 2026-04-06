@@ -24,6 +24,7 @@ Canonical phase/status names: `shared/references/runtime_status_catalog.md`
 
 - `simplified`
 - `worker_results`
+- `child_runs`
 - `research_status`
 - `manual_status`
 - `test_task_id`
@@ -42,3 +43,13 @@ Canonical phase/status names: `shared/references/runtime_status_catalog.md`
 ## Worker Summaries
 
 Workers emit `test-planning-worker` summaries using the shared envelope.
+Managed delegation passes deterministic child `run_id` plus exact `summaryArtifactPath`, checkpoints `child_run` metadata, and advances only from the worker artifact.
+Worker runtime family: `shared/references/test_planning_worker_runtime_contract.md`
+
+Managed delegation sequence:
+1. compute deterministic child `run_id`
+2. compute exact child artifact path
+3. start `test-planning-worker-runtime`
+4. checkpoint `child_run`
+5. invoke worker with both transport inputs
+6. record only the resulting `test-planning-worker` artifact

@@ -87,7 +87,6 @@ Domain runtimes may add specialized commands such as:
 - `record-worker`
 - `record-epic`
 - `record-plan`
-- `record-task`
 - `record-group`
 - `record-cycle`
 

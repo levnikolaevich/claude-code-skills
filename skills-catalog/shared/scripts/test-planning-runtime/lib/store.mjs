@@ -53,6 +53,7 @@ const plannerStore = createRuntimeStore({
             decisions: [],
             simplified: manifest.simplified,
             worker_results: {},
+            child_runs: {},
             research_status: null,
             manual_status: null,
             test_task_id: null,

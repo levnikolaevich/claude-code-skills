@@ -1,10 +1,12 @@
 import { resolve } from "node:path";
 import { createRuntimeStore, readJsonFile } from "../../coordinator-runtime/lib/core.mjs";
 import {
+    auditCoordinatorSummarySchema,
     auditWorkerSummarySchema,
     buildRuntimeStateSchema,
     pendingDecisionSchema,
 } from "../../coordinator-runtime/lib/schemas.mjs";
+import { writeRuntimeArtifactJson } from "../../coordinator-runtime/lib/artifacts.mjs";
 import { assertSchema } from "../../coordinator-runtime/lib/validate.mjs";
 
 const phasePolicySchema = {
@@ -61,6 +63,12 @@ const auditStateSchema = buildRuntimeStateSchema({
         type: "object",
         additionalProperties: auditWorkerSummarySchema,
     },
+    child_runs: {
+        type: "object",
+        additionalProperties: {
+            type: "object",
+        },
+    },
     aggregation_summary: {
         type: ["object", "null"],
     },
@@ -70,11 +78,15 @@ const auditStateSchema = buildRuntimeStateSchema({
     results_log_path: { type: ["string", "null"] },
     cleanup_completed: { type: "boolean" },
     self_check_passed: { type: "boolean" },
+    summary_recorded: { type: "boolean" },
+    summary_artifact_path: { type: ["string", "null"] },
+    summary: { type: ["object", "null"] },
 }, [
     "phase_order",
     "phase_data",
     "worker_plan",
     "worker_results",
+    "child_runs",
     "aggregation_summary",
     "report_written",
     "report_path",
@@ -82,6 +94,9 @@ const auditStateSchema = buildRuntimeStateSchema({
     "results_log_path",
     "cleanup_completed",
     "self_check_passed",
+    "summary_recorded",
+    "summary_artifact_path",
+    "summary",
 ]);
 
 function normalizePhaseOrder(phaseOrder) {
@@ -129,6 +144,7 @@ const auditStore = createRuntimeStore({
             phase_data: {},
             worker_plan: [],
             worker_results: {},
+            child_runs: {},
             aggregation_summary: null,
             report_written: false,
             report_path: manifest.report_path,
@@ -136,6 +152,9 @@ const auditStore = createRuntimeStore({
             results_log_path: manifest.results_log_path || null,
             cleanup_completed: false,
             self_check_passed: false,
+            summary_recorded: false,
+            summary_artifact_path: null,
+            summary: null,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
         };
@@ -215,13 +234,44 @@ export function recordWorkerResult(projectRoot, runId, summary) {
     if (!validation.ok) {
         return validation;
     }
+    const workerResultKey = `${summary.producer_skill}--${summary.identifier}`;
     return updateState(projectRoot, runId, state => ({
         ...state,
         worker_results: {
             ...state.worker_results,
-            [summary.identifier]: summary,
+            [workerResultKey]: summary,
         },
     }));
+}
+
+export function recordSummary(projectRoot, runId, summary) {
+    const run = loadRun(projectRoot, runId);
+    if (!run) {
+        return { ok: false, error: "Run not found" };
+    }
+    if (summary?.run_id !== runId) {
+        return { ok: false, error: `Audit coordinator summary run_id must match runtime run_id (${runId})` };
+    }
+    const validation = assertSchema(auditCoordinatorSummarySchema, summary, "audit coordinator summary");
+    if (!validation.ok) {
+        return validation;
+    }
+    return updateState(projectRoot, runId, state => {
+        const artifactIdentifier = `${summary.producer_skill}--${summary.identifier}`;
+        const artifactPath = writeRuntimeArtifactJson(projectRoot, runId, summary.summary_kind, artifactIdentifier, summary);
+        return {
+            ...state,
+            summary_recorded: true,
+            summary_artifact_path: artifactPath,
+            summary: {
+                ...summary,
+                payload: {
+                    ...summary.payload,
+                    artifact_path: artifactPath,
+                },
+            },
+        };
+    });
 }
 
 export {

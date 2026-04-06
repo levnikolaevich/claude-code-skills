@@ -63,6 +63,13 @@ function resolveRun(projectRoot) {
 
 function applyCheckpointToState(state, phase, payload) {
     const nextState = { ...state };
+    if ([PHASES.CODE_QUALITY, PHASES.CLEANUP, PHASES.REGRESSION, PHASES.LOG_ANALYSIS].includes(phase)
+        && payload.child_run?.worker) {
+        nextState.child_runs = {
+            ...(nextState.child_runs || {}),
+            [payload.child_run.worker]: payload.child_run,
+        };
+    }
     if (phase === PHASES.FINALIZE) {
         nextState.quality_score = payload.quality_score ?? nextState.quality_score;
         nextState.quality_verdict = payload.quality_verdict || nextState.quality_verdict;

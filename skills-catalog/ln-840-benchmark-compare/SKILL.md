@@ -12,7 +12,7 @@ model: claude-haiku-4-5
 **Type:** L3 Worker
 **Category:** 8XX Optimization -> 840 Benchmark
 
-Run a clean A/B benchmark in Claude Code: one session with built-in tools only, one with `hex-line`. The benchmark is scenario-based, diff-validated, and manifest-driven. It measures activation, correctness, time, cost, and tokens.
+Run a clean A/B benchmark in Claude Code: one session with built-in tools only, one with `hex-line`. The benchmark is scenario-based, diff-validated, manifest-driven, and runtime-backed. It measures activation, correctness, time, cost, and tokens.
 
 ---
 
@@ -21,7 +21,7 @@ Run a clean A/B benchmark in Claude Code: one session with built-in tools only, 
 | Direction | Content |
 |-----------|----------|
 | **Input** | Repo checkout containing `mcp/hex-line-mcp/`, optional `references/goals.md`, optional `references/expectations.json` |
-| **Output** | Comparison report in `skills-catalog/ln-840-benchmark-compare/results/{date}-comparison.md` |
+| **Output** | Comparison report in `skills-catalog/ln-840-benchmark-compare/results/{date}-comparison.md` plus machine-readable benchmark summary artifact |
 
 ---
 
@@ -154,6 +154,71 @@ Do not treat raw time/cost as sufficient without scenario correctness.
 
 ---
 
+## Runtime Contract
+
+**MANDATORY READ:** Load shared/references/benchmark_worker_runtime_contract.md, shared/references/coordinator_summary_contract.md
+
+Runtime CLI:
+
+```bash
+node shared/scripts/benchmark-worker-runtime/cli.mjs start --skill ln-840-benchmark-compare --identifier suite-default --manifest-file <file>
+node shared/scripts/benchmark-worker-runtime/cli.mjs checkpoint --skill ln-840-benchmark-compare --identifier suite-default --phase PHASE_0_CONFIG --payload '{...}'
+node shared/scripts/benchmark-worker-runtime/cli.mjs record-summary --skill ln-840-benchmark-compare --identifier suite-default --payload '{...}'
+node shared/scripts/benchmark-worker-runtime/cli.mjs complete --skill ln-840-benchmark-compare --identifier suite-default
+```
+
+Required state fields:
+- `report_ready`
+- `summary_recorded`
+- `final_result`
+- `self_check_passed`
+
+Domain checkpoints:
+- `PHASE_0_CONFIG`
+- `PHASE_1_PREFLIGHT`
+- `PHASE_2_LOAD_SUITE`
+- `PHASE_3_RUN_SCENARIOS`
+- `PHASE_4_PARSE_RESULTS`
+- `PHASE_5_WRITE_REPORT`
+- `PHASE_6_WRITE_SUMMARY`
+- `PHASE_7_SELF_CHECK`
+
+Guard rules:
+- do not advance without checkpointing the current phase
+- do not complete before `benchmark-worker` summary is recorded
+- do not complete before self-check passes
+
+### Runtime Coordination
+
+- Managed runs may pass deterministic `runId` and exact `summaryArtifactPath`.
+- Standalone runs are supported. If both are omitted, runtime creates a standalone run and writes the default summary artifact path for the `benchmark-worker` family.
+
+---
+
+## Runtime Summary Artifact
+
+**MANDATORY READ:** Load shared/references/coordinator_summary_contract.md
+
+Emit a `benchmark-worker` summary envelope after the comparison report is written.
+
+Managed mode:
+- write to the exact `summaryArtifactPath`
+
+Standalone mode:
+- write `.hex-skills/runtime-artifacts/runs/{run_id}/benchmark-worker/ln-840-benchmark-compare--{identifier}.json`
+
+Recommended payload:
+- `scenarios_total`
+- `scenarios_passed`
+- `scenarios_failed`
+- `activation_valid`
+- `validity_verdict`
+- `report_path`
+- `warnings`
+- `metrics`
+
+---
+
 ## Known Pitfalls
 
 | Pitfall | Solution |
@@ -174,6 +239,7 @@ Do not treat raw time/cost as sufficient without scenario correctness.
 - [ ] Each scenario runs in two clean worktrees from the same commit
 - [ ] Parser evaluates activation and scenario correctness from logs plus diffs
 - [ ] Final report is saved to `skills-catalog/ln-840-benchmark-compare/results/`
+- [ ] `benchmark-worker` summary artifact is written to the managed or standalone runtime path
 - [ ] Temporary worktrees are removed
 
 ---

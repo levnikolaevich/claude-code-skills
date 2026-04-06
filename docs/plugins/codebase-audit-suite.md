@@ -1,6 +1,6 @@
 # Codebase Audit Suite
 
-> Parallel auditors for security, quality, architecture, tests, and performance
+> Managed audit coordinators for security, quality, architecture, tests, and performance
 
 ## Install
 
@@ -14,7 +14,7 @@
 
 ## What it does
 
-Run comprehensive audits on any existing codebase. 5 coordinator skills launch parallel workers covering documentation, security, build health, code principles, dependencies, dead code, observability, concurrency, lifecycle, test suites, architecture patterns, layer boundaries, API contracts, and persistence performance.
+Run comprehensive audits on any existing codebase. Five coordinator skills launch managed audit-worker runtimes, checkpoint child runs, collect JSON summaries first, and then assemble markdown evidence for documentation, security, build health, code principles, dependencies, dead code, observability, concurrency, lifecycle, test suites, architecture patterns, layer boundaries, API contracts, and persistence performance.
 
 ## Skills
 
@@ -81,7 +81,7 @@ Run comprehensive audits on any existing codebase. 5 coordinator skills launch p
 
 ## How it works
 
-5 coordinators (ln-610, ln-620, ln-630, ln-640, ln-650) each launch their workers in parallel. Workers produce individual findings with severity ratings. Coordinators aggregate results into domain-specific reports with prioritized action items.
+5 coordinators (`ln-610`, `ln-620`, `ln-630`, `ln-640`, `ln-650`) each launch workers through `shared/scripts/audit-worker-runtime/cli.mjs`. Managed child runs write worker summaries to `.hex-skills/runtime-artifacts/runs/{parent_run_id}/audit-worker/{worker}--{identifier}.json`, worker markdown reports to `.hex-skills/runtime-artifacts/runs/{parent_run_id}/audit-report/`, and coordinator summaries to `.hex-skills/runtime-artifacts/runs/{parent_run_id}/audit-coordinator/`. Coordinators aggregate JSON summaries first, read markdown reports only for findings/evidence, write the public report under `docs/project/`, append `docs/project/.audit/results_log.md`, and then clean the run-scoped runtime artifacts.
 
 ## Quick start
 

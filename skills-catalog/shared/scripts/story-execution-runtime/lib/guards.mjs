@@ -1,6 +1,9 @@
 import { TASK_BOARD_STATUSES } from "../../coordinator-runtime/lib/runtime-constants.mjs";
 import { PHASES } from "./phases.mjs";
 
+const TASK_REVIEW_WORKER = "ln-402";
+const TASK_EXECUTION_WORKERS = Object.freeze(["ln-401", "ln-403", "ln-404"]);
+
 const ALLOWED_TRANSITIONS = new Map([
     [PHASES.CONFIG, new Set([PHASES.DISCOVERY])],
     [PHASES.DISCOVERY, new Set([PHASES.WORKTREE_SETUP])],
@@ -31,6 +34,48 @@ function hasInflightWorkers(state) {
     return Object.keys(state.inflight_workers || {}).length > 0;
 }
 
+function getTaskWorkerResults(state, taskId) {
+    return state.worker_results_by_task?.[taskId] || {};
+}
+
+function getReviewSummary(state, taskId) {
+    return getTaskWorkerResults(state, taskId)[TASK_REVIEW_WORKER] || null;
+}
+
+function hasReviewOutcome(state, taskId) {
+    const reviewSummary = getReviewSummary(state, taskId);
+    const toStatus = reviewSummary?.payload?.to_status;
+    return toStatus === TASK_BOARD_STATUSES.DONE || toStatus === TASK_BOARD_STATUSES.TO_REWORK;
+}
+
+function hasExecutionSummary(state, taskId) {
+    const taskWorkerResults = getTaskWorkerResults(state, taskId);
+    return TASK_EXECUTION_WORKERS.some(worker => Boolean(taskWorkerResults[worker]));
+}
+
+function getProcessedTaskIds(state) {
+    const processed = new Set([
+        ...Object.keys(state.worker_results_by_task || {}),
+        ...Object.keys(state.tasks || {}),
+    ]);
+    for (const group of Object.values(state.groups || {})) {
+        for (const taskId of group.task_ids || []) {
+            processed.add(taskId);
+        }
+    }
+    return Array.from(processed);
+}
+
+function getMissingReviewTasks(state, taskIds) {
+    return (taskIds || []).filter(taskId => !hasReviewOutcome(state, taskId));
+}
+
+function hasCompletedStage2Summary(state) {
+    return state.stage_summary?.summary_kind === "pipeline-stage"
+        && state.stage_summary?.payload?.stage === 2
+        && state.stage_summary?.payload?.status === "completed";
+}
+
 export function validateTransition(manifest, state, checkpoints, toPhase) {
     const allowed = ALLOWED_TRANSITIONS.get(state.phase);
     if (!allowed || !allowed.has(toPhase)) {
@@ -52,12 +97,33 @@ export function validateTransition(manifest, state, checkpoints, toPhase) {
         return { ok: false, error: "No selected group recorded for group execution" };
     }
 
+    if (toPhase === PHASES.VERIFY_STATUSES && state.phase === PHASES.TASK_EXECUTION) {
+        if (!state.current_task_id) {
+            return { ok: false, error: "No selected task recorded for status verification" };
+        }
+        if (!hasReviewOutcome(state, state.current_task_id)) {
+            return { ok: false, error: `ln-402 review summary missing for task ${state.current_task_id}` };
+        }
+    }
+
+    if (toPhase === PHASES.VERIFY_STATUSES && state.phase === PHASES.GROUP_EXECUTION) {
+        const groupTaskIds = state.groups?.[state.current_group_id]?.task_ids || [];
+        const missingReviewTasks = getMissingReviewTasks(state, groupTaskIds);
+        if (missingReviewTasks.length > 0) {
+            return { ok: false, error: `ln-402 review summaries missing for group tasks: ${missingReviewTasks.join(", ")}` };
+        }
+    }
+
     if (toPhase === PHASES.SCENARIO_VALIDATION) {
         if (hasProcessableWork(state.processable_counts)) {
             return { ok: false, error: "Processable tasks remain; cannot start scenario validation" };
         }
         if (hasInflightWorkers(state)) {
             return { ok: false, error: "Parallel workers still in flight" };
+        }
+        const missingReviewTasks = getMissingReviewTasks(state, getProcessedTaskIds(state));
+        if (missingReviewTasks.length > 0) {
+            return { ok: false, error: `Latest ln-402 summaries missing for tasks: ${missingReviewTasks.join(", ")}` };
         }
     }
 
@@ -82,6 +148,13 @@ export function validateTransition(manifest, state, checkpoints, toPhase) {
         }
         if (!state.final_result) {
             return { ok: false, error: "Final result not recorded" };
+        }
+        if (!hasCompletedStage2Summary(state)) {
+            return { ok: false, error: "Stage 2 coordinator artifact not recorded" };
+        }
+        const missingReviewTasks = getMissingReviewTasks(state, getProcessedTaskIds(state));
+        if (missingReviewTasks.length > 0) {
+            return { ok: false, error: `Latest ln-402 summaries missing for tasks: ${missingReviewTasks.join(", ")}` };
         }
     }
 
@@ -108,12 +181,27 @@ export function computeResumeAction(manifest, state, checkpoints) {
         return `Advance to ${PHASES.STORY_TO_REVIEW}`;
     }
     if (state.phase === PHASES.TASK_EXECUTION && state.current_task_id) {
-        return `Complete execute-review cycle for task ${state.current_task_id}`;
+        if (!hasReviewOutcome(state, state.current_task_id)) {
+            if (hasExecutionSummary(state, state.current_task_id)) {
+                return `Record ln-402 summary for task ${state.current_task_id} before status verification`;
+            }
+            return `Record worker summary for task ${state.current_task_id} before review`;
+        }
+        return `Checkpoint ${PHASES.TASK_EXECUTION} and advance to ${PHASES.VERIFY_STATUSES}`;
     }
     if (state.phase === PHASES.GROUP_EXECUTION && state.current_group_id) {
-        return `Wait for group ${state.current_group_id}, then review tasks and checkpoint PHASE_5_GROUP_EXECUTION`;
+        const groupTaskIds = state.groups?.[state.current_group_id]?.task_ids || [];
+        const missingReviewTasks = getMissingReviewTasks(state, groupTaskIds);
+        if (missingReviewTasks.length > 0) {
+            return `Record missing ln-402 summaries for group ${state.current_group_id} before status verification`;
+        }
+        return `Checkpoint ${PHASES.GROUP_EXECUTION} and advance to ${PHASES.VERIFY_STATUSES}`;
     }
     if (state.phase === PHASES.VERIFY_STATUSES) {
+        const missingReviewTasks = getMissingReviewTasks(state, getProcessedTaskIds(state));
+        if (missingReviewTasks.length > 0) {
+            return `Record latest ln-402 summaries before status verification: ${missingReviewTasks.join(", ")}`;
+        }
         if (hasProcessableWork(state.processable_counts)) {
             return "Re-read task statuses, checkpoint PHASE_6_VERIFY_STATUSES, then advance to PHASE_3_SELECT_WORK";
         }
@@ -132,6 +220,9 @@ export function computeResumeAction(manifest, state, checkpoints) {
         return `Move Story to ${TASK_BOARD_STATUSES.TO_REVIEW} and checkpoint ${PHASES.STORY_TO_REVIEW}`;
     }
     if (state.phase === PHASES.SELF_CHECK && !state.self_check_passed) {
+        if (!hasCompletedStage2Summary(state)) {
+            return "Record Stage 2 coordinator artifact before completion";
+        }
         return "Fix self-check failures, then checkpoint PHASE_8_SELF_CHECK with pass=true";
     }
 

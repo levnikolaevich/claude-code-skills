@@ -9,8 +9,9 @@ Workers receive the minimum context needed to stay decision-complete:
 ```json
 {
   "codebase_root": ".",
+  "runId": "ln-620-global--ln-621--global",
   "output_dir": ".hex-skills/runtime-artifacts/runs/{run_id}/audit-report",
-  "summaryArtifactPath": ".hex-skills/runtime-artifacts/runs/{run_id}/audit-worker/{worker-id}.json",
+  "summaryArtifactPath": ".hex-skills/runtime-artifacts/runs/{run_id}/audit-worker/{worker}--{identifier}.json",
   "tech_stack": {},
   "best_practices": {},
   "principles": {},
@@ -26,9 +27,17 @@ Workers receive the minimum context needed to stay decision-complete:
 Rules:
 - Pass only the fields the worker actually uses.
 - `output_dir` is a run-scoped runtime artifact directory, not a public project docs directory.
+- In managed mode, pass both `runId` and `summaryArtifactPath`.
+- In standalone mode, pass neither and let the worker runtime create them.
 - If `summaryArtifactPath` is present, write the worker JSON summary there per `shared/references/audit_summary_contract.md`.
 - If `domain_mode="domain-aware"`, scope scanning to `scan_path` and tag findings with the domain.
 - If `domain_mode="global"`, use `codebase_root` unless the skill defines a narrower scan target.
+
+## Runtime Contract
+
+**MANDATORY READ:** Load `shared/references/audit_worker_runtime_contract.md`.
+
+Workers remain standalone-capable, but coordinator-invoked runs must be backed by `shared/scripts/audit-worker-runtime/cli.mjs`.
 
 ## Scoring
 
@@ -49,9 +58,9 @@ Rules:
 
 **MANDATORY READ:** Load `shared/references/audit_summary_contract.md`.
 
-Workers must produce the JSON summary envelope when `summaryArtifactPath` is provided.
-
-Compact text output is optional compatibility fallback only.
+Workers must produce the JSON summary envelope in both modes:
+- managed mode -> write to the exact `summaryArtifactPath`
+- standalone mode -> write to the canonical run-scoped path from the runtime contract
 
 Required JSON fields:
 - `schema_version`
@@ -86,4 +95,4 @@ Diagnostic sub-scores never replace the primary penalty-based score.
 - Findings collected with severity, location, recommendation, and effort.
 - Score calculated via the shared scoring reference.
 - Report written to `{output_dir}/...` using the shared report template.
-- JSON summary written to `summaryArtifactPath` or returned in structured output.
+- JSON summary written to the managed or standalone runtime path.

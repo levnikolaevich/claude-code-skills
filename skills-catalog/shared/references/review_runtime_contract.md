@@ -29,6 +29,7 @@ node shared/scripts/review-runtime/cli.mjs status --skill ln-310 --identifier PR
 node shared/scripts/review-runtime/cli.mjs checkpoint --skill ln-310 --phase PHASE_2_AGENT_LAUNCH --payload '{...}'
 node shared/scripts/review-runtime/cli.mjs advance --skill ln-310 --to PHASE_3_RESEARCH
 node shared/scripts/review-runtime/cli.mjs register-agent --skill ln-310 --agent codex --metadata-file ... --result-file ...
+node shared/scripts/review-runtime/cli.mjs record-stage-summary --skill ln-310 --identifier PROJ-123 --payload '{...}'
 node shared/scripts/review-runtime/cli.mjs sync-agent --skill ln-310 --agent codex
 node shared/scripts/review-runtime/cli.mjs pause --skill ln-310 --reason "..."
 node shared/scripts/review-runtime/cli.mjs complete --skill ln-310
@@ -118,6 +119,21 @@ Per-agent fields:
 - `PHASE_3_RESEARCH -> PHASE_4_DOCS` always. `PHASE_4_DOCS -> PHASE_5_AUTOFIX/PHASE_6_MERGE` requires `docs_checkpoint` in state (story mode).
 - `PHASE_6_MERGE` is blocked until all required agents are resolved.
 - `PHASE_7_REFINEMENT` requires a merge summary.
+
+## Coordinator Stage Summary
+
+`ln-310` in `mode=story` writes a `pipeline-stage` coordinator summary once Story routing is resolved.
+
+Minimum semantics:
+- `stage = 1`
+- `story_id`
+- `status = completed`
+- `final_result`
+- `story_status`
+- `verdict`
+- `readiness_score`
+
+`ln-1000` consumes this artifact as the machine-readable completion signal for Stage 1.
 - Non-SKIPPED `PHASE_7_REFINEMENT` exit requires `refinement_iterations >= 1`.
 - `story` mode cannot skip Phase 4, 5, or Phase 8.
 - `DONE` requires `PHASE_9_SELF_CHECK` checkpoint with `pass=true` and `final_result` set.

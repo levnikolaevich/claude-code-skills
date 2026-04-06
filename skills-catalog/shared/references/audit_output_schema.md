@@ -20,14 +20,14 @@ Workers write markdown reports to `.hex-skills/runtime-artifacts/runs/{run_id}/a
 When structured output cannot be preserved in-context, worker may return a compact fallback:
 
 ```
-Report written: .hex-skills/runtime-artifacts/runs/{run_id}/audit-report/621-security.md
+Report written: .hex-skills/runtime-artifacts/runs/{run_id}/audit-report/ln-621--global.md
 Score: 7.5/10 | Issues: 5 (C:0 H:2 M:2 L:1)
 ```
 
 Extended workers (ln-641, ln-643) include diagnostic sub-scores:
 
 ```
-Report written: .hex-skills/runtime-artifacts/runs/{run_id}/audit-report/641-pattern-job-processing.md
+Report written: .hex-skills/runtime-artifacts/runs/{run_id}/audit-report/ln-641--job-processing.md
 Score: 6.0/10 (C:72 K:85 Q:68 I:90) | Issues: 3 (H:1 M:2 L:0)
 ```
 
@@ -91,7 +91,7 @@ For workers that scan per-domain, keep domain metadata both in the report and in
 {
   "status": "completed",
   "category": "Architecture & Design",
-  "report_path": ".hex-skills/runtime-artifacts/runs/demo/audit-report/623-principles-users.md",
+  "report_path": ".hex-skills/runtime-artifacts/runs/demo/audit-report/ln-623--users.md",
   "score": 6,
   "issues_total": 4,
   "severity_counts": {

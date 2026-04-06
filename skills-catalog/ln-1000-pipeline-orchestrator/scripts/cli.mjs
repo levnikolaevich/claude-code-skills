@@ -9,6 +9,7 @@ import {
     listActiveRuns,
     loadRun,
     pauseRun,
+    recordStageSummary,
     resolveRunId,
     saveState,
     startRun,
@@ -30,6 +31,7 @@ const { values, positionals } = parseArgs({
         stage: { type: "string" },
         storage: { type: "string" },
         reason: { type: "string" },
+        payload: { type: "string" },
         force: { type: "boolean", default: false },
         resolve: { type: "boolean", default: false },
         "plan-score": { type: "string" },
@@ -240,6 +242,22 @@ async function main() {
             return;
         }
 
+        case "record-stage-summary": {
+            if (!values.story) {
+                fail("record-stage-summary requires --story");
+            }
+            const payload = tryParse(values.payload);
+            if (!payload || typeof payload !== "object") {
+                fail("record-stage-summary requires --payload with a coordinator summary envelope");
+            }
+            const result = recordStageSummary(null, values.story, payload);
+            if (!result.ok) {
+                fail(result.error);
+            }
+            output(result);
+            return;
+        }
+
         case "pause": {
             if (!values.reason) {
                 fail("pause requires --reason");
@@ -278,7 +296,7 @@ async function main() {
         }
 
         default:
-            fail("Unknown command: start, status, advance, checkpoint, pause, cancel, complete");
+            fail("Unknown command: start, status, advance, checkpoint, record-stage-summary, pause, cancel, complete");
     }
 }
 

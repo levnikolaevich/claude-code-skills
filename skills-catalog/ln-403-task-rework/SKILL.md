@@ -65,9 +65,12 @@ Extract: `task_provider` = Task Management → Provider (`linear` | `file`).
 
 ## Runtime Summary Artifact
 
-**MANDATORY READ:** Load `shared/references/coordinator_summary_contract.md`
+**MANDATORY READ:** Load `shared/references/coordinator_summary_contract.md`, `shared/references/worker_runtime_contract.md`, `shared/references/task_worker_runtime_contract.md`
 
-Write `.hex-skills/runtime-artifacts/runs/{run_id}/task-status/{task_id}.json` before finishing.
+Shared contract:
+- emit `summary_kind=task-status`
+- standalone mode omits `runId` and `summaryArtifactPath`
+- managed mode passes both `runId` and exact `summaryArtifactPath` before the worker writes its validated summary
 
 ## Definition of Done
 - [ ] Task and review feedback fully read; actions mapped.

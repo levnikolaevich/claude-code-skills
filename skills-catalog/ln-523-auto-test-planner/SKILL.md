@@ -26,7 +26,7 @@ Creates Story test task with comprehensive automated test coverage (E2E/Integrat
 - **Calculate** risk-based priorities (Impact x Probability)
 - **Generate** 11-section test plan from manual test results
 - **Delegate** to ln-301-task-creator (CREATE) or ln-302-task-replanner (REPLAN)
-- **NOT** for: manual testing (ln-522), research (ln-521), orchestration (ln-520)
+- **NOT** for: manual testing, research, or orchestration
 
 ## When to Use
 
@@ -35,7 +35,7 @@ Creates Story test task with comprehensive automated test coverage (E2E/Integrat
 - ln-521 research: uses if available, generates minimal inline research if missing
 - ln-522 manual testing: uses if available, marks as 'skipped by policy' if missing
 
-**Automation:** Supports `autoApprove: true` (default when invoked by ln-520) to skip manual confirmation.
+**Automation:** Supports `autoApprove: true` in managed runs to skip manual confirmation.
 
 ## Workflow
 
@@ -143,7 +143,7 @@ Shows preview for review.
 **Step 1:** Preview generated test plan (always displayed for transparency)
 
 **Step 2:** Confirmation logic:
-- **autoApprove: true** (default from ln-520) -> proceed automatically
+- **autoApprove: true** -> proceed automatically
 - **Manual run** -> prompt user to type "confirm"
 
 **Step 3:** Check for existing test task
@@ -157,7 +157,14 @@ Shows preview for review.
 
 **Step 4a: CREATE MODE** (if Count = 0)
 
-Invoke ln-301-task-creator worker with taskType: "test"
+Managed delegation sequence:
+1. Compute `childRunId = {parent_run_id}--ln-301--{storyId}`
+2. Compute `childSummaryArtifactPath = .hex-skills/runtime-artifacts/runs/{parent_run_id}/task-plan/ln-301--{storyId}.json`
+3. Materialize child manifest at `.hex-skills/test-planning/ln-301--{storyId}_manifest.json`
+4. Start `task-plan-worker-runtime` with both transport inputs
+5. Checkpoint `child_run` metadata in `PHASE_6_DELEGATE_TASK_PLAN`
+6. Invoke `ln-301-task-creator` with `--run-id` and `--summary-artifact-path`
+7. Read only the resulting child `task-plan` artifact
 
 **Pass to worker:**
 - taskType, teamId, storyData (Story.id, title, AC, Technical Notes, Context)
@@ -166,40 +173,48 @@ Invoke ln-301-task-creator worker with taskType: "test"
 - testPlan (e2eTests, integrationTests, unitTests, riskPriorityMatrix)
 - infrastructureChanges, documentationUpdates, legacyCleanup
 
-**Worker returns:** Task URL + summary
+**Worker returns:** Task URL + `task-plan` artifact
 
 **Step 4b: REPLAN MODE** (if Count >= 1)
 
-Invoke ln-302-task-replanner worker with taskType: "test"
+Managed delegation sequence:
+1. Compute `childRunId = {parent_run_id}--ln-302--{storyId}`
+2. Compute `childSummaryArtifactPath = .hex-skills/runtime-artifacts/runs/{parent_run_id}/task-plan/ln-302--{storyId}.json`
+3. Materialize child manifest at `.hex-skills/test-planning/ln-302--{storyId}_manifest.json`
+4. Start `task-plan-worker-runtime` with both transport inputs
+5. Checkpoint `child_run` metadata in `PHASE_6_DELEGATE_TASK_PLAN`
+6. Invoke `ln-302-task-replanner` with `--run-id` and `--summary-artifact-path`
+7. Read only the resulting child `task-plan` artifact
 
 **Pass to worker:**
 - Same data as CREATE MODE + existingTaskIds
 
-**Worker returns:** Operations summary + warnings
+**Worker returns:** Operations summary + child `task-plan` artifact
 
-**Step 5:** Return summary to orchestrator (ln-520)
+**Step 5:** Return structured summary to caller
 
 ---
 
 ## Runtime Summary Artifact
 
-**MANDATORY READ:** Load `shared/references/test_planning_summary_contract.md`
+**MANDATORY READ:** Load `shared/references/test_planning_summary_contract.md`, `shared/references/test_planning_worker_runtime_contract.md`, `shared/references/task_plan_worker_runtime_contract.md`
 
-Accept optional `summaryArtifactPath`.
+Runtime profile:
+- family: `test-planning-worker`
+- worker: `ln-523`
+- summary kind: `test-planning-worker`
+- payload fields used by coordinators: `worker`, `status`, `warnings`, `test_task_id`, `test_task_url`, `coverage_summary`, `planned_scenarios`
 
-Summary kind:
-- `test-planning-worker`
+Invocation rules:
+- standalone: omit `runId` and `summaryArtifactPath`
+- managed: pass both `runId` and exact `summaryArtifactPath`
+- always write the validated summary before terminal outcome
 
-Required payload semantics:
-- `worker = "ln-523"`
-- `status`
-- `warnings`
-- `test_task_id`
-- `test_task_url`
-- `coverage_summary`
-- `planned_scenarios`
-
-Write the summary to the provided artifact path or return the same envelope in structured output.
+Delegated child worker rules:
+- when delegating to `ln-301` or `ln-302`, `ln-523` becomes the parent runtime
+- start `task-plan-worker-runtime` before delegation
+- checkpoint `child_run` metadata before the child Skill call
+- consume only the child `task-plan` artifact, never child prose
 
 ## Definition of Done
 
@@ -222,8 +237,10 @@ Write the summary to the provided artifact path or return the same envelope in s
 - [ ] Each test beyond baseline 2 justified
 
 **Worker Delegation Executed:**
-- [ ] CREATE MODE: Delegated to ln-301-task-creator
-- [ ] REPLAN MODE: Delegated to ln-302-task-replanner
+- [ ] CREATE MODE: Delegated to ln-301-task-creator through `task-plan-worker-runtime`
+- [ ] REPLAN MODE: Delegated to ln-302-task-replanner through `task-plan-worker-runtime`
+- [ ] Child run metadata checkpointed before delegation
+- [ ] Child `task-plan` artifact consumed before final summary
 - [ ] Linear Issue URL returned
 
 **Output:**
@@ -247,6 +264,7 @@ Write the summary to the provided artifact path or return the same envelope in s
 - **No framework testing:** Every test must validate OUR business logic; never test library/framework behavior
 - **Usefulness enforcement:** Every test beyond baseline must pass all 6 Usefulness Criteria (see risk_based_testing_guide.md)
 - **Delegate, don't create:** Task creation goes through ln-301/ln-302 workers; this skill generates the plan only
+- **Managed child runs only:** Parent-child delegation to ln-301/ln-302 must use `task-plan-worker-runtime`, deterministic child `runId`, exact child `summaryArtifactPath`, and artifact-only consumption
 
 ## Best Practices
 

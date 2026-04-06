@@ -13,6 +13,8 @@ When a Story's requirements change and tasks already exist, x-task-coordinator c
 
 **Key Principle**: The IDEAL plan from Phase 2 is the source of truth. Existing tasks are compared against this plan.
 
+**Binding Rule**: For ideal tasks with no existing match, CREATE is the default. To skip CREATE, the artifact must be literally trivially small (a config line or constant — not a new file, class, module, or prompt document) AND verifiably delivered in an existing Done task's committed code. Vague exemptions ("implicitly covered," "embedded in code," "part of another task") are not sufficient without code evidence.
+
 ## Inputs
 
 ### Phase 2 Output: IDEAL Task Plan

@@ -59,7 +59,7 @@ try {
     run(["checkpoint", "--project-root", projectRoot, "--phase", PHASES.TASK_EXECUTION]);
     run(["advance", "--project-root", projectRoot, "--to", PHASES.VERIFY_STATUSES]);
 
-    // TEST 1: STORY_TO_REVIEW blocked with processable_counts > 0
+    // TEST 1: SCENARIO_VALIDATION blocked with processable_counts > 0
     run([
         "checkpoint", "--project-root", projectRoot,
         "--phase", PHASES.VERIFY_STATUSES,
@@ -70,10 +70,10 @@ try {
     ]);
     const blocked1 = run([
         "advance", "--project-root", projectRoot,
-        "--to", PHASES.STORY_TO_REVIEW,
+        "--to", PHASES.SCENARIO_VALIDATION,
     ], { allowFailure: true });
     if (blocked1.ok !== false || !String(blocked1.error || "").includes("Processable")) {
-        throw new Error("Expected STORY_TO_REVIEW blocked with pending tasks");
+        throw new Error("Expected SCENARIO_VALIDATION blocked with pending tasks");
     }
 
     // TEST 2: DONE blocked without story_transition_done
@@ -85,6 +85,12 @@ try {
             processable_counts: { todo: 0, to_review: 0, to_rework: 0 },
             inflight_workers: {},
         }),
+    ]);
+    run(["advance", "--project-root", projectRoot, "--to", PHASES.SCENARIO_VALIDATION]);
+    run([
+        "checkpoint", "--project-root", projectRoot,
+        "--phase", PHASES.SCENARIO_VALIDATION,
+        "--payload", JSON.stringify({ scenario_pass: true, validation_mode: "self_check_only" }),
     ]);
     run(["advance", "--project-root", projectRoot, "--to", PHASES.STORY_TO_REVIEW]);
     run(["checkpoint", "--project-root", projectRoot, "--phase", PHASES.STORY_TO_REVIEW]);

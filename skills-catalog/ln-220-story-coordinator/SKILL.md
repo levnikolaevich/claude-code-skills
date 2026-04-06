@@ -92,6 +92,7 @@ Rules:
 - 5-10 Stories when Epic warrants it
 - concise Story statements and observable ACs
 - no orchestration prose inside the plan
+- delegate ACs must specify what equips the actor (context, instructions, tools, configuration), not just what the actor does
 
 Checkpoint payload:
 - `ideal_plan_summary`

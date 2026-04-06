@@ -86,17 +86,24 @@ try {
     run(["checkpoint", P, projectRoot, "--phase", PHASES.TASK_EXECUTION]);
     run(["advance", P, projectRoot, "--to", PHASES.VERIFY_STATUSES]);
 
-    // TEST 5: STORY_TO_REVIEW blocked with processable tasks
-    run(["checkpoint", P, projectRoot, "--phase", PHASES.VERIFY_STATUSES, "--payload", JSON.stringify({ processable_counts: { todo: 1, to_review: 0, to_rework: 0 }, inflight_workers: {} })]);
-    const t5 = run(["advance", P, projectRoot, "--to", PHASES.STORY_TO_REVIEW], { allowFailure: true });
-    expect("STORY_TO_REVIEW blocked with processable tasks", t5, false);
-
-    // Fix: clear processable
+    // TEST 5: STORY_TO_REVIEW blocked from VERIFY_STATUSES (must go through SCENARIO_VALIDATION)
     run(["checkpoint", P, projectRoot, "--phase", PHASES.VERIFY_STATUSES, "--payload", JSON.stringify({ processable_counts: { todo: 0, to_review: 0, to_rework: 0 }, inflight_workers: {} })]);
+    const t5 = run(["advance", P, projectRoot, "--to", PHASES.STORY_TO_REVIEW], { allowFailure: true });
+    expect("STORY_TO_REVIEW blocked from VERIFY_STATUSES", t5, false);
 
-    // TEST 6: STORY_TO_REVIEW allowed with zero processable
-    const t6 = run(["advance", P, projectRoot, "--to", PHASES.STORY_TO_REVIEW]);
-    expect("STORY_TO_REVIEW allowed with zero processable", t6, true);
+    // TEST 6: SCENARIO_VALIDATION allowed with zero processable
+    const t6 = run(["advance", P, projectRoot, "--to", PHASES.SCENARIO_VALIDATION]);
+    expect("SCENARIO_VALIDATION allowed with zero processable", t6, true);
+
+    // TEST 6b: STORY_TO_REVIEW blocked without scenario_pass
+    run(["checkpoint", P, projectRoot, "--phase", PHASES.SCENARIO_VALIDATION, "--payload", JSON.stringify({ scenario_pass: false })]);
+    const t6b = run(["advance", P, projectRoot, "--to", PHASES.STORY_TO_REVIEW], { allowFailure: true });
+    expect("STORY_TO_REVIEW blocked without scenario_pass", t6b, false);
+
+    // TEST 6c: STORY_TO_REVIEW allowed with scenario_pass=true
+    run(["checkpoint", P, projectRoot, "--phase", PHASES.SCENARIO_VALIDATION, "--payload", JSON.stringify({ scenario_pass: true, validation_mode: "self_check_only" })]);
+    const t6c = run(["advance", P, projectRoot, "--to", PHASES.STORY_TO_REVIEW]);
+    expect("STORY_TO_REVIEW allowed with scenario_pass=true", t6c, true);
 
     // TEST 7: DONE blocked without story_transition_done
     run(["checkpoint", P, projectRoot, "--phase", PHASES.STORY_TO_REVIEW]);

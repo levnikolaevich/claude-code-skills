@@ -78,10 +78,12 @@ Agent Installation:
 
 ### Phase 2: Post-Install Gemini Configuration
 
-After successful Gemini install/update, set in `~/.gemini/settings.json`:
+After successful Gemini install/update, merge into `~/.gemini/settings.json`:
 
-1. **Disable Conseca** — set `security.enableConseca` to `false`. Safety checker doubles API calls and exhausts quota.
-2. **Model** — do NOT pass `-m` flag when invoking Gemini CLI. Auto mode routes to best available model (gemini-3.1-pro / gemini-3-flash).
+1. Read existing file (or `{}` if missing)
+2. Deep-merge: set `security.enableConseca` to `false` (preserve all other keys — MCP servers, model, trust, etc.)
+3. Write back (2-space indent JSON)
+4. **Model** — do NOT pass `-m` flag when invoking Gemini CLI. Auto mode routes to best available model (gemini-3.1-pro / gemini-3-flash).
 
 ---
 
@@ -92,6 +94,7 @@ After successful Gemini install/update, set in `~/.gemini/settings.json`:
 3. **Global install only.** Always `npm install -g` (CLI tools must be in PATH)
 4. **Report all changes.** Include config modifications in the final summary table
 5. **Idempotent.** Safe to run multiple times
+6. **Non-destructive config writes.** Always read → deep-merge → edit. Never overwrite `~/.gemini/settings.json` from scratch — it contains MCP servers, hooks, and user preferences managed by other skills.
 
 ## Anti-Patterns
 
@@ -101,6 +104,7 @@ After successful Gemini install/update, set in `~/.gemini/settings.json`:
 | Retry failed installs automatically | One attempt, report failure |
 | Use `sudo npm install` | Suggest `--prefix` for permission issues |
 | Install agents marked `disabled` | Skip with clear report |
+| Overwrite entire config file with only known fields | Read existing → deep-merge only owned fields → edit back |
 
 ---
 

@@ -271,7 +271,7 @@ After all Phase 2 registrations complete:
 1. `PreToolUse` hook — redirects built-in Read/Edit/Write/Grep to hex-line equivalents
 2. `PostToolUse` hook — compresses verbose tool output (RTK filter)
 3. `SessionStart` hook — injects MCP Tool Preferences reminder
-4. Sets `disableAllHooks: false`
+4. **`disableAllHooks`:** After verifying hooks are synced, read `~/.claude/settings.json`, set `disableAllHooks: false` (merge, preserve all other fields), write back. This is appropriate here because the user explicitly invoked setup and wants hooks active. autoSync does NOT manage this flag — it only syncs hook file content and entries.
 
 **Output Style:**
 5. Copies `output-style.md` to `~/.claude/output-styles/hex-line.md`
@@ -279,7 +279,7 @@ After all Phase 2 registrations complete:
 
 **Verification:** Confirm all of the following after the first `hex-line` tool call:
 - `~/.claude/settings.json` contains the 3 `hex-line` hook entries with current command path
-- `disableAllHooks: false`
+- `disableAllHooks: false` (set explicitly by this skill, not by autoSync)
 - `~/.claude/output-styles/hex-line.md` exists and matches package content
 - `outputStyle: "hex-line"` is set only when no other style was already active
 
@@ -420,6 +420,7 @@ MCP Configuration:
 9. **MSYS2 path safety.** On Windows with Git Bash/MSYS2, always prefix `claude mcp add` with `MSYS_NO_PATHCONV=1`. After registration, verify `args[0]` in `.claude.json` is `"/c"` not `"C:/"`. Fix inline if corrupted.
 10. **Verify graph-specific deps after install.** After Phase 2 registration, check system binaries for hex-line, graph-specific optional providers, and optional SCIP exporters for detected project languages. Auto-install only with user consent. Never install project runtimes or framework packages here.
 11. **Report EOL churn risk, do not hide it.** If `.gitattributes`, `.editorconfig`, or Git config suggest working-tree line-ending rewrites, warn explicitly instead of silently changing repo policy here.
+12. **Non-destructive config writes.** Always read → merge → edit. Never overwrite config files from scratch. Preserve all keys/sections not owned by this skill.
 
 ## Anti-Patterns
 
@@ -436,6 +437,7 @@ MCP Configuration:
 | Run `claude mcp add` without MSYS_NO_PATHCONV on Windows bash | Always `MSYS_NO_PATHCONV=1 claude mcp add ...` or verify+fix args after |
 | Skip provider verification for hex-graph | Detect project language(s) first, then verify only relevant graph-specific providers and SCIP exporters |
 | Auto-install project/framework/runtime packages | Limit this phase to MCP-relevant graph providers and SCIP exporters, and ask user before install |
+| Overwrite entire config file with only known fields | Read existing → deep-merge only owned fields → edit back |
 
 ---
 

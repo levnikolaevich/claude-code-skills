@@ -51,7 +51,7 @@
 
 ## Step 5: Penalty Points Calculation
 
-- Evaluate all 28 criteria against Story/Tasks (see Auto-Fix Actions Reference below)
+- Evaluate all 30 criteria against Story/Tasks (see Auto-Fix Actions Reference below)
 - Assign penalty points per violation (CRITICAL=10, HIGH=5, MEDIUM=3, LOW=1)
 - Calculate total penalty points
 - Build fix plan for each violation
@@ -105,12 +105,14 @@ Detailed criteria table for Phase 4 auto-fix execution and Phase 3 penalty calcu
 | 14 | Documentation Complete | Pattern docs exist + referenced | HIGH (5) | Create inline per documentation_creation.md; add all doc links to Technical Notes |
 | 15 | Code Quality Basics | No hardcoded values | MEDIUM (3) | Add TODOs for constants/config/env |
 
-## Traceability (#16-#17)
+## Traceability (#16-#17, #17b-#17c)
 
 | # | Criterion | What it checks | Penalty | Auto-fix actions |
 |---|-----------|----------------|---------|------------------|
 | 16 | Story-Task Alignment | Each Task title contains keyword from Story AC; grep verification | MEDIUM (3) | Add TODO to misaligned Tasks; warn user |
 | 17 | AC-Task Coverage | Coverage matrix: each AC row has ≥1 Task; no empty rows | MEDIUM (3) | Add TODO for uncovered ACs; suggest missing Tasks |
+| 17b | AC Invocability | Every AC where an actor must invoke/consume a mechanism has a covering Task whose Implementation Plan names a concrete mechanism (MCP tool, API endpoint, CLI command, UI component, chat handler, config file, system prompt section, cron handler). Infrastructure-only tasks do NOT satisfy ACs requiring something to *use* that infrastructure. Vague mechanism = violation | HIGH (5) per AC | For each violating AC — identify missing mechanism, either (a) add to existing task's Implementation Plan with explicit section, or (b) flag that a new task is needed for the consuming layer. Update Linear |
+| 17c | Scenario Completeness | For each AC where an actor must invoke/consume a mechanism, covering task(s) must collectively address all 5 segments: (1) Actor trigger, (2) Entry point (named mechanism from #17b), (3) Discovery (how actor's system finds/loads mechanism at runtime), (4) Usage context (what actor's system needs to correctly invoke mechanism), (5) Observable outcome. Missing segment = violation | HIGH (5) per AC | For each violating AC — identify missing segment(s), either (a) add to existing task's Implementation Plan, or (b) flag that covering task needs a "Scenario Integration" section. Update Linear |
 
 ## Dependencies (#18-#19)
 
@@ -150,7 +152,7 @@ Detailed criteria table for Phase 4 auto-fix execution and Phase 3 penalty calcu
 |---|-----------|----------------|---------|------------------|
 | 27 | Pre-mortem Analysis | Pre-mortem with Tiger/Paper Tiger/Elephant classification (complex Stories) | MEDIUM (3) | Execute algorithm from premortem_validation.md; Tigers → risk #20; Elephants → Assumptions #24 [pre-mortem] |
 
-**Maximum Penalty:** 113 points (sum of all 28 criteria; #20 capped at 15; #25 max 1 CRITICAL = 10)
+**Maximum Penalty:** 123+ points (sum of all 30 criteria; #17b and #17c are HIGH per AC, uncapped; #20 capped at 15; #25 max 1 CRITICAL = 10)
 
 ---
 **Version:** 1.0.0

@@ -4,7 +4,7 @@
 
 Details that expand on SKILL.md: multiple violations, report format, edge cases.
 
-For severity levels and 28-criteria mapping, see [SKILL.md §Phase 4](../SKILL.md#phase-4-auto-fix) and [phase2_research_audit.md](phase2_research_audit.md).
+For severity levels and 30-criteria mapping, see [SKILL.md §Phase 4](../SKILL.md#phase-4-auto-fix) and [phase2_research_audit.md](phase2_research_audit.md).
 
 ---
 
@@ -21,6 +21,8 @@ Some criteria can have multiple violations (points multiply):
 | #9 Story Size | Per issue | 3 points * size_issues_count |
 | #16 Story-Task Alignment | Per misaligned Task | 3 points * misaligned_tasks_count (max 3x = 9) |
 | #17 AC-Task Coverage | Per uncovered AC | 3 points * uncovered_ac_count (max 3x = 9) |
+| #17b AC Invocability | Per invocable AC without concrete mechanism | 5 points * violating_ac_count (uncapped) |
+| #17c Scenario Completeness | Per invocable AC with incomplete segments | 5 points * incomplete_ac_count (uncapped) |
 | #18 Story Dependencies | Per forward dep | 10 points * forward_dep_count |
 | #19 Task Dependencies | Per forward dep | 3 points * forward_dep_count (max 3x = 9) |
 | #20 Risk Analysis | Per unmitigated risk | 5 points * risk_count (Priority >= 15) or 3 points (Priority 9-14), max 15 |
@@ -102,7 +104,7 @@ Story approved: Backlog -> Todo
 
 ### Maximum Violations
 
-If total > 30 points (max possible: 113 with all 28 criteria; #20 capped at 15, #25 max 1 CRITICAL = 10), add warning:
+If total > 30 points (max possible: 123+ with all 30 criteria; #17b and #17c are HIGH per AC, uncapped; #20 capped at 15, #25 max 1 CRITICAL = 10), add warning:
 
 ```
 WARNING: High violation count (42 points)

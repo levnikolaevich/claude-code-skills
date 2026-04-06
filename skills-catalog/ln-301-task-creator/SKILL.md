@@ -28,9 +28,14 @@ Load these before execution:
 Core inputs:
 - `taskType`
 - `storyData`
-- `idealPlan` or `appendMode + newTaskDescription`
+- `idealPlan` — task list with scopes, AC mappings, dependencies, layer classifications
 - `teamId`
 - `guideLinks`
+
+Coordinator context (passed in ADD/CREATE mode):
+- `traceabilityTablePath` — materialized traceability table from coordinator Phase 2
+- `discoveryContext` — architecture, tech stack, key files, integration points from coordinator Phase 1
+- `tasksToCreate` — specific tasks to create (ADD mode). Worker writes the 7-section document, does not decide whether tasks are needed.
 
 Optional transport inputs:
 - `runId`
@@ -71,12 +76,13 @@ If `summaryArtifactPath` is not provided:
 
 1. Resolve task provider and template set.
 2. Run DRY and destructive-operation checks where applicable.
-3. Generate task documents from the selected template.
-4. Validate type-specific rules.
-5. Show preview and get confirmation if needed.
-6. Create tasks in Linear or file mode.
-7. Update kanban.
-8. Return structured summary.
+3. Use coordinator context (`discoveryContext`, `traceabilityTablePath`) to understand architecture. Research codebase for implementation details (existing patterns, related files, integration points) to write good Technical Approach sections.
+4. Generate task documents from the selected template.
+5. Validate type-specific rules.
+6. Show preview and get confirmation if needed.
+7. Create tasks in Linear or file mode.
+8. Update kanban.
+9. Return structured summary.
 
 ## Critical Rules
 
@@ -84,6 +90,7 @@ If `summaryArtifactPath` is not provided:
 - Do not require coordinator runtime state.
 - Keep implementation, refactoring, and test rules separated by `taskType`.
 - Write machine-readable summary output every time.
+- **Ideal plan is binding.** Create every task in the approved plan. Do not re-evaluate whether tasks should exist.
 - **STOP before save_issue:** verify all 7 sections present in body: Context, Implementation Plan, Technical Approach, Acceptance Criteria, Affected Components, Existing Code Impact, Definition of Done. PreToolUse hook will BLOCK creation without them.
 
 ## Definition of Done

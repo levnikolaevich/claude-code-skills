@@ -4,6 +4,15 @@ Prevention checklist for content creators. Maps to story validation criteria —
 
 For full validation rules and auto-fix logic, see story validator `references/` (10 validation files).
 
+## Vocabulary
+
+**Actor:** The entity that makes the decision or performs the action described in an AC.
+
+Rules:
+- The actor is the entity that executes, not the entity that launches, schedules, or dispatches.
+- If the AC describes a delegated action (spawned process, background worker, agent session), the actor is the delegate — not the delegator.
+- Scenario segments (3) Discovery and (4) Usage Context must be answered from the actor's perspective: what does the actor discover, what context does the actor have at the point of execution.
+
 ## Story Creation Checklist
 
 For Story creation workflow.
@@ -21,13 +30,16 @@ For Story creation workflow.
 | 14 | Documentation Complete | 5 | Pattern docs (from best practices research) referenced in Technical Notes. No orphan patterns |
 | 16 | Story-Task Alignment | 3 | Each Task title contains keyword from Story AC (grep-verifiable) |
 | 17 | AC-Task Coverage | 3 | Coverage matrix: every AC covered by >= 1 Task. No empty rows |
+| 17b | AC Invocability | 5 | Every AC where an actor invokes a mechanism must map to a task creating a concrete, named mechanism. Infrastructure-only tasks (queue, registry, store) do NOT satisfy ACs requiring something to *use* that infrastructure. One named mechanism per actor — no vague "via X or Y" |
+| 17c | Scenario Completeness | 5 | Each AC traces 5 segments: (1) Trigger, (2) Entry Point, (3) Discovery, (4) Usage Context, (5) Outcome. All 5 must be addressed across covering tasks. Traceability table with these columns required in the plan. See ln-300 Phase 2 for segment definitions |
+| 17d | Layer Separation | 5 | Segments map to layers: Foundation, Invocation, Knowledge, Wiring. Buildable artifacts in different layers = separate tasks. A foundation task must not also deliver the invocation mechanism or the actor's knowledge of how to use it, unless the artifact is trivially small (config line, not a new file/module) |
 | 18 | Story Dependencies | 10 | No forward dependencies on Stories not yet created. Only reference earlier Stories |
 | 24 | Assumption Registry | 3 | Assumptions section with >=1 typed entry per relevant category (FEASIBILITY/DEPENDENCY/DATA/SCOPE). Each entry has Confidence and Invalidation Impact |
 | 28 | AC Purity | 3 | Every AC describes observable user behavior (Given user does X, Then user sees Y). System internals (lookup priority, cache layers, endpoint URLs, architecture) belong in Technical Notes, not ACs |
 | 29 | Scope Minimalism | 3 | Simplest design that delivers Epic Goal. No benchmark-driven inflation ("industry does X" is not a reason to add AC). Standards Research → Technical Notes only |
 | 30 | Feature Bundling | 3 | Story title has no conjunctions joining distinct capabilities ("and", "&", "+"). Each distinct user capability = separate Story |
 
-**Total exposure:** 62 penalty points if all violated.
+**Total exposure:** 77 penalty points if all violated.
 
 ## Task Creation Checklist
 

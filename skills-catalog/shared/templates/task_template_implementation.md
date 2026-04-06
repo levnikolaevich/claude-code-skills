@@ -73,6 +73,14 @@
 - **How:** [dependency injection / direct import / middleware / decorator / etc.]
 - **When:** [startup / request handler / background task / etc.]
 
+<!-- Include when this task covers ACs where an actor must invoke/consume a mechanism (criterion #17c). Remove if task is pure infrastructure with no consumer. -->
+### Scenario Integration
+> For each AC this task covers where an actor (user, bot, scheduler, handler, pipeline) must invoke or consume a mechanism, trace all 5 segments.
+
+| AC | Actor Trigger | Entry Point | Discovery | Usage Context | Observable Outcome |
+|----|--------------|-------------|-----------|---------------|-------------------|
+| [AC ref] | [What initiates: user message, timer fire, webhook arrival, event enqueue] | [Named mechanism: tool/endpoint/command/component/config/prompt section] | [How the actor's system finds it: config registration, route mount, plugin load, system prompt, env var] | [What the actor's system needs to invoke it: instructions, prompts, schemas, param guidance, docs] | [Verifiable result: response, state change, log entry, notification] |
+
 ### Why This Approach
 - [Reason 1: Standards compliance or industry best practice reference]
 - [Reason 2: Performance/Security/Maintainability/Team familiarity benefit]

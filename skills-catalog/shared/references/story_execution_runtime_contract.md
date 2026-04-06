@@ -35,6 +35,7 @@ node shared/scripts/story-execution-runtime/cli.mjs complete
 - `PHASE_4_TASK_EXECUTION`
 - `PHASE_5_GROUP_EXECUTION`
 - `PHASE_6_VERIFY_STATUSES`
+- `PHASE_6B_SCENARIO_VALIDATION`
 - `PHASE_7_STORY_TO_REVIEW`
 - `PHASE_8_SELF_CHECK`
 - `DONE`

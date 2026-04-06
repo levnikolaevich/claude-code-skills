@@ -34,7 +34,8 @@
 
 ## Acceptance Criteria
 
-Use **Given-When-Then** format:
+Use **Given-When-Then** format.
+<!-- Delegate actors: if an AC describes a delegate (spawned process, worker, agent session) performing an action, specify what equips that actor — context, instructions, tools, configuration. See Vocabulary in creation_quality_checklist.md. -->
 
 ### Main Scenarios
 

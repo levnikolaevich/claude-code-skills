@@ -31,7 +31,7 @@ Validates Stories/Tasks (`mode=story`), implementation plans (`mode=plan_review`
 
 ## Purpose
 
-- `mode=story`: validate Story + Tasks against 28 criteria, auto-fix structural issues, merge agent review, then approve (`Backlog -> Todo`) only after zero remaining blockers
+- `mode=story`: validate Story + Tasks against 30 criteria, auto-fix structural issues, merge agent review, then approve (`Backlog -> Todo`) only after zero remaining blockers
 - `mode=plan_review`: review plan against codebase, standards, and alternatives; apply accepted corrections
 - `mode=context`: review architecture/documents/context materials; apply accepted corrections
 - All modes: run deterministic agent review with runtime checkpoints, critical verification, and Codex refinement
@@ -140,7 +140,7 @@ Common work:
 `mode=story`:
 - pre-mortem analysis
 - cross-reference analysis
-- penalty points calculation across all 28 criteria
+- penalty points calculation across all 30 criteria
 - save audit to `.hex-skills/agent-review/{storyId}_phase3_audit.md`
 
 `mode=plan_review | mode=context`:
@@ -185,13 +185,13 @@ For `mode=plan_review | mode=context`, checkpoint Phase 4 as `{"status":"skipped
 | 8 | Risk (#20) | `references/risk_validation.md` |
 | 9 | Pre-mortem (#27) | `references/premortem_validation.md` |
 | 10 | Verification (#22) | `references/traceability_validation.md` |
-| 11 | Traceability (#16-#17) | `references/traceability_validation.md` |
+| 11 | Traceability (#16-#17, #17b-#17c) | `references/traceability_validation.md` |
 
 Rules:
 - zero out penalty points only when the defect is actually repaired
 - use `FLAGGED` only when human judgment is required and auto-fix cannot safely continue
 - test strategy section may exist but remain empty
-- max penalty = 113
+- max penalty = 123+
 
 Checkpoint Phase 4 with penalty before/after, flagged items, and coverage summary.
 

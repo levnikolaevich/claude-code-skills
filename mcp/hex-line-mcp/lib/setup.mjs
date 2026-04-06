@@ -6,7 +6,7 @@
  * If identical — no-op.
  */
 
-import { readFileSync, writeFileSync, existsSync, mkdirSync, copyFileSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync, mkdirSync, copyFileSync, renameSync, unlinkSync } from "node:fs";
 import { resolve, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { homedir } from "node:os";
@@ -46,12 +46,24 @@ const CLAUDE_HOOKS = {
 
 function readJson(filePath) {
     if (!existsSync(filePath)) return null;
-    return JSON.parse(readFileSync(filePath, "utf-8"));
+    try {
+        return JSON.parse(readFileSync(filePath, "utf-8"));
+    } catch {
+        process.stderr.write(`hex-line: warning — failed to parse ${filePath}, skipping\n`);
+        return null;
+    }
 }
 
 function writeJson(filePath, data) {
     mkdirSync(dirname(filePath), { recursive: true });
-    writeFileSync(filePath, JSON.stringify(data, null, 2) + "\n", "utf-8");
+    const tmp = `${filePath}.hexline-tmp-${process.pid}`;
+    try {
+        writeFileSync(tmp, JSON.stringify(data, null, 2) + "\n", "utf-8");
+        renameSync(tmp, filePath);
+    } catch (err) {
+        try { unlinkSync(tmp); } catch { /* best-effort cleanup */ }
+        throw err;
+    }
 }
 
 function findEntryByCommand(entries) {
@@ -95,10 +107,6 @@ function writeHooksToFile(settingsPath) {
         }
     }
 
-    if (config.disableAllHooks !== false) {
-        config.disableAllHooks = false;
-        changed = true;
-    }
 
     if (changed) writeJson(settingsPath, config);
     return changed;

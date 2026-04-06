@@ -8,7 +8,7 @@ Quick-reference for understanding how the validator works at runtime. For implem
 |---|-----------|-----------|-------------|
 | **Input** | Story ID (Backlog) | Plan file (auto-detect) | Conversation + git diff |
 | **Phases** | 0 → 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 | 0 → 1 → 2 → 3 → 5 → 6 → 8 | 0 → 1 → 2 → 3 → 5 → 6 → 8 |
-| **Phase 3 work** | 28-criteria audit + display | MCP Ref research | MCP Ref research |
+| **Phase 3 work** | 30-criteria audit + display | MCP Ref research | MCP Ref research |
 | **Agents** | Codex + Gemini (background) | Codex + Gemini (background) | Codex + Gemini (background) |
 | **Output** | GO/NO-GO, Story → Todo | Advisory corrections | Advisory corrections |
 | **Prompt template** | `modes/story.md` | `modes/plan_review.md` | `modes/context.md` |
@@ -30,7 +30,7 @@ Phase 4          Phase 5                    Phase 6            Phase 7          
 ┌──────────────┐ ┌────────────────────────┐ ┌──────────────┐ ┌──────────────┐ ┌─────────────┐
 │ Auto-Fix     │ │ Wait for agents        │ │ Iterative    │ │ Story → Todo │ │ Self-Check  │
 │ 11 groups    │→│ Parse + Merge + Dedup  │→│ Refinement   │→│ Kanban update│→│ All [ ] must│
-│ 28 criteria  │ │ REJECT if disagree     │ │ Codex loop   │ │ Summary post │ │ be [x]      │
+│ 30 criteria  │ │ REJECT if disagree     │ │ Codex loop   │ │ Summary post │ │ be [x]      │
 └──────────────┘ └────────────────────────┘ └──────────────┘ └──────────────┘ └─────────────┘
 ```
 
@@ -68,7 +68,7 @@ Phase 2                           Phases 3-4 (foreground)           Phase 5
 ┌────────────────────┐  ┌───────────────────────────────────┐  ┌─────────────┐
 │ agent_runner.mjs   │  │                                   │  │ Process-as- │
 │ --health-check     │  │  mode=story:                      │  │ arrive:     │
-│                    │  │    Research + 28 criteria audit    │  │             │
+│                    │  │    Research + 30 criteria audit    │  │             │
 │ Build prompt from  │  │    Display penalty points         │  │ 1st agent → │
 │ review_base.md +   │  │    Auto-fix 11 groups             │  │  verify     │
 │ modes/{mode}.md    │  │                                   │  │             │
@@ -117,7 +117,7 @@ Claude                           Codex CLI                    Gemini CLI
   └─ Display summary                │                             │
 ```
 
-## 28 Criteria at a Glance
+## 30 Criteria at a Glance
 
 | # | Criterion | Severity | Group |
 |---|-----------|----------|-------|
@@ -138,6 +138,8 @@ Claude                           Codex CLI                    Gemini CLI
 | 15 | Code Quality Basics | MEDIUM (3) | Quality |
 | 16 | Story-Task Alignment | MEDIUM (3) | Traceability |
 | 17 | AC-Task Coverage | MEDIUM (3) | Traceability |
+| 17b | AC Invocability | HIGH (5)* | Traceability |
+| 17c | Scenario Completeness | HIGH (5)* | Traceability |
 | 18 | Story Dependencies | CRITICAL (10) | Dependencies |
 | 19 | Task Dependencies | MEDIUM (3) | Dependencies |
 | 20 | Risk Analysis | HIGH (5)* | Risk |
@@ -150,7 +152,7 @@ Claude                           Codex CLI                    Gemini CLI
 | 27 | Pre-mortem Analysis | MEDIUM (3) | Pre-mortem |
 | 28 | Library Feature Utilization | MEDIUM (3) | Solution |
 
-*#20 capped at 15 points (3 risks max). #25 max 1 CRITICAL = 10. Maximum total: 113 points.
+*#20 capped at 15 points (3 risks max). #25 max 1 CRITICAL = 10. #17b and #17c are HIGH per AC, uncapped. Maximum total: 123+ points.
 
 ## Penalty Points Scoring
 
@@ -171,7 +173,7 @@ AC Coverage: 100% = pass    80-99% = -3 penalty    <80% = -5, NO-GO
 |------|---------|---------|
 | `SKILL.md` | Full workflow spec (phases 0-9) | Entry point |
 | **Validation criteria** | | |
-| `references/phase2_research_audit.md` | 28 criteria + auto-fix actions table | Phase 3 |
+| `references/phase2_research_audit.md` | 30 criteria + auto-fix actions table | Phase 3 |
 | `references/penalty_points.md` | Calculation rules, caps, report format | Phase 3 |
 | **Validation checklists** | | |
 | `references/structural_validation.md` | #1-4: template, statement, AC | Phase 4 group 1 |
@@ -183,7 +185,7 @@ AC Coverage: 100% = pass    80-99% = -3 penalty    <80% = -5, NO-GO
 | `references/cross_reference_validation.md` | #25-26: AC overlap, task duplication | Phase 4 group 7 |
 | `references/risk_validation.md` | #20: impact x probability matrix | Phase 4 group 8 |
 | `references/premortem_validation.md` | #27: Tiger/Paper Tiger/Elephant | Phase 4 group 9 |
-| `references/traceability_validation.md` | #16-17, #22: alignment, coverage, verify | Phase 4 groups 10-11 |
+| `references/traceability_validation.md` | #16-17, #17b-17c, #22: alignment, coverage, invocability, scenario completeness, verify | Phase 4 groups 10-11 |
 | **Research** | | |
 | `references/context_review_pipeline.md` | MCP Ref research pipeline | Phase 3 |
 | `references/domain_patterns.md` | Pattern registry for domain extraction | Phase 3 |

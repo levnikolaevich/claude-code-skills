@@ -72,6 +72,9 @@ Decision logic:
 | Link exists, points wrong | WARN, ask user before replacing |
 | Real directory exists (not link) | WARN, skip (avoid data loss) |
 | No link exists | Create link |
+| Link exists, target does not exist (stale) | WARN "stale junction: {path} → {dead_target}". Remove stale link, recreate with correct target |
+
+**Stale junction detection:** Use `lstatSync()` (succeeds on dangling links) + `statSync()` (throws if target missing). Do NOT rely on `existsSync()` alone — it returns `false` for dangling junctions on Windows, but the filesystem entry still exists and will cause `EEXIST` on create.
 
 ### Phase 3: Sync MCP Settings
 IF agent `disabled: true` → SKIP for that target.
@@ -174,6 +177,7 @@ Config Sync:
 4. **Backup before write.** Create `.bak` copy before modifying any config file
 5. **Respect `disabled` flags.** Skip all operations for disabled agents
 6. **Idempotent.** Safe to run multiple times. Already-synced state is skipped
+7. **Non-destructive config writes.** Always read → deep-merge → edit. Never overwrite target config files from scratch. Preserve all keys not mapped from Claude.
 
 ## Anti-Patterns
 
@@ -186,6 +190,7 @@ Config Sync:
 | Try to sync hooks to Codex | Report "not supported", skip |
 | Use `cmd /c mklink /J` from Git Bash | Use `fs.symlinkSync(source, target, 'junction')` via Node.js — works from any shell |
 | Auto-replace mispointed symlinks | Ask user before replacing |
+| Overwrite entire config file with only known fields | Read existing → deep-merge only owned fields → edit back |
 
 ---
 

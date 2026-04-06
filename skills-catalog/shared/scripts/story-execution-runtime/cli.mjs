@@ -97,6 +97,12 @@ function applyCheckpointToState(state, phase, payload) {
         }
     }
 
+    if (phase === PHASES.SCENARIO_VALIDATION) {
+        nextState.scenario_pass = payload.scenario_pass === true;
+        nextState.validation_mode = payload.validation_mode || null;
+        nextState.rework_tasks = payload.rework_tasks || [];
+    }
+
     if (phase === PHASES.STORY_TO_REVIEW) {
         nextState.story_transition_done = payload.story_transition_done === true;
         nextState.final_result = payload.final_result || nextState.final_result;

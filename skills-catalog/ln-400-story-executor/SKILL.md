@@ -142,7 +142,42 @@ Used only for `Todo` groups with more than one task.
 5. If any task hits `To Rework` for the third consecutive time, pause runtime with escalation reason.
 6. Checkpoint `PHASE_6_VERIFY_STATUSES`.
 7. If processable work remains -> advance back to `PHASE_3_SELECT_WORK`.
-8. If no processable work remains -> advance to `PHASE_7_STORY_TO_REVIEW`.
+8. If no processable work remains -> advance to `PHASE_6B_SCENARIO_VALIDATION`.
+
+### Phase 6b: Scenario Validation
+
+Runs once when all tasks are Done. Delegates to an external agent to trace the user scenario end-to-end against implemented code. The executor has completion bias after shepherding tasks through implementation — an external agent has no investment in the story being done.
+
+1. Load the Story ACs and the traceability table (from `.hex-skills/task-planning/{identifier}_traceability.md`). If the traceability artifact is missing, reconstruct an equivalent trace from the Story ACs and task Implementation Plans — do not fail Phase 6b solely because the planner artifact is absent.
+2. Run agent health check. If an agent is available (prefer `gemini-review`, fallback `codex-review`):
+   a. Build validation prompt from `shared/agents/prompt_templates/scenario_validator.md`
+   b. Fill with: Story ACs, traceability table, architecture context, project root path (agent reads code directly)
+   c. Save prompt to `.hex-skills/story-execution/{identifier}_scenario_prompt.md`
+   d. Launch agent:
+
+   ```bash
+   node shared/agents/agent_runner.mjs \
+     --agent {agent} \
+     --prompt-file .hex-skills/story-execution/{identifier}_scenario_prompt.md \
+     --output-file .hex-skills/story-execution/{identifier}_scenario_result.md \
+     --cwd {project_dir}
+   ```
+
+   e. Parse result JSON for broken segments
+3. If no agent available: run self-check as fallback (trace 5 segments via code inspection).
+4. If any segment is broken or missing:
+   - Identify the responsible task from traceability table layer mapping
+   - Set that task back to `To Rework` with scenario findings as rework context
+   - Advance back to `PHASE_3_SELECT_WORK`
+5. Max 2 scenario validation loops. If still failing after 2 rework cycles, `PAUSE` for user review.
+6. If all segments pass -> advance to `PHASE_7_STORY_TO_REVIEW`.
+
+Checkpoint `PHASE_6B_SCENARIO_VALIDATION` with:
+- `scenario_pass`: true/false
+- `segments_traced`: count
+- `segments_passed`: count
+- `rework_tasks`: list of task IDs sent back (empty if pass)
+- `validation_mode`: `agent_validated` or `self_check_only`
 
 ### Phase 7: Story To Review
 
@@ -204,6 +239,7 @@ Skill(skill: "ln-402-task-reviewer", args: "{taskId}")
 - Execute task/group (pending)
 - Review task results immediately (pending)
 - Re-read statuses and record checkpoint (pending)
+- Validate user scenario end-to-end (pending)
 - Move Story to To Review (pending)
 - Run runtime self-check and complete (pending)
 ```
@@ -224,6 +260,7 @@ Skill(skill: "ln-402-task-reviewer", args: "{taskId}")
 - [ ] Every executed task/group recorded in runtime
 - [ ] Rework-loop escalation handled deterministically (`PAUSED`) when needed
 - [ ] Final status verification checkpointed
+- [ ] Scenario validation passed or PAUSED for user review
 - [ ] Story moved to `To Review`, not `Done`
 - [ ] Self-check passed and runtime completed
 

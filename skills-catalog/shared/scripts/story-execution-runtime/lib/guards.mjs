@@ -8,7 +8,8 @@ const ALLOWED_TRANSITIONS = new Map([
     [PHASES.SELECT_WORK, new Set([PHASES.TASK_EXECUTION, PHASES.GROUP_EXECUTION, PHASES.STORY_TO_REVIEW])],
     [PHASES.TASK_EXECUTION, new Set([PHASES.VERIFY_STATUSES])],
     [PHASES.GROUP_EXECUTION, new Set([PHASES.VERIFY_STATUSES])],
-    [PHASES.VERIFY_STATUSES, new Set([PHASES.SELECT_WORK, PHASES.STORY_TO_REVIEW])],
+    [PHASES.VERIFY_STATUSES, new Set([PHASES.SELECT_WORK, PHASES.SCENARIO_VALIDATION])],
+    [PHASES.SCENARIO_VALIDATION, new Set([PHASES.SELECT_WORK, PHASES.STORY_TO_REVIEW])],
     [PHASES.STORY_TO_REVIEW, new Set([PHASES.SELF_CHECK])],
     [PHASES.SELF_CHECK, new Set([PHASES.DONE])],
     [PHASES.PAUSED, new Set([])],
@@ -51,12 +52,24 @@ export function validateTransition(manifest, state, checkpoints, toPhase) {
         return { ok: false, error: "No selected group recorded for group execution" };
     }
 
+    if (toPhase === PHASES.SCENARIO_VALIDATION) {
+        if (hasProcessableWork(state.processable_counts)) {
+            return { ok: false, error: "Processable tasks remain; cannot start scenario validation" };
+        }
+        if (hasInflightWorkers(state)) {
+            return { ok: false, error: "Parallel workers still in flight" };
+        }
+    }
+
     if (toPhase === PHASES.STORY_TO_REVIEW) {
         if (hasProcessableWork(state.processable_counts)) {
             return { ok: false, error: "Processable tasks remain; cannot move Story to To Review" };
         }
         if (hasInflightWorkers(state)) {
             return { ok: false, error: "Parallel workers still in flight" };
+        }
+        if (state.phase === PHASES.SCENARIO_VALIDATION && !state.scenario_pass) {
+            return { ok: false, error: "Scenario validation must pass before Story To Review" };
         }
     }
 
@@ -104,7 +117,16 @@ export function computeResumeAction(manifest, state, checkpoints) {
         if (hasProcessableWork(state.processable_counts)) {
             return "Re-read task statuses, checkpoint PHASE_6_VERIFY_STATUSES, then advance to PHASE_3_SELECT_WORK";
         }
-        return `Advance to ${PHASES.STORY_TO_REVIEW}`;
+        return `Advance to ${PHASES.SCENARIO_VALIDATION}`;
+    }
+    if (state.phase === PHASES.SCENARIO_VALIDATION) {
+        if (state.scenario_pass) {
+            return `Advance to ${PHASES.STORY_TO_REVIEW}`;
+        }
+        if (state.scenario_pass === false) {
+            return "Scenario validation failed — advance to PHASE_3_SELECT_WORK for rework";
+        }
+        return "Run scenario validation and checkpoint PHASE_6B_SCENARIO_VALIDATION";
     }
     if (state.phase === PHASES.STORY_TO_REVIEW && !state.story_transition_done) {
         return `Move Story to ${TASK_BOARD_STATUSES.TO_REVIEW} and checkpoint ${PHASES.STORY_TO_REVIEW}`;

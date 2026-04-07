@@ -36,8 +36,8 @@ Receives `contextStore` with: `tech_stack`, `best_practices`, `principles`, `cod
 2) **Scan codebase for violations (Layer 1)**
    - All Grep/Glob patterns use `scan_path` (not codebase_root)
    - **Graph acceleration (if available):** IF `contextStore.graph_indexed` OR `.hex-skills/codegraph/index.db` exists:
-     - **Complexity + God classes:** `audit_workspace(path=scan_path, detail_level="full")` -- use returned hotspots to pre-identify complex functions and god classes.
-     - **Module metrics:** `analyze_architecture(path=scan_path, detail_level="full")` -- use returned coupling metrics for cascade depth and coupling analysis.
+     - **Complexity + God classes:** `audit_workspace(path=scan_path, verbosity="full")` -- use returned hotspots to pre-identify complex functions and god classes.
+     - **Module metrics:** `analyze_architecture(path=scan_path, verbosity="full")` -- use returned coupling metrics for cascade depth and coupling analysis.
      - Fall back to grep patterns below if graph unavailable.
      - **Outline-first read:** `outline(path)` before reading large source files -- understand function/class structure for complexity analysis.
    - Example: `Grep(pattern="if.*if.*if", path=scan_path)` for nesting detection

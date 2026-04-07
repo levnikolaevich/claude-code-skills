@@ -32,13 +32,13 @@ Advanced / occasional:
 
 | Tool | Description | Key Feature |
 |------|-------------|-------------|
-| `read_file` | Read file with hash-annotated lines, checksums, revision, and automatic graph hints when available | Partial reads via `offset`/`limit` or `ranges`, compact output by default |
+| `read_file` | Read file with progressive disclosure, optional edit-ready metadata, and automatic graph hints when available | Minimal plain discovery by default, explicit `edit_ready` for verified edits |
 | `edit_file` | Revision-aware anchor edits (`set_line`, `replace_lines`, `insert_after`, `replace_between`) | Batched same-file edits + conservative auto-rebase |
 | `write_file` | Create new file or overwrite, auto-creates parent dirs | Path validation, no hash overhead |
-| `grep_search` | Search with ripgrep, 3 output modes, per-group checksums | Plain `files`/`count`, compact edit-ready `content` |
+| `grep_search` | Search with ripgrep, summary-first discovery, and optional edit-ready hunks | `summary` by default, explicit `content` + `edit_ready` for verified edits |
 | `outline` | AST-based structural overview with hash anchors via tree-sitter WASM. Supports JavaScript/TypeScript, Python, C#, PHP, and fence-aware markdown headings | 95% token reduction, direct edit anchors |
 | `verify` | Check if held checksums / revision are still current | Staleness check without full re-read |
-| `inspect_path` | Unified file-or-directory inspection | File metadata for files, tree or pattern search for directories |
+| `inspect_path` | Unified file-or-directory inspection | Minimal tree discovery by default, deeper traversal on demand |
 | `changes` | Compare file against git ref, shows added/removed/modified symbols | AST-level semantic diff |
 | `bulk_replace` | Search-and-replace across multiple files inside an explicit root path | Compact summary (default) or capped diffs via `format`, dry_run, max_files |
 
@@ -141,18 +141,32 @@ Use `bulk_replace` for text rename patterns across one or more files inside a kn
 
 ### read_file
 
-Read a file as canonical edit-ready blocks. Each valid range becomes a `read_range` block with absolute span, line entries, and a checksum covering exactly the emitted lines. Invalid ranges become explicit diagnostic blocks. Supports batch reads and multi-range reads. Directories go through `inspect_path`.
+Read a file with progressive disclosure. Default mode is discovery-first: plain partial lines, low token cost, and optional continuation hints. When you need verified edits, pass `edit_ready: true` with `verbosity: "full"` to get canonical `read_range` blocks with anchors and checksums. Directories go through `inspect_path`.
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `path` | string | yes | File path |
 | `paths` | string[] | no | Array of file paths to read (batch mode) |
 | `offset` | number | no | Start line, 1-indexed (default: 1) |
-| `limit` | number | no | Max lines to return (default: 2000, 0 = all) |
+| `limit` | number | no | Max lines to return (default: 200 for discovery, 2000 for edit-ready, 0 = all) |
 | `ranges` | array | no | Explicit line ranges, e.g. `[{ "start": 10, "end": 30 }]` |
 | `plain` | boolean | no | Omit hashes, output `lineNum\|content` instead |
+| `verbosity` | enum | no | `minimal`, `compact`, or `full` |
+| `edit_ready` | boolean | no | Include hash/checksum edit protocol blocks explicitly |
 
-Default output is compact but block-structured:
+Default output is discovery-first:
+
+```text
+File: lib/search.mjs
+meta: 282 lines, 10.2KB, 2 hours ago
+continuation: {"kind":"offset","offset":4,"limit":200}
+
+1|import { resolve } from "node:path";
+2|import { readFileSync } from "node:fs";
+3|...
+```
+
+Explicit edit-ready output:
 
 ```
 File: lib/search.mjs
@@ -234,7 +248,7 @@ Create a new file or overwrite an existing one. Creates parent directories autom
 
 ### grep_search
 
-Search file contents using ripgrep. Three output modes: `content` (canonical `search_hunk` blocks), `files` (plain path list), `count` (plain `file:count` list).
+Search file contents using ripgrep. Default mode is `summary` for discovery. Use `content` with `edit_ready: true` when you need canonical `search_hunk` blocks for verified edits. `files` and `count` stay plain list modes.
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
@@ -242,7 +256,7 @@ Search file contents using ripgrep. Three output modes: `content` (canonical `se
 | `path` | string | no | Directory or file to search (default: cwd) |
 | `glob` | string | no | Glob filter, e.g. `"*.ts"` |
 | `type` | string | no | File type filter, e.g. `"js"`, `"py"` |
-| `output` | enum | no | Output format: `"content"` (default), `"files"`, `"count"` |
+| `output` | enum | no | Output format: `"summary"` (default), `"content"`, `"files"`, `"count"` |
 | `case_insensitive` | boolean | no | Ignore case |
 | `smart_case` | boolean | no | CI when lowercase, CS when uppercase (`-S`) |
 | `literal` | boolean | no | Literal string search, no regex (`-F`) |
@@ -250,11 +264,12 @@ Search file contents using ripgrep. Three output modes: `content` (canonical `se
 | `context` | number | no | Symmetric context lines around matches (`-C`) |
 | `context_before` | number | no | Context lines BEFORE match (`-B`) |
 | `context_after` | number | no | Context lines AFTER match (`-A`) |
-| `limit` | number | no | Max matches per file (default: 100) |
-| `total_limit` | number | no | Total match events across all files; multiline matches count as 1 (default: 200 for `content`, 1000 for `files`/`count`, 0 = unlimited) |
+| `limit` | number | no | Max matches per file (default: 20 for `summary`, 100 for `content`) |
+| `total_limit` | number | no | Total match events across all files; multiline matches count as 1 (default: 50 for `summary`, 200 for `content`, 1000 for `files`/`count`, 0 = unlimited) |
 | `plain` | boolean | no | Omit hash tags inside block entries, return `lineNum\|content` |
+| `edit_ready` | boolean | no | Preserve hash/checksum search hunks in `content` mode |
 
-`content` mode returns canonical `search_hunk` blocks with per-hunk checksums enabling direct `replace_lines` from grep results without intermediate `read_file`.
+`summary` mode returns counts, top files, and a few plain snippets. `content` mode returns canonical `search_hunk` blocks with per-hunk checksums enabling direct `replace_lines` from grep results without intermediate `read_file`.
 
 ### outline
 
@@ -303,9 +318,10 @@ Inspect a file or directory path without guessing which low-level tool to call f
 | `path` | string | yes | File or directory path |
 | `pattern` | string | no | Glob filter on names (e.g. `"*-mcp"`, `"*.mjs"`). Returns flat match list instead of tree |
 | `type` | string | no | `"file"`, `"dir"`, or `"all"` (default). Like `find -type f/d` |
-| `max_depth` | number | no | Max recursion depth (default: 3, or 20 in pattern mode) |
+| `max_depth` | number | no | Max recursion depth (default: 2 for discovery, or 20 in pattern mode) |
 | `gitignore` | boolean | no | Respect root .gitignore patterns (default: true). Nested .gitignore not supported |
 | `format` | string | no | `"compact"` = shorter path view. `"full"` = include sizes / metadata where available |
+| `verbosity` | enum | no | `minimal`, `compact`, or `full` |
 
 - For regular files it returns compact metadata: size, line count when cheap, modification time, type, and binary flag.
 - For directories it returns a gitignore-aware tree.

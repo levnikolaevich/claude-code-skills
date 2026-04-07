@@ -73,7 +73,7 @@ Build ruleset:
 
 
 **Graph acceleration (if available):** IF `contextStore.graph_indexed` OR `.hex-skills/codegraph/index.db` exists:
-- **Module coupling:** `analyze_architecture(path=scan_root, detail_level="full")` -- use returned coupling metrics to identify tightly-coupled layers.
+- **Module coupling:** `analyze_architecture(path=scan_root, verbosity="full")` -- use returned coupling metrics to identify tightly-coupled layers.
 - **Cross-layer calls:** `find_references(symbol)` for transaction/session functions -- trace commit/rollback ownership across layers.
 - **Orchestration depth:** `trace_paths(name="ServiceFn", file="...", path_kind="calls", direction="forward", depth=3, path=scan_root)` -- measure chain depth for flat orchestration check from a concrete service symbol.
 - Empty `trace_paths` from a coarse or module-level selector is not enough to clear a layer; fall back to `inspect_symbol` or grep/manual review when the selector is broad.

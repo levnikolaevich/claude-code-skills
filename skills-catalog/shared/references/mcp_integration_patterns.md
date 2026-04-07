@@ -13,20 +13,20 @@ Apply them only when the skill actually edits code or makes semantic decisions f
 ### Outline-First Read
 
 **When:** Unfamiliar code file over 100 lines.  
-**Tools:** `outline -> read_file(ranges)`
+**Tools:** `outline -> read_file(verbosity="minimal", ranges)`
 
 ```text
 1. outline(path) -> get function/class structure
-2. read_file(path, ranges=[...]) -> read only the needed section
+2. read_file(path, verbosity="minimal", ranges=[...]) -> read only the needed section
 ```
 
 ### Verified Edit Cycle
 
 **When:** Any code modification.  
-**Tools:** `read_file -> edit_file(base_revision) -> verify`
+**Tools:** `read_file(edit_ready=true, verbosity="full") -> edit_file(base_revision) -> verify`
 
 ```text
-1. read_file(path) -> capture revision and checksums
+1. read_file(path, edit_ready=true, verbosity="full") -> capture revision and checksums
 2. edit_file(path, edits=[...], base_revision=rev)
 3. verify(path, checksums, base_revision=rev) -> confirm no stale state before delayed or mixed-tool follow-up edits
 4. If edit_file returns retry_edit / retry_edits / retry_checksum / retry_plan, reuse them directly
@@ -51,7 +51,7 @@ Apply them only when the skill actually edits code or makes semantic decisions f
 
 ```text
 1. index_project(path=project_root)
-2. analyze_architecture(path=project_root, detail_level="compact")
+2. analyze_architecture(path=project_root, verbosity="minimal")
 3. find_symbols(query="AuthService")
 4. inspect_symbol(workspace_qualified_name=...) -> use symbol context to refine task boundaries and dependency order
 ```
@@ -59,6 +59,7 @@ Apply them only when the skill actually edits code or makes semantic decisions f
 Notes:
 - `find_symbols` expects a symbol name or partial name, not a code fragment or unresolved member call such as `server.tool()`
 - For raw method-call patterns or regex-like code search, use `grep_search`
+- `grep_search` returns `summary` by default; switch to `output="content", edit_ready=true` only when you need canonical hunks for follow-up edits
 - Path-scoped graph queries may use `path=project_root`, `path=subdirectory`, or `path=file` as long as the target stays inside the indexed project
 
 ### Semantic Diff Review
@@ -88,7 +89,7 @@ Notes:
 Add to `allowed-tools` when the skill edits code or reasons about architecture:
 
 ```yaml
-allowed-tools: Read, Grep, Glob, Bash, mcp__hex-line__outline, mcp__hex-line__verify, mcp__hex-line__changes, mcp__hex-graph__index_project, mcp__hex-graph__analyze_edit_region, mcp__hex-graph__analyze_changes
+allowed-tools: Read, Grep, Glob, Bash, mcp__hex-line__inspect_path, mcp__hex-line__outline, mcp__hex-line__read_file, mcp__hex-line__edit_file, mcp__hex-line__verify, mcp__hex-line__changes, mcp__hex-graph__index_project, mcp__hex-graph__analyze_edit_region, mcp__hex-graph__analyze_changes
 ```
 
 Add body instruction:

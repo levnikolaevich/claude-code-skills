@@ -30,6 +30,7 @@ import { fileOutline } from "./lib/outline.mjs";
 import { verifyChecksums } from "./lib/verify.mjs";
 import { assertProjectScopedPath, validateWritePath } from "./lib/security.mjs";
 import { inspectPath } from "./lib/inspect-path.mjs";
+import { fileInfo } from "./lib/info.mjs";
 import { autoSync } from "./lib/setup.mjs";
 import { fileChanges } from "./lib/changes.mjs";
 import { bulkReplace } from "./lib/bulk-replace.mjs";
@@ -67,25 +68,41 @@ function parseReadRanges(rawRanges) {
 
 server.registerTool("read_file", {
     title: "Read File",
-    description: "Read file with hash-annotated lines, checksums, logical revision metadata, EOL/trailing-newline state, and graph hints when available. Default: edit-ready output.",
+    description: "Read file with progressive disclosure. Default: minimal plain partial read for discovery; enable edit-ready metadata explicitly when preparing a verified edit.",
     inputSchema: z.object({
         path: z.string().optional().describe("File path"),
         paths: z.array(z.string()).optional().describe("Array of file paths to read (batch mode)"),
         offset: flexNum().describe("Start line (1-indexed, default: 1)"),
-        limit: flexNum().describe("Max lines (default: 2000, 0 = all)"),
+        limit: flexNum().describe("Max lines (default: 200 for discovery, 2000 for edit-ready, 0 = all)"),
         ranges: z.union([z.string(), z.array(readRangeSchema)]).optional().describe('Line ranges, e.g. ["10-25", {"start":40,"end":55}]'),
         plain: flexBool().describe("Omit hashes (lineNum|content)"),
+        verbosity: z.enum(["minimal", "compact", "full"]).optional().describe("Response budget. `minimal` is discovery-first, `compact` adds revision context, `full` preserves the richest payload."),
+        edit_ready: flexBool().describe("Include hash/checksum edit protocol blocks explicitly. Default: false for discovery reads."),
     }),
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
 }, async (rawParams) => {
-    const { path: p, paths: multi, offset, limit, ranges: rawRanges, plain } = rawParams ?? {};
+    const { path: p, paths: multi, offset, limit, ranges: rawRanges, plain, verbosity, edit_ready } = rawParams ?? {};
     try {
         const ranges = parseReadRanges(rawRanges);
+        const readVerbosity = verbosity ?? "minimal";
+        const readLimit = limit ?? (edit_ready ? 2000 : 200);
+        const readPlain = plain ?? (!edit_ready && readVerbosity !== "full");
         if (multi && multi.length > 0 && !p) {
             const results = [];
             for (const fp of multi) {
                 try {
-                    results.push(readFile(fp, { offset, limit, ranges, plain }));
+                    if (!edit_ready && readVerbosity !== "full") {
+                        results.push(`${fileInfo(fp)}\nnext_hint: read_file path="${fp}" verbosity="compact"`);
+                    } else {
+                        results.push(readFile(fp, {
+                            offset,
+                            limit: readLimit,
+                            ranges,
+                            plain: readPlain,
+                            verbosity: readVerbosity,
+                            editReady: !!edit_ready,
+                        }));
+                    }
                 } catch (e) {
                     results.push(`File: ${fp}\n\nERROR: ${e.message}`);
                 }
@@ -93,7 +110,14 @@ server.registerTool("read_file", {
             return { content: [{ type: "text", text: results.join("\n\n---\n\n") }] };
         }
         if (!p) throw new Error("Either 'path' or 'paths' is required");
-        return { content: [{ type: "text", text: readFile(p, { offset, limit, ranges, plain }) }] };
+        return { content: [{ type: "text", text: readFile(p, {
+            offset,
+            limit: readLimit,
+            ranges,
+            plain: readPlain,
+            verbosity: readVerbosity,
+            editReady: !!edit_ready,
+        }) }] };
     } catch (e) {
         return { content: [{ type: "text", text: e.message }], isError: true };
     }
@@ -177,13 +201,13 @@ server.registerTool("write_file", {
 
 server.registerTool("grep_search", {
     title: "Search Files",
-    description: "Search file contents with ripgrep. Default: edit-ready blocks with hashes and checksums. Use output:'files' or 'count' for non-edit workflows. With graph DB: results ranked by importance.",
+    description: "Search file contents with ripgrep. Default: summary-first discovery output; use `content` with `edit_ready=true` when you need verified edit hunks.",
     inputSchema: z.object({
         pattern: z.string().describe("Search pattern (regex by default, literal if literal:true)"),
         path: z.string().optional().describe("Search dir/file (default: cwd)"),
         glob: z.string().optional().describe('Glob filter (e.g. "*.ts")'),
         type: z.string().optional().describe('File type (e.g. "js", "py")'),
-        output: z.enum(["content", "files", "count"]).optional().describe('Output format (default: content)'),
+        output: z.enum(["summary", "content", "files", "count"]).optional().describe('Output format (default: summary)'),
         case_insensitive: flexBool().describe("Ignore case (-i)"),
         smart_case: flexBool().describe("CI when pattern is all lowercase, CS if uppercase (-S)"),
         literal: flexBool().describe("Literal string search, no regex (-F)"),
@@ -191,19 +215,23 @@ server.registerTool("grep_search", {
         context: flexNum().describe("Symmetric context lines around matches (-C)"),
         context_before: flexNum().describe("Context lines BEFORE match (-B)"),
         context_after: flexNum().describe("Context lines AFTER match (-A)"),
-        limit: flexNum().describe("Max matches per file (default: 100)"),
-        total_limit: flexNum().describe("Total match events across all files; multiline matches count as 1 (default: 200 for content, 1000 for files/count, 0 = unlimited)"),
+        limit: flexNum().describe("Max matches per file (default: 20 for summary discovery, 100 for content)"),
+        total_limit: flexNum().describe("Total match events across all files; multiline matches count as 1 (default: 50 for summary discovery, 200 for content, 1000 for files/count, 0 = unlimited)"),
         plain: flexBool().describe("Omit hash tags, return file:line:content"),
+        edit_ready: flexBool().describe("Preserve hash/checksum search hunks in `content` mode. Default: false."),
     }),
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
 }, async (rawParams) => {
     const { pattern, path: p, glob, type, output, case_insensitive, smart_case, literal, multiline,
-            context, context_before, context_after, limit, total_limit, plain } = rawParams ?? {};
+            context, context_before, context_after, limit, total_limit, plain, edit_ready } = rawParams ?? {};
     try {
+        const resolvedOutput = output ?? "summary";
+        const resolvedLimit = limit ?? (resolvedOutput === "summary" ? 20 : 100);
+        const resolvedTotalLimit = total_limit ?? (resolvedOutput === "summary" ? 50 : undefined);
         const result = await grepSearch(pattern, {
-            path: p, glob, type, output, caseInsensitive: case_insensitive, smartCase: smart_case,
+            path: p, glob, type, output: resolvedOutput, caseInsensitive: case_insensitive, smartCase: smart_case,
             literal, multiline, context, contextBefore: context_before, contextAfter: context_after,
-            limit, totalLimit: total_limit, plain,
+            limit: resolvedLimit, totalLimit: resolvedTotalLimit, plain, editReady: !!edit_ready,
         });
         return { content: [{ type: "text", text: result }] };
     } catch (e) {
@@ -268,15 +296,23 @@ server.registerTool("inspect_path", {
         path: z.string().describe("File or directory path"),
         pattern: z.string().optional().describe('Glob filter on names (e.g. "*-mcp", "*.mjs"). Returns flat match list instead of tree'),
         type: z.enum(["file", "dir", "all"]).optional().describe('"file", "dir", or "all" (default). Like find -type f/d'),
-        max_depth: flexNum().describe("Max recursion depth (default: 3, or 20 in pattern mode)"),
+        max_depth: flexNum().describe("Max recursion depth (default: 2 for discovery, or 20 in pattern mode)"),
         gitignore: flexBool().describe("Respect root .gitignore patterns (default: true). Nested .gitignore not supported"),
         format: z.enum(["compact", "full"]).optional().describe('"compact" = shorter path view, "full" = include sizes/metadata where available'),
+        verbosity: z.enum(["minimal", "compact", "full"]).optional().describe("Response budget. `minimal` returns the shortest tree summary."),
     }),
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
 }, async (rawParams) => {
-    const { path: p, max_depth, gitignore, format, pattern, type: entryType } = rawParams ?? {};
+    const { path: p, max_depth, gitignore, format, pattern, type: entryType, verbosity } = rawParams ?? {};
     try {
-        return { content: [{ type: "text", text: inspectPath(p, { max_depth, gitignore, format, pattern, type: entryType }) }] };
+        const resolvedVerbosity = verbosity ?? "minimal";
+        return { content: [{ type: "text", text: inspectPath(p, {
+            max_depth: max_depth ?? (pattern ? 20 : (resolvedVerbosity === "full" ? 3 : 2)),
+            gitignore,
+            format: format ?? (resolvedVerbosity === "full" ? "full" : "compact"),
+            pattern,
+            type: entryType,
+        }) }] };
     } catch (e) {
         return { content: [{ type: "text", text: e.message }], isError: true };
     }

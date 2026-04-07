@@ -87,8 +87,8 @@ function summarizeEditedSymbol(symbol) {
     };
 }
 
-function trimForDetail(items, detailLevel, limit = 10) {
-    return detailLevel === "full" ? items : items.slice(0, limit);
+function trimForDetail(items, verbosity, limit = 10) {
+    return verbosity === "full" ? items : items.slice(0, limit);
 }
 
 function mergeWarnings(...groups) {
@@ -341,69 +341,75 @@ export function runAnalyzeArchitectureUseCase({
     scope = null,
     limit = 15,
     detailLevel = "compact",
+    verbosity = null,
 } = {}) {
     return withResolvedStore(path, (store) => {
         if (!store) {
             return { error: { code: "NOT_INDEXED", message: "No project indexed", recovery: QUERY_PATH_RECOVERY } };
         }
+        const responseVerbosity = verbosity || detailLevel;
         const architecture = getArchitectureReport({ path, scopePath: scope, limit });
         if (architecture?.error) return architecture;
         const cycles = findCycles(store, { scopePath: scope });
         const metrics = getModuleMetricsReport({ path, scopePath: scope, minCoupling: 2, sort: "instability" });
         if (metrics?.error) return metrics;
-        const compactCycles = trimForDetail(cycles.cycles || [], detailLevel, limit);
-        const compactCoupling = trimForDetail(metrics.result || [], detailLevel, limit);
-        const compactEdges = trimForDetail(architecture.result.cross_module_edges || [], detailLevel, limit);
-        const compactHotspots = trimForDetail(architecture.result.hotspots || [], detailLevel, limit);
-        const compactFramework = trimForDetail(architecture.result.framework || [], detailLevel, limit);
-        const compactModules = trimForDetail(architecture.result.modules || [], detailLevel, limit).map((module) => ({
+        const compactCycles = trimForDetail(cycles.cycles || [], responseVerbosity, limit);
+        const compactCoupling = trimForDetail(metrics.result || [], responseVerbosity, limit);
+        const compactEdges = trimForDetail(architecture.result.cross_module_edges || [], responseVerbosity, limit);
+        const compactHotspots = trimForDetail(architecture.result.hotspots || [], responseVerbosity, limit);
+        const compactFramework = trimForDetail(architecture.result.framework || [], responseVerbosity, limit);
+        const compactModules = trimForDetail(architecture.result.modules || [], responseVerbosity, limit).map((module) => ({
             module_key: module.module_key,
             module_name: module.module_name,
             package_key: module.package_key || null,
             exported_symbols: module.exported_symbols,
             imported_modules: module.imported_modules,
             instability: module.instability,
+            language: module.language || null,
         }));
+        const architectureResult = {
+            workspace_summary: architecture.result.stats,
+            modules: compactModules,
+            cycles: compactCycles,
+            top_risks: compactHotspots.map((risk) => ({
+                file: risk.file,
+                symbol: risk.symbol,
+                reason: risk.reason,
+                rank: risk.rank,
+            })),
+        };
+        if (responseVerbosity !== "minimal") {
+            architectureResult.module_boundaries = compactEdges.map((edge) => ({
+                from_module: edge.from_module,
+                to_module: edge.to_module,
+                edge_kind: edge.edge_kind,
+                count: edge.count,
+            }));
+            architectureResult.coupling = compactCoupling.map((row) => ({
+                module_key: row.module_key,
+                instability: row.instability,
+                efferent_coupling: row.ce,
+                afferent_coupling: row.ca,
+            }));
+            architectureResult.framework_surfaces = compactFramework.map((entry) => ({
+                symbol: entry.symbol,
+                origin: entry.origin,
+                file: entry.file,
+            }));
+        }
         return {
             query: {
                 path,
                 scope,
                 limit,
-                detail_level: detailLevel,
+                verbosity: responseVerbosity,
             },
             summary: [
                 `${summarizeCount(architecture.result.modules.length, "module")}`,
                 `${summarizeCount(cycles.cycles.length, "cycle")}`,
                 `${summarizeCount(compactHotspots.length, "top risk")}`,
             ].join(", "),
-            result: {
-                workspace_summary: architecture.result.stats,
-                modules: compactModules,
-                module_boundaries: compactEdges.map((edge) => ({
-                    from_module: edge.from_module,
-                    to_module: edge.to_module,
-                    edge_kind: edge.edge_kind,
-                    count: edge.count,
-                })),
-                cycles: compactCycles,
-                coupling: compactCoupling.map((row) => ({
-                    module_key: row.module_key,
-                    instability: row.instability,
-                    efferent_coupling: row.ce,
-                    afferent_coupling: row.ca,
-                })),
-                framework_surfaces: compactFramework.map((entry) => ({
-                    symbol: entry.symbol,
-                    origin: entry.origin,
-                    file: entry.file,
-                })),
-                top_risks: compactHotspots.map((risk) => ({
-                    file: risk.file,
-                    symbol: risk.symbol,
-                    reason: risk.reason,
-                    rank: risk.rank,
-                })),
-            },
+            result: architectureResult,
             warnings: mergeWarnings(
                 cycles.cycles.length
                     ? [`${summarizeCount(cycles.cycles.length, "cycle")} detected across workspace modules.`]
@@ -422,7 +428,7 @@ export function runAnalyzeArchitectureUseCase({
                 cycle_count: cycles.cycles.length,
                 coupling_rows: metrics.result.length,
             },
-            limits_applied: { limit, detail_level: detailLevel },
+            limits_applied: { limit, verbosity: responseVerbosity },
         };
     });
 }
@@ -431,6 +437,7 @@ export function runAuditWorkspaceUseCase({
     path,
     scope = null,
     detailLevel = "compact",
+    verbosity = null,
     showSuppressed = false,
     cloneType = "all",
     cloneThreshold = 0.80,
@@ -440,6 +447,8 @@ export function runAuditWorkspaceUseCase({
         if (!store) {
             return { error: { code: "NOT_INDEXED", message: "No project indexed", recovery: QUERY_PATH_RECOVERY } };
         }
+        const responseVerbosity = verbosity || detailLevel;
+        const discoveryLimit = responseVerbosity === "full" ? 15 : 5;
         const unused = findUnusedExports(store, { scopePath: scope, kind: "all" });
         const visibleUnused = showSuppressed ? unused.unused : unused.unused.filter(item => !item.suppressed);
         const hotspots = getHotspots({ path, scopePath: scope, minCallers: 2, minComplexity: 15, limit: 20 });
@@ -457,7 +466,7 @@ export function runAuditWorkspaceUseCase({
             query: {
                 path,
                 scope,
-                detail_level: detailLevel,
+                verbosity: responseVerbosity,
                 show_suppressed: showSuppressed,
                 clone_type: cloneType,
             },
@@ -467,17 +476,21 @@ export function runAuditWorkspaceUseCase({
                 `${summarizeCount(clones.summary?.total_groups || 0, "clone group")}`,
             ].join(", "),
             result: {
-                unused_exports: trimForDetail(visibleUnused, detailLevel, 15),
-                uncertain_unused_exports: trimForDetail(unused.uncertain || [], detailLevel, 10),
-                hotspots: trimForDetail(hotspots, detailLevel, 15),
-                clones: trimForDetail(clones.groups || [], detailLevel, 10),
+                unused_exports: trimForDetail(visibleUnused, responseVerbosity, discoveryLimit),
+                uncertain_unused_exports: responseVerbosity === "minimal"
+                    ? []
+                    : trimForDetail(unused.uncertain || [], responseVerbosity, discoveryLimit),
+                hotspots: trimForDetail(hotspots, responseVerbosity, discoveryLimit),
+                clones: trimForDetail(clones.groups || [], responseVerbosity, discoveryLimit),
                 risk_summary: {
                     unused_exports: visibleUnused.length,
                     uncertain_unused_exports: unused.uncertain.length,
                     hotspots: hotspots.length,
                     clone_groups: clones.summary?.total_groups || 0,
                 },
-                suppressed_items: showSuppressed ? unused.unused.filter(item => item.suppressed) : [],
+                suppressed_items: showSuppressed && responseVerbosity !== "minimal"
+                    ? trimForDetail(unused.unused.filter(item => item.suppressed), responseVerbosity, discoveryLimit)
+                    : [],
             },
             warnings: nextActions([
                 visibleUnused.length ? `${summarizeCount(visibleUnused.length, "unused export")} should be reviewed before public API cleanup.` : null,
@@ -495,7 +508,7 @@ export function runAuditWorkspaceUseCase({
                 hotspot_count: hotspots.length,
                 clone_group_count: clones.summary?.total_groups || 0,
             },
-            limits_applied: { detail_level: detailLevel },
+            limits_applied: { verbosity: responseVerbosity },
         };
     });
 }
@@ -506,11 +519,13 @@ export function runAnalyzeEditRegionUseCase({
     lineStart,
     lineEnd,
     detailLevel = "compact",
+    verbosity = null,
 } = {}) {
     return withResolvedStore(path, (store) => {
         if (!store) {
             return { error: { code: "NOT_INDEXED", message: "No project indexed", recovery: QUERY_PATH_RECOVERY } };
         }
+        const responseVerbosity = verbosity || detailLevel;
         const normalizedFile = normalizeProjectFile(path, file);
         if (normalizedFile?.error) return normalizedFile;
 
@@ -535,7 +550,7 @@ export function runAnalyzeEditRegionUseCase({
 
     if (!editedRows.length) {
         return {
-            query: { path, file: normalizedFile, line_start: lineStart, line_end: lineEnd, detail_level: detailLevel },
+            query: { path, file: normalizedFile, line_start: lineStart, line_end: lineEnd, verbosity: responseVerbosity },
             summary: "No indexed symbol overlaps the requested edit region.",
             result: {
                 file: normalizedFile,
@@ -638,10 +653,10 @@ export function runAnalyzeEditRegionUseCase({
                 sink_reach: row.sink_reach_count,
                 clone_siblings: row.clone_sibling_count,
             },
-            external_callers: trimForDetail(externalCallers, detailLevel, 10),
-            downstream_flow: trimForDetail(downstreamFlow, detailLevel, 12),
-            clone_siblings: trimForDetail(cloneSiblings, detailLevel, 10),
-            similar_symbols: trimForDetail(similarSymbols, detailLevel, 10),
+            external_callers: trimForDetail(externalCallers, responseVerbosity, 10),
+            downstream_flow: trimForDetail(downstreamFlow, responseVerbosity, 12),
+            clone_siblings: trimForDetail(cloneSiblings, responseVerbosity, 10),
+            similar_symbols: trimForDetail(similarSymbols, responseVerbosity, 10),
             framework_origins: frameworkRows.map(entry => entry.origin).filter(Boolean),
             duplicate_risk: {
                 level: riskLevel(duplicateRank),
@@ -693,7 +708,7 @@ export function runAnalyzeEditRegionUseCase({
             file: normalizedFile,
             line_start: lineStart,
             line_end: lineEnd,
-            detail_level: detailLevel,
+            verbosity: responseVerbosity,
         },
         summary: [
             `${summarizeCount(editedSymbols.length, "edited symbol")}`,
@@ -705,17 +720,17 @@ export function runAnalyzeEditRegionUseCase({
             file: normalizedFile,
             range: { line_start: lineStart, line_end: lineEnd },
             languages: editedLanguages,
-            edited_symbols: trimForDetail(editedSymbols.map(summarizeEditedSymbol), detailLevel, 10),
+            edited_symbols: trimForDetail(editedSymbols.map(summarizeEditedSymbol), responseVerbosity, 10),
             impact_summary: {
                 edited_symbol_count: editedSymbols.length,
                 external_callers: aggregateExternalCallers.length,
                 downstream_flows: aggregateFlows.length,
                 clone_siblings: aggregateClones.length,
             },
-            external_callers: trimForDetail(aggregateExternalCallers, detailLevel, 12),
-            downstream_flow: trimForDetail(aggregateFlows, detailLevel, 12),
-            clone_siblings: trimForDetail(aggregateClones, detailLevel, 10),
-            similar_symbols: trimForDetail(aggregateSimilar, detailLevel, 10),
+            external_callers: trimForDetail(aggregateExternalCallers, responseVerbosity, 12),
+            downstream_flow: trimForDetail(aggregateFlows, responseVerbosity, 12),
+            clone_siblings: trimForDetail(aggregateClones, responseVerbosity, 10),
+            similar_symbols: trimForDetail(aggregateSimilar, responseVerbosity, 10),
             duplicate_risk: {
                 level: duplicateLevel,
                 reasons: editedSymbols.flatMap(symbol => symbol.duplicate_risk.reasons).slice(0, 6),
@@ -745,7 +760,7 @@ export function runAnalyzeEditRegionUseCase({
             external_caller_count: aggregateExternalCallers.length,
             downstream_flow_count: aggregateFlows.length,
         },
-        limits_applied: { detail_level: detailLevel },
+        limits_applied: { verbosity: responseVerbosity },
         };
     });
 }

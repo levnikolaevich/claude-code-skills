@@ -112,7 +112,7 @@ function graphError(codeOrError, message, recovery) {
         recovery: error.recovery,
     });
     return {
-        content: [{ type: "text", text: JSON.stringify(payload, null, 2) }],
+        content: [{ type: "text", text: JSON.stringify(payload) }],
         isError: true,
     };
 }
@@ -161,8 +161,8 @@ function confidenceSchema() {
     return z.enum(CONFIDENCE_VALUES).optional().describe("Filter out facts below this confidence tier");
 }
 
-function detailLevelSchema() {
-    return z.enum(["compact", "full"]).default("compact").describe("Response detail level. `compact` keeps the payload short; `full` includes richer supporting sections.");
+function verbositySchema() {
+    return z.enum(["minimal", "compact", "full"]).default("compact").describe("Response budget. `minimal` returns the shortest actionable answer, `compact` keeps key reasoning visible, and `full` includes supporting detail.");
 }
 
 function flowPointSchema() {
@@ -176,15 +176,25 @@ function flowPointSchema() {
     });
 }
 
-function wrapResult(result, format = "json") {
+function pruneForVerbosity(payload, verbosity = "full") {
+    if (verbosity === "full") return payload;
+    const next = { ...payload };
+    delete next.quality;
+    delete next.evidence;
+    delete next.limits_applied;
+    if (verbosity === "minimal") delete next.reason;
+    return pruneEmpty(next) || {};
+}
+
+function wrapResult(result, format = "json", verbosity = "full") {
     if (result?.error) {
         return graphError(result.error);
     }
-    const payload = pruneEmpty({
+    const payload = pruneForVerbosity(pruneEmpty({
         status: STATUS.OK,
         ...result,
-    }) || {};
-    const text = format === "json" ? JSON.stringify(payload, null, 2) : JSON.stringify(payload);
+    }) || {}, verbosity);
+    const text = JSON.stringify(payload);
     return { content: [{ type: "text", text }] };
 }
 
@@ -289,7 +299,7 @@ server.registerTool("index_project", {
             reason: "index_project_completed",
             evidence: {},
             limits_applied: {},
-        });
+        }, "json", "full");
     } catch (e) {
         const message = e?.message || String(e);
         if (e?.code === "GRAPH_DB_UNREADABLE") {
@@ -331,7 +341,7 @@ server.registerTool("install_graph_providers", {
             reason: mode === "install" ? "graph_providers_install_attempted" : "graph_providers_checked",
             evidence: { layer: "environment", origin: "graph_provider_planner" },
             limits_applied: {},
-        }, format);
+        }, format, "full");
     } catch (error) {
         return graphError("GRAPH_PROVIDER_SETUP_FAILED", error.message, "Verify the project path exists, then rerun install_graph_providers in `check` mode to inspect remediation steps.");
     }
@@ -395,7 +405,7 @@ server.registerTool("export_scip", {
             reason: "scip_export_completed",
             evidence: { layer: "interop", origin: "scip_export" },
             limits_applied: {},
-        }, format);
+        }, format, "full");
     } catch (error) {
         return graphError("SCIP_EXPORT_FAILED", error.message, "Run index_project first, verify the output path is writable, and install the required upstream SCIP indexer when using Python, PHP, or C#");
     }
@@ -426,7 +436,7 @@ server.registerTool("import_scip_overlay", {
             reason: "scip_import_completed",
             evidence: { layer: "interop", origin: "scip_import" },
             limits_applied: {},
-        }, format);
+        }, format, "full");
     } catch (error) {
         return graphError("SCIP_IMPORT_FAILED", error.message, "Run index_project first, verify the SCIP artifact path, and ensure the artifact contains supported document languages");
     }
@@ -438,15 +448,15 @@ server.registerTool("find_symbols", {
     inputSchema: z.object({
         query: z.string().describe("Symbol name or partial name"),
         kind: z.string().optional().describe("Optional kind filter"),
-        limit: flexNum().describe("Max candidate symbols to return (default: 20)"),
+        limit: flexNum().describe("Max candidate symbols to return (default: 5)"),
         path: z.string().describe("Indexed project root or a file/directory inside the indexed project"),
         format: z.enum(["json", "text"]).default("json"),
     }),
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
 }, async (rawParams) => {
     const { query, kind, limit, path, format } = rawParams;
-    const result = runFindSymbolsUseCase(query, { kind, limit: limit ?? 20, path });
-    return wrapResult(result, format);
+    const result = runFindSymbolsUseCase(query, { kind, limit: limit ?? 5, path });
+    return wrapResult(result, format, "minimal");
 });
 
 server.registerTool("inspect_symbol", {
@@ -465,7 +475,7 @@ server.registerTool("inspect_symbol", {
         path,
         minConfidence: min_confidence ?? null,
     });
-    return wrapResult(withQuality(result, inspectQuality(result)), format);
+    return wrapResult(withQuality(result, inspectQuality(result)), format, "compact");
 });
 
 server.registerTool("trace_paths", {
@@ -477,7 +487,7 @@ server.registerTool("trace_paths", {
         path_kind: z.enum(["calls", "references", "imports", "type", "flow", "mixed"]).default("calls").describe("Traversal edge set. `mixed` includes framework overlay hops when present."),
         direction: z.enum(["forward", "reverse", "both"]).default("reverse"),
         depth: flexNum().describe("Max traversal depth (default: 3)"),
-        limit: flexNum().describe("Max paths (default: 50)"),
+        limit: flexNum().describe("Max paths (default: 10)"),
         min_confidence: confidenceSchema(),
         path: z.string().describe("Indexed project root or a file/directory inside the indexed project"),
         format: z.enum(["json", "text"]).default("json"),
@@ -495,7 +505,7 @@ server.registerTool("trace_paths", {
         path_kind: path_kind ?? "calls",
         direction: direction ?? "reverse",
         depth: depth ?? 3,
-        limit: limit ?? 50,
+        limit: limit ?? 10,
         min_confidence: min_confidence ?? null,
         path,
         target,
@@ -514,7 +524,7 @@ server.registerTool("trace_paths", {
         ]);
         result.next_actions = unique(["inspect_symbol", ...(pathCount ? [] : ["adjust_query"])]);
     }
-    return wrapResult(withQuality(result, traceQuality(result)), format);
+    return wrapResult(withQuality(result, traceQuality(result)), format, "compact");
 });
 
 server.registerTool("find_references", {
@@ -523,7 +533,7 @@ server.registerTool("find_references", {
     inputSchema: z.object({
         ...selectorSchema(),
         kind: z.enum(REFERENCE_KINDS).default("all").describe("Optional edge-kind filter. Includes semantic and framework kinds such as `route_to_handler`, `injects`, `registers`, `renders`, and `middleware_for`."),
-        limit: flexNum().describe("Max references (default: 50)"),
+        limit: flexNum().describe("Max references (default: 10)"),
         min_confidence: confidenceSchema(),
         path: z.string().describe("Indexed project root or a file/directory inside the indexed project"),
         format: z.enum(["json", "text"]).default("json"),
@@ -533,7 +543,7 @@ server.registerTool("find_references", {
     const { path, format, kind, limit, min_confidence, ...selector } = rawParams;
     const result = getReferencesBySelector(selector, {
         kind: kind ?? "all",
-        limit: limit ?? 50,
+        limit: limit ?? 10,
         min_confidence: min_confidence ?? null,
         path,
     });
@@ -547,7 +557,7 @@ server.registerTool("find_references", {
         ]);
         result.next_actions = ["inspect_symbol", "trace_paths"];
     }
-    return wrapResult(withQuality(result, referencesQuality(result)), format);
+    return wrapResult(withQuality(result, referencesQuality(result)), format, "compact");
 });
 
 server.registerTool("find_implementations", {
@@ -555,14 +565,14 @@ server.registerTool("find_implementations", {
     description: "Find implementations and overrides for a canonical symbol identity.",
     inputSchema: z.object({
         ...selectorSchema(),
-        limit: flexNum().describe("Max implementation rows to return (default: 50)"),
+        limit: flexNum().describe("Max implementation rows to return (default: 10)"),
         path: z.string().describe("Indexed project root or a file/directory inside the indexed project"),
         format: z.enum(["json", "text"]).default("json"),
     }),
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
 }, async (rawParams) => {
     const { path, format, limit, ...selector } = rawParams;
-    const result = findImplementationsBySelector(selector, { path, limit: limit ?? 50 });
+    const result = findImplementationsBySelector(selector, { path, limit: limit ?? 10 });
     if (!result?.error) {
         result.summary = result.result.implementations.length
             ? `Found ${result.result.implementations.length} implementation or override relation(s).`
@@ -570,7 +580,7 @@ server.registerTool("find_implementations", {
         result.warnings = result.result.implementations.length ? [] : ["No implementation relation matched the current symbol."];
         result.next_actions = ["inspect_symbol"];
     }
-    return wrapResult(result, format);
+    return wrapResult(result, format, "compact");
 });
 
 server.registerTool("trace_dataflow", {
@@ -581,7 +591,7 @@ server.registerTool("trace_dataflow", {
         sink: flowPointSchema().optional(),
         flow_kind: z.enum(["value", "taint"]).default("value"),
         max_hops: flexNum().describe(`Max flow propagation hops (default: ${DEFAULT_FLOW_MAX_HOPS})`),
-        limit: flexNum().describe(`Max flow paths (default: ${DEFAULT_FLOW_LIMIT})`),
+        limit: flexNum().describe("Max flow paths (default: 10)"),
         min_confidence: confidenceSchema(),
         path: z.string().describe("Indexed project root or a file/directory inside the indexed project"),
         format: z.enum(["json", "text"]).default("json"),
@@ -596,10 +606,10 @@ server.registerTool("trace_dataflow", {
         max_hops: max_hops ?? DEFAULT_FLOW_MAX_HOPS,
         min_confidence: min_confidence ?? null,
     }, {
-        limit: limit ?? DEFAULT_FLOW_LIMIT,
+        limit: limit ?? 10,
         path,
     });
-    return wrapResult(result, format);
+    return wrapResult(result, format, "compact");
 });
 
 server.registerTool("analyze_changes", {
@@ -610,8 +620,8 @@ server.registerTool("analyze_changes", {
         base_ref: z.string().describe("Git baseline ref used to compute the changed-symbol set"),
         head_ref: z.string().optional().describe("Optional git head ref. If omitted, the current checkout/worktree is compared to `base_ref`."),
         include_paths: z.boolean().default(false).describe("Include reverse mixed graph paths for the returned symbols. Default is false to keep the snapshot compact."),
-        max_symbols: flexNum().describe(`Maximum changed symbols to return after risk ranking (default: ${DEFAULT_PR_IMPACT_MAX_SYMBOLS})`),
-        max_paths: flexNum().describe(`Maximum supporting paths per symbol when \`include_paths\` is true (default: ${DEFAULT_PR_IMPACT_MAX_PATHS})`),
+        max_symbols: flexNum().describe("Maximum changed symbols to return after risk ranking (default: 10)"),
+        max_paths: flexNum().describe("Maximum supporting paths per symbol when `include_paths` is true (default: 3)"),
         format: z.enum(["json", "text"]).default("json"),
     }),
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
@@ -623,13 +633,13 @@ server.registerTool("analyze_changes", {
             baseRef: base_ref,
             headRef: head_ref || null,
             includePaths: include_paths,
-            maxSymbols: max_symbols ?? DEFAULT_PR_IMPACT_MAX_SYMBOLS,
-            maxPaths: max_paths ?? DEFAULT_PR_IMPACT_MAX_PATHS,
+            maxSymbols: max_symbols ?? 10,
+            maxPaths: max_paths ?? 3,
         });
         if (result?.error) {
             return graphError(result.error);
         }
-        return wrapResult(withQuality(result, changesQuality(result)), format);
+        return wrapResult(withQuality(result, changesQuality(result)), format, "minimal");
     } catch (error) {
         return graphError("ANALYZE_CHANGES_FAILED", error.message, "Run index_project first, then verify the git refs and project path.");
     }
@@ -643,23 +653,23 @@ server.registerTool("analyze_edit_region", {
         file: z.string().describe("File path inside the indexed project. Absolute paths are accepted when they stay inside the project root."),
         line_start: flexNum().describe("1-based starting line of the edited region"),
         line_end: flexNum().describe("1-based ending line of the edited region"),
-        detail_level: detailLevelSchema(),
+        verbosity: verbositySchema(),
         format: z.enum(["json", "text"]).default("json"),
     }),
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
 }, async (rawParams) => {
-    const { path, file, line_start, line_end, detail_level, format } = rawParams;
+    const { path, file, line_start, line_end, verbosity, format } = rawParams;
     const result = runAnalyzeEditRegionUseCase({
         path,
         file,
         lineStart: line_start,
         lineEnd: line_end,
-        detailLevel: detail_level ?? "compact",
+        verbosity: verbosity ?? "compact",
     });
     if (result?.error) {
         return graphError(result.error);
     }
-    return wrapResult(withQuality(result, editRegionQuality(result)), format);
+    return wrapResult(withQuality(result, editRegionQuality(result)), format, verbosity ?? "compact");
 });
 
 server.registerTool("analyze_architecture", {
@@ -668,23 +678,23 @@ server.registerTool("analyze_architecture", {
     inputSchema: z.object({
         path: z.string().describe("Indexed project root"),
         scope: z.string().optional().describe("Optional file path prefix filter"),
-        limit: flexNum().describe("Max module, cycle, coupling, and hotspot rows to surface (default: 15)"),
-        detail_level: detailLevelSchema(),
+        limit: flexNum().describe("Max module, cycle, coupling, and hotspot rows to surface (default: 5)"),
+        verbosity: verbositySchema(),
         format: z.enum(["json", "text"]).default("json"),
     }),
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
 }, async (rawParams) => {
-    const { path, scope, limit, detail_level, format } = rawParams;
+    const { path, scope, limit, verbosity, format } = rawParams;
     const result = runAnalyzeArchitectureUseCase({
         path,
         scope: scope || null,
-        limit: limit ?? 15,
-        detailLevel: detail_level ?? "compact",
+        limit: limit ?? 5,
+        verbosity: verbosity ?? "minimal",
     });
     if (result?.error) {
         return graphError(result.error);
     }
-    return wrapResult(withQuality(result, architectureQuality(result)), format);
+    return wrapResult(withQuality(result, architectureQuality(result)), format, verbosity ?? "minimal");
 });
 
 server.registerTool("audit_workspace", {
@@ -693,23 +703,23 @@ server.registerTool("audit_workspace", {
     inputSchema: z.object({
         path: z.string().describe("Indexed project root"),
         scope: z.string().optional().describe("Optional file path prefix filter"),
-        detail_level: detailLevelSchema(),
+        verbosity: verbositySchema(),
         show_suppressed: flexBool().describe("Include suppressed unused exports in the visible result"),
         format: z.enum(["json", "text"]).default("json"),
     }),
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
 }, async (rawParams) => {
-    const { path, scope, detail_level, show_suppressed, format } = rawParams;
+    const { path, scope, verbosity, show_suppressed, format } = rawParams;
     const result = runAuditWorkspaceUseCase({
         path,
         scope: scope || null,
-        detailLevel: detail_level ?? "compact",
+        verbosity: verbosity ?? "minimal",
         showSuppressed: show_suppressed ?? false,
     });
     if (result?.error) {
         return graphError(result.error);
     }
-    return wrapResult(withQuality(result, auditQuality(result)), format);
+    return wrapResult(withQuality(result, auditQuality(result)), format, verbosity ?? "minimal");
 });
 
 const transport = new StdioServerTransport();

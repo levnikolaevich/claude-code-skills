@@ -73,7 +73,7 @@ Do NOT load existing tasks here. Existing tasks load in Phase 4 only.
 
 - For Stories that modify existing code in supported languages, build graph context once:
   - `index_project(path=project_root)`
-  - `analyze_architecture(path=project_root, detail_level="compact")`
+  - `analyze_architecture(path=project_root, verbosity="minimal")`
   - `find_symbols` + `inspect_symbol` for named components from Story AC or Technical Notes
 - Use graph context to confirm real affected modules and entrypoints before decomposition
 

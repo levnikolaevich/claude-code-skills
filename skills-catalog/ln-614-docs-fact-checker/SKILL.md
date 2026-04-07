@@ -53,7 +53,7 @@ If `docs/project/.context/doc_registry.json` exists:
 
 For each prioritized document, use section-first reads to extract verifiable claims using Grep/regex patterns.
 
-For code files referenced by docs, use `outline()` and `read_file()` before built-in reads. Use `hex-graph` only when entity identity or reference resolution remains ambiguous after direct manifest/file checks.
+For code files referenced by docs, use `outline()` and discovery-first `read_file()` before built-in reads. Only request `edit_ready=true, verbosity="full"` if verification turns into a follow-up edit. Use `hex-graph` only when entity identity or reference resolution remains ambiguous after direct manifest/file checks.
 
 **MANDATORY READ:** Load [references/claim_extraction_rules.md](references/claim_extraction_rules.md) for detailed extraction patterns per claim type.
 

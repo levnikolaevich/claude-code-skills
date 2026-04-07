@@ -732,8 +732,47 @@ export const environmentStateSchema = {
                 },
             },
         },
+        ide_extension: {
+            type: "object",
+            properties: {
+                cursor: ideExtensionEntrySchema(),
+                vscode: ideExtensionEntrySchema(),
+            },
+        },
     },
 };
+
+function ideExtensionEntrySchema() {
+    return {
+        type: "object",
+        properties: {
+            installed: { type: "boolean" },
+            extension_version: { type: "string" },
+            settings_path: { type: "string" },
+            initial_permission_mode: {
+                type: "string",
+                enum: ["default", "acceptEdits", "plan", "bypassPermissions"],
+            },
+            allow_dangerously_skip_permissions: { type: "boolean" },
+            effective_state: {
+                type: "string",
+                enum: [
+                    "default-prompt",
+                    "accept-edits",
+                    "plan-only",
+                    "bypass-active",
+                    "bypass-blocked",
+                    "no-ide",
+                ],
+            },
+            conflict_with_project_default_mode: {
+                type: "string",
+                enum: ["aligned", "override", "n/a"],
+            },
+            last_modified_by_skill: { type: "string" },
+        },
+    };
+}
 
 export const reviewAgentRecordSchema = {
     type: "object",

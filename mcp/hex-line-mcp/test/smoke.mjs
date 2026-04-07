@@ -577,7 +577,7 @@ describe("edit business logic", () => {
         const tmp = TMP("hex-test-search-block-edit.js");
         fs.writeFileSync(tmp, "const alpha = 1;\nconst target = 2;\nconst omega = 3;\n");
         try {
-            const grepResult = await grepSearch("target", { path: tmp, context: 1 });
+            const grepResult = await grepSearch("target", { path: tmp, context: 1, output: "content", editReady: true });
             const anchor = grepResult.match(/>>([a-z2-7]{2}\.2)\tconst target = 2;/)?.[1];
             assert.ok(anchor, "Canonical search block provides direct anchor");
 
@@ -824,7 +824,7 @@ describe("graph enrichment", () => {
             assert.ok(readResult.includes("flow 1out"), "Graph header includes flow count");
             assert.ok(readResult.includes("api"), "Graph header includes exported/public signal");
 
-            const grepResult = await grepSearch("export function foo", { path: join(repo, "a.mjs") });
+            const grepResult = await grepSearch("export function foo", { path: join(repo, "a.mjs"), output: "content", editReady: true });
             assert.ok(grepResult.includes("[fn"), "grep match annotated via line facts");
             assert.ok(grepResult.includes("1↑"), "grep match annotation includes caller count");
             assert.ok(grepResult.includes("[api"), "grep match annotation includes public API marker");
@@ -940,7 +940,7 @@ describe("grep_search output modes", () => {
 
     it("content mode returns checksums per group", async () => {
         const { grepSearch } = await import("../lib/search.mjs");
-        const result = await grepSearch("grepSearch", { path: CWD + "/lib/search.mjs", context: 1 });
+        const result = await grepSearch("grepSearch", { path: CWD + "/lib/search.mjs", context: 1, output: "content", editReady: true });
         assert.ok(result.includes("block: search_hunk"), "content mode emits canonical search blocks");
         assert.ok(result.includes("span:"), "content mode includes block span");
         assert.ok(result.includes(">>"), "content mode has >> match markers");
@@ -1743,9 +1743,17 @@ describe("protocol: edit_file output", () => {
         fs.writeFileSync(tmp, "alpha\nbeta\ngamma\ndelta\n");
         try {
             await withMcpClient(async (client) => {
-                const readResult = await client.callTool({
+                const defaultRead = await client.callTool({
                     name: "read_file",
                     arguments: { path: tmp, ranges: ["2-3"] },
+                });
+                const defaultText = defaultRead.content[0].text;
+                assert.ok(defaultText.includes("2|beta"), "default read_file is discovery-first plain output");
+                assert.ok(!defaultText.includes("checksum:"), "default read_file omits edit-ready checksums");
+
+                const readResult = await client.callTool({
+                    name: "read_file",
+                    arguments: { path: tmp, ranges: ["2-3"], edit_ready: true, verbosity: "full" },
                 });
                 const readText = readResult.content[0].text;
                 const startAnchor = readText.match(/([a-z2-7]{2}\.2)\tbeta/)?.[1];
@@ -1785,7 +1793,7 @@ describe("protocol: edit_file output", () => {
             await withMcpClient(async (client) => {
                 const readResult = await client.callTool({
                     name: "read_file",
-                    arguments: { path: tmp, ranges: ["1-2"] },
+                    arguments: { path: tmp, ranges: ["1-2"], edit_ready: true, verbosity: "full" },
                 });
                 const readText = readResult.content[0].text;
                 const anchor = readText.match(/([a-z2-7]{2}\.2)\tbeta/)?.[1];
@@ -1812,6 +1820,33 @@ describe("protocol: edit_file output", () => {
                 });
                 assert.notEqual(allowed.isError, true, "explicit override should allow external edit");
                 assert.ok(fs.readFileSync(tmp, "utf8").includes("BETA"), "external edit applies once override is set");
+            });
+        } finally {
+            if (fs.existsSync(tmp)) fs.unlinkSync(tmp);
+        }
+    });
+
+    it("grep_search defaults to summary and requires explicit edit_ready for canonical hunks", async () => {
+        const tmp = join(tmpdir(), `hex-test-mcp-grep-${Date.now()}-${Math.random().toString(16).slice(2)}.js`);
+        fs.writeFileSync(tmp, "const AAA = 1;\nconst BBB = 2;\nconst AAA_2 = 3;\n");
+        try {
+            await withMcpClient(async (client) => {
+                const summaryResult = await client.callTool({
+                    name: "grep_search",
+                    arguments: { path: tmp, pattern: "AAA" },
+                });
+                const summaryText = summaryResult.content[0].text;
+                assert.ok(summaryText.includes("summary:"), "default grep_search returns summary output");
+                assert.ok(summaryText.includes("snippets:"), "summary output includes snippets");
+                assert.ok(!summaryText.includes("block: search_hunk"), "summary output omits canonical hunks");
+
+                const contentResult = await client.callTool({
+                    name: "grep_search",
+                    arguments: { path: tmp, pattern: "AAA", output: "content", edit_ready: true },
+                });
+                const contentText = contentResult.content[0].text;
+                assert.ok(contentText.includes("block: search_hunk"), "explicit content mode returns search hunks");
+                assert.ok(contentText.includes("checksum:"), "explicit content mode returns checksums");
             });
         } finally {
             if (fs.existsSync(tmp)) fs.unlinkSync(tmp);
@@ -1982,7 +2017,7 @@ describe("E2E: workflow round-trips", () => {
         fs.writeFileSync(tmp, "function hello() {\n    return 'world';\n}\n");
         try {
             // Search
-            const searchResult = await grepSearch("hello", { path: tmp, output: "content" });
+            const searchResult = await grepSearch("hello", { path: tmp, output: "content", editReady: true });
             assert.ok(searchResult.includes("search_hunk"), "Search returned hunk");
             // Extract anchor from search result
             const anchor = searchResult.match(/>>([a-z2-7]{2}\.\d+)\t/)?.[1];
@@ -2087,7 +2122,7 @@ describe("remaining checklist tests", () => {
         fs.writeFileSync(tmp, "const AAA = 1;\nconst BBB = 2;\nconst CCC = 3;\nconst AAA_2 = 4;\n");
         try {
             // Search for AAA
-            const searchResult = await grepSearch("AAA", { path: tmp, output: "content" });
+            const searchResult = await grepSearch("AAA", { path: tmp, output: "content", editReady: true });
             assert.ok(searchResult.includes("search_hunk"), "Search returned hunks");
             // Extract 2 match anchors
             const anchors = [...searchResult.matchAll(/>>([a-z2-7]{2}\.\d+)\t/g)].map(m => m[1]);

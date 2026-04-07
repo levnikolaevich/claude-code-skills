@@ -57,8 +57,8 @@ Route based on user intent:
 | "Project structure" / "Architecture" | `analyze_architecture` | `{ path: "{project_path}", scope?: "src/" }` |
 | "Find symbol X" | `find_symbols` | `{ query: "X" }` |
 | "Find `app.get(...)` / `router.use(...)` / `server.registerTool(...)` pattern" | `grep_search` | `{ path: "{project_path}", pattern: "app\\.get\\(|router\\.use\\(|server\\.registerTool\\(" }` |
-| "Find duplicate code / hotspots / unused exports" | `audit_workspace` | `{ path: "{project_path}", scope?: "src/", detail_level: "full" }` |
-| "Circular dependencies / module coupling" | `analyze_architecture` | `{ path: "{project_path}", detail_level: "full" }` |
+| "Find duplicate code / hotspots / unused exports" | `audit_workspace` | `{ path: "{project_path}", scope?: "src/", verbosity: "full" }` |
+| "Circular dependencies / module coupling" | `analyze_architecture` | `{ path: "{project_path}", verbosity: "full" }` |
 | "Implementations / overrides" | `find_implementations` | `{ name: "X", file: "...", path: "{project_path}" }` |
 | "Dataflow / propagation" | `trace_dataflow` | `{ source: { symbol: { name: "X", file: "..." }, anchor: { kind: "param", name: "input" } }, sink?: { symbol: { name: "X", file: "..." }, anchor: { kind: "return" } }, path: "{project_path}" }` |
 | "Review a diff / worktree" | `analyze_changes` | `{ path: "{project_path}", base_ref: "origin/main" }` |
@@ -87,7 +87,7 @@ Route based on user intent:
 ### Phase 3: Present Results
 
 1. Show MCP tool output directly (markdown tables)
-2. For code snippets referenced in results, use `hex-line read_file` with line ranges
+2. For code snippets referenced in results, use `hex-line read_file` with line ranges; add `edit_ready=true, verbosity="full"` only when you intend to carry revision/checksums into an edit
 3. Suggest follow-up queries based on results:
    - After `find_symbols` → suggest `inspect_symbol` with `workspace_qualified_name` for the top exact match
    - After `inspect_symbol` → suggest `trace_paths` if refactoring

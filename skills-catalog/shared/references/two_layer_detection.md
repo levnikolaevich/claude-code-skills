@@ -22,7 +22,7 @@ Fast, automated scan using Grep/Glob/Bash tools.
 When hex-graph is available (project indexed via `mcp__hex-graph__index_project`), use `mcp__hex-graph__audit_workspace` for Layer 1 DRY candidate detection instead of Grep:
 
 ```
-audit_workspace(path, detail_level="full")
+audit_workspace(path, verbosity="full")
 ```
 
 | Output field | Use |

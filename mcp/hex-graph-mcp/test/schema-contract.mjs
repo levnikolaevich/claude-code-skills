@@ -52,11 +52,11 @@ describe("schema descriptions", () => {
             const editRegion = toolByName(result.tools, "analyze_edit_region");
             const editProps = editRegion.inputSchema.properties || {};
             assert.equal(editProps.file?.description, "File path inside the indexed project. Absolute paths are accepted when they stay inside the project root.");
-            assert.equal(editProps.detail_level?.description, "Response detail level. `compact` keeps the payload short; `full` includes richer supporting sections.");
+            assert.equal(editProps.verbosity?.description, "Response budget. `minimal` returns the shortest actionable answer, `compact` keeps key reasoning visible, and `full` includes supporting detail.");
 
             const architecture = toolByName(result.tools, "analyze_architecture");
             const architectureProps = architecture.inputSchema.properties || {};
-            assert.equal(architectureProps.limit?.description, "Max module, cycle, coupling, and hotspot rows to surface (default: 15)");
+            assert.equal(architectureProps.limit?.description, "Max module, cycle, coupling, and hotspot rows to surface (default: 5)");
 
             const audit = toolByName(result.tools, "audit_workspace");
             const auditProps = audit.inputSchema.properties || {};

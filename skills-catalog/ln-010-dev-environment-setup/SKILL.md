@@ -36,6 +36,7 @@ Load these before execution:
 |-----------|----------|---------|-------------|
 | `targets` | No | `both` | `gemini`, `codex`, or `both` |
 | `dry_run` | No | `false` | Plan without mutating |
+| `apply_ide_override` | No | `false` | Pass-through to ln-012 Phase 7b. When `true`, ln-012 may write `claudeCode.initialPermissionMode` and `claudeCode.allowDangerouslySkipPermissions` to Cursor / VSCode user settings after explicit user consent. When `false` (default), Phase 7b is detection-only and reports drift without mutating IDE settings. |
 
 ## Runtime
 
@@ -71,6 +72,7 @@ Collect one environment snapshot:
 - task management provider detection (Linear → GitHub → file)
 - research tool detection (Ref → Context7 → websearch)
 - git worktree availability
+- Claude Code IDE extension state: glob `~/.cursor/extensions/anthropic.claude-code-*` and `~/.vscode/extensions/anthropic.claude-code-*`. For each found, read `claudeCode.initialPermissionMode` and `claudeCode.allowDangerouslySkipPermissions` from the matching IDE user settings.json. Detection-only — no writes here.
 
 Checkpoint payload:
 - `assess_summary`
@@ -121,7 +123,7 @@ Checkpoint payload:
 Write final durable state to:
 - `.hex-skills/environment_state.json`
 
-Includes all detected sections: agents (with sync status), task_management, research, claude_md, assessment, hooks.
+Includes all detected sections: agents (with sync status), task_management, research, claude_md, assessment, hooks, ide_extension (Cursor / VSCode Claude Code extension state from Phase 1 plus any Phase 7b mutations from ln-012).
 
 Rules:
 - runtime state is not environment state
@@ -158,16 +160,18 @@ Do not mix these layers.
 | Phase | Worker | Context |
 |-------|--------|---------|
 | 3 | `ln-011-agent-installer` | Install or update CLI agents |
-| 3 | `ln-012-mcp-configurator` | Configure MCP servers, hooks, and permissions |
+| 3 | `ln-012-mcp-configurator` | Configure MCP servers, hooks, permissions, and IDE extension permission mode (Phase 7b) |
 | 3 | `ln-013-config-syncer` | Sync config to Gemini and Codex |
 | 3 | `ln-014-agent-instructions-manager` | Create and audit instruction files |
 
 ```text
 Skill(skill: "ln-011-agent-installer", args: "{targets} {dry_run}")
-Skill(skill: "ln-012-mcp-configurator", args: "{dry_run}")
+Skill(skill: "ln-012-mcp-configurator", args: "{dry_run} {apply_ide_override}")
 Skill(skill: "ln-013-config-syncer", args: "{targets} {dry_run}")
 Skill(skill: "ln-014-agent-instructions-manager", args: "{dry_run}")
 ```
+
+`apply_ide_override` propagates from ln-010 input to ln-012 only. Default `false` keeps Phase 7b in detection mode and reports IDE drift as a WARN in the assessment summary; passing `true` lets ln-012 prompt the user and write Cursor / VSCode settings.
 
 ## TodoWrite format (mandatory)
 
@@ -207,5 +211,5 @@ Skill type: `domain-coordinator`. Run after all phases complete. Output to chat 
 
 ---
 
-**Version:** 6.0.0
-**Last Updated:** 2026-04-05
+**Version:** 6.1.0
+**Last Updated:** 2026-04-07

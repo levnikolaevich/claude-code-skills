@@ -1,6 +1,6 @@
 ---
 name: ln-012-mcp-configurator
-description: "Installs MCP packages, registers servers in Claude Code, configures hooks, permissions, and migrations. Use when MCP needs setup or reconfiguration."
+description: "Installs MCP packages, registers servers in Claude Code, configures hooks, permissions, IDE extension permission mode, and migrations. Use when MCP needs setup or reconfiguration."
 license: MIT
 ---
 
@@ -19,8 +19,8 @@ Configures MCP servers in Claude Code: installs npm packages, registers servers,
 
 | Direction | Content |
 |-----------|---------|
-| **Input** | OS info, `dry_run` flag, optional `runId`, optional `summaryArtifactPath` |
-| **Output** | Structured summary envelope with `payload.status` = `completed` / `skipped` / `error`, plus per-server outcomes in `changes` / `detail` |
+| **Input** | OS info, `dry_run` flag, optional `apply_ide_override` flag (default `false` — Phase 7b is detection-only without it), optional `runId`, optional `summaryArtifactPath` |
+| **Output** | Structured summary envelope with `payload.status` = `completed` / `skipped` / `error`, plus per-server outcomes in `changes` / `detail`, plus IDE extension state in `payload.ide_extension` |
 
 If `summaryArtifactPath` is provided, write the same summary JSON there. If not provided, return the summary inline and remain fully standalone. If `runId` is not provided, generate a standalone `run_id` before emitting the summary envelope.
 
@@ -45,7 +45,7 @@ Two transport types: **stdio** (local process) and **HTTP** (cloud endpoint).
 ## Workflow
 
 ```
-Check Status & Version → Register & Configure → Verify Graph Provider Deps → Hooks → Permissions → Migrate → Report
+Check Status & Version → Register & Configure → Verify Graph Provider Deps → Hooks → Permissions → IDE Extension Mode → Migrate → Report
 ```
 
 ### Phase 1: Check Status & Version
@@ -390,6 +390,80 @@ Ensure built-in tools and MCP server prefixes are in `~/.claude/settings.json` -
 
 **Idempotent:** existing universal entries skipped. Only specific sub-entries are consolidated into universal ones.
 
+### Phase 7b: Verify IDE Extension Permission Mode
+
+The Claude Code IDE extension (Cursor / VSCode) has its own `claudeCode.initialPermissionMode` setting that **overrides** `permissions.defaultMode` from `~/.claude/settings.json` when Claude runs through the IDE. Default value is `"default"` — this silently ignores any project-level `bypassPermissions` from `.claude/settings.local.json`. To actually enable bypass when running through the IDE, two extension settings must be set together.
+
+**This phase is detection-first.** It does NOT modify IDE settings without explicit user consent because permission mode is a security decision and IDE settings are vendor-specific.
+
+**Step 1: Detect installed Claude Code IDE extensions**
+
+| IDE | Extensions directory | User settings path (Windows) | User settings path (macOS) | User settings path (Linux) |
+|-----|---------------------|------------------------------|----------------------------|----------------------------|
+| Cursor | `~/.cursor/extensions/anthropic.claude-code-*` | `%APPDATA%/Cursor/User/settings.json` | `~/Library/Application Support/Cursor/User/settings.json` | `~/.config/Cursor/User/settings.json` |
+| VSCode | `~/.vscode/extensions/anthropic.claude-code-*` | `%APPDATA%/Code/User/settings.json` | `~/Library/Application Support/Code/User/settings.json` | `~/.config/Code/User/settings.json` |
+
+For each IDE: glob the extensions directory for `anthropic.claude-code-*`. If at least one match exists, the extension is installed.
+
+**Step 2: Read `package.json` from extension to enumerate `claudeCode.*` settings**
+
+The relevant keys (verified against extension package.json contributes.configuration.properties):
+
+| Setting key | Type | Default | Effect |
+|-------------|------|---------|--------|
+| `claudeCode.initialPermissionMode` | string enum | `"default"` | Sets `--permission-mode` flag at session start. Enum: `default`, `acceptEdits`, `plan`, `bypassPermissions` |
+| `claudeCode.allowDangerouslySkipPermissions` | boolean | `false` | Hard gate — must be `true` for `bypassPermissions` to actually engage. Anthropic's explicit guard for IDE contexts |
+
+**Step 3: Read user settings JSON for each detected IDE and report current state**
+
+| Detected state | Effective behavior | Reported as |
+|----------------|--------------------|-------------|
+| `initialPermissionMode` absent OR `"default"`, `allowDangerouslySkipPermissions` absent OR `false` | Standard prompt-based permissions, project `defaultMode` IGNORED | `default-prompt` |
+| `initialPermissionMode = "acceptEdits"` | File ops auto-approve, Bash still prompts | `accept-edits` |
+| `initialPermissionMode = "plan"` | Plan mode forced (no execution) | `plan-only` |
+| `initialPermissionMode = "bypassPermissions"`, `allowDangerouslySkipPermissions = true` | Bypass active | `bypass-active` |
+| `initialPermissionMode = "bypassPermissions"`, `allowDangerouslySkipPermissions = false` | **Misconfigured** — user wanted bypass but gate is closed; falls back to default | `bypass-blocked` |
+
+Always include in the report: a one-line explanation of why `.claude/settings.local.json defaultMode` is silently ignored when running via IDE extension.
+
+**Step 4: Cross-check against `.claude/settings.json` and `.claude/settings.local.json defaultMode`**
+
+If user's project settings declare `permissions.defaultMode = "bypassPermissions"` but the IDE extension is in `default-prompt` or `bypass-blocked` state → emit a `WARN` in the summary explaining the override:
+
+> WARN: Project `.claude/settings.local.json` declares `defaultMode: bypassPermissions`, but the Claude Code IDE extension for {IDE} forces `--permission-mode {detected}` at session start. The project setting is ignored when running through the IDE. To align them, run this skill with `apply_ide_override=true` and confirm at the prompt, or manually set `claudeCode.initialPermissionMode` and `claudeCode.allowDangerouslySkipPermissions` in {settings_path}.
+
+**Step 5: Optional remediation (only with explicit user consent)**
+
+This phase only writes IDE settings when the caller passes `apply_ide_override=true` (a separate flag distinct from the main `dry_run`). Even with the flag, the skill MUST prompt the user with a single confirmation question listing exactly which keys will change in which file.
+
+When applying changes:
+
+1. **Backup first:** copy settings.json to `settings.json.bak.{timestamp}` before any write
+2. **Read → deep-merge → write:** preserve every other `claudeCode.*` key (`preferredLocation`, `useTerminal`, `respectGitIgnore`, etc.) and every non-`claudeCode.*` key
+3. **Write only the two keys** dictated by the desired mode:
+   - For `bypassPermissions`: set `claudeCode.allowDangerouslySkipPermissions: true` AND `claudeCode.initialPermissionMode: "bypassPermissions"`
+   - For `acceptEdits`: set `claudeCode.initialPermissionMode: "acceptEdits"` (gate not required)
+   - For `default`: remove both keys (or set to `false` / `"default"`)
+4. **Instruct full restart:** print "IDE restart required (full Quit + reopen, NOT Reload Window) — extension reads settings only at activation"
+5. **Record in summary:** include before/after values, backup path, and the explicit user consent timestamp
+
+**Skip conditions:**
+
+| Condition | Action |
+|-----------|--------|
+| No Claude Code IDE extension found | SKIP entire phase, report `no-ide` |
+| `dry_run: true` | Detect + report only, no writes (same as default behavior) |
+| `apply_ide_override` flag absent | Detect + report only, do NOT prompt user |
+| User declines remediation prompt | SKIP write, log decision in summary |
+| Project `.claude/settings*.json` does not declare `defaultMode` | INFO: report extension state but no WARN (no conflict to resolve) |
+
+**Why this phase is detection-first by default:**
+
+- IDE settings are per-IDE-vendor and per-user — auto-modifying them across machines is intrusive
+- `bypassPermissions` is a security-sensitive choice; Anthropic explicitly guarded it with `allowDangerouslySkipPermissions` for IDE contexts (intended for sandboxes without internet)
+- Users may legitimately want different modes per IDE (e.g. `acceptEdits` in Cursor for daily work, `bypassPermissions` in a separate VSCode profile for sandbox automation)
+- Aligns with the no-agent-config-modification rule from the host project memory: detection always, writes only on explicit consent
+
 ### Phase 8: Report
 
 **Status table:**
@@ -403,6 +477,12 @@ MCP Configuration:
 | context7  | HTTP      | —       | configured    | granted    | mcp.context7.com        |
 | Ref       | HTTP      | —       | configured    | granted    | api.ref.tools (key set) |
 | linear    | HTTP      | —       | skipped       | skipped    | user declined           |
+
+IDE Extension Permission Mode:
+| IDE     | Extension Version | initialPermissionMode | allowDangerouslySkipPermissions | Effective State | Conflict with project defaultMode |
+|---------|-------------------|-----------------------|---------------------------------|-----------------|-----------------------------------|
+| Cursor  | 2.1.92            | bypassPermissions     | true                            | bypass-active   | aligned                           |
+| VSCode  | (not installed)   | —                     | —                               | no-ide          | n/a                               |
 ```
 
 ---
@@ -421,6 +501,7 @@ MCP Configuration:
 10. **Verify graph-specific deps after install.** After Phase 2 registration, check system binaries for hex-line, graph-specific optional providers, and optional SCIP exporters for detected project languages. Auto-install only with user consent. Never install project runtimes or framework packages here.
 11. **Report EOL churn risk, do not hide it.** If `.gitattributes`, `.editorconfig`, or Git config suggest working-tree line-ending rewrites, warn explicitly instead of silently changing repo policy here.
 12. **Non-destructive config writes.** Always read → merge → edit. Never overwrite config files from scratch. Preserve all keys/sections not owned by this skill.
+13. **IDE extension settings are detection-first.** Phase 7b reads `claudeCode.*` keys from Cursor / VSCode user settings and reports the effective permission mode, but never writes IDE settings without `apply_ide_override=true` AND an explicit user prompt confirmation. IDE settings are vendor-specific and changing `bypassPermissions` is a security decision the user must own.
 
 ## Anti-Patterns
 
@@ -438,6 +519,9 @@ MCP Configuration:
 | Skip provider verification for hex-graph | Detect project language(s) first, then verify only relevant graph-specific providers and SCIP exporters |
 | Auto-install project/framework/runtime packages | Limit this phase to MCP-relevant graph providers and SCIP exporters, and ask user before install |
 | Overwrite entire config file with only known fields | Read existing → deep-merge only owned fields → edit back |
+| Silently flip `claudeCode.initialPermissionMode` to `bypassPermissions` because the project asked for it | Detect, WARN about the override, require `apply_ide_override=true` AND explicit user confirmation before writing IDE settings |
+| Set `initialPermissionMode = "bypassPermissions"` without also setting `allowDangerouslySkipPermissions = true` | Both keys are required together — without the gate the mode silently degrades to default |
+| Tell user to use Reload Window after changing IDE settings | Always tell user to fully Quit + reopen — extension reads settings only at activation, not on Reload Window |
 
 ---
 
@@ -450,11 +534,12 @@ MCP Configuration:
 - [ ] Hooks auto-synced after first `hex-line` startup (PreToolUse, PostToolUse, SessionStart) and `disableAllHooks: false` (Phase 3)
 - [ ] Output style installed (Phase 3)
 - [ ] Permissions granted for all configured servers (Phase 7)
+- [ ] IDE extension permission mode detected for installed Cursor / VSCode and reported with WARN if it overrides project `defaultMode` (Phase 7b). Writes only with `apply_ide_override=true` AND user consent.
 - [ ] Project allowed-tools migrated (Phase 5)
 - [ ] MCP Tool Preferences in all instruction files (Phase 6)
-- [ ] Status table with version column displayed (Phase 8)
+- [ ] Status table with version column displayed (Phase 8) including IDE extension permission mode row
 
 ---
 
-**Version:** 1.6.0
-**Last Updated:** 2026-04-05
+**Version:** 1.7.0
+**Last Updated:** 2026-04-07

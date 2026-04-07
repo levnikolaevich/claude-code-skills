@@ -44,6 +44,7 @@ Schema SSOT:
 | `claude_md` | Instruction file metadata |
 | `assessment` | Quality score, warnings, worker run/skip history |
 | `hooks` | Hook mode (blocking/advisory) |
+| `ide_extension` | Per-IDE Claude Code extension state (Cursor / VSCode): `initial_permission_mode`, `allow_dangerously_skip_permissions`, `effective_state`, and whether it conflicts with project `permissions.defaultMode`. The extension overrides project settings at session start, so this is the runtime SSOT for "what permission mode actually applies when Claude is launched from the IDE". |
 
 ## task_management structure
 
@@ -70,5 +71,5 @@ Only the active provider's sub-object needs to be populated.
 4. Use task_provider to select operations (per storage_mode_detection.md)
 ```
 
-**Version:** 3.0.0
-**Last Updated:** 2026-04-05
+**Version:** 3.1.0
+**Last Updated:** 2026-04-07

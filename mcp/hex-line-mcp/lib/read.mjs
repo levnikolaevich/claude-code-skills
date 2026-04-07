@@ -18,6 +18,13 @@ import {
 
 const DEFAULT_LIMIT = 2000;
 
+function resolveReadMode(opts = {}) {
+    const verbosity = opts.verbosity || "full";
+    const editReady = opts.editReady ?? (verbosity === "full" && opts.plain !== true);
+    const plain = opts.plain ?? (!editReady || verbosity !== "full");
+    return { verbosity, editReady, plain };
+}
+
 function parseRangeEntry(entry, total) {
     if (typeof entry === "string") {
         const match = entry.trim().match(/^(\d+)(?:-(\d*)?)?$/);
@@ -106,6 +113,33 @@ function buildReadBlock(snapshot, range, plain, remainingChars) {
     };
 }
 
+function buildPlainRange(snapshot, range, remainingChars) {
+    const lines = [];
+    let nextBudget = remainingChars;
+    let cappedAtLine = 0;
+    for (let lineNumber = range.startLine; lineNumber <= range.endLine; lineNumber++) {
+        const rendered = `${lineNumber}|${snapshot.lines[lineNumber - 1] ?? ""}`;
+        const nextCost = rendered.length + 1;
+        if (lines.length > 0 && nextBudget - nextCost < 0) {
+            cappedAtLine = lineNumber;
+            break;
+        }
+        lines.push(rendered);
+        nextBudget -= nextCost;
+    }
+    if (lines.length === 0) {
+        lines.push(`${range.startLine}|${snapshot.lines[range.startLine - 1] ?? ""}`);
+        nextBudget -= lines[0].length + 1;
+        if (range.endLine > range.startLine) cappedAtLine = range.startLine + 1;
+    }
+    return { text: lines.join("\n"), remainingChars: nextBudget, cappedAtLine };
+}
+
+function buildContinuation({ nextOffset, limit }) {
+    if (!nextOffset) return "";
+    return `continuation: {"kind":"offset","offset":${nextOffset},"limit":${limit}}\n`;
+}
+
 export function readFile(filePath, opts = {}) {
     filePath = normalizePath(filePath);
     const real = validatePath(filePath);
@@ -117,6 +151,7 @@ export function readFile(filePath, opts = {}) {
 
     const snapshot = readSnapshot(real);
     const total = snapshot.lines.length;
+    const { verbosity, editReady, plain } = resolveReadMode(opts);
 
     let requestedRanges;
     if (opts.ranges && opts.ranges.length > 0) {
@@ -127,17 +162,85 @@ export function readFile(filePath, opts = {}) {
         requestedRanges = [{ start: startLine, end: Math.min(total, startLine - 1 + maxLines) }];
     }
 
-    const blocks = [];
+    const normalizedRanges = [];
     const diagnostics = [];
-    let remainingChars = MAX_OUTPUT_CHARS;
-    let cappedAtLine = 0;
     for (const requested of requestedRanges) {
         const normalized = normalizeRange(requested, total);
-        if (normalized.type === "diagnostic_block") {
-            diagnostics.push(normalized);
-            continue;
+        if (normalized.type === "diagnostic_block") diagnostics.push(normalized);
+        else normalizedRanges.push(normalized);
+    }
+
+    const sizeText = formatSize(stat.size);
+    const ago = relativeTime(stat.mtime);
+    let meta = `${total} lines, ${sizeText}, ${ago}`;
+    const rangeForMeta = normalizedRanges.length === 1 ? normalizedRanges[0] : null;
+    if (rangeForMeta) {
+        if (rangeForMeta.startLine > 1 || rangeForMeta.endLine < total) meta += `, showing ${rangeForMeta.startLine}-${rangeForMeta.endLine}`;
+        if (rangeForMeta.endLine < total) meta += `, ${total - rangeForMeta.endLine} more below`;
+    }
+
+    let graphLine = "";
+    if (verbosity === "full") {
+        const db = getGraphDB(real);
+        const relFile = db ? getRelativePath(real) : null;
+        if (db && relFile) {
+            const visibleStart = normalizedRanges.length > 0 ? Math.min(...normalizedRanges.map(range => range.startLine)) : 1;
+            const visibleEnd = normalizedRanges.length > 0 ? Math.max(...normalizedRanges.map(range => range.endLine)) : total;
+            const annos = fileAnnotations(db, relFile, { startLine: visibleStart, endLine: visibleEnd, limit: 6 });
+            if (annos.length > 0) {
+                const items = annos.map(a => {
+                    const parts = [];
+                    if (a.is_exported) parts.push(a.is_default_export ? "default api" : "api");
+                    if ((a.framework_incoming_count || 0) > 0) {
+                        parts.push(a.framework_incoming_count === 1 ? "entrypoint" : `entrypoint ${a.framework_incoming_count}`);
+                    }
+                    if ((a.callees_exact || 0) > 0 || (a.callers_exact || 0) > 0) {
+                        parts.push(`${a.callees_exact}\u2193 ${a.callers_exact}\u2191`);
+                    }
+                    const flow = [];
+                    if ((a.incoming_flow_count || 0) > 0) flow.push(`${a.incoming_flow_count}in`);
+                    if ((a.outgoing_flow_count || 0) > 0) flow.push(`${a.outgoing_flow_count}out`);
+                    if ((a.through_flow_count || 0) > 0) flow.push(`${a.through_flow_count}thru`);
+                    if (flow.length > 0) parts.push(`flow ${flow.join(" ")}`);
+                    if ((a.clone_sibling_count || 0) > 0) parts.push(`clone ${a.clone_sibling_count}`);
+                    return parts.length > 0
+                        ? `${a.name} [${a.kind} ${parts.join(" | ")}]`
+                        : `${a.name} [${a.kind}]`;
+                });
+                graphLine = `\nGraph: ${items.join(" | ")}`;
+            }
         }
-        const built = buildReadBlock(snapshot, normalized, opts.plain, remainingChars);
+    }
+
+    if (!editReady || verbosity !== "full") {
+        const sections = [];
+        let remainingChars = MAX_OUTPUT_CHARS;
+        let cappedAtLine = 0;
+        for (const range of normalizedRanges) {
+            const built = buildPlainRange(snapshot, range, remainingChars);
+            sections.push(built.text);
+            remainingChars = built.remainingChars;
+            if (built.cappedAtLine) {
+                cappedAtLine = built.cappedAtLine;
+                break;
+            }
+        }
+        const nextOffset = cappedAtLine || (
+            rangeForMeta && rangeForMeta.endLine < total && !opts.ranges
+                ? rangeForMeta.endLine + 1
+                : 0
+        );
+        const diagnosticsText = diagnostics.map(block => serializeDiagnosticBlock(block)).join("\n\n");
+        const body = [sections.join("\n\n"), diagnosticsText].filter(Boolean).join("\n\n");
+        const revisionLine = verbosity === "compact" ? `revision: ${snapshot.revision}\n` : "";
+        return `File: ${filePath}${graphLine}\nmeta: ${meta}\n${revisionLine}${buildContinuation({ nextOffset, limit: opts.limit && opts.limit > 0 ? opts.limit : DEFAULT_LIMIT })}\n${body}`.trim();
+    }
+
+    const blocks = [];
+    let remainingChars = MAX_OUTPUT_CHARS;
+    let cappedAtLine = 0;
+    for (const range of normalizedRanges) {
+        const built = buildReadBlock(snapshot, range, plain, remainingChars);
         blocks.push(built.block);
         remainingChars = built.remainingChars;
         if (built.cappedAtLine) {
@@ -153,53 +256,8 @@ export function readFile(filePath, opts = {}) {
             break;
         }
     }
-
-    const sizeText = formatSize(stat.size);
-    const ago = relativeTime(stat.mtime);
-    let meta = `${total} lines, ${sizeText}, ${ago}`;
-    if (requestedRanges.length === 1 && blocks.length === 1) {
-        const block = blocks[0];
-        if (block.startLine > 1 || block.endLine < total) {
-            meta += `, showing ${block.startLine}-${block.endLine}`;
-        }
-        if (block.endLine < total) {
-            meta += `, ${total - block.endLine} more below`;
-        }
-    }
-
-    const db = getGraphDB(real);
-    const relFile = db ? getRelativePath(real) : null;
-    let graphLine = "";
-    if (db && relFile) {
-        const visibleStart = blocks.length > 0 ? Math.min(...blocks.map(block => block.startLine)) : 1;
-        const visibleEnd = blocks.length > 0 ? Math.max(...blocks.map(block => block.endLine)) : total;
-        const annos = fileAnnotations(db, relFile, { startLine: visibleStart, endLine: visibleEnd, limit: 6 });
-        if (annos.length > 0) {
-            const items = annos.map(a => {
-                const parts = [];
-                if (a.is_exported) parts.push(a.is_default_export ? "default api" : "api");
-                if ((a.framework_incoming_count || 0) > 0) {
-                    parts.push(a.framework_incoming_count === 1 ? "entrypoint" : `entrypoint ${a.framework_incoming_count}`);
-                }
-                if ((a.callees_exact || 0) > 0 || (a.callers_exact || 0) > 0) {
-                    parts.push(`${a.callees_exact}\u2193 ${a.callers_exact}\u2191`);
-                }
-                const flow = [];
-                if ((a.incoming_flow_count || 0) > 0) flow.push(`${a.incoming_flow_count}in`);
-                if ((a.outgoing_flow_count || 0) > 0) flow.push(`${a.outgoing_flow_count}out`);
-                if ((a.through_flow_count || 0) > 0) flow.push(`${a.through_flow_count}thru`);
-                if (flow.length > 0) parts.push(`flow ${flow.join(" ")}`);
-                if ((a.clone_sibling_count || 0) > 0) parts.push(`clone ${a.clone_sibling_count}`);
-                return parts.length > 0
-                    ? `${a.name} [${a.kind} ${parts.join(" | ")}]`
-                    : `${a.name} [${a.kind}]`;
-            });
-            graphLine = `\nGraph: ${items.join(" | ")}`;
-        }
-    }
-
     const serializedBlocks = [
-        ...blocks.map(block => serializeReadBlock(block, { plain: opts.plain })),
+        ...blocks.map(block => serializeReadBlock(block, { plain })),
         ...diagnostics.map(block => serializeDiagnosticBlock(block)),
     ];
     if (cappedAtLine && serializedBlocks.length === 0) {

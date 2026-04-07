@@ -109,6 +109,47 @@
           "description": "blocking = deny built-in tools, advisory = allow with suggestion"
         }
       }
+    },
+    "ide_extension": {
+      "type": "object",
+      "description": "Claude Code IDE extension state per IDE. Detected by ln-010 Phase 1 and refined by ln-012 Phase 7b. The extension's claudeCode.initialPermissionMode overrides project permissions.defaultMode at session start, and claudeCode.allowDangerouslySkipPermissions is the gate that must be true for bypass to actually engage.",
+      "properties": {
+        "cursor": { "$ref": "#/$defs/ide_extension_entry" },
+        "vscode": { "$ref": "#/$defs/ide_extension_entry" }
+      }
+    }
+  },
+  "$defs": {
+    "ide_extension_entry": {
+      "type": "object",
+      "properties": {
+        "installed": { "type": "boolean" },
+        "extension_version": { "type": "string", "description": "e.g. 2.1.92" },
+        "settings_path": { "type": "string", "description": "Absolute path to IDE user settings.json" },
+        "initial_permission_mode": {
+          "type": "string",
+          "enum": ["default", "acceptEdits", "plan", "bypassPermissions"],
+          "description": "Value of claudeCode.initialPermissionMode; default 'default' if absent"
+        },
+        "allow_dangerously_skip_permissions": {
+          "type": "boolean",
+          "description": "Value of claudeCode.allowDangerouslySkipPermissions; default false if absent"
+        },
+        "effective_state": {
+          "type": "string",
+          "enum": ["default-prompt", "accept-edits", "plan-only", "bypass-active", "bypass-blocked", "no-ide"],
+          "description": "Computed runtime behavior. bypass-blocked = mode is bypassPermissions but the gate is closed, so it silently degrades to default-prompt"
+        },
+        "conflict_with_project_default_mode": {
+          "type": "string",
+          "enum": ["aligned", "override", "n/a"],
+          "description": "Whether the extension state agrees with the project's permissions.defaultMode from .claude/settings.local.json. 'override' means extension wins and project setting is ignored."
+        },
+        "last_modified_by_skill": {
+          "type": "string",
+          "description": "ISO timestamp of the last ln-012 Phase 7b write, or absent if never modified"
+        }
+      }
     }
   }
 }

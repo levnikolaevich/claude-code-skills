@@ -116,7 +116,7 @@ Bundled MCP servers extend agent capabilities — hash-verified editing, code in
 Deterministic scope rule: `hex-line` and `hex-graph` keep `path` as the project anchor. In normal use the agent fills it automatically from the active file or project root, so users usually do not need to type it manually. `hex-ssh` runs on Windows/macOS/Linux hosts; remote shell tools stay POSIX-oriented, while SFTP transfers support platform-aware remote paths.
 
 <!-- GENERATED:HEX_GRAPH_MCP_STATUS:START -->
-`hex-graph-mcp` quality snapshot: `89/89` tests passing, `1` curated corpus, `1` pinned external corpora, parser-first `green`.
+`hex-graph-mcp` quality snapshot: `90/90` tests passing, `1` curated corpus, `1` pinned external corpora, parser-first `green`.
 <!-- GENERATED:HEX_GRAPH_MCP_STATUS:END -->
 
 ### External servers

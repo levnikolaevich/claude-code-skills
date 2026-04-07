@@ -31,16 +31,26 @@ function toolByName(tools, name) {
 }
 
 describe("schema descriptions", () => {
-    it("listTools preserves read_file property descriptions under Zod 4", async () => {
+    it("listTools preserves discovery-first read/search property descriptions under Zod 4", async () => {
         await withMcpClient(async (client) => {
             const result = await client.listTools();
             assert.equal(result.tools.length, 9, "hex-line exposes the compact 9-tool surface");
-            toolByName(result.tools, "inspect_path");
+            const inspectPath = toolByName(result.tools, "inspect_path");
             const readFile = toolByName(result.tools, "read_file");
-            const props = readFile.inputSchema.properties || {};
-            assert.equal(props.path?.description, "File path");
-            assert.equal(props.offset?.description, "Start line (1-indexed, default: 1)");
-            assert.equal(props.include_graph, undefined);
+            const readProps = readFile.inputSchema.properties || {};
+            assert.equal(readProps.path?.description, "File path");
+            assert.equal(readProps.offset?.description, "Start line (1-indexed, default: 1)");
+            assert.equal(readProps.verbosity?.description, "Response budget. `minimal` is discovery-first, `compact` adds revision context, `full` preserves the richest payload.");
+            assert.equal(readProps.edit_ready?.description, "Include hash/checksum edit protocol blocks explicitly. Default: false for discovery reads.");
+            assert.equal(readProps.include_graph, undefined);
+
+            const grepSearch = toolByName(result.tools, "grep_search");
+            const grepProps = grepSearch.inputSchema.properties || {};
+            assert.equal(grepProps.output?.description, "Output format (default: summary)");
+            assert.equal(grepProps.edit_ready?.description, "Preserve hash/checksum search hunks in `content` mode. Default: false.");
+
+            const inspectProps = inspectPath.inputSchema.properties || {};
+            assert.equal(inspectProps.verbosity?.description, "Response budget. `minimal` returns the shortest tree summary.");
         });
     });
 });

@@ -162,4 +162,66 @@ describe("use-case wrappers", () => {
             rmSync(dir, { recursive: true, force: true });
         }
     });
+
+    it("supports minimal progressive-disclosure payloads for architecture and workspace audit", async () => {
+        const dir = makeTempDir();
+        try {
+            mkdirSync(join(dir, "src"), { recursive: true });
+            writeFileSync(join(dir, "src", "a.ts"), [
+                "import { b } from \"./b\";",
+                "export function a() {",
+                "  return b();",
+                "}",
+                "",
+            ].join("\n"), "utf8");
+            writeFileSync(join(dir, "src", "b.ts"), [
+                "import { a } from \"./a\";",
+                "export function b() {",
+                "  return 1;",
+                "}",
+                "",
+                "export function deadExport() {",
+                "  return a();",
+                "}",
+                "",
+            ].join("\n"), "utf8");
+            writeFileSync(join(dir, "src", "dup-one.js"), [
+                "export function duplicateThing(input) {",
+                "  const trimmed = input.trim();",
+                "  if (!trimmed) return null;",
+                "  return trimmed.toUpperCase();",
+                "}",
+                "",
+            ].join("\n"), "utf8");
+            writeFileSync(join(dir, "src", "dup-two.js"), [
+                "export function duplicateOther(input) {",
+                "  const trimmed = input.trim();",
+                "  if (!trimmed) return null;",
+                "  return trimmed.toUpperCase();",
+                "}",
+                "",
+            ].join("\n"), "utf8");
+            await indexProject(dir);
+
+            const architecture = runAnalyzeArchitectureUseCase({ path: dir, verbosity: "minimal", limit: 3 });
+            assert.ok(Array.isArray(architecture.result.modules), "minimal architecture still returns module horizon");
+            assert.ok(Array.isArray(architecture.result.cycles), "minimal architecture still returns cycles");
+            assert.ok(Array.isArray(architecture.result.top_risks), "minimal architecture still returns top risks");
+            assert.equal("module_boundaries" in architecture.result, false, "minimal architecture omits boundaries");
+            assert.equal("coupling" in architecture.result, false, "minimal architecture omits coupling");
+            assert.equal("framework_surfaces" in architecture.result, false, "minimal architecture omits framework surfaces");
+            assert.equal(architecture.query.verbosity, "minimal");
+
+            const audit = runAuditWorkspaceUseCase({ path: dir, verbosity: "minimal", showSuppressed: true });
+            assert.ok(Array.isArray(audit.result.unused_exports), "minimal audit still returns visible cleanup targets");
+            assert.ok(Array.isArray(audit.result.hotspots), "minimal audit still returns hotspots");
+            assert.ok(Array.isArray(audit.result.clones), "minimal audit still returns clone groups");
+            assert.deepEqual(audit.result.uncertain_unused_exports, [], "minimal audit omits uncertain exports");
+            assert.deepEqual(audit.result.suppressed_items, [], "minimal audit omits suppressed detail");
+            assert.equal(audit.query.verbosity, "minimal");
+        } finally {
+            resolveStore(dir)?.close();
+            rmSync(dir, { recursive: true, force: true });
+        }
+    });
 });

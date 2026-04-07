@@ -3,7 +3,8 @@
  * Uses spawn with arg arrays (no shell string interpolation).
  *
  * Output modes:
- *   content (default) — edit-ready search blocks (uses rg --json)
+ *   summary — match counts, top files, and plain snippets
+ *   content — edit-ready search blocks (uses rg --json)
  *   files — file paths only (rg -l)
  *   count — match counts per file (rg -c)
  */
@@ -91,6 +92,7 @@ export function grepSearch(pattern, opts = {}) {
     const target = normPath ? resolve(normPath) : process.cwd();
     const output = opts.output || "content";
     const plain = !!opts.plain;
+    const editReady = !!opts.editReady;
     const defaultTotalLimit = output === "content"
         ? DEFAULT_TOTAL_LIMIT_CONTENT
         : DEFAULT_TOTAL_LIMIT_LIST;
@@ -99,9 +101,10 @@ export function grepSearch(pattern, opts = {}) {
         : (opts.totalLimit && opts.totalLimit > 0) ? opts.totalLimit : defaultTotalLimit;
 
     // Branch by output mode
+    if (output === "summary") return summaryMode(pattern, target, opts, totalLimit);
     if (output === "files") return filesMode(pattern, target, opts, totalLimit);
     if (output === "count") return countMode(pattern, target, opts, totalLimit);
-    return contentMode(pattern, target, opts, plain, totalLimit);
+    return contentMode(pattern, target, opts, plain, editReady, totalLimit);
 }
 
 function applyListModeTotalLimit(lines, totalLimit) {
@@ -158,11 +161,61 @@ async function countMode(pattern, target, opts, totalLimit) {
     return applyListModeTotalLimit(normalized, totalLimit);
 }
 
+async function summaryMode(pattern, target, opts, totalLimit) {
+    const realArgs = ["-n", "-H", "--no-heading", "--color", "never"];
+    if (opts.caseInsensitive) realArgs.push("-i");
+    else if (opts.smartCase) realArgs.push("-S");
+    if (opts.literal) realArgs.push("-F");
+    if (opts.multiline) realArgs.push("-U", "--multiline-dotall");
+    if (opts.glob) realArgs.push("--glob", opts.glob);
+    if (opts.type) realArgs.push("--type", opts.type);
+
+    const limit = (opts.limit && opts.limit > 0) ? opts.limit : 20;
+    realArgs.push("-m", String(limit));
+    realArgs.push("--", pattern, target);
+
+    const { stdout, code, stderr, killed } = await spawnRg(realArgs);
+    if (killed) return "GREP_OUTPUT_TRUNCATED: exceeded 10MB. Use specific glob/path.";
+    if (code === 1) return "No matches found.";
+    if (code !== 0 && code !== null) throw new Error(`GREP_ERROR: rg exit ${code} — ${stderr.trim() || "unknown error"}`);
+
+    const rawLines = stdout.trimEnd().split("\n").filter(Boolean);
+    const visible = totalLimit > 0 ? rawLines.slice(0, totalLimit) : rawLines;
+    const fileHits = new Map();
+    const snippets = [];
+
+    for (const line of visible) {
+        const match = line.match(/^(.*):(\d+):(.*)$/);
+        if (!match) continue;
+        const [, file, lineNumber, content] = match;
+        fileHits.set(file, (fileHits.get(file) || 0) + 1);
+        if (snippets.length < 3) snippets.push(`${file}:${lineNumber}: ${content.trim()}`);
+    }
+
+    const topFiles = [...fileHits.entries()]
+        .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+        .slice(0, 5);
+
+    const lines = [
+        `summary: ${rawLines.length} match event(s) across ${fileHits.size} file(s)`,
+        topFiles.length ? `top_files: ${topFiles.map(([file, count]) => `${file} (${count})`).join(", ")}` : "top_files: none",
+    ];
+    if (snippets.length > 0) {
+        lines.push("snippets:");
+        lines.push(...snippets.map((snippet) => `- ${snippet}`));
+    }
+    if (totalLimit > 0 && rawLines.length > totalLimit) {
+        lines.push(`continuation_hint: rerun grep_search with a higher total_limit or narrower path/glob to inspect ${rawLines.length - totalLimit} additional match event(s)`);
+    }
+    return lines.join("\n");
+}
+
 /**
  * content mode: rg --json — canonical search blocks.
  */
-async function contentMode(pattern, target, opts, plain, totalLimit) {
+async function contentMode(pattern, target, opts, plain, editReady, totalLimit) {
     const realArgs = ["--json"];
+    const plainOutput = plain || !editReady;
     if (opts.caseInsensitive) realArgs.push("-i");
     else if (opts.smartCase) realArgs.push("-S");
     if (opts.literal) realArgs.push("-F");
@@ -297,7 +350,7 @@ async function contentMode(pattern, target, opts, plain, totalLimit) {
                 }));
                 return blocks
                     .map(block => block.type === "edit_ready_block"
-                        ? serializeSearchBlock(block, { plain })
+                        ? serializeSearchBlock(block, { plain: plainOutput })
                         : serializeDiagnosticBlock(block))
                     .join("\n\n");
             }
@@ -313,7 +366,7 @@ async function contentMode(pattern, target, opts, plain, totalLimit) {
     let capped = false;
     for (const block of blocks) {
         const serialized = block.type === "edit_ready_block"
-            ? serializeSearchBlock(block, { plain })
+            ? serializeSearchBlock(block, { plain: plainOutput })
             : serializeDiagnosticBlock(block);
         if (parts.length > 0 && budget - serialized.length < 0) {
             capped = true;

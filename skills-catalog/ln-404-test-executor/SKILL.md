@@ -19,8 +19,8 @@ Runs a single Story final test task (label "tests") through implementation/execu
 - Enforce risk-based constraints: Priority ≥15 scenarios covered; each test passes Usefulness Criteria; no framework/DB/library/performance tests.
 - Update Linear/kanban for this task only: Todo -> In Progress -> To Review.
 
-**Hex-line acceleration (if available):** Use `outline(path)` before reading test targets. Use `inspect_path(path="tests/")` to understand test structure.
-Use `read_file()` and `edit_file()` as the primary path for test/code/config files. Use `verify()` and `changes()` before handoff. Built-in Read/Edit are fallback only when hex-line is unavailable.
+**Hex-line acceleration (if available):** Use `outline(path)` before reading test targets. Use `inspect_path(path="tests/")` to understand test structure; it is minimal by default, so only deepen when the first pass is insufficient.
+Use `read_file()` and `edit_file()` as the primary path for test/code/config files. Keep `read_file()` in discovery mode for normal inspection; use `read_file(edit_ready=true, verbosity="full")` before edits that need revision/checksum protocol. Use `verify()` and `changes()` before handoff. Built-in Read/Edit are fallback only when hex-line is unavailable.
 
 ## Inputs
 

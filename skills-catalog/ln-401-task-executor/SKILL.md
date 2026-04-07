@@ -20,7 +20,7 @@ Executes a single implementation (or refactor) task from Todo to To Review using
 - Run typecheck/lint; update docs/tests/config per task instructions.
 - Not for test tasks (label "tests" goes to ln-404-test-executor).
 
-**Hex MCP acceleration (if available):** Use `inspect_path()` and `outline(path)` before reading large code files. Use `read_file()` and `edit_file()` as the primary path for code/config/script/test files. For edits to existing code, run `index_project(path=project_root)` once and use `analyze_edit_region(...)` before non-trivial edits. After edits: `edit_file(base_revision=rev)` -> `verify(checksums)`. Before handoff: `changes()` to review diff.
+**Hex MCP acceleration (if available):** Use `inspect_path()` and `outline(path)` before reading large code files. Use `read_file()` in discovery mode for structure and targeted ranges; when you need `revision` and checksums for a follow-up edit, refresh that file with `read_file(edit_ready=true, verbosity="full")` before `edit_file()`. For edits to existing code, run `index_project(path=project_root)` once and use `analyze_edit_region(...)` before non-trivial edits. After edits: `edit_file(base_revision=rev)` -> `verify(checksums)`. Before handoff: `changes()` to review diff.
 ## Inputs
 
 | Input | Required | Source | Description |

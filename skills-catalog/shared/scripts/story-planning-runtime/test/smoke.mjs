@@ -27,6 +27,7 @@ try {
     if (!started.ok) {
         throw new Error("Failed to start story planning runtime");
     }
+    const parentRunId = started.run_id;
 
     run(["checkpoint", "--project-root", projectRoot, "--epic", "7", "--phase", PHASES.CONFIG]);
     run(["advance", "--project-root", projectRoot, "--epic", "7", "--to", PHASES.CONTEXT_ASSEMBLY]);
@@ -41,10 +42,32 @@ try {
     run(["checkpoint", "--project-root", projectRoot, "--epic", "7", "--phase", PHASES.MODE_DETECTION, "--payload", "{\"epic_group_modes\":{\"7\":\"CREATE\"}}"]);
     run(["pause", "--project-root", projectRoot, "--epic", "7", "--reason", "Preview confirmation", "--payload", "{\"kind\":\"preview_confirmation\",\"question\":\"Confirm preview?\",\"choices\":[\"confirm_preview\",\"cancel\"],\"default_choice\":\"confirm_preview\",\"context\":{\"epic_id\":\"7\"},\"resume_to_phase\":\"PHASE_6_DELEGATE\",\"blocking\":true}"]);
     run(["set-decision", "--project-root", projectRoot, "--epic", "7", "--payload", "{\"selected_choice\":\"confirm_preview\"}"]);
-    run(["record-epic", "--project-root", projectRoot, "--epic", "7", "--payload", "{\"schema_version\":\"1.0\",\"summary_kind\":\"story-plan\",\"run_id\":\"run-1\",\"identifier\":\"epic-7\",\"producer_skill\":\"ln-221\",\"produced_at\":\"2026-03-26T00:00:00Z\",\"payload\":{\"mode\":\"CREATE\",\"epic_id\":\"7\",\"stories_planned\":3,\"stories_created\":3,\"stories_updated\":0,\"stories_canceled\":0,\"story_urls\":[\"US001\",\"US002\",\"US003\"],\"warnings\":[],\"kanban_updated\":true,\"research_path_used\":\"docs/research/rsh-007-auth.md\"}}"]);
+    run(["record-epic", "--project-root", projectRoot, "--epic", "7", "--payload", "{\"schema_version\":\"1.0\",\"summary_kind\":\"story-plan-worker\",\"run_id\":\"child-ln-221-epic-7\",\"identifier\":\"epic-7\",\"producer_skill\":\"ln-221\",\"produced_at\":\"2026-03-26T00:00:00Z\",\"payload\":{\"mode\":\"CREATE\",\"epic_id\":\"7\",\"stories_planned\":3,\"stories_created\":3,\"stories_updated\":0,\"stories_canceled\":0,\"story_urls\":[\"US001\",\"US002\",\"US003\"],\"warnings\":[],\"kanban_updated\":true,\"research_path_used\":\"docs/research/rsh-007-auth.md\"}}"]);
     run(["checkpoint", "--project-root", projectRoot, "--epic", "7", "--phase", PHASES.DELEGATE]);
     run(["advance", "--project-root", projectRoot, "--epic", "7", "--to", PHASES.FINALIZE]);
     run(["checkpoint", "--project-root", projectRoot, "--epic", "7", "--phase", PHASES.FINALIZE, "--payload", "{\"final_result\":\"CREATED\",\"template_compliance_passed\":true}"]);
+    run(["record-plan-summary", "--project-root", projectRoot, "--epic", "7", "--payload", JSON.stringify({
+        schema_version: "1.0.0",
+        summary_kind: "story-plan",
+        run_id: parentRunId,
+        identifier: "epic-7",
+        producer_skill: "ln-220",
+        produced_at: "2026-04-08T00:00:00Z",
+        payload: {
+            mode: "CREATE",
+            epic_id: "7",
+            stories_planned: 3,
+            stories_created: 3,
+            stories_updated: 0,
+            stories_canceled: 0,
+            story_urls: ["US001", "US002", "US003"],
+            warnings: [],
+            kanban_updated: true,
+            research_path_used: "docs/research/rsh-007-auth.md",
+            worker_runs_completed: 1,
+            artifact_path: null,
+        },
+    })]);
     run(["advance", "--project-root", projectRoot, "--epic", "7", "--to", PHASES.SELF_CHECK]);
     run(["checkpoint", "--project-root", projectRoot, "--epic", "7", "--phase", PHASES.SELF_CHECK, "--payload", "{\"pass\":true,\"final_result\":\"CREATED\"}"]);
     const completed = run(["complete", "--project-root", projectRoot, "--epic", "7"]);

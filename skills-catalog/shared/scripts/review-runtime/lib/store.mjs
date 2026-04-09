@@ -5,12 +5,12 @@ import {
     readJsonFile,
     resolveTrackedPath,
 } from "../../coordinator-runtime/lib/core.mjs";
+import { recordCoordinatorSummaryState } from "../../planning-runtime/lib/store.mjs";
 import { REVIEW_AGENT_STATUSES } from "../../coordinator-runtime/lib/runtime-constants.mjs";
 import {
     pipelineStageCoordinatorSummarySchema,
     reviewAgentRecordSchema,
 } from "../../coordinator-runtime/lib/schemas.mjs";
-import { writeRuntimeArtifactJson } from "../../coordinator-runtime/lib/artifacts.mjs";
 import { assertSchema } from "../../coordinator-runtime/lib/validate.mjs";
 import { PHASES } from "./phases.mjs";
 
@@ -71,7 +71,10 @@ const reviewStore = createRuntimeStore({
             docs_checkpoint: null,
             merge_summary: null,
             refinement_iterations: 0,
+            refinement_exit_reason: null,
+            refinement_applied: 0,
             self_check_passed: false,
+            processes_verified_dead: false,
             final_result: null,
             final_verdict: null,
             agents: {},
@@ -129,30 +132,16 @@ export function registerAgent(projectRoot, runId, agentRecord) {
 }
 
 export function recordStageSummary(projectRoot, runId, summary) {
-    const run = loadRun(projectRoot, runId);
-    if (!run) {
-        return { ok: false, error: "Run not found" };
-    }
-    if (summary?.run_id !== runId) {
-        return { ok: false, error: `Stage summary run_id must match runtime run_id (${runId})` };
-    }
-    const validation = assertSchema(pipelineStageCoordinatorSummarySchema, summary, "pipeline stage coordinator summary");
-    if (!validation.ok) {
-        return validation;
-    }
-    return updateState(projectRoot, runId, state => {
-        const artifactIdentifier = `${summary.identifier}-stage-${summary.payload.stage}`;
-        const artifactPath = writeRuntimeArtifactJson(projectRoot, runId, summary.summary_kind, artifactIdentifier, summary);
-        return {
-            ...state,
-            stage_summary: {
-                ...summary,
-                payload: {
-                    ...summary.payload,
-                    artifact_path: artifactPath,
-                },
-            },
-        };
+    return recordCoordinatorSummaryState({
+        projectRoot,
+        runId,
+        summary,
+        schema: pipelineStageCoordinatorSummarySchema,
+        label: "pipeline stage coordinator summary",
+        stateKey: "stage_summary",
+        loadRun,
+        updateState,
+        artifactIdentifier: nextSummary => `${nextSummary.identifier}-stage-${nextSummary.payload.stage}`,
     });
 }
 

@@ -29,6 +29,7 @@ Runtime contract for `ln-300`.
 - `plan_result`
 - `child_run`
 - `verification_summary`
+- `template_compliance_passed`
 - `final_result`
 - `self_check_passed`
 - `pending_decision`
@@ -38,12 +39,13 @@ Runtime contract for `ln-300`.
 - No transition without current-phase checkpoint.
 - `PHASE_2_DECOMPOSE` requires `discovery_ready`.
 - `PHASE_3_READINESS_GATE` requires `ideal_plan_summary`.
+- `PHASE_3_READINESS_GATE` always runs deterministic local scoring first. External traceability validation is conditional and should run only for borderline or ambiguous plans.
 - `PHASE_4_MODE_DETECTION` requires `readiness_score`.
 - `readiness_score < 4` blocks the run.
 - `readiness_score` `4-5` requires a resolved approval decision before mode detection.
 - `PHASE_5_DELEGATE` requires `mode_detection`.
 - `PHASE_6_VERIFY` requires task-plan worker summary.
-- `PHASE_7_SELF_CHECK` requires `verification_summary`.
+- `PHASE_7_SELF_CHECK` requires `verification_summary` and `template_compliance_passed`.
 - `DONE` requires `self_check_passed` and `final_result`.
 
 ## Pending Decisions
@@ -58,6 +60,12 @@ Use shared `pending_decision` schema for:
 Workers stay standalone-capable, but coordinator-invoked runs must pass both `runId` and `summaryArtifactPath`.
 Every `task-plan` summary uses the shared envelope with mandatory `run_id`; standalone workers generate one when the caller does not pass `runId`.
 The runtime may checkpoint child task-plan worker metadata in `child_run`, but phase advancement still depends on the final `task-plan` artifact.
+
+## Verification Semantics
+
+- Phase 6 verifies the resulting task set, not the decomposition logic itself.
+- `template_compliance_passed` is recorded only after every created/updated task body passes `validateTemplateCompliance(..., "task")`.
+- High-confidence plans should reach delegation without an approval pause; borderline plans must pause before mode detection.
 
 Managed delegation sequence:
 1. compute deterministic child `runId`

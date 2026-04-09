@@ -1,5 +1,8 @@
 import { resolve } from "node:path";
-import { storyPlanWorkerSummarySchema } from "../../coordinator-runtime/lib/schemas.mjs";
+import {
+    storyPlanCoordinatorSummarySchema,
+    storyPlanWorkerSummarySchema,
+} from "../../coordinator-runtime/lib/schemas.mjs";
 import {
     createPlanningManifestSchema,
     createPlanningRuntimeStore,
@@ -33,6 +36,7 @@ const storyPlanningStore = createPlanningRuntimeStore({
             routing_summary: null,
             epic_group_modes: {},
             epic_results: {},
+            story_plan_summary: null,
         });
     },
     pausedPhase: PHASES.PAUSED,
@@ -70,5 +74,16 @@ export function recordEpic(projectRoot, runId, summary) {
                 [nextSummary.payload.epic_id]: nextSummary,
             },
         }),
+    );
+}
+
+export function recordPlanSummary(projectRoot, runId, summary) {
+    return storyPlanningStore.recordCoordinatorSummary(
+        projectRoot,
+        runId,
+        summary,
+        storyPlanCoordinatorSummarySchema,
+        "story planning coordinator summary",
+        "story_plan_summary",
     );
 }

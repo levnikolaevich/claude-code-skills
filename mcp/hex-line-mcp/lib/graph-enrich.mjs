@@ -13,7 +13,7 @@
  * enrichment is disabled silently for that project.
  */
 
-import { existsSync } from "node:fs";
+import { existsSync, statSync } from "node:fs";
 import { join, dirname, relative } from "node:path";
 import { createRequire } from "node:module";
 
@@ -40,6 +40,20 @@ const FACT_PRIORITY = new Map([
 
 const _dbs = new Map();
 let _driverUnavailable = false;
+let _reindexUnavailable = false;
+let _reindexLoader = null;
+const _pendingRefreshes = new Map();
+const _pendingProjectRefreshes = new Map();
+const _freshnessCache = new Map();
+const _projectRefreshWindows = new Map();
+const _graphRefreshStats = {
+    staleSuppressions: 0,
+    fileRefreshScheduled: 0,
+    fileRefreshCompleted: 0,
+    projectRefreshThresholdHits: 0,
+    projectRefreshScheduled: 0,
+    projectRefreshCompleted: 0,
+};
 // Safety cap for parent-directory traversal while resolving the nearest project boundary.
 const MAX_PROJECT_ROOT_ASCENT = 25;
 const PROJECT_BOUNDARY_MARKERS = [
@@ -53,8 +67,12 @@ const PROJECT_BOUNDARY_MARKERS = [
     "deno.jsonc",
     ".git",
 ];
+const FRESHNESS_TOLERANCE_MS = 1;
+const FRESHNESS_CACHE_TTL_MS = 1_000;
+const PROJECT_REFRESH_THRESHOLD = 3;
+const PROJECT_REFRESH_WINDOW_MS = 2_000;
 
-export function getGraphDB(filePath) {
+export function getGraphDB(filePath, { allowStale = false } = {}) {
     if (_driverUnavailable) return null;
 
     try {
@@ -63,7 +81,13 @@ export function getGraphDB(filePath) {
 
         const dbPath = join(projectRoot, ".hex-skills/codegraph", "index.db");
         if (!existsSync(dbPath)) return null;
-        if (_dbs.has(dbPath)) return _dbs.get(dbPath);
+        if (_dbs.has(dbPath)) {
+            const cached = _dbs.get(dbPath);
+            if (isFilePathFresh(cached, projectRoot, filePath)) return cached;
+            if (allowStale) return cached;
+            _graphRefreshStats.staleSuppressions++;
+            return null;
+        }
 
         const require = createRequire(import.meta.url);
         const Database = require("better-sqlite3");
@@ -73,7 +97,10 @@ export function getGraphDB(filePath) {
             return null;
         }
         _dbs.set(dbPath, db);
-        return db;
+        if (isFilePathFresh(db, projectRoot, filePath)) return db;
+        if (allowStale) return db;
+        _graphRefreshStats.staleSuppressions++;
+        return null;
     } catch {
         _driverUnavailable = true;
         return null;
@@ -85,7 +112,38 @@ export function _resetGraphDBCache() {
         try { db.close(); } catch { /* ignore */ }
     }
     _dbs.clear();
+    _freshnessCache.clear();
+    _pendingRefreshes.clear();
+    _pendingProjectRefreshes.clear();
+    _projectRefreshWindows.clear();
     _driverUnavailable = false;
+    _reindexUnavailable = false;
+    _reindexLoader = null;
+}
+
+export function _resetGraphRefreshStats() {
+    _graphRefreshStats.staleSuppressions = 0;
+    _graphRefreshStats.fileRefreshScheduled = 0;
+    _graphRefreshStats.fileRefreshCompleted = 0;
+    _graphRefreshStats.projectRefreshThresholdHits = 0;
+    _graphRefreshStats.projectRefreshScheduled = 0;
+    _graphRefreshStats.projectRefreshCompleted = 0;
+}
+
+export async function _waitForPendingGraphRefreshes() {
+    await Promise.allSettled([
+        ..._pendingRefreshes.values(),
+        ..._pendingProjectRefreshes.values(),
+    ]);
+}
+
+export function _graphRefreshDebugState() {
+    return {
+        fileRefreshCount: _pendingRefreshes.size,
+        projectRefreshCount: _pendingProjectRefreshes.size,
+        staleProjectCount: _projectRefreshWindows.size,
+        stats: { ..._graphRefreshStats },
+    };
 }
 
 function validateContract(db) {
@@ -128,6 +186,39 @@ function compactSymbolCounts(node) {
     return parts;
 }
 
+function lineFactLabel(fact) {
+    switch (fact.fact_kind) {
+    case "public_api":
+        return "api";
+    case "framework_entrypoint":
+        return fact.related_display_name ? `entry:${fact.related_display_name}` : "entry";
+    case "definition":
+        return shortKind(fact.kind);
+    case "callee":
+        return fact.related_display_name ? `callee:${fact.related_display_name}` : "callee";
+    case "caller":
+        return fact.related_display_name ? `caller:${fact.related_display_name}` : "caller";
+    case "outgoing_flow":
+        return `flow-out:${fact.target_anchor_kind || "?"}`;
+    case "incoming_flow":
+        return `flow-in:${fact.target_anchor_kind || "?"}`;
+    case "through_flow":
+        return "flow-through";
+    case "clone":
+        return "clone";
+    case "hotspot":
+        return "hotspot";
+    default:
+        return fact.fact_kind;
+    }
+}
+
+function formatLineFact(fact, { includeCounts = true } = {}) {
+    const countParts = includeCounts ? compactSymbolCounts(fact) : [];
+    const suffix = countParts.length > 0 ? ` | ${countParts.join(" | ")}` : "";
+    return `[${lineFactLabel(fact)}${suffix}]`;
+}
+
 export function symbolAnnotation(db, file, name) {
     try {
         const node = db.prepare(
@@ -143,6 +234,19 @@ export function symbolAnnotation(db, file, name) {
         return parts.length > 0 ? `[${prefix} ${parts.join(" | ")}]` : `[${prefix}]`;
     } catch {
         return null;
+    }
+}
+
+export function ensureGraphFreshForFile(db, absoluteFilePath) {
+    if (!db) return false;
+    try {
+        const projectRoot = findProjectRoot(absoluteFilePath);
+        if (!projectRoot) return true;
+        const fresh = isFilePathFresh(db, projectRoot, absoluteFilePath);
+        if (!fresh) _graphRefreshStats.staleSuppressions++;
+        return fresh;
+    } catch {
+        return true;
     }
 }
 
@@ -188,35 +292,6 @@ export function fileAnnotations(db, file, { startLine = null, endLine = null, li
     }
 }
 
-function formatLineFact(fact) {
-    const countParts = compactSymbolCounts(fact);
-    const suffix = countParts.length > 0 ? ` | ${countParts.join(" | ")}` : "";
-    switch (fact.fact_kind) {
-    case "public_api":
-        return `[api${suffix}]`;
-    case "framework_entrypoint":
-        return fact.related_display_name ? `[entry:${fact.related_display_name}${suffix}]` : `[entry${suffix}]`;
-    case "definition":
-        return `[${shortKind(fact.kind)}${suffix}]`;
-    case "callee":
-        return fact.related_display_name ? `[callee:${fact.related_display_name}${suffix}]` : `[callee${suffix}]`;
-    case "caller":
-        return fact.related_display_name ? `[caller:${fact.related_display_name}${suffix}]` : `[caller${suffix}]`;
-    case "outgoing_flow":
-        return `[flow-out:${fact.target_anchor_kind || "?"}${suffix}]`;
-    case "incoming_flow":
-        return `[flow-in:${fact.target_anchor_kind || "?"}${suffix}]`;
-    case "through_flow":
-        return `[flow-through${suffix}]`;
-    case "clone":
-        return `[clone${suffix}]`;
-    case "hotspot":
-        return `[hotspot${suffix}]`;
-    default:
-        return `[${fact.fact_kind}${suffix}]`;
-    }
-}
-
 function priorityForFact(factKind) {
     return FACT_PRIORITY.get(factKind) ?? 99;
 }
@@ -246,10 +321,14 @@ export function matchAnnotation(db, file, line) {
         facts.sort((left, right) => priorityForFact(left.fact_kind) - priorityForFact(right.fact_kind));
         const labels = [];
         const seenKinds = new Set();
+        const seenCountKeys = new Set();
         for (const fact of facts) {
             if (seenKinds.has(fact.fact_kind)) continue;
             seenKinds.add(fact.fact_kind);
-            labels.push(formatLineFact(fact));
+            const countKey = compactSymbolCounts(fact).join("|");
+            const includeCounts = countKey.length > 0 && !seenCountKeys.has(countKey);
+            if (includeCounts) seenCountKeys.add(countKey);
+            labels.push(formatLineFact(fact, { includeCounts }));
             if (labels.length >= 3) break;
         }
         return labels.join(" ");
@@ -379,4 +458,152 @@ function findProjectRoot(filePath) {
         dir = parent;
     }
     return null;
+}
+
+function freshnessCacheKey(projectRoot, relativeFile) {
+    return `${projectRoot}:${relativeFile}`;
+}
+
+function normalizeRelativeFile(projectRoot, filePath) {
+    const relFile = relative(projectRoot, filePath).replace(/\\/g, "/");
+    if (!relFile || relFile.startsWith("..")) return null;
+    return relFile;
+}
+
+function lookupIndexedMtime(db, relativeFile) {
+    try {
+        const row = db.prepare("SELECT mtime FROM files WHERE path = ? LIMIT 1").get(relativeFile);
+        return row?.mtime ?? null;
+    } catch {
+        return null;
+    }
+}
+
+function isFilePathFresh(db, projectRoot, filePath) {
+    let stat;
+    try {
+        stat = statSync(filePath);
+    } catch {
+        return false;
+    }
+    if (!stat.isFile()) return true;
+
+    const relativeFile = normalizeRelativeFile(projectRoot, filePath);
+    if (!relativeFile) return true;
+
+    const cacheKey = freshnessCacheKey(projectRoot, relativeFile);
+    const cached = _freshnessCache.get(cacheKey);
+    if (
+        cached
+        && (Date.now() - cached.checkedAt) < FRESHNESS_CACHE_TTL_MS
+        && Math.abs(cached.actualMtime - stat.mtimeMs) < FRESHNESS_TOLERANCE_MS
+    ) {
+        return cached.fresh;
+    }
+
+    const indexedMtime = lookupIndexedMtime(db, relativeFile);
+    const fresh = indexedMtime !== null && Math.abs(indexedMtime - stat.mtimeMs) < FRESHNESS_TOLERANCE_MS;
+    _freshnessCache.set(cacheKey, {
+        checkedAt: Date.now(),
+        actualMtime: stat.mtimeMs,
+        indexedMtime,
+        fresh,
+    });
+    if (!fresh) scheduleGraphRefresh(projectRoot, relativeFile, cacheKey);
+    return fresh;
+}
+
+function scheduleGraphRefresh(projectRoot, relativeFile, cacheKey) {
+    if (_reindexUnavailable || _pendingRefreshes.has(cacheKey)) return;
+    const triggeredProjectRefresh = recordStaleFile(projectRoot, relativeFile);
+    if (triggeredProjectRefresh) {
+        _graphRefreshStats.projectRefreshThresholdHits++;
+        scheduleProjectGraphRefresh(projectRoot);
+    }
+    if (_pendingProjectRefreshes.has(projectRoot) && !triggeredProjectRefresh) return;
+    const refresh = (async () => {
+        const indexer = await loadGraphIndexer();
+        if (!indexer?.reindexFile) return;
+        try {
+            await indexer.reindexFile(projectRoot, relativeFile);
+        } catch {
+            // Best-effort only: stale graph must never block hex-line.
+        } finally {
+            clearProjectDBCache(projectRoot);
+            _freshnessCache.delete(cacheKey);
+            _graphRefreshStats.fileRefreshCompleted++;
+        }
+    })();
+    _graphRefreshStats.fileRefreshScheduled++;
+    _pendingRefreshes.set(cacheKey, refresh);
+    void refresh.finally(() => {
+        _pendingRefreshes.delete(cacheKey);
+    });
+}
+
+function recordStaleFile(projectRoot, relativeFile) {
+    const now = Date.now();
+    let windowState = _projectRefreshWindows.get(projectRoot);
+    if (!windowState || (now - windowState.startedAt) > PROJECT_REFRESH_WINDOW_MS) {
+        windowState = { startedAt: now, files: new Set() };
+        _projectRefreshWindows.set(projectRoot, windowState);
+    }
+    windowState.files.add(relativeFile);
+    return windowState.files.size >= PROJECT_REFRESH_THRESHOLD;
+}
+
+function clearProjectFreshness(projectRoot) {
+    const prefix = `${projectRoot}::`;
+    for (const key of _freshnessCache.keys()) {
+        if (key.startsWith(prefix)) _freshnessCache.delete(key);
+    }
+}
+
+function clearProjectDBCache(projectRoot) {
+    const dbPath = join(projectRoot, ".hex-skills/codegraph", "index.db");
+    const db = _dbs.get(dbPath);
+    if (!db) return;
+    try { db.close(); } catch { /* ignore */ }
+    _dbs.delete(dbPath);
+}
+
+function scheduleProjectGraphRefresh(projectRoot) {
+    if (_reindexUnavailable || _pendingProjectRefreshes.has(projectRoot)) return;
+    const refresh = (async () => {
+        const indexer = await loadGraphIndexer();
+        if (!indexer?.indexProject) return;
+        try {
+            await indexer.indexProject(projectRoot);
+        } catch {
+            // Best-effort only: stale graph must never block hex-line.
+        } finally {
+            clearProjectDBCache(projectRoot);
+            clearProjectFreshness(projectRoot);
+            _projectRefreshWindows.delete(projectRoot);
+            _graphRefreshStats.projectRefreshCompleted++;
+        }
+    })();
+    _graphRefreshStats.projectRefreshScheduled++;
+    _pendingProjectRefreshes.set(projectRoot, refresh);
+    void refresh.finally(() => {
+        _pendingProjectRefreshes.delete(projectRoot);
+    });
+}
+
+async function loadGraphIndexer() {
+    if (_reindexUnavailable) return null;
+    if (_reindexLoader) return _reindexLoader;
+    _reindexLoader = (async () => {
+        try {
+            const mod = await import(new URL("../../hex-graph-mcp/lib/indexer.mjs", import.meta.url));
+            const reindexFile = typeof mod.reindexFile === "function" ? mod.reindexFile : null;
+            const indexProject = typeof mod.indexProject === "function" ? mod.indexProject : null;
+            if (reindexFile || indexProject) return { reindexFile, indexProject };
+        } catch {
+            // Fallback below.
+        }
+        _reindexUnavailable = true;
+        return null;
+    })();
+    return _reindexLoader;
 }

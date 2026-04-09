@@ -56,8 +56,8 @@ Legacy aliases are invalid. Use `PHASE_7_REFINEMENT`; `PHASE_6_REFINE` and `PHAS
 
 Mode rules:
 - `story`: all phases required
-- `plan_review`: Phase 4, 5 and 8 must be checkpointed as `skipped_by_mode`
-- `context`: Phase 4, 5 and 8 must be checkpointed as `skipped_by_mode`
+- `plan_review`: Phase 4, 5 and 8 must be checkpointed as `skipped_by_mode` and advanced immediately once the phase is reached
+- `context`: Phase 4, 5 and 8 must be checkpointed as `skipped_by_mode` and advanced immediately once the phase is reached
 
 ## Agent Status Contract
 
@@ -92,7 +92,10 @@ Required fields in `state.json`:
 - `docs_checkpoint`
 - `merge_summary`
 - `refinement_iterations`
+- `refinement_exit_reason`
+- `refinement_applied`
 - `self_check_passed`
+- `processes_verified_dead`
 - `final_result`
 - `final_verdict`
 - `agents`
@@ -119,6 +122,7 @@ Per-agent fields:
 - `PHASE_3_RESEARCH -> PHASE_4_DOCS` always. `PHASE_4_DOCS -> PHASE_5_AUTOFIX/PHASE_6_MERGE` requires `docs_checkpoint` in state (story mode).
 - `PHASE_6_MERGE` is blocked until all required agents are resolved.
 - `PHASE_7_REFINEMENT` requires a merge summary.
+- `PHASE_7_REFINEMENT` may exit with `CONVERGED_LOW_IMPACT` after a single executed iteration when no high-severity fixes remain.
 
 ## Coordinator Stage Summary
 
@@ -157,5 +161,9 @@ Deterministic sync depends on:
 - `--metadata-file` for launch/finish metadata
 - result file existence
 - stored `pid` for dead-vs-alive resolution
+
+No-agent path:
+- `agents_available = 0` is valid only when `agents_skipped_reason` is recorded in Phase 2.
+- In that path the runtime skips launch bookkeeping and proceeds directly into research after the Phase 2 checkpoint.
 
 Runtime is the source of truth for orchestration state. Prompt/result/log files remain the audit trail.

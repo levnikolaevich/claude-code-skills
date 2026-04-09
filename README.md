@@ -116,7 +116,7 @@ Bundled MCP servers extend agent capabilities — hash-verified editing, code in
 Deterministic scope rule: `hex-line` and `hex-graph` keep `path` as the project anchor. In normal use the agent fills it automatically from the active file or project root, so users usually do not need to type it manually. `hex-ssh` runs on Windows/macOS/Linux hosts; remote shell tools stay POSIX-oriented, while SFTP transfers support platform-aware remote paths.
 
 <!-- GENERATED:HEX_GRAPH_MCP_STATUS:START -->
-`hex-graph-mcp` quality snapshot: `90/90` tests passing, `1` curated corpus, `1` pinned external corpora, parser-first `green`.
+`hex-graph-mcp` quality snapshot: `92/92` tests passing, `1` curated corpus, `1` pinned external corpora, parser-first `green`.
 <!-- GENERATED:HEX_GRAPH_MCP_STATUS:END -->
 
 ### External servers
@@ -555,7 +555,7 @@ claude-code-skills/                      # MARKETPLACE
 |   |-- ln-830-code-modernization-coordinator/       # Code modernization:
 |   |   |-- ln-831-oss-replacer/             # Replace custom code with OSS packages
 |   |   |-- ln-832-bundle-optimizer/         # JS/TS bundle size reduction
-|   |-- ln-840-benchmark-compare/           # A/B comparison: built-in vs hex-line tools
+|   |-- ln-840-benchmark-compare/           # Canonical internal A/B: built-in vs hex-line, plus optional third Claude-compatible profile
 |
 |  └──────────────────────────────────────────────┘
 |  ┌─ Plugin: community-engagement ───────────────┐

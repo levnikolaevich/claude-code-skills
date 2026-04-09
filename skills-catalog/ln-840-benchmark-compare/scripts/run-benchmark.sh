@@ -14,6 +14,11 @@ DATE=$(date +%Y-%m-%d)
 BENCH_DIR="${BENCH_DIR:-d:/tmp}"
 PROMPTS_DIR="$RESULTS_DIR/.prompts-$DATE"
 MANIFEST_PATH="$PROMPTS_DIR/manifest.json"
+EXTRA_SESSION_ID="${EXTRA_SESSION_ID:-}"
+EXTRA_SESSION_LABEL="${EXTRA_SESSION_LABEL:-$EXTRA_SESSION_ID}"
+EXTRA_MCP_CONFIG="${EXTRA_MCP_CONFIG:-}"
+EXTRA_SETTINGS="${EXTRA_SETTINGS:-}"
+EXTRA_STRICT_MCP_CONFIG="${EXTRA_STRICT_MCP_CONFIG:-false}"
 
 mkdir -p "$RESULTS_DIR"
 
@@ -107,6 +112,9 @@ fi
 echo "Goals: $GOALS"
 echo "Expectations: $EXPECTATIONS"
 echo "Results: $RESULTS_DIR"
+if [ -n "$EXTRA_SESSION_ID" ]; then
+  echo "Extra session: $EXTRA_SESSION_LABEL ($EXTRA_SESSION_ID)"
+fi
 
 mkdir -p "$PROMPTS_DIR"
 node "$SCRIPT_DIR/extract-scenarios.mjs" "$GOALS" "$EXPECTATIONS" "$PROMPTS_DIR" > "$MANIFEST_PATH"
@@ -122,17 +130,30 @@ for row in "${SCENARIOS[@]}"; do
   IFS='|' read -r SCENARIO_ID PROMPT_FILE SCENARIO_TITLE <<< "$row"
   BUILTIN_WT="$BENCH_DIR/bench-${SCENARIO_ID}-builtin"
   HEXLINE_WT="$BENCH_DIR/bench-${SCENARIO_ID}-hexline"
+  EXTRA_WT="$BENCH_DIR/bench-${SCENARIO_ID}-${EXTRA_SESSION_ID}"
 
   echo ""
   echo "=== Scenario: $SCENARIO_TITLE ($SCENARIO_ID) ==="
   cleanup_worktree "$BUILTIN_WT"
   cleanup_worktree "$HEXLINE_WT"
+  if [ -n "$EXTRA_SESSION_ID" ]; then
+    cleanup_worktree "$EXTRA_WT"
+  fi
   git -C "$REPO_ROOT" worktree add "$BUILTIN_WT" HEAD >/dev/null
   git -C "$REPO_ROOT" worktree add "$HEXLINE_WT" HEAD >/dev/null
+  if [ -n "$EXTRA_SESSION_ID" ]; then
+    git -C "$REPO_ROOT" worktree add "$EXTRA_WT" HEAD >/dev/null
+  fi
   sync_current_tree "$BUILTIN_WT"
   sync_current_tree "$HEXLINE_WT"
+  if [ -n "$EXTRA_SESSION_ID" ]; then
+    sync_current_tree "$EXTRA_WT"
+  fi
   checkpoint_worktree "$BUILTIN_WT"
   checkpoint_worktree "$HEXLINE_WT"
+  if [ -n "$EXTRA_SESSION_ID" ]; then
+    checkpoint_worktree "$EXTRA_WT"
+  fi
 
   (
     cd "$BUILTIN_WT/mcp/hex-line-mcp"
@@ -162,16 +183,55 @@ for row in "${SCENARIOS[@]}"; do
   ) &
   PID_B=$!
 
+  if [ -n "$EXTRA_SESSION_ID" ]; then
+    (
+      cd "$EXTRA_WT/mcp/hex-line-mcp"
+      EXTRA_ARGS=(
+        -p
+        --verbose
+        --dangerously-skip-permissions
+        --output-format stream-json
+        --max-turns 50
+      )
+      if [ -n "$EXTRA_MCP_CONFIG" ]; then
+        EXTRA_ARGS+=(--mcp-config "$EXTRA_MCP_CONFIG")
+      fi
+      if [ "$EXTRA_STRICT_MCP_CONFIG" = "true" ]; then
+        EXTRA_ARGS+=(--strict-mcp-config)
+      fi
+      if [ -n "$EXTRA_SETTINGS" ]; then
+        EXTRA_ARGS+=(--settings "$EXTRA_SETTINGS")
+      fi
+      claude "${EXTRA_ARGS[@]}" \
+        < "$PROMPT_FILE" \
+        > "$RESULTS_DIR/${DATE}-${SCENARIO_ID}-${EXTRA_SESSION_ID}.jsonl" 2>&1
+    ) &
+    PID_C=$!
+  fi
+
   set +e
   wait $PID_A; STATUS_A=$?
   wait $PID_B; STATUS_B=$?
+  if [ -n "$EXTRA_SESSION_ID" ]; then
+    wait $PID_C; STATUS_C=$?
+  fi
   set -e
-  echo "Built-in exit: $STATUS_A | Hex-line exit: $STATUS_B"
+  if [ -n "$EXTRA_SESSION_ID" ]; then
+    echo "Built-in exit: $STATUS_A | Hex-line exit: $STATUS_B | $EXTRA_SESSION_LABEL exit: $STATUS_C"
+  else
+    echo "Built-in exit: $STATUS_A | Hex-line exit: $STATUS_B"
+  fi
 
   git -C "$BUILTIN_WT" diff --no-ext-diff --stat --patch > "$RESULTS_DIR/${DATE}-${SCENARIO_ID}-builtin.diff.txt" || true
   git -C "$HEXLINE_WT" diff --no-ext-diff --stat --patch > "$RESULTS_DIR/${DATE}-${SCENARIO_ID}-hexline.diff.txt" || true
+  if [ -n "$EXTRA_SESSION_ID" ]; then
+    git -C "$EXTRA_WT" diff --no-ext-diff --stat --patch > "$RESULTS_DIR/${DATE}-${SCENARIO_ID}-${EXTRA_SESSION_ID}.diff.txt" || true
+  fi
   cleanup_worktree "$BUILTIN_WT"
   cleanup_worktree "$HEXLINE_WT"
+  if [ -n "$EXTRA_SESSION_ID" ]; then
+    cleanup_worktree "$EXTRA_WT"
+  fi
 done
 
 echo ""
@@ -180,7 +240,9 @@ node "$SCRIPT_DIR/parse-results.mjs" \
   "$RESULTS_DIR" \
   "$EXPECTATIONS" \
   "$DATE" \
-  "$RESULTS_DIR/${DATE}-comparison.md"
+  "$RESULTS_DIR/${DATE}-comparison.md" \
+  "$EXTRA_SESSION_ID" \
+  "$EXTRA_SESSION_LABEL"
 
 echo ""
 echo "=== Done ==="

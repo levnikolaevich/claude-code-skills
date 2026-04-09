@@ -1,4 +1,5 @@
 import { resolve } from "node:path";
+import { epicPlanCoordinatorSummarySchema } from "../../coordinator-runtime/lib/schemas.mjs";
 import {
     createPlanningManifestSchema,
     createPlanningRuntimeStore,
@@ -29,6 +30,7 @@ const epicStore = createPlanningRuntimeStore({
             research_summary: null,
             ideal_plan_summary: null,
             mode_detection: null,
+            epic_plan_summary: null,
         });
     },
     pausedPhase: PHASES.PAUSED,
@@ -50,3 +52,14 @@ export const {
     setPendingDecision,
     startRun,
 } = epicStore;
+
+export function recordPlanSummary(projectRoot, runId, summary) {
+    return epicStore.recordCoordinatorSummary(
+        projectRoot,
+        runId,
+        summary,
+        epicPlanCoordinatorSummarySchema,
+        "epic planning coordinator summary",
+        "epic_plan_summary",
+    );
+}

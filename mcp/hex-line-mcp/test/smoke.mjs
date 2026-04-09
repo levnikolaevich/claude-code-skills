@@ -828,6 +828,10 @@ describe("graph enrichment", () => {
             assert.ok(grepResult.includes("[fn"), "grep match annotated via line facts");
             assert.ok(grepResult.includes("1↑"), "grep match annotation includes caller count");
             assert.ok(grepResult.includes("[api"), "grep match annotation includes public API marker");
+            assert.ok(grepResult.includes("[api | 0↓ 1↑ | flow 1out] [fn]"), "grep annotations suppress duplicate count suffixes");
+
+            const discoveryGrep = await grepSearch("export function foo", { path: join(repo, "a.mjs"), output: "content" });
+            assert.ok(!discoveryGrep.includes("[fn"), "discovery grep skips graph annotations");
 
             const anchor = `${lineTag(fnv1a("export function foo() {"))}.1`;
             const editResult = editFile(join(repo, "a.mjs"), [
@@ -837,8 +841,100 @@ describe("graph enrichment", () => {
             assert.ok(editResult.includes("Semantic impact:"), "Edit reports semantic impact");
             assert.ok(editResult.includes("external callers"), "Semantic impact includes caller totals");
             assert.ok(editResult.includes("return_flow_to_symbol: run (b.mjs:2)"), "Semantic impact names concrete downstream fact");
+            assert.ok(editResult.includes("graph_enrichment: available"), "Edit advertises graph enrichment state");
+            assert.ok(editResult.includes("semantic_impact_count:"), "Edit exposes semantic impact count");
+            assert.ok(editResult.includes("semantic_fact_count:"), "Edit exposes semantic fact count");
+            assert.ok(editResult.includes("payload_sections:"), "Edit exposes payload section preview");
+            assert.ok(editResult.includes("provenance_summary: edit_protocol=snapshot+anchors graph=hex_line_contract"), "Edit exposes provenance summary");
         } finally {
             _resetGraphDBCache();
+            await closeGraphRepo(repo);
+            fs.rmSync(repo, { recursive: true, force: true });
+        }
+    });
+
+    it("suppresses stale graph hints, triggers background refresh, and restores them on the next call", { skip: !HAS_GRAPH_SQLITE }, async () => {
+        const { readFile } = await import("../lib/read.mjs");
+        const {
+            _resetGraphDBCache,
+            _waitForPendingGraphRefreshes,
+        } = await import("../lib/graph-enrich.mjs");
+        const repo = makeTempRepo("hex-line-graph-refresh-", {
+            "a.mjs": "export function foo() {\n  return 1;\n}\n",
+            "b.mjs": "import { foo } from \"./a.mjs\";\nexport function run() {\n  return foo();\n}\n",
+        });
+        try {
+            await indexGraphRepo(repo);
+            _resetGraphDBCache();
+
+            const freshRead = readFile(join(repo, "a.mjs"));
+            assert.ok(freshRead.includes("\nGraph:"), "Fresh graph header is present before file drift");
+
+            await new Promise((resolve) => setTimeout(resolve, 20));
+            fs.writeFileSync(join(repo, "a.mjs"), "export function foo() {\n  return 2;\n}\n");
+
+            const staleRead = readFile(join(repo, "a.mjs"));
+            assert.ok(!staleRead.includes("\nGraph:"), "Stale graph hints are suppressed while refresh is pending");
+            assert.ok(staleRead.includes("return 2;"), "Read still returns fresh file content");
+
+            await _waitForPendingGraphRefreshes();
+
+            const refreshedRead = readFile(join(repo, "a.mjs"));
+            assert.ok(refreshedRead.includes("\nGraph:"), "Graph header returns after background refresh");
+            assert.ok(refreshedRead.includes("foo [function"), "Refreshed graph context still exposes symbol summary");
+        } finally {
+            _resetGraphDBCache();
+            await closeGraphRepo(repo);
+            fs.rmSync(repo, { recursive: true, force: true });
+        }
+    });
+
+    it("escalates to a project refresh when several files go stale together", { skip: !HAS_GRAPH_SQLITE }, async () => {
+        const { readFile } = await import("../lib/read.mjs");
+        const {
+            _graphRefreshDebugState,
+            _resetGraphDBCache,
+            _resetGraphRefreshStats,
+            _waitForPendingGraphRefreshes,
+        } = await import("../lib/graph-enrich.mjs");
+        const repo = makeTempRepo("hex-line-graph-project-refresh-", {
+            "a.mjs": "export function alpha() {\n  return 1;\n}\n",
+            "b.mjs": "export function beta() {\n  return 2;\n}\n",
+            "c.mjs": "export function gamma() {\n  return 3;\n}\n",
+        });
+        try {
+            await indexGraphRepo(repo);
+            _resetGraphDBCache();
+            _resetGraphRefreshStats();
+
+            assert.ok(readFile(join(repo, "a.mjs")).includes("\nGraph:"), "Fresh graph header exists before drift");
+            await new Promise((resolve) => setTimeout(resolve, 20));
+
+            fs.writeFileSync(join(repo, "a.mjs"), "export function alpha() {\n  return 10;\n}\n");
+            fs.writeFileSync(join(repo, "b.mjs"), "export function beta() {\n  return 20;\n}\n");
+            fs.writeFileSync(join(repo, "c.mjs"), "export function gamma() {\n  return 30;\n}\n");
+
+            assert.ok(!readFile(join(repo, "a.mjs")).includes("\nGraph:"), "First stale file suppresses graph hints");
+            assert.ok(!readFile(join(repo, "b.mjs")).includes("\nGraph:"), "Second stale file suppresses graph hints");
+            assert.ok(!readFile(join(repo, "c.mjs")).includes("\nGraph:"), "Third stale file suppresses graph hints");
+
+            const debugState = _graphRefreshDebugState();
+            assert.ok(debugState.projectRefreshCount >= 1, "Several stale files trigger one project refresh");
+            assert.equal(debugState.stats.projectRefreshScheduled, 1, "Escalation schedules one project refresh");
+            assert.equal(debugState.stats.projectRefreshThresholdHits, 1, "Threshold is hit once during burst");
+
+            await _waitForPendingGraphRefreshes();
+
+            const finalState = _graphRefreshDebugState();
+            assert.ok(finalState.stats.staleSuppressions >= 3, "Stale reads are counted");
+            assert.ok(finalState.stats.fileRefreshCompleted >= 1, "Threshold file still gets a file-level refresh");
+            assert.equal(finalState.stats.projectRefreshCompleted, 1, "Project refresh completes once");
+            assert.ok(readFile(join(repo, "a.mjs")).includes("\nGraph:"), "Project refresh restores graph hints for file A");
+            assert.ok(readFile(join(repo, "b.mjs")).includes("\nGraph:"), "Project refresh restores graph hints for file B");
+            assert.ok(readFile(join(repo, "c.mjs")).includes("\nGraph:"), "Project refresh restores graph hints for file C");
+        } finally {
+            _resetGraphDBCache();
+            _resetGraphRefreshStats();
             await closeGraphRepo(repo);
             fs.rmSync(repo, { recursive: true, force: true });
         }
@@ -1305,6 +1401,11 @@ describe("changes", () => {
         assert.ok(result.includes("reason:"), "changes returns canonical reason");
         assert.ok(result.includes("summary:"), "changes returns canonical summary");
         assert.ok(result.includes("next_action:"), "changes returns canonical next action");
+        assert.ok(result.includes("graph_enrichment:"), "changes returns graph enrichment state");
+        assert.ok(result.includes("risk_summary_count:"), "changes returns risk count preview");
+        assert.ok(result.includes("removed_api_warning_count:"), "changes returns API warning count preview");
+        assert.ok(result.includes("payload_sections:"), "changes returns payload section preview");
+        assert.ok(result.includes("provenance_summary:"), "changes returns provenance summary");
     });
 });
 // ==================== isHexLineDisabled ====================
@@ -1910,6 +2011,9 @@ describe("protocol: edit_file output", () => {
             const anchor = read.match(/([a-z2-7]{2}\.2)\tsecond/)?.[1];
             assert.ok(anchor, "Got anchor from read");
             const result = editFile(tmp, [{ set_line: { anchor, new_text: "SECOND" } }]);
+            assert.ok(result.includes("summary: lines_changed="), "Success output includes structured line summary");
+            assert.ok(result.includes("payload_sections:"), "Success output includes payload section preview");
+            assert.ok(result.includes("provenance_summary:"), "Success output includes provenance summary");
             assert.ok(result.includes("block: post_edit"), "Post-edit uses block protocol");
             assert.ok(result.includes("checksum:"), "Post-edit has checksum");
         } finally {

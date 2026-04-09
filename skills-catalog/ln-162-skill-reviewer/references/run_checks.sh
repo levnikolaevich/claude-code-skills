@@ -14,8 +14,10 @@
 
 set -uo pipefail
 
-# Resolve repo roots dynamically (works regardless of CWD depth)
-REPO_ROOT=$(cd "$(dirname "$0")/../../.." && pwd)
+# Resolve repo root. Prefer the caller's working tree (git) so the script works
+# even when invoked from a plugin cache against a different project tree.
+# Fallback: resolve relative to the script location for offline / non-git use.
+REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || (cd "$(dirname "$0")/../../.." && pwd))
 SKILLS_ROOT="$REPO_ROOT/skills-catalog"
 SCOPE="$@"
 FAILS=0

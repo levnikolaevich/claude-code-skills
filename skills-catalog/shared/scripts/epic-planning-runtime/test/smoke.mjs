@@ -26,6 +26,7 @@ try {
     if (!started.ok) {
         throw new Error("Failed to start epic-planning runtime");
     }
+    const parentRunId = started.run_id;
     run(["checkpoint", "--identifier", "scope", "--phase", PHASES.CONFIG, "--payload", "{\"config_ready\":true}"]);
     run(["advance", "--identifier", "scope", "--to", PHASES.DISCOVERY]);
     run(["checkpoint", "--identifier", "scope", "--phase", PHASES.DISCOVERY, "--payload", "{\"discovery_summary\":{\"scope\":\"ok\"}}"]);
@@ -41,6 +42,26 @@ try {
     run(["checkpoint", "--identifier", "scope", "--phase", PHASES.DELEGATE, "--payload", "{\"delegated\":true}"]);
     run(["advance", "--identifier", "scope", "--to", PHASES.FINALIZE]);
     run(["checkpoint", "--identifier", "scope", "--phase", PHASES.FINALIZE, "--payload", "{\"final_result\":\"READY\"}"]);
+    run(["record-plan-summary", "--identifier", "scope", "--payload", JSON.stringify({
+        schema_version: "1.0.0",
+        summary_kind: "epic-plan",
+        run_id: parentRunId,
+        identifier: "scope",
+        producer_skill: "ln-210",
+        produced_at: "2026-04-09T00:00:00Z",
+        payload: {
+            mode: "CREATE",
+            scope_identifier: "scope",
+            epics_created: 3,
+            epics_updated: 0,
+            epics_canceled: 0,
+            epic_urls: ["EPIC-1", "EPIC-2", "EPIC-3"],
+            warnings: [],
+            kanban_updated: true,
+            infrastructure_epic_included: false,
+            artifact_path: null,
+        },
+    })]);
     run(["advance", "--identifier", "scope", "--to", PHASES.SELF_CHECK]);
     run(["checkpoint", "--identifier", "scope", "--phase", PHASES.SELF_CHECK, "--payload", "{\"pass\":true,\"final_result\":\"READY\"}"]);
     const completed = run(["complete", "--identifier", "scope"]);

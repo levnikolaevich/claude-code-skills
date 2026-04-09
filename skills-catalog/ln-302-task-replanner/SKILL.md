@@ -78,10 +78,11 @@ Always write the validated summary before terminal outcome.
 2. Load existing tasks.
 3. Normalize ideal vs existing task structures.
 4. Classify `KEEP`, `UPDATE`, `OBSOLETE`, `CREATE`.
-5. Show summary if interactive.
-6. Execute provider-specific updates.
-7. Update kanban.
-8. Return structured summary.
+5. If classification is empty, emit a verified no-op summary and stop.
+6. Show summary if interactive.
+7. Execute provider-specific updates.
+8. Update kanban only when provider mutations occurred.
+9. Return structured summary.
 
 ## Critical Rules
 
@@ -89,6 +90,7 @@ Always write the validated summary before terminal outcome.
 - Do not require coordinator runtime state.
 - Preserve type-specific rules after replanning.
 - Return machine-readable output every time.
+- **Fast path for no-op replans:** when no task changes survive normalization, do not mutate provider state or kanban; return a summary with zero changes.
 - **STOP before save_issue:** verify all 7 sections present in body: Context, Implementation Plan, Technical Approach, Acceptance Criteria, Affected Components, Existing Code Impact, Definition of Done. PreToolUse hook will BLOCK creation without them.
 
 ## Definition of Done

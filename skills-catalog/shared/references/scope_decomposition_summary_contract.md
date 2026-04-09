@@ -13,6 +13,6 @@ Envelope: `shared/references/coordinator_summary_contract.md`
 - `scope_identifier`
 - `epic_runs_completed`
 - `story_runs_completed`
-- `prioritization_runs_completed`
+- `prioritization_runs_completed` - aggregated count of recorded per-Epic prioritization summaries
 - `warnings`
 - `final_result`

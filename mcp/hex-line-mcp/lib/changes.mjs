@@ -9,6 +9,18 @@ import { semanticGitDiff } from "@levnikolaevich/hex-common/git/semantic-diff";
 import { getGraphDB, getRelativePath, semanticImpact } from "./graph-enrich.mjs";
 import { ACTION, REASON } from "./output-contract.mjs";
 
+function graphEnrichmentState(db) {
+    return db ? "available" : "unavailable";
+}
+
+function provenanceSummary(semanticDiffState, db) {
+    return `semantic_diff=${semanticDiffState} graph=${db ? "hex_line_contract" : "unavailable"}`;
+}
+
+function payloadSections(sections) {
+    return sections.length > 0 ? sections.join(",") : "summary_only";
+}
+
 function exportedLooking(symbol) {
     return /^\s*(export|public)\b/.test(symbol.text || "");
 }
@@ -63,6 +75,7 @@ export async function fileChanges(filePath, compareAgainst = "HEAD") {
     if (statSync(real).isDirectory()) {
         const db = getGraphDB(join(real, "__hex-line_probe__"));
         const diff = await semanticGitDiff(real, { baseRef: compareAgainst });
+        const graphEnrichment = graphEnrichmentState(db);
         if (diff.summary.changed_file_count === 0) {
             return [
                 "status: NO_CHANGES",
@@ -72,8 +85,22 @@ export async function fileChanges(filePath, compareAgainst = "HEAD") {
                 "scope: directory",
                 "summary: changed_files=0",
                 `next_action: ${ACTION.NO_ACTION}`,
+                `graph_enrichment: ${graphEnrichment}`,
+                "risk_summary_count: 0",
+                "removed_api_warning_count: 0",
+                `payload_sections: ${payloadSections([])}`,
+                `provenance_summary: ${provenanceSummary("clean", db)}`,
             ].join("\n");
         }
+        const supportedCount = diff.changed_files.filter((entry) => entry.semantic_supported).length;
+        const semanticDiffState = supportedCount === 0
+            ? "unsupported"
+            : supportedCount === diff.changed_files.length
+                ? "semantic"
+                : "mixed";
+        let emittedRiskCount = 0;
+        let emittedRemovedApiWarnings = 0;
+        const sectionKinds = ["files"];
         const sections = [
             "status: CHANGED",
             `reason: ${REASON.DIRECTORY_CHANGED}`,
@@ -82,6 +109,7 @@ export async function fileChanges(filePath, compareAgainst = "HEAD") {
             "scope: directory",
             `summary: changed_files=${diff.summary.changed_file_count}`,
             `next_action: ${ACTION.INSPECT_FILE}`,
+            `graph_enrichment: ${graphEnrichment}`,
             "",
         ];
         for (const file of diff.changed_files) {
@@ -91,17 +119,31 @@ export async function fileChanges(filePath, compareAgainst = "HEAD") {
             ];
             sections.push(parts.join(" | "));
             const riskLines = summarizeGraphRisk(db, file.path.replace(/\\/g, "/"), file);
-            for (const line of riskLines.slice(0, 2)) sections.push(`risk_summary: ${summarizeRiskLine(line)}`);
+            const visibleRiskLines = riskLines.slice(0, 2);
+            emittedRiskCount += visibleRiskLines.length;
+            for (const line of visibleRiskLines) sections.push(`risk_summary: ${summarizeRiskLine(line)}`);
             for (const symbol of file.removed_symbols.slice(0, 2)) {
-                if (exportedLooking(symbol)) sections.push(`removed_api_warning: ${symbol.text}`);
+                if (exportedLooking(symbol)) {
+                    emittedRemovedApiWarnings += 1;
+                    sections.push(`removed_api_warning: ${symbol.text}`);
+                }
             }
         }
+        if (emittedRiskCount > 0) sectionKinds.push("risk_summary");
+        if (emittedRemovedApiWarnings > 0) sectionKinds.push("removed_api_warning");
+        sections.splice(8, 0,
+            `risk_summary_count: ${emittedRiskCount}`,
+            `removed_api_warning_count: ${emittedRemovedApiWarnings}`,
+            `payload_sections: ${payloadSections(sectionKinds)}`,
+            `provenance_summary: ${provenanceSummary(semanticDiffState, db)}`
+        );
         return sections.join("\n");
     }
 
     const db = getGraphDB(real);
     const diff = await semanticGitDiff(real, { baseRef: compareAgainst });
     const file = diff.changed_files[0];
+    const graphEnrichment = graphEnrichmentState(db);
     if (!file) {
         return [
             "status: NO_CHANGES",
@@ -111,6 +153,11 @@ export async function fileChanges(filePath, compareAgainst = "HEAD") {
             "scope: file",
             "summary: added=0 removed=0 modified=0",
             `next_action: ${ACTION.NO_ACTION}`,
+            `graph_enrichment: ${graphEnrichment}`,
+            "risk_summary_count: 0",
+            "removed_api_warning_count: 0",
+            `payload_sections: ${payloadSections([])}`,
+            `provenance_summary: ${provenanceSummary("clean", db)}`,
         ].join("\n");
     }
     if (!file.semantic_supported) {
@@ -122,9 +169,18 @@ export async function fileChanges(filePath, compareAgainst = "HEAD") {
             "scope: file",
             `summary: semantic diff unavailable for ${file.extension} files`,
             `next_action: ${ACTION.INSPECT_RAW_DIFF}`,
+            `graph_enrichment: ${graphEnrichment}`,
+            "risk_summary_count: 0",
+            "removed_api_warning_count: 0",
+            `payload_sections: ${payloadSections([])}`,
+            `provenance_summary: ${provenanceSummary("unsupported", db)}`,
         ].join("\n");
     }
 
+    const relFile = getRelativePath(real) || file.path?.replace(/\\/g, "/");
+    const riskLines = summarizeGraphRisk(db, relFile, file);
+    const removedApiWarnings = file.removed_symbols.filter(exportedLooking).slice(0, 4);
+    const sectionKinds = [];
     const parts = [
         "status: CHANGED",
         `reason: ${REASON.FILE_CHANGED}`,
@@ -132,21 +188,27 @@ export async function fileChanges(filePath, compareAgainst = "HEAD") {
         `compare_against: ${compareAgainst}`,
         "scope: file",
         `summary: ${symbolCountSummary(file)}`,
+        `graph_enrichment: ${graphEnrichment}`,
+        `risk_summary_count: ${riskLines.length}`,
+        `removed_api_warning_count: ${removedApiWarnings.length}`,
     ];
 
     if (file.added_symbols.length) {
+        sectionKinds.push("added");
         parts.push(`next_action: ${ACTION.REVIEW_RISKS}`);
         parts.push("");
         parts.push("added:");
         for (const symbol of file.added_symbols) parts.push(`  + ${symbol.start}-${symbol.end}: ${symbol.text}`);
     }
     if (file.removed_symbols.length) {
+        sectionKinds.push("removed");
         if (!parts.includes(`next_action: ${ACTION.REVIEW_RISKS}`)) parts.push(`next_action: ${ACTION.REVIEW_RISKS}`);
         parts.push("");
         parts.push("removed:");
         for (const symbol of file.removed_symbols) parts.push(`  - ${symbol.start}-${symbol.end}: ${symbol.text}`);
     }
     if (file.modified_symbols.length) {
+        sectionKinds.push("modified");
         if (!parts.includes(`next_action: ${ACTION.REVIEW_RISKS}`)) parts.push(`next_action: ${ACTION.REVIEW_RISKS}`);
         parts.push("");
         parts.push("modified:");
@@ -162,9 +224,12 @@ export async function fileChanges(filePath, compareAgainst = "HEAD") {
         parts.push("");
         parts.push("summary_detail: no symbol changes detected");
     }
-    const relFile = getRelativePath(real) || file.path?.replace(/\\/g, "/");
-    const riskLines = summarizeGraphRisk(db, relFile, file);
-    const removedApiWarnings = file.removed_symbols.filter(exportedLooking).slice(0, 4);
+    if (riskLines.length > 0) sectionKinds.push("risk_summary");
+    if (removedApiWarnings.length > 0) sectionKinds.push("removed_api_warning");
+    parts.splice(9, 0,
+        `payload_sections: ${payloadSections(sectionKinds)}`,
+        `provenance_summary: ${provenanceSummary("semantic", db)}`
+    );
     if (riskLines.length || removedApiWarnings.length) {
         parts.push("");
         parts.push("risk_summary:");

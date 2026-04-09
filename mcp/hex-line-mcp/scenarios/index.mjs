@@ -123,7 +123,7 @@ async function main() {
         if (graphOut.length > 0) {
             out.push("### Graph Enrichment Diagnostics");
             out.push("");
-            out.push("Graph-enrichment rows remain diagnostics only. Run with `--with-graph` to inspect them alongside the atomic rows.");
+            out.push("Graph-enrichment rows remain diagnostics only. Read the graph table as payload overhead versus follow-up tool calls avoided; it is not a compression score.");
             out.push("");
             out.push(...graphOut);
             out.push("");

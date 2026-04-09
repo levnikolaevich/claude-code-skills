@@ -15,7 +15,7 @@ import { fileInfo } from "../lib/info.mjs";
 import { bulkReplace } from "../lib/bulk-replace.mjs";
 import { verifyChecksums } from "../lib/verify.mjs";
 import { fileChanges } from "../lib/changes.mjs";
-import { outlineFromContent } from "../lib/outline.mjs";
+import { outlineFromContent } from "@levnikolaevich/hex-common/parser/outline";
 import { grepSearch } from "../lib/search.mjs";
 import { editFile } from "../lib/edit.mjs";
 import { extname } from "node:path";
@@ -79,7 +79,7 @@ export async function runAtomic(config) {
             const ext = extname(f);
             const outlineResult = await outlineFromContent(content, ext);
             const outlineStr = outlineResult
-                ? `File: ${f}\n\n${outlineResult.entries.map(e => `${e.startLine}-${e.endLine}: ${e.label}`).join("\n")}`
+                ? `File: ${f}\n\n${outlineResult.entries.map(e => `${e.start}-${e.end}: ${e.text}`).join("\n")}`
                 : readFile(f);
             const readStr = readFile(f, { offset: 1, limit: 30 });
             const hexResult = outlineStr + "\n---\n" + readStr;

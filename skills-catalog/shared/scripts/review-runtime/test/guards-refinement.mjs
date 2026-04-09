@@ -56,6 +56,22 @@ try {
         process.exit(1);
     }
 
+    const lowImpactRoot = createTestEnv("review-guards-refinement-low-impact-");
+    try {
+        startStoryRuntime(lowImpactRoot, "REFINE-LOW-IMPACT");
+        fastForwardTo(lowImpactRoot, PHASES.MERGE);
+        run(lowImpactRoot, ["advance", "--skill", "ln-310", "--to", PHASES.REFINEMENT]);
+        run(lowImpactRoot, [
+            "checkpoint", "--skill", "ln-310",
+            "--phase", PHASES.REFINEMENT,
+            "--payload", JSON.stringify({ iterations: 1, exit_reason: "CONVERGED_LOW_IMPACT", applied: 0 }),
+        ]);
+        const t5 = run(lowImpactRoot, ["advance", "--skill", "ln-310", "--to", PHASES.APPROVE]);
+        expect("REFINEMENT->APPROVE with CONVERGED_LOW_IMPACT and iterations=1 allows", t5, true);
+    } finally {
+        cleanupTestEnv(lowImpactRoot);
+    }
+
     report("guards-refinement");
 } finally {
     cleanupTestEnv(projectRoot);

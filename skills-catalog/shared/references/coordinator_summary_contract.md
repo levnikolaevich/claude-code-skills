@@ -27,7 +27,7 @@ Required fields for every worker summary:
 ```json
 {
   "schema_version": "1.0.0",
-  "summary_kind": "story-plan",
+  "summary_kind": "story-plan-worker",
   "run_id": "run-ln-220-20260326-abc123",
   "identifier": "epic-7",
   "producer_skill": "ln-221",
@@ -38,6 +38,7 @@ Required fields for every worker summary:
 
 Rules:
 - `summary_kind` describes the operation, not the coordinator.
+- worker and coordinator summary kinds stay distinct even when payload fields overlap
 - `run_id` is mandatory for every summary envelope.
 - If the caller does not pass `runId`, the worker generates a standalone `run_id` before emitting the summary.
 - `identifier` is domain-specific and stable inside the run.
@@ -61,7 +62,48 @@ Payload fields:
 - `warnings`
 - `detail`
 
+## Opportunity Discovery Worker Summary
+
+`summary_kind`:
+- `opportunity-discovery-worker`
+
+Payload fields:
+- `input_mode`
+- `ideas_analyzed`
+- `generated_ideas`
+- `survivors_count`
+- `killed_count`
+- `top_recommendation`
+- `report_path`
+- `warnings`
+- `artifact_path`
+
+Paths:
+- managed: `.hex-skills/runtime-artifacts/runs/{parent_run_id}/opportunity-discovery-worker/{worker}--{identifier}.json`
+- standalone: `.hex-skills/runtime-artifacts/runs/{run_id}/opportunity-discovery-worker/{worker}--{identifier}.json`
+
 ## Story Plan Worker Summary
+
+`summary_kind`:
+- `story-plan-worker`
+
+Payload fields:
+- `mode`
+- `epic_id`
+- `stories_planned`
+- `stories_created`
+- `stories_updated`
+- `stories_canceled`
+- `story_urls`
+- `warnings`
+- `kanban_updated`
+- `research_path_used`
+
+Paths:
+- managed: `.hex-skills/runtime-artifacts/runs/{parent_run_id}/story-plan-worker/{worker}--{identifier}.json`
+- standalone: `.hex-skills/runtime-artifacts/runs/{run_id}/story-plan-worker/{worker}--{identifier}.json`
+
+## Story Plan Coordinator Summary
 
 `summary_kind`:
 - `story-plan`
@@ -77,6 +119,11 @@ Payload fields:
 - `warnings`
 - `kanban_updated`
 - `research_path_used`
+- `worker_runs_completed`
+- `artifact_path`
+
+Paths:
+- coordinator: `.hex-skills/runtime-artifacts/runs/{run_id}/story-plan/{identifier}.json`
 
 ## Task Plan Worker Summary
 
@@ -190,6 +237,25 @@ Payload fields:
 Paths:
 - managed: `.hex-skills/runtime-artifacts/runs/{parent_run_id}/test-planning-worker/{worker}--{story_id}.json`
 - standalone: `.hex-skills/runtime-artifacts/runs/{run_id}/test-planning-worker/{worker}--{story_id}.json`
+
+## Story Prioritization Worker Summary
+
+`summary_kind`:
+- `story-prioritization-worker`
+
+Payload fields:
+- `epic_id`
+- `depth`
+- `stories_analyzed`
+- `priority_distribution`
+- `top_story_ids`
+- `prioritization_path`
+- `warnings`
+- `artifact_path`
+
+Paths:
+- managed: `.hex-skills/runtime-artifacts/runs/{parent_run_id}/story-prioritization-worker/{worker}--{identifier}.json`
+- standalone: `.hex-skills/runtime-artifacts/runs/{run_id}/story-prioritization-worker/{worker}--{identifier}.json`
 
 ## Docs Generation Summary
 
@@ -330,6 +396,10 @@ Payload fields:
 - `warnings`
 - `kanban_updated`
 - `infrastructure_epic_included`
+- `artifact_path`
+
+Paths:
+- coordinator: `.hex-skills/runtime-artifacts/runs/{run_id}/epic-plan/{identifier}.json`
 
 ## Scope Decomposition Summary
 
@@ -343,5 +413,9 @@ Payload fields:
 - `prioritization_runs_completed`
 - `warnings`
 - `final_result`
+- `artifact_path`
+
+Paths:
+- coordinator: `.hex-skills/runtime-artifacts/runs/{run_id}/scope-decomposition/{identifier}.json`
 
 The envelope remains the same. Only `summary_kind` and `payload` change.

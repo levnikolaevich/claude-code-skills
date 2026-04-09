@@ -12,7 +12,7 @@
 import { spawn } from "node:child_process";
 import { resolve, isAbsolute } from "node:path";
 import { existsSync } from "node:fs";
-import { getGraphDB, matchAnnotation, getRelativePath } from "./graph-enrich.mjs";
+import { getGraphDB, matchAnnotation, getRelativePath, ensureGraphFreshForFile } from "./graph-enrich.mjs";
 import { normalizePath } from "./security.mjs";
 import {
     buildDiagnosticBlock,
@@ -33,6 +33,7 @@ const DEFAULT_TOTAL_LIMIT_LIST = 1000;
 const MAX_OUTPUT = 10 * 1024 * 1024; // 10 MB
 const TIMEOUT = 30000; // 30s
 const MAX_SEARCH_OUTPUT_CHARS = 80000; // Block-aware cap to prevent CC maxResultSizeChars truncation
+const GRAPH_MATCH_ANNOTATION_BUDGET = 12;
 
 
 
@@ -216,6 +217,7 @@ async function summaryMode(pattern, target, opts, totalLimit) {
 async function contentMode(pattern, target, opts, plain, editReady, totalLimit) {
     const realArgs = ["--json"];
     const plainOutput = plain || !editReady;
+    const shouldUseGraph = editReady && !plain;
     if (opts.caseInsensitive) realArgs.push("-i");
     else if (opts.smartCase) realArgs.push("-S");
     if (opts.literal) realArgs.push("-F");
@@ -238,8 +240,9 @@ async function contentMode(pattern, target, opts, plain, editReady, totalLimit) 
     // Parse NDJSON output
     const jsonLines = stdout.trimEnd().split("\n").filter(Boolean);
     const blocks = [];
-    const db = getGraphDB(target);
+    const db = shouldUseGraph ? getGraphDB(target) : null;
     const relCache = new Map();
+    let annotationBudget = GRAPH_MATCH_ANNOTATION_BUDGET;
 
     let groupFile = null;
     let groupEntries = [];
@@ -320,15 +323,20 @@ async function contentMode(pattern, target, opts, plain, editReady, totalLimit) 
 
             const isMatch = msg.type === "match";
             let annotation = "";
-            if (db && isMatch) {
-                let rel = relCache.get(filePath);
-                if (rel === undefined) {
-                    rel = getRelativePath(resolve(filePath)) || "";
-                    relCache.set(filePath, rel);
-                }
-                if (rel) {
-                    const a = matchAnnotation(db, rel, ln);
-                    if (a) annotation = a;
+            if (db && isMatch && annotationBudget > 0) {
+                if (ensureGraphFreshForFile(db, resolve(filePath))) {
+                    let rel = relCache.get(filePath);
+                    if (rel === undefined) {
+                        rel = getRelativePath(resolve(filePath)) || "";
+                        relCache.set(filePath, rel);
+                    }
+                    if (rel) {
+                        const a = matchAnnotation(db, rel, ln);
+                        if (a) {
+                            annotation = a;
+                            annotationBudget--;
+                        }
+                    }
                 }
             }
             groupEntries.push({

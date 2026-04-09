@@ -7,6 +7,8 @@ Repo-level MCP policy for code files and semantic codebase analysis.
 - Use `hex-line` first when a skill materially reads or edits source code, config, scripts, or test files.
 - Use `hex-graph` first when a skill must reason about existing code semantics: symbol identity, references, edit blast radius, architecture, clone groups, or semantic diff risk.
 - Use built-in `Read/Edit/Write/Grep` only as named fallback when the relevant MCP is unavailable, unsupported for the file/task, or outside MCP scope.
+- Use shell only as named fallback for repo inspection when MCP is unavailable, unsupported, or outside scope.
+- Do not use shell repo-wide search or read patterns such as `rg`, `grep`, `cat`, `find`, or recursive tree dumps when `hex-line` or `hex-graph` covers the task.
 - Do not cargo-cult `hex-graph` into planning, docs, community, research, or runtime-only skills that do not make semantic code decisions.
 
 ## Applicability Matrix
@@ -25,9 +27,11 @@ Repo-level MCP policy for code files and semantic codebase analysis.
 
 - Preferred `hex-line` flow: `inspect_path -> outline -> read_file(discovery) -> read_file(edit_ready=true, verbosity="full") only when revision/checksums are required -> edit_file(base_revision) -> verify`
 - Preferred `hex-graph` flow: `index_project -> find_symbols/inspect_symbol -> analyze_edit_region or analyze_changes`
+- For repo structure or code discovery, prefer `inspect_path`, `outline`, and targeted `read_file` over shell `ls`, `tree`, `cat`, or bulk dumps
 - `inspect_path` defaults to a minimal tree; request deeper output only when structure discovery is insufficient
 - `read_file` defaults to discovery-first plain output; request `edit_ready=true, verbosity="full"` before carrying `revision` and checksums into an edit workflow
 - `grep_search` defaults to `summary`; request `output="content", edit_ready=true` only when canonical search hunks/checksums are needed
+- For text search in repo files, prefer `grep_search(summary)` before any shell search; escalate to `output="content"` only when canonical hunks are required
 - `analyze_architecture`, `audit_workspace`, and `analyze_edit_region` use `verbosity` (`minimal|compact|full`) instead of `detail_level`
 - `find_symbols` is for symbol names or partial names, not code fragments like `export function` and not unresolved member calls like `server.tool()` or `app.get(...)`
 - Path-scoped `hex-graph` query tools accept the indexed project root or any file/subdirectory inside that indexed project
@@ -49,6 +53,7 @@ Use standard tools only when one of these is true:
 - target language is unsupported by `hex-graph`
 - task is outside MCP scope, such as images, PDFs, notebooks, external websites, or pure GitHub mutations
 - target file is small markdown or metadata where MCP setup adds no value
+- task is Git history, build/test/runtime execution, package management, container control, or another shell-native workflow with no MCP equivalent
 
 Fallbacks must be explicit in the skill:
 - `hex-line` fallback -> built-in `Read/Edit/Write/Grep`

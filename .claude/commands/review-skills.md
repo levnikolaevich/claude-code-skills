@@ -222,12 +222,16 @@ else
 fi
 
 # === R20: Guard coverage tests (guards.mjs per runtime) ===
+# Skip runtimes that delegate guard logic to coordinator-runtime shared helpers
+# (validateLinearWorkerTransition / validateCoordinatorTransition) — those are
+# covered by coordinator-runtime/test/, adding own-test would duplicate coverage.
 R20_MISSING=""
 for runtime_dir in skills-catalog/shared/scripts/*-runtime; do
   [ -d "$runtime_dir/test" ] || continue
   [ -f "$runtime_dir/lib/guards.mjs" ] || continue
   runtime=$(basename "$runtime_dir")
   echo "$runtime" | grep -qE '^(coordinator|planning|story-planning|task-planning)-runtime$' && continue
+  grep -q 'validateLinearWorkerTransition\|validateCoordinatorTransition' "$runtime_dir/lib/guards.mjs" && continue
   [ -f "$runtime_dir/test/guards.mjs" ] || R20_MISSING="$R20_MISSING $runtime"
 done
 [ -z "$R20_MISSING" ] && add_result R20 "Guard coverage tests" PASS || add_result R20 "Guard coverage tests" "FAIL (missing:$R20_MISSING)"
@@ -241,10 +245,13 @@ done
 [ "$R21_FAILS" -eq 0 ] && add_result R21 "resumablePhases in planning stores" PASS || add_result R21 "resumablePhases" "FAIL ($R21_FAILS stores missing)"
 
 # === R22: final_result guard on DONE ===
+# Runtimes that delegate to shared coordinator-runtime helpers inherit the
+# final_result check from validateLinearWorkerTransition — skip literal grep.
 R22_FAILS=0
 for guards in skills-catalog/shared/scripts/*-runtime/lib/guards.mjs; do
   [ -f "$guards" ] || continue
   grep -q 'DONE' "$guards" || continue
+  grep -q 'validateLinearWorkerTransition\|validateCoordinatorTransition' "$guards" && continue
   grep -q 'final_result' "$guards" || { R22_FAILS=$((R22_FAILS + 1)); echo "  R22: missing in $(dirname $(dirname $guards))" >&2; }
 done
 [ "$R22_FAILS" -eq 0 ] && add_result R22 "final_result guard on DONE" PASS || add_result R22 "final_result guard on DONE" "FAIL ($R22_FAILS missing)"

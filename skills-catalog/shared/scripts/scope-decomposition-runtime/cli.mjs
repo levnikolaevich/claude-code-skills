@@ -11,6 +11,8 @@ import {
     readJsonFile,
     recordDecision,
     recordEpicSummary,
+    recordPrioritizationSummary,
+    recordScopeSummary,
     recordStorySummary,
     resolveRunId,
     runtimePaths,
@@ -73,7 +75,20 @@ function applyCheckpointToState(state, phase, payload) {
         nextState.discovery_summary = payload.discovery_summary || payload;
     }
     if (phase === PHASES.PRIORITIZATION_LOOP) {
-        nextState.prioritization_summary = payload.prioritization_summary || payload;
+        if (typeof payload.prioritization_enabled === "boolean") {
+            nextState.prioritization_enabled = payload.prioritization_enabled;
+        }
+        if (Array.isArray(payload.expected_prioritization_epics)) {
+            nextState.expected_prioritization_epics = payload.expected_prioritization_epics;
+        } else if (payload.prioritization_enabled === true && (!nextState.expected_prioritization_epics || nextState.expected_prioritization_epics.length === 0)) {
+            nextState.expected_prioritization_epics = Object.keys(nextState.story_summaries || {});
+        }
+        if (payload.prioritization_summaries && typeof payload.prioritization_summaries === "object") {
+            nextState.prioritization_summaries = {
+                ...(nextState.prioritization_summaries || {}),
+                ...payload.prioritization_summaries,
+            };
+        }
     }
     if (phase === PHASES.FINALIZE) {
         nextState.final_result = payload.final_result || nextState.final_result;
@@ -174,6 +189,28 @@ async function main() {
         return;
     }
 
+    if (command === "record-prioritization-summary") {
+        const payload = readPayload(values, readJsonFile);
+        const { runId } = resolveRun(projectRoot);
+        const result = recordPrioritizationSummary(projectRoot, runId, payload);
+        if (!result.ok) {
+            failResult(result);
+        }
+        output(result);
+        return;
+    }
+
+    if (command === "record-scope-summary") {
+        const payload = readPayload(values, readJsonFile);
+        const { runId } = resolveRun(projectRoot);
+        const result = recordScopeSummary(projectRoot, runId, payload);
+        if (!result.ok) {
+            failResult(result);
+        }
+        output(result);
+        return;
+    }
+
     if (command === "pause") {
         const payload = readPayload(values, readJsonFile);
         const { runId } = resolveRun(projectRoot);
@@ -187,7 +224,7 @@ async function main() {
         return;
     }
 
-    fail("Unknown command. Use: start, status, advance, checkpoint, record-epic-summary, record-story-summary, set-decision, pause, complete");
+    fail("Unknown command. Use: start, status, advance, checkpoint, record-epic-summary, record-story-summary, record-prioritization-summary, record-scope-summary, set-decision, pause, complete");
 }
 
 main().catch(error => fail(error.message));

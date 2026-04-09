@@ -36,6 +36,9 @@ export function validateTransition(manifest, state, checkpoints, toPhase) {
     if (toPhase === PHASES.DELEGATE && !manifest.auto_approve && !hasChoice(state.decisions, "confirm_epic_preview")) {
         return { ok: false, error: "Preview confirmation decision missing" };
     }
+    if (toPhase === PHASES.SELF_CHECK && !state.epic_plan_summary) {
+        return { ok: false, error: "Epic plan coordinator summary missing" };
+    }
     if (toPhase === PHASES.DONE) {
         if (!state.self_check_passed) {
             return { ok: false, error: "Self-check must pass before completion" };
@@ -48,6 +51,9 @@ export function validateTransition(manifest, state, checkpoints, toPhase) {
 }
 
 export function computeResumeAction(manifest, state, checkpoints) {
+    if (state.phase === PHASES.FINALIZE && !state.epic_plan_summary) {
+        return "Record epic-plan coordinator summary before self-check";
+    }
     if (state.phase === PHASES.SELF_CHECK && !state.self_check_passed) {
         return `Fix self-check failures, then checkpoint ${PHASES.SELF_CHECK} with pass=true`;
     }

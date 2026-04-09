@@ -1,9 +1,9 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-const [,, resultsDir, expectationsFile, date, outputFile] = process.argv;
+const [,, resultsDir, expectationsFile, date, outputFile, extraSessionId = "", extraSessionLabel = ""] = process.argv;
 if (!resultsDir || !expectationsFile || !date) {
-    process.stderr.write("Usage: node parse-results.mjs <results-dir> <expectations.json> <date> [output.md]\n");
+    process.stderr.write("Usage: node parse-results.mjs <results-dir> <expectations.json> <date> [output.md] [extra-session-id] [extra-session-label]\n");
     process.exit(1);
 }
 
@@ -149,7 +149,7 @@ function evaluateScenario(session, scenario, diffText) {
     };
 }
 
-function loadScenarioResults(scenarios, preflight) {
+function loadScenarioResults(scenarios, preflight, extraId) {
     return scenarios.map((scenario) => {
         const builtinBase = resolve(resultsDir, `${date}-${scenario.id}-builtin`);
         const hexlineBase = resolve(resultsDir, `${date}-${scenario.id}-hexline`);
@@ -157,7 +157,7 @@ function loadScenarioResults(scenarios, preflight) {
         const hexlineSession = parseSession(`${hexlineBase}.jsonl`, "hexline", preflight);
         const builtinDiff = safeRead(`${builtinBase}.diff.txt`);
         const hexlineDiff = safeRead(`${hexlineBase}.diff.txt`);
-        return {
+        const result = {
             scenario,
             builtin: {
                 ...builtinSession,
@@ -170,6 +170,17 @@ function loadScenarioResults(scenarios, preflight) {
                 evaluation: evaluateScenario(hexlineSession, scenario, hexlineDiff),
             },
         };
+        if (extraId) {
+            const extraBase = resolve(resultsDir, `${date}-${scenario.id}-${extraId}`);
+            const extraSession = parseSession(`${extraBase}.jsonl`, "extra", preflight);
+            const extraDiff = safeRead(`${extraBase}.diff.txt`);
+            result.extra = {
+                ...extraSession,
+                diffText: extraDiff,
+                evaluation: evaluateScenario(extraSession, scenario, extraDiff),
+            };
+        }
+        return result;
     });
 }
 
@@ -192,7 +203,9 @@ if (!expectations?.scenarios?.length) {
 }
 
 const preflight = safeJson(resolve(resultsDir, `${date}-hexline.preflight.json`));
-const scenarioResults = loadScenarioResults(expectations.scenarios, preflight);
+const hasExtraSession = extraSessionId.length > 0;
+const resolvedExtraLabel = extraSessionLabel || extraSessionId;
+const scenarioResults = loadScenarioResults(expectations.scenarios, preflight, extraSessionId);
 
 const builtinTotals = {
     turns: sum(scenarioResults, (item) => item.builtin.turns),
@@ -216,6 +229,19 @@ const hexlineTotals = {
     totalTools: sum(scenarioResults, (item) => item.hexline.totalTools),
 };
 
+const extraTotals = hasExtraSession
+    ? {
+        turns: sum(scenarioResults, (item) => item.extra.turns),
+        durationMs: sum(scenarioResults, (item) => item.extra.durationMs),
+        durationApiMs: sum(scenarioResults, (item) => item.extra.durationApiMs),
+        cost: sum(scenarioResults, (item) => item.extra.cost),
+        outputTokens: sum(scenarioResults, (item) => item.extra.outputTokens),
+        cacheCreation: sum(scenarioResults, (item) => item.extra.cacheCreation),
+        cacheRead: sum(scenarioResults, (item) => item.extra.cacheRead),
+        totalTools: sum(scenarioResults, (item) => item.extra.totalTools),
+    }
+    : null;
+
 const scenarioRows = scenarioResults.map((item) => {
     const builtinReasons = item.builtin.evaluation.reasons.join("; ") || "-";
     const hexlineReasons = item.hexline.evaluation.reasons.join("; ") || "-";
@@ -228,7 +254,32 @@ const activationRows = scenarioResults.map((item) =>
     `| ${item.scenario.title} | ${boolLabel(item.builtin.activationSuccess)} | ${boolLabel(item.hexline.activationSuccess)} | ${item.hexline.firstHexToolTurn ?? "-"} | ${item.hexline.firstToolSearchTurn ?? "-"} |`
 ).join("\n");
 
+const extraScenarioRows = hasExtraSession
+    ? scenarioResults.map((item) => {
+        const extraReasons = item.extra.evaluation.reasons.join("; ") || "-";
+        const extraFiles = item.extra.evaluation.changedFiles.join(", ") || "-";
+        return `| ${item.scenario.title} | ${boolLabel(item.extra.evaluation.pass)} | ${extraFiles} | ${extraReasons} |`;
+    }).join("\n")
+    : "";
+
+const extraMetricsRows = hasExtraSession
+    ? [
+        `| Wall time | ${(extraTotals.durationMs / 1000).toFixed(1)}s | ${delta(builtinTotals.durationMs, extraTotals.durationMs)} |`,
+        `| API time | ${(extraTotals.durationApiMs / 1000).toFixed(1)}s | ${delta(builtinTotals.durationApiMs, extraTotals.durationApiMs)} |`,
+        `| Turns | ${extraTotals.turns} | ${delta(builtinTotals.turns, extraTotals.turns)} |`,
+        `| Total cost | $${extraTotals.cost.toFixed(4)} | ${delta(builtinTotals.cost, extraTotals.cost)} |`,
+        `| Output tokens | ${extraTotals.outputTokens} | ${delta(builtinTotals.outputTokens, extraTotals.outputTokens)} |`,
+        `| Total tool calls | ${extraTotals.totalTools} | ${delta(builtinTotals.totalTools, extraTotals.totalTools)} |`,
+    ].join("\n")
+    : "";
+
 const report = `# Benchmark: Built-in vs Hex-line - ${date}
+
+## 0. Scope
+
+This report covers the internal canonical A/B only: built-in Claude vs Claude plus \`hex-line\`.
+
+It is not an external best-alternative comparison. Any future external baseline must reuse the same scenario suite and correctness contract unchanged.${hasExtraSession ? `\n\nThis run also includes an additional session profile: \`${resolvedExtraLabel}\` (\`${extraSessionId}\`). Treat it as an extra profile under the same contract, not as a universal leaderboard by itself.` : ""}
 
 ## 1. Scenario Outcomes
 
@@ -277,7 +328,18 @@ Server syntax preflight: ${preflight?.serverSyntaxOk ? "PASS" : "FAIL"}
 Hook syntax preflight: ${preflight?.hookSyntaxOk ? "PASS" : "FAIL"}
 
 SessionStart preflight: ${preflight?.sessionStartOk ? "PASS" : "FAIL"}
-`;
+${hasExtraSession ? `
+
+## 8. Extra Session: ${resolvedExtraLabel}
+
+| Scenario | ${resolvedExtraLabel} | Changed files | Reasons |
+|----------|----------------|---------------|---------|
+${extraScenarioRows}
+
+| Metric | ${resolvedExtraLabel} | Delta vs Built-in |
+|--------|----------------|-------------------|
+${extraMetricsRows}
+` : ""}`;
 
 if (outputFile) {
     writeFileSync(outputFile, report, "utf8");

@@ -32,7 +32,7 @@ Three optimization tracks: Performance (profile -> research -> validate -> execu
 | ln-830-code-modernization-coordinator | Coordinate OSS replacement and bundle optimization |
 | ln-831-oss-replacer | Replace custom modules with OSS packages |
 | ln-832-bundle-optimizer | Reduce JS/TS bundle size |
-| ln-840-benchmark-compare | A/B benchmark: built-in vs hex-line tool comparison |
+| ln-840-benchmark-compare | Canonical internal A/B for built-in vs hex-line, plus an optional third Claude-compatible session profile under the same scenario contract |
 
 ## How it works
 
@@ -42,7 +42,7 @@ Three optimization tracks: Performance (profile -> research -> validate -> execu
 
 **Modernization:** ln-830 -> ln-831 (OSS replacement) + ln-832 (bundle optimization). The coordinator assigns deterministic child runs, workers emit `modernization-worker` summaries, and ln-830 records the final `modernization-coordinator` summary.
 
-**Benchmark:** ln-840 runs the scenario suite, writes the comparison report, and emits a final `benchmark-worker` summary artifact with validity and scenario metrics.
+**Benchmark:** ln-840 runs the scenario suite, writes the comparison report, and emits a final `benchmark-worker` summary artifact with validity and scenario metrics. The default mode is the internal built-in vs `hex-line` A/B. Maintainers can also attach one optional extra Claude-compatible session profile through `EXTRA_SESSION_*` variables when that comparator can emit the same `stream-json` logs and diff artifacts.
 
 ## Quick start
 

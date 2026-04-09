@@ -81,6 +81,7 @@ Worker runtimes are family-specific thin layers over the shared runtime engine, 
 - quality: `shared/references/quality_worker_runtime_contract.md`
 - test planning: `shared/references/test_planning_worker_runtime_contract.md`
 - task planning: `shared/references/task_plan_worker_runtime_contract.md`
+- planning: `shared/references/planning_worker_runtime_contract.md`
 
 ---
 **Version:** 1.0.0

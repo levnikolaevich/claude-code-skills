@@ -31,6 +31,7 @@ Canonical phase/status names: `shared/references/runtime_status_catalog.md`
 - `routing_summary`
 - `epic_group_modes`
 - `epic_results`
+- `story_plan_summary`
 - `final_result`
 - `self_check_passed`
 - `pending_decision`
@@ -44,7 +45,8 @@ Canonical phase/status names: `shared/references/runtime_status_catalog.md`
 - `PHASE_5_MODE_DETECTION` requires `routing_summary`.
 - `PHASE_6_DELEGATE` requires `epic_group_modes`.
 - If `auto_approve=false`, `PHASE_6_DELEGATE` also requires resolved preview decision.
-- `PHASE_7_FINALIZE` requires all expected story-plan worker summaries.
+- `PHASE_7_FINALIZE` requires all expected `story-plan-worker` summaries.
+- `PHASE_8_SELF_CHECK` requires `story-plan` coordinator summary.
 - `DONE` requires `self_check_passed` and `final_result`.
 
 ## Pending Decisions
@@ -57,5 +59,6 @@ Use shared `pending_decision` schema for:
 
 ## Worker Summaries
 
-Workers stay standalone-first and may optionally write `story-plan` summaries.
-Every `story-plan` summary uses the shared envelope with mandatory `run_id`; standalone workers generate one when the caller does not pass `runId`.
+Workers stay standalone-capable, but coordinator-invoked runs must pass both `runId` and `summaryArtifactPath`.
+Child worker summaries use `summary_kind=story-plan-worker`.
+After finalization, `ln-220` writes its own `story-plan` coordinator artifact.

@@ -18,6 +18,24 @@ const allowedLegacyPhaseDocs = new Set([
 
 const workerRuntimeWiringDocs = new Map([
     [
+        normalizePath(join(skillsRepoRoot, "ln-200-scope-decomposer/SKILL.md")),
+        [
+            "node shared/scripts/epic-planning-runtime/cli.mjs start",
+            "node shared/scripts/story-planning-runtime/cli.mjs start",
+            "node shared/scripts/planning-worker-runtime/cli.mjs start",
+            "story-prioritization-worker/ln-230--{identifier}.json",
+            "child_run",
+        ],
+    ],
+    [
+        normalizePath(join(skillsRepoRoot, "ln-220-story-coordinator/SKILL.md")),
+        [
+            "node shared/scripts/planning-worker-runtime/cli.mjs start",
+            "story-plan-worker/{worker}--{identifier}.json",
+            "child_run",
+        ],
+    ],
+    [
         normalizePath(join(skillsRepoRoot, "ln-300-task-coordinator/SKILL.md")),
         [
             "node shared/scripts/task-plan-worker-runtime/cli.mjs start",

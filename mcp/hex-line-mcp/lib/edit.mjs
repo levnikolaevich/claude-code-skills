@@ -456,6 +456,21 @@ function deriveNextAction({ retryEdit = null, retryEdits = null, suggestedReadCa
     return ACTION.INSPECT_SNIPPET;
 }
 
+function summarizeChangedSpan(minLine, maxLine) {
+    return Number.isFinite(minLine) && Number.isFinite(maxLine) && minLine !== Infinity && maxLine > 0
+        ? `${minLine}-${maxLine}`
+        : "unknown";
+}
+
+function countDiffEntries(fullDiff) {
+    if (!fullDiff) return 0;
+    return fullDiff.split("\n").filter((line) => /^[+-]\d+\|/.test(line)).length;
+}
+
+function payloadSections(sections) {
+    return sections.length > 0 ? sections.join(",") : "summary_only";
+}
+
 function buildRetryEdit(edit, lines, options = {}) {
     const retryChecksum = options.retryChecksum || null;
     if (edit.set_line) {
@@ -1197,10 +1212,20 @@ export function editFile(filePath, edits, opts = {}) {
             }
         }
     }
+    const diffEntryCount = countDiffEntries(fullDiff);
+    const changedSpan = summarizeChangedSpan(minLine, maxLine);
 
     if (opts.dryRun) {
-        let msg = `status: ${autoRebased ? STATUS.AUTO_REBASED : STATUS.OK}\nreason: ${REASON.DRY_RUN_PREVIEW}\nrevision: ${currentSnapshot.revision}\nfile: ${currentSnapshot.fileChecksum}\nDry run: ${filePath} would change (${lines.length} lines)`;
+        let msg = `status: ${autoRebased ? STATUS.AUTO_REBASED : STATUS.OK}\nreason: ${REASON.DRY_RUN_PREVIEW}\nrevision: ${currentSnapshot.revision}\nfile: ${currentSnapshot.fileChecksum}`;
         if (staleRevision && hasBaseSnapshot) msg += `\nchanged_ranges: ${describeChangedRanges(changedRanges)}`;
+        msg += `\nsummary: lines_changed=${changedSpan} diff_entries=${diffEntryCount} lines_after=${lines.length}`;
+        msg += `\npayload_sections: ${payloadSections(displayDiff ? ["diff"] : [])}`;
+        msg += "\ngraph_enrichment: unavailable";
+        msg += "\nsemantic_impact_count: 0";
+        msg += "\nsemantic_fact_count: 0";
+        msg += "\nclone_warning_count: 0";
+        msg += "\nprovenance_summary: edit_protocol=snapshot+anchors graph=unavailable";
+        msg += `\nDry run: ${filePath} would change (${lines.length} lines)`;
         if (displayDiff) msg += `\n\nDiff:\n\`\`\`diff\n${displayDiff}\n\`\`\``;
         return msg;
     }
@@ -1219,6 +1244,10 @@ export function editFile(filePath, edits, opts = {}) {
     if (remaps.length > 0) {
         msg += `\nremapped_refs:\n${remaps.map(({ from, to }) => `${from} -> ${to}`).join("\n")}`;
     }
+    let hasPostEditBlock = false;
+    let graphEnrichment = "unavailable";
+    let semanticImpacts = [];
+    let cloneWarnings = [];
     msg += `\nUpdated ${filePath} (${lines.length} lines)`;
 
     // Post-edit context (before diff — always visible even if output truncated)
@@ -1236,18 +1265,20 @@ export function editFile(filePath, edits, opts = {}) {
                     trailing_newline: nextSnapshot.trailingNewline,
                 },
             });
+            hasPostEditBlock = true;
             msg += `\n\n${serializeReadBlock(block)}`;
         }
     }
 
     // Graph enrichment: semantic impact + clone warnings
     try {
-        const db = getGraphDB(real);
+        const db = getGraphDB(real, { allowStale: true });
         const relFile = db ? getRelativePath(real) : null;
         if (db && relFile && fullDiff && minLine <= maxLine) {
-            const impacts = semanticImpact(db, relFile, minLine, maxLine);
-            if (impacts.length > 0) {
-                const sections = impacts.map(impact => {
+            graphEnrichment = "available";
+            semanticImpacts = semanticImpact(db, relFile, minLine, maxLine);
+            if (semanticImpacts.length > 0) {
+                const sections = semanticImpacts.map(impact => {
                     const totals = [];
                     if (impact.counts.publicApi > 0) totals.push("public API");
                     if (impact.counts.frameworkEntrypoints > 0) totals.push(`${impact.counts.frameworkEntrypoints} framework entrypoint`);
@@ -1276,13 +1307,30 @@ export function editFile(filePath, edits, opts = {}) {
                 });
                 msg += `\n\n\u26a0 Semantic impact:\n${sections.join("\n")}`;
             }
-            const clones = cloneWarning(db, relFile, minLine, maxLine);
-            if (clones.length > 0) {
-                const list = clones.map(c => `${c.file}:${c.line}`).join(", ");
-                msg += `\n\n\u26a0 ${clones.length} clone(s): ${list}`;
+            cloneWarnings = cloneWarning(db, relFile, minLine, maxLine);
+            if (cloneWarnings.length > 0) {
+                const list = cloneWarnings.map(c => `${c.file}:${c.line}`).join(", ");
+                msg += `\n\n\u26a0 ${cloneWarnings.length} clone(s): ${list}`;
             }
         }
     } catch { /* silent */ }
+
+    const payloadKinds = [];
+    if (hasPostEditBlock) payloadKinds.push("post_edit");
+    if (semanticImpacts.length > 0) payloadKinds.push("semantic_impact");
+    if (cloneWarnings.length > 0) payloadKinds.push("clone_warning");
+    if (displayDiff) payloadKinds.push("diff");
+    const semanticFactCount = semanticImpacts.reduce((sum, impact) => sum + (impact.facts?.length || 0), 0);
+    const summaryLines = [
+        `summary: lines_changed=${changedSpan} diff_entries=${diffEntryCount} lines_after=${lines.length}`,
+        `payload_sections: ${payloadSections(payloadKinds)}`,
+        `graph_enrichment: ${graphEnrichment}`,
+        `semantic_impact_count: ${semanticImpacts.length}`,
+        `semantic_fact_count: ${semanticFactCount}`,
+        `clone_warning_count: ${cloneWarnings.length}`,
+        `provenance_summary: edit_protocol=snapshot+anchors graph=${graphEnrichment === "available" ? "hex_line_contract" : "unavailable"}`,
+    ].join("\n");
+    msg = msg.replace(`\nUpdated ${filePath} (${lines.length} lines)`, `\n${summaryLines}\nUpdated ${filePath} (${lines.length} lines)`);
 
     // Diff (last — safe to truncate by Claude Code)
     if (displayDiff) msg += `\n\nDiff:\n\`\`\`diff\n${displayDiff}\n\`\`\``;

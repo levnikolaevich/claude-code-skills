@@ -1,6 +1,6 @@
 ---
 name: ln-840-benchmark-compare
-description: "Runs built-in vs hex-line benchmark with scenario manifests, activation checks, and diff-based correctness. Use when measuring hex-line MCP performance against built-in tools."
+description: "Runs a canonical built-in vs hex-line benchmark with scenario manifests, activation checks, and diff-based correctness. Use when measuring hex-line MCP performance against Claude built-in tools or when preparing the canonical suite for later external baselines."
 license: MIT
 model: claude-haiku-4-5
 ---
@@ -12,7 +12,7 @@ model: claude-haiku-4-5
 **Type:** L3 Worker
 **Category:** 8XX Optimization -> 840 Benchmark
 
-Run a clean A/B benchmark in Claude Code: one session with built-in tools only, one with `hex-line`. The benchmark is scenario-based, diff-validated, manifest-driven, and runtime-backed. It measures activation, correctness, time, cost, and tokens.
+Run a clean A/B benchmark in Claude Code: one session with built-in tools only, one with `hex-line`. The benchmark is scenario-based, diff-validated, manifest-driven, and runtime-backed. It measures activation, correctness, time, cost, and tokens. The current runner is intentionally scoped to this internal A/B. It does not, by itself, prove best-in-class against external alternatives.
 
 ---
 
@@ -45,6 +45,16 @@ bash skills-catalog/ln-840-benchmark-compare/scripts/run-benchmark.sh \
   [skills-catalog/ln-840-benchmark-compare/references/expectations.json]
 ```
 
+Optional extra session profile:
+
+```bash
+EXTRA_SESSION_ID=other-mcp \
+EXTRA_SESSION_LABEL="Other MCP" \
+EXTRA_MCP_CONFIG=/abs/path/to/other-mcp.json \
+EXTRA_SETTINGS='{"disableAllHooks":true}' \
+bash skills-catalog/ln-840-benchmark-compare/scripts/run-benchmark.sh
+```
+
 The runner handles:
 - syntax preflight
 - SessionStart preflight
@@ -52,6 +62,17 @@ The runner handles:
 - isolated worktrees per scenario/session
 - per-scenario diffs
 - final comparison report
+
+Current scope:
+- built-in Claude session
+- Claude plus `hex-line`
+- optional third Claude-compatible session profile through `EXTRA_SESSION_*` environment variables
+
+External baseline note:
+- use the same `goals.md` and `expectations.json`
+- do not rewrite scenarios to fit the external tool
+- do not make "top tool" claims from the internal A/B alone
+- the optional third session profile is only valid when it can emit the same `stream-json` log shape and diff artifacts
 
 ---
 
@@ -68,6 +89,7 @@ Rules:
 - Do not design the suite to favor `hex-line`.
 - Every scenario in `goals.md` must have a matching entry in `expectations.json`.
 - `expectations.json` is the source of truth for correctness.
+- The same pair must be reused unchanged for any future external baseline.
 
 Supported expectation fields per scenario:
 
@@ -139,6 +161,7 @@ Interpretation rules:
 - `invalid run` means setup/adoption failure, not product performance
 - scenario `FAIL` means correctness contract was not met
 - activation is part of product quality for `hex-line`, not external noise
+- this report is necessary for internal A/B evaluation, but not sufficient for best-alternative claims
 
 ---
 
@@ -151,6 +174,14 @@ Interpretation rules:
 - Was the run valid?
 
 Do not treat raw time/cost as sufficient without scenario correctness.
+
+## External Baseline Policy
+
+- This skill owns the canonical suite, not a universal leaderboard.
+- If maintainers compare `hex-line` against external alternatives, they must reuse the same `goals.md`, `expectations.json`, and diff-based evaluation rules.
+- External runs may use different harnesses, but they must preserve the same task text, starting commit, and correctness contract.
+- If an external tool cannot satisfy the contract format, record that as a harness limitation instead of rewriting the suite to accommodate it.
+- A report that only covers built-in Claude vs `hex-line` must say so explicitly.
 
 ---
 
@@ -228,6 +259,7 @@ Recommended payload:
 | Worktree already exists from prior crash | Remove it before adding a new one |
 | Diff artifacts missing | Treat scenario correctness as failed |
 | Simple scenario favors built-ins | Keep it in the suite if it is common; honesty beats cherry-picking |
+| External comparison uses edited scenarios or relaxed expectations | Treat the comparison as invalid |
 
 ---
 
@@ -241,6 +273,7 @@ Recommended payload:
 - [ ] Final report is saved to `skills-catalog/ln-840-benchmark-compare/results/`
 - [ ] `benchmark-worker` summary artifact is written to the managed or standalone runtime path
 - [ ] Temporary worktrees are removed
+- [ ] Report states clearly whether it is internal A/B only or includes additional external baselines
 
 ---
 

@@ -27,11 +27,22 @@ Skills collection for Codex with config-driven Agile task management (Linear or 
 
 ## MCP Tool Preferences
 
-Prefer `hex-line` for code/config/script/test files.
-- Use `outline` before large reads, then `read_file` with ranges.
-- Use `edit_file` / `write_file` for writes, `bulk_replace` for multi-file text rename, `verify` after conflicts or delayed follow-up edits, and `changes` for diff review.
-- Use `hex-graph` only for symbol, reference, architecture, and semantic diff questions.
-- Built-in tools are still fine for images, PDFs, notebooks, Glob, and `.claude/settings*.json`.
+Use `hex-line` first for repo file reads/search/edits on code, config, scripts, and tests.
+- Use `hex-graph` first for symbol identity, references, architecture, edit blast radius, clone groups, and semantic diff risk.
+- Built-in `Read/Edit/Write/Grep` and shell repo inspection are fallback only when MCP is unavailable, unsupported, or outside scope.
+- Do not use shell repo-wide search/read patterns such as `rg`, `grep`, `cat`, `find`, or recursive tree dumps when `hex-line` or `hex-graph` covers the task.
+- Shell is still appropriate for Git history, build/test/runtime commands, package managers, Docker, images, PDFs, notebooks, and `.claude/settings*.json`.
+
+| Instead of | Use | Why |
+|-----------|-----|-----|
+| Read | `mcp__hex-line__read_file` | Discovery-first reads with revision support when needed |
+| Edit | `mcp__hex-line__edit_file` | Hash-verified edits with conservative follow-up flow |
+| Write | `mcp__hex-line__write_file` | Direct writes without broad rereads |
+| Grep | `mcp__hex-line__grep_search` | Summary-first search with optional edit-ready hunks |
+| Text rename across files | `mcp__hex-line__bulk_replace` | Explicit-root multi-file rename/refactor |
+
+- Preferred cheap flow: `inspect_path -> outline -> read_file(minimal, ranges)` and only request `edit_ready=true` / rich output when revisions or checksums are required.
+- Before delayed same-file follow-up edits, carry `base_revision` and run `verify` instead of rereading blindly.
 
 ## Quick Understanding
 

@@ -13,6 +13,21 @@ const ALLOWED_TRANSITIONS = new Map([
     [PHASES.DONE, new Set([])],
 ]);
 
+function expectedPrioritizationEpics(state) {
+    if (Array.isArray(state.expected_prioritization_epics) && state.expected_prioritization_epics.length > 0) {
+        return state.expected_prioritization_epics;
+    }
+    return Object.keys(state.story_summaries || {});
+}
+
+function missingPrioritizationEpics(state) {
+    if (state.prioritization_enabled !== true) {
+        return [];
+    }
+    const recorded = state.prioritization_summaries || {};
+    return expectedPrioritizationEpics(state).filter(epicId => !recorded[epicId]);
+}
+
 export function validateTransition(manifest, state, checkpoints, toPhase) {
     const base = validatePlanningBaseTransition(state, checkpoints, toPhase, ALLOWED_TRANSITIONS);
     if (!base.ok) {
@@ -26,6 +41,18 @@ export function validateTransition(manifest, state, checkpoints, toPhase) {
     }
     if (toPhase === PHASES.PRIORITIZATION_LOOP && Object.keys(state.story_summaries || {}).length === 0) {
         return { ok: false, error: "No story planning summaries recorded" };
+    }
+    if (toPhase === PHASES.FINALIZE) {
+        const missingEpics = missingPrioritizationEpics(state);
+        if (missingEpics.length > 0) {
+            return {
+                ok: false,
+                error: `Story prioritization summaries missing for epics: ${missingEpics.join(", ")}`,
+            };
+        }
+    }
+    if (toPhase === PHASES.SELF_CHECK && !state.scope_summary) {
+        return { ok: false, error: "Scope decomposition summary missing" };
     }
     if (toPhase === PHASES.DONE) {
         if (!state.self_check_passed) {
@@ -44,6 +71,15 @@ export function computeResumeAction(manifest, state, checkpoints) {
     }
     if (state.phase === PHASES.STORY_LOOP && Object.keys(state.story_summaries || {}).length === 0) {
         return "Record Story-planning summaries before prioritization/finalization";
+    }
+    if (state.phase === PHASES.PRIORITIZATION_LOOP) {
+        const missingEpics = missingPrioritizationEpics(state);
+        if (missingEpics.length > 0) {
+            return `Record story-prioritization-worker summaries for epics: ${missingEpics.join(", ")}`;
+        }
+    }
+    if (state.phase === PHASES.FINALIZE && !state.scope_summary) {
+        return "Record scope-decomposition coordinator summary before self-check";
     }
     if (state.phase === PHASES.SELF_CHECK && !state.self_check_passed) {
         return `Fix self-check failures, then checkpoint ${PHASES.SELF_CHECK} with pass=true`;

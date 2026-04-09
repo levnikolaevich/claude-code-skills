@@ -186,7 +186,7 @@ export function readFile(filePath, opts = {}) {
         if (db && relFile) {
             const visibleStart = normalizedRanges.length > 0 ? Math.min(...normalizedRanges.map(range => range.startLine)) : 1;
             const visibleEnd = normalizedRanges.length > 0 ? Math.max(...normalizedRanges.map(range => range.endLine)) : total;
-            const annos = fileAnnotations(db, relFile, { startLine: visibleStart, endLine: visibleEnd, limit: 6 });
+            const annos = fileAnnotations(db, relFile, { startLine: visibleStart, endLine: visibleEnd, limit: 4 });
             if (annos.length > 0) {
                 const items = annos.map(a => {
                     const parts = [];

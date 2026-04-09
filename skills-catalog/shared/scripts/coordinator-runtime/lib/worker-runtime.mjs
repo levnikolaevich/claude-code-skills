@@ -96,8 +96,11 @@ export function createWorkerRuntimeStore({
         if (summary.producer_skill !== run.manifest.skill) {
             return { ok: false, error: `Worker summary producer_skill must match runtime skill (${run.manifest.skill})` };
         }
-        if (summary.summary_kind !== expectedSummaryKind) {
-            return { ok: false, error: `Worker summary kind must be ${expectedSummaryKind}` };
+        const resolvedExpectedSummaryKind = typeof expectedSummaryKind === "function"
+            ? expectedSummaryKind(run.manifest, summary)
+            : expectedSummaryKind;
+        if (resolvedExpectedSummaryKind && summary.summary_kind !== resolvedExpectedSummaryKind) {
+            return { ok: false, error: `Worker summary kind must be ${resolvedExpectedSummaryKind}` };
         }
         if (summary.payload && typeof summary.payload === "object" && Object.prototype.hasOwnProperty.call(summary.payload, "worker")
             && summary.payload.worker !== run.manifest.skill) {

@@ -265,7 +265,18 @@ Fatal:
 | 2 | ln-831-oss-replacer | Isolated child run with `runId` and exact `summaryArtifactPath` |
 | 2 | ln-832-bundle-optimizer | Isolated child run with `runId` and exact `summaryArtifactPath` |
 
-All workers: invoke through Agent tool, checkpoint the child run metadata immediately, then consume the emitted `modernization-worker` summary envelope via `record-worker-result`.
+All workers: start the child runtime, checkpoint the `child_run` metadata, then invoke the worker skill explicitly and consume the emitted `modernization-worker` summary envelope via `record-worker-result`.
+
+```text
+# Sequential per selected worker (ln-831 before ln-832 when both selected):
+node shared/scripts/modernization-runtime/cli.mjs start --skill {worker} --identifier {identifier} --manifest-file {workerManifestPath} --run-id {childRunId} --summary-artifact-path {childSummaryArtifactPath}
+node shared/scripts/optimization-runtime/cli.mjs checkpoint --phase PHASE_2_DELEGATE --payload '{"child_run":{"worker":"{worker}","run_id":"{childRunId}","summary_artifact_path":"{childSummaryArtifactPath}"}}'
+Skill(skill: "{worker}", args: "{identifier} --run-id {childRunId} --summary-artifact-path {childSummaryArtifactPath}")
+Read {childSummaryArtifactPath}
+node shared/scripts/optimization-runtime/cli.mjs record-worker-result --payload-file {childSummaryArtifactPath}
+```
+
+Worker token substitution: `{worker}` is `ln-831-oss-replacer` or `ln-832-bundle-optimizer`.
 
 ---
 

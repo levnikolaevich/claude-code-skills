@@ -81,12 +81,15 @@ Always write the validated summary before terminal outcome.
 1. Resolve task provider and template set.
 2. Run DRY and destructive-operation checks where applicable.
 3. Use coordinator context (`discoveryContext`, `traceabilityTablePath`) to understand architecture. Research codebase for implementation details (existing patterns, related files, integration points) to write good Technical Approach sections.
-4. Generate task documents from the selected template.
-5. Validate type-specific rules.
-6. Show preview and get confirmation if needed.
-7. Create tasks in Linear or file mode.
-8. Update kanban.
-9. Return structured summary.
+4. Select scope:
+   - `ADD`: use `tasksToCreate` only
+   - `CREATE`: expand the full `idealPlan`
+5. Generate task documents from the selected scope.
+6. Validate type-specific rules.
+7. Show preview and get confirmation if needed.
+8. Create tasks in Linear or file mode.
+9. Update kanban.
+10. Return structured summary.
 
 ## Critical Rules
 
@@ -95,6 +98,7 @@ Always write the validated summary before terminal outcome.
 - Keep implementation, refactoring, and test rules separated by `taskType`.
 - Write machine-readable summary output every time.
 - **Ideal plan is binding.** Create every task in the approved plan. Do not re-evaluate whether tasks should exist.
+- **Fast path for `ADD`:** `tasksToCreate` is the execution scope. Do not re-expand the full ideal plan when the coordinator already selected the delta.
 - **STOP before save_issue:** verify all 7 sections present in body: Context, Implementation Plan, Technical Approach, Acceptance Criteria, Affected Components, Existing Code Impact, Definition of Done. PreToolUse hook will BLOCK creation without them.
 
 ## Definition of Done

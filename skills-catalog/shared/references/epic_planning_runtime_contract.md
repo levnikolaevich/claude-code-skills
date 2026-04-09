@@ -28,6 +28,8 @@ Canonical phase/status names: `shared/references/runtime_status_catalog.md`
 - `research_summary`
 - `ideal_plan_summary`
 - `mode_detection`
+- `epic_plan_summary`
+- `final_result`
 - `pending_decision`
 - `self_check_passed`
 
@@ -38,4 +40,9 @@ Canonical phase/status names: `shared/references/runtime_status_catalog.md`
 - `PHASE_3_PLAN` requires research summary
 - `PHASE_4_MODE_DETECTION` requires ideal plan summary
 - `PHASE_6_DELEGATE` requires preview confirmation when `auto_approve=false`
+- `PHASE_8_SELF_CHECK` requires `epic-plan` coordinator summary
 - `DONE` requires `self_check_passed` and `final_result`
+
+## Coordinator Artifact
+
+After `PHASE_7_FINALIZE`, `ln-210` writes an `epic-plan` coordinator artifact.

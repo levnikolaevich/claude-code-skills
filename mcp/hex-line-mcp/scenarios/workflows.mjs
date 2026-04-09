@@ -49,13 +49,17 @@ export async function runWorkflows(config) {
 
         const targetIdx = ensureLine(
             sourceLines,
-            (line) => line.includes("ls -R, ls -laR (recursive only)"),
+            (line) =>
+                line.includes("ls -R, ls -laR (recursive only)")
+                || line.includes("Bash redirect: blocks simple cat/head/tail/ls/grep/sed/diff"),
             "hook redirect comment",
         );
         const tempPath = resolve(tmpdir(), `hex-line-wf1-${Date.now()}.mjs`);
         copyFileSync(sourcePath, tempPath);
 
-        const updatedLine = sourceLines[targetIdx].replace("recursive only", "recursive listing only");
+        const updatedLine = sourceLines[targetIdx].includes("recursive only")
+            ? sourceLines[targetIdx].replace("recursive only", "recursive listing only")
+            : sourceLines[targetIdx].replace("grep/sed/diff", "grep/sed/diff/find");
 
         const { value: chars } = runN(() => {
             let total = 0;
@@ -86,16 +90,20 @@ export async function runWorkflows(config) {
 
         const targetIdx = ensureLine(
             sourceLines,
-            (line) => line.includes("Codex: Not supported"),
+            (line) =>
+                line.includes("Codex: Not supported")
+                || line.includes("hex-line: warning — failed to parse ${filePath}, skipping\\n"),
             "setup guidance line",
         );
         const tempPath = resolve(tmpdir(), `hex-line-wf2-${Date.now()}.mjs`);
         copyFileSync(sourcePath, tempPath);
 
-        const updatedLine = sourceLines[targetIdx].replace(
-            "Add MCP Tool Preferences to AGENTS.md instead",
-            "Document MCP Tool Preferences in AGENTS.md instead",
-        );
+        const updatedLine = sourceLines[targetIdx].includes("Add MCP Tool Preferences to AGENTS.md instead")
+            ? sourceLines[targetIdx].replace(
+                "Add MCP Tool Preferences to AGENTS.md instead",
+                "Document MCP Tool Preferences in AGENTS.md instead",
+            )
+            : sourceLines[targetIdx].replace("skipping\\n", "ignoring\\n");
         const windowStart = Math.max(1, targetIdx - 3);
         const windowLimit = Math.min(sourceLines.length - windowStart + 1, 10);
         const hashes = sourceLines.map((line) => fnv1a(line));

@@ -202,6 +202,23 @@ export const environmentWorkerPayloadSchema = {
     },
 };
 
+export const opportunityDiscoveryWorkerPayloadSchema = {
+    type: "object",
+    required: ["input_mode", "ideas_analyzed", "survivors_count", "killed_count", "warnings"],
+    additionalProperties: false,
+    properties: {
+        input_mode: { type: "string", minLength: 1 },
+        ideas_analyzed: { type: "integer" },
+        generated_ideas: { type: "integer" },
+        survivors_count: { type: "integer" },
+        killed_count: { type: "integer" },
+        top_recommendation: nullableStringSchema(),
+        report_path: nullableStringSchema(),
+        warnings: stringArraySchema(),
+        artifact_path: nullableStringSchema(),
+    },
+};
+
 export const storyPlanWorkerPayloadSchema = {
     type: "object",
     required: ["mode", "epic_id", "stories_created", "stories_updated", "stories_canceled", "story_urls", "warnings", "kanban_updated"],
@@ -217,6 +234,26 @@ export const storyPlanWorkerPayloadSchema = {
         warnings: stringArraySchema(),
         kanban_updated: { type: "boolean" },
         research_path_used: { type: "string" },
+    },
+};
+
+export const storyPlanCoordinatorPayloadSchema = {
+    type: "object",
+    required: ["mode", "epic_id", "stories_created", "stories_updated", "stories_canceled", "story_urls", "warnings", "kanban_updated"],
+    additionalProperties: false,
+    properties: {
+        mode: { type: "string" },
+        epic_id: { type: "string" },
+        stories_planned: { type: "integer" },
+        stories_created: { type: "integer" },
+        stories_updated: { type: "integer" },
+        stories_canceled: { type: "integer" },
+        story_urls: stringArraySchema(),
+        warnings: stringArraySchema(),
+        kanban_updated: { type: "boolean" },
+        research_path_used: { type: "string" },
+        worker_runs_completed: { type: "integer" },
+        artifact_path: nullableStringSchema(),
     },
 };
 
@@ -303,6 +340,32 @@ export const testPlanningWorkerPayloadSchema = {
     },
 };
 
+export const storyPrioritizationWorkerPayloadSchema = {
+    type: "object",
+    required: ["epic_id", "stories_analyzed", "priority_distribution", "prioritization_path", "warnings"],
+    additionalProperties: false,
+    properties: {
+        epic_id: { type: "string", minLength: 1 },
+        depth: { type: "string" },
+        stories_analyzed: { type: "integer" },
+        priority_distribution: {
+            type: "object",
+            required: ["p0", "p1", "p2", "p3"],
+            additionalProperties: false,
+            properties: {
+                p0: nonNegativeIntegerSchema(),
+                p1: nonNegativeIntegerSchema(),
+                p2: nonNegativeIntegerSchema(),
+                p3: nonNegativeIntegerSchema(),
+            },
+        },
+        top_story_ids: stringArraySchema(),
+        prioritization_path: { type: "string", minLength: 1 },
+        warnings: stringArraySchema(),
+        artifact_path: nullableStringSchema(),
+    },
+};
+
 export const docsGenerationWorkerPayloadSchema = {
     type: "object",
     required: ["worker", "status", "created_files", "skipped_files", "quality_inputs", "validation_status", "warnings"],
@@ -339,6 +402,7 @@ export const epicPlanCoordinatorPayloadSchema = {
         warnings: stringArraySchema(),
         kanban_updated: { type: "boolean" },
         infrastructure_epic_included: { type: "boolean" },
+        artifact_path: nullableStringSchema(),
     },
 };
 
@@ -353,6 +417,7 @@ export const scopeDecompositionPayloadSchema = {
         prioritization_runs_completed: { type: "integer" },
         warnings: stringArraySchema(),
         final_result: { type: "string" },
+        artifact_path: nullableStringSchema(),
     },
 };
 
@@ -604,11 +669,14 @@ export const benchmarkWorkerPayloadSchema = {
 };
 
 export const environmentWorkerSummarySchema = buildSummaryEnvelopeSchema(environmentWorkerPayloadSchema);
+export const opportunityDiscoveryWorkerSummarySchema = buildSummaryEnvelopeSchema(opportunityDiscoveryWorkerPayloadSchema);
 export const storyPlanWorkerSummarySchema = buildSummaryEnvelopeSchema(storyPlanWorkerPayloadSchema);
+export const storyPlanCoordinatorSummarySchema = buildSummaryEnvelopeSchema(storyPlanCoordinatorPayloadSchema);
 export const taskPlanWorkerSummarySchema = buildSummaryEnvelopeSchema(taskPlanWorkerPayloadSchema);
 export const qualityWorkerSummarySchema = buildSummaryEnvelopeSchema(qualityWorkerPayloadSchema);
 export const taskStatusWorkerSummarySchema = buildSummaryEnvelopeSchema(taskStatusWorkerPayloadSchema);
 export const testPlanningWorkerSummarySchema = buildSummaryEnvelopeSchema(testPlanningWorkerPayloadSchema);
+export const storyPrioritizationWorkerSummarySchema = buildSummaryEnvelopeSchema(storyPrioritizationWorkerPayloadSchema);
 export const docsGenerationWorkerSummarySchema = buildSummaryEnvelopeSchema(docsGenerationWorkerPayloadSchema);
 export const epicPlanCoordinatorSummarySchema = buildSummaryEnvelopeSchema(epicPlanCoordinatorPayloadSchema);
 export const scopeDecompositionSummarySchema = buildSummaryEnvelopeSchema(scopeDecompositionPayloadSchema);

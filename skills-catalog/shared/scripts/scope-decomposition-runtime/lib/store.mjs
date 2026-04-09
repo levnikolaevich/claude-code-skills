@@ -1,7 +1,9 @@
 import { resolve } from "node:path";
 import {
     epicPlanCoordinatorSummarySchema,
-    storyPlanWorkerSummarySchema,
+    scopeDecompositionSummarySchema,
+    storyPlanCoordinatorSummarySchema,
+    storyPrioritizationWorkerSummarySchema,
 } from "../../coordinator-runtime/lib/schemas.mjs";
 import {
     createPlanningManifestSchema,
@@ -32,7 +34,10 @@ const scopeStore = createPlanningRuntimeStore({
             discovery_summary: null,
             epic_summary: null,
             story_summaries: {},
-            prioritization_summary: null,
+            prioritization_enabled: false,
+            expected_prioritization_epics: [],
+            prioritization_summaries: {},
+            scope_summary: null,
         });
     },
     pausedPhase: PHASES.PAUSED,
@@ -74,7 +79,7 @@ export function recordStorySummary(projectRoot, runId, summary) {
         projectRoot,
         runId,
         summary,
-        storyPlanWorkerSummarySchema,
+        storyPlanCoordinatorSummarySchema,
         "story planning summary",
         (state, nextSummary) => ({
             ...state,
@@ -83,5 +88,33 @@ export function recordStorySummary(projectRoot, runId, summary) {
                 [nextSummary.payload.epic_id]: nextSummary,
             },
         }),
+    );
+}
+
+export function recordPrioritizationSummary(projectRoot, runId, summary) {
+    return scopeStore.recordSummary(
+        projectRoot,
+        runId,
+        summary,
+        storyPrioritizationWorkerSummarySchema,
+        "story prioritization summary",
+        (state, nextSummary) => ({
+            ...state,
+            prioritization_summaries: {
+                ...(state.prioritization_summaries || {}),
+                [nextSummary.payload.epic_id]: nextSummary,
+            },
+        }),
+    );
+}
+
+export function recordScopeSummary(projectRoot, runId, summary) {
+    return scopeStore.recordCoordinatorSummary(
+        projectRoot,
+        runId,
+        summary,
+        scopeDecompositionSummarySchema,
+        "scope decomposition summary",
+        "scope_summary",
     );
 }

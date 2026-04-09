@@ -10,6 +10,7 @@ import {
     pauseRun,
     readJsonFile,
     recordDecision,
+    recordPlanSummary,
     resolveRunId,
     runtimePaths,
     saveState,
@@ -156,6 +157,17 @@ async function main() {
         return;
     }
 
+    if (command === "record-plan-summary") {
+        const payload = readPayload(values, readJsonFile);
+        const { runId } = resolveRun(projectRoot);
+        const result = recordPlanSummary(projectRoot, runId, payload);
+        if (!result.ok) {
+            failResult(result);
+        }
+        output(result);
+        return;
+    }
+
     if (command === "pause") {
         const payload = readPayload(values, readJsonFile);
         const { runId } = resolveRun(projectRoot);
@@ -169,7 +181,7 @@ async function main() {
         return;
     }
 
-    fail("Unknown command. Use: start, status, advance, checkpoint, set-decision, pause, complete");
+    fail("Unknown command. Use: start, status, advance, checkpoint, record-plan-summary, set-decision, pause, complete");
 }
 
 main().catch(error => fail(error.message));

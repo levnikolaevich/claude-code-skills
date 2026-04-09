@@ -51,6 +51,9 @@ export function validateTransition(manifest, state, checkpoints, toPhase) {
             return { ok: false, error: "Not all epic groups produced worker summaries" };
         }
     }
+    if (toPhase === PHASES.SELF_CHECK && !state.story_plan_summary) {
+        return { ok: false, error: "Story plan coordinator summary missing" };
+    }
     if (toPhase === PHASES.SELF_CHECK && !state.template_compliance_passed) {
         return { ok: false, error: "Template compliance not verified. Fetch each created story via get_issue, run validateTemplateCompliance(description, 'story'), record template_compliance_passed in state." };
     }
@@ -79,6 +82,9 @@ export function computeResumeAction(manifest, state, checkpoints) {
         if (expected > actual) {
             return "Record remaining epic worker summaries before finalization";
         }
+    }
+    if (state.phase === PHASES.FINALIZE && !state.story_plan_summary) {
+        return "Record story-plan coordinator summary before self-check";
     }
     if (state.phase === PHASES.SELF_CHECK && !state.self_check_passed) {
         return `Fix self-check failures, then checkpoint ${PHASES.SELF_CHECK} with pass=true`;

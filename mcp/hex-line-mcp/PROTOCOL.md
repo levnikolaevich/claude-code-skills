@@ -35,6 +35,17 @@ The protocol is built around three concepts:
 - semantic summaries
 
 If graph data is missing, `hex-line` remains fully correct.
+If graph data is stale, `hex-line` suppresses it rather than pretending it is fresh.
+
+## Graph freshness policy
+
+- Stale graph never changes the canonical read, search, edit, or verify protocol.
+- One stale file schedules a best-effort background `reindexFile(...)` for that file.
+- A short stale burst escalates to one best-effort background `indexProject(...)` for the project.
+- The threshold-crossing file still keeps its point refresh so the system does not create a blind window before project refresh completes.
+- `edit_file` may still use stale graph facts as same-response advisory context after a local edit, but edit correctness never depends on graph freshness.
+- `grep_search` only pulls line-level graph annotations for edit-ready content mode. Discovery-only search modes do not spend payload on graph hints.
+- `read_file` only emits the top-line `Graph:` header in `verbosity=full`.
 
 ## Persistence policy
 

@@ -8,7 +8,6 @@ import {
     createPlanningRuntimeStore,
     createPlanningState,
 } from "../../planning-runtime/lib/store.mjs";
-import { writeRuntimeArtifactJson } from "../../coordinator-runtime/lib/artifacts.mjs";
 import { PHASES } from "./phases.mjs";
 
 const taskPlanningStore = createPlanningRuntimeStore({
@@ -39,6 +38,7 @@ const taskPlanningStore = createPlanningRuntimeStore({
             child_run: null,
             verification_summary: null,
             stage_summary: null,
+            template_compliance_passed: false,
         });
     },
     pausedPhase: PHASES.PAUSED,
@@ -77,41 +77,15 @@ export function recordPlan(projectRoot, runId, summary) {
 }
 
 export function recordStageSummary(projectRoot, runId, summary) {
-    if (summary?.run_id !== runId) {
-        return { ok: false, error: `Stage summary run_id must match runtime run_id (${runId})` };
-    }
-    const validation = taskPlanningStore.recordSummary(
+    return taskPlanningStore.recordCoordinatorSummary(
         projectRoot,
         runId,
         summary,
         pipelineStageCoordinatorSummarySchema,
         "pipeline stage coordinator summary",
-        (state, nextSummary) => {
-            const artifactIdentifier = `${nextSummary.identifier}-stage-${nextSummary.payload.stage}`;
-            const artifactPath = writeRuntimeArtifactJson(
-                projectRoot,
-                runId,
-                nextSummary.summary_kind,
-                artifactIdentifier,
-                {
-                    ...nextSummary,
-                    payload: {
-                        ...nextSummary.payload,
-                        artifact_path: nextSummary.payload.artifact_path || null,
-                    },
-                },
-            );
-            return {
-                ...state,
-                stage_summary: {
-                    ...nextSummary,
-                    payload: {
-                        ...nextSummary.payload,
-                        artifact_path: artifactPath,
-                    },
-                },
-            };
+        "stage_summary",
+        {
+            artifactIdentifier: nextSummary => `${nextSummary.identifier}-stage-${nextSummary.payload.stage}`,
         },
     );
-    return validation;
 }

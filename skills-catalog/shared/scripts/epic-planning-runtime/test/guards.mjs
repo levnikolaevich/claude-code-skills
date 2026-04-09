@@ -44,7 +44,8 @@ function expect(name, result, expectedOk) {
 }
 
 try {
-    run(["start", "--identifier", "scope", "--manifest-file", manifestPath]);
+    const started = run(["start", "--identifier", "scope", "--manifest-file", manifestPath]);
+    const parentRunId = started.run_id;
 
     // Fast-forward to PREVIEW (all checkpoints valid)
     run(["checkpoint", "--identifier", "scope", "--phase", PHASES.CONFIG]);
@@ -86,14 +87,36 @@ try {
     run(["checkpoint", "--identifier", "scope", "--phase", PHASES.DELEGATE]);
     run(["advance", "--identifier", "scope", "--to", PHASES.FINALIZE]);
     run(["checkpoint", "--identifier", "scope", "--phase", PHASES.FINALIZE]);
+    const missingCoordinatorSummary = run(["advance", "--identifier", "scope", "--to", PHASES.SELF_CHECK], { allowFailure: true });
+    expect("SELF_CHECK blocked without epic-plan summary", missingCoordinatorSummary, false);
+    run(["record-plan-summary", "--identifier", "scope", "--payload", JSON.stringify({
+        schema_version: "1.0.0",
+        summary_kind: "epic-plan",
+        run_id: parentRunId,
+        identifier: "scope",
+        producer_skill: "ln-210",
+        produced_at: "2026-04-09T00:00:00Z",
+        payload: {
+            mode: "CREATE",
+            scope_identifier: "scope",
+            epics_created: 3,
+            epics_updated: 0,
+            epics_canceled: 0,
+            epic_urls: ["EPIC-1", "EPIC-2", "EPIC-3"],
+            warnings: [],
+            kanban_updated: true,
+            infrastructure_epic_included: false,
+            artifact_path: null,
+        },
+    })]);
     run(["advance", "--identifier", "scope", "--to", PHASES.SELF_CHECK]);
 
-    // TEST 3: DONE blocked without final_result
+    // TEST 4: DONE blocked without final_result
     run(["checkpoint", "--identifier", "scope", "--phase", PHASES.SELF_CHECK, "--payload", "{\"pass\":true}"]);
     const t3 = run(["complete", "--identifier", "scope"], { allowFailure: true });
     expect("DONE blocked without final_result", t3, false);
 
-    // TEST 4: DONE allowed with final_result
+    // TEST 5: DONE allowed with final_result
     run(["checkpoint", "--identifier", "scope", "--phase", PHASES.SELF_CHECK, "--payload", "{\"pass\":true,\"final_result\":\"READY\"}"]);
     const t4 = run(["complete", "--identifier", "scope"]);
     expect("DONE allowed with final_result", t4, true);

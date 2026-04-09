@@ -1,6 +1,7 @@
 import { createRuntimeStore, readJsonFile } from "../../coordinator-runtime/lib/core.mjs";
 import { pendingDecisionSchema } from "../../coordinator-runtime/lib/schemas.mjs";
 import { assertSchema } from "../../coordinator-runtime/lib/validate.mjs";
+import { writeRuntimeArtifactJson } from "../../coordinator-runtime/lib/artifacts.mjs";
 
 const BASE_MANIFEST_PROPERTIES = {
     skill: { type: "string" },
@@ -40,6 +41,63 @@ export function createPlanningState(manifest, runId, phase, extraState = {}) {
         updated_at: new Date().toISOString(),
         ...extraState,
     };
+}
+
+export function recordCoordinatorSummaryState({
+    projectRoot,
+    runId,
+    summary,
+    schema,
+    label,
+    stateKey,
+    loadRun,
+    updateState,
+    artifactIdentifier,
+    reduceState,
+}) {
+    const run = loadRun(projectRoot, runId);
+    if (!run) {
+        return { ok: false, error: "Run not found" };
+    }
+    if (summary?.run_id !== runId) {
+        return { ok: false, error: `${label} run_id must match runtime run_id (${runId})` };
+    }
+    const validation = assertSchema(schema, summary, label);
+    if (!validation.ok) {
+        return validation;
+    }
+    return updateState(projectRoot, runId, state => {
+        const nextArtifactIdentifier = typeof artifactIdentifier === "function"
+            ? artifactIdentifier(summary, state)
+            : (artifactIdentifier || summary.identifier);
+        const artifactPath = writeRuntimeArtifactJson(
+            projectRoot,
+            runId,
+            summary.summary_kind,
+            nextArtifactIdentifier,
+            {
+                ...summary,
+                payload: {
+                    ...summary.payload,
+                    artifact_path: summary.payload.artifact_path || null,
+                },
+            },
+        );
+        const reducedSummary = {
+            ...summary,
+            payload: {
+                ...summary.payload,
+                artifact_path: artifactPath,
+            },
+        };
+        const nextState = {
+            ...state,
+            [stateKey]: reducedSummary,
+        };
+        return typeof reduceState === "function"
+            ? reduceState(nextState, reducedSummary, state)
+            : nextState;
+    });
 }
 
 export function createPlanningRuntimeStore({
@@ -119,11 +177,27 @@ export function createPlanningRuntimeStore({
         return store.updateState(projectRoot, runId, state => reducer(state, summary));
     }
 
+    function recordCoordinatorSummary(projectRoot, runId, summary, schema, label, stateKey, options = {}) {
+        return recordCoordinatorSummaryState({
+            projectRoot,
+            runId,
+            summary,
+            schema,
+            label,
+            stateKey,
+            loadRun: store.loadRun,
+            updateState: store.updateState,
+            artifactIdentifier: options.artifactIdentifier,
+            reduceState: options.reduceState,
+        });
+    }
+
     return {
         ...store,
         setPendingDecision,
         recordDecision,
         recordSummary,
+        recordCoordinatorSummary,
         readJsonFile,
     };
 }

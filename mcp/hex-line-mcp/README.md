@@ -39,7 +39,7 @@ Advanced / occasional:
 | `outline` | AST-based structural overview with hash anchors via tree-sitter WASM. Supports JavaScript/TypeScript, Python, C#, PHP, and fence-aware markdown headings | 95% token reduction, direct edit anchors |
 | `verify` | Check if held checksums / revision are still current | Staleness check without full re-read |
 | `inspect_path` | Unified file-or-directory inspection | Minimal tree discovery by default, deeper traversal on demand |
-| `changes` | Compare file against git ref, shows added/removed/modified symbols | AST-level semantic diff |
+| `changes` | Compare file against git ref, shows added/removed/modified symbols | AST-level semantic diff with risk/provenance preview |
 | `bulk_replace` | Search-and-replace across multiple files inside an explicit root path | Compact summary (default) or capped diffs via `format`, dry_run, max_files |
 
 ### Hooks (SessionStart + PreToolUse + PostToolUse)
@@ -86,6 +86,15 @@ npm run lint
 npm run check
 ```
 
+For the full MCP workspace regression pass from the repository root, run the package test scripts explicitly:
+
+```bash
+npm --prefix mcp --workspace hex-common test
+npm --prefix mcp --workspace hex-line-mcp test
+npm --prefix mcp --workspace hex-graph-mcp test
+npm --prefix mcp --workspace hex-ssh-mcp test:all
+```
+
 Maintainers can also run the internal scenario harness when they want reproducible repo-local workflow regressions:
 
 ```bash
@@ -93,7 +102,9 @@ npm run scenarios -- --repo /path/to/repo
 npm run scenarios:diagnostic -- --repo /path/to/repo
 ```
 
-Comparative built-in vs hex-line benchmarks are maintained outside this package.
+The diagnostics run reports graph payload overhead and auto-refresh telemetry. Read those rows as engineering diagnostics, not as a compression score.
+
+Comparative built-in vs hex-line benchmarks are maintained outside this package. External-baseline comparisons must reuse the same scenario suite and correctness contract before making broader claims.
 
 ### Optional Graph Enrichment
 
@@ -103,8 +114,16 @@ If a project already has `.hex-skills/codegraph/index.db`, `hex-line` automatica
 - Graph enrichment is project-deterministic. `hex-line` only uses the graph database that belongs to the resolved current project scope.
 - Nested projects do not inherit graph hints from a parent repo index once a nested project boundary is detected.
 - `better-sqlite3` is optional. If it is unavailable, `hex-line` still works without graph hints.
+- `read_file` only emits the top-line `Graph:` header in `verbosity=full`.
+- `grep_search` only emits line-level graph annotations in `output=content` when `editReady=true`. `summary`, `files`, `count`, and discovery-only content search stay graph-free.
+- Grep annotations are capped and count-suffixes are deduplicated so the first label keeps the counts and later labels stay short.
 - `read_file`, `outline`, and `grep_search` stay compact: they only surface high-signal local facts such as `api`, framework entrypoints, callers, flow, and clone hints.
 - `edit_file` and `changes` surface the deeper review layer: external callers, downstream return/property flow, clone peers, public API risk, framework entrypoint risk, and same-name sibling warnings when present.
+- Both tools now expose a short top-level preview before the detailed sections: `payload_sections`, `graph_enrichment`, count fields, and `provenance_summary`.
+- Stale graph data never changes correctness. `hex-line` suppresses stale hints, schedules a best-effort `reindexFile(...)` for a stale file, and escalates to one background `indexProject(...)` when several files go stale inside the burst window.
+- The threshold-crossing file still keeps its point refresh so a short stale burst does not create a blind gap before the project refresh finishes.
+- `edit_file` may still use stale graph context as same-response advisory metadata when the file was just edited, but stale graph never gates the edit protocol itself.
+- `npm run scenarios:diagnostic -- --with-graph` prints graph payload overhead plus an auto-refresh probe line with `suppressions`, `file_refresh`, `project_refresh`, and `threshold_hits`.
 
 `hex-line` does not read `hex-graph` internals directly anymore. The integration uses a small read-only contract exposed by `hex-graph-mcp`:
 
@@ -224,6 +243,11 @@ Result footer includes:
 - `reason: ...` as the canonical machine-readable cause for the current status
 - `revision: ...`
 - `file: ...`
+- `summary: ...` with edited line span / diff counts on successful edits
+- `payload_sections: ...` so callers know which detailed sections follow
+- `graph_enrichment: available | unavailable`
+- `semantic_impact_count: ...`, `semantic_fact_count: ...`, and `clone_warning_count: ...` when graph-backed review data is available
+- `provenance_summary: ...` for the edit protocol + optional graph source
 - `changed_ranges: ...` when relevant
 - `recovery_ranges: ...` with the narrowest recommended `read_file` ranges for retry
 - `next_action: ...` as the canonical immediate choice: `apply_retry_edit`, `apply_retry_batch`, or `reread_then_retry`
@@ -233,7 +257,7 @@ Result footer includes:
 - `retry_edits: ...` on conservative batch conflicts when every conflicted edit can be retried directly
 - `suggested_read_call: ...` when rereading is the safest next step
 - `retry_plan: ...` with a compact machine-readable next-call plan
-- `summary: ...` and `snippet: ...` instead of long prose blocks
+- `summary: ...` and `snippet: ...` instead of long prose blocks on conflicts
 - `edit_conflicts: N` on conservative multi-edit preflight conflicts
 
 ### write_file

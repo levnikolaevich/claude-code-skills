@@ -2,6 +2,8 @@
 
 Run the scenarios independently. Do not make unrelated changes. Show your work and keep the repository in a valid state after each scenario.
 
+This file is the canonical scenario suite for internal built-in vs `hex-line` comparison. If maintainers run an external baseline later, reuse this suite unchanged together with the matching correctness expectations.
+
 ## Scenario A: Small Focused Edit
 
 File `lib/search.mjs` defines the ripgrep timeout.

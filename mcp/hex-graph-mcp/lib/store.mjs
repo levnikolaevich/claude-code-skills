@@ -2502,45 +2502,6 @@ function collectReferenceRows(store, node, kind) {
     return refs;
 }
 
-function serializeFlowSummary(store, row) {
-    return {
-        kind: row.kind,
-        source_name: row.source_name,
-        target_name: row.target_name,
-        confidence: row.confidence,
-        file: row.file,
-        line: row.line,
-        related_symbol: row.related_symbol_id
-            ? serializeNode(store, {
-                id: row.related_symbol_id,
-                qualified_name: row.related_qualified_name || null,
-                name: row.related_name,
-                kind: row.related_kind,
-                language: row.related_language || null,
-                file: row.related_file,
-                line_start: row.related_line,
-                line_end: row.related_line,
-                signature: null,
-                is_exported: 0,
-                is_default_export: 0,
-            })
-            : null,
-    };
-}
-
-function serializeFlowEdge(row, direction) {
-    return {
-        layer: "flow",
-        kind: row.kind,
-        confidence: row.confidence,
-        file: row.file,
-        line: row.line,
-        direction,
-        source_name: row.source_name,
-        target_name: row.target_name,
-    };
-}
-
 function parseAccessPath(value) {
     if (!value) return null;
     try {
@@ -3042,9 +3003,10 @@ export function getReferencesBySelector(selector, { kind, limit = 50, min_confid
         const resolved = resolveSelector(store, selector);
         if (resolved.error) return resolved;
 
-        const refs = dedupeReferenceRows(filterEdgesByConfidence(collectReferenceRows(store, resolved.node, kind), min_confidence)).slice(0, limit);
+        const allRefs = dedupeReferenceRows(filterEdgesByConfidence(collectReferenceRows(store, resolved.node, kind), min_confidence));
+        const refs = allRefs.slice(0, limit);
         const byKind = {};
-        for (const row of refs) byKind[row.kind] = (byKind[row.kind] || 0) + 1;
+        for (const row of allRefs) byKind[row.kind] = (byKind[row.kind] || 0) + 1;
 
         return {
             query: { ...resolved.query, kind: kind || "all", limit, min_confidence },
@@ -3060,12 +3022,12 @@ export function getReferencesBySelector(selector, { kind, limit = 50, min_confid
                     evidence: parseEvidence(r.evidence_json),
                 })),
                 total_by_kind: byKind,
-                total: refs.length,
+                total: allRefs.length,
             },
             confidence: resolved.confidence,
             reason: resolved.reason,
             warnings: resolved.warnings || [],
-            evidence: { total_found: refs.length },
+            evidence: { total_found: allRefs.length, returned_count: refs.length },
             limits_applied: { limit },
         };
     });
@@ -3080,9 +3042,8 @@ export function findImplementationsBySelector(selector, { limit = 50, path } = {
         const allowedKinds = resolved.node.kind === "method"
             ? new Set(["overrides"])
             : new Set(["implements", "extends", "overrides"]);
-        const matches = store.edgesTo(resolved.node.id)
+        const allMatches = store.edgesTo(resolved.node.id)
             .filter(edge => edge.layer === "type" && allowedKinds.has(edge.kind))
-            .slice(0, limit)
             .map(edge => ({
                 kind: edge.kind,
                 confidence: edge.confidence,
@@ -3106,17 +3067,19 @@ export function findImplementationsBySelector(selector, { limit = 50, path } = {
                     line: edge.line,
                 },
             }));
+        const matches = allMatches.slice(0, limit);
 
         return {
             query: resolved.query,
             result: {
                 symbol: serializeNode(store, resolved.node),
+                total: allMatches.length,
                 implementations: matches,
             },
-            confidence: matches.some(match => match.confidence === "heuristic") ? "heuristic" : resolved.confidence,
+            confidence: allMatches.some(match => match.confidence === "heuristic") ? "heuristic" : resolved.confidence,
             reason: "type_graph_lookup",
             warnings: resolved.warnings || [],
-            evidence: { match_count: matches.length },
+            evidence: { match_count: allMatches.length, returned_count: matches.length },
             limits_applied: { limit },
         };
     });

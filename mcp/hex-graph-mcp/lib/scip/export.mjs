@@ -8,8 +8,6 @@ import { resolveStore } from "../store.mjs";
 import { exportExternalScip, exportToolInfo } from "./external.mjs";
 import { defaultPositionEncodingForLanguage, normalizeScipLanguage } from "./languages.mjs";
 import {
-    buildNodeLookup,
-    isCallLikeIdentifier,
     isDeclarationName,
     isTypePosition,
     isTypeScriptFile,

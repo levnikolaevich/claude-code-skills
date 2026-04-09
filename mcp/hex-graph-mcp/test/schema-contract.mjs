@@ -61,6 +61,24 @@ describe("schema descriptions", () => {
             const audit = toolByName(result.tools, "audit_workspace");
             const auditProps = audit.inputSchema.properties || {};
             assert.equal(auditProps.show_suppressed?.description, "Include suppressed unused exports in the visible result");
+
+            const inspect = toolByName(result.tools, "inspect_symbol");
+            const inspectProps = inspect.inputSchema.properties || {};
+            assert.equal(inspectProps.verbosity?.description, "Response budget. `minimal` returns the shortest actionable answer, `compact` keeps key reasoning visible, and `full` includes supporting detail.");
+            assert.equal(inspectProps.expand_limit?.description, "Max rows to materialize for expanded sections (default: 10, capped at 25)");
+
+            const refs = toolByName(result.tools, "find_references");
+            const refsProps = refs.inputSchema.properties || {};
+            assert.equal(refsProps.expand?.description, "Optional bounded expansion sections to materialize. Heavy tools return counts/previews by default and expand only the requested sections.");
+            assert.equal(refsProps.include_evidence?.description, "Include supporting evidence in expanded rows. Defaults to false to keep payloads compact.");
+
+            const trace = toolByName(result.tools, "trace_paths");
+            const traceProps = trace.inputSchema.properties || {};
+            assert.equal(traceProps.expand_limit?.description, "Max rows to materialize for expanded sections (default: 10, capped at 25)");
+
+            const flow = toolByName(result.tools, "trace_dataflow");
+            const flowProps = flow.inputSchema.properties || {};
+            assert.equal(flowProps.include_evidence?.description, "Include supporting evidence in expanded rows. Defaults to false to keep payloads compact.");
         });
     });
 });

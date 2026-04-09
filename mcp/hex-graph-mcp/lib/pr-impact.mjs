@@ -272,7 +272,7 @@ export async function getPrImpact({
             return (b.caller_count || 0) - (a.caller_count || 0);
         })
         .slice(0, maxSymbols)
-        .map(({ risk_score, ...item }) => item);
+        .map(({ risk_score: _risk_score, ...item }) => item);
 
     const allRisks = riskSummary(symbols);
 

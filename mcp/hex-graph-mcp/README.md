@@ -63,6 +63,8 @@ All symbol/query tools also require `path` as the project anchor. Pass the index
 
 `find_symbols` is name-oriented discovery, not free-form code search. If the input looks like `export function`, `server.tool()`, `app.get(...)`, or another raw code fragment, use `grep_search` or a framework-aware graph query instead.
 
+Heavy tools now default to `verbosity: "compact"` and summary-first output. They return counts, previews, `available_expansions`, `expansion_hints`, `resolution_quality`, and `provenance_summary` first, so the client sees upfront how much a deeper expansion will return and which layer the current answer comes from. Use `expand`, `expand_limit`, `limit`, `depth`, `max_hops`, `kind`, and `min_confidence` to request a bounded deeper slice instead of dumping the whole graph in one call.
+
 All public responses now use the same top-level shape:
 
 - `status`
@@ -110,11 +112,11 @@ Errors use a compact top-level shape:
 | Tool | Best for | Key result sections |
 |------|----------|---------------------|
 | `find_symbols` | Discovery before you know the exact identity | `candidates`, `disambiguation_hints` |
-| `inspect_symbol` | One-stop symbol briefing | `symbol`, `resolution`, `context`, `references_summary`, `implementations_summary`, `framework_roles` |
-| `find_references` | All semantic usages of one symbol | `references`, `total_by_kind`, framework wiring, inline `quality` |
-| `find_implementations` | Override / implementation search | `implementations`, `summary`, `next_actions` |
-| `trace_paths` | Blast radius and dependency paths from a concrete symbol | `paths`, `summary`, `warnings`, inline `quality` |
-| `trace_dataflow` | Source-to-sink propagation | `flows`, `anchors`, `summary` |
+| `inspect_symbol` | One-stop symbol briefing | `symbol`, `resolution`, `context`, `counts`, `references_summary`, `implementations_summary`, `available_expansions`, optional `expanded` |
+| `find_references` | All semantic usages of one symbol | `total`, `total_by_kind`, `preview`, `available_expansions`, optional `expanded`, inline `quality` |
+| `find_implementations` | Override / implementation search | `total`, `preview`, `available_expansions`, optional `expanded` |
+| `trace_paths` | Blast radius and dependency paths from a concrete symbol | `path_count`, `path_previews`, `available_expansions`, optional `expanded`, inline `quality` |
+| `trace_dataflow` | Source-to-sink propagation | `source`, `sink`, `path_count`, `path_previews`, `available_expansions`, optional `expanded` |
 
 ### Review and Editing
 
@@ -235,7 +237,7 @@ Inline `quality` metadata is currently surfaced by:
 ### Generated Snapshot
 
 - MCP tools registered in server contract: `14`
-- Semantic suite: `90/90` passing
+- Semantic suite: `92/92` passing
 - Corpora: `1` curated, `1` pinned external
 - Lanes: parser-first `green`, precise overlay `provider_conditional`
 
@@ -251,6 +253,8 @@ Public targets:
 - Parser-first steady-state query p50: `<=200ms`
 - Precise-overlay incremental reindex p50: `<=2s`
 - Workflow token savings target: `>=50%`
+- Summary-first default preview: `<=5 rows`
+- Resolution/provenance surface coverage: `100% / 100%`
 
 Workflow baseline (`benchmark/workflow-summary.json`):
 

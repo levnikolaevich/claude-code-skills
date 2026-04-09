@@ -13,10 +13,12 @@ import {
     getModuleMetricsReport,
     getReferencesBySelector,
     getSymbol,
+    tracePaths,
     withResolvedStore,
 } from "./store.mjs";
 import { findUnusedExports } from "./unused.mjs";
 import { ACTION, nextActions } from "./output-contract.mjs";
+import { confidenceRank, normalizeConfidence } from "./confidence.mjs";
 
 const QUERY_PATH_RECOVERY = "Run index_project on the project root first; symbol/query tools then accept that root or a file/subdirectory inside it as path";
 
@@ -95,6 +97,237 @@ function mergeWarnings(...groups) {
     return [...new Set(groups.flat().filter(Boolean))];
 }
 
+function clampLimit(value, fallback, max = 25) {
+    if (value == null || Number.isNaN(Number(value))) return fallback;
+    return Math.max(1, Math.min(max, Number(value)));
+}
+
+function normalizeExpansions(expand, allowed = [], maxSections = 3) {
+    const requested = Array.isArray(expand)
+        ? expand
+        : typeof expand === "string"
+            ? [expand]
+            : [];
+    return [...new Set(
+        requested
+            .filter((entry) => typeof entry === "string")
+            .map(entry => entry.trim())
+            .filter(Boolean)
+            .filter(entry => allowed.includes(entry)),
+    )].slice(0, maxSections);
+}
+
+function compactReferenceRow(reference, includeEvidence = false) {
+    if (!reference) return null;
+    return {
+        file: reference.file,
+        line: reference.line,
+        kind: reference.kind,
+        confidence: reference.confidence,
+        origin: reference.origin,
+        ...(includeEvidence && reference.evidence ? { evidence: reference.evidence } : {}),
+    };
+}
+
+function compactImplementationRow(match, includeEvidence = false) {
+    if (!match) return null;
+    return {
+        kind: match.kind,
+        confidence: match.confidence,
+        source: match.source,
+        ...(includeEvidence && match.evidence ? { evidence: match.evidence } : {}),
+    };
+}
+
+function compactTraceEdge(edge, includeEvidence = false) {
+    if (!edge) return null;
+    return {
+        kind: edge.kind,
+        layer: edge.layer,
+        confidence: edge.confidence,
+        origin: edge.origin,
+        ...(includeEvidence && edge.evidence ? { evidence: edge.evidence } : {}),
+    };
+}
+
+function compactTracePath(path, includeEvidence = false) {
+    if (!path) return null;
+    if (path.hops) {
+        return {
+            depth: path.depth,
+            nodes: path.nodes || [],
+            hops: path.hops.map(hop => compactTraceEdge(hop, includeEvidence)),
+        };
+    }
+    return {
+        depth: path.depth,
+        nodes: path.nodes?.map(node => compactNode(node)) || [],
+        edges: path.edges?.map(edge => compactTraceEdge(edge, includeEvidence)) || [],
+    };
+}
+
+function buildPathPreview(path) {
+    const nodes = path?.nodes || [];
+    const edges = path?.edges || path?.hops || [];
+    const first = nodes[0];
+    const last = nodes[nodes.length - 1];
+    return {
+        depth: path?.depth ?? Math.max(0, edges.length),
+        node_count: nodes.length,
+        edge_count: edges.length,
+        edge_kinds: [...new Set(edges.map(edge => edge?.kind).filter(Boolean))],
+        start: first ? {
+            display_name: first.display_name || first.name || null,
+            file: first.file || null,
+            line: first.line_start || first.line || null,
+        } : null,
+        end: last ? {
+            display_name: last.display_name || last.name || null,
+            file: last.file || null,
+            line: last.line_start || last.line || null,
+        } : null,
+    };
+}
+
+function buildExpansionHint({
+    expansion,
+    total,
+    returnedByDefault,
+    expandLimit,
+    includeEvidence = false,
+    extra = {},
+}) {
+    return {
+        expansion,
+        total,
+        returned_by_default: returnedByDefault,
+        remaining: Math.max(0, total - returnedByDefault),
+        suggested_params: {
+            expand: [expansion],
+            expand_limit: Math.min(expandLimit, Math.max(total, returnedByDefault, 1)),
+            include_evidence: includeEvidence,
+            ...extra,
+        },
+    };
+}
+
+function incrementCount(map, key) {
+    if (!key) return;
+    map.set(key, (map.get(key) || 0) + 1);
+}
+
+function summarizeCounts(map, limit = 5) {
+    return [...map.entries()]
+        .sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))
+        .slice(0, limit)
+        .map(([value, count]) => ({ value, count }));
+}
+
+function classifyProvenanceTier(origin) {
+    if (!origin) return "unknown";
+    if (origin === "scip_import") return "scip_overlay";
+    if (origin.startsWith("framework:")) return "framework_overlay";
+    if (origin.startsWith("precise_") || ["typescript", "basedpyright", "csharp-ls", "phpactor"].includes(origin)) {
+        return "precise_provider";
+    }
+    if (origin === "external" || origin === "unresolved") return "external_or_unresolved";
+    return "parser_or_workspace";
+}
+
+function buildProvenanceSummary(rows, { totalRows = null, originLimit = 5 } = {}) {
+    const sourceRows = rows.filter(Boolean);
+    const byOrigin = new Map();
+    const byTier = new Map();
+    const byConfidence = new Map();
+    let strongestConfidence = "low";
+    let strongestTier = "unknown";
+    for (const row of sourceRows) {
+        const confidence = normalizeConfidence(row.confidence);
+        const tier = classifyProvenanceTier(row.origin);
+        incrementCount(byOrigin, row.origin || "unknown");
+        incrementCount(byTier, tier);
+        incrementCount(byConfidence, confidence);
+        if (confidenceRank(confidence) > confidenceRank(strongestConfidence)) {
+            strongestConfidence = confidence;
+        }
+        if ((byTier.get(tier) || 0) > 0 && (byTier.get(strongestTier) || 0) === 0) {
+            strongestTier = tier;
+        }
+    }
+    const analyzedRows = sourceRows.length;
+    const expectedTotal = totalRows ?? analyzedRows;
+    return {
+        total_rows: expectedTotal,
+        analyzed_rows: analyzedRows,
+        remaining_rows: Math.max(0, expectedTotal - analyzedRows),
+        coverage_ratio: expectedTotal > 0 ? Number((analyzedRows / expectedTotal).toFixed(2)) : 1,
+        strongest_confidence: strongestConfidence,
+        strongest_tier: strongestTier,
+        tiers: summarizeCounts(byTier, originLimit),
+        confidences: summarizeCounts(byConfidence, originLimit),
+        origins: summarizeCounts(byOrigin, originLimit),
+    };
+}
+
+function selectorSpecificity(selectorKind) {
+    switch (selectorKind) {
+        case "symbol_id":
+            return "exact_id";
+        case "workspace_qualified_name":
+            return "workspace_stable";
+        case "qualified_name":
+            return "file_scoped";
+        case "name_file":
+            return "name_file_match";
+        default:
+            return "unknown";
+    }
+}
+
+function buildRecommendedSelectors(symbol) {
+    if (!symbol) return {};
+    return {
+        symbol_id: symbol.symbol_id,
+        workspace_qualified_name: symbol.workspace_qualified_name || null,
+        qualified_name: symbol.qualified_name || null,
+        name_file: symbol.file && symbol.name
+            ? { name: symbol.name, file: symbol.file }
+            : null,
+    };
+}
+
+function buildResolutionPayload(resolution, symbol) {
+    const providerStatus = resolution?.precise_provider_status || null;
+    return {
+        ...resolution,
+        ownership: symbol ? {
+            file: symbol.file,
+            package_key: symbol.package_key || null,
+            package_name: symbol.package_name || null,
+            module_key: symbol.module_key || null,
+            module_name: symbol.module_name || null,
+        } : null,
+        resolution_quality: {
+            selector_specificity: selectorSpecificity(resolution?.selector_kind),
+            candidate_count: resolution?.parsed_candidates?.length || 0,
+            precise_provider_status: providerStatus?.status || "unknown",
+            precise_provider_message: providerStatus?.message || null,
+            precise_edge_counts: {
+                incoming: resolution?.precise_results?.incoming_count || 0,
+                outgoing: resolution?.precise_results?.outgoing_count || 0,
+            },
+        },
+        selector_hints: {
+            recommended_selectors: buildRecommendedSelectors(symbol),
+            preferred_for_repeat_queries: symbol?.workspace_qualified_name ? "workspace_qualified_name" : "symbol_id",
+        },
+    };
+}
+
+function traceRowsForProvenance(paths) {
+    return (paths || []).flatMap(path => [...(path.edges || []), ...(path.hops || [])]);
+}
+
 function classifyFindSymbolsQuery(query) {
     if (typeof query !== "string") return [];
     const trimmed = query.trim();
@@ -161,26 +394,66 @@ export function runFindSymbolsUseCase(query, { kind, limit = 20, path } = {}) {
 export function runInspectSymbolUseCase(selector, {
     minConfidence = null,
     path,
+    verbosity = "compact",
+    expand = [],
+    expandLimit = null,
+    includeEvidence = false,
     referenceLimit = 10,
     implementationLimit = 10,
 } = {}) {
+    const previewLimit = verbosity === "minimal" ? 3 : verbosity === "full" ? 8 : 5;
+    const detailLimit = clampLimit(expandLimit, Math.max(referenceLimit, implementationLimit, 10));
+    const expansions = normalizeExpansions(expand, ["siblings", "incoming", "outgoing", "references", "implementations"]);
+    const referenceFetchLimit = Math.max(referenceLimit, previewLimit, expansions.includes("references") ? detailLimit : 0);
+    const implementationFetchLimit = Math.max(implementationLimit, previewLimit, expansions.includes("implementations") ? detailLimit : 0);
     const symbolResult = getSymbol(selector, { min_confidence: minConfidence, path });
     if (symbolResult?.error) return symbolResult;
     const resolutionResult = explainResolution(selector, { path });
     if (resolutionResult?.error) return resolutionResult;
     const referencesResult = getReferencesBySelector(selector, {
-        limit: referenceLimit,
+        limit: referenceFetchLimit,
         min_confidence: minConfidence,
         path,
     });
     if (referencesResult?.error) return referencesResult;
     const implementationsResult = findImplementationsBySelector(selector, {
-        limit: implementationLimit,
+        limit: implementationFetchLimit,
         path,
     });
     if (implementationsResult?.error) return implementationsResult;
 
     const symbol = symbolResult.result.symbol;
+    const siblings = symbolResult.result.siblings || [];
+    const incoming = symbolResult.result.incoming || [];
+    const outgoing = symbolResult.result.outgoing || [];
+    const totalReferences = referencesResult.result.total || 0;
+    const totalImplementations = implementationsResult.result.total || implementationsResult.result.implementations.length;
+    const referencesPreview = referencesResult.result.references
+        .slice(0, previewLimit)
+        .map(reference => compactReferenceRow(reference, includeEvidence));
+    const implementationsPreview = implementationsResult.result.implementations
+        .slice(0, previewLimit)
+        .map(match => compactImplementationRow(match, includeEvidence));
+    const expanded = {};
+    if (expansions.includes("siblings")) {
+        expanded.siblings = siblings.slice(0, detailLimit).map(compactNode);
+    }
+    if (expansions.includes("incoming")) {
+        expanded.incoming = incoming.slice(0, detailLimit);
+    }
+    if (expansions.includes("outgoing")) {
+        expanded.outgoing = outgoing.slice(0, detailLimit);
+    }
+    if (expansions.includes("references")) {
+        expanded.references = referencesResult.result.references
+            .slice(0, detailLimit)
+            .map(reference => compactReferenceRow(reference, includeEvidence));
+    }
+    if (expansions.includes("implementations")) {
+        expanded.implementations = implementationsResult.result.implementations
+            .slice(0, detailLimit)
+            .map(match => compactImplementationRow(match, includeEvidence));
+    }
     const frameworkOrigins = [...new Set(
         (referencesResult.result.references || [])
             .map(reference => reference.origin)
@@ -199,24 +472,43 @@ export function runInspectSymbolUseCase(selector, {
         ),
         result: {
             symbol,
-            resolution: resolutionResult.result,
+            resolution: buildResolutionPayload(resolutionResult.result, symbol),
             context: {
                 module: symbolResult.result.module,
-                siblings: symbolResult.result.siblings || [],
-                incoming: symbolResult.result.incoming || [],
-                outgoing: symbolResult.result.outgoing || [],
                 provider_status: symbolResult.result.provider_status,
             },
+            counts: {
+                siblings: siblings.length,
+                incoming: incoming.length,
+                outgoing: outgoing.length,
+                references: totalReferences,
+                implementations: totalImplementations,
+            },
             references_summary: {
-                total: referencesResult.result.total,
+                total: totalReferences,
                 total_by_kind: referencesResult.result.total_by_kind,
-                preview: referencesResult.result.references.slice(0, referenceLimit),
+                preview: referencesPreview,
             },
             implementations_summary: {
-                total: implementationsResult.result.implementations.length,
-                preview: implementationsResult.result.implementations.slice(0, implementationLimit),
+                total: totalImplementations,
+                preview: implementationsPreview,
             },
+            provenance_summary: buildProvenanceSummary([
+                ...referencesResult.result.references,
+                ...implementationsResult.result.implementations,
+            ], {
+                totalRows: totalReferences + totalImplementations,
+            }),
             framework_roles: frameworkOrigins,
+            available_expansions: ["siblings", "incoming", "outgoing", "references", "implementations"],
+            expansion_hints: [
+                buildExpansionHint({ expansion: "siblings", total: siblings.length, returnedByDefault: 0, expandLimit: detailLimit, includeEvidence }),
+                buildExpansionHint({ expansion: "incoming", total: incoming.length, returnedByDefault: 0, expandLimit: detailLimit, includeEvidence }),
+                buildExpansionHint({ expansion: "outgoing", total: outgoing.length, returnedByDefault: 0, expandLimit: detailLimit, includeEvidence }),
+                buildExpansionHint({ expansion: "references", total: totalReferences, returnedByDefault: referencesPreview.length, expandLimit: detailLimit, includeEvidence }),
+                buildExpansionHint({ expansion: "implementations", total: totalImplementations, returnedByDefault: implementationsPreview.length, expandLimit: detailLimit, includeEvidence }),
+            ],
+            ...(Object.keys(expanded).length ? { expanded } : {}),
         },
         warnings: mergeWarnings(
             symbolResult.warnings || [],
@@ -233,33 +525,277 @@ export function runInspectSymbolUseCase(selector, {
         reason: symbolResult.reason,
         evidence: {
             ...symbolResult.evidence,
-            reference_count: referencesResult.result.total,
-            implementation_count: implementationsResult.result.implementations.length,
+            reference_count: totalReferences,
+            implementation_count: totalImplementations,
         },
         limits_applied: {
-            reference_limit: referenceLimit,
-            implementation_limit: implementationLimit,
+            reference_limit: referenceFetchLimit,
+            implementation_limit: implementationFetchLimit,
+            expand_limit: detailLimit,
+            expanded_sections: expansions,
         },
     };
 }
 
-export function runTraceDataflowUseCase(selector, { path, limit, depth } = {}) {
-    const base = findDataflowsBySelector(selector, { path, limit, depth });
+export function runFindReferencesUseCase(selector, {
+    kind = "all",
+    limit = 10,
+    minConfidence = null,
+    path,
+    verbosity = "compact",
+    expand = [],
+    expandLimit = null,
+    includeEvidence = false,
+} = {}) {
+    const previewLimit = verbosity === "minimal" ? 3 : verbosity === "full" ? 8 : 5;
+    const detailLimit = clampLimit(expandLimit, limit);
+    const expansions = normalizeExpansions(expand, ["references"]);
+    const fetchLimit = Math.max(limit, previewLimit, expansions.includes("references") ? detailLimit : 0);
+    const base = getReferencesBySelector(selector, {
+        kind,
+        limit: fetchLimit,
+        min_confidence: minConfidence,
+        path,
+    });
     if (base?.error) return base;
-    const flows = base.result || [];
+    const preview = base.result.references.slice(0, previewLimit).map(reference => compactReferenceRow(reference, includeEvidence));
+    const expanded = expansions.includes("references")
+        ? {
+            references: base.result.references
+                .slice(0, detailLimit)
+                .map(reference => compactReferenceRow(reference, includeEvidence)),
+        }
+        : null;
+    return {
+        query: base.query,
+        summary: base.result.total
+            ? `Found ${summarizeCount(base.result.total, "semantic reference")} across ${Object.keys(base.result.total_by_kind || {}).length || 1} kind(s).`
+            : "No semantic reference matched the requested symbol.",
+        result: {
+            symbol: base.result.symbol,
+            provider_status: base.result.provider_status,
+            total: base.result.total,
+            total_by_kind: base.result.total_by_kind,
+            preview,
+            provenance_summary: buildProvenanceSummary(base.result.references, { totalRows: base.result.total }),
+            available_expansions: ["references"],
+            expansion_hints: [
+                buildExpansionHint({ expansion: "references", total: base.result.total, returnedByDefault: preview.length, expandLimit: detailLimit, includeEvidence }),
+            ],
+            ...(expanded ? { expanded } : {}),
+        },
+        warnings: mergeWarnings(
+            base.warnings || [],
+            base.result.total ? [] : ["No reference matched the current symbol and filters."],
+            base.result.total >= fetchLimit ? ["Result set was bounded. Use expand_limit or limit to inspect more rows."] : [],
+        ),
+        next_actions: nextActions([
+            ACTION.INSPECT_SYMBOL,
+            base.result.total ? ACTION.TRACE_PATHS : ACTION.ADJUST_QUERY,
+        ]),
+        confidence: base.confidence,
+        reason: base.reason,
+        evidence: base.evidence,
+        limits_applied: {
+            ...base.limits_applied,
+            expand_limit: detailLimit,
+            expanded_sections: expansions,
+        },
+    };
+}
+
+export function runFindImplementationsUseCase(selector, {
+    limit = 10,
+    path,
+    verbosity = "compact",
+    expand = [],
+    expandLimit = null,
+    includeEvidence = false,
+} = {}) {
+    const previewLimit = verbosity === "minimal" ? 3 : verbosity === "full" ? 8 : 5;
+    const detailLimit = clampLimit(expandLimit, limit);
+    const expansions = normalizeExpansions(expand, ["implementations"]);
+    const fetchLimit = Math.max(limit, previewLimit, expansions.includes("implementations") ? detailLimit : 0);
+    const base = findImplementationsBySelector(selector, { limit: fetchLimit, path });
+    if (base?.error) return base;
+    const preview = base.result.implementations.slice(0, previewLimit).map(match => compactImplementationRow(match, includeEvidence));
+    const expanded = expansions.includes("implementations")
+        ? {
+            implementations: base.result.implementations
+                .slice(0, detailLimit)
+                .map(match => compactImplementationRow(match, includeEvidence)),
+        }
+        : null;
+    return {
+        query: { ...base.query, limit: fetchLimit },
+        summary: base.result.total
+            ? `Found ${summarizeCount(base.result.total, "implementation relation")} for the requested symbol.`
+            : "No implementation or override relation matched the requested symbol.",
+        result: {
+            symbol: base.result.symbol,
+            total: base.result.total,
+            preview,
+            provenance_summary: buildProvenanceSummary(base.result.implementations, { totalRows: base.result.total }),
+            available_expansions: ["implementations"],
+            expansion_hints: [
+                buildExpansionHint({ expansion: "implementations", total: base.result.total, returnedByDefault: preview.length, expandLimit: detailLimit, includeEvidence }),
+            ],
+            ...(expanded ? { expanded } : {}),
+        },
+        warnings: mergeWarnings(
+            base.warnings || [],
+            base.result.total ? [] : ["No implementation relation matched the current symbol."],
+            base.result.total >= fetchLimit ? ["Result set was bounded. Increase limit or use expand_limit for a deeper override list."] : [],
+        ),
+        next_actions: nextActions([
+            ACTION.INSPECT_SYMBOL,
+            base.result.total ? ACTION.TRACE_PATHS : null,
+        ]),
+        confidence: base.confidence,
+        reason: base.reason,
+        evidence: base.evidence,
+        limits_applied: {
+            ...base.limits_applied,
+            expand_limit: detailLimit,
+            expanded_sections: expansions,
+        },
+    };
+}
+
+export function runTracePathsUseCase(selector, {
+    pathKind = "calls",
+    direction = "reverse",
+    depth = 3,
+    limit = 10,
+    minConfidence = null,
+    path,
+    target = null,
+    verbosity = "compact",
+    expand = [],
+    expandLimit = null,
+    includeEvidence = false,
+} = {}) {
+    const previewLimit = verbosity === "minimal" ? 3 : verbosity === "full" ? 8 : 5;
+    const detailLimit = clampLimit(expandLimit, limit);
+    const expansions = normalizeExpansions(expand, ["paths"]);
+    const fetchLimit = Math.max(limit, previewLimit, expansions.includes("paths") ? detailLimit : 0);
+    const base = tracePaths(selector, {
+        path_kind: pathKind,
+        direction,
+        depth,
+        limit: fetchLimit,
+        min_confidence: minConfidence,
+        path,
+        target,
+    });
+    if (base?.error) return base;
+    const pathRows = base.result || [];
+    const pathPreviews = pathRows.slice(0, previewLimit).map(buildPathPreview);
+    const expanded = expansions.includes("paths")
+        ? {
+            paths: pathRows.slice(0, detailLimit).map(pathRow => compactTracePath(pathRow, includeEvidence)),
+        }
+        : null;
+    return {
+        query: base.query,
+        summary: pathRows.length
+            ? `Found ${summarizeCount(pathRows.length, "graph path")} through ${pathKind} edges.`
+            : "No path matched the requested traversal.",
+        result: {
+            path_count: pathRows.length,
+            target_found: target ? pathRows.length > 0 : null,
+            path_previews: pathPreviews,
+            provenance_summary: buildProvenanceSummary(traceRowsForProvenance(pathRows), { totalRows: traceRowsForProvenance(pathRows).length }),
+            available_expansions: ["paths"],
+            expansion_hints: [
+                buildExpansionHint({
+                    expansion: "paths",
+                    total: pathRows.length,
+                    returnedByDefault: pathPreviews.length,
+                    expandLimit: detailLimit,
+                    includeEvidence,
+                    extra: { depth, limit: fetchLimit, path_kind: pathKind, direction },
+                }),
+            ],
+            ...(expanded ? { expanded } : {}),
+        },
+        warnings: mergeWarnings(
+            base.warnings || [],
+            pathRows.length ? [] : [
+                "No path matched the current selectors, direction, and depth.",
+                "For module overview or broad dependency structure, inspect_symbol and analyze_architecture are usually more reliable than trace_paths from a coarse selector.",
+            ],
+            pathRows.length >= fetchLimit ? ["Returned path count hit the current limit. Increase limit or depth to continue the search."] : [],
+        ),
+        next_actions: nextActions([
+            ACTION.INSPECT_SYMBOL,
+            pathRows.length ? null : ACTION.ADJUST_QUERY,
+        ]),
+        confidence: base.confidence,
+        reason: base.reason,
+        evidence: base.evidence,
+        limits_applied: {
+            ...base.limits_applied,
+            expand_limit: detailLimit,
+            expanded_sections: expansions,
+        },
+    };
+}
+
+export function runTraceDataflowUseCase(selector, {
+    path,
+    limit,
+    depth,
+    verbosity = "compact",
+    expand = [],
+    expandLimit = null,
+    includeEvidence = false,
+} = {}) {
+    const previewLimit = verbosity === "minimal" ? 3 : verbosity === "full" ? 8 : 5;
+    const detailLimit = clampLimit(expandLimit, limit ?? 10);
+    const expansions = normalizeExpansions(expand, ["paths"]);
+    const fetchLimit = Math.max(limit ?? 10, previewLimit, expansions.includes("paths") ? detailLimit : 0);
+    const base = findDataflowsBySelector(selector, { path, limit: fetchLimit, depth });
+    if (base?.error) return base;
+    const flows = base.result?.paths || [];
+    const expanded = expansions.includes("paths")
+        ? {
+            paths: flows.slice(0, detailLimit).map(flow => compactTracePath(flow, includeEvidence)),
+        }
+        : null;
     return {
         query: base.query,
         summary: flows.length
             ? `Found ${summarizeCount(flows.length, "dataflow path")} from the requested source.`
             : "No dataflow path matched the requested source/sink anchors.",
         result: {
-            flows,
+            source: base.result?.source,
+            sink: base.result?.sink,
+            path_count: flows.length,
+            target_found: base.evidence?.target_found ?? null,
+            path_previews: flows.slice(0, previewLimit).map(buildPathPreview),
+            provenance_summary: buildProvenanceSummary(traceRowsForProvenance(flows), { totalRows: traceRowsForProvenance(flows).length }),
+            available_expansions: ["paths"],
+            expansion_hints: [
+                buildExpansionHint({
+                    expansion: "paths",
+                    total: flows.length,
+                    returnedByDefault: Math.min(previewLimit, flows.length),
+                    expandLimit: detailLimit,
+                    includeEvidence,
+                    extra: { max_hops: base.query?.max_hops, limit: fetchLimit, flow_kind: base.query?.flow_kind },
+                }),
+            ],
             anchors: {
                 source: base.query.source,
                 sink: base.query.sink || null,
             },
+            ...(expanded ? { expanded } : {}),
         },
-        warnings: flows.length ? [] : ["No deterministic flow fact matched the requested anchors."],
+        warnings: mergeWarnings(
+            flows.length ? [] : ["No deterministic flow fact matched the requested anchors."],
+            flows.length >= fetchLimit ? ["Returned path count hit the current limit. Increase limit or max_hops to continue the search."] : [],
+        ),
         next_actions: nextActions([
             flows.length ? ACTION.TRACE_PATHS : null,
         ]),

@@ -27,6 +27,7 @@ describe("quality tooling", () => {
         assert.ok(block.includes("### Generated Snapshot"));
         assert.ok(block.includes("analyze_architecture"));
         assert.ok(block.includes("Workflow baseline"));
+        assert.ok(block.includes("Summary-first default preview"));
     });
 
     it("keeps ln-012 provider contract aligned with its reference", () => {

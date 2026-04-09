@@ -62,6 +62,20 @@
         "target_gte": 0.5,
         "unit": "ratio"
       }
+    },
+    "summary_first_contract": {
+      "preview_rows_default_lte": {
+        "target_lte": 5,
+        "unit": "rows"
+      },
+      "resolution_surface_rate": {
+        "target": 1.0,
+        "unit": "ratio"
+      },
+      "provenance_surface_rate": {
+        "target": 1.0,
+        "unit": "ratio"
+      }
     }
   },
   "publication_policy": {

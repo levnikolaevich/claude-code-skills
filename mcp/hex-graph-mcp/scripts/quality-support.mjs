@@ -220,6 +220,8 @@ export function renderPackageQualityBlock(inputs) {
         `- Parser-first steady-state query p50: \`<=${qualityTargets.lanes.parser_first.latency.steady_state_query_ms_p50.target_lte}ms\``,
         `- Precise-overlay incremental reindex p50: \`<=${qualityTargets.lanes.precise_overlay.latency.incremental_reindex_seconds_p50.target_lte}s\``,
         `- Workflow token savings target: \`>=${pctFromRatio(qualityTargets.lanes.workflow_benchmark.token_savings_ratio.target_gte)}\``,
+        `- Summary-first default preview: \`<=${qualityTargets.lanes.summary_first_contract.preview_rows_default_lte.target_lte} rows\``,
+        `- Resolution/provenance surface coverage: \`${pctFromRatio(qualityTargets.lanes.summary_first_contract.resolution_surface_rate.target)} / ${pctFromRatio(qualityTargets.lanes.summary_first_contract.provenance_surface_rate.target)}\``,
         "",
         "Workflow baseline (`benchmark/workflow-summary.json`):",
         "",

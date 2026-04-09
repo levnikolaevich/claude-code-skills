@@ -10,11 +10,9 @@ const version = typeof __HEX_VERSION__ !== "undefined" ? __HEX_VERSION__ // esli
 import { createServerRuntime } from "@levnikolaevich/hex-common/runtime/mcp-bootstrap";
 import { flexBool, flexNum } from "@levnikolaevich/hex-common/runtime/schema";
 import { checkForUpdates } from "@levnikolaevich/hex-common/runtime/update-check";
-import { tracePaths, getReferencesBySelector, findImplementationsBySelector } from "./lib/store.mjs";
 import { closeAllStores } from "./lib/store.mjs";
 import { CONFIDENCE_VALUES } from "./lib/confidence.mjs";
-import { DEFAULT_FLOW_LIMIT, DEFAULT_FLOW_MAX_HOPS, FLOW_ANCHOR_KINDS } from "./lib/flow.mjs";
-import { DEFAULT_PR_IMPACT_MAX_PATHS, DEFAULT_PR_IMPACT_MAX_SYMBOLS } from "./lib/pr-impact.mjs";
+import { DEFAULT_FLOW_MAX_HOPS, FLOW_ANCHOR_KINDS } from "./lib/flow.mjs";
 import { buildInlineQuality, collectFrameworksFromOrigins } from "./lib/quality.mjs";
 import { installGraphProviders } from "./lib/providers/index.mjs";
 import { exportScip } from "./lib/scip/export.mjs";
@@ -26,7 +24,10 @@ import {
     runAnalyzeEditRegionUseCase,
     runAuditWorkspaceUseCase,
     runFindSymbolsUseCase,
+    runFindImplementationsUseCase,
+    runFindReferencesUseCase,
     runInspectSymbolUseCase,
+    runTracePathsUseCase,
     runTraceDataflowUseCase,
 } from "./lib/use-cases.mjs";
 import { ACTION, pruneEmpty, STATUS } from "./lib/output-contract.mjs";
@@ -165,6 +166,18 @@ function verbositySchema() {
     return z.enum(["minimal", "compact", "full"]).default("compact").describe("Response budget. `minimal` returns the shortest actionable answer, `compact` keeps key reasoning visible, and `full` includes supporting detail.");
 }
 
+function expandSchema() {
+    return z.array(z.string()).optional().describe("Optional bounded expansion sections to materialize. Heavy tools return counts/previews by default and expand only the requested sections.");
+}
+
+function expandLimitSchema() {
+    return flexNum().describe("Max rows to materialize for expanded sections (default: 10, capped at 25)");
+}
+
+function includeEvidenceSchema() {
+    return flexBool().default(false).describe("Include supporting evidence in expanded rows. Defaults to false to keep payloads compact.");
+}
+
 function flowPointSchema() {
     return z.object({
         symbol: z.object(selectorSchema()).describe("Canonical selector for the symbol that owns this flow point"),
@@ -186,7 +199,7 @@ function pruneForVerbosity(payload, verbosity = "full") {
     return pruneEmpty(next) || {};
 }
 
-function wrapResult(result, format = "json", verbosity = "full") {
+function wrapResult(result, _format = "json", verbosity = "full") {
     if (result?.error) {
         return graphError(result.error);
     }
@@ -208,18 +221,20 @@ function withQuality(result, quality) {
 }
 
 function referencesQuality(result) {
+    const rows = result?.result?.expanded?.references || result?.result?.preview || result?.result?.references || [];
     return buildInlineQuality({
         queryFamily: "find_references",
         languages: [result?.result?.symbol?.language],
-        frameworks: collectFrameworksFromOrigins(result?.result?.references?.map(reference => reference.origin)),
+        frameworks: collectFrameworksFromOrigins(rows?.map(reference => reference.origin)),
     });
 }
 
 function traceQuality(result) {
+    const paths = Array.isArray(result?.result) ? result.result : result?.result?.expanded?.paths || [];
     return buildInlineQuality({
         queryFamily: "trace_paths",
-        languages: unique(result?.result?.flatMap(path => path.nodes?.map(node => node.language) || [])),
-        frameworks: collectFrameworksFromOrigins(result?.result?.flatMap(path => path.edges?.map(edge => edge.origin) || [])),
+        languages: unique(paths.flatMap(path => path.nodes?.map(node => node.language) || [])),
+        frameworks: collectFrameworksFromOrigins(paths.flatMap(path => (path.edges || path.hops || []).map(edge => edge.origin) || [])),
     });
 }
 
@@ -465,17 +480,25 @@ server.registerTool("inspect_symbol", {
     inputSchema: z.object({
         ...selectorSchema(),
         min_confidence: confidenceSchema(),
+        verbosity: verbositySchema(),
+        expand: expandSchema(),
+        expand_limit: expandLimitSchema(),
+        include_evidence: includeEvidenceSchema(),
         path: z.string().describe("Indexed project root or a file/directory inside the indexed project"),
         format: z.enum(["json", "text"]).default("json"),
     }),
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
 }, async (rawParams) => {
-    const { path, format, min_confidence, ...selector } = rawParams;
+    const { path, format, min_confidence, verbosity, expand, expand_limit, include_evidence, ...selector } = rawParams;
     const result = runInspectSymbolUseCase(selector, {
         path,
         minConfidence: min_confidence ?? null,
+        verbosity: verbosity ?? "compact",
+        expand,
+        expandLimit: expand_limit ?? null,
+        includeEvidence: include_evidence ?? false,
     });
-    return wrapResult(withQuality(result, inspectQuality(result)), format, "compact");
+    return wrapResult(withQuality(result, inspectQuality(result)), format, verbosity ?? "compact");
 });
 
 server.registerTool("trace_paths", {
@@ -489,42 +512,36 @@ server.registerTool("trace_paths", {
         depth: flexNum().describe("Max traversal depth (default: 3)"),
         limit: flexNum().describe("Max paths (default: 10)"),
         min_confidence: confidenceSchema(),
+        verbosity: verbositySchema(),
+        expand: expandSchema(),
+        expand_limit: expandLimitSchema(),
+        include_evidence: includeEvidenceSchema(),
         path: z.string().describe("Indexed project root or a file/directory inside the indexed project"),
         format: z.enum(["json", "text"]).default("json"),
     }),
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
 }, async (rawParams) => {
-    const { path, format, path_kind, direction, depth, limit, min_confidence, ...selector } = rawParams;
+    const { path, format, path_kind, direction, depth, limit, min_confidence, verbosity, expand, expand_limit, include_evidence, ...selector } = rawParams;
     const target = buildTargetSelector(selector);
     delete selector.to_symbol_id;
     delete selector.to_workspace_qualified_name;
     delete selector.to_qualified_name;
     delete selector.to_name;
     delete selector.to_file;
-    const result = tracePaths(selector, {
-        path_kind: path_kind ?? "calls",
+    const result = runTracePathsUseCase(selector, {
+        pathKind: path_kind ?? "calls",
         direction: direction ?? "reverse",
         depth: depth ?? 3,
         limit: limit ?? 10,
-        min_confidence: min_confidence ?? null,
+        minConfidence: min_confidence ?? null,
         path,
         target,
+        verbosity: verbosity ?? "compact",
+        expand,
+        expandLimit: expand_limit ?? null,
+        includeEvidence: include_evidence ?? false,
     });
-    if (!result?.error) {
-        const pathCount = result.result.length;
-        result.summary = pathCount
-            ? `Found ${pathCount} path(s) through ${path_kind ?? "calls"} edges.`
-            : "No path matched the requested traversal.";
-        result.warnings = unique([
-            ...(result.warnings || []),
-            ...(pathCount ? [] : [
-                "No path matched the current selectors, direction, and depth.",
-                "For module overview or broad dependency structure, inspect_symbol and analyze_architecture are usually more reliable than trace_paths from a coarse selector.",
-            ]),
-        ]);
-        result.next_actions = unique(["inspect_symbol", ...(pathCount ? [] : ["adjust_query"])]);
-    }
-    return wrapResult(withQuality(result, traceQuality(result)), format, "compact");
+    return wrapResult(withQuality(result, traceQuality(result)), format, verbosity ?? "compact");
 });
 
 server.registerTool("find_references", {
@@ -535,29 +552,27 @@ server.registerTool("find_references", {
         kind: z.enum(REFERENCE_KINDS).default("all").describe("Optional edge-kind filter. Includes semantic and framework kinds such as `route_to_handler`, `injects`, `registers`, `renders`, and `middleware_for`."),
         limit: flexNum().describe("Max references (default: 10)"),
         min_confidence: confidenceSchema(),
+        verbosity: verbositySchema(),
+        expand: expandSchema(),
+        expand_limit: expandLimitSchema(),
+        include_evidence: includeEvidenceSchema(),
         path: z.string().describe("Indexed project root or a file/directory inside the indexed project"),
         format: z.enum(["json", "text"]).default("json"),
     }),
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
 }, async (rawParams) => {
-    const { path, format, kind, limit, min_confidence, ...selector } = rawParams;
-    const result = getReferencesBySelector(selector, {
+    const { path, format, kind, limit, min_confidence, verbosity, expand, expand_limit, include_evidence, ...selector } = rawParams;
+    const result = runFindReferencesUseCase(selector, {
         kind: kind ?? "all",
         limit: limit ?? 10,
-        min_confidence: min_confidence ?? null,
+        minConfidence: min_confidence ?? null,
         path,
+        verbosity: verbosity ?? "compact",
+        expand,
+        expandLimit: expand_limit ?? null,
+        includeEvidence: include_evidence ?? false,
     });
-    if (!result?.error) {
-        result.summary = result.result.total
-            ? `Found ${result.result.total} semantic reference(s).`
-            : "No semantic reference matched the requested symbol.";
-        result.warnings = unique([
-            ...(result.warnings || []),
-            ...(result.result.total ? [] : ["No reference matched the current symbol and filters."]),
-        ]);
-        result.next_actions = ["inspect_symbol", "trace_paths"];
-    }
-    return wrapResult(withQuality(result, referencesQuality(result)), format, "compact");
+    return wrapResult(withQuality(result, referencesQuality(result)), format, verbosity ?? "compact");
 });
 
 server.registerTool("find_implementations", {
@@ -566,21 +581,25 @@ server.registerTool("find_implementations", {
     inputSchema: z.object({
         ...selectorSchema(),
         limit: flexNum().describe("Max implementation rows to return (default: 10)"),
+        verbosity: verbositySchema(),
+        expand: expandSchema(),
+        expand_limit: expandLimitSchema(),
+        include_evidence: includeEvidenceSchema(),
         path: z.string().describe("Indexed project root or a file/directory inside the indexed project"),
         format: z.enum(["json", "text"]).default("json"),
     }),
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
 }, async (rawParams) => {
-    const { path, format, limit, ...selector } = rawParams;
-    const result = findImplementationsBySelector(selector, { path, limit: limit ?? 10 });
-    if (!result?.error) {
-        result.summary = result.result.implementations.length
-            ? `Found ${result.result.implementations.length} implementation or override relation(s).`
-            : "No implementation or override relation matched the requested symbol.";
-        result.warnings = result.result.implementations.length ? [] : ["No implementation relation matched the current symbol."];
-        result.next_actions = ["inspect_symbol"];
-    }
-    return wrapResult(result, format, "compact");
+    const { path, format, limit, verbosity, expand, expand_limit, include_evidence, ...selector } = rawParams;
+    const result = runFindImplementationsUseCase(selector, {
+        path,
+        limit: limit ?? 10,
+        verbosity: verbosity ?? "compact",
+        expand,
+        expandLimit: expand_limit ?? null,
+        includeEvidence: include_evidence ?? false,
+    });
+    return wrapResult(result, format, verbosity ?? "compact");
 });
 
 server.registerTool("trace_dataflow", {
@@ -593,12 +612,16 @@ server.registerTool("trace_dataflow", {
         max_hops: flexNum().describe(`Max flow propagation hops (default: ${DEFAULT_FLOW_MAX_HOPS})`),
         limit: flexNum().describe("Max flow paths (default: 10)"),
         min_confidence: confidenceSchema(),
+        verbosity: verbositySchema(),
+        expand: expandSchema(),
+        expand_limit: expandLimitSchema(),
+        include_evidence: includeEvidenceSchema(),
         path: z.string().describe("Indexed project root or a file/directory inside the indexed project"),
         format: z.enum(["json", "text"]).default("json"),
     }),
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
 }, async (rawParams) => {
-    const { path, format, source, sink, flow_kind, max_hops, limit, min_confidence } = rawParams;
+    const { path, format, source, sink, flow_kind, max_hops, limit, min_confidence, verbosity, expand, expand_limit, include_evidence } = rawParams;
     const result = runTraceDataflowUseCase({
         source,
         sink,
@@ -608,8 +631,12 @@ server.registerTool("trace_dataflow", {
     }, {
         limit: limit ?? 10,
         path,
+        verbosity: verbosity ?? "compact",
+        expand,
+        expandLimit: expand_limit ?? null,
+        includeEvidence: include_evidence ?? false,
     });
-    return wrapResult(result, format, "compact");
+    return wrapResult(result, format, verbosity ?? "compact");
 });
 
 server.registerTool("analyze_changes", {

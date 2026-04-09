@@ -11,7 +11,11 @@ import {
     runAnalyzeEditRegionUseCase,
     runAuditWorkspaceUseCase,
     runFindSymbolsUseCase,
+    runFindImplementationsUseCase,
+    runFindReferencesUseCase,
     runInspectSymbolUseCase,
+    runTraceDataflowUseCase,
+    runTracePathsUseCase,
 } from "../lib/use-cases.mjs";
 
 function makeTempDir() {
@@ -45,9 +49,16 @@ describe("use-case wrappers", () => {
 
             const symbol = candidates.result.candidates.find((candidate) => candidate.kind === "function")
                 || candidates.result.candidates[0];
-            const inspect = runInspectSymbolUseCase({ symbol_id: symbol.symbol_id }, { path: dir });
+            const inspect = runInspectSymbolUseCase({ symbol_id: symbol.symbol_id }, { path: dir, verbosity: "compact" });
             assert.equal(inspect.result.symbol.name, "stable");
             assert.ok(inspect.result.references_summary.total >= 1);
+            assert.ok(inspect.result.counts.references >= 1);
+            assert.ok(Array.isArray(inspect.result.references_summary.preview));
+            assert.ok(Array.isArray(inspect.result.available_expansions));
+            assert.equal(inspect.result.resolution.ownership.file, "src/util.ts");
+            assert.equal(inspect.result.resolution.resolution_quality.selector_specificity, "exact_id");
+            assert.ok(inspect.result.provenance_summary.total_rows >= 1);
+            assert.equal("siblings" in inspect.result.context, false);
             assert.ok(inspect.summary.includes("reference"));
             assert.ok(inspect.next_actions.includes("find_references"));
             assert.ok(inspect.next_actions.includes("trace_paths"));
@@ -219,6 +230,113 @@ describe("use-case wrappers", () => {
             assert.deepEqual(audit.result.uncertain_unused_exports, [], "minimal audit omits uncertain exports");
             assert.deepEqual(audit.result.suppressed_items, [], "minimal audit omits suppressed detail");
             assert.equal(audit.query.verbosity, "minimal");
+        } finally {
+            resolveStore(dir)?.close();
+            rmSync(dir, { recursive: true, force: true });
+        }
+    });
+
+    it("returns bounded expansion hints and explicit drill-down payloads for heavy symbol tools", async () => {
+        const dir = makeTempDir();
+        try {
+            mkdirSync(join(dir, "src"), { recursive: true });
+            writeFileSync(join(dir, "src", "util.ts"), [
+                "export function stable(value: string) {",
+                "  return value.toUpperCase();",
+                "}",
+                "",
+            ].join("\n"), "utf8");
+            writeFileSync(join(dir, "src", "consumer-a.ts"), [
+                "import { stable } from \"./util\";",
+                "export const a = stable(\"a\");",
+                "",
+            ].join("\n"), "utf8");
+            writeFileSync(join(dir, "src", "consumer-b.ts"), [
+                "import { stable } from \"./util\";",
+                "export const b = stable(\"b\");",
+                "",
+            ].join("\n"), "utf8");
+            await indexProject(dir);
+
+            const symbol = runFindSymbolsUseCase("stable", { path: dir }).result.candidates[0];
+            const inspect = runInspectSymbolUseCase(
+                { symbol_id: symbol.symbol_id },
+                { path: dir, verbosity: "compact", expand: ["references"], expandLimit: 2 },
+            );
+            assert.ok(inspect.result.expansion_hints.some((hint) => hint.expansion === "references"));
+            assert.ok(Array.isArray(inspect.result.expanded.references));
+            assert.ok(inspect.result.expanded.references.length <= 2);
+
+            const references = runFindReferencesUseCase(
+                { symbol_id: symbol.symbol_id },
+                { path: dir, verbosity: "compact", expand: ["references"], expandLimit: 2 },
+            );
+            assert.ok(references.result.total >= 2);
+            assert.ok(Array.isArray(references.result.preview));
+            assert.ok(Array.isArray(references.result.expanded.references));
+            assert.ok(references.result.expanded.references.length <= 2);
+            assert.ok(references.result.provenance_summary.analyzed_rows >= 1);
+
+            const implementations = runFindImplementationsUseCase(
+                { symbol_id: symbol.symbol_id },
+                { path: dir, verbosity: "compact", expand: ["implementations"], expandLimit: 2 },
+            );
+            assert.ok(Array.isArray(implementations.result.preview));
+            assert.ok(Array.isArray(implementations.result.expansion_hints));
+            assert.ok(implementations.result.provenance_summary.total_rows >= 0);
+        } finally {
+            resolveStore(dir)?.close();
+            rmSync(dir, { recursive: true, force: true });
+        }
+    });
+
+    it("returns bounded previews and path expansion guidance for trace tools", async () => {
+        const dir = makeTempDir();
+        try {
+            mkdirSync(join(dir, "src"), { recursive: true });
+            writeFileSync(join(dir, "src", "util.ts"), [
+                "export function stable(value: string) {",
+                "  return value.toUpperCase();",
+                "}",
+                "",
+                "export function relay(value: string) {",
+                "  return stable(value);",
+                "}",
+                "",
+            ].join("\n"), "utf8");
+            writeFileSync(join(dir, "src", "consumer.ts"), [
+                "import { relay } from \"./util\";",
+                "export function useRelay(input: string) {",
+                "  return relay(input);",
+                "}",
+                "",
+            ].join("\n"), "utf8");
+            await indexProject(dir);
+
+            const stable = runFindSymbolsUseCase("stable", { path: dir }).result.candidates[0];
+            const trace = runTracePathsUseCase(
+                { symbol_id: stable.symbol_id },
+                { path: dir, pathKind: "calls", direction: "reverse", expand: ["paths"], expandLimit: 2 },
+            );
+            assert.ok(trace.result.path_count >= 1);
+            assert.ok(Array.isArray(trace.result.path_previews));
+            assert.ok(Array.isArray(trace.result.expanded.paths));
+            assert.ok(trace.result.expanded.paths.length <= 2);
+            assert.ok(trace.result.provenance_summary.analyzed_rows >= 1);
+
+            const dataflow = runTraceDataflowUseCase({
+                source: {
+                    symbol: { symbol_id: stable.symbol_id },
+                    anchor: { kind: "return" },
+                },
+            }, {
+                path: dir,
+                expand: ["paths"],
+                expandLimit: 2,
+            });
+            assert.ok(Array.isArray(dataflow.result.path_previews));
+            assert.ok(Array.isArray(dataflow.result.expansion_hints));
+            assert.ok("provenance_summary" in dataflow.result);
         } finally {
             resolveStore(dir)?.close();
             rmSync(dir, { recursive: true, force: true });

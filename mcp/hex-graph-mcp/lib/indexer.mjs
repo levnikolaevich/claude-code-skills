@@ -266,7 +266,7 @@ export async function reindexFile(projectPath, filePath) {
  * marks exported symbols, and persists module_edges.
  * @returns {number} count of call edges created
  */
-function resolveFileEdges(store, workspace, filePath, { source, definitions, imports, calls, references, flow_ir, exports: fileExports, defaultExport, reexports, nodeIds, language }) {
+function resolveFileEdges(store, workspace, filePath, { source: _source, definitions, imports, calls, references, flow_ir, exports: fileExports, defaultExport, reexports, nodeIds, language }) {
     let callEdgeCount = 0;
 
     // 1. Create synthetic reexport nodes

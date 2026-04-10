@@ -47,10 +47,10 @@ try {
         throw new Error("Failed to start docs-pipeline runtime");
     }
     run(["checkpoint", "--identifier", "docs-pipeline", "--phase", PHASES.CONFIG, "--payload", "{\"config_ready\":true}"]);
-    run(["advance", "--identifier", "docs-pipeline", "--to", PHASES.LEGACY_SCAN]);
-    run(["checkpoint", "--identifier", "docs-pipeline", "--phase", PHASES.LEGACY_SCAN, "--payload", "{\"legacy_manifest\":[]}"]);
+    run(["advance", "--identifier", "docs-pipeline", "--to", PHASES.SOURCE_SCAN]);
+    run(["checkpoint", "--identifier", "docs-pipeline", "--phase", PHASES.SOURCE_SCAN, "--payload", "{\"source_manifest\":[]}"]);
     run(["advance", "--identifier", "docs-pipeline", "--to", PHASES.CONFIRMATION]);
-    run(["checkpoint", "--identifier", "docs-pipeline", "--phase", PHASES.CONFIRMATION, "--payload", "{\"legacy_mode\":\"skip\"}"]);
+    run(["checkpoint", "--identifier", "docs-pipeline", "--phase", PHASES.CONFIRMATION, "--payload", "{\"source_mode\":\"skip\"}"]);
     run(["advance", "--identifier", "docs-pipeline", "--to", PHASES.DELEGATE]);
     run(["record-component", "--identifier", "docs-pipeline", "--payload", component("ln-110")]);
     run(["checkpoint", "--identifier", "docs-pipeline", "--phase", PHASES.DELEGATE, "--payload", "{\"delegated\":true}"]);

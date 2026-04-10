@@ -35,10 +35,10 @@ Advanced / occasional:
 | `read_file` | Read file with progressive disclosure, optional edit-ready metadata, and automatic graph hints when available | Minimal plain discovery by default, explicit `edit_ready` for verified edits |
 | `edit_file` | Revision-aware anchor edits (`set_line`, `replace_lines`, `insert_after`, `replace_between`) | Batched same-file edits + conservative auto-rebase |
 | `write_file` | Create new file or overwrite, auto-creates parent dirs | Path validation, no hash overhead |
-| `grep_search` | Search with ripgrep, summary-first discovery, and optional edit-ready hunks | `summary` by default, explicit `content` + `edit_ready` for verified edits |
+| `grep_search` | Search with ripgrep, summary-first discovery, and optional edit-ready hunks | `summary` by default, capped `content` mode with explicit `allow_large_output` escape hatch |
 | `outline` | AST-based structural overview with hash anchors via tree-sitter WASM. Supports JavaScript/TypeScript, Python, C#, PHP, and fence-aware markdown headings | 95% token reduction, direct edit anchors |
 | `verify` | Check if held checksums / revision are still current | Staleness check without full re-read |
-| `inspect_path` | Unified file-or-directory inspection | Minimal tree discovery by default, deeper traversal on demand |
+| `inspect_path` | Unified file-or-directory inspection | Minimal tree discovery by default, capped pattern-mode lists with refine hints |
 | `changes` | Compare file against git ref, shows added/removed/modified symbols | AST-level semantic diff with risk/provenance preview |
 | `bulk_replace` | Search-and-replace across multiple files inside an explicit root path | Compact summary (default) or capped diffs via `format`, dry_run, max_files |
 
@@ -46,7 +46,7 @@ Advanced / occasional:
 
 | Event | Trigger | Action |
 |-------|---------|--------|
-| **PreToolUse** | Read/Edit/Write/Grep on text files | Redirect-first policy for text files; built-in tools stay reserved for binary/media and `.claude/settings*.json` exceptions |
+| **PreToolUse** | Read/Edit/Write/Grep/Glob on project text scope | Hard redirect to hex-line for project-scoped text files and file discovery; built-in tools stay available for binary/media and text paths outside the current project root |
 | **PreToolUse** | Bash with dangerous commands | Blocks `rm -rf /`, `git push --force`, etc. Agent must confirm with user |
 | **PostToolUse** | Bash with 50+ lines output | RTK: deduplicates, truncates, shows filtered summary to Claude as feedback |
 | **SessionStart** | Session begins | Injects a short bootstrap hint; defers to the active output style when `hex-line` style is enabled |
@@ -54,7 +54,7 @@ Advanced / occasional:
 
 ### Bash Redirects
 
-PreToolUse also intercepts simple Bash commands: cat, head, tail, tree, find, stat, wc -l, grep, rg, sed -i — redirects to hex-line equivalents. `ls`/`dir` only redirected for recursive listing (`ls -R`, `dir /s`); simple `ls path` is allowed. Compound commands with pipes are allowed.
+PreToolUse also intercepts project-scoped file inspection Bash commands: `cat`, `type`, `Get-Content`, `head`, `tail`, `ls`, `dir`, `tree`, `find`, `Get-ChildItem`, `stat`, `wc`, `Get-Item`, `grep`, `rg`, `findstr`, `Select-String`, `sed -i`. Targeted inspection pipelines are redirected too; Git/build/test/docker/network and stdin-filter pipelines remain allowed.
 ## Install
 
 ### MCP Server
@@ -292,8 +292,12 @@ Search file contents using ripgrep. Default mode is `summary` for discovery. Use
 | `total_limit` | number | no | Total match events across all files; multiline matches count as 1 (default: 50 for `summary`, 200 for `content`, 1000 for `files`/`count`, 0 = unlimited) |
 | `plain` | boolean | no | Omit hash tags inside block entries, return `lineNum\|content` |
 | `edit_ready` | boolean | no | Preserve hash/checksum search hunks in `content` mode |
+| `allow_large_output` | boolean | no | Bypass the default `content`-mode block/char caps when you intentionally need a larger payload |
 
 `summary` mode returns counts, top files, and a few plain snippets. `content` mode returns canonical `search_hunk` blocks with per-hunk checksums enabling direct `replace_lines` from grep results without intermediate `read_file`.
+
+- Default `content` mode is intentionally capped to keep discovery cheap. When truncation happens, the diagnostic block includes `shown_matches`, `file_count`, `truncated`, `next_action`, and `suggested_refine_call`.
+- Treat `allow_large_output: true` as an explicit override for review/debug workflows, not as the normal discovery path.
 
 ### outline
 
@@ -343,6 +347,7 @@ Inspect a file or directory path without guessing which low-level tool to call f
 | `pattern` | string | no | Glob filter on names (e.g. `"*-mcp"`, `"*.mjs"`). Returns flat match list instead of tree |
 | `type` | string | no | `"file"`, `"dir"`, or `"all"` (default). Like `find -type f/d` |
 | `max_depth` | number | no | Max recursion depth (default: 2 for discovery, or 20 in pattern mode) |
+| `max_entries` | number | no | Max entries to show in pattern mode before truncation metadata is returned (default: 60, `0` = unlimited) |
 | `gitignore` | boolean | no | Respect root .gitignore patterns (default: true). Nested .gitignore not supported |
 | `format` | string | no | `"compact"` = shorter path view. `"full"` = include sizes / metadata where available |
 | `verbosity` | enum | no | `minimal`, `compact`, or `full` |
@@ -350,6 +355,7 @@ Inspect a file or directory path without guessing which low-level tool to call f
 - For regular files it returns compact metadata: size, line count when cheap, modification time, type, and binary flag.
 - For directories it returns a gitignore-aware tree.
 - With `pattern`, it switches to flat match mode and works as the preferred replacement for `find` / recursive `ls`.
+- Broad pattern mode is capped by default and returns `match_count`, `shown_count`, `truncated`, `next_action`, and `suggested_refine_call` so the caller can narrow `path` before asking for more.
 
 ## Hook
 
@@ -357,11 +363,11 @@ The unified hook (`hook.mjs`) handles three Claude hook events:
 
 ### PreToolUse: Tool Redirect
 
-Applies redirect-first steering to built-in `Read`, `Edit`, `Write`, and `Grep` on text files. Binary/media files (images, PDFs, notebooks, archives, executables, fonts, media) stay on built-in tools. `.claude/settings.json` and `.claude/settings.local.json` at project root or home are also allowed on built-in tools.
+Hard-routes built-in `Read`, `Edit`, `Write`, `Grep`, and `Glob` on project-scoped text workflows to hex-line. Binary/media files (images, PDFs, notebooks, archives, executables, fonts, media) and text paths outside the current project root stay on built-in tools.
 
 ### PreToolUse: Bash Redirect + Dangerous Blocker
 
-Intercepts simple Bash commands (`cat`, `head`, `tail`, `tree`, `find`, `stat`, `wc -l`, `grep`, `rg`, `sed -i`, etc.) and redirects covered cases to hex-line tools. `ls`/`dir` are redirected only for recursive listing. Dangerous commands (`rm -rf /`, `git push --force`, `git reset --hard`, `DROP TABLE`, `chmod 777`, `mkfs`, `dd`) are blocked.
+Intercepts project-scoped Bash file inspection commands (`cat`, `type`, `Get-Content`, `head`, `tail`, `ls`, `dir`, `tree`, `find`, `Get-ChildItem`, `stat`, `wc`, `Get-Item`, `grep`, `rg`, `findstr`, `Select-String`, `sed -i`, etc.) and redirects covered cases to hex-line tools. Targeted inspection pipelines are redirected. Dangerous commands (`rm -rf /`, `git push --force`, `git reset --hard`, `DROP TABLE`, `chmod 777`, `mkfs`, `dd`) are blocked.
 
 ### PostToolUse: RTK Output Filter
 
@@ -477,7 +483,7 @@ The PostToolUse hook normalizes Bash output (replaces UUIDs, timestamps, IPs wit
 <details>
 <summary><b>Can I disable the built-in tool blocking?</b></summary>
 
-Yes. To downgrade redirects to advice, set `.hex-skills/environment_state.json` to `{ "hooks": { "mode": "advisory" } }`. To remove the hook entirely, delete the `hex-line` hook entries from `~/.claude/settings.json`. To disable the MCP server for one project, add `hex-line` to `~/.claude.json -> projects.{cwd}.disabledMcpServers`.
+Yes. The supported runtime bypass is `.hex-skills/environment_state.json` -> `{ "hooks": { "mode": "advisory" } }`, which downgrades project text redirects to advice. To remove the hook entirely, delete the `hex-line` hook entries from `~/.claude/settings.json`. To disable the MCP server for one project, add `hex-line` to `~/.claude.json -> projects.{cwd}.disabledMcpServers`.
 
 </details>
 

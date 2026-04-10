@@ -20,7 +20,7 @@ Executes a single implementation (or refactor) task from Todo to To Review using
 - Run typecheck/lint; update docs/tests/config per task instructions.
 - Not for test tasks (label "tests" goes to ln-404-test-executor).
 
-**Hex MCP acceleration (if available):** Use `inspect_path()` and `outline(path)` before reading large code files. Use `read_file()` in discovery mode for structure and targeted ranges; when you need `revision` and checksums for a follow-up edit, refresh that file with `read_file(edit_ready=true, verbosity="full")` before `edit_file()`. For edits to existing code, run `index_project(path=project_root)` once and use `analyze_edit_region(...)` before non-trivial edits. After edits: `edit_file(base_revision=rev)` -> `verify(checksums)`. Before handoff: `changes()` to review diff.
+**Hex MCP acceleration (if available):** Use narrow `inspect_path(path=<relevant dir>)` and `outline(path)` before reading large code files; avoid repo-root wildcard inventories unless you intentionally need one. Use `grep_search(output="summary")` first for search/discovery, then escalate to `output="content", edit_ready=true` only when you need canonical hunks for follow-up edits; use `allow_large_output=true` only as an explicit last resort. Use `read_file()` in discovery mode for structure and targeted ranges; when you need `revision` and checksums for a follow-up edit, refresh that file with `read_file(edit_ready=true, verbosity="full")` before `edit_file()`. For edits to existing code, run `index_project(path=project_root)` once and use `analyze_edit_region(...)` before non-trivial edits. After edits: `edit_file(base_revision=rev)` -> `verify(checksums)`. Before handoff: `changes()` to review diff.
 ## Inputs
 
 | Input | Required | Source | Description |
@@ -85,9 +85,10 @@ Step 2b: Goal Articulation Gate
   - Complete 4 questions from shared/references/goal_articulation_gate.md (<=25 tokens each)
 
 Step 2c: Implementation Blueprint
-  - From task "Affected Components": extract file paths (Glob/Grep to find actual paths)
+  - From task "Affected Components": extract file paths (Glob/Grep or narrow `inspect_path(path=<component dir>)` to find actual paths)
   - Read each file (or key sections) to understand current structure
-  - IF modifying existing code in supported languages: `index_project(path=project_root)` once, then use `find_symbols` / `inspect_symbol` for exact symbol identity and `analyze_edit_region` before editing non-trivial ranges
+  - IF modifying existing code in supported languages: `index_project(path=project_root)` once, then use path-scoped `find_symbols` / `inspect_symbol` for exact symbol identity and `analyze_edit_region` before editing non-trivial ranges
+  - IF `find_symbols` returns `truncated: true` or a broad candidate set: refine to `name + file` or `workspace_qualified_name` before planning from it
   - Output:
     ## Implementation Blueprint: {taskId}
     **Files to create:** [list with brief purpose]
@@ -123,7 +124,7 @@ Step 6: Finish
 1) **Resolve taskId:** Run Task Resolution Chain per guide (status filter: [Todo]).
 2) **Load context:** Fetch full task description (Linear: get_issue; File: Read task file); read linked guides/manuals/ADRs/research; auto-discover team/config if needed.
 2b) **Goal gate:** **MANDATORY READ:** `shared/references/goal_articulation_gate.md` — Complete the 4-question gate (<=25 tokens each). State REAL GOAL (deliverable as subject), DONE LOOKS LIKE, NOT THE GOAL, INVARIANTS & HIDDEN CONSTRAINTS.
-2c) **Implementation Blueprint:** From task "Affected Components", find actual file paths via Glob/Grep or `inspect_path`. Read key sections of each file. If task changes existing code in supported languages, build graph context once (`index_project`) and use `find_symbols` / `inspect_symbol` for exact symbol identity plus `analyze_edit_region` before editing non-trivial ranges. Output structured plan: files to create/modify, change order (dependencies first), risks (shared files with parallel tasks, external callers, public API surfaces). Scope: this task only.
+2c) **Implementation Blueprint:** From task "Affected Components", find actual file paths via Glob/Grep or narrow `inspect_path(path=<component dir>)`. Read key sections of each file. If task changes existing code in supported languages, build graph context once (`index_project`) and use path-scoped `find_symbols` / `inspect_symbol` for exact symbol identity plus `analyze_edit_region` before editing non-trivial ranges. If symbol discovery is truncated, refine to `name + file` or `workspace_qualified_name` before planning from it. Output structured plan: files to create/modify, change order (dependencies first), risks (shared files with parallel tasks, external callers, public API surfaces). Scope: this task only.
 3) **Start work:** Update this task to In Progress (Linear: update_issue; File: Edit status line); move it in kanban (keep Epic/Story indent).
 4) **Implement (with verification loop):** **Before writing new utilities/handlers**, Grep `src/` for existing patterns (error handling, validation, config access). Reuse if found; if not reusable, document rationale in code comment. For edits to existing functions, classes, routes, or middleware, run `analyze_edit_region` first and account for external callers, clone siblings, downstream flow, and public API risk. Follow checkboxes/plan; keep it simple; avoid hardcoded values; reuse existing components; update docs noted in Affected Components; update existing tests if impacted (no new tests here). Before creating service functions, apply Architecture Guard (cascade depth, interface honesty, flat orchestration; for frontend files: **MANDATORY READ** `shared/references/frontend_design_guide.md`, load design_guidelines.md if exists, verify composition/typography/WCAG rules). After implementation, execute `verify:` methods from task AC: test → run specified test; command → execute and check output; inspect → verify file/content exists. If any verify fails → fix before proceeding.
 5) **Quality:** Run typecheck and lint (or project equivalents); ensure instructions in Existing Code Impact are addressed.

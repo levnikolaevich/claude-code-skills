@@ -11,7 +11,7 @@ Canonical phase/status names: `shared/references/runtime_status_catalog.md`
 ## Phases
 
 - `PHASE_0_CONFIG`
-- `PHASE_1_LEGACY_SCAN`
+- `PHASE_1_SOURCE_SCAN`
 - `PHASE_2_CONFIRMATION`
 - `PHASE_3_DELEGATE`
 - `PHASE_4_QUALITY_GATE`
@@ -22,8 +22,8 @@ Canonical phase/status names: `shared/references/runtime_status_catalog.md`
 
 ## Required State
 
-- `legacy_manifest`
-- `legacy_mode`
+- `source_manifest`
+- `source_mode`
 - `component_results`
 - `quality_summary`
 - `cleanup_summary`

@@ -54,6 +54,7 @@ Allowed `summary_kind` values:
 - `env-mcp-config`
 - `env-config-sync`
 - `env-instructions`
+- `env-cleanup`
 
 Payload fields:
 - `status` (`completed`, `skipped`, `error`)
@@ -61,6 +62,10 @@ Payload fields:
 - `changes`
 - `warnings`
 - `detail`
+
+Paths:
+- managed: exact caller-provided `summaryArtifactPath`
+- standalone: `.hex-skills/runtime-artifacts/runs/{run_id}/{summary_kind}/{worker}--{identifier}.json`
 
 ## Opportunity Discovery Worker Summary
 
@@ -170,6 +175,28 @@ Examples:
 - story test summaries
 - `audit-coordinator` summaries
 - optimization summaries
+
+## Evaluation Coordinator Summary
+
+`summary_kind`:
+- `evaluation-coordinator`
+
+Payload fields:
+- `status`
+- `final_result`
+- `report_path`
+- `worker_count`
+- `agent_count`
+- `issues_total`
+- `severity_counts`
+- `warnings`
+- `cleanup_verified`
+- `research_completed`
+- `artifact_path`
+- `metadata`
+
+Paths:
+- coordinator: `.hex-skills/runtime-artifacts/runs/{run_id}/evaluation-coordinator/{identifier}.json`
 
 ## Task Execution Worker Summary
 

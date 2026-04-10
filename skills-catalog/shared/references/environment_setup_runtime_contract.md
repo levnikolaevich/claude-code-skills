@@ -52,3 +52,16 @@ Workers stay standalone-first and may optionally write:
 Coordinator consumes only the shared summary envelope.
 Every worker summary envelope must include `run_id`; standalone workers generate one when the caller does not pass `runId`.
 Worker payload `status` uses `completed`, `skipped`, or `error`.
+
+## Managed Worker Handoff
+
+For every dispatched worker:
+- compute deterministic `child_run_id`
+- compute exact `childSummaryArtifactPath`
+- materialize a child manifest
+- checkpoint `child_run` metadata before invocation
+- start `environment-worker-runtime` in managed mode
+- invoke the worker with both `runId` and `summaryArtifactPath`
+- read the artifact and record it through `record-worker`
+
+`ln-015` is part of the environment family, but it is not part of the `ln-010` dispatch set.

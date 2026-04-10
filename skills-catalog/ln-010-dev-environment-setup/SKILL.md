@@ -19,7 +19,9 @@ Runtime-backed coordinator for environment setup. The runtime is the execution S
 Load these before execution:
 - `shared/references/coordinator_runtime_contract.md`
 - `shared/references/environment_setup_runtime_contract.md`
+- `shared/references/environment_worker_runtime_contract.md`
 - `shared/references/coordinator_summary_contract.md`
+- `shared/references/agent_skill_roots_contract.md`
 - `shared/references/environment_state_contract.md`
 - `shared/references/environment_state_schema.json`
 
@@ -36,7 +38,7 @@ Load these before execution:
 |-----------|----------|---------|-------------|
 | `targets` | No | `both` | `gemini`, `codex`, or `both` |
 | `dry_run` | No | `false` | Plan without mutating |
-| `apply_ide_override` | No | `false` | Pass-through to ln-012 Phase 7b. When `true`, ln-012 may write `claudeCode.initialPermissionMode` and `claudeCode.allowDangerouslySkipPermissions` to Cursor / VSCode user settings after explicit user consent. When `false` (default), Phase 7b is detection-only and reports drift without mutating IDE settings. |
+| `apply_ide_override` | No | `false` | Pass-through to ln-012 Phase 6b. When `true`, ln-012 may write `claudeCode.initialPermissionMode` and `claudeCode.allowDangerouslySkipPermissions` to Cursor / VSCode user settings after explicit user consent. When `false` (default), Phase 6b is detection-only and reports drift without mutating IDE settings. |
 
 ## Runtime
 
@@ -67,6 +69,7 @@ Collect one environment snapshot:
 - MCP registration/connection state
 - hook state
 - config sync state
+- Codex skill-root discovery health: active roots, cache roots, duplicate skill names, `known_marketplaces.json` install-location drift, whether cache is visible under `~/.codex/skills`, and whether `approval_policy=never` plus `sandbox_mode=danger-full-access` are already aligned
 - instruction file state
 - disabled flags from `.hex-skills/environment_state.json` if present
 - task management provider detection (Linear → GitHub → file)
@@ -79,6 +82,9 @@ Checkpoint payload:
 ### Phase 2: Dispatch Plan
 
 Build selective dispatch plan. Only invoke workers that have work.
+
+Dispatch precedence:
+- If Codex discovery violation or Codex execution-default drift is present, `ln-013-config-syncer` becomes mandatory before Codex can be reported as healthy.
 
 Workers:
 - `ln-011-agent-installer`
@@ -93,10 +99,18 @@ Checkpoint payload:
 
 Invoke only selected workers. Do not re-probe the whole environment between worker calls.
 
-Each worker:
-- remains standalone-capable
-- may receive `summaryArtifactPath`
-- must return the same structured summary even without artifact writing
+Phase 1 assessment is the shared discovery snapshot. Materialize child manifests from that snapshot and pass them into managed worker runs.
+
+For each selected worker:
+- compute deterministic `child_run_id`
+- compute exact `child_summary_artifact_path`
+- checkpoint `child_run` metadata before delegation
+- start the managed `environment-worker-runtime` child run
+- invoke the worker with both `runId` and `summaryArtifactPath`
+- read the artifact written by the worker
+- record the structured worker summary through `environment-setup-runtime`
+
+Each worker remains standalone-capable, but Phase 3 always uses managed transport.
 
 Expected summary kinds:
 - `env-agent-install`
@@ -112,6 +126,7 @@ Run targeted verification against the post-worker state:
 - health checks
 - hook status
 - sync status
+- Codex skill discovery and execution-default status
 - instruction file quality
 - runtime dependency status (ripgrep, optional language servers)
 
@@ -123,7 +138,7 @@ Checkpoint payload:
 Write final durable state to:
 - `.hex-skills/environment_state.json`
 
-Includes all detected sections: agents (with sync status), task_management, research, claude_md, assessment, hooks, ide_extension (Cursor / VSCode Claude Code extension state from Phase 1 plus any Phase 7b mutations from ln-012).
+Includes all detected sections: agents (with sync status, Codex skill-root health, and Codex execution-default state), task_management, research, claude_md, assessment, hooks, ide_extension (Cursor / VSCode Claude Code extension state from Phase 1 plus any Phase 6b mutations from ln-012).
 
 Rules:
 - runtime state is not environment state
@@ -160,25 +175,26 @@ Do not mix these layers.
 | Phase | Worker | Context |
 |-------|--------|---------|
 | 3 | `ln-011-agent-installer` | Install or update CLI agents |
-| 3 | `ln-012-mcp-configurator` | Configure MCP servers, hooks, permissions, and IDE extension permission mode (Phase 7b) |
-| 3 | `ln-013-config-syncer` | Sync config to Gemini and Codex |
+| 3 | `ln-012-mcp-configurator` | Configure MCP servers, hooks, permissions, and IDE extension permission mode (Phase 6b) |
+| 3 | `ln-013-config-syncer` | Sync config to Gemini and repair Codex skill-root mapping + MCP state |
 | 3 | `ln-014-agent-instructions-manager` | Create and audit instruction files |
 
 ```text
-Skill(skill: "ln-011-agent-installer", args: "{targets} {dry_run}")
-Skill(skill: "ln-012-mcp-configurator", args: "{dry_run} {apply_ide_override}")
-Skill(skill: "ln-013-config-syncer", args: "{targets} {dry_run}")
-Skill(skill: "ln-014-agent-instructions-manager", args: "{dry_run}")
+node shared/scripts/environment-worker-runtime/cli.mjs start --skill {worker} --identifier {childIdentifier} --manifest-file {childManifestPath} --run-id {childRunId} --summary-artifact-path {childSummaryArtifactPath}
+node shared/scripts/environment-setup-runtime/cli.mjs checkpoint --identifier {identifier} --phase PHASE_3_WORKER_EXECUTION --payload '{"child_run":{"worker":"{worker}","run_id":"{childRunId}","summary_artifact_path":"{childSummaryArtifactPath}"}}'
+Skill(skill: "{worker}", args: "{workerArgs} --run-id {childRunId} --summary-artifact-path {childSummaryArtifactPath}")
+Read {childSummaryArtifactPath}
+node shared/scripts/environment-setup-runtime/cli.mjs record-worker --identifier {identifier} --payload '{...environment worker summary...}'
 ```
 
-`apply_ide_override` propagates from ln-010 input to ln-012 only. Default `false` keeps Phase 7b in detection mode and reports IDE drift as a WARN in the assessment summary; passing `true` lets ln-012 prompt the user and write Cursor / VSCode settings.
+`apply_ide_override` propagates from ln-010 input to ln-012 only. Default `false` keeps Phase 6b in detection mode and reports IDE drift as a WARN in the assessment summary; passing `true` lets ln-012 prompt the user and write Cursor / VSCode settings.
 
 ## TodoWrite format (mandatory)
 
 ```text
 - Phase 1: Assess (pending)
 - Phase 2: Build dispatch plan (pending)
-- Phase 3: Run selected workers (pending)
+- Phase 3: Start child runtime, checkpoint child metadata, and run selected workers (pending)
 - Phase 4: Verify final state (pending)
 - Phase 5: Write environment_state.json (pending)
 - Phase 6: Self-check (pending)
@@ -198,6 +214,7 @@ Skill(skill: "ln-014-agent-instructions-manager", args: "{dry_run}")
 - [ ] Runtime started with identifier-scoped manifest and state
 - [ ] Assessment snapshot recorded
 - [ ] Dispatch plan checkpointed
+- [ ] Child worker run metadata checkpointed before each delegation
 - [ ] Worker summaries recorded through machine-readable contract
 - [ ] Verification summary checkpointed
 - [ ] `.hex-skills/environment_state.json` validated and written, or explicit `DRY_RUN_PLAN`

@@ -25,8 +25,8 @@ const pipelineStore = createPlanningRuntimeStore({
     defaultState(manifest, runId) {
         return createPlanningState(manifest, runId, PHASES.CONFIG, {
             pipeline_id: manifest.pipeline_id,
-            legacy_manifest: [],
-            legacy_mode: null,
+            source_manifest: [],
+            source_mode: null,
             component_results: {},
             quality_summary: null,
             cleanup_summary: null,

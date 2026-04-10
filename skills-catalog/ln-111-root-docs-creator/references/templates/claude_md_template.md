@@ -1,6 +1,6 @@
 # {{PROJECT_NAME}}
 
-<!-- SCOPE: Anthropic-compatible compatibility wrapper ONLY. Points to AGENTS.md and adds provider-specific notes when needed. -->
+<!-- SCOPE: Anthropic-specific derived entrypoint ONLY. Points to AGENTS.md and adds provider-specific notes when needed. -->
 <!-- DOC_KIND: index -->
 <!-- DOC_ROLE: derived -->
 <!-- READ_WHEN: Read when tooling expects CLAUDE.md or when Anthropic-specific notes are needed. -->
@@ -17,7 +17,7 @@
 
 ## Agent Entry
 
-- Purpose: Thin compatibility shim for Claude-compatible tooling.
+- Purpose: Thin Anthropic-specific entrypoint for tooling that loads `CLAUDE.md`.
 - Read when: Tooling loads `CLAUDE.md` by convention or provider-specific notes are required.
 - Skip when: `AGENTS.md` is already loaded.
 - Canonical: No.

@@ -27,6 +27,13 @@
             "version": { "type": "string" },
             "config_synced": { "type": "boolean" },
             "servers_synced": { "type": "integer" },
+            "active_skill_roots": { "type": "array", "items": { "type": "string" } },
+            "cache_roots": { "type": "array", "items": { "type": "string" } },
+            "duplicate_skill_names": { "type": "array", "items": { "type": "string" } },
+            "discovery_violation": { "type": "boolean" },
+            "approval_policy": { "type": "string" },
+            "sandbox_mode": { "type": "string" },
+            "permissions_default_ready": { "type": "boolean" },
             "sync_actions": { "type": "array", "items": { "type": "string" } },
             "detail": { "type": "string" }
           }
@@ -112,7 +119,7 @@
     },
     "ide_extension": {
       "type": "object",
-      "description": "Claude Code IDE extension state per IDE. Detected by ln-010 Phase 1 and refined by ln-012 Phase 7b. The extension's claudeCode.initialPermissionMode overrides project permissions.defaultMode at session start, and claudeCode.allowDangerouslySkipPermissions is the gate that must be true for bypass to actually engage.",
+      "description": "Claude Code IDE extension state per IDE. Detected by ln-010 Phase 1 and refined by ln-012 Phase 6b. The extension's claudeCode.initialPermissionMode overrides project permissions.defaultMode at session start, and claudeCode.allowDangerouslySkipPermissions is the gate that must be true for bypass to actually engage.",
       "properties": {
         "cursor": { "$ref": "#/$defs/ide_extension_entry" },
         "vscode": { "$ref": "#/$defs/ide_extension_entry" }
@@ -147,7 +154,7 @@
         },
         "last_modified_by_skill": {
           "type": "string",
-          "description": "ISO timestamp of the last ln-012 Phase 7b write, or absent if never modified"
+          "description": "ISO timestamp of the last ln-012 Phase 6b write, or absent if never modified"
         }
       }
     }

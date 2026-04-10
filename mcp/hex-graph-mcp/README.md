@@ -63,6 +63,8 @@ All symbol/query tools also require `path` as the project anchor. Pass the index
 
 `find_symbols` is name-oriented discovery, not free-form code search. If the input looks like `export function`, `server.tool()`, `app.get(...)`, or another raw code fragment, use `grep_search` or a framework-aware graph query instead.
 
+`find_symbols` is also intentionally compact for overloaded names. The default detailed slice is `8`; when more candidates exist, the response reports `candidate_count`, `shown_count`, `truncated`, `overflow_groups`, and stronger `disambiguation_hints` so the next call narrows with `path`, `name + file`, or `workspace_qualified_name`.
+
 Heavy tools now default to `verbosity: "compact"` and summary-first output. They return counts, previews, `available_expansions`, `expansion_hints`, `resolution_quality`, and `provenance_summary` first, so the client sees upfront how much a deeper expansion will return and which layer the current answer comes from. Use `expand`, `expand_limit`, `limit`, `depth`, `max_hops`, `kind`, and `min_confidence` to request a bounded deeper slice instead of dumping the whole graph in one call.
 
 All public responses now use the same top-level shape:
@@ -111,7 +113,7 @@ Errors use a compact top-level shape:
 
 | Tool | Best for | Key result sections |
 |------|----------|---------------------|
-| `find_symbols` | Discovery before you know the exact identity | `candidates`, `disambiguation_hints` |
+| `find_symbols` | Discovery before you know the exact identity | `candidates`, `candidate_count`, `shown_count`, `truncated`, `overflow_groups`, `disambiguation_hints` |
 | `inspect_symbol` | One-stop symbol briefing | `symbol`, `resolution`, `context`, `counts`, `references_summary`, `implementations_summary`, `available_expansions`, optional `expanded` |
 | `find_references` | All semantic usages of one symbol | `total`, `total_by_kind`, `preview`, `available_expansions`, optional `expanded`, inline `quality` |
 | `find_implementations` | Override / implementation search | `total`, `preview`, `available_expansions`, optional `expanded` |
@@ -201,7 +203,7 @@ hex-graph-mcp/
 
 | Scenario | Tool | Example |
 |----------|------|---------|
-| Find candidate symbols | `find_symbols` | `path: "/project", query: "handleAuth"` |
+| Find candidate symbols | `find_symbols` | `path: "/project/src/auth", query: "handleAuth"` |
 | Search raw method-call pattern like `server.tool(...)` | `grep_search` | `path: "/project", pattern: "server\\.tool\\("` |
 | Inspect one exact symbol | `inspect_symbol` | `path: "/project", name: "UserService", file: "src/services/user.ts"` |
 | Find semantic usages of one symbol | `find_references` | `path: "/project", workspace_qualified_name: "...", kind: "all"` |
@@ -237,7 +239,7 @@ Inline `quality` metadata is currently surfaced by:
 ### Generated Snapshot
 
 - MCP tools registered in server contract: `14`
-- Semantic suite: `92/92` passing
+- Semantic suite: `93/93` passing
 - Corpora: `1` curated, `1` pinned external
 - Lanes: parser-first `green`, precise overlay `provider_conditional`
 

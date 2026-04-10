@@ -353,41 +353,93 @@ function buildSymbolSummary(symbol, references, implementations) {
     return parts.join(", ");
 }
 
+function directoryBucket(file) {
+    if (!file) return ".";
+    const normalized = String(file).replace(/\\/g, "/");
+    const segments = normalized.split("/").filter(Boolean);
+    if (segments.length <= 1) return ".";
+    return segments.slice(0, Math.min(2, segments.length - 1)).join("/");
+}
+
+function overflowGroups(candidates, shownCount, limit = 4) {
+    const counts = new Map();
+    for (const candidate of candidates.slice(shownCount)) {
+        incrementCount(counts, directoryBucket(candidate.file));
+    }
+    return summarizeCounts(counts, limit)
+        .map(({ key, count }) => ({ directory: key, count }));
+}
+
+function findSymbolsHints(candidates, query, totalCount, shownCount) {
+    if (totalCount <= 1) return [];
+    const hints = [];
+    const sample = candidates.slice(0, Math.min(3, shownCount));
+    if (sample[0]?.file) {
+        hints.push(`Refine with name + file, for example { name: "${query}", file: "${sample[0].file}" }.`);
+    }
+    if (sample.some((candidate) => candidate.workspace_qualified_name)) {
+        hints.push("Prefer workspace_qualified_name when the same name exists across packages or modules.");
+    }
+    if (totalCount > shownCount) {
+        const grouped = overflowGroups(candidates, shownCount, 2);
+        const top = grouped[0]?.directory;
+        if (top && top !== ".") {
+            hints.push(`Narrow path to ${top}/ before rerunning find_symbols on overloaded names.`);
+        }
+    }
+    return hints;
+}
+
 export function runFindSymbolsUseCase(query, { kind, limit = 20, path } = {}) {
-    const base = findSymbols(query, { kind, limit, path });
+    const detailLimit = clampLimit(limit, 8, 25);
+    const fetchLimit = Math.min(Math.max(detailLimit * 4, detailLimit + 8), 64);
+    const base = findSymbols(query, { kind, limit: fetchLimit, path });
     if (base?.error) return base;
     const candidates = base.matches || [];
+    const shownCandidates = candidates.slice(0, detailLimit);
     const queryWarnings = classifyFindSymbolsQuery(query);
+    const genericQueryWarning = (
+        candidates.length > detailLimit
+        && /^[A-Za-z_$][\w$]*$/.test(String(query || "").trim())
+    )
+        ? [`"${query}" is a broad bare symbol query. Narrow path or refine with name + file before deeper graph inspection.`]
+        : [];
     const summary = candidates.length
-        ? `Found ${summarizeCount(candidates.length, "candidate symbol")} for "${query}".`
+        ? `Found ${summarizeCount(candidates.length, "candidate symbol")} for "${query}"${candidates.length > shownCandidates.length ? `; showing top ${shownCandidates.length}.` : "."}`
         : `No candidate symbols matched "${query}".`;
     return {
         query: base.query,
         summary,
         result: {
-            candidates,
-            disambiguation_hints: candidates.length > 1
-                ? [
-                    "Prefer workspace_qualified_name for cross-package symbols.",
-                    "Pair name with file when several same-name symbols exist.",
-                ]
+            candidates: shownCandidates,
+            candidate_count: candidates.length,
+            shown_count: shownCandidates.length,
+            truncated: candidates.length > shownCandidates.length,
+            overflow_groups: candidates.length > shownCandidates.length
+                ? overflowGroups(candidates, shownCandidates.length)
                 : [],
+            disambiguation_hints: findSymbolsHints(shownCandidates, query, candidates.length, shownCandidates.length),
         },
         warnings: mergeWarnings(
             base.warnings || [],
             candidates.length ? [] : ["No semantic symbol matched the requested query."],
             queryWarnings,
+            genericQueryWarning,
         ),
         next_actions: nextActions([
-            candidates.length ? ACTION.INSPECT_SYMBOL : null,
-            queryWarnings.length ? ACTION.ADJUST_QUERY : null,
-            !candidates.length ? ACTION.WIDEN_QUERY : null,
-            !candidates.length ? ACTION.INDEX_PROJECT : null,
+            shownCandidates.length ? ACTION.INSPECT_SYMBOL : null,
+            (queryWarnings.length || candidates.length > shownCandidates.length) ? ACTION.ADJUST_QUERY : null,
+            !shownCandidates.length ? ACTION.WIDEN_QUERY : null,
+            !shownCandidates.length ? ACTION.INDEX_PROJECT : null,
         ]),
         confidence: base.confidence,
         reason: base.reason,
         evidence: base.evidence,
-        limits_applied: base.limits_applied,
+        limits_applied: {
+            ...(base.limits_applied || {}),
+            candidate_fetch_limit: fetchLimit,
+            candidate_detail_limit: detailLimit,
+        },
     };
 }
 

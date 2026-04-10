@@ -11,7 +11,10 @@ license: MIT
 **Type:** L3 Worker
 **Category:** 0XX Shared
 
-Creates missing instruction files and audits all (CLAUDE.md, AGENTS.md, GEMINI.md) for quality, consistency, and best practices.
+Creates missing instruction files and audits all (CLAUDE.md, AGENTS.md, GEMINI.md) for quality, consistency, and best practices. This skill is the single owner of instruction-file creation and MCP Tool Preferences insertion or replacement.
+
+**MANDATORY READ:** Load `shared/references/coordinator_summary_contract.md`, `shared/references/environment_worker_runtime_contract.md`, and `shared/references/worker_runtime_contract.md`
+**MANDATORY READ:** Load `shared/references/mcp_tool_preferences.md`
 
 ## Input / Output
 
@@ -21,6 +24,42 @@ Creates missing instruction files and audits all (CLAUDE.md, AGENTS.md, GEMINI.m
 | **Output** | Structured summary envelope with `payload.status` = `completed` / `skipped` / `error`, plus created files, audit findings, and warnings in `changes` / `detail` |
 
 If `summaryArtifactPath` is provided, write the same summary JSON there. If not provided, return the summary inline and remain fully standalone. If `runId` is not provided, generate a standalone `run_id` before emitting the summary envelope.
+
+## Runtime
+
+Runtime family: `environment-worker-runtime`
+
+Phase profile:
+1. `PHASE_0_CONFIG`
+2. `PHASE_1_DISCOVER_FILES`
+3. `PHASE_2_CREATE_MISSING_FILES`
+4. `PHASE_3_TOKEN_BUDGET_AUDIT`
+5. `PHASE_4_PROMPT_CACHE_SAFETY`
+6. `PHASE_5_CONTENT_QUALITY`
+7. `PHASE_6_CROSS_AGENT_CONSISTENCY`
+8. `PHASE_7_WRITE_SUMMARY`
+9. `PHASE_8_SELF_CHECK`
+
+Runtime rules:
+- emit `summary_kind=env-instructions`
+- standalone runs generate their own `run_id` and write the default worker-family artifact path
+- managed runs require both `runId` and `summaryArtifactPath` and must write the summary to the exact provided path
+- always write the validated summary artifact before terminal outcome
+
+## Output Contract
+
+Always build a structured `env-instructions` summary envelope per:
+- `shared/references/coordinator_summary_contract.md`
+- `shared/references/environment_worker_runtime_contract.md`
+
+Payload fields:
+- `files_found`
+- `files_created`
+- `quality_findings`
+- `token_budget`
+- `prompt_cache_safety`
+- `consistency_status`
+- `status`
 
 ## When to Use
 
@@ -49,8 +88,10 @@ Report: which files exist (`found` / `missing`), which agents share files.
 1. Read `~/.claude/settings.json` → parse `enabledPlugins`
 2. Filter: enabled=true AND publisher ≠ `levnikolaevich-skills-marketplace`
 3. For each external plugin:
-   - Locate cache: `~/.claude/plugins/cache/{publisher}/{plugin}/*/skills/*/SKILL.md`
-   - Read each skill description (frontmatter `description:` field)
+   - Resolve active install first: matching plugin or marketplace under `~/.claude/plugins/marketplaces/*`
+   - Read active `skills-catalog/*/SKILL.md` descriptions from that install surface
+   - Only if no active install is available, fall back to the latest cache snapshot under `~/.claude/plugins/cache/{publisher}/{plugin}/*/skills/*/SKILL.md`
+   - Treat cache as forensic fallback only. Never count multiple cache snapshots as separate active conflicts.
    - Match against conflict signal keywords:
 
 | Signal | Keywords in description | Overlap with |
@@ -63,7 +104,7 @@ Report: which files exist (`found` / `missing`), which agents share files.
 | Debugging | "systematic.*debug", "root.*cause.*phase" | problem_solving.md |
 | Git isolation | "worktree.*creat", "git.*isolat" | git_worktree_fallback.md |
 
-   - Check for `hooks/session-start` directory (competing SessionStart injection)
+   - Check for `hooks/session-start` directory in the active install surface first
 4. Score: 2+ signal categories → CONFLICT. 1 → WARN. 0 → safe
 5. CONFLICT: `"CONFLICT: {plugin} overlaps with ln-* pipeline ({signals}). Disable?"` → AskUserQuestion → if yes, set to `false` in settings.json
 6. WARN: report, continue
@@ -195,6 +236,10 @@ Compare content across all found instruction files:
 
 **Sync action:** For each inconsistency, show diff and suggest which file is source of truth (usually CLAUDE.md).
 
+If `.hex-skills/environment_state.json` reports `agents.codex.discovery_violation=true`, emit a WARN that Codex skill discovery is drifted and duplicate skill counts from stale cache must not be used as evidence during instruction audits until `ln-013-config-syncer` repairs the mapping.
+
+If `.hex-skills/environment_state.json` reports `agents.codex.permissions_default_ready=false`, emit a WARN that Codex CLI startup permissions are drifted from the managed default and instruction audits must not assume full-access startup semantics until `ln-013-config-syncer` repairs `~/.codex/config.toml`.
+
 ## Phase 7: Report
 
 ```
@@ -228,6 +273,8 @@ Recommendations:
 - [ ] Cross-agent consistency verified
 - [ ] Report generated with creation log and actionable recommendations
 - [ ] No conflicting external plugins detected (or user confirmed keep)
+- [ ] Structured summary returned
+- [ ] Summary artifact written to the managed or standalone runtime path
 
 **Critical Rule: Non-destructive file edits.** Auto-fix inserts sections at verified positions only. Never rewrite the entire instruction file. Preserve all existing content outside the inserted section.
 

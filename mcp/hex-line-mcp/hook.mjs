@@ -5,11 +5,12 @@
  * Handles three events:
  *
  * PreToolUse:
- *   - Tool redirect: redirects Read/Edit/Write/Grep for text files
+ *   - Tool redirect: redirects project-scoped text Read/Edit/Write/Grep/Glob
  *     to hex-line, with narrow exceptions for binary/media and
- *     allowed .claude/settings*.json paths.
- *   - Bash redirect: blocks simple cat/head/tail/ls/grep/sed/diff
- *     commands, redirecting to hex-line MCP equivalents.
+ *     text paths outside the current project root.
+ *   - Bash redirect: blocks project-scoped file inspection commands,
+ *     including Windows-native readers/searchers/listing commands,
+ *     redirecting to hex-line MCP equivalents.
  *   - Dangerous command blocker: blocks rm -rf /, force push,
  *     hard reset, DROP, chmod 777, mkfs, dd, etc.
  *
@@ -41,7 +42,8 @@ import {
     REVERSE_TOOL_HINTS,
     TOOL_HINTS,
     TOOL_REDIRECT_MAP,
-    buildAllowedClaudeSettingsPaths,
+    isWithinDir,
+    normalizePolicyPath,
 } from "./lib/hook-policy.mjs";
 
 // ---- Helpers ----
@@ -55,10 +57,177 @@ function getFilePath(toolInput) {
     return toolInput.file_path || toolInput.path || "";
 }
 
+function getGlobScopePath(toolInput) {
+    if (toolInput.path) return toolInput.path;
+    const pattern = typeof toolInput.pattern === "string" ? toolInput.pattern : "";
+    if (!pattern) return "";
+    const prefix = pattern.split(/[*?[{\]]/, 1)[0];
+    return prefix.replace(/[\\/]+$/, "");
+}
+
 function resolveToolPath(filePath) {
     if (!filePath) return "";
     if (filePath.startsWith("~/")) return resolve(homedir(), filePath.slice(2));
     return resolve(process.cwd(), filePath);
+}
+
+function stripMatchingQuotes(token) {
+    if (!token || token.length < 2) return token;
+    const first = token[0];
+    const last = token[token.length - 1];
+    return (first === last && (first === "\"" || first === "'" || first === "`"))
+        ? token.slice(1, -1)
+        : token;
+}
+
+function tokenizeCommand(segment) {
+    return (segment.match(/"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|`(?:[^`\\]|\\.)*`|\S+/g) || [])
+        .map(stripMatchingQuotes);
+}
+
+function splitCompoundCommand(command) {
+    return command.split(/\s*(?:\|\||&&|[|;]|>>?)\s*/).map(part => part.trim()).filter(Boolean);
+}
+
+function readNamedOptionValues(tokens, optionNames) {
+    const values = [];
+    const names = new Set(optionNames.map(name => name.toLowerCase()));
+
+    for (let i = 1; i < tokens.length; i++) {
+        const token = tokens[i];
+        const lower = token.toLowerCase();
+        let matched = false;
+
+        for (const name of names) {
+            if (lower === name) {
+                if (tokens[i + 1]) {
+                    values.push(tokens[i + 1]);
+                }
+                matched = true;
+                break;
+            }
+            if (lower.startsWith(`${name}=`) || lower.startsWith(`${name}:`)) {
+                values.push(token.slice(name.length + 1));
+                matched = true;
+                break;
+            }
+        }
+
+        if (matched) continue;
+    }
+
+    return { values };
+}
+
+function collectPositionals(tokens, { optionValueFlags = [], slashOptions = false } = {}) {
+    const values = [];
+    const expectsValue = new Set(optionValueFlags.map(flag => flag.toLowerCase()));
+
+    for (let i = 1; i < tokens.length; i++) {
+        const token = tokens[i];
+        const lower = token.toLowerCase();
+
+        if (expectsValue.has(lower)) {
+            i += 1;
+            continue;
+        }
+        if (lower.startsWith("-")) continue;
+        if (slashOptions && lower.startsWith("/")) continue;
+        values.push(token);
+    }
+
+    return values;
+}
+
+function resolveCandidatePaths(pathTokens) {
+    return pathTokens
+        .map(resolveToolPath)
+        .filter(Boolean)
+        .map(normalizePolicyPath);
+}
+
+function isProjectScopedPath(filePath) {
+    return !!filePath && isWithinDir(resolveToolPath(filePath), process.cwd());
+}
+
+function getBashPathCandidates(spec, tokens, isFirstSegment) {
+    const command = (tokens[0] || "").toLowerCase();
+    const powershellPaths = readNamedOptionValues(tokens, ["-path", "-literalpath"]);
+    const positional = (flags = [], slashOptions = false) =>
+        collectPositionals(tokens, { optionValueFlags: flags, slashOptions });
+
+    if (spec.kind === "reader") {
+        if (powershellPaths.values.length > 0) return powershellPaths.values;
+        if (command === "head" || command === "tail") {
+            return positional(["-n", "-c", "--lines", "--bytes"]).slice(-1);
+        }
+        return positional();
+    }
+
+    if (spec.kind === "list") {
+        if (powershellPaths.values.length > 0) return powershellPaths.values;
+        if (command === "find") return positional().slice(0, 1);
+        if (command === "dir") return positional([], true);
+        return positional();
+    }
+
+    if (spec.kind === "meta") {
+        if (powershellPaths.values.length > 0) return powershellPaths.values;
+        if (command === "wc") return positional(["-l", "-w", "-c", "-m", "-L"]).slice(0);
+        return positional();
+    }
+
+    if (spec.kind === "edit") {
+        const args = positional(["-e", "-f"]);
+        const hasScriptOption = tokens.some(token => {
+            const lower = token.toLowerCase();
+            return lower === "-e" || lower === "-f";
+        });
+        return hasScriptOption ? args : args.slice(1);
+    }
+
+    if (spec.kind === "search") {
+        if (powershellPaths.values.length > 0) return powershellPaths.values;
+        const args = command === "findstr"
+            ? positional(["/c"], true)
+            : positional(["-e", "-f", "-g", "--glob", "-t", "--type", "--type-not", "-A", "-B", "-C", "-m"]);
+        const hasExplicitPatternOption = command === "findstr"
+            ? tokens.some(token => {
+                const lower = token.toLowerCase();
+                return lower === "/c" || lower.startsWith("/c:");
+            })
+            : tokens.some(token => {
+                const lower = token.toLowerCase();
+                return lower === "-e" || lower === "-f";
+            });
+        const pathArgs = hasExplicitPatternOption ? args : args.slice(1);
+        if (pathArgs.length > 0) return pathArgs;
+        return isFirstSegment ? [process.cwd()] : [];
+    }
+
+    return [];
+}
+
+function getBashRedirect(segment, isFirstSegment) {
+    const tokens = tokenizeCommand(segment);
+    if (tokens.length === 0) return null;
+
+    const spec = BASH_REDIRECTS.find(entry => entry.regex.test(segment));
+    if (!spec) return null;
+
+    const targets = resolveCandidatePaths(getBashPathCandidates(spec, tokens, isFirstSegment));
+    if (targets.length > 0 && !targets.some(target => isWithinDir(target, process.cwd()))) {
+        return null;
+    }
+    if (targets.length === 0 && spec.kind !== "list" && !(spec.kind === "search" && isFirstSegment)) {
+        return null;
+    }
+
+    const hint = TOOL_HINTS[spec.key];
+    return {
+        hint,
+        toolName: hint.split(" (")[0],
+    };
 }
 
 function isPartialRead(toolInput) {
@@ -190,24 +359,19 @@ function handlePreToolUse(data) {
         process.exit(0);
     }
 
-    // Tool redirect: Read / Edit / Write / Grep
+    // Tool redirect: Read / Edit / Write / Grep / Glob
     const hintKey = TOOL_REDIRECT_MAP[toolName];
     if (hintKey) {
-        const filePath = getFilePath(toolInput);
+        const filePath = toolName === "Glob" ? getGlobScopePath(toolInput) : getFilePath(toolInput);
 
         // Skip binary extensions
         if (BINARY_EXT.has(extOf(filePath))) {
             process.exit(0);
         }
 
-        // .claude/ config: allow only settings files at project root or home
-        const resolvedNorm = resolveToolPath(filePath).replace(/\\/g, "/");
-        const claudeAllow = buildAllowedClaudeSettingsPaths(process.cwd(), homedir());
-        if (claudeAllow.includes(resolvedNorm.toLowerCase())) {
+        const projectScoped = filePath ? isProjectScopedPath(filePath) : toolName === "Grep" || toolName === "Glob";
+        if (!projectScoped) {
             process.exit(0);
-        }
-        if (resolvedNorm.includes("/.claude/")) {
-            redirect("Protected .claude/ path. Use built-in tools for .claude/ config files.");
         }
 
         if (toolName === "Read") {
@@ -220,14 +384,14 @@ function handlePreToolUse(data) {
                 : filePath
                     ? `Use mcp__hex-line__read_file(path="${filePath}") with ranges or offset/limit.${rangeHint}`
                     : "Use mcp__hex-line__inspect_path or mcp__hex-line__read_file";
-            redirect(outlineHint, "Use hex-line for text-file reads to keep hashes, revision metadata, and graph hints in one flow.\n" + DEFERRED_HINT);
+            redirect(outlineHint, "Use hex-line for project text-file reads to keep hashes, revision metadata, and graph hints in one flow.\n" + DEFERRED_HINT);
         }
 
         if (toolName === "Edit") {
             const target = filePath
                 ? `Use mcp__hex-line__grep_search or mcp__hex-line__read_file, then mcp__hex-line__edit_file with path="${filePath}"`
                 : "Use mcp__hex-line__grep_search or mcp__hex-line__read_file, then mcp__hex-line__edit_file";
-            redirect(target, "Use hash-verified edits for text files. Locate anchors/checksums first, then call edit_file once with batched edits.\n" + DEFERRED_HINT);
+            redirect(target, "Use hash-verified edits for project text files. Locate anchors/checksums first, then call edit_file once with batched edits.\n" + DEFERRED_HINT);
         }
 
         if (toolName === "Write") {
@@ -238,6 +402,16 @@ function handlePreToolUse(data) {
         if (toolName === "Grep") {
             const pathNote = filePath ? ` with path="${filePath}"` : "";
             redirect(`Use mcp__hex-line__grep_search${pathNote}`, TOOL_HINTS.Grep + "\n" + DEFERRED_HINT);
+        }
+
+        if (toolName === "Glob") {
+            const pattern = typeof toolInput.pattern === "string" ? toolInput.pattern : "";
+            const inspectPath = JSON.stringify(filePath || process.cwd());
+            const inspectPattern = pattern ? JSON.stringify(pattern) : "\"...\"";
+            redirect(
+                `Use mcp__hex-line__inspect_path(path=${inspectPath}, pattern=${inspectPattern})`,
+                "Use inspect_path(pattern=...) for project file discovery and name/path globbing. grep_search(glob=...) remains available when you also need content search.\n" + DEFERRED_HINT
+            );
         }
     }
 
@@ -264,28 +438,23 @@ function handlePreToolUse(data) {
             }
         }
 
-        // Compound commands: check first command in pipe before skipping
+        // Compound commands: redirect only when a segment clearly inspects project files.
         if (COMPOUND_OPERATORS.test(command)) {
-            const firstCmd = command.split(/\s*[|;&>]\s*/)[0].trim();
-            for (const { regex, key } of BASH_REDIRECTS) {
-                if (regex.test(firstCmd)) {
-                    const hint = TOOL_HINTS[key];
-                    const toolName2 = hint.split(" (")[0];
-                    redirect(`Use ${toolName2} instead of piped command`, hint);
+            const segments = splitCompoundCommand(command);
+            for (const [index, segment] of segments.entries()) {
+                const redirectInfo = getBashRedirect(segment, index === 0);
+                if (redirectInfo) {
+                    redirect(`Use ${redirectInfo.toolName} instead of project file inspection pipeline`, redirectInfo.hint);
                 }
             }
             process.exit(0);
         }
 
-        // Simple command redirect — extract args for instant retry
-        for (const { regex, key } of BASH_REDIRECTS) {
-            if (regex.test(command)) {
-                const hint = TOOL_HINTS[key];
-                const toolName2 = hint.split(" (")[0];
-                const args = command.split(/\s+/).slice(1).join(" ");
-                const argsNote = args ? ` — args: "${args}"` : "";
-                redirect(`Use ${toolName2}${argsNote}`, hint);
-            }
+        const redirectInfo = getBashRedirect(command, true);
+        if (redirectInfo) {
+            const args = command.split(/\s+/).slice(1).join(" ");
+            const argsNote = args ? ` — args: "${args}"` : "";
+            redirect(`Use ${redirectInfo.toolName}${argsNote}`, redirectInfo.hint);
         }
     }
 
@@ -391,7 +560,7 @@ function handleSessionStart() {
             "<hex-line_instructions>\n" +
             "  <deferred_loading>If hex-line schemas not loaded, run: ToolSearch('+hex-line read edit')</deferred_loading>\n" +
             "  <note>Follow the active hex-line output style for primary tool choices.</note>\n" +
-            "  <exceptions>Built-in tools stay OK for images, PDFs, notebooks, Glob, .claude/settings.json, and .claude/settings.local.json.</exceptions>\n" +
+            "  <exceptions>Built-in tools stay OK for images, PDFs, notebooks, and text paths outside the current project root.</exceptions>\n" +
             "</hex-line_instructions>"
         : "Hex-line MCP available.\n" +
             "<hex-line_instructions>\n" +
@@ -414,8 +583,9 @@ function handleSessionStart() {
             "    <tip>If edit returns CONFLICT, call verify \u2014 only reread when STALE.</tip>\n" +
             "    <tip>Avoid large first-pass edit batches. Start with 1-2 hunks, then continue from the returned revision.</tip>\n" +
             "    <tip>Use write_file for new files (no prior Read needed).</tip>\n" +
+            "    <tip>Use inspect_path(pattern=...) for project file discovery and name/path globbing.</tip>\n" +
             "  </tips>\n" +
-            "  <exceptions>Built-in tools stay OK for images, PDFs, notebooks, Glob, .claude/settings.json, and .claude/settings.local.json.</exceptions>\n" +
+            "  <exceptions>Built-in tools stay OK for images, PDFs, notebooks, and text paths outside the current project root.</exceptions>\n" +
             "</hex-line_instructions>";
     safeExit(1, JSON.stringify({ systemMessage: msg }), 0);
 }

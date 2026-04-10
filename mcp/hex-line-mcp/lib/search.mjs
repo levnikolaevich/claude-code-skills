@@ -30,6 +30,8 @@ try {
 const DEFAULT_LIMIT = 100;
 const DEFAULT_TOTAL_LIMIT_CONTENT = 200;
 const DEFAULT_TOTAL_LIMIT_LIST = 1000;
+const DEFAULT_CONTENT_BLOCK_LIMIT = 12;
+const DEFAULT_CONTENT_OUTPUT_CHARS = 12000;
 const MAX_OUTPUT = 10 * 1024 * 1024; // 10 MB
 const TIMEOUT = 30000; // 30s
 const MAX_SEARCH_OUTPUT_CHARS = 80000; // Block-aware cap to prevent CC maxResultSizeChars truncation
@@ -91,9 +93,10 @@ function spawnRg(args) {
 export function grepSearch(pattern, opts = {}) {
     const normPath = normalizePath(opts.path || "");
     const target = normPath ? resolve(normPath) : process.cwd();
-    const output = opts.output || "content";
+    const output = opts.output || "summary";
     const plain = !!opts.plain;
     const editReady = !!opts.editReady;
+    const allowLargeOutput = !!opts.allowLargeOutput;
     const defaultTotalLimit = output === "content"
         ? DEFAULT_TOTAL_LIMIT_CONTENT
         : DEFAULT_TOTAL_LIMIT_LIST;
@@ -105,7 +108,7 @@ export function grepSearch(pattern, opts = {}) {
     if (output === "summary") return summaryMode(pattern, target, opts, totalLimit);
     if (output === "files") return filesMode(pattern, target, opts, totalLimit);
     if (output === "count") return countMode(pattern, target, opts, totalLimit);
-    return contentMode(pattern, target, opts, plain, editReady, totalLimit);
+    return contentMode(pattern, target, opts, plain, editReady, totalLimit, allowLargeOutput);
 }
 
 function applyListModeTotalLimit(lines, totalLimit) {
@@ -211,13 +214,28 @@ async function summaryMode(pattern, target, opts, totalLimit) {
     return lines.join("\n");
 }
 
+function buildSearchRefineCall(target, pattern, opts) {
+    const args = { path: String(target).replace(/\\/g, "/"), pattern };
+    if (opts.glob) args.glob = opts.glob;
+    if (opts.type) args.type = opts.type;
+    return JSON.stringify({
+        tool: "mcp__hex_line__grep_search",
+        arguments: {
+            ...args,
+            output: "summary",
+        },
+    });
+}
+
 /**
  * content mode: rg --json — canonical search blocks.
  */
-async function contentMode(pattern, target, opts, plain, editReady, totalLimit) {
+async function contentMode(pattern, target, opts, plain, editReady, totalLimit, allowLargeOutput) {
     const realArgs = ["--json"];
     const plainOutput = plain || !editReady;
     const shouldUseGraph = editReady && !plain;
+    const contentBlockLimit = allowLargeOutput ? Number.POSITIVE_INFINITY : DEFAULT_CONTENT_BLOCK_LIMIT;
+    const outputCharBudget = allowLargeOutput ? MAX_SEARCH_OUTPUT_CHARS : DEFAULT_CONTENT_OUTPUT_CHARS;
     if (opts.caseInsensitive) realArgs.push("-i");
     else if (opts.smartCase) realArgs.push("-S");
     if (opts.literal) realArgs.push("-F");
@@ -243,6 +261,7 @@ async function contentMode(pattern, target, opts, plain, editReady, totalLimit) 
     const db = shouldUseGraph ? getGraphDB(target) : null;
     const relCache = new Map();
     let annotationBudget = GRAPH_MATCH_ANNOTATION_BUDGET;
+    const matchedFiles = new Set();
 
     let groupFile = null;
     let groupEntries = [];
@@ -292,6 +311,7 @@ async function contentMode(pattern, target, opts, plain, editReady, totalLimit) 
         const filePath = (data.path?.text || "").replace(/\\/g, "/");
         const lineNum = data.line_number;
         if (!lineNum) continue;
+        if (msg.type === "match") matchedFiles.add(filePath);
 
         // Get line content (handle text vs bytes)
         let content = data.lines?.text;
@@ -353,6 +373,15 @@ async function contentMode(pattern, target, opts, plain, editReady, totalLimit) 
                 flushGroup();
                 blocks.push(buildDiagnosticBlock({
                     kind: "total_limit",
+                    meta: {
+                        total_matches: matchCount,
+                        shown_matches: matchCount,
+                        file_count: matchedFiles.size,
+                        shown_count: blocks.filter(block => block.type === "edit_ready_block").length,
+                        truncated: true,
+                        next_action: "narrow_search_scope",
+                        suggested_refine_call: buildSearchRefineCall(target, pattern, opts),
+                    },
                     message: `Search stopped after ${totalLimit} match event(s). Narrow the query, raise total_limit, or pass total_limit=0 to disable the cap.`,
                     path: String(target).replace(/\\/g, "/"),
                 }));
@@ -369,10 +398,18 @@ async function contentMode(pattern, target, opts, plain, editReady, totalLimit) 
     // Graph-aware ranking: sort blocks by graphScore DESC (only reorders when graph DB is available)
     if (db) blocks.sort((a, b) => (b.meta.graphScore || 0) - (a.meta.graphScore || 0));
     // Block-aware output cap: serialize incrementally, stop at budget
+    const searchBlocks = blocks.filter(block => block.type === "edit_ready_block");
+    const totalSearchBlocks = searchBlocks.length;
     const parts = [];
-    let budget = MAX_SEARCH_OUTPUT_CHARS;
+    let budget = outputCharBudget;
     let capped = false;
+    let shownBlocks = 0;
+    let shownMatches = 0;
     for (const block of blocks) {
+        if (block.type === "edit_ready_block" && shownBlocks >= contentBlockLimit) {
+            capped = true;
+            break;
+        }
         const serialized = block.type === "edit_ready_block"
             ? serializeSearchBlock(block, { plain: plainOutput })
             : serializeDiagnosticBlock(block);
@@ -382,12 +419,26 @@ async function contentMode(pattern, target, opts, plain, editReady, totalLimit) 
         }
         parts.push(serialized);
         budget -= serialized.length;
+        if (block.type === "edit_ready_block") {
+            shownBlocks++;
+            shownMatches += Array.isArray(block.meta.matchLines) ? block.meta.matchLines.length : 0;
+        }
     }
     if (capped) {
-        const remaining = blocks.length - parts.length;
+        const remaining = Math.max(0, totalSearchBlocks - shownBlocks);
         parts.push(serializeDiagnosticBlock(buildDiagnosticBlock({
             kind: "output_capped",
-            message: `OUTPUT_CAPPED: ${remaining} more search block(s) omitted (${MAX_SEARCH_OUTPUT_CHARS} char limit). Narrow with path= or glob= filters.`,
+            path: String(target).replace(/\\/g, "/"),
+            meta: {
+                total_matches: matchCount,
+                shown_matches: shownMatches,
+                file_count: matchedFiles.size,
+                shown_count: shownBlocks,
+                truncated: true,
+                next_action: "narrow_search_scope",
+                suggested_refine_call: buildSearchRefineCall(target, pattern, opts),
+            },
+            message: `OUTPUT_CAPPED: ${remaining} more search block(s) omitted (${outputCharBudget} char limit${allowLargeOutput ? "" : `, ${DEFAULT_CONTENT_BLOCK_LIMIT} block default`}). Narrow with path= or glob= filters or pass allow_large_output=true when you intentionally need a larger payload.`,
         })));
     }
     return parts.join("\n\n");

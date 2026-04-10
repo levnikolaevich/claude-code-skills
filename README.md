@@ -1,7 +1,7 @@
 # Claude Code Skills
 
 ![Version](https://img.shields.io/badge/version-2026.04.10-blue)
-![Skills](https://img.shields.io/badge/skills-129-green)
+![Skills](https://img.shields.io/badge/skills-135-green)
 ![License](https://img.shields.io/badge/license-MIT-green)
 [![GitHub stars](https://img.shields.io/github/stars/levnikolaevich/claude-code-skills?style=social)](https://github.com/levnikolaevich/claude-code-skills)
 
@@ -116,7 +116,7 @@ Bundled MCP servers extend agent capabilities — hash-verified editing, code in
 Deterministic scope rule: `hex-line` and `hex-graph` keep `path` as the project anchor. In normal use the agent fills it automatically from the active file or project root, so users usually do not need to type it manually. `hex-ssh` runs on Windows/macOS/Linux hosts; remote shell tools stay POSIX-oriented, while SFTP transfers support platform-aware remote paths.
 
 <!-- GENERATED:HEX_GRAPH_MCP_STATUS:START -->
-`hex-graph-mcp` quality snapshot: `92/92` tests passing, `1` curated corpus, `1` pinned external corpora, parser-first `green`.
+`hex-graph-mcp` quality snapshot: `93/93` tests passing, `1` curated corpus, `1` pinned external corpora, parser-first `green`.
 <!-- GENERATED:HEX_GRAPH_MCP_STATUS:END -->
 
 ### External servers
@@ -160,7 +160,7 @@ MCP servers can be installed correctly and still lose to built-ins in practice. 
 |-----------|-------------|
 | **[Output style](mcp/hex-line-mcp/output-style.md)** | Injected into system prompt — maps built-in tools to MCP equivalents (`Read` → `hex-line read_file`, `Edit` → `hex-line edit_file`) |
 | **SessionStart hook** | Injects a compact bootstrap hint and defers to the active `hex-line` output style when present |
-| **PreToolUse hook** | Advises small `Read`/`Edit`, redirects heavier `Read`/`Edit` plus `Write`/`Grep`, selectively redirects simple Bash, blocks dangerous commands |
+| **PreToolUse hook** | Hard-redirects project text `Read`/`Edit`/`Write`/`Grep`/`Glob`, redirects project file-inspection Bash commands, blocks dangerous commands |
 | **PostToolUse hook** | Filters only verbose Bash output (50+ lines), keeping first 15 + last 15 lines after normalization and dedupe |
 
 Hooks and output style auto-sync on `hex-line-mcp` startup. First run after install performs the initial sync automatically.
@@ -227,7 +227,7 @@ All skills support:
 <details>
 <summary><b>Sharing skills & MCP between agents</b></summary>
 
-**Share skills** — symlink/junction plugin directory:
+**Share skills with Gemini** — symlink/junction the active plugin directory:
 
 | OS | Command |
 |----|---------|
@@ -235,7 +235,7 @@ All skills support:
 | Windows (CMD) | `mklink /J "C:\Users\<USER>\.gemini\skills" "<PLUGIN_DIR>"` |
 | macOS / Linux | `ln -s ~/.claude/plugins/<PLUGIN_DIR> ~/.gemini/skills` |
 
-Same for `.codex/skills`. Or use **ln-013-config-syncer** to automate symlinks + MCP sync.
+**Codex is different.** Do not symlink `.codex/skills` to `.claude/plugins` or expose cache snapshots under the Codex discovery root. Keep active installs under `~/.codex/skills/marketplaces/...` and keep cache outside the discovery root (for example `~/.codex/skill-cache/...`). Or use **ln-013-config-syncer** to repair Codex skill mapping and MCP sync together.
 
 **MCP settings locations** (for manual sharing):
 
@@ -261,23 +261,16 @@ A plugin for [Claude Code](https://claude.ai/code) that provides production-read
 </details>
 
 <details>
-<summary><b>How does it automate the Agile workflow?</b></summary>
+<summary><b>Is it free and open source?</b></summary>
 
-Skills form a complete pipeline: `ln-700` bootstraps the project → `ln-100` generates documentation → `ln-200` decomposes scope into Epics and Stories → `ln-1000` drives `ln-300 -> ln-310 -> ln-400 -> ln-500` through coordinator stage artifacts. Task-plan, execution, quality, and test-planning workers are stateful and resumable, while coordinators make decisions only from machine-readable artifacts.
-
-</details>
-
-<details>
-<summary><b>Does it require Linear or any external dependencies?</b></summary>
-
-No. All skills work without Linear or any external tools. Linear integration is optional — when unavailable, skills fallback to a standalone flow using local markdown files (`kanban_board.md`) as the task management backend. No API keys, no paid services required.
+Yes. MIT license, fully open source. No API keys, no paid services required. Claude Code CLI is the only prerequisite.
 
 </details>
 
 <details>
-<summary><b>What AI models does it use?</b></summary>
+<summary><b>What languages and frameworks does it support?</b></summary>
 
-Claude Opus is the primary model. For code and story reviews, skills delegate to external agents (OpenAI Codex, Google Gemini) for parallel multi-model review with automatic fallback to Claude Opus if external agents are unavailable.
+Bootstrap skills scaffold React, .NET, and Python projects to Clean Architecture. Audit and execution skills are language-agnostic — they work on any codebase Claude Code can read. Dependency auditors cover npm, NuGet, and pip ecosystems.
 
 </details>
 
@@ -313,7 +306,7 @@ Claude Opus is the primary model. For code and story reviews, skills delegate to
 | Audit existing code for issues | `codebase-audit-suite` |
 | Scaffold a new project or restructure existing | `project-bootstrap` |
 | Optimize performance, dependencies, bundle size | `optimization-suite` |
-| Manage GitHub community (triage, announcements, RFCs) | `community-engagement` |
+| Manage GitHub community (triage, announcements, RFCs, responses) | `community-engagement` |
 | Set up multi-agent dev environment | `setup-environment` |
 | Everything | `/plugin marketplace add levnikolaevich/claude-code-skills` + all 7 `/plugin install ...@levnikolaevich-skills-marketplace` commands |
 
@@ -322,9 +315,9 @@ Add the marketplace once, then install only what you need.
 </details>
 
 <details>
-<summary><b>Can I run individual skills without the full pipeline?</b></summary>
+<summary><b>Does it require Linear or any external dependencies?</b></summary>
 
-Yes. Most skills work standalone — just invoke them directly (e.g., `/ln-620-codebase-auditor` for a full code audit). Pipeline orchestrators (`ln-1000`, `ln-400`, `ln-510`, `ln-520`) coordinate other skills but are not required, and their workers remain standalone-capable. In managed runs, coordinators pass deterministic `runId` and exact `summaryArtifactPath`; in standalone runs, workers create their own runtime state and summary path.
+No. All skills work without Linear or any external tools. Linear integration is optional — when unavailable, skills fallback to a standalone flow using local markdown files (`kanban_board.md`) as the task management backend. No API keys, no paid services required.
 
 </details>
 
@@ -336,9 +329,30 @@ Yes. `ln-700-project-bootstrap` has a TRANSFORM mode that restructures existing 
 </details>
 
 <details>
+<summary><b>How does it automate the Agile workflow?</b></summary>
+
+Skills form a complete pipeline: `ln-700` bootstraps the project → `ln-100` generates documentation → `ln-200` decomposes scope into Epics and Stories → `ln-1000` drives `ln-300 -> ln-310 -> ln-400 -> ln-500` through coordinator stage artifacts. Task-plan, execution, quality, and test-planning workers are stateful and resumable, while coordinators make decisions only from machine-readable artifacts.
+
+</details>
+
+<details>
+<summary><b>Can I run individual skills without the full pipeline?</b></summary>
+
+Yes. Most skills work standalone — just invoke them directly (e.g., `/ln-620-codebase-auditor` for a full code audit). Pipeline orchestrators (`ln-1000`, `ln-400`, `ln-510`, `ln-520`) coordinate other skills but are not required, and their workers remain standalone-capable. In managed runs, coordinators pass deterministic `runId` and exact `summaryArtifactPath`; in standalone runs, workers create their own runtime state and summary path.
+
+</details>
+
+<details>
+<summary><b>Can it generate tests automatically?</b></summary>
+
+Yes. `ln-520-test-planner` orchestrates the full test planning pipeline, `ln-523-auto-test-planner` creates risk-based test scenarios (E2E, integration, unit), and `ln-404-test-executor` implements test tasks. Manual testing is covered by `ln-522-manual-tester` with executable bash scripts. Run `ln-630-test-auditor` to audit an existing test suite across 7 categories.
+
+</details>
+
+<details>
 <summary><b>How does it handle "almost right" AI-generated code?</b></summary>
 
-Through automated review loops. `ln-402-task-reviewer` checks every task output, `ln-403-task-rework` fixes issues and resubmits for review, and `ln-500-story-quality-gate` runs a 4-level gate (PASS/CONCERNS/REWORK/FAIL) before any Story is marked Done. Code is never shipped without passing quality checks.
+Through automated review loops. `ln-402-task-reviewer` checks every task output, `ln-403-task-rework` fixes issues and resubmits for review, and `ln-500-story-quality-gate` runs a 4-level gate (PASS/CONCERNS/FAIL/WAIVED) before any Story is marked Done. Code is never shipped without passing quality checks.
 
 </details>
 
@@ -350,37 +364,16 @@ No — it augments human review. Multi-model cross-checking (Claude + Codex + Ge
 </details>
 
 <details>
-<summary><b>How does it maintain context across large codebases?</b></summary>
+<summary><b>Can it catch technical debt from AI-generated code?</b></summary>
 
-Through the Orchestrator-Worker pattern plus persisted runtime state. Instead of feeding the entire codebase into one prompt, orchestrators advance stages from coordinator artifacts, coordinators consume worker artifacts, and workers execute with minimal, targeted context. Each layer loads only the files it needs and can resume from checkpoints instead of replaying long chat history.
+Yes. Audit skills specifically target AI-induced tech debt: `ln-623` checks DRY/KISS/YAGNI violations, `ln-626` finds dead code and unused imports, `ln-640` audits architectural pattern evolution, `ln-644` detects dependency cycles and coupling metrics, `ln-645` finds custom code that can be replaced by battle-tested open-source packages, and `ln-646` validates project structure against framework-specific conventions. Run `ln-620-codebase-auditor` to scan all 9 categories in parallel.
 
 </details>
 
 <details>
 <summary><b>What can the audit skills detect?</b></summary>
 
-Audit skills in 5 groups: documentation quality (structure, semantics, fact-checking, inline code documentation), codebase health (security, build, DRY/KISS/YAGNI, complexity, dependencies, dead code, observability, concurrency, lifecycle), test suites (business logic, E2E coverage, value scoring, coverage gaps, isolation), architecture (patterns, layer boundaries, API contracts, dependency graphs, OSS replacements, project structure, env configuration), and persistence performance (query efficiency, transactions, runtime, resource lifecycle).
-
-</details>
-
-<details>
-<summary><b>How is it different from custom prompts or slash commands?</b></summary>
-
-Custom prompts are ad-hoc and context-free. Claude Code Skills provides coordinated skills with an [Orchestrator-Worker architecture](docs/architecture/SKILL_ARCHITECTURE_GUIDE.md) — L0 meta-orchestrator drives L1 coordinators via sequential Skill() calls, which delegate to L2 coordinators and L3 workers, each with single responsibility and token-efficient context loading. Skills build on each other's outputs across the full lifecycle.
-
-</details>
-
-<details>
-<summary><b>What is the Orchestrator-Worker pattern?</b></summary>
-
-A 4-level hierarchy: L0 orchestrator (`ln-1000-pipeline-orchestrator`) advances the pipeline from coordinator stage artifacts, L1 coordinators (for example `ln-300`, `ln-400`, `ln-510`, `ln-520`) manage one domain workflow, and L3 workers execute bounded responsibilities with their own runtime state. Dependency direction stays one-way: orchestrators know coordinator artifacts, coordinators know worker artifacts, and workers do not know their parent hierarchy. See [SKILL_ARCHITECTURE_GUIDE.md](docs/architecture/SKILL_ARCHITECTURE_GUIDE.md).
-
-</details>
-
-<details>
-<summary><b>Can it catch technical debt from AI-generated code?</b></summary>
-
-Yes. Audit skills specifically target AI-induced tech debt: `ln-623` checks DRY/KISS/YAGNI violations, `ln-626` finds dead code and unused imports, `ln-640` audits architectural pattern evolution, `ln-644` detects dependency cycles and coupling metrics, `ln-645` finds custom code that can be replaced by battle-tested open-source packages, and `ln-646` validates project structure against framework-specific conventions. Run `ln-620-codebase-auditor` to scan all 9 categories in parallel.
+Audit skills in 5 groups: documentation quality (structure, semantics, fact-checking, inline code documentation), codebase health (security, build, DRY/KISS/YAGNI, complexity, dependencies, dead code, observability, concurrency, lifecycle), test suites (business logic, E2E coverage, value scoring, coverage gaps, isolation, manual test quality, test structure), architecture (patterns, layer boundaries, API contracts, dependency graphs, OSS replacements, project structure, env configuration), and persistence performance (query efficiency, transactions, runtime, resource lifecycle).
 
 </details>
 
@@ -392,9 +385,51 @@ Bootstrap skills (`ln-7XX`) support React, .NET, and Python project structures. 
 </details>
 
 <details>
+<summary><b>What AI models does it use?</b></summary>
+
+Claude Opus is the primary model. For code and story reviews, skills delegate to external agents (OpenAI Codex, Google Gemini) for parallel multi-model review with automatic fallback to Claude Opus if external agents are unavailable.
+
+</details>
+
+<details>
+<summary><b>What MCP servers are included?</b></summary>
+
+Three bundled MCP servers, all published on npm: `hex-line-mcp` (hash-verified file editing — every line carries a content hash, preventing stale-context corruption), `hex-graph-mcp` (code knowledge graph with symbol search, references, architecture analysis, and SCIP interop), and `hex-ssh-mcp` (hash-verified remote editing and SFTP over SSH). Skills work without MCP servers (fallback to built-in tools), but MCP improves edit accuracy and reduces token usage. See [MCP Servers](#mcp-servers-optional) for setup.
+
+</details>
+
+<details>
+<summary><b>What is hash-verified editing and why does it matter?</b></summary>
+
+Every line `hex-line-mcp` reads carries a content hash. When the agent edits, it must reference these hashes — proving it sees current file content, not a stale version from earlier in the conversation. This eliminates a common failure mode where AI agents overwrite recent changes with outdated context. Hooks auto-steer Claude from built-in tools to `hex-line` equivalents so the protection is always active.
+
+</details>
+
+<details>
+<summary><b>How does it maintain context across large codebases?</b></summary>
+
+Through the Orchestrator-Worker pattern plus persisted runtime state. Instead of feeding the entire codebase into one prompt, orchestrators advance stages from coordinator artifacts, coordinators consume worker artifacts, and workers execute with minimal, targeted context. Each layer loads only the files it needs and can resume from checkpoints instead of replaying long chat history.
+
+</details>
+
+<details>
+<summary><b>How much context/tokens does it use?</b></summary>
+
+Skills are designed for token efficiency. Each worker loads only the files it needs via targeted context — no full-codebase prompts. Orchestrators advance stages from machine-readable artifacts instead of replaying chat history, and workers resume from checkpoints instead of reprocessing. See [TOKEN_EFFICIENCY_PATTERNS.md](docs/standards/TOKEN_EFFICIENCY_PATTERNS.md) for the patterns used.
+
+</details>
+
+<details>
+<summary><b>Can I customize or create my own skills?</b></summary>
+
+Yes. Skills are markdown files in `.claude/commands/`. You can create standalone L3 workers or compose them into L2 coordinators and L1 orchestrators. See [SKILL_ARCHITECTURE_GUIDE.md](docs/architecture/SKILL_ARCHITECTURE_GUIDE.md) for the 4-level hierarchy (L0 → L1 → L2 → L3) and writing guidelines.
+
+</details>
+
+<details>
 <summary><b>Can I share these skills with Gemini CLI or OpenAI Codex?</b></summary>
 
-Yes — create symlinks/junctions to the plugin directory, or use `ln-013-config-syncer` to automate it. See [AI Review Models > Sharing skills & MCP between agents](#ai-review-models-optional) for commands and MCP config paths.
+Yes, but the mapping differs by agent. Gemini can use a shared symlink/junction to the active plugin directory. Codex should use its own active marketplace under `~/.codex/skills/marketplaces/...` and must keep cache outside `~/.codex/skills`. `ln-013-config-syncer` handles that split model. See [AI Review Models > Sharing skills & MCP between agents](#ai-review-models-optional) for commands and MCP config paths.
 
 </details>
 
@@ -568,17 +603,17 @@ claude-code-skills/                      # MARKETPLACE
 |   |-- ln-914-community-responder/    # Respond to unanswered discussions/issues
 |
 |  └──────────────────────────────────────────────┘
-|  ┌─ Plugin: setup-environment ──────────────────────┐
+|  ┌─ Plugin: setup-environment ────────────────────┐
 |
 |-- ln-001-push-all/                   # Commit and push all changes in one command
 |-- ln-002-session-analyzer/           # Analyze sessions for optimization opportunities
 |-- ln-0XX-*/                          # SETUP ENVIRONMENT
 |   |-- ln-010-dev-environment-setup/  # L2: Full environment setup coordinator
 |   |-- ln-011-agent-installer/        # Install/update Codex, Gemini & Claude CLI
-|   |-- ln-012-mcp-configurator/       # MCP server setup & budget analysis
-|   |-- ln-013-config-syncer/          # Sync settings to Gemini/Codex
-|   |-- ln-014-agent-instructions-manager/ # Create + audit CLAUDE.md/AGENTS.md/GEMINI.md
-|   |-- ln-015-hex-line-uninstaller/   # Remove hex-line hooks and output style from system
+|   |-- ln-012-mcp-configurator/       # Claude-side MCP setup: registration, hooks, permissions, migrations
+|   |-- ln-013-config-syncer/          # Sync Gemini/Codex config, MCP state, and Codex defaults
+|   |-- ln-014-agent-instructions-manager/ # Single owner of CLAUDE.md/AGENTS.md/GEMINI.md creation and audit
+|   |-- ln-015-hex-line-uninstaller/   # Remove Claude-side hex-line registration, permissions, hooks, and output style
 |-- ln-020-codegraph/                  # Code knowledge graph for dependency analysis & impact checking
 |
 |  └──────────────────────────────────────────────┘
@@ -589,7 +624,7 @@ claude-code-skills/                      # MARKETPLACE
 |   |-- best-practice/                 # Claude Code usage tips & component selection
 |   |-- standards/                     # Documentation & README standards
 |-- AGENTS.md                          # Canonical agent-facing repo map
-|-- CLAUDE.md                          # Thin Anthropic compatibility shim
+|-- CLAUDE.md                          # Derived Anthropic entrypoint
 ```
 
 </details>
@@ -616,7 +651,7 @@ claude-code-skills/                      # MARKETPLACE
 Papers, docs, and methodologies studied and implemented in the skill architecture.
 
 | Source | Learned | Changed |
-|--------|---------|---------|
+|--------|---------|--------|
 | [STAR Framework](https://arxiv.org/abs/2602.21814) (2025) | Forced goal articulation: +85pp accuracy; structured reasoning > context injection 2.83x | [`goal_articulation_gate.md`](skills-catalog/shared/references/goal_articulation_gate.md) — 4-question gate in 6 skills + 6 templates |
 | [Building Effective Agents](https://www.anthropic.com/research/building-effective-agents) (Anthropic, 2024) | Orchestrator-Worker, prompt chaining, evaluator-optimizer patterns | Core 4-level hierarchy (L0→L3), single responsibility per skill |
 | [Multi-Agent Research System](https://www.anthropic.com/engineering/multi-agent-research-system) (Anthropic, 2025) | Production orchestration: 90.2% perf improvement with specialized agents | `ln-1000` pipeline orchestrator, parallel agent reviews (`ln-310`, `ln-510`) |
@@ -632,6 +667,7 @@ Papers, docs, and methodologies studied and implemented in the skill architectur
 </details>
 
 ---
+
 
 ## License
 

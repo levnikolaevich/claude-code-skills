@@ -27,7 +27,7 @@ Prefer `hex-line` for code/config/script/test files.
 - Use `outline` before large reads, then `read_file` with ranges.
 - Use `edit_file` / `write_file` for writes, `bulk_replace` for multi-file text rename, `verify` after conflicts or delayed follow-up edits, and `changes` for diff review.
 - Use `hex-graph` only for symbol, reference, architecture, and semantic diff questions.
-- Built-in tools are still fine for images, PDFs, notebooks, Glob, and `.claude/settings*.json`.
+- With the hook active, project-scoped text `Read`/`Edit`/`Write`/`Grep`/`Glob` are redirected to `hex-line`. Built-in tools stay fine for images, PDFs, notebooks, and text paths outside the current project root.
 
 ## Quick Understanding
 

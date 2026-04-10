@@ -502,6 +502,68 @@ export const auditCoordinatorPayloadSchema = {
     },
 };
 
+export const evaluationWorkerPayloadSchema = {
+    type: "object",
+    required: ["status", "worker", "operation", "warnings"],
+    additionalProperties: false,
+    properties: {
+        status: { type: "string", enum: WORKER_SUMMARY_STATUS_LIST },
+        worker: { type: "string", minLength: 1 },
+        operation: { type: "string", minLength: 1 },
+        verdict: nullableStringSchema(),
+        findings: {
+            type: "array",
+            items: {
+                type: "object",
+                additionalProperties: true,
+            },
+        },
+        metrics: {
+            type: "object",
+            additionalProperties: true,
+        },
+        decisions: {
+            type: "array",
+            items: {
+                type: "object",
+                additionalProperties: true,
+            },
+        },
+        report_path: nullableStringSchema(),
+        artifact_path: nullableStringSchema(),
+        warnings: stringArraySchema(),
+        metadata: {
+            type: "object",
+            additionalProperties: true,
+        },
+    },
+};
+
+export const evaluationCoordinatorPayloadSchema = {
+    type: "object",
+    required: ["status", "final_result", "report_path", "worker_count", "issues_total", "severity_counts", "warnings", "cleanup_verified"],
+    additionalProperties: false,
+    properties: {
+        status: { type: "string", enum: WORKER_SUMMARY_STATUS_LIST },
+        final_result: { type: "string", minLength: 1 },
+        report_path: { type: "string", minLength: 1 },
+        results_log_path: nullableStringSchema(),
+        overall_score: { type: ["number", "null"] },
+        worker_count: nonNegativeIntegerSchema(),
+        agent_count: nonNegativeIntegerSchema(),
+        issues_total: nonNegativeIntegerSchema(),
+        severity_counts: auditSeverityCountsSchema,
+        warnings: stringArraySchema(),
+        cleanup_verified: { type: "boolean" },
+        research_completed: { type: "boolean" },
+        artifact_path: nullableStringSchema(),
+        metadata: {
+            type: "object",
+            additionalProperties: true,
+        },
+    },
+};
+
 export const optimizationWorkerPayloadSchema = {
     type: "object",
     required: ["status", "worker"],
@@ -682,6 +744,8 @@ export const epicPlanCoordinatorSummarySchema = buildSummaryEnvelopeSchema(epicP
 export const scopeDecompositionSummarySchema = buildSummaryEnvelopeSchema(scopeDecompositionPayloadSchema);
 export const auditWorkerSummarySchema = buildSummaryEnvelopeSchema(auditWorkerPayloadSchema);
 export const auditCoordinatorSummarySchema = buildSummaryEnvelopeSchema(auditCoordinatorPayloadSchema);
+export const evaluationWorkerSummarySchema = buildSummaryEnvelopeSchema(evaluationWorkerPayloadSchema);
+export const evaluationCoordinatorSummarySchema = buildSummaryEnvelopeSchema(evaluationCoordinatorPayloadSchema);
 export const pipelineStageCoordinatorSummarySchema = buildSummaryEnvelopeSchema(pipelineStageCoordinatorPayloadSchema);
 export const optimizationWorkerSummarySchema = buildSummaryEnvelopeSchema(optimizationWorkerPayloadSchema);
 export const optimizationCoordinatorSummarySchema = buildSummaryEnvelopeSchema(optimizationCoordinatorPayloadSchema);

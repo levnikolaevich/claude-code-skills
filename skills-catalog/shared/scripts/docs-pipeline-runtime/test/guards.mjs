@@ -55,8 +55,8 @@ function component(worker) {
 try {
     run(["start", "--identifier", "docs-pipeline", "--manifest-file", manifestPath]);
     run(["checkpoint", "--identifier", "docs-pipeline", "--phase", PHASES.CONFIG]);
-    run(["advance", "--identifier", "docs-pipeline", "--to", PHASES.LEGACY_SCAN]);
-    run(["checkpoint", "--identifier", "docs-pipeline", "--phase", PHASES.LEGACY_SCAN]);
+    run(["advance", "--identifier", "docs-pipeline", "--to", PHASES.SOURCE_SCAN]);
+    run(["checkpoint", "--identifier", "docs-pipeline", "--phase", PHASES.SOURCE_SCAN]);
     run(["advance", "--identifier", "docs-pipeline", "--to", PHASES.CONFIRMATION]);
     run(["checkpoint", "--identifier", "docs-pipeline", "--phase", PHASES.CONFIRMATION]);
 

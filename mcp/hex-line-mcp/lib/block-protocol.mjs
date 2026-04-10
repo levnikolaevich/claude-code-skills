@@ -160,6 +160,7 @@ export function serializeDiagnosticBlock(block) {
     if (block.requestedStartLine !== null && block.requestedEndLine !== null) {
         lines.push(`requested_span: ${block.requestedStartLine}-${block.requestedEndLine}`);
     }
+    lines.push(...renderMetaLines(block.meta));
     lines.push(`message: ${block.message}`);
     return lines.join("\n");
 }

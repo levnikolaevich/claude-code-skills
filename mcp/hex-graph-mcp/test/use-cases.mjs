@@ -104,6 +104,38 @@ describe("use-case wrappers", () => {
         }
     });
 
+    it("truncates ambiguous find_symbols results and surfaces overflow guidance", async () => {
+        const dir = makeTempDir();
+        try {
+            mkdirSync(join(dir, "src"), { recursive: true });
+            for (let idx = 0; idx < 10; idx++) {
+                writeFileSync(join(dir, "src", `mod-${idx + 1}.ts`), [
+                    `export function stable(value${idx}) {`,
+                    `  return value${idx};`,
+                    "}",
+                    "",
+                ].join("\n"), "utf8");
+            }
+            await indexProject(dir);
+
+            const result = runFindSymbolsUseCase("stable", { path: dir, limit: 3 });
+            assert.equal(result.result.candidate_count, 10);
+            assert.equal(result.result.shown_count, 3);
+            assert.equal(result.result.candidates.length, 3);
+            assert.equal(result.result.truncated, true);
+            assert.ok(result.result.overflow_groups.length >= 1);
+            assert.ok(
+                result.result.disambiguation_hints.some((hint) => hint.includes("name + file")),
+                "name+file refine hint is returned",
+            );
+            assert.ok(result.next_actions.includes("inspect_symbol"));
+            assert.ok(result.next_actions.includes("adjust_query"));
+        } finally {
+            resolveStore(dir)?.close();
+            rmSync(dir, { recursive: true, force: true });
+        }
+    });
+
     it("covers edit impact, architecture, and workspace audit use cases", async () => {
         const dir = makeTempDir();
         try {

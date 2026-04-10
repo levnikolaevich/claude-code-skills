@@ -1,9 +1,13 @@
 #!/usr/bin/env bash
 # Automated SKILL.md verification checks (ln-162-skill-reviewer Phase 2)
-# Usage: bash run_checks.sh <SKILL.md files...>
-# Example: bash run_checks.sh ln-005-*/SKILL.md ln-810-*/SKILL.md
+# Usage: bash run_checks.sh <batched SKILL.md files...>
+# Example: bash run_checks.sh ln-010-*/SKILL.md ln-011-*/SKILL.md
 #
 # Exit code: 0 if all pass, 1 if any FAIL found
+# Batch policy:
+#   - keep one invocation within one ln-NXX family when possible
+#   - split coordinators and workers into separate invocations
+#   - for large families, chunk into 5-10 files instead of one giant repo-wide run
 # Lessons learned (bugs fixed vs template version):
 #   - grep -q returns exit code 1 on no match -> breaks && chains; use if/then
 #   - grep -c returns exit code 1 when count=0 -> append || true
@@ -26,6 +30,10 @@ if [ $# -eq 0 ]; then
   echo "Usage: bash run_checks.sh <SKILL.md files...>"
   echo "Example: bash run_checks.sh ln-*/SKILL.md"
   exit 2
+fi
+
+if [ $# -gt 12 ]; then
+  echo "WARN: large scope ($# files). Split run_checks.sh into smaller batches by ln-NXX family or coordinator/worker group." >&2
 fi
 
 fail() { echo "FAIL: $1"; FAILS=$((FAILS + 1)); }

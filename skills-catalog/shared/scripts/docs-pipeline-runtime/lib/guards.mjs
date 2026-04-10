@@ -6,8 +6,8 @@ import {
 import { PHASES } from "./phases.mjs";
 
 const ALLOWED_TRANSITIONS = new Map([
-    [PHASES.CONFIG, new Set([PHASES.LEGACY_SCAN])],
-    [PHASES.LEGACY_SCAN, new Set([PHASES.CONFIRMATION])],
+    [PHASES.CONFIG, new Set([PHASES.SOURCE_SCAN])],
+    [PHASES.SOURCE_SCAN, new Set([PHASES.CONFIRMATION])],
     [PHASES.CONFIRMATION, new Set([PHASES.DELEGATE])],
     [PHASES.DELEGATE, new Set([PHASES.QUALITY_GATE])],
     [PHASES.QUALITY_GATE, new Set([PHASES.CLEANUP])],
@@ -23,7 +23,7 @@ export function validateTransition(manifest, state, checkpoints, toPhase) {
         return base;
     }
     if (toPhase === PHASES.DELEGATE && !manifest.auto_approve && !hasChoice(state.decisions, "confirm_docs_pipeline")) {
-        return { ok: false, error: "Legacy migration confirmation decision missing" };
+        return { ok: false, error: "Source cleanup confirmation decision missing" };
     }
     if (toPhase === PHASES.QUALITY_GATE && Object.keys(state.component_results || {}).length === 0) {
         return { ok: false, error: "No docs component summaries recorded" };

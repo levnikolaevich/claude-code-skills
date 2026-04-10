@@ -29,7 +29,7 @@
 | Requirement | Why It Exists |
 |-------------|---------------|
 | `AGENTS.md` is the canonical machine-facing root doc | Keeps the always-loaded entrypoint small and stable |
-| `CLAUDE.md` stays a thin compatibility shim | Avoids duplicate persistent context |
+| `CLAUDE.md` stays a thin derived Anthropic entrypoint | Avoids duplicate persistent context |
 | Every generated doc has the standard header contract | Enables deterministic routing and auditing |
 | Every generated doc has `Quick Navigation`, `Agent Entry`, and `Maintenance` | Enables section-first reading |
 | No raw placeholders outside allowlisted task setup docs | Published docs must be immediately usable |

@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -9,6 +9,10 @@ export function createProjectRoot(prefix) {
 
 export function writeJson(path, value) {
     writeFileSync(path, JSON.stringify(value, null, 2));
+}
+
+export function readJson(path) {
+    return JSON.parse(readFileSync(path, "utf8"));
 }
 
 export function createJsonCliRunner(cliPath, projectRoot) {

@@ -21,13 +21,13 @@ try {
 
     run(["start", "--identifier", "docs-pipeline", "--manifest-file", manifestPath]);
     run(["checkpoint", "--identifier", "docs-pipeline", "--phase", PHASES.CONFIG, "--payload", "{\"config_ready\":true}"]);
-    run(["advance", "--identifier", "docs-pipeline", "--to", PHASES.LEGACY_SCAN]);
-    run(["checkpoint", "--identifier", "docs-pipeline", "--phase", PHASES.LEGACY_SCAN, "--payload", "{\"legacy_manifest\":[]}"]);
+    run(["advance", "--identifier", "docs-pipeline", "--to", PHASES.SOURCE_SCAN]);
+    run(["checkpoint", "--identifier", "docs-pipeline", "--phase", PHASES.SOURCE_SCAN, "--payload", "{\"source_manifest\":[]}"]);
     run(["advance", "--identifier", "docs-pipeline", "--to", PHASES.CONFIRMATION]);
-    run(["checkpoint", "--identifier", "docs-pipeline", "--phase", PHASES.CONFIRMATION, "--payload", "{\"legacy_mode\":\"skip\"}"]);
+    run(["checkpoint", "--identifier", "docs-pipeline", "--phase", PHASES.CONFIRMATION, "--payload", "{\"source_mode\":\"skip\"}"]);
 
     const missingDecision = run(["advance", "--identifier", "docs-pipeline", "--to", PHASES.DELEGATE], { allowFailure: true });
-    if (missingDecision.error !== "Legacy migration confirmation decision missing") {
+    if (missingDecision.error !== "Source cleanup confirmation decision missing") {
         throw new Error(`Expected docs pipeline decision failure, got: ${JSON.stringify(missingDecision)}`);
     }
 

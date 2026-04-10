@@ -57,6 +57,29 @@ function isIgnored(ig, relPath, isDir) {
     return ig.ignores(isDir ? relPath + "/" : relPath);
 }
 
+function topPatternGroups(matches) {
+    const groups = new Map();
+    for (const entry of matches) {
+        const trimmed = entry.endsWith("/") ? entry.slice(0, -1) : entry;
+        const [head] = trimmed.split("/");
+        const key = trimmed.includes("/") ? head : ".";
+        groups.set(key, (groups.get(key) || 0) + 1);
+    }
+    return [...groups.entries()]
+        .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+        .slice(0, 4);
+}
+
+function buildPatternRefineCall(absRoot, pattern, type, groups) {
+    const bestGroup = groups.find(([key]) => key !== ".")?.[0];
+    const args = { path: bestGroup ? join(absRoot, bestGroup) : absRoot, pattern };
+    if (type && type !== "all") args.type = type;
+    return JSON.stringify({
+        tool: "mcp__hex_line__inspect_path",
+        arguments: args,
+    });
+}
+
 /**
  * Find files/dirs by glob pattern. Returns flat list of relative paths.
  * @param {string} dirPath - Root directory to search
@@ -67,6 +90,9 @@ function findByPattern(dirPath, opts) {
     const re = globToRegex(opts.pattern);
     const filterType = opts.type || "all";
     const maxDepth = opts.max_depth ?? 20;
+    const maxEntries = opts.max_entries === 0
+        ? 0
+        : Math.max(1, Number(opts.max_entries ?? 60));
 
     const abs = resolve(normalizePath(dirPath));
     if (!existsSync(abs)) throw new Error(`DIRECTORY_NOT_FOUND: ${abs}`);
@@ -107,7 +133,25 @@ function findByPattern(dirPath, opts) {
     if (matches.length === 0) {
         return `No matches for "${opts.pattern}" in ${rootName}/`;
     }
-    return `Found ${matches.length} match${matches.length === 1 ? "" : "es"} for "${opts.pattern}" in ${rootName}/\n\n${matches.join("\n")}`;
+    const shown = maxEntries === 0 ? matches : matches.slice(0, maxEntries);
+    const truncated = shown.length < matches.length;
+    const groups = topPatternGroups(matches);
+    const lines = [
+        `Found ${matches.length} match${matches.length === 1 ? "" : "es"} for "${opts.pattern}" in ${rootName}/`,
+        `match_count: ${matches.length}`,
+        `shown_count: ${shown.length}`,
+        `truncated: ${truncated}`,
+    ];
+    if (groups.length > 0) {
+        lines.push(`top_groups: ${groups.map(([group, count]) => `${group} (${count})`).join(", ")}`);
+    }
+    if (truncated) {
+        lines.push("next_action: narrow_path");
+        lines.push(`suggested_refine_call: ${buildPatternRefineCall(abs, opts.pattern, filterType, groups)}`);
+    }
+    lines.push("");
+    lines.push(...shown);
+    return lines.join("\n");
 }
 
 /**

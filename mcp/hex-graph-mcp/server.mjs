@@ -463,14 +463,14 @@ server.registerTool("find_symbols", {
     inputSchema: z.object({
         query: z.string().describe("Symbol name or partial name"),
         kind: z.string().optional().describe("Optional kind filter"),
-        limit: flexNum().describe("Max candidate symbols to return (default: 5)"),
+        limit: flexNum().describe("Max detailed candidate symbols to return (default: 8)"),
         path: z.string().describe("Indexed project root or a file/directory inside the indexed project"),
         format: z.enum(["json", "text"]).default("json"),
     }),
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
 }, async (rawParams) => {
     const { query, kind, limit, path, format } = rawParams;
-    const result = runFindSymbolsUseCase(query, { kind, limit: limit ?? 5, path });
+    const result = runFindSymbolsUseCase(query, { kind, limit: limit ?? 8, path });
     return wrapResult(result, format, "minimal");
 });
 

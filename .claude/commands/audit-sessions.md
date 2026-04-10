@@ -10,6 +10,9 @@ Analyze all agent sessions from the last 3 days across Claude, Codex, and Gemini
 **Scope:** Multi-day batch analysis (3 days, all agents). Aggregate patterns across sessions.
 For single-session deep analysis: `ln-002-session-analyzer`. For skill self-audit: meta-analysis protocol §7.
 
+**Routing gate:** If the user asks for `this session`, `current session`, or a single named session, do not run the 3-day inventory below.
+Route to `ln-002-session-analyzer` and analyze that session directly from conversation context or the latest matching JSONL.
+
 **Scope:** `$ARGUMENTS` — `all` (default), `mcp`, `hooks`, `skills`, `tokens`, `problems`.
 
 ## Session Storage
@@ -215,6 +218,9 @@ while IFS= read -r f; do
   grep -oE 'NOOP_EDIT|TEXT_NOT_FOUND|FILE_NOT_FOUND|HASH_HINT|mismatch|out of range' "$f" 2>/dev/null
 done < /tmp/audit_gemini.txt | sort | uniq -c | sort -rn
 ```
+
+Validate these counts against actual tool failure/result events before reporting them as findings.
+The same keywords can appear inside instructions, templates, or embedded docs and inflate raw grep totals.
 
 ### 2e. Skill Usage
 

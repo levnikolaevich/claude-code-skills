@@ -52,14 +52,17 @@ Apply them only when the skill actually edits code or makes semantic decisions f
 ```text
 1. index_project(path=project_root)
 2. analyze_architecture(path=project_root, verbosity="minimal")
-3. find_symbols(query="AuthService")
+3. find_symbols(path="src/auth", query="AuthService")
 4. inspect_symbol(workspace_qualified_name=...) -> use symbol context to refine task boundaries and dependency order
 ```
 
 Notes:
 - `find_symbols` expects a symbol name or partial name, not a code fragment or unresolved member call such as `server.tool()`
+- Narrow `path` before `find_symbols` whenever you can; broad project-root symbol discovery is a fallback, not the default
+- If `find_symbols` returns `truncated: true` or a large `candidate_count`, refine to `name + file` or `workspace_qualified_name` before treating the result as authoritative
 - For raw method-call patterns or regex-like code search, use `grep_search`
 - `grep_search` returns `summary` by default; switch to `output="content", edit_ready=true` only when you need canonical hunks for follow-up edits
+- Treat `allow_large_output=true` as an explicit escape hatch after narrowing `path`, `glob`, or query shape
 - Path-scoped graph queries may use `path=project_root`, `path=subdirectory`, or `path=file` as long as the target stays inside the indexed project
 
 ### Semantic Diff Review
@@ -109,7 +112,7 @@ Add body instruction:
 ```markdown
 **MANDATORY READ:** Load `shared/references/mcp_tool_preferences.md` and `shared/references/mcp_integration_patterns.md`
 
-Use `hex-line` as the primary path for code/config/script/test files. Built-in Read/Edit/Write/Grep are fallback only when hex-line is unavailable or outside scope.
+Use `hex-line` as the primary path for code/config/script/test files. With the hook active, project-scoped text Read/Edit/Write/Grep/Glob are redirected there; built-in fallback remains only for MCP failure, unsupported cases, binary/media, or text paths outside the current project root.
 ```
 
 ### Semantic Code Reasoning Skill

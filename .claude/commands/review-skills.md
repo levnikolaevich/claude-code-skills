@@ -9,7 +9,7 @@ Universal review (`ln-162`) plus repo-specific checks for `claude-code-skills`.
 
 ## Execution Strategy
 
-**Step 1 FIRST** - invoke `ln-162` via Skill tool. **Step 2** - run the repo-specific bash script. Combine both outputs in Step 3.
+**Step 1 FIRST** - invoke `ln-162` via Skill tool. **Step 2** - run repo-specific checks in batches, not as one monolithic shell run. Combine both outputs in Step 3.
 
 ## Step 1: Universal Review (MANDATORY Skill invocation)
 
@@ -19,7 +19,15 @@ Invoke `Skill("ln-162-skill-reviewer")` with `$ARGUMENTS` (skill dirs or empty f
 
 ## Step 2: Repo-Specific Checks
 
-Run this combined script:
+Run repo-specific checks in grouped passes:
+
+1. `R1-R16` static and contract checks
+2. `R17` runtime tests in batches by runtime family or coordinator/worker group
+3. `R18-R22` contract-sync checks
+
+Do not paste one giant all-repo script into a single shell session when the scope is large.
+
+Use this script structure:
 
 ```bash
 #!/usr/bin/env bash
@@ -182,16 +190,65 @@ done
 R16_FAILS=$(rg -n '\.hex-skills/runtime-artifacts/(?!runs/)' skills-catalog README.md docs site AGENTS.md -P --glob '!skills-catalog/ln-162-skill-reviewer/**' --glob '!.claude/commands/review-skills.md' 2>/dev/null | wc -l)
 [ "$R16_FAILS" -eq 0 ] && add_result R16 "Run-scoped artifact paths" PASS || add_result R16 "Run-scoped artifact paths" "FAIL ($R16_FAILS non-run-scoped paths)"
 
-# === R17: Runtime full test suite ===
+# === R17: Runtime full test suite (batched) ===
 R17_FAILS=0
 R17_TOTAL=0
-for f in skills-catalog/shared/scripts/*/test/*.mjs skills-catalog/ln-1000-pipeline-orchestrator/scripts/test/*.mjs; do
-  [ -f "$f" ] || continue
-  basename "$f" | grep -q 'helpers' && continue
-  R17_TOTAL=$((R17_TOTAL + 1))
-  node "$f" >/dev/null 2>&1 || R17_FAILS=$((R17_FAILS + 1))
-done
-[ "$R17_FAILS" -eq 0 ] && add_result R17 "Runtime test suite ($R17_TOTAL files)" PASS || add_result R17 "Runtime test suite" "FAIL ($R17_FAILS/$R17_TOTAL failed)"
+R17_BATCH_FAILS=0
+run_r17_batch() {
+  local batch_name="$1"
+  shift
+  local batch_fail=0
+  for f in "$@"; do
+    [ -f "$f" ] || continue
+    basename "$f" | grep -q 'helpers' && continue
+    R17_TOTAL=$((R17_TOTAL + 1))
+    timeout 90s node "$f" >/dev/null 2>&1 || {
+      batch_fail=$((batch_fail + 1))
+      R17_FAILS=$((R17_FAILS + 1))
+      echo "  R17[$batch_name]: $(basename "$f") failed or timed out" >&2
+    }
+  done
+  [ "$batch_fail" -eq 0 ] || R17_BATCH_FAILS=$((R17_BATCH_FAILS + 1))
+}
+
+run_r17_batch "docs+audit" \
+  skills-catalog/shared/scripts/audit-runtime/test/*.mjs \
+  skills-catalog/shared/scripts/audit-worker-runtime/test/*.mjs \
+  skills-catalog/shared/scripts/docs-pipeline-runtime/test/*.mjs \
+  skills-catalog/shared/scripts/docs-quality/test/*.mjs \
+  skills-catalog/shared/scripts/docs-runtime/test/*.mjs \
+  skills-catalog/shared/scripts/review-runtime/test/*.mjs
+
+run_r17_batch "planning+story" \
+  skills-catalog/shared/scripts/epic-planning-runtime/test/*.mjs \
+  skills-catalog/shared/scripts/planning-worker-runtime/test/*.mjs \
+  skills-catalog/shared/scripts/scope-decomposition-runtime/test/*.mjs \
+  skills-catalog/shared/scripts/story-execution-runtime/test/*.mjs \
+  skills-catalog/shared/scripts/story-gate-runtime/test/*.mjs \
+  skills-catalog/shared/scripts/story-planning-runtime/test/*.mjs \
+  skills-catalog/shared/scripts/task-plan-worker-runtime/test/*.mjs \
+  skills-catalog/shared/scripts/task-planning-runtime/test/*.mjs \
+  skills-catalog/shared/scripts/task-worker-runtime/test/*.mjs \
+  skills-catalog/shared/scripts/test-planning-runtime/test/*.mjs \
+  skills-catalog/shared/scripts/test-planning-worker-runtime/test/*.mjs
+
+run_r17_batch "env+quality+optimization" \
+  skills-catalog/shared/scripts/benchmark-worker-runtime/test/*.mjs \
+  skills-catalog/shared/scripts/coordinator-runtime/test/*.mjs \
+  skills-catalog/shared/scripts/dependency-runtime/test/*.mjs \
+  skills-catalog/shared/scripts/environment-setup-runtime/test/*.mjs \
+  skills-catalog/shared/scripts/environment-worker-runtime/test/*.mjs \
+  skills-catalog/shared/scripts/evaluation-runtime/test/*.mjs \
+  skills-catalog/shared/scripts/evaluation-worker-runtime/test/*.mjs \
+  skills-catalog/shared/scripts/modernization-runtime/test/*.mjs \
+  skills-catalog/shared/scripts/optimization-runtime/test/*.mjs \
+  skills-catalog/shared/scripts/quality-runtime/test/*.mjs \
+  skills-catalog/shared/scripts/quality-worker-runtime/test/*.mjs
+
+run_r17_batch "pipeline-orchestrator" \
+  skills-catalog/ln-1000-pipeline-orchestrator/scripts/test/*.mjs
+
+[ "$R17_FAILS" -eq 0 ] && add_result R17 "Runtime test suite ($R17_TOTAL files)" PASS || add_result R17 "Runtime test suite" "FAIL ($R17_FAILS/$R17_TOTAL failed across $R17_BATCH_FAILS batches)"
 
 # === R18: Exit reason enum sync ===
 R18_FAILS=0

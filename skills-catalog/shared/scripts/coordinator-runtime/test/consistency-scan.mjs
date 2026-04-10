@@ -52,14 +52,6 @@ const workerRuntimeWiringDocs = new Map([
         ],
     ],
     [
-        normalizePath(join(skillsRepoRoot, "ln-510-quality-coordinator/SKILL.md")),
-        [
-            "node shared/scripts/quality-worker-runtime/cli.mjs start",
-            "quality-worker/ln-511--{storyId}.json",
-            "quality-worker/ln-514--{storyId}.json",
-        ],
-    ],
-    [
         normalizePath(join(skillsRepoRoot, "ln-520-test-planner/SKILL.md")),
         [
             "node shared/scripts/test-planning-worker-runtime/cli.mjs start",
@@ -82,46 +74,6 @@ const workerRuntimeWiringDocs = new Map([
             "story-quality/{storyId}.json",
             "node shared/scripts/test-planning-runtime/cli.mjs start",
             "story-tests/{storyId}.json",
-            "child_run",
-        ],
-    ],
-    [
-        normalizePath(join(skillsRepoRoot, "ln-610-docs-auditor/SKILL.md")),
-        [
-            "node shared/scripts/audit-worker-runtime/cli.mjs start",
-            "audit-worker/{worker}--{identifier}.json",
-            "child_run",
-        ],
-    ],
-    [
-        normalizePath(join(skillsRepoRoot, "ln-620-codebase-auditor/SKILL.md")),
-        [
-            "node shared/scripts/audit-worker-runtime/cli.mjs start",
-            "audit-worker/{worker}--{identifier}.json",
-            "child_run",
-        ],
-    ],
-    [
-        normalizePath(join(skillsRepoRoot, "ln-630-test-auditor/SKILL.md")),
-        [
-            "node shared/scripts/audit-worker-runtime/cli.mjs start",
-            "audit-worker/{worker}--{identifier}.json",
-            "child_run",
-        ],
-    ],
-    [
-        normalizePath(join(skillsRepoRoot, "ln-640-pattern-evolution-auditor/SKILL.md")),
-        [
-            "node shared/scripts/audit-worker-runtime/cli.mjs start",
-            "audit-worker/{worker}--{identifier}.json",
-            "child_run",
-        ],
-    ],
-    [
-        normalizePath(join(skillsRepoRoot, "ln-650-persistence-performance-auditor/SKILL.md")),
-        [
-            "node shared/scripts/audit-worker-runtime/cli.mjs start",
-            "audit-worker/{worker}--{identifier}.json",
             "child_run",
         ],
     ],

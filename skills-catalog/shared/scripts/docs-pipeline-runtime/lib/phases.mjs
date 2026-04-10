@@ -2,7 +2,7 @@ import { TERMINAL_RUNTIME_PHASES } from "../../coordinator-runtime/lib/runtime-c
 
 export const PHASES = Object.freeze({
     CONFIG: "PHASE_0_CONFIG",
-    LEGACY_SCAN: "PHASE_1_LEGACY_SCAN",
+    SOURCE_SCAN: "PHASE_1_SOURCE_SCAN",
     CONFIRMATION: "PHASE_2_CONFIRMATION",
     DELEGATE: "PHASE_3_DELEGATE",
     QUALITY_GATE: "PHASE_4_QUALITY_GATE",

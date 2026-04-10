@@ -68,11 +68,11 @@ function resolveRun(projectRoot) {
 
 function applyCheckpointToState(state, phase, payload) {
     const nextState = { ...state };
-    if (phase === PHASES.LEGACY_SCAN) {
-        nextState.legacy_manifest = payload.legacy_manifest || [];
+    if (phase === PHASES.SOURCE_SCAN) {
+        nextState.source_manifest = payload.source_manifest || [];
     }
     if (phase === PHASES.CONFIRMATION) {
-        nextState.legacy_mode = payload.legacy_mode || nextState.legacy_mode;
+        nextState.source_mode = payload.source_mode || nextState.source_mode;
     }
     if (phase === PHASES.QUALITY_GATE) {
         nextState.quality_summary = payload.quality_summary || payload;

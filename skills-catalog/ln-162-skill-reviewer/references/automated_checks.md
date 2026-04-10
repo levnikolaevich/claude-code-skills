@@ -5,6 +5,12 @@
 
 Run ALL checks below for every SKILL.md in scope. Every FAIL is a confirmed violation -- no judgment needed, no skipping.
 
+Execution policy:
+- do not pass a whole mixed-repo scope to `run_checks.sh` in one giant invocation
+- batch by `ln-NXX` family when possible
+- if scope mixes coordinators and workers, run them as separate batches
+- if one batch is still large, split it into 5-10 files
+
 ## Check 1: Frontmatter (D7)
 ```bash
 for f in {scoped SKILL.md files}; do

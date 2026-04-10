@@ -27,11 +27,7 @@ From coordinator:
   - TECH_STACK_SUMMARY
   - DEV_COMMANDS (from package.json scripts)
   - DATE (current date)
-  - **LEGACY_CONTENT** (optional, from ln-100 Phase 0 migration):
-    - `legacy_principles`: { principles[], anti_patterns[], conventions[] }
 - `targetDir`: Project root directory
-
-**LEGACY_CONTENT** is used as base content when creating principles.md. Priority: **Legacy > Template defaults**.
 
 **MANDATORY READ:** Load `shared/references/docs_quality_contract.md` and `shared/references/docs_quality_rules.json`.
 
@@ -53,7 +49,7 @@ From coordinator:
 3. Set defaults for missing optional keys
 
 ### Phase 2: Create Documents
-For each document (AGENTS.md, CLAUDE.md, docs/README.md, documentation_standards.md, principles.md):
+For each document (`AGENTS.md`, `CLAUDE.md`, `docs/README.md`, `docs/documentation_standards.md`, `docs/principles.md`):
 1. Check if file exists (idempotent)
 2. If exists: skip with log
 3. If not exists:
@@ -69,14 +65,8 @@ For each document (AGENTS.md, CLAUDE.md, docs/README.md, documentation_standards
      - `## Quick Navigation`
      - `## Agent Entry`
      - `## Maintenance`
-   - **Check LEGACY_CONTENT for this document type:**
-     - For `principles.md`: If `LEGACY_CONTENT.legacy_principles` exists:
-       - Use `legacy_principles.principles[]` as base for "## Core Principles" section
-       - Use `legacy_principles.anti_patterns[]` for "## Anti-Patterns" section
-       - Use `legacy_principles.conventions[]` for code style rules
-       - Augment with template structure (add missing sections)
-       - Mark: `<!-- Migrated from legacy documentation -->` at top of relevant sections
-     - For other documents: Use template as-is (no legacy content applicable)
+   - For `docs/principles.md`: prefer normalized principle inputs already present in Context Store
+   - If project-specific principles are absent, keep the template structure and fill only facts supported by current project sources
    - Replace `{{PLACEHOLDER}}` with Context Store values
    - Never leave template markers in published root docs
    - If data is missing: omit the claim or use a concise neutral fallback, but do NOT emit `[TBD: ...]`
@@ -125,7 +115,7 @@ Return to coordinator:
 - **Publishable output:** Root docs must not contain `[TBD: ...]`, `TODO`, or leaked template metadata
 - **Language:** All root docs in English (universal standards)
 - **SCOPE tags:** Required in first 10 lines of each file
-- **Map-first root model:** `AGENTS.md` is canonical; `CLAUDE.md` is a compatibility shim
+- **Map-first root model:** `AGENTS.md` is canonical; `CLAUDE.md` is a derived Anthropic entrypoint
 
 ### NO_CODE_EXAMPLES Rule (MANDATORY)
 Root documents define **navigation and standards**, NOT implementations:
@@ -170,7 +160,7 @@ Write the summary to the provided artifact path or return the same envelope in s
 - [ ] Status returned
 
 ## Reference Files
-- Templates: `references/templates/agents_md_template.md`, `claude_md_template.md`, `docs_root_readme_template.md`, `documentation_standards_template.md`, `principles_template.md`
+- Templates: `references/templates/agents_md_template.md`, `references/templates/claude_md_template.md`, `references/templates/docs_root_readme_template.md`, `references/templates/documentation_standards_template.md`, `references/templates/principles_template.md`
 - Questions: `references/questions_root.md` (Q1-Q22)
 - **Environment state:** `shared/references/environment_state_contract.md` (detection and bootstrap pattern)
 

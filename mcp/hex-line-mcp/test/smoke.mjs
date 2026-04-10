@@ -21,9 +21,13 @@ const HAS_GRAPH_SQLITE = (() => {
     }
 })();
 
-function runHook(hookEvent, toolName, toolInput, extra = {}) {
+function runHook(hookEvent, toolName, toolInput, extra = {}, execOptions = {}) {
     return new Promise((res) => {
-        const child = execFile("node", [HOOK_PATH], { stdio: ["pipe", "pipe", "pipe"] }, (error, stdout, stderr) => {
+        const child = execFile("node", [HOOK_PATH], {
+            stdio: ["pipe", "pipe", "pipe"],
+            cwd: execOptions.cwd,
+            env: execOptions.env,
+        }, (error, stdout, stderr) => {
             res({ code: error ? error.code : 0, stdout, stderr });
         });
         child.stdin.write(JSON.stringify({
@@ -675,6 +679,37 @@ describe("inspect_path", () => {
         const none = inspectPath(CWD, { pattern: "nonexistent-xyz-42" });
         assert.ok(none.includes("No matches"));
     });
+    it("caps broad pattern output and returns refine metadata", async () => {
+        const { inspectPath } = await import("../lib/inspect-path.mjs");
+        const dir = makeTempRepo("hex-test-inspect-cap-", Object.fromEntries(
+            Array.from({ length: 70 }, (_, idx) => [`docs/file-${String(idx + 1).padStart(3, "0")}.md`, `# file ${idx + 1}\n`]),
+        ));
+        try {
+            const result = inspectPath(dir, { pattern: "*.md", type: "file" });
+            assert.ok(result.includes("match_count: 70"), "reports total matches");
+            assert.ok(result.includes("shown_count: 60"), "reports default shown cap");
+            assert.ok(result.includes("truncated: true"), "reports truncation");
+            assert.ok(result.includes("next_action: narrow_path"), "includes next action");
+            assert.ok(result.includes("suggested_refine_call:"), "includes refine call");
+            assert.ok(!result.includes("file-070.md"), "omits entries beyond the default cap");
+        } finally {
+            fs.rmSync(dir, { recursive: true, force: true });
+        }
+    });
+
+    it("supports max_entries override in pattern mode", async () => {
+        const { inspectPath } = await import("../lib/inspect-path.mjs");
+        const dir = makeTempRepo("hex-test-inspect-max-", Object.fromEntries(
+            Array.from({ length: 15 }, (_, idx) => [`docs/file-${String(idx + 1).padStart(3, "0")}.md`, `# file ${idx + 1}\n`]),
+        ));
+        try {
+            const result = inspectPath(dir, { pattern: "*.md", type: "file", max_entries: 10 });
+            assert.ok(result.includes("shown_count: 10"), "respects max_entries");
+            assert.ok(!result.includes("file-015.md"), "entries after override cap stay hidden");
+        } finally {
+            fs.rmSync(dir, { recursive: true, force: true });
+        }
+    });
     it("returns file metadata for regular files", async () => {
         const { inspectPath } = await import("../lib/inspect-path.mjs");
         const result = inspectPath(CWD + "/package.json");
@@ -1003,8 +1038,8 @@ describe("grep_search case modes", () => {
     it("default is case-sensitive", async () => {
         const { grepSearch } = await import("../lib/search.mjs");
         // server.mjs has 'Search' (uppercase) — lowercase 'search' should miss it in CS mode
-        const cs = await grepSearch("search", { path: CWD + "/server.mjs", plain: true });
-        const ci = await grepSearch("search", { path: CWD + "/server.mjs", plain: true, caseInsensitive: true });
+        const cs = await grepSearch("search", { path: CWD + "/server.mjs", plain: true, output: "content" });
+        const ci = await grepSearch("search", { path: CWD + "/server.mjs", plain: true, output: "content", caseInsensitive: true });
         const csCount = cs.split("\n").filter(l => l.trim()).length;
         const ciCount = ci.split("\n").filter(l => l.trim()).length;
         assert.ok(ciCount > csCount, `CI (${ciCount}) should find more than CS (${csCount})`);
@@ -1012,8 +1047,8 @@ describe("grep_search case modes", () => {
 
     it("smart_case: lowercase pattern is CI, uppercase pattern is CS", async () => {
         const { grepSearch } = await import("../lib/search.mjs");
-        const lower = await grepSearch("search", { path: CWD + "/server.mjs", plain: true, smartCase: true });
-        const upper = await grepSearch("Search", { path: CWD + "/server.mjs", plain: true, smartCase: true });
+        const lower = await grepSearch("search", { path: CWD + "/server.mjs", plain: true, output: "content", smartCase: true });
+        const upper = await grepSearch("Search", { path: CWD + "/server.mjs", plain: true, output: "content", smartCase: true });
         const lowerCount = lower.split("\n").filter(l => l.trim()).length;
         const upperCount = upper.split("\n").filter(l => l.trim()).length;
         assert.ok(lowerCount > upperCount, `lowercase (${lowerCount}) should find more than uppercase (${upperCount})`);
@@ -1021,6 +1056,13 @@ describe("grep_search case modes", () => {
 });
 
 describe("grep_search output modes", () => {
+    it("direct function defaults to summary for discovery", async () => {
+        const { grepSearch } = await import("../lib/search.mjs");
+        const result = await grepSearch("grepSearch", { path: CWD + "/lib/search.mjs" });
+        assert.ok(result.includes("summary:"), "defaults to summary mode");
+        assert.ok(!result.includes("block: search_hunk"), "summary mode omits canonical hunks");
+    });
+
     it("files mode returns only paths, count mode returns counts", async () => {
         const { grepSearch } = await import("../lib/search.mjs");
         const files = await grepSearch("export", { path: CWD + "/lib", output: "files" });
@@ -1052,7 +1094,7 @@ describe("grep_search output modes", () => {
         const content = ["MARKER_A", ...Array(10).fill("filler"), "MARKER_B"].join("\n") + "\n";
         fs.writeFileSync(tmp, content);
         try {
-            const result = await grepSearch("MARKER", { path: tmp });
+            const result = await grepSearch("MARKER", { path: tmp, output: "content" });
             assert.ok((result.match(/block: search_hunk/g) || []).length >= 2, "Disjoint hunks stay separate blocks");
             const checksums = result.match(/checksum: \d+-\d+:[0-9a-f]{8}/g) || [];
             assert.ok(checksums.length >= 2, `disjoint markers should produce >=2 checksums, got ${checksums.length}`);
@@ -1067,7 +1109,7 @@ describe("grep_search output modes", () => {
         const tmp = join(tmpdir(), "hex-test-roundtrip.txt");
         fs.writeFileSync(tmp, "line one\nline two\nline three\n");
         try {
-            const result = await grepSearch("two", { path: tmp });
+            const result = await grepSearch("two", { path: tmp, output: "content" });
             const csMatch = result.match(/checksum: (\d+-\d+:[0-9a-f]{8})/);
             assert.ok(csMatch, "grep should produce a checksum");
             const verifyResult = verifyChecksums(tmp, [csMatch[1]]);
@@ -1087,17 +1129,45 @@ describe("grep_search output modes", () => {
             ]),
         ));
         try {
-            const capped = await grepSearch("MATCH", { path: dir, limit: 100 });
+            const capped = await grepSearch("MATCH", { path: dir, limit: 100, output: "content" });
             assert.ok(
                 capped.includes("Search stopped after 200 match event(s)"),
                 "default total_limit should cap broad searches",
             );
 
-            const uncapped = await grepSearch("MATCH", { path: dir, limit: 100, totalLimit: 0 });
+            const uncapped = await grepSearch("MATCH", { path: dir, limit: 100, output: "content", totalLimit: 0 });
             assert.ok(
                 !uncapped.includes("Search stopped after 200 match event(s)"),
                 "explicit totalLimit=0 disables the default cap",
             );
+        } finally {
+            fs.rmSync(dir, { recursive: true, force: true });
+        }
+    });
+
+    it("content mode truncates oversized payloads with refine metadata", async () => {
+        const { grepSearch } = await import("../lib/search.mjs");
+        const dir = makeTempRepo("hex-test-grep-output-cap-", Object.fromEntries(
+            Array.from({ length: 20 }, (_, fileIdx) => [
+                `src/file-${fileIdx + 1}.txt`,
+                `MATCH ${fileIdx + 1}\n`,
+            ]),
+        ));
+        try {
+            const capped = await grepSearch("MATCH", { path: dir, output: "content", editReady: true });
+            assert.ok(capped.includes("kind: output_capped"), "reports content truncation");
+            assert.ok(capped.includes("shown_matches:"), "reports shown matches");
+            assert.ok(capped.includes("truncated: true"), "reports truncation flag");
+            assert.ok(capped.includes("next_action: narrow_search_scope"), "includes next action");
+            assert.ok(capped.includes("suggested_refine_call:"), "includes refine call");
+
+            const uncapped = await grepSearch("MATCH", {
+                path: dir,
+                output: "content",
+                editReady: true,
+                allowLargeOutput: true,
+            });
+            assert.ok(!uncapped.includes("kind: output_capped"), "allowLargeOutput bypasses default payload cap");
         } finally {
             fs.rmSync(dir, { recursive: true, force: true });
         }
@@ -1210,8 +1280,8 @@ describe("grep_search new params", () => {
         fs.writeFileSync(tmp, "alpha\nbeta.gamma\nxyz\n");
         try {
             // '.' in regex matches any char; in literal mode matches only '.'
-            const regex = await grepSearch(".", { path: tmp, plain: true });
-            const literal = await grepSearch(".", { path: tmp, plain: true, literal: true });
+            const regex = await grepSearch(".", { path: tmp, plain: true, output: "content" });
+            const literal = await grepSearch(".", { path: tmp, plain: true, output: "content", literal: true });
             const regexCount = regex.split("\n").filter(l => l.trim()).length;
             const litCount = literal.split("\n").filter(l => l.trim()).length;
             assert.ok(regexCount > litCount, `regex (${regexCount}) should match more than literal (${litCount})`);
@@ -1460,96 +1530,264 @@ describe("isHexLineDisabled", () => {
 
 // ==================== hook subprocess ====================
 
-describe("hook — ls redirect", () => {
-    it("allows simple ls", async () => {
-        const r = await runHook("PreToolUse", "Bash", { command: "ls src/" });
-        assert.equal(r.code, 0);
+describe("hook — project Bash redirect scope", () => {
+    it("redirects simple ls in the project", async () => {
+        const repo = makeTempRepo("hex-hook-bash-repo-", { "src/index.ts": "const value = 1;\n" });
+        try {
+            const r = await runHook("PreToolUse", "Bash", { command: "ls src/" }, {}, { cwd: repo });
+            assert.notEqual(r.code, 0);
+        } finally {
+            fs.rmSync(repo, { recursive: true, force: true });
+        }
     });
-    it("allows ls -la", async () => {
-        const r = await runHook("PreToolUse", "Bash", { command: "ls -la src/" });
-        assert.equal(r.code, 0);
+    it("redirects dir /s in the project", async () => {
+        const repo = makeTempRepo("hex-hook-bash-repo-", { "src/index.ts": "const value = 1;\n" });
+        try {
+            const r = await runHook("PreToolUse", "Bash", { command: "dir /s" }, {}, { cwd: repo });
+            assert.notEqual(r.code, 0);
+        } finally {
+            fs.rmSync(repo, { recursive: true, force: true });
+        }
     });
-    it("redirects ls -R", async () => {
-        const r = await runHook("PreToolUse", "Bash", { command: "ls -R" });
-        assert.notEqual(r.code, 0);
+    it("redirects Get-Content on a project file", async () => {
+        const repo = makeTempRepo("hex-hook-bash-repo-", { "src/index.ts": "const value = 1;\n" });
+        try {
+            const r = await runHook("PreToolUse", "Bash", { command: "Get-Content src/index.ts" }, {}, { cwd: repo });
+            assert.notEqual(r.code, 0);
+        } finally {
+            fs.rmSync(repo, { recursive: true, force: true });
+        }
     });
-    it("redirects ls -R .", async () => {
-        const r = await runHook("PreToolUse", "Bash", { command: "ls -R ." });
-        assert.notEqual(r.code, 0);
+    it("redirects type on a project file", async () => {
+        const repo = makeTempRepo("hex-hook-bash-repo-", { "src/index.ts": "const value = 1;\n" });
+        try {
+            const r = await runHook("PreToolUse", "Bash", { command: "type src/index.ts" }, {}, { cwd: repo });
+            assert.notEqual(r.code, 0);
+        } finally {
+            fs.rmSync(repo, { recursive: true, force: true });
+        }
     });
-    it("redirects ls -laR src/", async () => {
-        const r = await runHook("PreToolUse", "Bash", { command: "ls -laR src/" });
-        assert.notEqual(r.code, 0);
+    it("redirects Get-ChildItem recursion in the project", async () => {
+        const repo = makeTempRepo("hex-hook-bash-repo-", { "src/index.ts": "const value = 1;\n" });
+        try {
+            const r = await runHook("PreToolUse", "Bash", { command: "Get-ChildItem src -Recurse" }, {}, { cwd: repo });
+            assert.notEqual(r.code, 0);
+        } finally {
+            fs.rmSync(repo, { recursive: true, force: true });
+        }
     });
-    it("redirects dir /s", async () => {
-        const r = await runHook("PreToolUse", "Bash", { command: "dir /s" });
-        assert.notEqual(r.code, 0);
+    it("redirects Get-Item on a project file", async () => {
+        const repo = makeTempRepo("hex-hook-bash-repo-", { "src/index.ts": "const value = 1;\n" });
+        try {
+            const r = await runHook("PreToolUse", "Bash", { command: "Get-Item src/index.ts" }, {}, { cwd: repo });
+            assert.notEqual(r.code, 0);
+        } finally {
+            fs.rmSync(repo, { recursive: true, force: true });
+        }
     });
-    it("allows ls -al -R (documented limitation)", async () => {
-        const r = await runHook("PreToolUse", "Bash", { command: "ls -al -R src/" });
-        assert.equal(r.code, 0, "accepted trade-off — unusual flag ordering not caught");
+    it("redirects findstr on a project file", async () => {
+        const repo = makeTempRepo("hex-hook-bash-repo-", { "src/index.ts": "const value = 1;\n" });
+        try {
+            const r = await runHook("PreToolUse", "Bash", { command: "findstr value src/index.ts" }, {}, { cwd: repo });
+            assert.notEqual(r.code, 0);
+        } finally {
+            fs.rmSync(repo, { recursive: true, force: true });
+        }
+    });
+    it("redirects Select-String with -Path in the project", async () => {
+        const repo = makeTempRepo("hex-hook-bash-repo-", { "src/index.ts": "const value = 1;\n" });
+        try {
+            const r = await runHook("PreToolUse", "Bash", { command: "Select-String -Path src/index.ts -Pattern value" }, {}, { cwd: repo });
+            assert.notEqual(r.code, 0);
+        } finally {
+            fs.rmSync(repo, { recursive: true, force: true });
+        }
+    });
+    it("redirects targeted inspection pipelines in the project", async () => {
+        const repo = makeTempRepo("hex-hook-bash-repo-", { "src/index.ts": "const value = 1;\n" });
+        try {
+            const r = await runHook("PreToolUse", "Bash", { command: "Get-ChildItem src -Recurse | Select-String -Pattern value" }, {}, { cwd: repo });
+            assert.notEqual(r.code, 0);
+        } finally {
+            fs.rmSync(repo, { recursive: true, force: true });
+        }
+    });
+    it("allows grep-like filters on stdin pipelines", async () => {
+        const repo = makeTempRepo("hex-hook-bash-repo-", { "src/index.ts": "const value = 1;\n" });
+        try {
+            const r = await runHook("PreToolUse", "Bash", { command: "git diff | rg value" }, {}, { cwd: repo });
+            assert.equal(r.code, 0);
+        } finally {
+            fs.rmSync(repo, { recursive: true, force: true });
+        }
+    });
+    it("allows cat on a text file outside the project", async () => {
+        const repo = makeTempRepo("hex-hook-bash-repo-", { "src/index.ts": "const value = 1;\n" });
+        const tmp = TMP(`hex-hook-outside-cat-${Date.now()}.ts`);
+        fs.writeFileSync(tmp, "const external = true;\n");
+        try {
+            const r = await runHook("PreToolUse", "Bash", { command: `cat ${tmp}` }, {}, { cwd: repo });
+            assert.equal(r.code, 0);
+        } finally {
+            fs.rmSync(tmp, { force: true });
+            fs.rmSync(repo, { recursive: true, force: true });
+        }
     });
 });
 
-describe("hook — Read config exception", () => {
-    it("allows .claude/settings.json (relative)", async () => {
-        const r = await runHook("PreToolUse", "Read", { file_path: ".claude/settings.json" });
-        assert.equal(r.code, 0);
-    });
-    it("allows ./.claude/settings.json (dot-relative)", async () => {
-        const r = await runHook("PreToolUse", "Read", { file_path: "./.claude/settings.json" });
-        assert.equal(r.code, 0);
-    });
-    it("blocks src/.claude/settings.json (not under cwd/.claude/)", async () => {
-        const r = await runHook("PreToolUse", "Read", { file_path: "src/.claude/settings.json" });
-        assert.notEqual(r.code, 0);
-    });
-    it("blocks .claude/foo.ts", async () => {
-        const r = await runHook("PreToolUse", "Read", { file_path: ".claude/foo.ts" });
-        assert.notEqual(r.code, 0);
-    });
-    it("redirects src/index.ts", async () => {
-        const r = await runHook("PreToolUse", "Read", { file_path: "src/index.ts" });
-        assert.notEqual(r.code, 0);
-    });
-    it("redirects partial built-in Read on a small file", async () => {
-        const tmp = TMP(`hex-hook-small-read-${Date.now()}.ts`);
-        fs.writeFileSync(tmp, "line 1\nline 2\nline 3\n");
+describe("hook — project text redirect scope", () => {
+    it("redirects project src/index.ts", async () => {
+        const repo = makeTempRepo("hex-hook-text-repo-", { "src/index.ts": "const value = 1;\n" });
         try {
-            const r = await runHook("PreToolUse", "Read", { file_path: tmp, offset: 1, limit: 2 });
+            const r = await runHook("PreToolUse", "Read", { file_path: "src/index.ts" }, {}, { cwd: repo });
+            assert.notEqual(r.code, 0);
+        } finally {
+            fs.rmSync(repo, { recursive: true, force: true });
+        }
+    });
+    it("redirects project .claude/settings.json like any other text file", async () => {
+        const repo = makeTempRepo("hex-hook-text-repo-", { ".claude/settings.json": "{\"hooks\":{}}\n" });
+        try {
+            const r = await runHook("PreToolUse", "Read", { file_path: ".claude/settings.json" }, {}, { cwd: repo });
+            assert.notEqual(r.code, 0);
+        } finally {
+            fs.rmSync(repo, { recursive: true, force: true });
+        }
+    });
+    it("redirects partial built-in Read on a project file", async () => {
+        const repo = makeTempRepo("hex-hook-text-repo-", { "src/index.ts": "line 1\nline 2\nline 3\n" });
+        try {
+            const r = await runHook("PreToolUse", "Read", { file_path: "src/index.ts", offset: 1, limit: 2 }, {}, { cwd: repo });
             assert.notEqual(r.code, 0);
             assert.ok(r.stdout.includes("read_file"), "Partial read is redirected to hex-line read_file");
         } finally {
-            fs.rmSync(tmp, { force: true });
+            fs.rmSync(repo, { recursive: true, force: true });
         }
     });
-    it("blocks full built-in Read on a large file", async () => {
-        const tmp = TMP(`hex-hook-large-read-${Date.now()}.ts`);
-        fs.writeFileSync(tmp, Array.from({ length: 1000 }, () => "const value = 1234567890;").join("\n"));
+    it("redirects full built-in Read on a project file", async () => {
+        const repo = makeTempRepo("hex-hook-text-repo-", { "src/index.ts": Array.from({ length: 1000 }, () => "const value = 1234567890;").join("\n") });
         try {
-            const r = await runHook("PreToolUse", "Read", { file_path: tmp });
+            const r = await runHook("PreToolUse", "Read", { file_path: "src/index.ts" }, {}, { cwd: repo });
             assert.notEqual(r.code, 0);
         } finally {
+            fs.rmSync(repo, { recursive: true, force: true });
+        }
+    });
+    it("redirects built-in Edit on a project text file", async () => {
+        const repo = makeTempRepo("hex-hook-text-repo-", { "src/index.ts": "const value = 1;\n" });
+        try {
+            const r = await runHook("PreToolUse", "Edit", {
+                file_path: "src/index.ts",
+                old_string: "value = 1",
+                new_string: "value = 2",
+            }, {}, { cwd: repo });
+            assert.notEqual(r.code, 0);
+            assert.ok(r.stdout.includes("mcp__hex-line__edit_file"));
+        } finally {
+            fs.rmSync(repo, { recursive: true, force: true });
+        }
+    });
+    it("redirects built-in Write on a project text file", async () => {
+        const repo = makeTempRepo("hex-hook-text-repo-", {});
+        try {
+            const r = await runHook("PreToolUse", "Write", { file_path: "notes.txt", content: "hello" }, {}, { cwd: repo });
+            assert.notEqual(r.code, 0);
+        } finally {
+            fs.rmSync(repo, { recursive: true, force: true });
+        }
+    });
+    it("redirects built-in Grep without path as a project search", async () => {
+        const repo = makeTempRepo("hex-hook-text-repo-", { "src/index.ts": "const value = 1;\n" });
+        try {
+            const r = await runHook("PreToolUse", "Grep", { pattern: "value" }, {}, { cwd: repo });
+            assert.notEqual(r.code, 0);
+        } finally {
+            fs.rmSync(repo, { recursive: true, force: true });
+        }
+    });
+    it("redirects built-in Glob without path as a project discovery", async () => {
+        const repo = makeTempRepo("hex-hook-text-repo-", { "src/index.ts": "const value = 1;\n" });
+        try {
+            const r = await runHook("PreToolUse", "Glob", { pattern: "**/*.ts" }, {}, { cwd: repo });
+            assert.notEqual(r.code, 0);
+            assert.ok(r.stdout.includes("inspect_path"), "Project Glob is redirected to inspect_path");
+        } finally {
+            fs.rmSync(repo, { recursive: true, force: true });
+        }
+    });
+    it("redirects built-in Glob on a project path", async () => {
+        const repo = makeTempRepo("hex-hook-text-repo-", { "src/index.ts": "const value = 1;\n" });
+        try {
+            const r = await runHook("PreToolUse", "Glob", { pattern: "*.ts", path: "src" }, {}, { cwd: repo });
+            assert.notEqual(r.code, 0);
+            assert.ok(r.stdout.includes("inspect_path"), "Scoped Glob is redirected to inspect_path");
+        } finally {
+            fs.rmSync(repo, { recursive: true, force: true });
+        }
+    });
+    it("allows built-in Read on a text file outside project root", async () => {
+        const repo = makeTempRepo("hex-hook-text-repo-", { "src/index.ts": "const value = 1;\n" });
+        const tmp = TMP(`hex-hook-outside-read-${Date.now()}.ts`);
+        fs.writeFileSync(tmp, "const external = true;\n");
+        try {
+            const r = await runHook("PreToolUse", "Read", { file_path: tmp }, {}, { cwd: repo });
+            assert.equal(r.code, 0);
+        } finally {
             fs.rmSync(tmp, { force: true });
+            fs.rmSync(repo, { recursive: true, force: true });
+        }
+    });
+    it("allows built-in Edit on a text file outside project root", async () => {
+        const repo = makeTempRepo("hex-hook-text-repo-", { "src/index.ts": "const value = 1;\n" });
+        const tmp = TMP(`hex-hook-outside-edit-${Date.now()}.ts`);
+        fs.writeFileSync(tmp, "const external = true;\n");
+        try {
+            const r = await runHook("PreToolUse", "Edit", {
+                file_path: tmp,
+                old_string: "external = true",
+                new_string: "external = false",
+            }, {}, { cwd: repo });
+            assert.equal(r.code, 0);
+        } finally {
+            fs.rmSync(tmp, { force: true });
+            fs.rmSync(repo, { recursive: true, force: true });
+        }
+    });
+    it("allows built-in Write on a text file outside project root", async () => {
+        const repo = makeTempRepo("hex-hook-text-repo-", { "src/index.ts": "const value = 1;\n" });
+        const tmp = TMP(`hex-hook-outside-write-${Date.now()}.ts`);
+        try {
+            const r = await runHook("PreToolUse", "Write", { file_path: tmp, content: "const external = true;\n" }, {}, { cwd: repo });
+            assert.equal(r.code, 0);
+        } finally {
+            fs.rmSync(tmp, { force: true });
+            fs.rmSync(repo, { recursive: true, force: true });
+        }
+    });
+    it("allows built-in Grep on an outside-project path", async () => {
+        const repo = makeTempRepo("hex-hook-text-repo-", { "src/index.ts": "const value = 1;\n" });
+        const outside = makeTempRepo("hex-hook-outside-grep-", { "notes.txt": "needle\n" });
+        try {
+            const r = await runHook("PreToolUse", "Grep", { pattern: "needle", path: outside }, {}, { cwd: repo });
+            assert.equal(r.code, 0);
+        } finally {
+            fs.rmSync(outside, { recursive: true, force: true });
+            fs.rmSync(repo, { recursive: true, force: true });
+        }
+    });
+    it("allows built-in Glob on an outside-project path", async () => {
+        const repo = makeTempRepo("hex-hook-text-repo-", { "src/index.ts": "const value = 1;\n" });
+        const outside = makeTempRepo("hex-hook-outside-glob-", { "notes.txt": "needle\n" });
+        try {
+            const r = await runHook("PreToolUse", "Glob", { pattern: "*.txt", path: outside }, {}, { cwd: repo });
+            assert.equal(r.code, 0);
+        } finally {
+            fs.rmSync(outside, { recursive: true, force: true });
+            fs.rmSync(repo, { recursive: true, force: true });
         }
     });
     it("allows image.png (binary)", async () => {
         const r = await runHook("PreToolUse", "Read", { file_path: "image.png" });
-        assert.equal(r.code, 0);
-    });
-    it("allows ~/.claude/settings.json (home-relative)", async () => {
-        const r = await runHook("PreToolUse", "Read", { file_path: "~/.claude/settings.json" });
-        assert.equal(r.code, 0);
-    });
-    it("allows absolute .claude/settings.json (uppercase drive)", async () => {
-        const cwd = process.cwd().replace(/\\/g, "/");
-        const r = await runHook("PreToolUse", "Read", { file_path: cwd + "/.claude/settings.json" });
-        assert.equal(r.code, 0);
-    });
-    it("allows absolute .claude/settings.json (lowercase drive)", async () => {
-        const cwd = process.cwd().replace(/\\/g, "/");
-        const lower = cwd[0].toLowerCase() + cwd.slice(1);
-        const r = await runHook("PreToolUse", "Read", { file_path: lower + "/.claude/settings.json" });
         assert.equal(r.code, 0);
     });
 });
@@ -1567,36 +1805,6 @@ describe("hook — regressions", () => {
         const r = await runHook("PreToolUse", "Bash", { command: "rm -rf / # hex-confirmed" });
         assert.equal(r.code, 0);
     });
-    it("redirects small built-in Edit on a small file", async () => {
-        const tmp = TMP(`hex-hook-small-edit-${Date.now()}.ts`);
-        fs.writeFileSync(tmp, "const value = 1;\n");
-        try {
-            const r = await runHook("PreToolUse", "Edit", {
-                file_path: tmp,
-                old_string: "value = 1",
-                new_string: "value = 2",
-            });
-            assert.notEqual(r.code, 0, "Small edit is redirected");
-            assert.ok(r.stdout.includes("mcp__hex-line__edit_file"), "Small edit redirects to hex-line edit_file");
-        } finally {
-            fs.rmSync(tmp, { force: true });
-        }
-    });
-    it("blocks replace_all built-in Edit on a large file", async () => {
-        const tmp = TMP(`hex-hook-large-edit-${Date.now()}.ts`);
-        fs.writeFileSync(tmp, Array.from({ length: 1200 }, () => "const item = oldValue;").join("\n"));
-        try {
-            const r = await runHook("PreToolUse", "Edit", {
-                file_path: tmp,
-                old_string: "oldValue",
-                new_string: "newValue",
-                replace_all: true,
-            });
-            assert.notEqual(r.code, 0);
-        } finally {
-            fs.rmSync(tmp, { force: true });
-        }
-    });
     it("SessionStart injects structured instructions with deferred loading hint", async () => {
         const r = await runHook("SessionStart", "", {});
         assert.equal(r.code, 0);
@@ -1609,6 +1817,62 @@ describe("hook — regressions", () => {
         const r = await runHook("PreToolUse", "Write", { file_path: "test.ts", content: "hello" });
         assert.notEqual(r.code, 0, "Write is redirected");
         assert.ok(r.stdout.includes("ToolSearch"), "Redirect includes ToolSearch hint");
+    });
+});
+
+describe("hook — advisory mode", () => {
+    it("downgrades project Read redirect to advice", async () => {
+        const repo = makeTempRepo("hex-hook-advisory-", {
+            ".hex-skills/environment_state.json": JSON.stringify({ hooks: { mode: "advisory" } }, null, 2),
+            "src/index.ts": "const value = 1;\n",
+        });
+        try {
+            const r = await runHook("PreToolUse", "Read", { file_path: "src/index.ts" }, {}, { cwd: repo });
+            assert.equal(r.code, 0);
+            assert.ok(r.stdout.includes("\"permissionDecision\":\"allow\""));
+            assert.ok(r.stdout.includes("read_file"));
+        } finally {
+            fs.rmSync(repo, { recursive: true, force: true });
+        }
+    });
+    it("downgrades project Bash inspection redirect to advice", async () => {
+        const repo = makeTempRepo("hex-hook-advisory-", {
+            ".hex-skills/environment_state.json": JSON.stringify({ hooks: { mode: "advisory" } }, null, 2),
+            "src/index.ts": "const value = 1;\n",
+        });
+        try {
+            const r = await runHook("PreToolUse", "Bash", { command: "cat src/index.ts" }, {}, { cwd: repo });
+            assert.equal(r.code, 0);
+            assert.ok(r.stdout.includes("\"permissionDecision\":\"allow\""));
+            assert.ok(r.stdout.includes("read_file"));
+        } finally {
+            fs.rmSync(repo, { recursive: true, force: true });
+        }
+    });
+    it("downgrades project Glob redirect to advice", async () => {
+        const repo = makeTempRepo("hex-hook-advisory-", {
+            ".hex-skills/environment_state.json": JSON.stringify({ hooks: { mode: "advisory" } }, null, 2),
+            "src/index.ts": "const value = 1;\n",
+        });
+        try {
+            const r = await runHook("PreToolUse", "Glob", { pattern: "**/*.ts" }, {}, { cwd: repo });
+            assert.equal(r.code, 0);
+            assert.ok(r.stdout.includes("\"permissionDecision\":\"allow\""));
+            assert.ok(r.stdout.includes("inspect_path"));
+        } finally {
+            fs.rmSync(repo, { recursive: true, force: true });
+        }
+    });
+    it("keeps dangerous commands blocked in advisory mode", async () => {
+        const repo = makeTempRepo("hex-hook-advisory-", {
+            ".hex-skills/environment_state.json": JSON.stringify({ hooks: { mode: "advisory" } }, null, 2),
+        });
+        try {
+            const r = await runHook("PreToolUse", "Bash", { command: "rm -rf /" }, {}, { cwd: repo });
+            assert.notEqual(r.code, 0);
+        } finally {
+            fs.rmSync(repo, { recursive: true, force: true });
+        }
     });
 });
 

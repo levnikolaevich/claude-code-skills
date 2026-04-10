@@ -21,9 +21,10 @@ MCP prepends `mcp__<server>__` automatically. Name the tool itself without the s
 |-----------|----------|---------|
 | `plain` (boolean) | Omit hash annotations, return `lineNum\|content` | `read_file` with `plain: true` |
 | `limit` (number) | Cap returned lines | `read_file` with `limit: 50` |
+| `max_entries` (number) | Cap broad pattern/path discovery results | `inspect_path` with `pattern: "*.ts", max_entries: 60` |
 | `format` (proposed) | Compact = summary + counts; Full = all data | Large result tools |
 
-Rule: if a tool can return >100 lines, it MUST support truncation or a compact mode.
+Rule: if a tool can return >100 lines, it MUST support truncation or a compact mode and return a concrete next-step hint (`next_action`, refine suggestion, or equivalent).
 
 ## 3. Error Design — every error = code + what happened + what to do next
 
@@ -45,7 +46,7 @@ Anti-pattern: raw stack traces. Agents cannot act on `Error: ENOENT` -- they nee
 | Bad | Good |
 |-----|------|
 | "This tool reads files" | "Read a file with hash-annotated lines. For large code files: use outline first, then read_file with offset/limit." |
-| "Searches code" | "Search file contents with ripgrep. ALWAYS prefer over shell grep/rg/findstr." |
+| "Searches code" | "Search file contents with ripgrep. Default to summary-first discovery; escalate to edit-ready content only when the next action needs canonical hunks." |
 | "Shows file structure" | "AST-based outline. 10-20 lines instead of 500. Use before reading large code files." |
 
 Pattern: `"Use [tool] when [situation]. Prefer over [alternative] because [reason]."`
@@ -55,18 +56,18 @@ Pattern: `"Use [tool] when [situation]. Prefer over [alternative] because [reaso
 | Component | Cap Strategy | Implementation |
 |-----------|-------------|----------------|
 | File content tools | `limit` param, default 2000 lines | `read_file` DEFAULT_LIMIT |
-| Search result tools | `limit` per file, default 100 | `grep_search` limit param |
+| Search result tools | Summary-first default, bounded content mode, structured refine metadata | `grep_search` with `output="summary"` default plus `next_action`/`suggested_refine_call` |
 | Hooks (PostToolUse) | `smartTruncate(text, HEAD, TAIL)` | head 15 + tail 15, gap indicator |
 | Hooks (SessionStart) | Fixed injection string | Single `systemMessage`, no file reads |
-| Directory listings | `max_depth`, default 3 | `inspect_path` depth limit |
+| Directory listings | `max_depth` for trees, `max_entries` for broad pattern mode | `inspect_path` depth limit + pattern cap |
 
-Always show `--- N lines omitted ---` when truncating.
+When truncating, prefer structured metadata that tells the agent how to narrow next. Plain omission markers are secondary.
 
 ## 6. High-Level vs Low-Level
 
 | Principle | Bad | Good |
 |-----------|-----|------|
-| No `list_all_*` | `list_all_files` returns 10K paths | `inspect_path` with depth limit |
+| No `list_all_*` | `list_all_files` returns 10K paths | `inspect_path` with depth limit or bounded pattern mode |
 | One tool = one decision | `read_and_edit` (two decisions) | Separate `read_file` + `edit_file` |
 | Combine read workflows | Two calls always needed | Description guides: "use outline first" |
 | Separate user decisions | Tool auto-confirms danger | `AskUserQuestion` pattern: block + ask user |

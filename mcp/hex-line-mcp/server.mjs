@@ -219,11 +219,12 @@ server.registerTool("grep_search", {
         total_limit: flexNum().describe("Total match events across all files; multiline matches count as 1 (default: 50 for summary discovery, 200 for content, 1000 for files/count, 0 = unlimited)"),
         plain: flexBool().describe("Omit hash tags, return file:line:content"),
         edit_ready: flexBool().describe("Preserve hash/checksum search hunks in `content` mode. Default: false."),
+        allow_large_output: flexBool().describe("Bypass the default content-mode block/char caps when you intentionally need a larger payload."),
     }),
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
 }, async (rawParams) => {
     const { pattern, path: p, glob, type, output, case_insensitive, smart_case, literal, multiline,
-            context, context_before, context_after, limit, total_limit, plain, edit_ready } = rawParams ?? {};
+            context, context_before, context_after, limit, total_limit, plain, edit_ready, allow_large_output } = rawParams ?? {};
     try {
         const resolvedOutput = output ?? "summary";
         const resolvedLimit = limit ?? (resolvedOutput === "summary" ? 20 : 100);
@@ -232,6 +233,7 @@ server.registerTool("grep_search", {
             path: p, glob, type, output: resolvedOutput, caseInsensitive: case_insensitive, smartCase: smart_case,
             literal, multiline, context, contextBefore: context_before, contextAfter: context_after,
             limit: resolvedLimit, totalLimit: resolvedTotalLimit, plain, editReady: !!edit_ready,
+            allowLargeOutput: !!allow_large_output,
         });
         return { content: [{ type: "text", text: result }] };
     } catch (e) {
@@ -297,13 +299,14 @@ server.registerTool("inspect_path", {
         pattern: z.string().optional().describe('Glob filter on names (e.g. "*-mcp", "*.mjs"). Returns flat match list instead of tree'),
         type: z.enum(["file", "dir", "all"]).optional().describe('"file", "dir", or "all" (default). Like find -type f/d'),
         max_depth: flexNum().describe("Max recursion depth (default: 2 for discovery, or 20 in pattern mode)"),
+        max_entries: flexNum().describe("Max entries to show in pattern mode before truncation metadata is returned (default: 60, 0 = unlimited)"),
         gitignore: flexBool().describe("Respect root .gitignore patterns (default: true). Nested .gitignore not supported"),
         format: z.enum(["compact", "full"]).optional().describe('"compact" = shorter path view, "full" = include sizes/metadata where available'),
         verbosity: z.enum(["minimal", "compact", "full"]).optional().describe("Response budget. `minimal` returns the shortest tree summary."),
     }),
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
 }, async (rawParams) => {
-    const { path: p, max_depth, gitignore, format, pattern, type: entryType, verbosity } = rawParams ?? {};
+    const { path: p, max_depth, max_entries, gitignore, format, pattern, type: entryType, verbosity } = rawParams ?? {};
     try {
         const resolvedVerbosity = verbosity ?? "minimal";
         return { content: [{ type: "text", text: inspectPath(p, {
@@ -312,6 +315,7 @@ server.registerTool("inspect_path", {
             format: format ?? (resolvedVerbosity === "full" ? "full" : "compact"),
             pattern,
             type: entryType,
+            max_entries,
         }) }] };
     } catch (e) {
         return { content: [{ type: "text", text: e.message }], isError: true };

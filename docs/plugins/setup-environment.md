@@ -23,10 +23,10 @@ Sets up and maintains the multi-agent development environment. The coordinator i
 | ln-001-push-all | Commit and push all changes to remote |
 | ln-010-dev-environment-setup | Full environment setup coordinator |
 | ln-011-agent-installer | Install or update Codex CLI, Gemini CLI, and Claude Code |
-| ln-012-mcp-configurator | Register MCP servers and analyze token budget |
-| ln-013-config-syncer | Sync settings from Claude to Gemini/Codex |
-| ln-014-agent-instructions-manager | Create missing instruction files and audit all for quality |
-| ln-015-hex-line-uninstaller | Remove hex-line hooks, output style, and cached files from system |
+| ln-012-mcp-configurator | Configure Claude-side MCP registration, hooks, permissions, and migrations |
+| ln-013-config-syncer | Sync Gemini/Codex config from Claude and align Codex execution defaults |
+| ln-014-agent-instructions-manager | Single owner of instruction file creation, audit, and MCP Tool Preferences sync |
+| ln-015-hex-line-uninstaller | Remove Claude-side hex-line registration, permissions, hooks, and output style |
 | ln-020-codegraph | Code knowledge graph for dependency analysis and impact checking |
 
 ## How it works
@@ -39,7 +39,7 @@ ln-010 (coordinator)
     → ln-014 (audit instructions)
 ```
 
-`ln-010` scans the environment once, builds a selective dispatch plan, delegates to 4 standalone workers, verifies the result, and writes `.hex-skills/environment_state.json` only after verification passes. Worker summaries are coordination artifacts; the final environment file remains the durable project output.
+`ln-010` scans the environment once, builds a selective dispatch plan, starts managed child runtimes for the selected workers, records structured worker artifacts, verifies the result, and writes `.hex-skills/environment_state.json` only after verification passes. Worker summaries are coordination artifacts; the final environment file remains the durable project output.
 
 ## Quick start
 

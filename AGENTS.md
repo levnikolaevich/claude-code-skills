@@ -30,8 +30,9 @@ Skills collection for Codex with config-driven Agile task management (Linear or 
 Use `hex-line` first for repo file reads/search/edits on code, config, scripts, and tests.
 - Use `hex-graph` first for symbol identity, references, architecture, edit blast radius, clone groups, and semantic diff risk.
 - Built-in `Read/Edit/Write/Grep` and shell repo inspection are fallback only when MCP is unavailable, unsupported, or outside scope.
+- When the hex-line hook is active, project-scoped text `Read/Edit/Write/Grep/Glob` are hard-routed to `hex-line`; built-in exceptions are binary/media and text paths outside the current project root.
 - Do not use shell repo-wide search/read patterns such as `rg`, `grep`, `cat`, `find`, or recursive tree dumps when `hex-line` or `hex-graph` covers the task.
-- Shell is still appropriate for Git history, build/test/runtime commands, package managers, Docker, images, PDFs, notebooks, and `.claude/settings*.json`.
+- Shell is still appropriate for Git history, build/test/runtime commands, package managers, Docker, images, PDFs, notebooks, and user-level `.claude/settings*.json` work outside the repo.
 
 | Instead of | Use | Why |
 |-----------|-----|-----|
@@ -39,10 +40,15 @@ Use `hex-line` first for repo file reads/search/edits on code, config, scripts, 
 | Edit | `mcp__hex-line__edit_file` | Hash-verified edits with conservative follow-up flow |
 | Write | `mcp__hex-line__write_file` | Direct writes without broad rereads |
 | Grep | `mcp__hex-line__grep_search` | Summary-first search with optional edit-ready hunks |
+| Glob | `mcp__hex-line__inspect_path` | Pattern-based file discovery inside an explicit root |
 | Text rename across files | `mcp__hex-line__bulk_replace` | Explicit-root multi-file rename/refactor |
 
 - Preferred cheap flow: `inspect_path -> outline -> read_file(minimal, ranges)` and only request `edit_ready=true` / rich output when revisions or checksums are required.
 - Before delayed same-file follow-up edits, carry `base_revision` and run `verify` instead of rereading blindly.
+- Do not start discovery with repo-root wildcard `inspect_path` such as `pattern="*.md"` unless you intentionally need a repo inventory. Narrow `path` first.
+- For text search, prefer `grep_search(output="summary")` first. Escalate to `output="content"` only after narrowing `path`, `glob`, or pattern, or when canonical hunks/checksums are required.
+- Use `allow_large_output=true` only when a large `grep_search(output="content")` payload is explicitly needed. Default behavior is intentionally capped and should be treated as the safe path.
+- Do not use `find_symbols` on broad/common bare names until you narrow by `path` or can immediately refine with `name + file` or `workspace_qualified_name`.
 
 ## Quick Understanding
 

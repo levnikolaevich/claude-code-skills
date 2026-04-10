@@ -13,7 +13,8 @@ Prefer `hex-line` for text files you may inspect or modify. Hash-annotated reads
 | Read | `mcp__hex-line__read_file` | Hash-annotated, revision-aware |
 | Edit | `mcp__hex-line__edit_file` | Hash-verified anchors + conservative auto-rebase |
 | Write | `mcp__hex-line__write_file` | No prior Read needed |
-| Grep | `mcp__hex-line__grep_search` | Edit-ready matches |
+| Grep | `mcp__hex-line__grep_search` | Summary-first discovery with edit-ready escalation |
+| Glob | `mcp__hex-line__inspect_path` | Project file discovery and name/path globbing |
 | Text rename across files | `mcp__hex-line__bulk_replace` | Multi-file text rename/refactor inside an explicit root path |
 | Path/tree/stat Bash | `mcp__hex-line__inspect_path` | Compact path info and pattern search |
 | Large code read | `mcp__hex-line__outline` then `read_file` with ranges | Structure first, targeted reads |
@@ -26,7 +27,7 @@ Prefer `hex-line` for text files you may inspect or modify. Hash-annotated reads
 
 | Path | Flow |
 |------|------|
-| Surgical | `grep_search -> edit_file` |
+| Surgical | `grep_search(output="summary") -> grep_search(output="content", edit_ready=true) if needed -> edit_file` |
 | Exploratory | `outline -> read_file (ranges) -> edit_file(base_revision)` |
 | Multi-file | `bulk_replace(path=<project root>)` |
 | Follow-up after delay | `verify(base_revision) -> reread only if STALE -> retry with returned helpers` |
@@ -36,14 +37,14 @@ Prefer `hex-line` for text files you may inspect or modify. Hash-annotated reads
 - Auto-fill `path` instead of leaving scope implicit.
 - For file tools (`read_file`, `edit_file`, `outline`, `changes` on one file), use the target file path.
 - Read-only file tools may target explicit temp-file paths outside the repo when you intentionally inspect a scratch file.
-- For repo-wide tools (`bulk_replace`, directory `inspect_path`, broad `grep_search`), use the resolved project root or intended directory scope.
+- For repo-wide tools (`bulk_replace`, directory `inspect_path`, broad `grep_search`), use the resolved project root or intended directory scope, then narrow further before requesting rich output.
 - Mutating tools stay inside the current project root by default. Add `allow_external=true` only when you intentionally edit a temp or external path.
 - Treat missing or ambiguous scope as an error to fix, not as a reason to guess across repositories.
 
 ## Edit Discipline
 
-- Never invent `range_checksum`. Copy it from a fresh `read_file` or `grep_search(output:"content")` block.
-- First mutation in a file: use `grep_search` for narrow targets, or `outline -> read_file(ranges)` for structural edits.
+- Never invent `range_checksum`. Copy it from a fresh `read_file` or `grep_search(output:"content", edit_ready=true)` block.
+- First mutation in a file: use `grep_search(output="summary")` for narrow targets, or `outline -> read_file(ranges)` for structural edits. Escalate to `grep_search(output="content", edit_ready=true)` only when the next edit needs canonical hunks.
 - Preserve file conventions mentally: `hex-line` hashes normalized logical text, but `edit_file` preserves the file's existing line endings and trailing-newline shape on write.
 - Prefer `set_line` or `insert_after` for small local changes. Prefer `replace_between` for larger bounded block rewrites.
 - Use `replace_lines` only when you already hold the exact inclusive range checksum for that block.
@@ -53,11 +54,12 @@ Prefer `hex-line` for text files you may inspect or modify. Hash-annotated reads
 - Reuse `retry_checksum` when it is returned for the exact same target range.
 - Once `hex-line` owns a file edit session, avoid mixing built-in `Edit`/`Write` on that file unless you intentionally want a new baseline.
 - Follow `next_action` first. Treat `summary` and `snippet` as the compact local context, not as prose to reinterpret.
+- If broad `grep_search(output="content")` or pattern `inspect_path` truncates, narrow `path`, `glob`, or query shape before retrying. Use `allow_large_output=true` only when you intentionally accept a larger payload.
 
 ## Exceptions
 
-- Built-in `Read`/`Edit`/`Write`/`Grep` are fallback only. Built-in OK for images, PDFs, notebooks, Glob, `.claude/settings.json`, and `.claude/settings.local.json`.
-- Bash is still fine for npm, node, git, docker, curl, pipes, and compound commands.
+- Built-in `Read`/`Edit`/`Write`/`Grep`/`Glob` are fallback only. With the hook active, project-scoped text calls and file discovery route to hex-line. Built-in OK for images, PDFs, notebooks, and text paths outside the current project root.
+- Bash is still fine for npm, node, git, docker, curl, non-inspection pipelines, and other runtime workflows. Project file inspection commands route to hex-line, including Windows-native readers/searchers/listing commands.
 
 ## hex-graph
 

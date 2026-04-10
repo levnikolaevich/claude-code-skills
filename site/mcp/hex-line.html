@@ -458,7 +458,7 @@
       <p class="section-desc">hex-line ships with a hook system that works alongside the MCP tools:</p>
 
       <div class="feature-card">
-        <p><strong>PreToolUse</strong> &mdash; advises small built-in <code>Read</code>/<code>Edit</code> calls, redirects heavier <code>Read</code>/<code>Edit</code> plus <code>Write</code>/<code>Grep</code> to hex-line, selectively redirects simple Bash, and blocks dangerous Bash commands (<code>git push --force</code>, <code>rm -rf /</code>, <code>DROP</code>) until the user confirms.</p>
+        <p><strong>PreToolUse</strong> &mdash; hard-redirects project-scoped text <code>Read</code>/<code>Edit</code>/<code>Write</code>/<code>Grep</code> to hex-line, redirects project file-inspection Bash commands, and blocks dangerous Bash commands (<code>git push --force</code>, <code>rm -rf /</code>, <code>DROP</code>) until the user confirms.</p>
       </div>
       <div class="feature-card">
         <p><strong>PostToolUse</strong> &mdash; filters verbose Bash output (50+ lines): deduplicates, normalizes, truncates. Keeps first 15 + last 15 lines.</p>
@@ -467,7 +467,7 @@
         <p><strong>SessionStart</strong> &mdash; injects a short bootstrap hint at session start. If the <code>hex-line</code> output style is already active, the hook stays minimal and defers to that style.</p>
       </div>
       <div class="feature-card">
-        <p><strong>Bash redirects</strong> &mdash; intercepts simple <code>cat</code>, <code>head</code>, <code>tail</code>, <code>tree</code>, <code>find</code>, <code>stat</code>, <code>wc -l</code>, <code>grep</code>, <code>rg</code>, <code>sed -i</code> and redirects covered cases through hex-line. Recursive <code>ls</code>/<code>dir</code> is redirected; simple <code>ls path</code> is allowed.</p>
+        <p><strong>Bash redirects</strong> &mdash; intercepts project-scoped file inspection commands such as <code>cat</code>, <code>type</code>, <code>Get-Content</code>, <code>ls</code>, <code>dir</code>, <code>tree</code>, <code>find</code>, <code>Get-ChildItem</code>, <code>grep</code>, <code>rg</code>, <code>findstr</code>, <code>Select-String</code>, <code>stat</code>, <code>Get-Item</code>, and <code>sed -i</code>. Targeted inspection pipelines are redirected; Git/build/test/docker/network workflows remain allowed.</p>
       </div>
 
       <div style="margin-top: 32px;">

@@ -2,6 +2,14 @@
 
 <!-- SCOPE: User-facing changes only. Max 5 bullets per entry. Focus: new capabilities, workflow changes, breaking changes. -->
 
+## 2026-04-10
+
+- **hex-line v1.12→v1.16** — progressive disclosure read (`edit_ready`/`verbosity`), line-ending preservation (LF/CRLF/CR), `allow_external` scope boundary, graph staleness auto-refresh, summary-first grep
+- **hex-graph v0.8→v0.12** — summary-first output with `available_expansions`/provenance, expanded use-case API, SCIP module fix, 92/92 semantic tests
+- **Artifact-first coordinators** — coordinators advance only from machine-readable artifacts; workers keep persisted runtime state and emit JSON summaries; new runtime contracts across all coordinator families
+- **Planning runtime overhaul** — new/updated contracts for scope decomposition, epic/story/task planning, dependency and worker runtimes with coordinator summary contract and guard tests
+- **Skill updates** — ln-200, ln-201, ln-210–ln-310, ln-840 refreshed with runtime alignment
+
 ## 2026-04-05
 
 - **hex-line v1.12.0** — conservative conflict recovery (retry_edit/retry_edits/retry_plan), hook policy extraction, canonical output contracts for verify/changes

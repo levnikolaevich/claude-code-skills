@@ -55,23 +55,37 @@ Compare commits vs existing CHANGELOG entries:
 - Max 5 bullets per entry (per CHANGELOG scope comment)
 - Use `## YYYY-MM-DD` heading format
 
-### 5. Build Release Notes
+### 5. Read Previous Release Style
 
-Assemble release notes from the **updated** CHANGELOG:
+Read the most recent published release to match its tone, structure, and formatting:
+
+```bash
+gh release view {LAST_TAG} --json body --jq '.body'
+```
+
+Use this as the style template for the new release notes. Match: narrative subsections with `###` headers per major area, **bold lead** — description format, `> version range` blockquotes after MCP sections, bullet lists for smaller items.
+
+### 6. Build Release Notes
+
+Assemble release notes matching the previous release style.
+
+**MCP grouping rule:** if multiple MCP package versions were released since the last release, group them into a single range (e.g. `v1.13–v1.16`) and list all changes together — do NOT enumerate intermediate versions.
 
 ````markdown
 ## What's New in v{VERSION}
 
-{bullets from updated CHANGELOG}
+{narrative sections matching previous release style}
 
 ### Install
 
 /plugin add levnikolaevich/claude-code-skills
 
 **All plugins & docs:** [README.md](README.md)
+
+**Full changelog:** [CHANGELOG.md](CHANGELOG.md)
 ````
 
-### 6. Confirm with User
+### 7. Confirm with User
 Present the assembled release notes and version tag to the user via AskUserQuestion:
 
 - Show: `Release: v{VERSION}`
@@ -80,7 +94,7 @@ Present the assembled release notes and version tag to the user via AskUserQuest
 
 Do NOT proceed without explicit confirmation.
 
-### 7. Create Release
+### 8. Create Release
 
 ```bash
 gh release create "v${VERSION}" --title "v${VERSION}" --notes "${RELEASE_NOTES}"
@@ -109,4 +123,4 @@ Report the release URL to the user.
 - [CHANGELOG.md](CHANGELOG.md) -- release notes source
 
 ---
-**Last Updated:** 2026-03-21
+**Last Updated:** 2026-04-10

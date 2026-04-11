@@ -321,7 +321,9 @@ function block(reason, context) {
     const msg = context ? `${reason}\n${context}` : reason;
     const output = {
         hookSpecificOutput: {
+            hookEventName: "PreToolUse",
             permissionDecision: "deny",
+            permissionDecisionReason: reason,
         },
         systemMessage: msg,
     };
@@ -332,7 +334,9 @@ function block(reason, context) {
 function advise(reason, context) {
     const output = {
         hookSpecificOutput: {
+            hookEventName: "PreToolUse",
             permissionDecision: "allow",
+            permissionDecisionReason: reason,
         },
         systemMessage: context ? `${reason}\n${context}` : reason,
     };

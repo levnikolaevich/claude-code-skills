@@ -181,7 +181,7 @@ for f in $SCOPE; do
     start=$((linenum > 5 ? linenum - 5 : 1))
     endline=$((linenum + 10))
     nearby=$(sed -n "${start},${endline}p" "$f")
-    if ! echo "$nearby" | grep -qE -- '--prompt-file|--output-file'; then
+    if ! echo "$nearby" | grep -qE -- '```|`node |`bash |--prompt-file|--output-file|--agent '; then
       warn "imperative tool action at line $linenum without inline command template: $f"
       WARNS=$((WARNS + 1))
     fi

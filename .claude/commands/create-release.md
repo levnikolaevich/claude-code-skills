@@ -1,11 +1,19 @@
 ---
-description: Create a GitHub release — audits commits, updates CHANGELOG, builds release notes
+description: Create a GitHub release from commits, CHANGELOG, release notes, and confirmation
 allowed-tools: Read, Bash, Grep, AskUserQuestion
 ---
 
 # Create Release
 
 Create a tagged GitHub release with structured release notes. Audits commits since last release, updates CHANGELOG.md, builds release notes, asks for confirmation, then publishes.
+
+## Source
+
+| Field | Value |
+|-------|-------|
+| Source | Repo-maintained release command |
+| Version Source | `README.md` badge |
+| Release Notes Source | `CHANGELOG.md` |
 
 ## Prerequisites
 

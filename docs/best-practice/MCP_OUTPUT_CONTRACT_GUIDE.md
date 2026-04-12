@@ -1,6 +1,6 @@
 # MCP Output Contract Guide
 
-> **SCOPE:** Maintainer reference for public MCP output contracts. Defines canonical `status`, `reason`, `next_action`, `next_actions`, `summary`, and error envelope vocabulary for repo-owned MCP servers. These fields live in `structuredContent` (primary payload). The `content[0].text` block is auto-generated `JSON.stringify(structuredContent)` per MCP spec and is not separately specified.
+> **SCOPE:** Maintainer reference for public MCP output contracts. Defines canonical `status`, `reason`, `next_action`, `next_actions`, `summary`, and error envelope vocabulary for repo-owned MCP servers. These fields live in `structuredContent` (primary payload). Repo-owned MCP servers mirror `structuredContent` into `content[0].text` as JSON for backward-compatible agent consumption.
 
 This guide exists to stop drift. New MCP tools and edits to existing ones should reuse the same public vocabulary instead of inventing fresh wording.
 
@@ -215,7 +215,7 @@ Every tool response has this shape:
 ```
 
 - `structuredContent` is the primary payload consumed by agents and validated against `outputSchema`.
-- `content[0].text` is `JSON.stringify(structuredContent)` -- required by MCP spec 2025-06-18 backward-compat rule.
+- `content[0].text` is `JSON.stringify(structuredContent)` by repo convention. The MCP spec requires unstructured `content` and allows optional `structuredContent`; it does not require this exact mirror.
 - `isError: true` whenever `structuredContent.status === "ERROR"`.
 - `_meta` is present only for large results (see §9).
 

@@ -1,11 +1,19 @@
 ---
-description: "Analyze agent sessions (3 days) for MCP, hooks, skills optimization opportunities with real token stats"
+description: "Audit agent sessions for MCP, hooks, skills, tokens, and recurring workflow problems"
 allowed-tools: "Bash, Agent, Read, Glob, mcp__hex-line__read_file, mcp__hex-line__grep_search, mcp__hex-line__outline"
 ---
 
 # Audit Agent Sessions
 
 Analyze all agent sessions from the last 3 days across Claude, Codex, and Gemini. Produce actionable optimization report.
+
+## Source
+
+| Field | Value |
+|-------|-------|
+| Source | Repo-maintained operational command |
+| Review Contract | `skills-catalog/ln-162-skill-reviewer/references/command_review_criteria.md` |
+| Related Skill | `skills-catalog/ln-002-session-analyzer/SKILL.md` |
 
 **Scope:** Multi-day batch analysis (3 days, all agents). Aggregate patterns across sessions.
 For single-session deep analysis: `ln-002-session-analyzer`. For skill self-audit: meta-analysis protocol §7.
@@ -460,3 +468,6 @@ For deeper single-session analysis, use `ln-002-session-analyzer`.
 **MANDATORY READ:** Load `shared/references/meta_analysis_protocol.md`
 
 Analyze this session per protocol §7. Output per protocol format.
+
+---
+**Last Updated:** 2026-04-12

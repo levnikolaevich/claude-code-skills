@@ -39,7 +39,7 @@
     "zod": "^4.3.6"
   },
   "optionalDependencies": {
-    "better-sqlite3": "^12.8.0"
+    "better-sqlite3": "^12.9.0"
   },
   "author": "Lev Nikolaevich <https://github.com/levnikolaevich>",
   "license": "MIT",

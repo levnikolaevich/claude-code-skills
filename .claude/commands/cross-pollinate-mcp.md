@@ -7,6 +7,20 @@ allowed-tools: "Bash,Agent,mcp__hex-line__read_file,mcp__hex-line__grep_search,m
 
 Diff-driven audit: find real transferable changes across hex-line-mcp, hex-ssh-mcp, hex-graph-mcp. Each delta is classified, not blindly ported.
 
+## Source
+
+| Field | Value |
+|-------|-------|
+| Source | Repo-maintained MCP maintenance command |
+| Review Contract | `skills-catalog/ln-162-skill-reviewer/references/command_review_criteria.md` |
+| MCP Guidance | `docs/best-practice/MCP_TOOL_DESIGN_GUIDE.md` |
+
+## Command Actions
+
+- Audit current hex MCP deltas.
+- Compare transferable changes across sibling MCP servers.
+- Report concrete port, skip, or follow-up decisions.
+
 | Server | Directory | Tools | Role |
 |--------|-----------|-------|------|
 | hex-line-mcp | `mcp/hex-line-mcp/` | 11 | Local file ops (source of current deltas) |
@@ -130,3 +144,6 @@ List all files created or modified.
 **MANDATORY READ:** Load `shared/references/meta_analysis_protocol.md`
 
 Analyze this session per protocol. Output per protocol format.
+
+---
+**Last Updated:** 2026-04-12

@@ -424,7 +424,7 @@ Skills are designed for token efficiency. Each worker loads only the files it ne
 <details>
 <summary><b>Can I customize or create my own skills?</b></summary>
 
-Yes. Skills are markdown files in `.claude/commands/`. You can create standalone L3 workers or compose them into L2 coordinators and L1 orchestrators. See [SKILL_ARCHITECTURE_GUIDE.md](docs/architecture/SKILL_ARCHITECTURE_GUIDE.md) for the 4-level hierarchy (L0 → L1 → L2 → L3) and writing guidelines.
+Yes. Skills are `SKILL.md` files in skill directories. Legacy-compatible `.claude/commands/*.md` files still work as slash commands, but new reusable capabilities should use the skill structure. You can create standalone L3 workers or compose them into L2 coordinators and L1 orchestrators. See [SKILL_ARCHITECTURE_GUIDE.md](docs/architecture/SKILL_ARCHITECTURE_GUIDE.md) for the 4-level hierarchy (L0 → L1 → L2 → L3) and writing guidelines.
 
 </details>
 

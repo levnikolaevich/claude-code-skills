@@ -7,6 +7,14 @@ allowed-tools: Skill, Bash, Grep, Glob, Read, AskUserQuestion, mcp__hex-graph__i
 
 Universal review (`ln-162`) plus repo-specific checks for `claude-code-skills`.
 
+## Source
+
+| Field | Value |
+|-------|-------|
+| Source | Repo-maintained skill review command |
+| Primary Skill | `skills-catalog/ln-162-skill-reviewer/SKILL.md` |
+| Review Contract | `skills-catalog/shared/references/skill_contract.md` |
+
 ## Execution Strategy
 
 **Step 1 FIRST** - invoke `ln-162` via Skill tool. **Step 2** - run repo-specific checks in batches, not as one monolithic shell run. Combine both outputs in Step 3.
@@ -479,3 +487,6 @@ Compare phase names against CLI dispatch branches. Report phases with no handler
 **MANDATORY READ:** Load `skills-catalog/shared/references/meta_analysis_protocol.md`
 
 Analyze the session per protocol section 7. Output using the protocol format.
+
+---
+**Last Updated:** 2026-04-12

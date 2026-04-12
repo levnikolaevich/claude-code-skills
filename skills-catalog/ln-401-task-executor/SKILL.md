@@ -99,6 +99,10 @@ Step 2c: Implementation Blueprint
     **Risks:** {shared files with parallel tasks, if any}
   - Scope: ONLY files of this task. Do not analyze other tasks.
 
+  - **Checkpoint:** Emit PHASE_3 checkpoint with structured `blueprint` payload:
+    `{ "blueprint": { "change_order": [{ "file": "...", "action": "create|modify", "reason": "..." }] } }`
+    Guard blocks PHASE_4 if blueprint is missing from the checkpoint.
+
 Step 3: Start Work
   - Set task to In Progress, update kanban
 
@@ -114,6 +118,7 @@ Step 4: Implement
 
 Step 5: Quality
   - Run typecheck and lint (or project equivalents)
+  - 5b Blueprint Completion: compare actual changes to blueprint; emit blueprint_status in PHASE_6 checkpoint
 
 Step 6: Finish
   - Set task to To Review, update kanban
@@ -127,7 +132,7 @@ Step 6: Finish
 2c) **Implementation Blueprint:** From task "Affected Components", find actual file paths via Glob/Grep or narrow `inspect_path(path=<component dir>)`. Read key sections of each file. If task changes existing code in supported languages, build graph context once (`index_project`) and use path-scoped `find_symbols` / `inspect_symbol` for exact symbol identity plus `analyze_edit_region` before editing non-trivial ranges. If symbol discovery is truncated, refine to `name + file` or `workspace_qualified_name` before planning from it. Output structured plan: files to create/modify, change order (dependencies first), risks (shared files with parallel tasks, external callers, public API surfaces). Scope: this task only.
 3) **Start work:** Update this task to In Progress (Linear: update_issue; File: Edit status line); move it in kanban (keep Epic/Story indent).
 4) **Implement (with verification loop):** **Before writing new utilities/handlers**, Grep `src/` for existing patterns (error handling, validation, config access). Reuse if found; if not reusable, document rationale in code comment. For edits to existing functions, classes, routes, or middleware, run `analyze_edit_region` first and account for external callers, clone siblings, downstream flow, and public API risk. Follow checkboxes/plan; keep it simple; avoid hardcoded values; reuse existing components; update docs noted in Affected Components; update existing tests if impacted (no new tests here). Before creating service functions, apply Architecture Guard (cascade depth, interface honesty, flat orchestration; for frontend files: **MANDATORY READ** `shared/references/frontend_design_guide.md`, load design_guidelines.md if exists, verify composition/typography/WCAG rules). After implementation, execute `verify:` methods from task AC: test → run specified test; command → execute and check output; inspect → verify file/content exists. If any verify fails → fix before proceeding.
-5) **Quality:** Run typecheck and lint (or project equivalents); ensure instructions in Existing Code Impact are addressed.
+5) **Quality:** Run typecheck and lint (or project equivalents); ensure instructions in Existing Code Impact are addressed. **Blueprint Completion:** compare actual changes against blueprint from Step 2c — for each planned file mark completed or skipped (with justification), for each unplanned file mark added (with justification). Emit PHASE_6 checkpoint: `{ "blueprint_status": { "planned_count": N, "completed": [...], "skipped": [{"file":"...","justification":"..."}], "added": [{"file":"...","justification":"..."}], "completion_pct": N } }`. Guard blocks PHASE_7 if missing.
 6) **Finish:** Mark task To Review (Linear: update_issue; File: Edit status line); update kanban to To Review; add summary comment (what changed, tests run, docs touched).
 
 ## Pre-Submission Checklist
@@ -150,6 +155,7 @@ Before setting To Review, verify all items:
 | 7 | **Architecture guard** | Cascade depth <= 2 (leaf functions); no hidden writes in read-named functions; no service chains >= 3 in leaf functions (orchestrator imports exempt). Frontend files: composition, typography, WCAG per `shared/references/frontend_design_guide.md` |
 | 8 | **Destructive op safety** | If task has "Destructive Operation Safety" section: (1) backup step executed/planned before destructive code, (2) rollback mechanism exists in code, (3) environment guard present, (4) preview/dry-run evidence attached or referenced |
 | 9 | **Code efficiency** | No unnecessary intermediates, verbose patterns replaced by language idioms, no boilerplate framework handles (per `shared/references/code_efficiency_criterion.md`) |
+| 10 | **Blueprint complete** | All blueprint items completed or skipped with justification; `blueprint_status` emitted in PHASE_6 checkpoint |
 
 **MANDATORY READ:** Load `shared/references/destructive_operation_safety.md` for severity classification and safety requirements.
 

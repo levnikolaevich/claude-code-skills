@@ -29,11 +29,36 @@ try {
         "PHASE_7_WRITE_SUMMARY",
         "PHASE_8_SELF_CHECK",
     ];
+    // --- Blueprint guard test: PHASE_4 blocked without blueprint ---
+    const bpManifestPath = join(projectRoot, "bp-manifest.json");
+    writeJson(bpManifestPath, {});
+    run(["start", "--skill", "ln-401", "--task-id", "T-BP", "--manifest-file", bpManifestPath]);
+    for (const p of ["PHASE_0_CONFIG", "PHASE_1_RESOLVE_TASK", "PHASE_2_LOAD_CONTEXT", "PHASE_3_GOAL_GATE_BLUEPRINT"]) {
+        run(["checkpoint", "--skill", "ln-401", "--task-id", "T-BP", "--phase", p, "--payload", "{}"]);
+        const next = p === "PHASE_0_CONFIG" ? "PHASE_1_RESOLVE_TASK"
+            : p === "PHASE_1_RESOLVE_TASK" ? "PHASE_2_LOAD_CONTEXT"
+            : p === "PHASE_2_LOAD_CONTEXT" ? "PHASE_3_GOAL_GATE_BLUEPRINT" : null;
+        if (next) run(["advance", "--skill", "ln-401", "--task-id", "T-BP", "--to", next]);
+    }
+    const noBlueprint = run(["advance", "--skill", "ln-401", "--task-id", "T-BP", "--to", "PHASE_4_START_WORK"], { allowFailure: true });
+    if (noBlueprint.ok !== false || !/blueprint/i.test(noBlueprint.error || "")) {
+        throw new Error("Expected blueprint guard failure at PHASE_4");
+    }
+
+    // --- Summary guard test (existing): full run without recording summary ---
     for (let index = 0; index < phases.length; index += 1) {
         const phase = phases[index];
-        run(["checkpoint", "--skill", "ln-401", "--task-id", "T-NEG", "--phase", phase, "--payload", phase === "PHASE_8_SELF_CHECK"
-            ? "{\"pass\":true,\"final_result\":\"READY\"}"
-            : "{}"]);
+        let payload;
+        if (phase === "PHASE_8_SELF_CHECK") {
+            payload = "{\"pass\":true,\"final_result\":\"READY\"}";
+        } else if (phase === "PHASE_3_GOAL_GATE_BLUEPRINT") {
+            payload = JSON.stringify({ blueprint: { change_order: [{ file: "neg.ts", action: "create", reason: "test" }] } });
+        } else if (phase === "PHASE_6_QUALITY_AND_HANDOFF") {
+            payload = JSON.stringify({ blueprint_status: { planned_count: 1, completed: ["neg.ts"], skipped: [], added: [], completion_pct: 100 } });
+        } else {
+            payload = "{}";
+        }
+        run(["checkpoint", "--skill", "ln-401", "--task-id", "T-NEG", "--phase", phase, "--payload", payload]);
         if (phases[index + 1]) {
             run(["advance", "--skill", "ln-401", "--task-id", "T-NEG", "--to", phases[index + 1]]);
         }

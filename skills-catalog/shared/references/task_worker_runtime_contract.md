@@ -96,3 +96,5 @@ Standalone artifact path:
 - no `DONE` before self-check passes
 - `ln-401`, `ln-403`, and `ln-404` must emit `to_status = To Review`
 - `ln-402` must emit `to_status = Done | To Rework`
+- `ln-401` `PHASE_4_START_WORK` requires PHASE_3 checkpoint with `blueprint` payload (structured `change_order`)
+- `ln-401` `PHASE_7_WRITE_SUMMARY` requires PHASE_6 checkpoint with `blueprint_status` payload (completion metrics)

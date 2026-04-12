@@ -986,3 +986,63 @@ export const optimizationCycleSchema = {
         recorded_at: dateTimeSchema(),
     },
 };
+
+// ── Blueprint verification (ln-401 task executor) ──────────────────────────
+
+export const blueprintCheckpointPayloadSchema = {
+    type: "object",
+    required: ["blueprint"],
+    properties: {
+        blueprint: {
+            type: "object",
+            required: ["change_order"],
+            properties: {
+                change_order: {
+                    type: "array",
+                    items: {
+                        type: "object",
+                        required: ["file", "action"],
+                        properties: {
+                            file: { type: "string", minLength: 1 },
+                            action: { type: "string", enum: ["create", "modify"] },
+                            reason: { type: "string" },
+                        },
+                    },
+                    minItems: 1,
+                },
+            },
+        },
+    },
+};
+
+export const blueprintStatusSchema = {
+    type: "object",
+    required: ["planned_count", "completed", "skipped", "added", "completion_pct"],
+    properties: {
+        planned_count: { type: "integer", minimum: 0 },
+        completed: stringArraySchema(),
+        skipped: {
+            type: "array",
+            items: {
+                type: "object",
+                required: ["file", "justification"],
+                properties: {
+                    file: { type: "string", minLength: 1 },
+                    justification: { type: "string", minLength: 1 },
+                },
+            },
+        },
+        added: {
+            type: "array",
+            items: {
+                type: "object",
+                required: ["file", "justification"],
+                properties: {
+                    file: { type: "string", minLength: 1 },
+                    justification: { type: "string", minLength: 1 },
+                },
+            },
+        },
+        completion_pct: { type: "number", minimum: 0, maximum: 100 },
+    },
+};

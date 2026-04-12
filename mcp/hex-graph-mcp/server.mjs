@@ -35,10 +35,10 @@ import { result as mcpResult, errorResult } from "@levnikolaevich/hex-common/run
 
 // Graph envelope output schema — shared by all 14 tools
 const GRAPH_OUTPUT_SCHEMA = z.object({
-    status: z.string(),
+    status: z.enum(["OK", "ERROR"]),
     query: z.record(z.string(), z.unknown()).optional(),
     result: z.unknown().optional(),
-    confidence: z.number().optional(),
+    confidence: z.string().optional(),
     reason: z.string().optional(),
     evidence: z.array(z.unknown()).optional(),
     limits_applied: z.record(z.string(), z.unknown()).optional(),

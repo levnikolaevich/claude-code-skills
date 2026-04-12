@@ -103,8 +103,8 @@ async function sshExec(args, command) {
 /**
  * Standard error response.
  */
-function errResult(msg) {
-    return errorResult("GENERIC", msg, "Check SSH connection");
+function errResult(msg, code = "GENERIC") {
+    return errorResult(code, msg, "Check SSH connection");
 }
 
 function sshError(code, message, recovery) {
@@ -112,10 +112,11 @@ function sshError(code, message, recovery) {
 }
 
 function okResult(structured) {
-    const large = typeof structured === "object" && JSON.stringify(structured).length > 50_000;
-    return result(typeof structured === "string"
+    const payload = typeof structured === "string"
         ? { status: "OK", content: structured }
-        : { status: "OK", ...structured }, { large });
+        : { status: "OK", ...structured };
+    const textField = payload.content || payload.stdout || "";
+    return result(payload, { large: textField.length > 50_000 });
 }
 
 function transferError(code, message) {
@@ -131,7 +132,7 @@ function transferError(code, message) {
     if (code === "TRANSFER_FAILED") {
         return sshError(code, message, "Check SSH permissions, disk space, and destination parent directory");
     }
-    return errResult(`${code}: ${message}`);
+    return errResult(message, code);
 }
 
 function requirePosixRemotePath(args, filePath, label = "filePath") {

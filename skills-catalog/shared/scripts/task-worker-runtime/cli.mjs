@@ -72,6 +72,13 @@ function resolveRun(projectRoot) {
 
 function applyCheckpointToState(state, phase, payload) {
     const nextState = { ...state };
+    if (phase === "PHASE_3_GOAL_GATE_BLUEPRINT" && payload.blueprint) {
+        nextState.blueprint_recorded = true;
+    }
+    if (phase === "PHASE_6_QUALITY_AND_HANDOFF" && payload.blueprint_status) {
+        nextState.blueprint_verified = true;
+        nextState.blueprint_completion_pct = payload.blueprint_status.completion_pct ?? null;
+    }
     if (phase.endsWith("SELF_CHECK")) {
         nextState.self_check_passed = payload.pass === true;
         nextState.final_result = payload.final_result || nextState.final_result;

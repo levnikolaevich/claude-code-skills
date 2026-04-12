@@ -67,9 +67,16 @@ try {
         const phases = getWorkerPhases(skill);
         for (let index = 0; index < phases.length; index += 1) {
             const phase = phases[index];
-            const payload = phase.endsWith("SELF_CHECK")
-                ? JSON.stringify({ pass: true, final_result: "READY" })
-                : "{}";
+            let payload;
+            if (phase.endsWith("SELF_CHECK")) {
+                payload = JSON.stringify({ pass: true, final_result: "READY" });
+            } else if (skill === "ln-401" && phase === "PHASE_3_GOAL_GATE_BLUEPRINT") {
+                payload = JSON.stringify({ blueprint: { change_order: [{ file: "test.ts", action: "create", reason: "test" }] } });
+            } else if (skill === "ln-401" && phase === "PHASE_6_QUALITY_AND_HANDOFF") {
+                payload = JSON.stringify({ blueprint_status: { planned_count: 1, completed: ["test.ts"], skipped: [], added: [], completion_pct: 100 } });
+            } else {
+                payload = "{}";
+            }
             run(["checkpoint", "--skill", skill, "--task-id", taskId, "--phase", phase, "--payload", payload]);
             if (phase.includes("WRITE_SUMMARY")) {
                 run(["record-summary", "--skill", skill, "--task-id", taskId, "--payload", JSON.stringify(buildSummary(skill, childRunId, taskId, toStatus))]);

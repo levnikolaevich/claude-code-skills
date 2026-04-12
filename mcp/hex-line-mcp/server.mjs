@@ -88,7 +88,7 @@ server.registerTool("read_file", {
         status: STATUS_ENUM,
         path: z.string().optional(),
         paths: z.array(z.string()).optional(),
-        content: z.string(),
+        content: z.string().optional(),
         edit_ready: z.boolean().optional(),
         next_action: z.string().optional(),
         error: ERROR_SHAPE,
@@ -161,7 +161,7 @@ server.registerTool("edit_file", {
         conflict_policy: z.enum(["strict", "conservative"]).optional().describe('Conflict handling (default: "conservative"). "conservative" returns structured CONFLICT output with recovery_ranges, retry_edit/retry_edits, suggested_read_call, and retry_plan when available.'),
         allow_external: flexBool().describe("Allow editing a path outside the current project root. Use only when you intentionally target a temp or external file."),
     }),
-    outputSchema: z.object({ status: STATUS_ENUM, path: z.string().optional(), content: z.string(), next_action: z.string().optional(), error: ERROR_SHAPE }),
+    outputSchema: z.object({ status: STATUS_ENUM, path: z.string().optional(), content: z.string().optional(), next_action: z.string().optional(), error: ERROR_SHAPE }),
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
 }, async (rawParams) => {
     const { path: p, edits: json, dry_run, restore_indent, base_revision, conflict_policy, allow_external } = rawParams ?? {};
@@ -196,7 +196,7 @@ server.registerTool("write_file", {
         content: z.string().describe("File content"),
         allow_external: flexBool().describe("Allow writing a path outside the current project root. Use only when you intentionally target a temp or external file."),
     }),
-    outputSchema: z.object({ status: STATUS_ENUM, path: z.string(), lines: z.number(), error: ERROR_SHAPE }),
+    outputSchema: z.object({ status: STATUS_ENUM, path: z.string().optional(), lines: z.number().optional(), error: ERROR_SHAPE }),
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
 }, async (rawParams) => {
     const { path: p, content, allow_external } = rawParams ?? {};
@@ -237,7 +237,7 @@ server.registerTool("grep_search", {
         edit_ready: flexBool().describe("Preserve hash/checksum search hunks in `content` mode. Default: false."),
         allow_large_output: flexBool().describe("Bypass the default content-mode block/char caps when you intentionally need a larger payload."),
     }),
-    outputSchema: z.object({ status: STATUS_ENUM, pattern: z.string().optional(), content: z.string(), next_action: z.string().optional(), error: ERROR_SHAPE }),
+    outputSchema: z.object({ status: STATUS_ENUM, pattern: z.string().optional(), content: z.string().optional(), next_action: z.string().optional(), error: ERROR_SHAPE }),
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true },
 }, async (rawParams) => {
     const { pattern, path: p, glob, type, output, case_insensitive, smart_case, literal, multiline,
@@ -269,7 +269,7 @@ server.registerTool("outline", {
     inputSchema: z.object({
         path: z.string().describe("Source file path"),
     }),
-    outputSchema: z.object({ status: STATUS_ENUM, path: z.string().optional(), content: z.string(), error: ERROR_SHAPE }),
+    outputSchema: z.object({ status: STATUS_ENUM, path: z.string().optional(), content: z.string().optional(), error: ERROR_SHAPE }),
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
 }, async (rawParams) => {
     const { path: p } = rawParams ?? {};
@@ -292,7 +292,7 @@ server.registerTool("verify", {
         checksums: z.array(z.string()).describe('Checksum strings, e.g. ["1-50:f7e2a1b0", "51-100:abcd1234"]'),
         base_revision: z.string().optional().describe("Optional prior revision to compare against latest state."),
     }),
-    outputSchema: z.object({ status: STATUS_ENUM, path: z.string().optional(), content: z.string(), error: ERROR_SHAPE }),
+    outputSchema: z.object({ status: STATUS_ENUM, path: z.string().optional(), content: z.string().optional(), error: ERROR_SHAPE }),
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
 }, async (rawParams) => {
     const { path: p, checksums, base_revision } = rawParams ?? {};
@@ -324,7 +324,7 @@ server.registerTool("inspect_path", {
         format: z.enum(["compact", "full"]).optional().describe('"compact" = shorter path view, "full" = include sizes/metadata where available'),
         verbosity: z.enum(["minimal", "compact", "full"]).optional().describe("Response budget. `minimal` returns the shortest tree summary."),
     }),
-    outputSchema: z.object({ status: STATUS_ENUM, path: z.string().optional(), content: z.string(), next_action: z.string().optional(), error: ERROR_SHAPE }),
+    outputSchema: z.object({ status: STATUS_ENUM, path: z.string().optional(), content: z.string().optional(), next_action: z.string().optional(), error: ERROR_SHAPE }),
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true },
 }, async (rawParams) => {
     const { path: p, max_depth, max_entries, gitignore, format, pattern, type: entryType, verbosity } = rawParams ?? {};
@@ -355,7 +355,7 @@ server.registerTool("changes", {
         path: z.string().describe("File or directory path"),
         compare_against: z.string().optional().describe('Git ref to compare against (default: "HEAD")'),
     }),
-    outputSchema: z.object({ status: STATUS_ENUM, path: z.string().optional(), content: z.string(), next_action: z.string().optional(), error: ERROR_SHAPE }),
+    outputSchema: z.object({ status: STATUS_ENUM, path: z.string().optional(), content: z.string().optional(), next_action: z.string().optional(), error: ERROR_SHAPE }),
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true },
 }, async (rawParams) => {
     const { path: p, compare_against } = rawParams ?? {};
@@ -382,7 +382,7 @@ server.registerTool("bulk_replace", {
         format: z.enum(["compact", "full"]).optional().describe('"compact" (default) = summary only, "full" = include capped diffs'),
         allow_external: flexBool().describe("Allow a replacement root outside the current project root. Use only when you intentionally target a temp or external directory."),
     }),
-    outputSchema: z.object({ status: STATUS_ENUM, path: z.string().optional(), content: z.string(), next_action: z.string().optional(), error: ERROR_SHAPE }),
+    outputSchema: z.object({ status: STATUS_ENUM, path: z.string().optional(), content: z.string().optional(), next_action: z.string().optional(), error: ERROR_SHAPE }),
     annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: false },
 }, async (rawParams) => {
     try {

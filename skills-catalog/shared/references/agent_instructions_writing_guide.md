@@ -111,7 +111,7 @@ If you find yourself writing the same rule into both AGENTS.md and CLAUDE.md, th
 | Hand-maintained "Self-Improvement Loop" / `tasks/lessons.md` section | Claude Code's built-in auto memory already does this (Anthropic docs); a parallel convention wastes context and diverges over time | Delete the section; rely on `~/.claude/projects/<project>/memory/` |
 | Large HTML comment blocks at the top of CLAUDE.md for documentation | Block-level HTML comments are stripped before context injection *(Anthropic docs)*, so they cost zero context tokens, but they still clutter the maintainer view of the file | Short maintainer notes only; put detailed guide content in `agent_instructions_writing_guide.md` and point to it |
 | Using `/init` without review | `/init` can insert boilerplate that reduces the signal-to-noise ratio of a high-leverage file; bad lines in CLAUDE.md cascade into every future session | Use `CLAUDE_CODE_NEW_INIT=1` for the interactive multi-phase flow with a reviewable proposal, or author by hand |
-| Aggregate counts in instruction files (`"we have 137 skills"`) | Changes every time the repo grows, breaks prompt cache prefix match | Put counts only in README.md badges; everywhere else use qualitative descriptions |
+| Aggregate counts in instruction files (`"we have many skills"`) | Changes every time the repo grows, breaks prompt cache prefix match | Put counts only in README.md badges; everywhere else use qualitative descriptions |
 | Timestamps and dates inside the rules text | Same cache-prefix problem | Keep `**Last Updated:** YYYY-MM-DD` at file end only |
 
 ## Optional Hosni workflow blocks — opt-in, not default

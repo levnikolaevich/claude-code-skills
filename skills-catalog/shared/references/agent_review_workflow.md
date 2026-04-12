@@ -2,7 +2,7 @@
 
 Common workflow for all agent review workers. Each skill provides parameters and unique logic; this reference defines the shared execution mechanics.
 
-> **Preferred orchestration path:** Coordinators that need deterministic phase control should use `shared/references/review_runtime_contract.md` plus `shared/scripts/review-runtime/cli.mjs`. This file defines the shared review mechanics; runtime-enabled skills persist state/checkpoints instead of relying on conversational memory.
+> **Preferred orchestration path:** Evaluation-platform coordinators that need deterministic phase control should use `shared/references/evaluation_coordinator_runtime_contract.md` plus `shared/scripts/evaluation-runtime/cli.mjs`. This file defines shared review mechanics; runtime-enabled skills persist state/checkpoints instead of relying on conversational memory.
 
 ## Parameters (provided by each skill)
 
@@ -99,8 +99,8 @@ node shared/agents/agent_runner.mjs --agent {agent_name} \
 Repeat for each available agent (names from `--list-agents`).
 
 **Runtime-first monitoring (preferred):**
-- Register each launched agent in review runtime with prompt/result/log/metadata paths
-- Use `node shared/scripts/review-runtime/cli.mjs sync-agent --skill {skill}` before merge gates
+- Register each launched agent in the active coordinator runtime with prompt/result/log/metadata paths
+- Evaluation-platform validators use `node shared/scripts/evaluation-runtime/cli.mjs sync-agent --skill {skill} --identifier {identifier}` before merge gates
 - Merge is allowed only after every required agent is `result_ready | dead | failed | skipped`
 
 **Log-based monitoring (legacy/manual path):**
@@ -111,7 +111,7 @@ Repeat for each available agent (names from `--list-agents`).
 - Do NOT poll in a sleep-loop — the framework sends background task notifications automatically
 - When each agent completes, immediately output: `"Agent {name} completed ({duration}s). {N} suggestions found."` Then proceed to parse results.
 
-> **BLOCKING MODEL:** Background agents enable foreground work in parallel. But before merging results (Critical Verification step), ALL agents must be **resolved**. For runtime-enabled skills, resolve from metadata + result files via review runtime. For legacy/manual skills, use the liveness protocol below. Do NOT begin Critical Verification until this condition is met for every launched agent.
+> **BLOCKING MODEL:** Background agents enable foreground work in parallel. But before merging results (Critical Verification step), ALL agents must be **resolved**. Runtime-enabled skills resolve from metadata + result files through their active coordinator runtime. Manual, non-runtime skills use the liveness protocol below. Do NOT begin Critical Verification until this condition is met for every launched agent.
 
 
 **Agent Liveness Protocol (MANDATORY before declaring agent failed/timed out):**
@@ -331,7 +331,7 @@ After returning results, run meta-analysis on agent delegation effectiveness: co
 ## Output Schema (common structure)
 
 `runtime_status` follows `shared/references/runtime_status_catalog.md`.
-`execution_outcome` is runner-local transport telemetry, not a review-runtime enum.
+`execution_outcome` is runner-local transport telemetry, not a coordinator runtime enum.
 
 ```yaml
 verdict: "{verdict_acceptable} | SUGGESTIONS | SKIPPED"
@@ -367,7 +367,7 @@ refinement:
 
 ## Shared Reference Files
 
-- **Review runtime contract:** `shared/references/review_runtime_contract.md`
+- **Evaluation runtime contract:** `shared/references/evaluation_coordinator_runtime_contract.md`
 - **Agent delegation pattern:** `shared/references/agent_delegation_pattern.md`
 - **Review base template:** `shared/agents/prompt_templates/review_base.md`
 - **Review mode files:** `shared/agents/prompt_templates/modes/` (code.md, story.md, context.md)

@@ -51,11 +51,11 @@ Extract: `task_provider` = Task Management → Provider (`linear` | `file`).
 ## Workflow (concise)
 1) **Resolve taskId:** Run Task Resolution Chain per guide (status filter: [Todo, label: tests]).
 2) **Load task:** Fetch full test task description (Linear: get_issue; File: Read task file); read linked guides/manuals/ADRs/research; review parent Story and manual test results if provided.
-2b) **Goal gate:** **MANDATORY READ:** `shared/references/goal_articulation_gate.md` — State REAL GOAL of these tests (which business behavior must be verified, not "write tests"). NOT THE GOAL: testing infrastructure or framework behavior instead of business logic. HIDDEN CONSTRAINT: which existing tests might break from implementation changes.
+2b) **Goal gate:** **MANDATORY READ:** Load `shared/references/goal_articulation_gate.md` — State REAL GOAL of these tests (which business behavior must be verified, not "write tests"). NOT THE GOAL: testing infrastructure or framework behavior instead of business logic. HIDDEN CONSTRAINT: which existing tests might break from implementation changes.
 3) **Read environment docs:** **Read `docs/project/infrastructure.md`** — get server IPs, ports, service endpoints. **Read `docs/project/runbook.md`** — understand test environment setup, Docker commands, test execution prerequisites. Use exact commands from runbook.
 4) **Validate plan:** Check Priority ≥15 coverage and Usefulness Criteria; ensure focus on business flows (no infra-only tests).
 5) **Start work:** Set task In Progress (Linear: update_issue; File: Edit status line); move in kanban.
-6) **Implement & run:** **MANDATORY READ:** `shared/references/code_efficiency_criterion.md` — Author/update tests per plan; reuse existing fixtures/helpers; run tests; fix failing existing tests; update infra/doc sections as required. Before handoff, verify 3 efficiency self-checks (especially: reuse fixtures instead of duplicating setup).
+6) **Implement & run:** **MANDATORY READ:** Load `shared/references/code_efficiency_criterion.md` — Author/update tests per plan; reuse existing fixtures/helpers; run tests; fix failing existing tests; update infra/doc sections as required. Before handoff, verify 3 efficiency self-checks (especially: reuse fixtures instead of duplicating setup).
 7) **Complete:** Ensure counts/priority still within limits; set task To Review; move in kanban; add comment summarizing coverage, commands run, and any deviations.
 
 ## Critical Rules
@@ -146,7 +146,7 @@ Shared contract:
 - **Environment state:** `shared/references/environment_state_contract.md`
 - **Storage mode operations:** `shared/references/storage_mode_detection.md`
 - Kanban format: `docs/tasks/kanban_board.md`
-- **MANDATORY READ:** `shared/references/research_tool_fallback.md`
+- **MANDATORY READ:** Load `shared/references/research_tool_fallback.md`
 
 ---
 **Version:** 3.2.0

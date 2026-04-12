@@ -1,31 +1,38 @@
 # Audit Summary Contract
 
-Machine-readable summary contract for 6XX audit workers.
+Audit payload rules for 6XX workers running on the evaluation-worker summary envelope.
 
-Audit coordinators consume JSON summaries first and read markdown worker reports only for detailed evidence.
+Audit coordinators consume evaluation-worker JSON summaries first and read markdown worker reports only for detailed evidence.
 
 ## Envelope
 
-Audit workers use the shared coordinator envelope:
+Audit workers use the shared evaluation-worker envelope:
 
 ```json
 {
   "schema_version": "1.0.0",
-  "summary_kind": "audit-worker",
+  "summary_kind": "evaluation-worker",
   "run_id": "ln-620-global-...",
   "identifier": "global",
   "producer_skill": "ln-621",
   "produced_at": "2026-03-27T10:00:00Z",
-  "payload": {}
+  "payload": {
+    "worker": "ln-621",
+    "status": "completed",
+    "operation": "auditing",
+    "warnings": [],
+    "audit": {}
+  }
 }
 ```
 
 Rules:
-- `summary_kind` for 6XX workers is `audit-worker`.
+- `summary_kind` for 6XX workers is `evaluation-worker`.
 - `run_id` is mandatory for every audit summary envelope.
 - If the caller does not pass `runId`, the worker generates a standalone `run_id` before emitting the summary.
 - `identifier` must be stable inside the run.
 - Use the domain or target only. Worker disambiguation belongs in the artifact filename, not the envelope identifier.
+- Audit-specific fields live under `payload.audit`; the top-level payload keeps the required evaluation-worker fields.
 
 Examples:
 - `docs-readme`
@@ -34,11 +41,10 @@ Examples:
 
 ## Payload
 
-Required payload fields:
+Required `payload.audit` fields:
 
 ```json
 {
-  "status": "completed",
   "category": "Security",
   "report_path": ".hex-skills/runtime-artifacts/runs/<run_id>/audit-report/ln-621--global.md",
   "score": 8.5,
@@ -48,12 +54,11 @@ Required payload fields:
     "high": 1,
     "medium": 2,
     "low": 0
-  },
-  "warnings": []
+  }
 }
 ```
 
-Allowed `status` values:
+Allowed `payload.status` values:
 - `completed` - worker finished normally and produced a usable report
 - `skipped` - worker was intentionally skipped for scope or applicability reasons
 - `error` - worker could not finish normally; report may contain partial evidence
@@ -90,5 +95,5 @@ The markdown report remains the evidence artifact for findings tables and extend
 
 ## Canonical Paths
 
-- managed: `.hex-skills/runtime-artifacts/runs/{parent_run_id}/audit-worker/{worker}--{identifier}.json`
-- standalone: `.hex-skills/runtime-artifacts/runs/{run_id}/audit-worker/{worker}--{identifier}.json`
+- managed: `.hex-skills/runtime-artifacts/runs/{parent_run_id}/evaluation-worker/{worker}--{identifier}.json`
+- standalone: `.hex-skills/runtime-artifacts/runs/{run_id}/evaluation-worker/{worker}--{identifier}.json`

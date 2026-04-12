@@ -8,12 +8,12 @@ Delivery is split between:
 
 ## Runtime Output Layout
 
-Workers write markdown reports to `.hex-skills/runtime-artifacts/runs/{run_id}/audit-report/` and JSON summaries to `.hex-skills/runtime-artifacts/runs/{run_id}/audit-worker/`.
+Workers write markdown reports to `.hex-skills/runtime-artifacts/runs/{run_id}/audit-report/` and JSON summaries to `.hex-skills/runtime-artifacts/runs/{run_id}/evaluation-worker/`.
 
 **Contracts:**
 - JSON transport: `shared/references/audit_summary_contract.md`
 - markdown evidence template: `shared/templates/audit_worker_report_template.md`
-- runtime orchestration: `shared/references/audit_runtime_contract.md`
+- runtime orchestration: `shared/references/evaluation_coordinator_runtime_contract.md` and `shared/references/evaluation_worker_runtime_contract.md`
 
 ### Worker Return (Fallback)
 
@@ -35,11 +35,11 @@ Score: 6.0/10 (C:72 K:85 Q:68 I:90) | Issues: 3 (H:1 M:2 L:0)
 
 | Coordinator | Workers | Report Dir | Summary Dir |
 |-------------|---------|------------|-------------|
-| ln-610 (4 workers) | ln-611..ln-614 | `.hex-skills/runtime-artifacts/runs/{run_id}/audit-report/` | `.hex-skills/runtime-artifacts/runs/{run_id}/audit-worker/` |
-| ln-620 (9 workers) | ln-621..ln-629 | `.hex-skills/runtime-artifacts/runs/{run_id}/audit-report/` | `.hex-skills/runtime-artifacts/runs/{run_id}/audit-worker/` |
-| ln-630 (7 workers) | ln-631..ln-637 | `.hex-skills/runtime-artifacts/runs/{run_id}/audit-report/` | `.hex-skills/runtime-artifacts/runs/{run_id}/audit-worker/` |
-| ln-640 (7 workers) | ln-641..ln-647 | `.hex-skills/runtime-artifacts/runs/{run_id}/audit-report/` | `.hex-skills/runtime-artifacts/runs/{run_id}/audit-worker/` |
-| ln-650 (4 workers) | ln-651..ln-654 | `.hex-skills/runtime-artifacts/runs/{run_id}/audit-report/` | `.hex-skills/runtime-artifacts/runs/{run_id}/audit-worker/` |
+| ln-610 (4 workers) | ln-611..ln-614 | `.hex-skills/runtime-artifacts/runs/{run_id}/audit-report/` | `.hex-skills/runtime-artifacts/runs/{run_id}/evaluation-worker/` |
+| ln-620 (9 workers) | ln-621..ln-629 | `.hex-skills/runtime-artifacts/runs/{run_id}/audit-report/` | `.hex-skills/runtime-artifacts/runs/{run_id}/evaluation-worker/` |
+| ln-630 (7 workers) | ln-631..ln-637 | `.hex-skills/runtime-artifacts/runs/{run_id}/audit-report/` | `.hex-skills/runtime-artifacts/runs/{run_id}/evaluation-worker/` |
+| ln-640 (7 workers) | ln-641..ln-647 | `.hex-skills/runtime-artifacts/runs/{run_id}/audit-report/` | `.hex-skills/runtime-artifacts/runs/{run_id}/evaluation-worker/` |
+| ln-650 (4 workers) | ln-651..ln-654 | `.hex-skills/runtime-artifacts/runs/{run_id}/audit-report/` | `.hex-skills/runtime-artifacts/runs/{run_id}/evaluation-worker/` |
 
 Public history is preserved in consolidated outputs such as `docs/project/.audit/results_log.md`, not in dated worker staging folders.
 

@@ -2,7 +2,7 @@
 
 Standard pattern for skills delegating work to external CLI AI agents (Codex, Gemini) via `shared/agents/agent_runner.mjs`.
 
-For deterministic orchestration, pair this file with `shared/references/review_runtime_contract.md`. Runtime-enabled skills keep agent state in `.hex-skills/agent-review/runtime/` and use `--metadata-file` for launch/finish bookkeeping.
+For deterministic orchestration, pair this file with the active coordinator runtime contract for the skill family. Evaluation-platform validators use `shared/references/evaluation_coordinator_runtime_contract.md`, keep run state in `.hex-skills/evaluation/`, and use `--metadata-file` for launch/finish bookkeeping.
 
 ## When to Use
 

@@ -13,7 +13,6 @@ const selfPath = normalizePath(fileURLToPath(import.meta.url));
 const allowedLegacyPhaseDocs = new Set([
     selfPath,
     normalizePath(join(skillsRepoRoot, "shared/references/runtime_status_catalog.md")),
-    normalizePath(join(skillsRepoRoot, "shared/references/review_runtime_contract.md")),
 ]);
 
 const workerRuntimeWiringDocs = new Map([

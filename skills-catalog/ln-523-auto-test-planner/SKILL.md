@@ -255,7 +255,7 @@ Delegated child worker rules:
 - **Auto-discovery patterns:** `shared/references/auto_discovery_pattern.md`
 - **Test task template:** `shared/templates/test_task_template.md` (workers ln-301/ln-302 load via Template Loading)
 - **Testing examples:** `references/risk_based_testing_examples.md`
-- **MANDATORY READ:** `shared/references/research_tool_fallback.md`
+- **MANDATORY READ:** Load `shared/references/research_tool_fallback.md`
 
 ## Critical Rules
 

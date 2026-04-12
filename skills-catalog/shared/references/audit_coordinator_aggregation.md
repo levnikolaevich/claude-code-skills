@@ -8,8 +8,8 @@ Use one run-scoped artifact directory per run:
 
 ```text
 .hex-skills/runtime-artifacts/runs/{run_id}/audit-report/
-.hex-skills/runtime-artifacts/runs/{run_id}/audit-worker/
-.hex-skills/runtime-artifacts/runs/{run_id}/audit-coordinator/
+.hex-skills/runtime-artifacts/runs/{run_id}/evaluation-worker/
+.hex-skills/runtime-artifacts/runs/{run_id}/evaluation-coordinator/
 ```
 
 Rules:
@@ -22,7 +22,7 @@ Prefer JSON worker summaries for numbers:
 
 ```json
 {
-  "summary_kind": "audit-worker",
+  "summary_kind": "evaluation-worker",
   "identifier": "global",
   "payload": {
     "report_path": ".hex-skills/runtime-artifacts/runs/{run_id}/audit-report/ln-621--global.md",
@@ -92,10 +92,10 @@ After the results-log row is appended and the coordinator summary is written, de
 
 ```bash
 rm -rf .hex-skills/runtime-artifacts/runs/{run_id}/audit-report
-rm -rf .hex-skills/runtime-artifacts/runs/{run_id}/audit-worker
+rm -rf .hex-skills/runtime-artifacts/runs/{run_id}/evaluation-worker
 ```
 
-This removes run-scoped worker markdown reports and JSON summaries. The coordinator summary artifact stays in `.hex-skills/runtime-artifacts/runs/{run_id}/audit-coordinator/`.
+This removes run-scoped worker markdown reports and JSON summaries. The coordinator summary artifact stays in `.hex-skills/runtime-artifacts/runs/{run_id}/evaluation-coordinator/`.
 
 Do NOT delete `docs/project/.audit/results_log.md` — it lives outside the dated directory.
 

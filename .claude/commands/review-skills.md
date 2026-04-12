@@ -23,7 +23,7 @@ Run repo-specific checks in grouped passes:
 
 1. `R1-R16` static and contract checks
 2. `R17` runtime tests in batches by runtime family or coordinator/worker group
-3. `R18-R22` contract-sync checks
+3. `R18-R26` contract-sync and drift checks
 
 Do not paste one giant all-repo script into a single shell session when the scope is large.
 
@@ -212,12 +212,9 @@ run_r17_batch() {
 }
 
 run_r17_batch "docs+audit" \
-  skills-catalog/shared/scripts/audit-runtime/test/*.mjs \
-  skills-catalog/shared/scripts/audit-worker-runtime/test/*.mjs \
   skills-catalog/shared/scripts/docs-pipeline-runtime/test/*.mjs \
   skills-catalog/shared/scripts/docs-quality/test/*.mjs \
-  skills-catalog/shared/scripts/docs-runtime/test/*.mjs \
-  skills-catalog/shared/scripts/review-runtime/test/*.mjs
+  skills-catalog/shared/scripts/docs-runtime/test/*.mjs
 
 run_r17_batch "planning+story" \
   skills-catalog/shared/scripts/epic-planning-runtime/test/*.mjs \
@@ -312,6 +309,29 @@ for guards in skills-catalog/shared/scripts/*-runtime/lib/guards.mjs; do
   grep -q 'final_result' "$guards" || { R22_FAILS=$((R22_FAILS + 1)); echo "  R22: missing in $(dirname $(dirname $guards))" >&2; }
 done
 [ "$R22_FAILS" -eq 0 ] && add_result R22 "final_result guard on DONE" PASS || add_result R22 "final_result guard on DONE" "FAIL ($R22_FAILS missing)"
+
+# === R23: No legacy review/audit runtimes in active docs ===
+R23_FAILS=$(rg -n 'review-runtime|audit-runtime|audit-worker-runtime|review_runtime_contract|audit_runtime_contract|audit_worker_runtime_contract' AGENTS.md README.md docs skills-catalog .claude/commands --glob '!CHANGELOG.md' --glob '!.claude/commands/review-skills.md' 2>/dev/null | wc -l)
+[ "$R23_FAILS" -eq 0 ] && add_result R23 "No legacy review/audit runtimes" PASS || add_result R23 "No legacy review/audit runtimes" "FAIL ($R23_FAILS active refs)"
+
+# === R24: No hardcoded skill counts outside README badge ===
+R24_FAILS=0
+if [ -f README.md ]; then
+  R24_FAILS=$((R24_FAILS + $(rg -n '(^|[^A-Za-z0-9/])[0-9]+ skills' README.md 2>/dev/null | grep -v 'img.shields.io/badge/skills-' | wc -l)))
+fi
+R24_FAILS=$((R24_FAILS + $(rg -n '(^|[^A-Za-z0-9/])[0-9]+ skills|skills-[0-9]+' AGENTS.md docs skills-catalog .claude/commands --glob '!.claude/commands/review-skills.md' 2>/dev/null | wc -l)))
+[ "$R24_FAILS" -eq 0 ] && add_result R24 "No hardcoded skill counts" PASS || add_result R24 "No hardcoded skill counts" "FAIL ($R24_FAILS count refs outside badge)"
+
+# === R25: Exact MANDATORY READ pattern ===
+R25_FAILS=$(rg -n 'MANDATORY READ (per|for|when)|MANDATORY READ: (?!Load )|\*\*MANDATORY READ:\*\* (?!Load )' skills-catalog --glob 'SKILL.md' -P 2>/dev/null | wc -l)
+[ "$R25_FAILS" -eq 0 ] && add_result R25 "Exact MANDATORY READ pattern" PASS || add_result R25 "Exact MANDATORY READ pattern" "FAIL ($R25_FAILS nonstandard patterns)"
+
+# === R26: MCP output contract checker ===
+if [ -f mcp/check-output-contracts.mjs ]; then
+  node mcp/check-output-contracts.mjs >/dev/null 2>&1 && add_result R26 "MCP output contract checker" PASS || add_result R26 "MCP output contract checker" FAIL
+else
+  add_result R26 "MCP output contract checker" SKIP
+fi
 echo ""
 echo "## Repo-Specific Review -- claude-code-skills"
 echo ""

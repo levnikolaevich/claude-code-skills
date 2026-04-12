@@ -8,7 +8,7 @@ Use this contract for:
 - repository audits
 - optimization-plan feasibility review
 
-Do not mix `review-runtime`, `quality-runtime`, and `audit-runtime` semantics in new coordinators. New work uses `evaluation-runtime`.
+Evaluation coordinators must use `evaluation-runtime` semantics only.
 
 ## Goals
 

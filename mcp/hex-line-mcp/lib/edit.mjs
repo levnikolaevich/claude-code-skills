@@ -1223,6 +1223,7 @@ export function editFile(filePath, edits, opts = {}) {
         let msg = `status: ${autoRebased ? STATUS.AUTO_REBASED : STATUS.OK}\nreason: ${REASON.DRY_RUN_PREVIEW}\nrevision: ${currentSnapshot.revision}\nfile: ${currentSnapshot.fileChecksum}`;
         if (staleRevision && hasBaseSnapshot) msg += `\nchanged_ranges: ${describeChangedRanges(changedRanges)}`;
         msg += `\nsummary: lines_changed=${changedSpan} diff_entries=${diffEntryCount} lines_after=${lines.length}`;
+        msg += `\nnext_action: ${ACTION.KEEP_USING}`;
         msg += `\npayload_sections: ${payloadSections(displayDiff ? ["diff"] : [])}`;
         msg += "\ngraph_enrichment: unavailable";
         msg += "\nsemantic_impact_count: 0";
@@ -1245,6 +1246,7 @@ export function editFile(filePath, edits, opts = {}) {
     if (autoRebased && staleRevision && hasBaseSnapshot) {
         msg += `\nchanged_ranges: ${describeChangedRanges(changedRanges)}`;
     }
+    msg += `\nnext_action: ${ACTION.KEEP_USING}`;
     if (remaps.length > 0) {
         msg += `\nremapped_refs:\n${remaps.map(({ from, to }) => `${from} -> ${to}`).join("\n")}`;
     }

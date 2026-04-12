@@ -16,17 +16,29 @@ import {
 } from "../../../shared/scripts/coordinator-runtime/test/cli-test-helpers.mjs";
 import { PHASES as PIPELINE_PHASES } from "../lib/phases.mjs";
 import { PHASES as TASK_PLANNING_PHASES } from "../../../shared/scripts/task-planning-runtime/lib/phases.mjs";
-import { PHASES as REVIEW_PHASES } from "../../../shared/scripts/review-runtime/lib/phases.mjs";
 import { PHASES as EXECUTION_PHASES } from "../../../shared/scripts/story-execution-runtime/lib/phases.mjs";
 import { PHASES as GATE_PHASES } from "../../../shared/scripts/story-gate-runtime/lib/phases.mjs";
 
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
 const pipelineCliPath = join(__dirname, "..", "cli.mjs");
 const taskPlanningCliPath = join(__dirname, "../../../shared/scripts/task-planning-runtime/cli.mjs");
-const reviewCliPath = join(__dirname, "../../../shared/scripts/review-runtime/cli.mjs");
+const reviewCliPath = join(__dirname, "../../../shared/scripts/evaluation-runtime/cli.mjs");
 const executionCliPath = join(__dirname, "../../../shared/scripts/story-execution-runtime/cli.mjs");
 const gateCliPath = join(__dirname, "../../../shared/scripts/story-gate-runtime/cli.mjs");
 const FIXED_TIME = "2026-04-06T00:00:00Z";
+const REVIEW_PHASES = {
+    CONFIG: "PHASE_0_CONFIG",
+    DISCOVERY: "PHASE_1_DISCOVERY",
+    AGENT_LAUNCH: "PHASE_2_AGENT_LAUNCH",
+    RESEARCH: "PHASE_3_EVIDENCE_LANES",
+    DOCS: "PHASE_4_DOCS",
+    AUTOFIX: "PHASE_5_REPAIR",
+    MERGE: "PHASE_6_MERGE",
+    REFINEMENT: "PHASE_7_REFINEMENT",
+    APPROVE: "PHASE_8_APPROVAL",
+    SELF_CHECK: "PHASE_9_SELF_CHECK",
+    DONE: "DONE",
+};
 
 export function createScenarioContext(prefix, {
     storyId = "PROJ-123",
@@ -270,16 +282,36 @@ function runStage1(context, {
     const resultPath = join(context.projectRoot, `review-${label}.result.md`);
 
     writeJson(manifestPath, {
+        mode: "story",
         storage_mode: "file",
         expected_agents: ["codex"],
-        phase_policy: { phase5: "required", phase8: "required" },
+        required_research: true,
+        phase_order: [
+            REVIEW_PHASES.CONFIG,
+            REVIEW_PHASES.DISCOVERY,
+            REVIEW_PHASES.AGENT_LAUNCH,
+            REVIEW_PHASES.RESEARCH,
+            REVIEW_PHASES.DOCS,
+            REVIEW_PHASES.AUTOFIX,
+            REVIEW_PHASES.MERGE,
+            REVIEW_PHASES.REFINEMENT,
+            REVIEW_PHASES.APPROVE,
+            REVIEW_PHASES.SELF_CHECK,
+        ],
+        phase_policy: {
+            aggregate_phase: REVIEW_PHASES.MERGE,
+            report_phase: REVIEW_PHASES.APPROVE,
+            cleanup_phase: REVIEW_PHASES.SELF_CHECK,
+            self_check_phase: REVIEW_PHASES.SELF_CHECK,
+            agent_resolve_before: [REVIEW_PHASES.MERGE],
+        },
+        report_path: `docs/project/review-${label}.md`,
     });
 
     const started = context.runReview([
         "start",
         "--project-root", context.projectRoot,
         "--skill", "ln-310",
-        "--mode", "story",
         "--identifier", context.storyId,
         "--manifest-file", manifestPath,
     ]);
@@ -305,7 +337,7 @@ function runStage1(context, {
         "--payload", "{\"health_check_done\":true,\"agents_available\":1,\"agents_required\":[\"codex\"]}",
     ]);
     context.runReview(["advance", "--project-root", context.projectRoot, "--skill", "ln-310", "--to", REVIEW_PHASES.RESEARCH]);
-    context.runReview(["checkpoint", "--project-root", context.projectRoot, "--skill", "ln-310", "--phase", REVIEW_PHASES.RESEARCH]);
+    context.runReview(["checkpoint", "--project-root", context.projectRoot, "--skill", "ln-310", "--phase", REVIEW_PHASES.RESEARCH, "--payload", "{\"research_completed\":true,\"skipped\":true}"]);
     context.runReview(["advance", "--project-root", context.projectRoot, "--skill", "ln-310", "--to", REVIEW_PHASES.DOCS]);
     context.runReview(["checkpoint", "--project-root", context.projectRoot, "--skill", "ln-310", "--phase", REVIEW_PHASES.DOCS, "--payload", "{\"docs_checkpoint\":{\"docs_created\":[],\"docs_skipped_reason\":\"test\"}}"]);
     context.runReview(["advance", "--project-root", context.projectRoot, "--skill", "ln-310", "--to", REVIEW_PHASES.AUTOFIX]);
@@ -323,32 +355,52 @@ function runStage1(context, {
 
     context.runReview(["sync-agent", "--project-root", context.projectRoot, "--skill", "ln-310", "--agent", "codex"]);
     context.runReview(["advance", "--project-root", context.projectRoot, "--skill", "ln-310", "--to", REVIEW_PHASES.MERGE]);
-    context.runReview(["checkpoint", "--project-root", context.projectRoot, "--skill", "ln-310", "--phase", REVIEW_PHASES.MERGE, "--payload", "{\"merge_summary\":{\"accepted\":2,\"rejected\":1}}"]);
+    context.runReview(["checkpoint", "--project-root", context.projectRoot, "--skill", "ln-310", "--phase", REVIEW_PHASES.MERGE, "--payload", "{\"aggregation_summary\":{\"accepted\":2,\"rejected\":1}}"]);
     context.runReview(["advance", "--project-root", context.projectRoot, "--skill", "ln-310", "--to", REVIEW_PHASES.REFINEMENT]);
     context.runReview(["checkpoint", "--project-root", context.projectRoot, "--skill", "ln-310", "--phase", REVIEW_PHASES.REFINEMENT, "--payload", "{\"iterations\":1,\"exit_reason\":\"CONVERGED\",\"applied\":3}"]);
     context.runReview(["advance", "--project-root", context.projectRoot, "--skill", "ln-310", "--to", REVIEW_PHASES.APPROVE]);
-    context.runReview(["checkpoint", "--project-root", context.projectRoot, "--skill", "ln-310", "--phase", REVIEW_PHASES.APPROVE, "--payload", JSON.stringify({ verdict })]);
+    context.runReview(["checkpoint", "--project-root", context.projectRoot, "--skill", "ln-310", "--phase", REVIEW_PHASES.APPROVE, "--payload", JSON.stringify({ verdict, report_written: true, report_path: `docs/project/review-${label}.md`, final_result: verdict })]);
     context.runReview(["advance", "--project-root", context.projectRoot, "--skill", "ln-310", "--to", REVIEW_PHASES.SELF_CHECK]);
     context.runReview([
-        "record-stage-summary",
+        "record-summary",
         "--project-root", context.projectRoot,
         "--skill", "ln-310",
-        "--payload", JSON.stringify(buildPipelineStageArtifact({
-            stage: 1,
-            runId: started.run_id,
-            storyId: context.storyId,
-            producerSkill: "ln-310",
-            finalResult: verdict,
-            storyStatus,
-            extra: {
-                verdict,
-                readiness_score: readinessScore,
+        "--identifier", context.storyId,
+        "--payload", JSON.stringify({
+            schema_version: "1.0.0",
+            summary_kind: "evaluation-coordinator",
+            run_id: started.run_id,
+            identifier: context.storyId,
+            producer_skill: "ln-310",
+            produced_at: FIXED_TIME,
+            payload: {
+                status: "completed",
+                final_result: verdict,
+                report_path: `docs/project/review-${label}.md`,
+                worker_count: 0,
+                agent_count: 1,
+                issues_total: verdict === "GO" ? 0 : 1,
+                severity_counts: { critical: 0, high: 0, medium: verdict === "GO" ? 0 : 1, low: 0 },
+                warnings: [],
+                cleanup_verified: true,
+                research_completed: true,
+                metadata: { readiness_score: readinessScore },
             },
-        })),
+        }),
     ]);
-    context.runReview(["checkpoint", "--project-root", context.projectRoot, "--skill", "ln-310", "--phase", REVIEW_PHASES.SELF_CHECK, "--payload", JSON.stringify({ pass: true, processes_verified_dead: true, final_verdict: verdict })]);
-    const status = context.runReview(["status", "--project-root", context.projectRoot, "--skill", "ln-310", "--identifier", context.storyId]);
-    const artifact = readRuntimeArtifact(context.projectRoot, status.state.stage_summary.payload.artifact_path);
+    context.runReview(["checkpoint", "--project-root", context.projectRoot, "--skill", "ln-310", "--phase", REVIEW_PHASES.SELF_CHECK, "--payload", JSON.stringify({ pass: true, processes_verified_dead: true, cleanup_verified: true, final_result: verdict })]);
+    const artifact = buildPipelineStageArtifact({
+        stage: 1,
+        runId: started.run_id,
+        storyId: context.storyId,
+        producerSkill: "ln-310",
+        finalResult: verdict,
+        storyStatus,
+        extra: {
+            verdict,
+            readiness_score: readinessScore,
+        },
+    });
     const completed = context.runReview(["complete", "--project-root", context.projectRoot, "--skill", "ln-310", "--identifier", context.storyId]);
     assert(completed.ok && completed.state.phase === REVIEW_PHASES.DONE, "Stage 1 runtime did not complete");
 

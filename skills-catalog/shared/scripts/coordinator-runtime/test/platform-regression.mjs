@@ -13,7 +13,7 @@ const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../../../..")
 const envCli = join(repoRoot, "shared/scripts/environment-setup-runtime/cli.mjs");
 const storyCli = join(repoRoot, "shared/scripts/story-planning-runtime/cli.mjs");
 const taskCli = join(repoRoot, "shared/scripts/task-planning-runtime/cli.mjs");
-const reviewCli = join(repoRoot, "shared/scripts/review-runtime/cli.mjs");
+const evaluationCli = join(repoRoot, "shared/scripts/evaluation-runtime/cli.mjs");
 const executionCli = join(repoRoot, "shared/scripts/story-execution-runtime/cli.mjs");
 const gateCli = join(repoRoot, "shared/scripts/story-gate-runtime/cli.mjs");
 const optimizationCli = join(repoRoot, "shared/scripts/optimization-runtime/cli.mjs");
@@ -43,7 +43,7 @@ function testInactiveShape() {
     assertInactiveStatus(envCli);
     assertInactiveStatus(storyCli);
     assertInactiveStatus(taskCli);
-    assertInactiveStatus(reviewCli);
+    assertInactiveStatus(evaluationCli, ["--skill", "ln-310"]);
     assertInactiveStatus(executionCli);
     assertInactiveStatus(gateCli);
     assertInactiveStatus(optimizationCli);

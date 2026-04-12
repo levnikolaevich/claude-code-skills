@@ -11,7 +11,7 @@ Workers receive the minimum context needed to stay decision-complete:
   "codebase_root": ".",
   "runId": "ln-620-global--ln-621--global",
   "output_dir": ".hex-skills/runtime-artifacts/runs/{run_id}/audit-report",
-  "summaryArtifactPath": ".hex-skills/runtime-artifacts/runs/{run_id}/audit-worker/{worker}--{identifier}.json",
+  "summaryArtifactPath": ".hex-skills/runtime-artifacts/runs/{run_id}/evaluation-worker/{worker}--{identifier}.json",
   "tech_stack": {},
   "best_practices": {},
   "principles": {},
@@ -29,15 +29,15 @@ Rules:
 - `output_dir` is a run-scoped runtime artifact directory, not a public project docs directory.
 - In managed mode, pass both `runId` and `summaryArtifactPath`.
 - In standalone mode, pass neither and let the worker runtime create them.
-- If `summaryArtifactPath` is present, write the worker JSON summary there per `shared/references/audit_summary_contract.md`.
+- If `summaryArtifactPath` is present, write the worker JSON summary there per `shared/references/evaluation_summary_contract.md` and the audit payload rules in `shared/references/audit_summary_contract.md`.
 - If `domain_mode="domain-aware"`, scope scanning to `scan_path` and tag findings with the domain.
 - If `domain_mode="global"`, use `codebase_root` unless the skill defines a narrower scan target.
 
 ## Runtime Contract
 
-**MANDATORY READ:** Load `shared/references/audit_worker_runtime_contract.md`.
+**MANDATORY READ:** Load `shared/references/evaluation_worker_runtime_contract.md`.
 
-Workers remain standalone-capable, but coordinator-invoked runs must be backed by `shared/scripts/audit-worker-runtime/cli.mjs`.
+Workers remain standalone-capable, but coordinator-invoked runs must be backed by `shared/scripts/evaluation-worker-runtime/cli.mjs`.
 
 ## Scoring
 
@@ -56,9 +56,9 @@ Rules:
 
 ## Summary Contract
 
-**MANDATORY READ:** Load `shared/references/audit_summary_contract.md`.
+**MANDATORY READ:** Load `shared/references/evaluation_summary_contract.md`, `shared/references/audit_summary_contract.md`.
 
-Workers must produce the JSON summary envelope in both modes:
+Workers must produce the evaluation-worker JSON summary envelope in both modes:
 - managed mode -> write to the exact `summaryArtifactPath`
 - standalone mode -> write to the canonical run-scoped path from the runtime contract
 
@@ -69,13 +69,15 @@ Required JSON fields:
 - `identifier`
 - `producer_skill`
 - `produced_at`
+- `payload.worker`
 - `payload.status`
-- `payload.category`
-- `payload.report_path`
-- `payload.score`
-- `payload.issues_total`
-- `payload.severity_counts`
+- `payload.operation=auditing`
 - `payload.warnings`
+- `payload.audit.category`
+- `payload.audit.report_path`
+- `payload.audit.score`
+- `payload.audit.issues_total`
+- `payload.audit.severity_counts`
 - `payload.evidence_basis_counts` — optional breakdown by evidence basis (e.g. `{"code_evidence": 5, "research_claim": 1, "agent_inference": 0}`)
 
 Diagnostic sub-scores never replace the primary penalty-based score.
@@ -105,4 +107,4 @@ Most audit findings are `code_evidence` by nature (two-layer detection scans cod
 - Findings collected with severity, location, recommendation, and effort.
 - Score calculated via the shared scoring reference.
 - Report written to `{output_dir}/...` using the shared report template.
-- JSON summary written to the managed or standalone runtime path.
+- JSON summary written to the managed or standalone evaluation-worker runtime path.

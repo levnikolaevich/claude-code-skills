@@ -13,7 +13,7 @@ Workers write markdown evidence to run-scoped runtime artifacts, while coordinat
 
 **JSON summary convention:**
 ```text
-.hex-skills/runtime-artifacts/runs/{run_id}/audit-worker/
+.hex-skills/runtime-artifacts/runs/{run_id}/evaluation-worker/
 ```
 
 Run-scoped runtime artifacts can be cleaned up after the coordinator writes the public consolidated report.

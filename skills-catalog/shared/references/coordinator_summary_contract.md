@@ -173,7 +173,7 @@ Examples:
 - `task-status` execution summaries
 - story quality summaries
 - story test summaries
-- `audit-coordinator` summaries
+- `evaluation-coordinator` summaries for audit coordinators
 - optimization summaries
 
 ## Evaluation Coordinator Summary
@@ -299,10 +299,10 @@ Payload fields:
 - `warnings`
 - `metadata`
 
-## Audit Coordinator Summary
+## Evaluation Audit Coordinator Summary
 
 `summary_kind`:
-- `audit-coordinator`
+- `evaluation-coordinator`
 
 Payload fields:
 - `status`

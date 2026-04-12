@@ -39,6 +39,25 @@ import { result, errorResult } from "@levnikolaevich/hex-common/runtime/results"
 // Shared output schema fragments for all tools
 const STATUS_ENUM = z.enum(["OK", "ERROR", "AUTO_REBASED", "CONFLICT", "STALE", "INVALID", "NO_CHANGES", "CHANGED", "UNSUPPORTED"]);
 const ERROR_SHAPE = z.object({ code: z.string(), message: z.string(), recovery: z.string() }).optional();
+const LINE_REPORT_KEYS = new Set([
+    "status",
+    "reason",
+    "revision",
+    "file",
+    "path",
+    "compare_against",
+    "scope",
+    "summary",
+    "next_action",
+    "changed_ranges",
+    "recovery_ranges",
+    "retry_checksum",
+    "retry_edit",
+    "retry_edits",
+    "suggested_read_call",
+    "retry_plan",
+    "remapped_refs",
+]);
 
 const { server, StdioServerTransport } = await createServerRuntime({
     name: "hex-line-mcp",
@@ -67,6 +86,29 @@ function parseReadRanges(rawRanges) {
         throw new Error("ranges must be a non-empty array");
     }
     return parsed;
+}
+
+function parseLineReport(content) {
+    const parsed = {};
+    for (const rawLine of String(content).split(/\r?\n/)) {
+        if (!rawLine.trim()) break;
+        const match = /^([a-z_]+):\s*(.*)$/.exec(rawLine);
+        if (!match) continue;
+        const [, key, value] = match;
+        if (!LINE_REPORT_KEYS.has(key) || parsed[key] !== undefined) continue;
+        parsed[key] = value;
+    }
+    return parsed;
+}
+
+function lineReportResult(base, content, opts = {}) {
+    const report = parseLineReport(content);
+    return result({
+        status: report.status || base.status || "OK",
+        ...base,
+        ...report,
+        content,
+    }, opts);
 }
 
 // ==================== read_file ====================
@@ -161,7 +203,7 @@ server.registerTool("edit_file", {
         conflict_policy: z.enum(["strict", "conservative"]).optional().describe('Conflict handling (default: "conservative"). "conservative" returns structured CONFLICT output with recovery_ranges, retry_edit/retry_edits, suggested_read_call, and retry_plan when available.'),
         allow_external: flexBool().describe("Allow editing a path outside the current project root. Use only when you intentionally target a temp or external file."),
     }),
-    outputSchema: z.object({ status: STATUS_ENUM, path: z.string().optional(), content: z.string().optional(), next_action: z.string().optional(), error: ERROR_SHAPE }),
+    outputSchema: z.object({ status: STATUS_ENUM, path: z.string().optional(), content: z.string().optional(), reason: z.string().optional(), summary: z.string().optional(), next_action: z.string().optional(), error: ERROR_SHAPE }),
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
 }, async (rawParams) => {
     const { path: p, edits: json, dry_run, restore_indent, base_revision, conflict_policy, allow_external } = rawParams ?? {};
@@ -177,7 +219,7 @@ server.registerTool("edit_file", {
             baseRevision: base_revision,
             conflictPolicy: conflict_policy,
         });
-        return result({ status: "OK", path: p, content }, { large: content.length > 50_000 });
+        return lineReportResult({ path: p }, content, { large: content.length > 50_000 });
     } catch (e) {
         return errorResult(e.code || "EDIT_ERROR", e.message, e.recovery || "Check anchors and checksums");
     }
@@ -269,13 +311,13 @@ server.registerTool("outline", {
     inputSchema: z.object({
         path: z.string().describe("Source file path"),
     }),
-    outputSchema: z.object({ status: STATUS_ENUM, path: z.string().optional(), content: z.string().optional(), error: ERROR_SHAPE }),
+    outputSchema: z.object({ status: STATUS_ENUM, path: z.string().optional(), content: z.string().optional(), reason: z.string().optional(), summary: z.string().optional(), next_action: z.string().optional(), error: ERROR_SHAPE }),
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
 }, async (rawParams) => {
     const { path: p } = rawParams ?? {};
     try {
         const content = await fileOutline(p);
-        return result({ status: "OK", path: p, content });
+        return lineReportResult({ path: p }, content);
     } catch (e) {
         return errorResult(e.code || "OUTLINE_ERROR", e.message, e.recovery || "Check file path and language support");
     }
@@ -292,7 +334,7 @@ server.registerTool("verify", {
         checksums: z.array(z.string()).describe('Checksum strings, e.g. ["1-50:f7e2a1b0", "51-100:abcd1234"]'),
         base_revision: z.string().optional().describe("Optional prior revision to compare against latest state."),
     }),
-    outputSchema: z.object({ status: STATUS_ENUM, path: z.string().optional(), content: z.string().optional(), error: ERROR_SHAPE }),
+    outputSchema: z.object({ status: STATUS_ENUM, path: z.string().optional(), content: z.string().optional(), reason: z.string().optional(), summary: z.string().optional(), next_action: z.string().optional(), error: ERROR_SHAPE }),
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
 }, async (rawParams) => {
     const { path: p, checksums, base_revision } = rawParams ?? {};
@@ -301,7 +343,7 @@ server.registerTool("verify", {
             throw new Error("checksums must be a non-empty array of strings");
         }
         const content = verifyChecksums(p, checksums, { baseRevision: base_revision });
-        return result({ status: "OK", path: p, content });
+        return lineReportResult({ path: p }, content);
     } catch (e) {
         return errorResult(e.code || "VERIFY_ERROR", e.message, e.recovery || "Check checksums format");
     }
@@ -324,7 +366,7 @@ server.registerTool("inspect_path", {
         format: z.enum(["compact", "full"]).optional().describe('"compact" = shorter path view, "full" = include sizes/metadata where available'),
         verbosity: z.enum(["minimal", "compact", "full"]).optional().describe("Response budget. `minimal` returns the shortest tree summary."),
     }),
-    outputSchema: z.object({ status: STATUS_ENUM, path: z.string().optional(), content: z.string().optional(), next_action: z.string().optional(), error: ERROR_SHAPE }),
+    outputSchema: z.object({ status: STATUS_ENUM, path: z.string().optional(), content: z.string().optional(), reason: z.string().optional(), summary: z.string().optional(), next_action: z.string().optional(), error: ERROR_SHAPE }),
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true },
 }, async (rawParams) => {
     const { path: p, max_depth, max_entries, gitignore, format, pattern, type: entryType, verbosity } = rawParams ?? {};
@@ -361,7 +403,7 @@ server.registerTool("changes", {
     const { path: p, compare_against } = rawParams ?? {};
     try {
         const content = await fileChanges(p, compare_against);
-        return result({ status: "OK", path: p, content }, { large: content.length > 50_000 });
+        return lineReportResult({ path: p }, content, { large: content.length > 50_000 });
     } catch (e) {
         return errorResult(e.code || "CHANGES_ERROR", e.message, e.recovery || "Check git ref and path");
     }
@@ -382,7 +424,7 @@ server.registerTool("bulk_replace", {
         format: z.enum(["compact", "full"]).optional().describe('"compact" (default) = summary only, "full" = include capped diffs'),
         allow_external: flexBool().describe("Allow a replacement root outside the current project root. Use only when you intentionally target a temp or external directory."),
     }),
-    outputSchema: z.object({ status: STATUS_ENUM, path: z.string().optional(), content: z.string().optional(), next_action: z.string().optional(), error: ERROR_SHAPE }),
+    outputSchema: z.object({ status: STATUS_ENUM, path: z.string().optional(), content: z.string().optional(), reason: z.string().optional(), summary: z.string().optional(), next_action: z.string().optional(), error: ERROR_SHAPE }),
     annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: false },
 }, async (rawParams) => {
     try {
@@ -399,7 +441,7 @@ server.registerTool("bulk_replace", {
             replacements,
             { dryRun: params.dry_run || false, maxFiles: params.max_files || 100, format: params.format }
         );
-        return result({ status: "OK", path: params.path, content }, { large: params.format === "full" });
+        return lineReportResult({ path: params.path }, content, { large: params.format === "full" });
     } catch (e) {
         return errorResult(e.code || "REPLACE_ERROR", e.message, e.recovery || "Check replacement pairs and scope");
     }

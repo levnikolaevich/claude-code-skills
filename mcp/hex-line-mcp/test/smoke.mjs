@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { execFile } from "node:child_process";
+import { execFile, execFileSync } from "node:child_process";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
@@ -11,6 +11,7 @@ import { createRequire } from "node:module";
 // Structured MCP result accessors — no legacy fallbacks
 function textOf(r) { return r.structuredContent.content; }
 function errMsgOf(r) { return r.structuredContent.error.message; }
+function assertStructuredTextMirror(r) { assert.equal(r.content[0].text, JSON.stringify(r.structuredContent)); }
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const HOOK_PATH = resolve(__dirname, "../hook.mjs");
@@ -55,6 +56,10 @@ function makeTempRepo(prefix, files) {
         fs.writeFileSync(fullPath, content);
     }
     return dir;
+}
+
+function git(repo, args) {
+    execFileSync("git", args, { cwd: repo, stdio: "ignore" });
 }
 
 async function indexGraphRepo(dir) {
@@ -1543,6 +1548,150 @@ describe("changes", () => {
         assert.ok(result.includes("removed_api_warning_count:"), "changes returns API warning count preview");
         assert.ok(result.includes("payload_sections:"), "changes returns payload section preview");
         assert.ok(result.includes("provenance_summary:"), "changes returns provenance summary");
+    });
+});
+
+describe("MCP structured status contract", () => {
+    it("changes exposes NO_CHANGES and CHANGED as structured statuses", async () => {
+        const repo = makeTempRepo("hex-test-mcp-changes-", { "src/app.js": "export const value = 1;\n" });
+        try {
+            git(repo, ["init"]);
+            git(repo, ["config", "user.email", "hex-line@example.test"]);
+            git(repo, ["config", "user.name", "hex-line"]);
+            git(repo, ["add", "."]);
+            git(repo, ["commit", "-m", "initial"]);
+
+            await withMcpClient(async (client) => {
+                const clean = await client.callTool({
+                    name: "changes",
+                    arguments: { path: repo, compare_against: "HEAD" },
+                });
+                assert.equal(clean.structuredContent.status, "NO_CHANGES");
+                assert.equal(clean.structuredContent.next_action, "no_action");
+                assertStructuredTextMirror(clean);
+
+                fs.writeFileSync(join(repo, "src/app.js"), "export const value = 2;\n");
+                const dirty = await client.callTool({
+                    name: "changes",
+                    arguments: { path: repo, compare_against: "HEAD" },
+                });
+                assert.equal(dirty.structuredContent.status, "CHANGED");
+                assert.equal(dirty.structuredContent.next_action, "inspect_file");
+                assertStructuredTextMirror(dirty);
+            });
+        } finally {
+            fs.rmSync(repo, { recursive: true, force: true });
+        }
+    });
+
+    it("verify exposes STALE as a structured status", async () => {
+        const tmp = join(tmpdir(), `hex-test-mcp-verify-${Date.now()}-${Math.random().toString(16).slice(2)}.js`);
+        fs.writeFileSync(tmp, "alpha\nbeta\ngamma\n");
+        try {
+            await withMcpClient(async (client) => {
+                const read = await client.callTool({
+                    name: "read_file",
+                    arguments: { path: tmp, ranges: ["1-3"], edit_ready: true, verbosity: "full" },
+                });
+                const checksum = textOf(read).match(/checksum: (\d+-\d+:[0-9a-f]{8})/)?.[1];
+                assert.ok(checksum, "read_file exposes checksum");
+
+                fs.writeFileSync(tmp, "alpha\nBETA\ngamma\n");
+                const verify = await client.callTool({
+                    name: "verify",
+                    arguments: { path: tmp, checksums: [checksum] },
+                });
+                assert.equal(verify.structuredContent.status, "STALE");
+                assert.equal(verify.structuredContent.next_action, "reread_ranges");
+                assertStructuredTextMirror(verify);
+            });
+        } finally {
+            fs.rmSync(tmp, { force: true });
+        }
+    });
+
+    it("edit_file exposes AUTO_REBASED and CONFLICT as structured statuses", async () => {
+        const tmp = join(tmpdir(), `hex-test-mcp-edit-status-${Date.now()}-${Math.random().toString(16).slice(2)}.js`);
+        const original = "head1\nhead2\ntargetA\ntargetB\ntail\n";
+        fs.writeFileSync(tmp, original);
+        try {
+            await withMcpClient(async (client) => {
+                const read = await client.callTool({
+                    name: "read_file",
+                    arguments: { path: tmp, ranges: ["1-1", "3-4"], edit_ready: true, verbosity: "full" },
+                });
+                const readText = textOf(read);
+                const baseRevision = readText.match(/revision: (\S+)/)?.[1];
+                const headTag = readText.match(/([a-z2-7]{2}\.1)\thead1/)?.[1];
+                const startAnchor = readText.match(/([a-z2-7]{2}\.3)\ttargetA/)?.[1];
+                const endAnchor = readText.match(/([a-z2-7]{2}\.4)\ttargetB/)?.[1];
+                const checksum = readText.match(/checksum: (3-4:[0-9a-f]{8})/)?.[1];
+                assert.ok(baseRevision && headTag && startAnchor && endAnchor && checksum, "read_file exposes base edit metadata");
+
+                await client.callTool({
+                    name: "edit_file",
+                    arguments: {
+                        path: tmp,
+                        allow_external: true,
+                        edits: JSON.stringify([{ insert_after: { anchor: headTag, text: "inserted" } }]),
+                    },
+                });
+                const autoRebased = await client.callTool({
+                    name: "edit_file",
+                    arguments: {
+                        path: tmp,
+                        allow_external: true,
+                        base_revision: baseRevision,
+                        conflict_policy: "conservative",
+                        edits: JSON.stringify([{
+                            replace_lines: {
+                                start_anchor: startAnchor,
+                                end_anchor: endAnchor,
+                                new_text: "targetA\nupdatedB",
+                                range_checksum: checksum,
+                            },
+                        }]),
+                    },
+                });
+                assert.equal(autoRebased.structuredContent.status, "AUTO_REBASED");
+                assert.equal(autoRebased.structuredContent.next_action, "keep_using");
+                assertStructuredTextMirror(autoRebased);
+
+                fs.writeFileSync(tmp, original);
+                const conflictRead = await client.callTool({
+                    name: "read_file",
+                    arguments: { path: tmp, ranges: ["3-4"], edit_ready: true, verbosity: "full" },
+                });
+                const conflictText = textOf(conflictRead);
+                const conflictBaseRevision = conflictText.match(/revision: (\S+)/)?.[1];
+                const conflictStart = conflictText.match(/([a-z2-7]{2}\.3)\ttargetA/)?.[1];
+                const conflictEnd = conflictText.match(/([a-z2-7]{2}\.4)\ttargetB/)?.[1];
+                const conflictChecksum = conflictText.match(/checksum: (3-4:[0-9a-f]{8})/)?.[1];
+                fs.writeFileSync(tmp, "head1\nhead2\notherChange\ntargetB\ntail\n");
+                const conflict = await client.callTool({
+                    name: "edit_file",
+                    arguments: {
+                        path: tmp,
+                        allow_external: true,
+                        base_revision: conflictBaseRevision,
+                        conflict_policy: "conservative",
+                        edits: JSON.stringify([{
+                            replace_lines: {
+                                start_anchor: conflictStart,
+                                end_anchor: conflictEnd,
+                                new_text: "targetA\nupdatedB",
+                                range_checksum: conflictChecksum,
+                            },
+                        }]),
+                    },
+                });
+                assert.equal(conflict.structuredContent.status, "CONFLICT");
+                assert.equal(conflict.structuredContent.next_action, "apply_retry_edit");
+                assertStructuredTextMirror(conflict);
+            });
+        } finally {
+            fs.rmSync(tmp, { force: true });
+        }
     });
 });
 // ==================== isHexLineDisabled ====================

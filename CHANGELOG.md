@@ -55,8 +55,8 @@
 
 ## 2026-03-27
 - **Marketplace install docs** — updated README, plugin docs, and GitHub Pages site to use the current Claude Code marketplace flow (`/plugin marketplace add` + `/plugin install plugin@marketplace`) instead of deprecated `/plugin add`
-- **Audit runtime unification** — 6XX coordinators and 31 workers migrated to run-scoped artifacts, audit-runtime CLI, and JSON summary contract with `summaryArtifactPath`
-- **Runtime status catalog** — canonical status sets codified across all runtime contracts (story-gate, optimization, review, environment)
+- **Audit runtime unification** — 6XX coordinators and workers migrated to run-scoped artifacts, evaluation runtime CLIs, and JSON summary contract with `summaryArtifactPath`
+- **Runtime status catalog** — canonical status sets codified across active runtime contracts (story-gate, optimization, evaluation, environment)
 - **Worker independence cleanup** — removed 36 coordinator-aware DoD references, fixed 3 false positives in review-skills checks (R12/R13/R16)
 
 ## 2026-03-26
@@ -82,7 +82,7 @@
 ## 2026-03-23
 
 - **ln-010 assess-dispatch-verify** — redesigned from invoke-all to smart dispatch: probes environment once, builds decision matrix, skips workers with nothing to do
-- **ln-150 removed** — presentation-creator skill deleted; all references cleaned from pipeline, marketplace, site, docs (127 skills)
+- **ln-150 removed** — presentation-creator skill deleted; all references cleaned from pipeline, marketplace, site, docs
 - **ln-162 Check 18** — new automated check verifies every SKILL.md has `**Type:**` line; prevents silent bypass of Check 9/17
 - **run_checks.sh hardened** — Check 5 scoped to skills-catalog/ paths only; Check 9/17 exclude Workers from coordinator-only requirements
 - **ln-014 auditor → manager** — renamed to ln-014-agent-instructions-manager; creates missing CLAUDE.md, AGENTS.md, GEMINI.md
@@ -156,7 +156,7 @@
 ## 2026-03-08
 
 - **Plugin marketplace** — split into 5 focused plugins installable individually: agile-workflow, documentation-pipeline, codebase-audit-suite, project-bootstrap, optimization-suite
-- **Optimization Suite** — new plugin with 11 skills: full-stack performance optimization (profile → research → execute), dependency upgrades (npm/NuGet/pip), code modernization (OSS replacement, bundle optimization)
+- **Optimization Suite** — new plugin for full-stack performance optimization (profile → research → execute), dependency upgrades (npm/NuGet/pip), code modernization (OSS replacement, bundle optimization)
 - **Destructive operation safety** — all skills now classify destructive actions by severity with human-in-the-loop gates
 
 ---
@@ -225,4 +225,4 @@
 
 ## 2025-11-10
 
-- **v1.0.0** — 17 skills automating Agile workflow end-to-end: scope decomposition, task execution, quality gates, Linear integration, Risk-Based Testing
+- **v1.0.0** — Agile workflow automation end-to-end: scope decomposition, task execution, quality gates, Linear integration, Risk-Based Testing

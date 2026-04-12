@@ -359,7 +359,7 @@ Inspect a file or directory path without guessing which low-level tool to call f
 
 ## Hook
 
-The unified hook (`hook.mjs`) handles three Claude hook events:
+The unified hook (`hook.mjs`) handles five Claude hook events:
 
 ### PreToolUse: Tool Redirect
 
@@ -393,6 +393,18 @@ Hook policy constants in `lib/hook-policy.mjs`:
 ### SessionStart: Tool Preferences
 
 Injects a short operational workflow into agent context at session start. If schemas are not loaded yet, it includes the `ToolSearch('+hex-line read edit')` fallback. Primary flow stays `outline -> read_file -> edit_file -> verify`, with targeted reads over full-file reads.
+
+### PreToolUse: Plan Mode Enforcement
+
+When `permission_mode === "plan"`, blocks mutating hex-line tools (`edit_file`, `write_file`, `bulk_replace`) with a hard deny. Read-only tools pass through normally. This enforces plan mode for MCP tools that bypass the built-in Edit/Write permission layer.
+
+### ConfigChange: Cache Invalidation
+
+Invalidates cached hook mode and hex-line disabled flag when settings change mid-session. Dispatches **before** the `isHexLineDisabled()` check so that toggling hex-line on/off mid-session takes effect without restart.
+
+### PermissionDenied: Observability
+
+Logs when Claude denies a tool call after the hook delivered a redirect hint. Reads `data.reason` for hex-line tool mentions and Bash denials. Observability only — no action taken.
 
 ## Architecture
 

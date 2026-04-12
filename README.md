@@ -154,14 +154,16 @@ claude mcp add -s user --transport http linear-server https://mcp.linear.app/mcp
 
 ### Agent steering
 
-MCP servers can be installed correctly and still lose to built-ins in practice. `hex-line-mcp` keeps Claude aligned through one output style and three Claude hook events:
+MCP servers can be installed correctly and still lose to built-ins in practice. `hex-line-mcp` keeps Claude aligned through one output style and five Claude hook events:
 
 | Mechanism | How it works |
 |-----------|-------------|
 | **[Output style](mcp/hex-line-mcp/output-style.md)** | Injected into system prompt — maps built-in tools to MCP equivalents (`Read` → `hex-line read_file`, `Edit` → `hex-line edit_file`) |
 | **SessionStart hook** | Injects a compact bootstrap hint and defers to the active `hex-line` output style when present |
-| **PreToolUse hook** | Hard-redirects project text `Read`/`Edit`/`Write`/`Grep`/`Glob`, redirects project file-inspection Bash commands, blocks dangerous commands |
-| **PostToolUse hook** | Filters only verbose Bash output (50+ lines), keeping first 15 + last 15 lines after normalization and dedupe |
+| **PreToolUse hook** | Hard-redirects project text `Read`/`Edit`/`Write`/`Grep`/`Glob`, redirects Bash file-inspection commands, blocks dangerous commands, enforces plan mode for mutating MCP tools |
+| **PostToolUse hook** | Filters verbose Bash output (50+ lines): normalize, deduplicate, truncate to first 15 + last 15 lines |
+| **ConfigChange hook** | Invalidates cached state when settings change mid-session |
+| **PermissionDenied hook** | Observability: logs when Claude denies a tool call after redirect hint |
 
 Hooks and output style auto-sync on `hex-line-mcp` startup. First run after install performs the initial sync automatically.
 

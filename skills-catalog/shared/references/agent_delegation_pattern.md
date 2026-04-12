@@ -166,6 +166,10 @@ External agents run in non-interactive mode (`exec` / `-p`) with tool access for
 
 **FORBIDDEN:** Using TaskStop to kill agent background tasks. The runner handles timeout internally.
 
+**Optional: Agent log streaming (Claude Code 2.1.98+):**
+`Monitor(command="tail -f {agent_log} | grep --line-buffered -E 'Phase|ERROR|DONE'", timeout_ms=1800000, description="{agent} progress")`
+Supplementary to `run_in_background` — adds observability, not control.
+
 ## MCP Failure Resilience
 
 External agents may have MCP servers (Linear, GitHub, etc.) configured in their global settings. If an MCP server fails during agent startup (expired auth, network error, timeout), the agent process may crash before processing the prompt.

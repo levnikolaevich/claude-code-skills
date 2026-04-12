@@ -231,6 +231,8 @@ Configure CI to fail if coverage drops below thresholds.
 
 ---
 
+**Monitor (2.1.98+):** When test verification after scaffold expected >30s, use `Monitor`. Fallback: `Bash(run_in_background=true)`.
+
 ## Definition of Done
 
 - [ ] Test framework installed and configured

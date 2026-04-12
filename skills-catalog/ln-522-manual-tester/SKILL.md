@@ -151,7 +151,14 @@ Invocation rules:
 
 Test scripts always go to `tests/manual/`, never to the project root.
 
-**Runtime note:** Long-running test scripts: prefer Claude Code `Monitor` tool (2.1.98+) to stream background script events instead of polling Bash.
+### Monitor Integration (Claude Code 2.1.98+)
+
+**MANDATORY READ:** Load `shared/references/monitor_integration_pattern.md`
+
+When running test scripts expected to take >30 seconds:
+`Monitor(command="bash tests/manual/{suite}/test-{slug}.sh 2>&1", timeout_ms=300000, description="manual test: {slug}")`
+
+Fallback: if Monitor is unavailable (Bedrock/Vertex), use `Bash(run_in_background=true)`.
 
 
 ## Definition of Done

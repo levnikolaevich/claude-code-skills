@@ -265,6 +265,8 @@ Shared contract:
 - standalone mode omits `runId` and `summaryArtifactPath`
 - managed mode passes both `runId` and exact `summaryArtifactPath` before the worker writes its validated review outcome
 
+**Monitor (2.1.98+):** For lint/typecheck commands expected >30s, use `Monitor`. Fallback: `Bash(run_in_background=true)`.
+
 ## Definition of Done
 - [ ] Steps 1-9 completed: task resolved, context loaded, review checks passed, AC validated, side-effect bugs created, mechanical verification passed, decision applied.
 - [ ] If Done: task removed from kanban after review acceptance. If To Rework: task moved with fix guidance.

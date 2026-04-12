@@ -163,7 +163,20 @@ Without any one layer, coverage has holes. Together: significantly more stable.
 | Timeout too short | Killed mid-op, fails open silently | 5s Pre, 10s Post |
 | Using `defer` for advisory mode | `tool_deferred` in `-p`, ignored in interactive | Omit `permissionDecision`, use `additionalContext` |
 
-## 13. Session Title Override (UserPromptSubmit)
+## 13. Plan Mode Awareness
+
+Hook input includes `permission_mode` on every event. MCP tool hooks MUST check this field to enforce plan mode for mutating tools.
+
+```javascript
+// Block mutating MCP tools in plan mode
+if (data.permission_mode === "plan" && MUTATING_TOOLS.has(data.tool_name)) {
+    block("PLAN_MODE: write tools blocked during planning.", "Use read-only tools.");
+}
+```
+
+Claude Code blocks built-in Edit/Write in plan mode, but MCP tools bypass this layer. The hook is the enforcement point.
+
+## 14. Session Title Override (UserPromptSubmit)
 
 Claude Code 2.1.94 adds `hookSpecificOutput.sessionTitle` to UserPromptSubmit hook output. Setting this field renames the current session (equivalent to `/rename`). Use when a hook can detect scope from the first user message and auto-brand the session (e.g., "audit-mcp", "repo-bootstrap").
 

@@ -337,6 +337,8 @@ Score: X.X/10 | Issues: N (C:N H:N M:N L:N)
 - **Framework Tester dedup:** Category 1 (Business Logic Focus) covers framework tests separately -- coordinator deduplicates overlapping findings
 - **Context-aware:** Supertest with real Express app is acceptable for integration tests
 
+**Monitor (2.1.98+):** For repeated test runs expected >30s each, use `Monitor`. Fallback: `Bash(run_in_background=true)`.
+
 ## Definition of Done
 
 **MANDATORY READ:** Load `shared/references/audit_worker_core_contract.md`.

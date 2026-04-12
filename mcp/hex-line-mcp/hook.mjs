@@ -67,6 +67,14 @@ import {
     normalizePolicyPath,
 } from "./lib/hook-policy.mjs";
 
+// ---- Plan mode: mutating hex-line tools blocked during planning ----
+
+const HEX_LINE_MUTATING = new Set([
+    "mcp__hex-line__edit_file",
+    "mcp__hex-line__write_file",
+    "mcp__hex-line__bulk_replace",
+]);
+
 // ---- Helpers ----
 
 function extOf(filePath) {
@@ -383,6 +391,14 @@ function redirect(reason, context) {
 function handlePreToolUse(data) {
     const toolName = data.tool_name || "";
     const toolInput = data.tool_input || {};
+
+    // Plan mode: block mutating hex-line tools, allow read-only
+    if (data.permission_mode === "plan" && HEX_LINE_MUTATING.has(toolName)) {
+        block(
+            "PLAN_MODE: hex-line write tools are blocked during planning.",
+            "Use read-only tools: read_file, grep_search, outline, verify, inspect_path, changes."
+        );
+    }
 
     // Already using hex-line - approve silently
     if (toolName.startsWith("mcp__hex-line__")) {

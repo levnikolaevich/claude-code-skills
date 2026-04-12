@@ -75,6 +75,8 @@ Shared contract:
 - standalone mode omits `runId` and `summaryArtifactPath`
 - managed mode passes both `runId` and exact `summaryArtifactPath` before the worker writes its validated summary
 
+**Monitor (2.1.98+):** For test/coverage commands expected >30s, use `Monitor`. Fallback: `Bash(run_in_background=true)`.
+
 ## Definition of Done
 - [ ] Task identified as test task and set to In Progress; kanban updated
 - [ ] Plan validated (priority/limits) and guides read

@@ -188,6 +188,83 @@ describe("hook PreToolUse JSON schema", () => {
         assert.equal(result.stdout, "", "pass-through must not write stdout");
     });
 
+    // ---- Plan mode enforcement ----
+
+    it("blocks mutating hex-line tools in plan mode", () => {
+        const result = runHook({
+            cwd: tmpRoot,
+            payload: {
+                hook_event_name: "PreToolUse",
+                permission_mode: "plan",
+                tool_name: "mcp__hex-line__edit_file",
+                tool_input: { path: "foo.md" },
+            },
+        });
+        assert.equal(result.status, 2, "plan mode must hard-block mutating hex-line tools");
+        const output = parseStructuredOutput(result.stdout);
+        assertPreToolUseSchema(output, "deny");
+        assert.ok(
+            output.hookSpecificOutput.permissionDecisionReason.includes("PLAN_MODE"),
+            "reason must mention PLAN_MODE"
+        );
+    });
+
+    it("blocks write_file in plan mode", () => {
+        const result = runHook({
+            cwd: tmpRoot,
+            payload: {
+                hook_event_name: "PreToolUse",
+                permission_mode: "plan",
+                tool_name: "mcp__hex-line__write_file",
+                tool_input: { path: "foo.md", content: "x" },
+            },
+        });
+        assert.equal(result.status, 2);
+        const output = parseStructuredOutput(result.stdout);
+        assertPreToolUseSchema(output, "deny");
+    });
+
+    it("blocks bulk_replace in plan mode", () => {
+        const result = runHook({
+            cwd: tmpRoot,
+            payload: {
+                hook_event_name: "PreToolUse",
+                permission_mode: "plan",
+                tool_name: "mcp__hex-line__bulk_replace",
+                tool_input: { path: ".", replacements: [] },
+            },
+        });
+        assert.equal(result.status, 2);
+        const output = parseStructuredOutput(result.stdout);
+        assertPreToolUseSchema(output, "deny");
+    });
+
+    it("allows read-only hex-line tools in plan mode", () => {
+        const result = runHook({
+            cwd: tmpRoot,
+            payload: {
+                hook_event_name: "PreToolUse",
+                permission_mode: "plan",
+                tool_name: "mcp__hex-line__read_file",
+                tool_input: { path: "foo.md" },
+            },
+        });
+        assert.equal(result.status, 0, "read-only hex-line tools must pass in plan mode");
+    });
+
+    it("does not block hex-line edit in default mode", () => {
+        const result = runHook({
+            cwd: tmpRoot,
+            payload: {
+                hook_event_name: "PreToolUse",
+                permission_mode: "default",
+                tool_name: "mcp__hex-line__edit_file",
+                tool_input: { path: "foo.md" },
+            },
+        });
+        assert.equal(result.status, 0, "edit_file must pass in default mode");
+    });
+
     it("passes through Read on files outside the current project root", () => {
         const outsidePath = process.platform === "win32"
             ? "C:/Windows/System32/drivers/etc/hosts"

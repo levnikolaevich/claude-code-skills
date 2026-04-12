@@ -131,6 +131,8 @@ Return structured results to orchestrator.
 
 ---
 
+**Monitor (2.1.98+):** For build/restore commands expected >30s, use `Monitor`. Fallback: `Bash(run_in_background=true)`.
+
 ## Definition of Done
 
 - [ ] All project types detected

@@ -153,7 +153,20 @@ Return structured results to orchestrator.
 3. **Include failure details** - provide actionable information for debugging
 4. **Respect timeout** - prevent hanging on infinite loops
 
-**Runtime note:** Long-running test commands: prefer Claude Code `Monitor` tool (2.1.98+) to stream background script events instead of polling Bash.
+### Monitor Integration (Claude Code 2.1.98+)
+
+**MANDATORY READ:** Load `shared/references/monitor_integration_pattern.md`
+
+For test suites expected to run >30 seconds, use `Monitor` to stream failures in real-time:
+
+| Pattern | Command | timeout_ms |
+|---------|---------|------------|
+| Stream failures | `{test_command} 2>&1 \| grep --line-buffered -E 'FAIL\|Error\|✗\|AssertionError'` | `timeout * 1000` (from Options) |
+| Full output | `{test_command} 2>&1` | `timeout * 1000` |
+
+React to first failure immediately while remaining tests continue running.
+
+Fallback: if Monitor is unavailable (Bedrock/Vertex), use `Bash(run_in_background=true)`.
 
 ---
 

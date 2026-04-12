@@ -25,6 +25,16 @@ Skills collection for Codex with config-driven Agile task management (Linear or 
 | **DoD with checkboxes** | All `SKILL.md` files | `## Definition of Done` with `- [ ]` items |
 | **Worker independence** | L3 worker `SKILL.md` | No `**Parent:**`, no `**Coordinator:**`, no peer cross-references as public contract |
 
+## Workflow Principles
+
+**Plan first.** For any task with 3+ steps or architectural impact, produce a written plan before implementing. If something goes sideways during execution, STOP and re-plan rather than patch forward.
+
+**Verify before "done".** Never mark a task complete without evidence: diffs against main where relevant, passing tests, logs showing the new behavior. Ask yourself: "would a staff engineer approve this in review?"
+
+**Demand elegance, not over-engineering.** For non-trivial changes, pause and ask "is there a more elegant approach?" If a fix feels hacky, rewrite it with what you now know. For simple fixes, skip this — don't invent complexity.
+
+**Core principles.** Simplicity first · find root causes, no temporary patches · minimize blast radius, change only what's necessary.
+
 ## MCP Tool Preferences
 
 Use `hex-line` first for repo file reads/search/edits on code, config, scripts, and tests.
@@ -73,15 +83,19 @@ Use `hex-line` first for repo file reads/search/edits on code, config, scripts, 
 | Topic | File |
 |-------|------|
 | Skill contract | `skills-catalog/shared/references/skill_contract.md` |
+| Agent instructions writing guide | `skills-catalog/shared/references/agent_instructions_writing_guide.md` |
 | Writing guidelines | `docs/architecture/SKILL_ARCHITECTURE_GUIDE.md` |
 | Environment State | `skills-catalog/shared/references/environment_state_contract.md` |
 | Risk-Based Testing | `skills-catalog/shared/references/risk_based_testing_guide.md` |
+| Frontmatter fields | `skills-catalog/shared/references/frontmatter_reference.md` |
 | Questions format | `skills-catalog/shared/references/questions_format.md` |
+| Hooks reference | `skills-catalog/shared/references/hooks_reference.md` |
 | Hook design | `docs/best-practice/HOOK_DESIGN_GUIDE.md` |
 | MCP tool design | `docs/best-practice/MCP_TOOL_DESIGN_GUIDE.md` |
 | MCP output contract | `docs/best-practice/MCP_OUTPUT_CONTRACT_GUIDE.md` |
 | Token efficiency | `docs/standards/TOKEN_EFFICIENCY_PATTERNS.md` |
 | Prompt caching | `docs/best-practice/PROMPT_CACHING_GUIDE.md` |
+| npm packages | `docs/standards/NPM_PACKAGE_BEST_PRACTICES.md` |
 
 ## Maintenance
 
@@ -100,4 +114,4 @@ Preserve in priority order during `/compact`:
 - open TODOs and rollback notes
 - tool outputs as summaries only
 
-**Last Updated:** 2026-03-26
+**Last Updated:** 2026-04-11

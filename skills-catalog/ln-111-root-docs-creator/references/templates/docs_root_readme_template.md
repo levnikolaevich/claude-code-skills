@@ -11,7 +11,7 @@
 
 | Area | Canonical Docs | Purpose |
 |------|----------------|---------|
-| Root map | [AGENTS.md](../AGENTS.md), [CLAUDE.md](../CLAUDE.md) | Entry points |
+| Root map | [AGENTS.md](../AGENTS.md), [CLAUDE.md](../CLAUDE.md), [GEMINI.md](../GEMINI.md) | Entry points (AGENTS.md canonical; CLAUDE.md and GEMINI.md are @AGENTS.md import stubs) |
 | Standards | [documentation_standards.md](documentation_standards.md) | Documentation rules |
 | Principles | [principles.md](principles.md) | Project development principles |
 

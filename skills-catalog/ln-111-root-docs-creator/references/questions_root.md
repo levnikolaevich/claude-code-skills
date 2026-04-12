@@ -1,9 +1,9 @@
 # Root Documentation Questions (Q1-Q22)
 
-<!-- SCOPE: Interactive questions for 4 root docs (CLAUDE.md, docs/README.md, documentation_standards.md, principles.md) ONLY. -->
+<!-- SCOPE: Interactive questions for 6 root docs (AGENTS.md canonical, CLAUDE.md + GEMINI.md @AGENTS.md import stubs, docs/README.md, documentation_standards.md, principles.md) ONLY. -->
 <!-- DO NOT add here: question logic → ln-111-root-docs-creator SKILL.md, other doc questions → questions_core.md, questions_backend.md -->
 
-**Purpose:** Validation questions for 4 root documentation files.
+**Purpose:** Validation questions for 6 root documentation files.
 
 **Format:** Document -> Rules -> Questions -> Validation Heuristics -> Auto-Discovery
 
@@ -11,26 +11,30 @@
 
 ## Table of Contents
 
-| Document | Questions | Auto-Discovery | Priority | Line |
-|----------|-----------|----------------|----------|------|
-| [CLAUDE.md](#claudemd) | 6 | Medium | Critical | L25 |
-| [docs/README.md](#docsreadmemd) | 7 | Low | High | L95 |
-| [docs/documentation_standards.md](#docsdocumentation_standardsmd) | 3 | None | Medium | L175 |
-| [docs/principles.md](#docsprinciplesmd) | 6 | None | High | L215 |
+| Document | Questions | Auto-Discovery | Priority |
+|----------|-----------|----------------|----------|
+| [AGENTS.md](#agentsmd) | Q1-Q6 (6) | Medium | Critical |
+| [CLAUDE.md](#claudemd) | Q6a (stub shape) | None | Critical |
+| [GEMINI.md](#geminimd) | Q6b (stub shape) | None | Critical |
+| [docs/README.md](#docsreadmemd) | Q7-Q13 (7) | Low | High |
+| [docs/documentation_standards.md](#docsdocumentation_standardsmd) | Q14-Q16 (3) | None | Medium |
+| [docs/principles.md](#docsprinciplesmd) | Q17-Q22 (6) | None | High |
+
+Q6a and Q6b are sub-questions of the stub-shape check (not separate full questions), so the total stays at 22.
 
 ---
 
-<!-- DOCUMENT_START: CLAUDE.md -->
-## CLAUDE.md
+<!-- DOCUMENT_START: AGENTS.md -->
+## AGENTS.md
 
-**File:** CLAUDE.md (project root)
+**File:** AGENTS.md (project root) — canonical source of content for the root triple
 **Target Sections:** Critical Rules, Documentation Navigation, Documentation, Development Commands, Maintenance
 
 **Rules:**
-- Recommended length: <=100 lines
 - Must have SCOPE tag in first 10 lines
+- Must have the standard header metadata (`DOC_KIND`, `DOC_ROLE: canonical`, `READ_WHEN`, `SKIP_WHEN`, `PRIMARY_SOURCES`)
 - Must link to docs/README.md
-- Entry point for AI agents (DAG root)
+- Canonical root (DAG origin); CLAUDE.md and GEMINI.md re-use this content via `@AGENTS.md` imports
 
 ---
 
@@ -41,7 +45,7 @@
 **Target Section:** ## Documentation
 
 **Validation Heuristics:**
-- Has section "## Documentation" with links to docs/README.md, documentation_standards.md, principles.md
+- Has section "## Documentation" (or "## Navigation") with links to docs/README.md, documentation_standards.md, principles.md
 
 **Auto-Discovery:** None (standard structure)
 <!-- QUESTION_END: 1 -->
@@ -52,10 +56,10 @@
 ### Question 2: What are critical rules for AI agents?
 
 **Expected Answer:** Table of critical rules by category (Standards, Documentation, Testing, Research, Task Management)
-**Target Section:** ## Critical Rules for AI Agents
+**Target Section:** ## Critical Rules
 
 **Validation Heuristics:**
-- Has section "## Critical Rules for AI Agents" with table, 7+ rows, "Key Principles" subsection
+- Has section "## Critical Rules" with table, 7+ rows, "Key Principles" subsection
 
 **Auto-Discovery:** None (universal rules)
 <!-- QUESTION_END: 2 -->
@@ -66,7 +70,7 @@
 ### Question 3: How to navigate documentation (DAG structure)?
 
 **Expected Answer:** SCOPE tags explanation + reading order + graph structure
-**Target Section:** ## Documentation Navigation Rules
+**Target Section:** ## Documentation Navigation Rules (or ## Navigation)
 
 **Validation Heuristics:**
 - Has section with SCOPE tag explanation, reading order, >40 words
@@ -80,7 +84,7 @@
 ### Question 4: What are documentation maintenance rules?
 
 **Expected Answer:** DRY principles, Single Source of Truth, English-only policy
-**Target Section:** ## Documentation Maintenance Rules
+**Target Section:** ## Documentation Maintenance Rules (or embedded in Critical Rules)
 
 **Validation Heuristics:**
 - Has "Single Source of Truth"/"DRY", "English Only" rule, >60 words
@@ -91,7 +95,7 @@
 ---
 
 <!-- QUESTION_START: 5 -->
-### Question 5: When should CLAUDE.md be updated?
+### Question 5: When should AGENTS.md be updated?
 
 **Expected Answer:** Update triggers + verification checklist
 **Target Section:** ## Maintenance
@@ -123,10 +127,98 @@
 
 **Overall File Validation:**
 - Has SCOPE tag in first 10 lines
+- Has the standard header metadata (`DOC_KIND`, `DOC_ROLE: canonical`, `READ_WHEN`, `SKIP_WHEN`, `PRIMARY_SOURCES`)
 - Total length > 80 words
-- File size ≤100 lines (Claude Code performance requirement)
+- File size ≤200 lines (Anthropic memory docs target; WARN 150-200, FAIL >200)
+- User-added imperative count ≤100 (IFScale ceiling; lines starting `- ` inside rule sections + MUST/NEVER/ALWAYS/DO NOT)
+
+<!-- DOCUMENT_END: AGENTS.md -->
+
+---
+
+<!-- DOCUMENT_START: CLAUDE.md -->
+## CLAUDE.md
+
+**File:** CLAUDE.md (project root) — Claude Code stub that imports AGENTS.md
+**Target Shape:** `@AGENTS.md` import + `## Claude Code` harness delta
+
+**Rules:**
+- Has SCOPE tag in HTML comment at top (stripped from Claude Code context per Anthropic docs but visible to maintainers and auditors)
+- Has the standard header metadata (`DOC_KIND`, `DOC_ROLE: derived`, `READ_WHEN`, `SKIP_WHEN`, `PRIMARY_SOURCES: AGENTS.md`)
+- Contains exactly one `@AGENTS.md` line
+- Has a `## Claude Code` section with harness-specific delta (e.g., `/compact` preservation order, auto-memory pointer, `.claude/rules/` guidance, nested CLAUDE.md subdirectory notes)
+- ≤50 lines total, ideally ≤20
+- No content that duplicates AGENTS.md sections (ln-611 import_pattern_compliance check enforces this)
+
+---
+
+<!-- QUESTION_START: 6a -->
+### Question 6a: Is CLAUDE.md a valid Claude Code import stub?
+
+**Expected Answer:** Confirm the file matches the stub shape documented in `skills-catalog/shared/references/agent_instructions_writing_guide.md`
+**Target Shape:** `@AGENTS.md` import + `## Claude Code` delta
+
+**Validation Heuristics:**
+- `grep -c '^@AGENTS\.md$' CLAUDE.md` returns exactly 1
+- Has `## Claude Code` heading
+- Total line count ≤50 (WARN 21-50, PASS ≤20)
+- No section headings that duplicate AGENTS.md (e.g., `## Critical Rules`, `## MCP Tool Preferences`, `## Navigation`)
+
+**Auto-Discovery:** None (structural check)
+<!-- QUESTION_END: 6a -->
+
+---
+
+**Overall File Validation:**
+- Exactly one `^@AGENTS\.md$` line
+- Has `## Claude Code` section
+- ≤50 lines
+- No content that duplicates AGENTS.md sections
 
 <!-- DOCUMENT_END: CLAUDE.md -->
+
+---
+
+<!-- DOCUMENT_START: GEMINI.md -->
+## GEMINI.md
+
+**File:** GEMINI.md (project root) — Gemini CLI stub that imports AGENTS.md
+**Target Shape:** `@AGENTS.md` import + `## Gemini CLI` harness delta
+
+**Rules:**
+- Has SCOPE tag in HTML comment at top
+- Has the standard header metadata (`DOC_KIND`, `DOC_ROLE: derived`, `READ_WHEN`, `SKIP_WHEN`, `PRIMARY_SOURCES: AGENTS.md`)
+- Contains exactly one `@AGENTS.md` line (Gemini CLI natively supports the same `@file.md` import syntax with 5-hop recursion)
+- Has a `## Gemini CLI` section with harness-specific delta (e.g., context-compression preservation order, `/memory show` and `/memory reload` pointers)
+- ≤50 lines total, ideally ≤20
+- No content that duplicates AGENTS.md sections
+
+---
+
+<!-- QUESTION_START: 6b -->
+### Question 6b: Is GEMINI.md a valid Gemini CLI import stub?
+
+**Expected Answer:** Confirm the file matches the stub shape documented in `skills-catalog/shared/references/agent_instructions_writing_guide.md`
+**Target Shape:** `@AGENTS.md` import + `## Gemini CLI` delta
+
+**Validation Heuristics:**
+- `grep -c '^@AGENTS\.md$' GEMINI.md` returns exactly 1
+- Has `## Gemini CLI` heading
+- Total line count ≤50 (WARN 21-50, PASS ≤20)
+- No section headings that duplicate AGENTS.md
+
+**Auto-Discovery:** None (structural check)
+<!-- QUESTION_END: 6b -->
+
+---
+
+**Overall File Validation:**
+- Exactly one `^@AGENTS\.md$` line
+- Has `## Gemini CLI` section
+- ≤50 lines
+- No content that duplicates AGENTS.md sections
+
+<!-- DOCUMENT_END: GEMINI.md -->
 
 ---
 
@@ -425,8 +517,8 @@
 
 ---
 
-**Total Questions:** 22
-**Total Documents:** 4
+**Total Questions:** 22 (Q1-Q6 for AGENTS.md, Q6a/Q6b for CLAUDE.md and GEMINI.md stub shape, Q7-Q13 for docs/README.md, Q14-Q16 for documentation_standards.md, Q17-Q22 for principles.md)
+**Total Documents:** 6
 
 ---
 **Version:** 1.0.0

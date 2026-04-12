@@ -1,44 +1,17 @@
 # {{PROJECT_NAME}}
 
-<!-- SCOPE: Anthropic-specific derived entrypoint ONLY. Points to AGENTS.md and adds provider-specific notes when needed. -->
+<!-- SCOPE: Thin Claude Code projection of AGENTS.md via the @ import. AGENTS.md is the canonical source. Do not duplicate content here — add it to AGENTS.md instead, or scope it to `.claude/rules/*.md` with a `paths:` filter. -->
 <!-- DOC_KIND: index -->
 <!-- DOC_ROLE: derived -->
-<!-- READ_WHEN: Read when tooling expects CLAUDE.md or when Anthropic-specific notes are needed. -->
-<!-- SKIP_WHEN: Skip when AGENTS.md is already loaded and no Claude-specific note is required. -->
+<!-- READ_WHEN: Loaded automatically by Claude Code at session start. -->
+<!-- SKIP_WHEN: AGENTS.md is already imported, so do not re-read CLAUDE.md separately. -->
 <!-- PRIMARY_SOURCES: AGENTS.md -->
 
-## Quick Navigation
+@AGENTS.md
 
-| Need | Read |
-|------|------|
-| Canonical project map | [AGENTS.md](AGENTS.md) |
-| Documentation hub | [docs/README.md](docs/README.md) |
+## Claude Code
 
-
-## Agent Entry
-
-- Purpose: Thin Anthropic-specific entrypoint for tooling that loads `CLAUDE.md`.
-- Read when: Tooling loads `CLAUDE.md` by convention or provider-specific notes are required.
-- Skip when: `AGENTS.md` is already loaded.
-- Canonical: No.
-- Read next: `AGENTS.md`.
-- Primary sources: `AGENTS.md`.
-
-## Anthropic Notes
-
-- Load [AGENTS.md](AGENTS.md) as the canonical project map.
-- Use the relevant canonical document from [docs/README.md](docs/README.md) before editing a domain.
-- Keep this file small. Do not duplicate the full project knowledge base here.
-
-## Maintenance
-
-**Update Triggers:**
-- When `AGENTS.md` path or purpose changes
-- When Anthropic-specific notes change
-
-**Verification:**
-- [ ] `AGENTS.md` link resolves
-- [ ] No duplicated large guidance block was added here
-- [ ] Provider-specific notes are still accurate
-
-**Last Updated:** {{DATE}}
+- `/compact` preservation order: architecture decisions, modified files, verification status, open TODOs, tool outputs as summaries only.
+- Auto memory is on by default. Claude writes learnings to `~/.claude/projects/<project>/memory/` — run `/memory` to inspect or edit.
+- Scope path-specific rules to `.claude/rules/*.md` with a `paths:` frontmatter filter rather than inlining conditional "when working on X" blocks here.
+- Nested `CLAUDE.md` files in subdirectories load on demand — prefer them for area-specific guidance over growing this root file.

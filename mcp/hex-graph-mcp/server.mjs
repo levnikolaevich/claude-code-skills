@@ -31,6 +31,24 @@ import {
     runTraceDataflowUseCase,
 } from "./lib/use-cases.mjs";
 import { ACTION, pruneEmpty, STATUS } from "./lib/output-contract.mjs";
+import { result as mcpResult, errorResult } from "@levnikolaevich/hex-common/runtime/results";
+
+// Graph envelope output schema — shared by all 14 tools
+const GRAPH_OUTPUT_SCHEMA = z.object({
+    status: z.string(),
+    query: z.record(z.string(), z.unknown()).optional(),
+    result: z.unknown().optional(),
+    confidence: z.number().optional(),
+    reason: z.string().optional(),
+    evidence: z.array(z.unknown()).optional(),
+    limits_applied: z.record(z.string(), z.unknown()).optional(),
+    quality: z.record(z.string(), z.unknown()).optional(),
+    next_action: z.string().optional(),
+    summary: z.string().optional(),
+    code: z.string().optional(),
+    recovery: z.string().optional(),
+    error: z.object({ code: z.string(), message: z.string(), recovery: z.string() }).optional(),
+});
 
 const REFERENCE_KINDS = [
     "ref_read",
@@ -105,17 +123,14 @@ function graphError(codeOrError, message, recovery) {
             message,
             recovery: recovery || fallbackRecovery,
         };
-    const payload = pruneEmpty({
-        status: STATUS.ERROR,
-        code: error.code,
-        summary: error.message,
-        next_action: graphNextAction(error.code),
-        recovery: error.recovery,
+    return errorResult(error.code, error.message, error.recovery, {
+        extra: pruneEmpty({
+            code: error.code,
+            summary: error.message,
+            next_action: graphNextAction(error.code),
+            recovery: error.recovery,
+        }),
     });
-    return {
-        content: [{ type: "text", text: JSON.stringify(payload) }],
-        isError: true,
-    };
 }
 
 function selectorSchema() {
@@ -199,16 +214,16 @@ function pruneForVerbosity(payload, verbosity = "full") {
     return pruneEmpty(next) || {};
 }
 
-function wrapResult(result, _format = "json", verbosity = "full") {
-    if (result?.error) {
-        return graphError(result.error);
+function wrapResult(useCaseResult, _format = "json", verbosity = "full") {
+    if (useCaseResult?.error) {
+        return graphError(useCaseResult.error);
     }
     const payload = pruneForVerbosity(pruneEmpty({
         status: STATUS.OK,
-        ...result,
+        ...useCaseResult,
     }) || {}, verbosity);
-    const text = JSON.stringify(payload);
-    return { content: [{ type: "text", text }] };
+    const large = JSON.stringify(payload).length > 50_000;
+    return mcpResult(payload, { large });
 }
 
 function unique(values) {
@@ -301,7 +316,8 @@ server.registerTool("index_project", {
         path: z.string().describe("Project root directory"),
         languages: z.array(z.string()).optional().describe("Filter indexed languages"),
     }),
-    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
+    outputSchema: GRAPH_OUTPUT_SCHEMA,
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
 }, async (rawParams) => {
     const { path: projectPath, languages } = rawParams;
     try {
@@ -336,7 +352,8 @@ server.registerTool("install_graph_providers", {
         include_optional_scip: z.boolean().default(true).describe("Include optional SCIP exporter checks alongside precise providers."),
         format: z.enum(["json", "text"]).default("json"),
     }),
-    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true },
+    outputSchema: GRAPH_OUTPUT_SCHEMA,
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true },
 }, async (rawParams) => {
     const { path, mode, include_optional_scip, format } = rawParams;
     try {
@@ -377,7 +394,8 @@ server.registerTool("export_scip", {
         working_directory: z.string().optional().describe("C# only: optional working directory passed through to scip-dotnet."),
         format: z.enum(["json", "text"]).default("json"),
     }),
-    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true },
+    outputSchema: GRAPH_OUTPUT_SCHEMA,
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true },
 }, async (rawParams) => {
     const {
         path,
@@ -435,7 +453,8 @@ server.registerTool("import_scip_overlay", {
         replace_existing: z.boolean().default(true).describe("Clear prior `scip_import` overlay edges before importing this artifact."),
         format: z.enum(["json", "text"]).default("json"),
     }),
-    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true },
+    outputSchema: GRAPH_OUTPUT_SCHEMA,
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true },
 }, async (rawParams) => {
     const { path, artifact_path, replace_existing, format } = rawParams;
     try {
@@ -467,7 +486,8 @@ server.registerTool("find_symbols", {
         path: z.string().describe("Indexed project root or a file/directory inside the indexed project"),
         format: z.enum(["json", "text"]).default("json"),
     }),
-    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
+    outputSchema: GRAPH_OUTPUT_SCHEMA,
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
 }, async (rawParams) => {
     const { query, kind, limit, path, format } = rawParams;
     const result = runFindSymbolsUseCase(query, { kind, limit: limit ?? 8, path });
@@ -487,7 +507,8 @@ server.registerTool("inspect_symbol", {
         path: z.string().describe("Indexed project root or a file/directory inside the indexed project"),
         format: z.enum(["json", "text"]).default("json"),
     }),
-    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
+    outputSchema: GRAPH_OUTPUT_SCHEMA,
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
 }, async (rawParams) => {
     const { path, format, min_confidence, verbosity, expand, expand_limit, include_evidence, ...selector } = rawParams;
     const result = runInspectSymbolUseCase(selector, {
@@ -519,7 +540,8 @@ server.registerTool("trace_paths", {
         path: z.string().describe("Indexed project root or a file/directory inside the indexed project"),
         format: z.enum(["json", "text"]).default("json"),
     }),
-    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
+    outputSchema: GRAPH_OUTPUT_SCHEMA,
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
 }, async (rawParams) => {
     const { path, format, path_kind, direction, depth, limit, min_confidence, verbosity, expand, expand_limit, include_evidence, ...selector } = rawParams;
     const target = buildTargetSelector(selector);
@@ -559,7 +581,8 @@ server.registerTool("find_references", {
         path: z.string().describe("Indexed project root or a file/directory inside the indexed project"),
         format: z.enum(["json", "text"]).default("json"),
     }),
-    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
+    outputSchema: GRAPH_OUTPUT_SCHEMA,
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
 }, async (rawParams) => {
     const { path, format, kind, limit, min_confidence, verbosity, expand, expand_limit, include_evidence, ...selector } = rawParams;
     const result = runFindReferencesUseCase(selector, {
@@ -588,7 +611,8 @@ server.registerTool("find_implementations", {
         path: z.string().describe("Indexed project root or a file/directory inside the indexed project"),
         format: z.enum(["json", "text"]).default("json"),
     }),
-    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
+    outputSchema: GRAPH_OUTPUT_SCHEMA,
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
 }, async (rawParams) => {
     const { path, format, limit, verbosity, expand, expand_limit, include_evidence, ...selector } = rawParams;
     const result = runFindImplementationsUseCase(selector, {
@@ -619,7 +643,8 @@ server.registerTool("trace_dataflow", {
         path: z.string().describe("Indexed project root or a file/directory inside the indexed project"),
         format: z.enum(["json", "text"]).default("json"),
     }),
-    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
+    outputSchema: GRAPH_OUTPUT_SCHEMA,
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
 }, async (rawParams) => {
     const { path, format, source, sink, flow_kind, max_hops, limit, min_confidence, verbosity, expand, expand_limit, include_evidence } = rawParams;
     const result = runTraceDataflowUseCase({
@@ -651,7 +676,8 @@ server.registerTool("analyze_changes", {
         max_paths: flexNum().describe("Maximum supporting paths per symbol when `include_paths` is true (default: 3)"),
         format: z.enum(["json", "text"]).default("json"),
     }),
-    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
+    outputSchema: GRAPH_OUTPUT_SCHEMA,
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
 }, async (rawParams) => {
     const { path, base_ref, head_ref, include_paths, max_symbols, max_paths, format } = rawParams;
     try {
@@ -683,7 +709,8 @@ server.registerTool("analyze_edit_region", {
         verbosity: verbositySchema(),
         format: z.enum(["json", "text"]).default("json"),
     }),
-    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
+    outputSchema: GRAPH_OUTPUT_SCHEMA,
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
 }, async (rawParams) => {
     const { path, file, line_start, line_end, verbosity, format } = rawParams;
     const result = runAnalyzeEditRegionUseCase({
@@ -709,7 +736,8 @@ server.registerTool("analyze_architecture", {
         verbosity: verbositySchema(),
         format: z.enum(["json", "text"]).default("json"),
     }),
-    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
+    outputSchema: GRAPH_OUTPUT_SCHEMA,
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
 }, async (rawParams) => {
     const { path, scope, limit, verbosity, format } = rawParams;
     const result = runAnalyzeArchitectureUseCase({
@@ -734,7 +762,8 @@ server.registerTool("audit_workspace", {
         show_suppressed: flexBool().describe("Include suppressed unused exports in the visible result"),
         format: z.enum(["json", "text"]).default("json"),
     }),
-    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
+    outputSchema: GRAPH_OUTPUT_SCHEMA,
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
 }, async (rawParams) => {
     const { path, scope, verbosity, show_suppressed, format } = rawParams;
     const result = runAuditWorkspaceUseCase({

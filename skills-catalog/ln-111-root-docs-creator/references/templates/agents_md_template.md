@@ -37,6 +37,9 @@
 | Language | Keep project code and documentation in English | For all written project artifacts |
 | Research | Prefer configured official documentation sources | Before stack-specific decisions |
 
+<!-- Optional Workflow Principles shard. When ENABLE_WORKFLOW_PRINCIPLES=true, replace the next line with the full content of references/templates/agents_md_workflow_principles.md. When false, leave the line as-is and it will be stripped from the rendered output. -->
+{{WORKFLOW_PRINCIPLES_BLOCK}}
+
 ## Development Commands
 
 | Task | Windows | Bash |

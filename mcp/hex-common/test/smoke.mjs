@@ -7,6 +7,9 @@ import { grammarForExtension, isSupportedExtension, supportedExtensions } from "
 import { getParser, getLanguage, treeSitterArtifactManifest, treeSitterArtifactPath } from "../src/parser/tree-sitter.mjs";
 import { existsSync } from "node:fs";
 
+import { result, errorResult } from "../src/runtime/results.mjs";
+
+
 test("hash protocol stays stable", () => {
     const hash = fnv1a("const x = 1;");
     assert.equal(lineTag(hash).length, 2);
@@ -57,3 +60,44 @@ test("SDK subpath imports resolve", async () => {
     const stdio = await import("@modelcontextprotocol/sdk/server/stdio.js");
     assert.ok(stdio.StdioServerTransport, "StdioServerTransport not exported from SDK");
 });
+
+test("result() returns canonical MCP envelope", () => {
+    const r = result({ status: "OK", path: "test.txt", content: "hello" });
+    assert.deepEqual(r.content, [{ type: "text", text: JSON.stringify(r.structuredContent) }]);
+    assert.deepEqual(r.structuredContent, { status: "OK", path: "test.txt", content: "hello" });
+    assert.equal(r.isError, undefined);
+    assert.equal(r._meta, undefined);
+});
+
+test("result() with large=true sets _meta", () => {
+    const r = result({ status: "OK" }, { large: true });
+    assert.deepEqual(r._meta, { "anthropic/maxResultSizeChars": 500_000 });
+});
+
+test("result() with status ERROR sets isError", () => {
+    const r = result({ status: "ERROR", error: { code: "X", message: "fail", recovery: "fix" } });
+    assert.equal(r.isError, true);
+    assert.equal(r.structuredContent.status, "ERROR");
+});
+
+test("errorResult() builds canonical error envelope", () => {
+    const r = errorResult("NOT_FOUND", "file missing", "check path");
+    assert.equal(r.isError, true);
+    assert.equal(r.structuredContent.status, "ERROR");
+    assert.equal(r.structuredContent.error.code, "NOT_FOUND");
+    assert.equal(r.structuredContent.error.message, "file missing");
+    assert.equal(r.structuredContent.error.recovery, "check path");
+    assert.equal(r.structuredContent.summary, "file missing");
+    assert.deepEqual(JSON.parse(r.content[0].text), r.structuredContent);
+});
+
+test("errorResult() with extra preserves domain fields", () => {
+    const r = errorResult("SSH_ERROR", "conn fail", "retry", {
+        extra: { host: "server1", exit_code: 1, next_action: "fix_connection" },
+    });
+    assert.equal(r.structuredContent.host, "server1");
+    assert.equal(r.structuredContent.exit_code, 1);
+    assert.equal(r.structuredContent.next_action, "fix_connection");
+    assert.equal(r.structuredContent.error.code, "SSH_ERROR");
+});
+

@@ -203,6 +203,8 @@ Provide user with cleanup commands in report.
 4. **Parse compose file for ports** - do not hardcode port numbers
 5. **Respect depends_on order** - critical for database-dependent services
 
+**Runtime note:** Long-running container commands: prefer Claude Code `Monitor` tool (2.1.98+) to stream background script events instead of polling Bash.
+
 ---
 
 ## Definition of Done

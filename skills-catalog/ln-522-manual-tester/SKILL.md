@@ -151,6 +151,9 @@ Invocation rules:
 
 Test scripts always go to `tests/manual/`, never to the project root.
 
+**Runtime note:** Long-running test scripts: prefer Claude Code `Monitor` tool (2.1.98+) to stream background script events instead of polling Bash.
+
+
 ## Definition of Done
 - [ ] `tests/manual/` structure exists (config.sh, README.md, test-all.sh, results/ created if missing).
 - [ ] `tests/manual/results/` added to project `.gitignore`.

@@ -91,13 +91,52 @@ When truncating, prefer structured metadata that tells the agent how to narrow n
 
 Build a tool when: it saves tokens, adds verification, or prevents errors shell cannot catch.
 
-## 9. Evolution — periodically review constraints
+## 9. Evolution -- periodically review constraints
 
 | Practice | Example |
-|----------|---------|
+|----------|--------|
 | Review constraints | `TodoWrite` removed from Claude Code -- tools wrapping it become dead weight |
 | Track usage patterns | If agents never use `plain`, remove it or make it default |
 | Version schemas | Breaking input changes break cached agent behavior |
 | Deprecate before removing | "DEPRECATED: use X instead" in description, remove after one cycle |
 
-**Last Updated:** 2026-03-20
+## 10. Tool Annotations
+
+MCP SDK 1.x annotation hints declare tool behavior shape. Claude Code uses these for permission prompting and subagent capability filtering.
+
+| Annotation | Meaning | When to set |
+|------------|---------|-------------|
+| `readOnlyHint: true` | Tool does not modify any state | read_file, grep_search, outline, verify, inspect_path, changes |
+| `destructiveHint: true` | Tool can delete or overwrite data | bulk_replace |
+| `idempotentHint: true` | Repeat calls with same inputs = same result | read_file, outline, verify, write_file (same content) |
+| `openWorldHint: true` | Tool interacts with external systems or broad filesystem | grep_search (filesystem), changes (git), ssh-*, install_graph_providers |
+
+Set all applicable hints on every tool registration.
+
+## 11. outputSchema -- declare structured output
+
+Every tool MUST declare `outputSchema` alongside `inputSchema`. Handlers return `{content, structuredContent}` where `structuredContent` matches the schema. `content[0].text` is auto-generated as `JSON.stringify(structuredContent)` per MCP spec backward-compat requirement.
+
+Canonical fields (match [MCP_OUTPUT_CONTRACT_GUIDE.md](./MCP_OUTPUT_CONTRACT_GUIDE.md)):
+
+- `status` -- required, from canonical vocabulary (OK, ERROR, CONFLICT, STALE, etc.)
+- `reason` -- machine-readable classifier
+- `next_action` -- canonical label from output contract
+- `error: {code, message, recovery}` -- only when status is ERROR
+- domain-specific payload -- tool-owned fields (matches, outline, etc.)
+
+Domain envelopes (e.g., hex-graph `{query, result, evidence, limits_applied}`) are valid as outputSchema shapes -- do not flatten established envelopes.
+
+## 12. Large results -- `_meta` override
+
+Results >50KB MUST set `_meta["anthropic/maxResultSizeChars"] = 500000` to bypass the default persist cap (Claude Code 2.1.91+). Apply conditionally -- do not set on compact results, it wastes context budget.
+
+Decision rule (`large: true`) when any of:
+- `edit_ready=true` flag is set
+- `verbosity="full"` is requested
+- actual `JSON.stringify(structured).length > 50_000`
+- domain-specific full-output flags (`allow_large_output`, `format="full"`)
+
+Shared runtime `result(structured, { large })` handles the mechanics.
+
+**Last Updated:** 2026-04-11

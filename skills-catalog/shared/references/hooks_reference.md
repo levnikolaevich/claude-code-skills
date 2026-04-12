@@ -2,9 +2,9 @@
 
 <!-- SCOPE: Hooks reference used in this repository: standard events, 4 hook types, matchers, decision control, and env vars. -->
 
-Source: [Claude Code Docs](https://code.claude.com/docs/en/hooks) (verified 2026-03-26)
+Source: [Claude Code Docs](https://code.claude.com/docs/en/hooks) (verified 2026-04-11)
 
-## Hook Events (20)
+## Hook Events (21)
 
 | # | Event | Description | Matcher | Key options |
 |:-:|-------|-------------|---------|-------------|
@@ -28,14 +28,15 @@ Source: [Claude Code Docs](https://code.claude.com/docs/en/hooks) (verified 2026
 | 18 | `InstructionsLoaded` | `CLAUDE.md` or related rules loaded | None | `file_path`, `memory_type`, `load_reason` |
 | 19 | `Elicitation` | MCP requests user input | `mcp_server_name` | `message`, `mode`, `requested_schema` |
 | 20 | `ElicitationResult` | User responds to elicitation | `mcp_server_name` | `action`, `content` |
+| 21 | `PermissionDenied` | Auto-mode denied a tool call | `tool_name` | `reason`, `tool_use_id` |
 
-**Repository note:** experimental team-only hook events are intentionally excluded from this reference because this repository does not use team-session orchestration in production workflows.
+**Repository note:** experimental team-only hook events (TaskCreated, TaskCompleted, StopFailure, TeammateIdle, CwdChanged, FileChanged) are intentionally excluded because this repository does not use team-session orchestration.
 
 ## Hook Types (4)
 
 | Type | Description | Use case | Supported events |
 |------|-------------|----------|-----------------|
-| `command` | Shell command, receives JSON via stdin | Logging, notifications, scripts | All 20 |
+| `command` | Shell command, receives JSON via stdin | Logging, notifications, scripts | All 21 |
 | `prompt` | Single-turn LLM evaluation | Judgment-based decisions | Selected post/pre tool events and stop events |
 | `agent` | Multi-turn subagent with limited tools | Complex verification | Same family as `prompt` hooks |
 | `http` | POST JSON to a URL | External integration | Same family as `prompt` hooks |
@@ -63,11 +64,14 @@ Source: [Claude Code Docs](https://code.claude.com/docs/en/hooks) (verified 2026
 
 | Hook | Control method | Values |
 |------|---------------|--------|
-| `PreToolUse` | `hookSpecificOutput.permissionDecision` | `allow`, `deny`, `ask` |
+| `PreToolUse` | `hookSpecificOutput.permissionDecision` | `allow`, `deny`, `ask`, `defer` |
 | `PreToolUse` | `hookSpecificOutput.autoAllow` | `true` |
+| `PreToolUse` | `hookSpecificOutput.additionalContext` | Advisory hint text (no decision) |
 | `PermissionRequest` | `hookSpecificOutput.decision.behavior` | `allow`, `deny` |
 | `PostToolUse`, `PostToolUseFailure`, `Stop`, `SubagentStop`, `ConfigChange` | Top-level `decision` | `block` |
 | `UserPromptSubmit` | Modified `prompt` field | Prompt rewrite |
+| `UserPromptSubmit` | `hookSpecificOutput.sessionTitle` | Session title (renames session, 2.1.94) |
+| `UserPromptSubmit` | `hookSpecificOutput.additionalContext` | Appended context |
 | `WorktreeCreate` | Non-zero exit plus stdout path | Fails or redirects creation |
 | `Elicitation`, `ElicitationResult` | `hookSpecificOutput.action` | `accept`, `decline`, `cancel` |
 

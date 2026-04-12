@@ -49,7 +49,7 @@ Related contract:
 | `research` | Provider, fallback_chain |
 | `claude_md` | Instruction file metadata |
 | `assessment` | Quality score, warnings, worker run/skip history |
-| `hooks` | Hook mode (blocking/advisory) |
+| `hooks` | Hook mode (blocking/advisory), `disable_skill_shell_execution` (bool, mirrors `disableSkillShellExecution` setting from Claude Code 2.1.91), `script_caps` (number, mirrors `CLAUDE_CODE_SCRIPT_CAPS` env from Claude Code 2.1.98) |
 | `ide_extension` | Per-IDE Claude Code extension state (Cursor / VSCode): `initial_permission_mode`, `allow_dangerously_skip_permissions`, `effective_state`, and whether it conflicts with project `permissions.defaultMode`. The extension overrides project settings at session start, so this is the runtime SSOT for "what permission mode actually applies when Claude is launched from the IDE". |
 
 ## task_management structure

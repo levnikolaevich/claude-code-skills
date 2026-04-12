@@ -18,10 +18,31 @@ const version = typeof __HEX_VERSION__ !== "undefined" ? __HEX_VERSION__ // esli
   : (await import("node:module")).createRequire(import.meta.url)("./package.json").version;
 import { createServerRuntime } from "@levnikolaevich/hex-common/runtime/mcp-bootstrap";
 import { flexBool, flexNum } from "@levnikolaevich/hex-common/runtime/schema";
-import { textResult, errorResult } from "@levnikolaevich/hex-common/runtime/results";
+import { result, errorResult } from "@levnikolaevich/hex-common/runtime/results";
 import { checkForUpdates } from "@levnikolaevich/hex-common/runtime/update-check";
 import { fnv1a, lineTag, rangeChecksum, parseChecksum, parseRef } from "@levnikolaevich/hex-common/text-protocol/hash";
 import { deduplicateLines, normalizeOutput } from "@levnikolaevich/hex-common/output/normalize";
+
+// SSH output schema — shared by all 8 tools (all interact with external servers)
+const SSH_OUTPUT_SCHEMA = z.object({
+    status: z.string(),
+    host: z.string().optional(),
+    path: z.string().optional(),
+    content: z.string().optional(),
+    stdout: z.string().optional(),
+    stderr: z.string().optional(),
+    exit_code: z.number().optional(),
+    command: z.string().optional(),
+    bytes_written: z.number().optional(),
+    bytes_transferred: z.number().optional(),
+    local_path: z.string().optional(),
+    remote_path: z.string().optional(),
+    duration_ms: z.number().optional(),
+    revision: z.string().optional(),
+    checksum: z.string().optional(),
+    verify: z.any().optional(),
+    error: z.object({ code: z.string(), message: z.string(), recovery: z.string() }).optional(),
+});
 
 // LLM clients may send booleans as strings ("true"/"false").
 // z.coerce.boolean() is unsafe: Boolean("false") === true.
@@ -83,31 +104,18 @@ async function sshExec(args, command) {
  * Standard error response.
  */
 function errResult(msg) {
-    return errorResult(`Error: ${msg}`);
+    return errorResult("GENERIC", msg, "Check SSH connection");
 }
 
-/**
- * Structured error with code and recovery hint.
- */
 function sshError(code, message, recovery) {
-    return { content: [{ type: "text", text: `${code}: ${message}\nRecovery: ${recovery}` }], isError: true };
+    return errorResult(code, message, recovery);
 }
 
-function requirePosixRemotePath(args, filePath, label = "filePath") {
-    const { platform } = validateRemotePath(filePath, args.remotePlatform);
-    if (platform !== "posix") {
-        throw new Error(
-            `UNSUPPORTED_REMOTE_PLATFORM: ${label}=${filePath} resolved as ${platform}. ` +
-            "This tool uses POSIX shell commands on the remote host. Use remotePlatform=\"posix\" or use ssh-upload/ssh-download for Windows SFTP transfers."
-        );
-    }
-}
-
-/**
- * Standard success response.
- */
-function okResult(text) {
-    return textResult(text);
+function okResult(structured) {
+    const large = typeof structured === "object" && JSON.stringify(structured).length > 50_000;
+    return result(typeof structured === "string"
+        ? { status: "OK", content: structured }
+        : { status: "OK", ...structured }, { large });
 }
 
 function transferError(code, message) {
@@ -126,6 +134,16 @@ function transferError(code, message) {
     return errResult(`${code}: ${message}`);
 }
 
+function requirePosixRemotePath(args, filePath, label = "filePath") {
+    const { platform } = validateRemotePath(filePath, args.remotePlatform);
+    if (platform !== "posix") {
+        throw new Error(
+            `UNSUPPORTED_REMOTE_PLATFORM: ${label}=${filePath} resolved as ${platform}. ` +
+            "This tool uses POSIX shell commands on the remote host. Use remotePlatform=\"posix\" or use ssh-upload/ssh-download for Windows SFTP transfers."
+        );
+    }
+}
+
 
 // ==================== remote-ssh ====================
 
@@ -137,7 +155,8 @@ server.registerTool("remote-ssh", {
     inputSchema: connSchema({
         command: z.string().describe("Shell command to execute"),
     }),
-    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
+    outputSchema: SSH_OUTPUT_SCHEMA,
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
 }, async (rawArgs) => {
     const args = rawArgs ?? {};
     try {
@@ -177,7 +196,8 @@ server.registerTool("ssh-read-lines", {
         maxLines: flexNum().describe("Max lines to read (default: 200)"),
         plain: flexBool().describe("Omit hashes (lineNum|content)"),
     }),
-    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
+    outputSchema: SSH_OUTPUT_SCHEMA,
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true },
 }, async (rawArgs) => {
     const args = rawArgs ?? {};
     try {
@@ -281,7 +301,8 @@ server.registerTool("ssh-edit-block", {
         endAnchor: z.string().optional().describe("End hash anchor 'cd.45' for range replace"),
         insertAfter: z.string().optional().describe("Hash anchor 'ab.42' to insert after"),
     }),
-    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
+    outputSchema: SSH_OUTPUT_SCHEMA,
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
 }, async (rawArgs) => {
     const args = rawArgs ?? {};
     try {
@@ -460,7 +481,8 @@ server.registerTool("ssh-search-code", {
         maxResults: flexNum().describe("Max result lines (default: 50)"),
         contextLines: flexNum().describe("Context lines around matches (default: 0)"),
     }),
-    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
+    outputSchema: SSH_OUTPUT_SCHEMA,
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true },
 }, async (rawArgs) => {
     const args = rawArgs ?? {};
     try {
@@ -543,7 +565,8 @@ server.registerTool("ssh-write-chunk", {
         content: z.string().describe("Content to write"),
         mode: z.enum(["rewrite", "append"]).optional().describe("Write mode (default: rewrite)"),
     }),
-    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true },
+    outputSchema: SSH_OUTPUT_SCHEMA,
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true },
 }, async (rawArgs) => {
     const args = rawArgs ?? {};
     try {
@@ -601,7 +624,8 @@ server.registerTool("ssh-upload", {
         verify: z.enum(["none", "stat"]).optional().describe("Post-transfer verification mode. Default: stat"),
         permissions: z.string().optional().describe("Optional octal file mode for uploaded file, e.g. 0644"),
     }),
-    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
+    outputSchema: SSH_OUTPUT_SCHEMA,
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
 }, async (rawArgs) => {
     const args = rawArgs ?? {};
     try {
@@ -651,7 +675,8 @@ server.registerTool("ssh-download", {
         overwrite: z.boolean().optional().describe("Replace existing destination when true. Default: false"),
         verify: z.enum(["none", "stat"]).optional().describe("Post-transfer verification mode. Default: stat"),
     }),
-    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
+    outputSchema: SSH_OUTPUT_SCHEMA,
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
 }, async (rawArgs) => {
     const args = rawArgs ?? {};
     try {
@@ -698,7 +723,8 @@ server.registerTool("ssh-verify", {
         filePath: z.string().describe("Path to file on remote server"),
         checksums: z.string().describe('JSON array of checksum strings, e.g. ["1-50:f7e2a1b0", "51-100:abcd1234"]'),
     }),
-    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
+    outputSchema: SSH_OUTPUT_SCHEMA,
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true },
 }, async (rawArgs) => {
     const args = rawArgs ?? {};
     try {

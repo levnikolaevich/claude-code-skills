@@ -34,6 +34,11 @@ import { fileInfo } from "./lib/info.mjs";
 import { autoSync } from "./lib/setup.mjs";
 import { fileChanges } from "./lib/changes.mjs";
 import { bulkReplace } from "./lib/bulk-replace.mjs";
+import { result, errorResult } from "@levnikolaevich/hex-common/runtime/results";
+
+// Shared output schema fragments for all tools
+const STATUS_ENUM = z.enum(["OK", "ERROR", "AUTO_REBASED", "CONFLICT", "STALE", "INVALID", "NO_CHANGES", "CHANGED", "UNSUPPORTED"]);
+const ERROR_SHAPE = z.object({ code: z.string(), message: z.string(), recovery: z.string() }).optional();
 
 const { server, StdioServerTransport } = await createServerRuntime({
     name: "hex-line-mcp",
@@ -79,7 +84,16 @@ server.registerTool("read_file", {
         verbosity: z.enum(["minimal", "compact", "full"]).optional().describe("Response budget. `minimal` is discovery-first, `compact` adds revision context, `full` preserves the richest payload."),
         edit_ready: flexBool().describe("Include hash/checksum edit protocol blocks explicitly. Default: false for discovery reads."),
     }),
-    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
+    outputSchema: z.object({
+        status: STATUS_ENUM,
+        path: z.string().optional(),
+        paths: z.array(z.string()).optional(),
+        content: z.string(),
+        edit_ready: z.boolean().optional(),
+        next_action: z.string().optional(),
+        error: ERROR_SHAPE,
+    }),
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
 }, async (rawParams) => {
     const { path: p, paths: multi, offset, limit, ranges: rawRanges, plain, verbosity, edit_ready } = rawParams ?? {};
     try {
@@ -107,21 +121,24 @@ server.registerTool("read_file", {
                     results.push(`File: ${fp}\n\nERROR: ${e.message}`);
                 }
             }
-            return { content: [{ type: "text", text: results.join("\n\n---\n\n") }] };
+            const content = results.join("\n\n---\n\n");
+            return result({ status: "OK", paths: multi, content, edit_ready: !!edit_ready }, { large: !!edit_ready || readVerbosity === "full" || content.length > 50_000 });
         }
         if (!p) throw new Error("Either 'path' or 'paths' is required");
-        return { content: [{ type: "text", text: readFile(p, {
+        const content = readFile(p, {
             offset,
             limit: readLimit,
             ranges,
             plain: readPlain,
             verbosity: readVerbosity,
             editReady: !!edit_ready,
-        }) }] };
+        });
+        return result({ status: "OK", path: p, content, edit_ready: !!edit_ready }, { large: !!edit_ready || readVerbosity === "full" || content.length > 50_000 });
     } catch (e) {
-        return { content: [{ type: "text", text: e.message }], isError: true };
+        return errorResult(e.code || "READ_ERROR", e.message, e.recovery || "Check path and permissions");
     }
 });
+
 
 
 // ==================== edit_file ====================
@@ -144,7 +161,8 @@ server.registerTool("edit_file", {
         conflict_policy: z.enum(["strict", "conservative"]).optional().describe('Conflict handling (default: "conservative"). "conservative" returns structured CONFLICT output with recovery_ranges, retry_edit/retry_edits, suggested_read_call, and retry_plan when available.'),
         allow_external: flexBool().describe("Allow editing a path outside the current project root. Use only when you intentionally target a temp or external file."),
     }),
-    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
+    outputSchema: z.object({ status: STATUS_ENUM, path: z.string().optional(), content: z.string(), next_action: z.string().optional(), error: ERROR_SHAPE }),
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
 }, async (rawParams) => {
     const { path: p, edits: json, dry_run, restore_indent, base_revision, conflict_policy, allow_external } = rawParams ?? {};
     try {
@@ -153,19 +171,15 @@ server.registerTool("edit_file", {
         try { parsed = typeof json === "string" ? JSON.parse(json) : json; }
         catch { throw new Error('edits: invalid JSON. Expected: [{"set_line":{"anchor":"xx.N","new_text":"..."}}]'); }
         if (!Array.isArray(parsed) || !parsed.length) throw new Error("Edits: non-empty JSON array required");
-        return {
-            content: [{
-                type: "text",
-                text: editFile(p, parsed, {
-                    dryRun: dry_run,
-                    restoreIndent: restore_indent,
-                    baseRevision: base_revision,
-                    conflictPolicy: conflict_policy,
-                }),
-            }],
-        };
+        const content = editFile(p, parsed, {
+            dryRun: dry_run,
+            restoreIndent: restore_indent,
+            baseRevision: base_revision,
+            conflictPolicy: conflict_policy,
+        });
+        return result({ status: "OK", path: p, content }, { large: content.length > 50_000 });
     } catch (e) {
-        return { content: [{ type: "text", text: e.message }], isError: true };
+        return errorResult(e.code || "EDIT_ERROR", e.message, e.recovery || "Check anchors and checksums");
     }
 });
 
@@ -182,7 +196,8 @@ server.registerTool("write_file", {
         content: z.string().describe("File content"),
         allow_external: flexBool().describe("Allow writing a path outside the current project root. Use only when you intentionally target a temp or external file."),
     }),
-    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true },
+    outputSchema: z.object({ status: STATUS_ENUM, path: z.string(), lines: z.number(), error: ERROR_SHAPE }),
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
 }, async (rawParams) => {
     const { path: p, content, allow_external } = rawParams ?? {};
     try {
@@ -190,9 +205,10 @@ server.registerTool("write_file", {
         const abs = validateWritePath(p);
         mkdirSync(dirname(abs), { recursive: true });
         writeFileSync(abs, content, "utf-8");
-        return { content: [{ type: "text", text: `Created ${p} (${content.split("\n").length} lines)` }] };
+        const lines = content.split("\n").length;
+        return result({ status: "OK", path: p, lines });
     } catch (e) {
-        return { content: [{ type: "text", text: e.message }], isError: true };
+        return errorResult(e.code || "WRITE_ERROR", e.message, e.recovery || "Check path and permissions");
     }
 });
 
@@ -221,7 +237,8 @@ server.registerTool("grep_search", {
         edit_ready: flexBool().describe("Preserve hash/checksum search hunks in `content` mode. Default: false."),
         allow_large_output: flexBool().describe("Bypass the default content-mode block/char caps when you intentionally need a larger payload."),
     }),
-    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
+    outputSchema: z.object({ status: STATUS_ENUM, pattern: z.string().optional(), content: z.string(), next_action: z.string().optional(), error: ERROR_SHAPE }),
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true },
 }, async (rawParams) => {
     const { pattern, path: p, glob, type, output, case_insensitive, smart_case, literal, multiline,
             context, context_before, context_after, limit, total_limit, plain, edit_ready, allow_large_output } = rawParams ?? {};
@@ -229,15 +246,15 @@ server.registerTool("grep_search", {
         const resolvedOutput = output ?? "summary";
         const resolvedLimit = limit ?? (resolvedOutput === "summary" ? 20 : 100);
         const resolvedTotalLimit = total_limit ?? (resolvedOutput === "summary" ? 50 : undefined);
-        const result = await grepSearch(pattern, {
+        const searchResult = await grepSearch(pattern, {
             path: p, glob, type, output: resolvedOutput, caseInsensitive: case_insensitive, smartCase: smart_case,
             literal, multiline, context, contextBefore: context_before, contextAfter: context_after,
             limit: resolvedLimit, totalLimit: resolvedTotalLimit, plain, editReady: !!edit_ready,
             allowLargeOutput: !!allow_large_output,
         });
-        return { content: [{ type: "text", text: result }] };
+        return result({ status: "OK", pattern, content: searchResult }, { large: !!allow_large_output || resolvedOutput === "content" });
     } catch (e) {
-        return { content: [{ type: "text", text: e.message }], isError: true };
+        return errorResult(e.code || "GREP_ERROR", e.message, e.recovery || "Check pattern syntax");
     }
 });
 
@@ -252,14 +269,15 @@ server.registerTool("outline", {
     inputSchema: z.object({
         path: z.string().describe("Source file path"),
     }),
-    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
+    outputSchema: z.object({ status: STATUS_ENUM, path: z.string().optional(), content: z.string(), error: ERROR_SHAPE }),
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
 }, async (rawParams) => {
     const { path: p } = rawParams ?? {};
     try {
-        const result = await fileOutline(p);
-        return { content: [{ type: "text", text: result }] };
+        const content = await fileOutline(p);
+        return result({ status: "OK", path: p, content });
     } catch (e) {
-        return { content: [{ type: "text", text: e.message }], isError: true };
+        return errorResult(e.code || "OUTLINE_ERROR", e.message, e.recovery || "Check file path and language support");
     }
 });
 
@@ -274,16 +292,18 @@ server.registerTool("verify", {
         checksums: z.array(z.string()).describe('Checksum strings, e.g. ["1-50:f7e2a1b0", "51-100:abcd1234"]'),
         base_revision: z.string().optional().describe("Optional prior revision to compare against latest state."),
     }),
-    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
+    outputSchema: z.object({ status: STATUS_ENUM, path: z.string().optional(), content: z.string(), error: ERROR_SHAPE }),
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
 }, async (rawParams) => {
     const { path: p, checksums, base_revision } = rawParams ?? {};
     try {
         if (!Array.isArray(checksums) || checksums.length === 0) {
             throw new Error("checksums must be a non-empty array of strings");
         }
-        return { content: [{ type: "text", text: verifyChecksums(p, checksums, { baseRevision: base_revision }) }] };
+        const content = verifyChecksums(p, checksums, { baseRevision: base_revision });
+        return result({ status: "OK", path: p, content });
     } catch (e) {
-        return { content: [{ type: "text", text: e.message }], isError: true };
+        return errorResult(e.code || "VERIFY_ERROR", e.message, e.recovery || "Check checksums format");
     }
 });
 
@@ -304,21 +324,23 @@ server.registerTool("inspect_path", {
         format: z.enum(["compact", "full"]).optional().describe('"compact" = shorter path view, "full" = include sizes/metadata where available'),
         verbosity: z.enum(["minimal", "compact", "full"]).optional().describe("Response budget. `minimal` returns the shortest tree summary."),
     }),
-    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
+    outputSchema: z.object({ status: STATUS_ENUM, path: z.string().optional(), content: z.string(), next_action: z.string().optional(), error: ERROR_SHAPE }),
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true },
 }, async (rawParams) => {
     const { path: p, max_depth, max_entries, gitignore, format, pattern, type: entryType, verbosity } = rawParams ?? {};
     try {
         const resolvedVerbosity = verbosity ?? "minimal";
-        return { content: [{ type: "text", text: inspectPath(p, {
+        const content = inspectPath(p, {
             max_depth: max_depth ?? (pattern ? 20 : (resolvedVerbosity === "full" ? 3 : 2)),
             gitignore,
             format: format ?? (resolvedVerbosity === "full" ? "full" : "compact"),
             pattern,
             type: entryType,
             max_entries,
-        }) }] };
+        });
+        return result({ status: "OK", path: p, content });
     } catch (e) {
-        return { content: [{ type: "text", text: e.message }], isError: true };
+        return errorResult(e.code || "INSPECT_ERROR", e.message, e.recovery || "Check path exists");
     }
 });
 
@@ -333,13 +355,15 @@ server.registerTool("changes", {
         path: z.string().describe("File or directory path"),
         compare_against: z.string().optional().describe('Git ref to compare against (default: "HEAD")'),
     }),
-    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
+    outputSchema: z.object({ status: STATUS_ENUM, path: z.string().optional(), content: z.string(), next_action: z.string().optional(), error: ERROR_SHAPE }),
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true },
 }, async (rawParams) => {
     const { path: p, compare_against } = rawParams ?? {};
     try {
-        return { content: [{ type: "text", text: await fileChanges(p, compare_against) }] };
+        const content = await fileChanges(p, compare_against);
+        return result({ status: "OK", path: p, content }, { large: content.length > 50_000 });
     } catch (e) {
-        return { content: [{ type: "text", text: e.message }], isError: true };
+        return errorResult(e.code || "CHANGES_ERROR", e.message, e.recovery || "Check git ref and path");
     }
 });
 
@@ -358,7 +382,8 @@ server.registerTool("bulk_replace", {
         format: z.enum(["compact", "full"]).optional().describe('"compact" (default) = summary only, "full" = include capped diffs'),
         allow_external: flexBool().describe("Allow a replacement root outside the current project root. Use only when you intentionally target a temp or external directory."),
     }),
-    annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false },
+    outputSchema: z.object({ status: STATUS_ENUM, path: z.string().optional(), content: z.string(), next_action: z.string().optional(), error: ERROR_SHAPE }),
+    annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: false },
 }, async (rawParams) => {
     try {
         const params = rawParams ?? {};
@@ -368,15 +393,15 @@ server.registerTool("bulk_replace", {
         try { replacementsInput = typeof raw === "string" ? JSON.parse(raw) : raw; }
         catch { throw new Error('replacements: invalid JSON. Expected: [{"old":"text","new":"replacement"}]'); }
         const replacements = replacementPairsSchema.parse(replacementsInput);
-        const result = bulkReplace(
+        const content = bulkReplace(
             params.path,
             params.glob || "**/*.{md,mjs,json,yml,ts,js}",
             replacements,
             { dryRun: params.dry_run || false, maxFiles: params.max_files || 100, format: params.format }
         );
-        return { content: [{ type: "text", text: result }] };
+        return result({ status: "OK", path: params.path, content }, { large: params.format === "full" });
     } catch (e) {
-        return { content: [{ type: "text", text: e.message }], isError: true };
+        return errorResult(e.code || "REPLACE_ERROR", e.message, e.recovery || "Check replacement pairs and scope");
     }
 });
 

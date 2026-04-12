@@ -153,6 +153,8 @@ Return structured results to orchestrator.
 3. **Include failure details** - provide actionable information for debugging
 4. **Respect timeout** - prevent hanging on infinite loops
 
+**Runtime note:** Long-running test commands: prefer Claude Code `Monitor` tool (2.1.98+) to stream background script events instead of polling Bash.
+
 ---
 
 ## Definition of Done

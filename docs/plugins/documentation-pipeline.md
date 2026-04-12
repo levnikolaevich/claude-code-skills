@@ -14,7 +14,7 @@
 
 ## What it does
 
-Generates full project documentation in one command. Auto-detects project type (backend, frontend, devops) and creates appropriate docs: CLAUDE.md, README, architecture, requirements, API specs, runbooks, references, kanban, and test strategy. Also extracts procedural docs into reusable .claude/commands.
+Generates full project documentation in one command. Auto-detects project type (backend, frontend, devops) and creates appropriate docs: AGENTS.md (canonical), CLAUDE.md and GEMINI.md (`@AGENTS.md` import stubs), README, architecture, requirements, API specs, runbooks, references, kanban, and test strategy. Also extracts procedural docs into reusable .claude/commands.
 
 ## Skills
 
@@ -22,7 +22,7 @@ Generates full project documentation in one command. Auto-detects project type (
 |-------|-------------|
 | ln-100-documents-pipeline | Top orchestrator for complete doc system |
 | ln-110-project-docs-coordinator | Detect project type, delegate to workers |
-| ln-111-root-docs-creator | CLAUDE.md, docs/README, standards, principles, tools |
+| ln-111-root-docs-creator | AGENTS.md canonical + CLAUDE.md/GEMINI.md stubs, docs/README, standards, principles |
 | ln-112-project-core-creator | Requirements, architecture, tech stack, patterns |
 | ln-113-backend-docs-creator | API spec, database schema (when backend detected) |
 | ln-114-frontend-docs-creator | Design guidelines (when frontend detected) |

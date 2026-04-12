@@ -317,6 +317,8 @@ Standalone mode:
 - omit `runId` and `summaryArtifactPath`
 - write `.hex-skills/runtime-artifacts/runs/{run_id}/optimization-worker/ln-814--{identifier}.json`
 
+**Runtime note:** Long-running optimization commands: prefer Claude Code `Monitor` tool (2.1.98+) to stream background script events instead of polling Bash.
+
 ## Definition of Done
 
 - [ ] Baseline established using same metric type as observed problem

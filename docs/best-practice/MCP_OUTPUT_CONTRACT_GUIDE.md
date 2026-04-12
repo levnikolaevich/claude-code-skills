@@ -1,15 +1,14 @@
 # MCP Output Contract Guide
 
-> **SCOPE:** Maintainer reference for public MCP output contracts. Defines canonical `status`, `reason`, `next_action`, `next_actions`, `summary`, and error envelope vocabulary for repo-owned MCP servers.
+> **SCOPE:** Maintainer reference for public MCP output contracts. Defines canonical `status`, `reason`, `next_action`, `next_actions`, `summary`, and error envelope vocabulary for repo-owned MCP servers. These fields live in `structuredContent` (primary payload). The `content[0].text` block is auto-generated `JSON.stringify(structuredContent)` per MCP spec and is not separately specified.
 
 This guide exists to stop drift. New MCP tools and edits to existing ones should reuse the same public vocabulary instead of inventing fresh wording.
 
 ## 1. Public Contract First
 
-These rules apply to outputs that agents consume directly:
+These rules apply to `structuredContent` fields returned by repo-owned MCP tools:
 
 - MCP server tool responses
-- text contracts returned by repo-owned MCP tools
 - public README tool examples
 - hook-facing recovery messages when they guide the next tool call
 
@@ -22,7 +21,7 @@ These rules do not apply to:
 
 ## 2. Canonical Field Order
 
-When a tool returns a structured text contract, prefer this order:
+When a tool returns structured content, prefer this order:
 
 1. `status`
 2. `reason`
@@ -187,41 +186,61 @@ Bad:
 
 ## 7. Error Envelope
 
-Repo-owned MCP errors should use this public shape:
+Repo-owned MCP errors should use this public shape in `structuredContent`:
 
 - `status: "ERROR"`
 - `code`
 - `summary`
 - `next_action`
 - `recovery`
+- `error: { code, message, recovery }` (canonical sub-object)
 
-`summary` explains what failed.
+`summary` explains what failed. `next_action` names the immediate category of recovery. `recovery` gives the human-readable instruction.
 
-`next_action` names the immediate category of recovery.
-
-`recovery` gives the human-readable instruction.
+On the MCP envelope level, ALSO set `isError: true` (see §8).
 
 Do not return raw stack traces in public tool outputs.
 
-## 8. Text Contracts vs JSON Contracts
+## 8. MCP Envelope
 
-### Text-first tools
+Every tool response has this shape:
 
-`hex-line` returns operational text blocks that agents read directly. For those tools:
+```json
+{
+  "content": [{"type": "text", "text": "<JSON.stringify(structuredContent)>"}],
+  "structuredContent": { /* matches outputSchema, uses vocabulary from §3-6 */ },
+  "isError": true,
+  "_meta": {"anthropic/maxResultSizeChars": 500000}
+}
+```
 
-- keep each field on its own line when it is top-level
-- prefer `entry: ... | status: ... | ...` for repeated compact rows
-- use `summary` and `snippet` instead of long prose paragraphs
+- `structuredContent` is the primary payload consumed by agents and validated against `outputSchema`.
+- `content[0].text` is `JSON.stringify(structuredContent)` -- required by MCP spec 2025-06-18 backward-compat rule.
+- `isError: true` whenever `structuredContent.status === "ERROR"`.
+- `_meta` is present only for large results (see §9).
 
-### JSON-first tools
+### Envelope layering
 
-`hex-graph` is object-first. For those tools:
+| Layer | Field | Purpose |
+|-------|-------|---------|
+| MCP envelope | `isError: true` | Tells MCP client this is an error response |
+| Structured payload | `status: "ERROR"` | Tells agent how to interpret the payload |
 
-- keep top-level fields stable
-- prune empty values where possible
-- keep `next_actions` as labels, not prose
+On error: set BOTH. On success: omit `isError`, use `status: "OK"` or other success status.
 
-## 9. Drift Rules
+### Domain envelopes
+
+Domain-specific envelopes (e.g., hex-graph `{status, query, result, evidence, limits_applied}`) live INSIDE `structuredContent`. They are valid outputSchema shapes and should not be flattened to match a shared base schema.
+
+## 9. Result metadata (`_meta`)
+
+| Key | Type | Purpose | When to set |
+|-----|------|---------|-------------|
+| `anthropic/maxResultSizeChars` | number | Override default persist cap (Claude Code 2.1.91+) | Results >50KB |
+
+Add `_meta` on the top-level result object, not inside content blocks.
+
+## 10. Drift Rules
 
 If you change a public label:
 
@@ -232,7 +251,7 @@ If you change a public label:
 
 Do not introduce a new label if an existing one already covers the same decision.
 
-## 10. Review Checklist
+## 11. Review Checklist
 
 Before merging MCP output changes, check:
 
@@ -240,8 +259,10 @@ Before merging MCP output changes, check:
 - `reason` is snake_case and stable
 - `next_action` / `next_actions` use labels, not prose
 - `summary` is compact and non-redundant
-- error outputs use the shared envelope
+- error outputs set BOTH `isError: true` and `structuredContent.status: "ERROR"`
+- `outputSchema` matches actual `structuredContent` shape (schema-contract tests)
+- large results set `_meta["anthropic/maxResultSizeChars"]`
 - README examples match the live output
 - tests assert the public contract, not only implementation detail
 
-**Last Updated:** 2026-04-05
+**Last Updated:** 2026-04-11

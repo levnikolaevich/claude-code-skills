@@ -8,8 +8,9 @@
 
 | Requirement | Why It Exists |
 |-------------|---------------|
-| `AGENTS.md` is the canonical machine-facing entrypoint | Keeps the always-loaded map small and stable |
-| `CLAUDE.md` stays a thin derived Anthropic entrypoint | Avoids duplicated persistent context |
+| `AGENTS.md` is the canonical machine-facing entrypoint | Keeps the always-loaded map small and stable; single source of content |
+| `CLAUDE.md` is a `@AGENTS.md` import stub with a `## Claude Code` delta (≤50 lines) | Keeps Claude Code's auto-loaded file tiny; the import expands AGENTS.md into context at session start |
+| `GEMINI.md` is a `@AGENTS.md` import stub with a `## Gemini CLI` delta (≤50 lines) | Same mechanism for Gemini CLI via its native `@file.md` import syntax |
 | Every generated doc has the standard header contract | Enables routing and deterministic audits |
 | Every generated doc has `Quick Navigation`, `Agent Entry`, and `Maintenance` | Enables section-first reads |
 | No raw placeholders outside allowlisted setup docs | Generated docs must be publishable immediately |
@@ -49,14 +50,15 @@ Every generated markdown doc must expose the same top scan shape:
 
 | File | Role |
 |------|------|
-| `AGENTS.md` | Canonical vendor-neutral root map |
-| `CLAUDE.md` | Anthropic-compatible thin wrapper |
-| `docs/README.md` | Canonical documentation hub |
+| `AGENTS.md` | Canonical vendor-neutral root map. Single source of content. |
+| `CLAUDE.md` | `@AGENTS.md` import stub + `## Claude Code` harness delta. Auto-loaded by Claude Code. |
+| `GEMINI.md` | `@AGENTS.md` import stub + `## Gemini CLI` harness delta. Auto-loaded by Gemini CLI. |
+| `docs/README.md` | Canonical documentation hub. |
 
 Root docs should be map-first:
-- small enough to stay cheap in context
+- AGENTS.md ≤200 lines (ideally ≤150); CLAUDE.md and GEMINI.md stubs ≤50 lines (ideally ≤20)
 - explicit about routing
-- light on deep domain detail
+- light on deep domain detail; push depth into `docs/` and `.claude/rules/*.md` with `paths:` frontmatter
 
 ## Document Kinds
 

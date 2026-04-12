@@ -8,6 +8,10 @@ import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
 
+// Structured MCP result accessors — no legacy fallbacks
+function textOf(r) { return r.structuredContent.content; }
+function errMsgOf(r) { return r.structuredContent.error.message; }
+
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const HOOK_PATH = resolve(__dirname, "../hook.mjs");
 const require = createRequire(import.meta.url);
@@ -1338,7 +1342,7 @@ describe("edit_file replace removed", () => {
                     },
                 });
                 assert.equal(result.isError, true, "Tool rejects non-canonical edit payload");
-                assert.match(result.content[0].text, /BAD_INPUT: unknown edit type/, "Failure is reported at the public contract boundary");
+                assert.match(errMsgOf(result), /BAD_INPUT: unknown edit type/, "Failure is reported at the public contract boundary");
             });
         } finally {
             if (fs.existsSync(tmp)) fs.unlinkSync(tmp);
@@ -1829,7 +1833,8 @@ describe("hook — advisory mode", () => {
         try {
             const r = await runHook("PreToolUse", "Read", { file_path: "src/index.ts" }, {}, { cwd: repo });
             assert.equal(r.code, 0);
-            assert.ok(r.stdout.includes("\"permissionDecision\":\"allow\""));
+            assert.ok(!r.stdout.includes("\"permissionDecision\""), "advisory mode must NOT set permissionDecision");
+            assert.ok(r.stdout.includes("\"additionalContext\""), "advisory mode uses additionalContext");
             assert.ok(r.stdout.includes("read_file"));
         } finally {
             fs.rmSync(repo, { recursive: true, force: true });
@@ -1843,7 +1848,8 @@ describe("hook — advisory mode", () => {
         try {
             const r = await runHook("PreToolUse", "Bash", { command: "cat src/index.ts" }, {}, { cwd: repo });
             assert.equal(r.code, 0);
-            assert.ok(r.stdout.includes("\"permissionDecision\":\"allow\""));
+            assert.ok(!r.stdout.includes("\"permissionDecision\""), "advisory mode must NOT set permissionDecision");
+            assert.ok(r.stdout.includes("\"additionalContext\""), "advisory mode uses additionalContext");
             assert.ok(r.stdout.includes("read_file"));
         } finally {
             fs.rmSync(repo, { recursive: true, force: true });
@@ -1857,7 +1863,8 @@ describe("hook — advisory mode", () => {
         try {
             const r = await runHook("PreToolUse", "Glob", { pattern: "**/*.ts" }, {}, { cwd: repo });
             assert.equal(r.code, 0);
-            assert.ok(r.stdout.includes("\"permissionDecision\":\"allow\""));
+            assert.ok(!r.stdout.includes("\"permissionDecision\""), "advisory mode must NOT set permissionDecision");
+            assert.ok(r.stdout.includes("\"additionalContext\""), "advisory mode uses additionalContext");
             assert.ok(r.stdout.includes("inspect_path"));
         } finally {
             fs.rmSync(repo, { recursive: true, force: true });
@@ -2112,7 +2119,7 @@ describe("protocol: edit_file output", () => {
                     name: "read_file",
                     arguments: { path: tmp, ranges: ["2-3"] },
                 });
-                const defaultText = defaultRead.content[0].text;
+                const defaultText = textOf(defaultRead);
                 assert.ok(defaultText.includes("2|beta"), "default read_file is discovery-first plain output");
                 assert.ok(!defaultText.includes("checksum:"), "default read_file omits edit-ready checksums");
 
@@ -2120,7 +2127,7 @@ describe("protocol: edit_file output", () => {
                     name: "read_file",
                     arguments: { path: tmp, ranges: ["2-3"], edit_ready: true, verbosity: "full" },
                 });
-                const readText = readResult.content[0].text;
+                const readText = textOf(readResult);
                 const startAnchor = readText.match(/([a-z2-7]{2}\.2)\tbeta/)?.[1];
                 const endAnchor = readText.match(/([a-z2-7]{2}\.3)\tgamma/)?.[1];
                 const checksum = readText.match(/checksum: (\d+-\d+:[0-9a-f]{8})/)?.[1];
@@ -2142,7 +2149,7 @@ describe("protocol: edit_file output", () => {
                     },
                 });
                 assert.notEqual(editResult.isError, true, "Canonical edit payload succeeds");
-                const editText = editResult.content[0].text;
+                const editText = textOf(editResult);
                 assert.ok(editText.includes("status: OK"), "Edit reports success");
                 assert.ok(editText.includes("block: post_edit"), "Edit returns post-edit canonical block");
             });
@@ -2160,7 +2167,7 @@ describe("protocol: edit_file output", () => {
                     name: "read_file",
                     arguments: { path: tmp, ranges: ["1-2"], edit_ready: true, verbosity: "full" },
                 });
-                const readText = readResult.content[0].text;
+                const readText = textOf(readResult);
                 const anchor = readText.match(/([a-z2-7]{2}\.2)\tbeta/)?.[1];
                 assert.ok(anchor, "read_file still works for external temp paths");
 
@@ -2172,8 +2179,8 @@ describe("protocol: edit_file output", () => {
                     },
                 });
                 assert.equal(blocked.isError, true, "external edit should be blocked by default");
-                assert.match(blocked.content[0].text, /PATH_OUTSIDE_PROJECT/);
-                assert.match(blocked.content[0].text, /allow_external=true/);
+                assert.match(errMsgOf(blocked), /PATH_OUTSIDE_PROJECT/);
+                assert.ok(errMsgOf(blocked).includes("allow_external"), "error message mentions allow_external");
 
                 const allowed = await client.callTool({
                     name: "edit_file",
@@ -2200,7 +2207,7 @@ describe("protocol: edit_file output", () => {
                     name: "grep_search",
                     arguments: { path: tmp, pattern: "AAA" },
                 });
-                const summaryText = summaryResult.content[0].text;
+                const summaryText = textOf(summaryResult);
                 assert.ok(summaryText.includes("summary:"), "default grep_search returns summary output");
                 assert.ok(summaryText.includes("snippets:"), "summary output includes snippets");
                 assert.ok(!summaryText.includes("block: search_hunk"), "summary output omits canonical hunks");
@@ -2209,7 +2216,7 @@ describe("protocol: edit_file output", () => {
                     name: "grep_search",
                     arguments: { path: tmp, pattern: "AAA", output: "content", edit_ready: true },
                 });
-                const contentText = contentResult.content[0].text;
+                const contentText = textOf(contentResult);
                 assert.ok(contentText.includes("block: search_hunk"), "explicit content mode returns search hunks");
                 assert.ok(contentText.includes("checksum:"), "explicit content mode returns checksums");
             });
@@ -2229,7 +2236,7 @@ describe("protocol: edit_file output", () => {
                     arguments: { path: filePath, content: "alpha\n" },
                 });
                 assert.equal(blockedWrite.isError, true, "external write should be blocked by default");
-                assert.match(blockedWrite.content[0].text, /allow_external=true/);
+                assert.match(errMsgOf(blockedWrite), /allow_external=true/);
 
                 const allowedWrite = await client.callTool({
                     name: "write_file",
@@ -2246,7 +2253,7 @@ describe("protocol: edit_file output", () => {
                     },
                 });
                 assert.equal(blockedBulk.isError, true, "external bulk replace should be blocked by default");
-                assert.match(blockedBulk.content[0].text, /allow_external=true/);
+                assert.match(errMsgOf(blockedBulk), /allow_external=true/);
 
                 const allowedBulk = await client.callTool({
                     name: "bulk_replace",

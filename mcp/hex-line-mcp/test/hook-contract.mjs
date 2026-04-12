@@ -133,7 +133,7 @@ describe("hook PreToolUse JSON schema", () => {
         assertPreToolUseSchema(output, "deny");
     });
 
-    it("advise() emits hookEventName when hooks.mode is advisory", () => {
+    it("advise() omits permissionDecision and uses additionalContext in advisory mode", () => {
         mkdirSync(join(tmpRoot, ".hex-skills"), { recursive: true });
         writeFileSync(
             join(tmpRoot, ".hex-skills", "environment_state.json"),
@@ -150,9 +150,26 @@ describe("hook PreToolUse JSON schema", () => {
                     tool_input: { file_path: filePath },
                 },
             });
-            assert.equal(result.status, 0, "advisory mode must exit 0 (allow)");
+            assert.equal(result.status, 0, "advisory mode must exit 0");
             const output = parseStructuredOutput(result.stdout);
-            assertPreToolUseSchema(output, "allow");
+            // Advisory mode: no permissionDecision (not allow, not defer)
+            assert.equal(
+                output.hookSpecificOutput.permissionDecision,
+                undefined,
+                "advisory mode must NOT set permissionDecision — omit it entirely"
+            );
+            // Must have additionalContext for the redirect hint
+            assert.equal(
+                typeof output.hookSpecificOutput.additionalContext,
+                "string",
+                "advisory mode must set hookSpecificOutput.additionalContext"
+            );
+            assert.ok(
+                output.hookSpecificOutput.additionalContext.length > 0,
+                "additionalContext must not be empty"
+            );
+            // Must have systemMessage
+            assert.equal(typeof output.systemMessage, "string", "advisory must set systemMessage");
         } finally {
             rmSync(join(tmpRoot, ".hex-skills"), { recursive: true, force: true });
         }

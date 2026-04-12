@@ -29,7 +29,8 @@
 | Requirement | Why It Exists |
 |-------------|---------------|
 | `AGENTS.md` is the canonical machine-facing root doc | Keeps the always-loaded entrypoint small and stable |
-| `CLAUDE.md` stays a thin derived Anthropic entrypoint | Avoids duplicate persistent context |
+| `CLAUDE.md` is a `@AGENTS.md` import stub with a `## Claude Code` delta (≤50 lines) | Keeps Claude Code's auto-loaded file tiny; the import expands AGENTS.md into context at session start |
+| `GEMINI.md` is a `@AGENTS.md` import stub with a `## Gemini CLI` delta (≤50 lines) | Same mechanism for Gemini CLI via its native `@file.md` import syntax |
 | Every generated doc has the standard header contract | Enables deterministic routing and auditing |
 | Every generated doc has `Quick Navigation`, `Agent Entry`, and `Maintenance` | Enables section-first reading |
 | No raw placeholders outside allowlisted task setup docs | Published docs must be immediately usable |
@@ -43,7 +44,7 @@
 | Top sections | `Quick Navigation`, `Agent Entry`, `Maintenance` |
 | Doc kinds | `index`, `reference`, `how-to`, `explanation`, `record` |
 | Doc roles | `canonical`, `navigation`, `working`, `derived` |
-| Root model | `AGENTS.md` canonical, `CLAUDE.md` derived |
+| Root model | `AGENTS.md` canonical; `CLAUDE.md` and `GEMINI.md` are `@AGENTS.md` import stubs |
 
 ## Writing Rules
 

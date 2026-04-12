@@ -98,3 +98,7 @@ rm -rf .hex-skills/runtime-artifacts/runs/{run_id}/audit-worker
 This removes run-scoped worker markdown reports and JSON summaries. The coordinator summary artifact stays in `.hex-skills/runtime-artifacts/runs/{run_id}/audit-coordinator/`.
 
 Do NOT delete `docs/project/.audit/results_log.md` — it lives outside the dated directory.
+
+## Research Evidence Interop
+
+When audit findings feed into evaluation coordinators (via ln-310 `extra_evidence_workers`), research evidence follows `shared/references/evaluation_research_contract.md` including `confidence_tier`. Audit coordinators that perform their own research should use the same evidence card format for interoperability.

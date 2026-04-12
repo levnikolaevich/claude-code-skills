@@ -76,8 +76,18 @@ Required JSON fields:
 - `payload.issues_total`
 - `payload.severity_counts`
 - `payload.warnings`
+- `payload.evidence_basis_counts` — optional breakdown by evidence basis (e.g. `{"code_evidence": 5, "research_claim": 1, "agent_inference": 0}`)
 
 Diagnostic sub-scores never replace the primary penalty-based score.
+
+## Evidence Basis
+
+When audit findings are consumed by evaluation coordinators (ln-310 `extra_evidence_workers`), each finding should include `evidence_basis` where determinable:
+- `code_evidence` — finding verified directly in code (grep, AST, pattern match, test result)
+- `research_claim` — finding from external documentation or standards
+- `agent_inference` — finding from agent review opinion
+
+Most audit findings are `code_evidence` by nature (two-layer detection scans code directly). Workers that cannot determine basis should omit the field — the merge worker treats missing `evidence_basis` as `code_evidence` for audit workers.
 
 ## Generic Critical Rules
 

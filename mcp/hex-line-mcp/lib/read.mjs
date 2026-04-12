@@ -7,6 +7,7 @@ import { validatePath, normalizePath } from "./security.mjs";
 import { getGraphDB, fileAnnotations, getRelativePath } from "./graph-enrich.mjs";
 import { formatSize, relativeTime, MAX_OUTPUT_CHARS } from "./format.mjs";
 import { readSnapshot } from "./snapshot.mjs";
+import { hashLine } from "@levnikolaevich/hex-common/text-protocol/hash";
 import {
     buildDiagnosticBlock,
     buildEditReadyBlock,
@@ -21,7 +22,7 @@ const DEFAULT_LIMIT = 2000;
 function resolveReadMode(opts = {}) {
     const verbosity = opts.verbosity || "full";
     const editReady = opts.editReady ?? (verbosity === "full" && opts.plain !== true);
-    const plain = opts.plain ?? (!editReady || verbosity !== "full");
+    const plain = opts.plain ?? false;
     return { verbosity, editReady, plain };
 }
 
@@ -113,12 +114,15 @@ function buildReadBlock(snapshot, range, plain, remainingChars) {
     };
 }
 
-function buildPlainRange(snapshot, range, remainingChars) {
+function buildPlainRange(snapshot, range, remainingChars, plain = true) {
     const lines = [];
     let nextBudget = remainingChars;
     let cappedAtLine = 0;
     for (let lineNumber = range.startLine; lineNumber <= range.endLine; lineNumber++) {
-        const rendered = `${lineNumber}|${snapshot.lines[lineNumber - 1] ?? ""}`;
+        const content = snapshot.lines[lineNumber - 1] ?? "";
+        const rendered = plain
+            ? `${lineNumber}|${content}`
+            : `${hashLine(content)}.${lineNumber}\t${content}`;
         const nextCost = rendered.length + 1;
         if (lines.length > 0 && nextBudget - nextCost < 0) {
             cappedAtLine = lineNumber;
@@ -128,8 +132,12 @@ function buildPlainRange(snapshot, range, remainingChars) {
         nextBudget -= nextCost;
     }
     if (lines.length === 0) {
-        lines.push(`${range.startLine}|${snapshot.lines[range.startLine - 1] ?? ""}`);
-        nextBudget -= lines[0].length + 1;
+        const content = snapshot.lines[range.startLine - 1] ?? "";
+        const rendered = plain
+            ? `${range.startLine}|${content}`
+            : `${hashLine(content)}.${range.startLine}\t${content}`;
+        lines.push(rendered);
+        nextBudget -= rendered.length + 1;
         if (range.endLine > range.startLine) cappedAtLine = range.startLine + 1;
     }
     return { text: lines.join("\n"), remainingChars: nextBudget, cappedAtLine };
@@ -217,7 +225,7 @@ export function readFile(filePath, opts = {}) {
         let remainingChars = MAX_OUTPUT_CHARS;
         let cappedAtLine = 0;
         for (const range of normalizedRanges) {
-            const built = buildPlainRange(snapshot, range, remainingChars);
+            const built = buildPlainRange(snapshot, range, remainingChars, plain);
             sections.push(built.text);
             remainingChars = built.remainingChars;
             if (built.cappedAtLine) {

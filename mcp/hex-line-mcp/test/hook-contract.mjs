@@ -252,6 +252,32 @@ describe("hook PreToolUse JSON schema", () => {
         assert.equal(result.status, 0, "read-only hex-line tools must pass in plan mode");
     });
 
+    it("allows hex-line write to .hex-skills/ in plan mode", () => {
+        const result = runHook({
+            cwd: tmpRoot,
+            payload: {
+                hook_event_name: "PreToolUse",
+                permission_mode: "plan",
+                tool_name: "mcp__hex-line__write_file",
+                tool_input: { path: ".hex-skills/agent-review/codex/result.md", content: "x" },
+            },
+        });
+        assert.equal(result.status, 0, ".hex-skills/ writes must pass in plan mode");
+    });
+
+    it("allows hex-line edit to .claude/ in plan mode", () => {
+        const result = runHook({
+            cwd: tmpRoot,
+            payload: {
+                hook_event_name: "PreToolUse",
+                permission_mode: "plan",
+                tool_name: "mcp__hex-line__edit_file",
+                tool_input: { path: "C:\\Users\\test\\.claude\\plans\\myplan.md", edits: [] },
+            },
+        });
+        assert.equal(result.status, 0, ".claude/ writes must pass in plan mode");
+    });
+
     it("does not block hex-line edit in default mode", () => {
         const result = runHook({
             cwd: tmpRoot,

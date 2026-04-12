@@ -78,6 +78,7 @@ When deduplicating findings from multiple sources:
 2. If a `research_claim` contradicts `code_evidence`, keep `code_evidence` and add contradiction warning.
 3. `agent_inference` findings without supporting `code_evidence` or `research_claim` are demoted to `severity=info` unless the agent provided a specific file:line reference.
 4. `confidence_tier` from research cards informs merge priority: `tier_1` > `tier_2` > `tier_3`.
+5. Findings without `evidence_basis` from audit workers (`summary_kind=audit-worker`) default to `code_evidence`.
 
 ## Definition of Done
 

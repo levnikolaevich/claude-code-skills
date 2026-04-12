@@ -18,10 +18,10 @@ Every refinement trace entry must include:
 ## Required Perspectives
 
 Current standard order:
-1. `dry_run_executor`
-2. `adversarial_reviewer`
+1. `generic_quality`
+2. `dry_run_executor`
 3. `new_dev_tester`
-4. `generic_quality`
+4. `adversarial_reviewer`
 5. `final_sweep`
 
 Later perspectives may be skipped, but they still must appear in the trace with explicit skip reasons.

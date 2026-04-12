@@ -243,6 +243,8 @@ This guide is intentionally aligned with current agent-engineering practice:
 - progressive disclosure
 - specialized workers with clean contracts
 - enforceable shared rules rather than prose-only guidance
+- OODA-inspired evaluation patterns: evidence classification (`evidence_basis`), research freshness, merge priority rules, feedback loops between quality gate and executor
+- separate specialized systems (audit vs evaluation) bridged by shared envelope fields rather than monolithic unification (per DORA, AWS Well-Architected, SARIF patterns)
 
 Useful official references:
 - Anthropic memory and context management

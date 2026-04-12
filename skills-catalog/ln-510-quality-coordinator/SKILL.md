@@ -154,10 +154,10 @@ Rules:
 ### Phase 6: Refinement
 
 Refinement order:
-1. `dry_run_executor`
-2. `adversarial_reviewer`
+1. `generic_quality`
+2. `dry_run_executor`
 3. `new_dev_tester`
-4. `generic_quality`
+4. `adversarial_reviewer`
 5. `final_sweep`
 
 Rules:

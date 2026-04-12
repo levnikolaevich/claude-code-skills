@@ -32,7 +32,7 @@ STAGE_2 --[all tasks Done]--> STAGE_3
 STAGE_2 --[task stuck 3+ reworks]--> PAUSED    # Handled by ln-400 internally — escalated as Stage 2 ERROR
 
 STAGE_3 --[PASS/CONCERNS/WAIVED]--> DONE (branch pushed by ln-500)
-STAGE_3 --[FAIL, cycles < 2]--> STAGE_2
+STAGE_3 --[FAIL, cycles < 2]--> STAGE_2   # reads metadata.rework_hint, passes --rework-focus to ln-400
 STAGE_3 --[FAIL, cycles >= 2]--> PAUSED
 
 PAUSED --[user resolves]--> (appropriate stage)
@@ -48,7 +48,7 @@ PAUSED --[user resolves]--> (appropriate stage)
 | STAGE_1 -> STAGE_2 | ln-310 verdict = GO, Readiness >= 5 | Retry once, then PAUSE |
 | STAGE_2 -> STAGE_3 | All tasks status = Done | Wait for remaining tasks |
 | STAGE_3 -> DONE | Verdict IN (PASS, CONCERNS, WAIVED), ln-500 pushed branch | Branch finalization by ln-500 |
-| STAGE_3 -> STAGE_2 | quality_cycles < 2 | If >= 2, PAUSE and escalate |
+| STAGE_3 -> STAGE_2 | quality_cycles < 2 | Read `metadata.rework_hint` from Stage 3 artifact; pass `--rework-focus {blocking_categories}` to ln-400. If >= 2, PAUSE and escalate |
 
 ## Counters (per Story)
 

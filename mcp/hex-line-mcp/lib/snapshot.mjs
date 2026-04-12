@@ -77,7 +77,7 @@ function buildUniqueTagIndex(lineHashes) {
             duplicates.add(tag);
             continue;
         }
-        index.set(tag, i);
+        index.set(tag, { idx: i, hash32: lineHashes[i] });
     }
     return index;
 }

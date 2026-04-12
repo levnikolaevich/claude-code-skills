@@ -393,11 +393,19 @@ function handlePreToolUse(data) {
     const toolInput = data.tool_input || {};
 
     // Plan mode: block mutating hex-line tools, allow read-only
+    // Exception: .hex-skills/ and .claude/ are runtime/config artifacts, not project files
     if (data.permission_mode === "plan" && HEX_LINE_MUTATING.has(toolName)) {
-        block(
-            "PLAN_MODE: hex-line write tools are blocked during planning.",
-            "Use read-only tools: read_file, grep_search, outline, verify, inspect_path, changes."
-        );
+        const targetPath = (toolInput.path || "").replace(/\\/g, "/");
+        const isPlanSafe = targetPath.includes("/.hex-skills/") ||
+            targetPath.includes(".hex-skills/") ||
+            targetPath.includes("/.claude/") ||
+            targetPath.includes(".claude/");
+        if (!isPlanSafe) {
+            block(
+                "PLAN_MODE: hex-line write tools are blocked during planning.",
+                "Use read-only tools: read_file, grep_search, outline, verify, inspect_path, changes."
+            );
+        }
     }
 
     // Already using hex-line - approve silently

@@ -33,6 +33,7 @@ Evaluation-platform coordinator for story quality review.
 
 Primary input:
 - `storyId`
+- `--previous-cycle-focus` (optional, from ln-500): comma-separated blocking categories from prior FAIL cycle
 
 Status filter:
 - `To Review`
@@ -71,15 +72,15 @@ Phase order:
 Use the Skill tool for delegated workers. Do not inline worker logic inside the coordinator.
 
 TodoWrite format (mandatory):
-- `Config`
-- `Discovery`
-- `Read-only evidence`
-- `Cleanup`
-- `Agent barrier`
-- `Merge`
-- `Refinement`
-- `Verdict`
-- `Self-check`
+- `Resolve Story and build runtime manifest`
+- `Load Story metadata and detect changed files`
+- `Run quality checkers and research in parallel`
+- `Apply safe tech-debt cleanup`
+- `Sync agents and wait for all evidence`
+- `Merge and deduplicate all findings`
+- `Run bounded refinement loop`
+- `Compute quality verdict and score`
+- `Verify runtime cleanup and self-check`
 
 Representative invocations:
 
@@ -118,6 +119,11 @@ Rules:
 - research is mandatory
 - worker summaries are the only completion signal
 - no merge or mutation occurs in this phase
+
+When `previous_cycle_focus` is provided:
+- Prioritize evidence collection for the listed blocking categories.
+- ln-511 code quality checker should focus on the specified areas first.
+- This does not exclude other evidence — it reorders priority.
 
 ### Phase 3: Cleanup
 

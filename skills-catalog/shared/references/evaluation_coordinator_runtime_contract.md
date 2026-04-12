@@ -70,6 +70,8 @@ Optional manifest fields:
 - `phase_policy`
 - `expected_agents`
 - `required_research`
+- `research_freshness_hours`
+- `extra_evidence_workers`
 
 `phase_policy` may define:
 - `delegate_phases`

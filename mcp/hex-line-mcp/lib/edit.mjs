@@ -129,7 +129,7 @@ function composeRawText(lines, lineEndings) {
  * Find line by tag.lineNum reference with fuzzy matching (+-5 lines).
  * Falls back to global hash relocation via hashIndex before throwing.
  */
-function findLine(lines, lineNum, expectedTag, hashIndex) {
+function findLine(lines, lineNum, expectedTag, hashIndex, originalHash32) {
     const idx = lineNum - 1;
     if (idx < 0 || idx >= lines.length) {
         const center = idx >= lines.length ? lines.length - 1 : 0;
@@ -166,16 +166,22 @@ function findLine(lines, lineNum, expectedTag, hashIndex) {
         if (normalizedActual === normalizedExpected) return i;
     }
 
+    let collisionDetail = "";
     if (hashIndex) {
         const relocated = hashIndex.get(expectedTag);
-        if (relocated !== undefined) return relocated;
+        if (relocated !== undefined) {
+            if (originalHash32 === undefined || relocated.hash32 === originalHash32) {
+                return relocated.idx;
+            }
+            collisionDetail = ` Nearest "${expectedTag}" at line ${relocated.idx + 1} is a hash collision (different content), not a relocation.`;
+        }
     }
 
     const snip = buildErrorSnippet(lines, idx);
     throw new Error(
-        `HASH_MISMATCH: line ${lineNum} expected ${expectedTag}, got ${actual}.\n\n` +
+        `HASH_MISMATCH: line ${lineNum} expected ${expectedTag}, got ${actual}.${collisionDetail}\n\n` +
         `Current content (lines ${snip.start}-${snip.end}):\n${snip.text}\n\n` +
-        `Tip: Use updated hashes above for retry.`
+        `Tip: Re-read the target range with edit_ready=true and retry with fresh anchors.`
     );
 }
 
@@ -581,7 +587,7 @@ function collectBatchConflicts({
 
     const locateRef = (ref, remaps, remapKeys) => {
         try {
-            const idx = findLine(lines, ref.line, ref.tag, hashIndex);
+            const idx = findLine(lines, ref.line, ref.tag, hashIndex, baseSnapshot?.lineHashes?.[ref.line - 1]);
             pushRemap(remaps, remapKeys, lines, ref, idx);
             return { idx };
         } catch (error) {
@@ -1080,7 +1086,7 @@ export function editFile(filePath, edits, opts = {}) {
 
     const locateOrConflict = (ref, reason = "stale_anchor", retryEditBuilder = null) => {
         try {
-            const idx = findLine(lines, ref.line, ref.tag, hashIndex);
+            const idx = findLine(lines, ref.line, ref.tag, hashIndex, baseSnapshot?.lineHashes?.[ref.line - 1]);
             trackRemap(ref, idx);
             return idx;
         } catch (e) {

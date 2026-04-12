@@ -40,6 +40,10 @@ Research workers should return compact evidence cards with:
 - `verdict`
 - `impact`
 - `actionability`
+- `confidence_tier` — one of:
+  - `tier_1` — official documentation, language spec, RFC (max confidence)
+  - `tier_2` — established best-practice guide, reputable blog, conference talk
+  - `tier_3` — community discussion, Stack Overflow, AI-generated content
 
 ## Actionability Gate
 

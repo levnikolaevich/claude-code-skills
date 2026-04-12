@@ -658,6 +658,69 @@ describe("edit error messages", () => {
     });
 });
 
+describe("hash collision safety", () => {
+    it("findLine rejects global relocation when full hash differs (collision)", async () => {
+        const { editFile } = await import("../lib/edit.mjs");
+        const { readSnapshot } = await import("../lib/snapshot.mjs");
+        const { fnv1a, lineTag } = await import("@levnikolaevich/hex-common/text-protocol/hash");
+        const tmp = TMP("hex-test-collision.txt");
+
+        // "line_content_13" and "line_content_40" share tag "cf" but differ on full 32-bit hash
+        const lineA = "line_content_13";
+        const lineB = "line_content_40";
+        assert.strictEqual(lineTag(fnv1a(lineA)), lineTag(fnv1a(lineB)), "Tags must collide");
+        assert.notStrictEqual(fnv1a(lineA), fnv1a(lineB), "Full hashes must differ");
+
+        // Place collision partners >10 lines apart so steps 1-4 can't match
+        const padding = Array.from({ length: 15 }, (_, i) => `pad_${i}`).join("\n");
+        // lineB at line 2, lineA at line 18 (separated by 16 lines)
+        fs.writeFileSync(tmp, `header\n${lineB}\n${padding}\n${lineA}\nfooter\n`);
+        try {
+            const snap1 = readSnapshot(tmp);
+            const revision1 = snap1.revision;
+            const tagA = lineTag(fnv1a(lineA));
+            const anchorA = `${tagA}.18`; // lineA is at line 18
+
+            // Mutate: remove lineA, lineB stays at line 2 (>10 lines from 18)
+            fs.writeFileSync(tmp, `header\n${lineB}\n${padding}\nfooter\n`);
+
+            // Edit with baseRevision — step 5 should detect collision via full hash mismatch
+            editFile(tmp, [{ set_line: { anchor: anchorA, new_text: "replaced" } }], { baseRevision: revision1 });
+            assert.fail("Should have thrown HASH_MISMATCH, not silently edited wrong line");
+        } catch (e) {
+            assert.ok(e.message.includes("HASH_MISMATCH"), `Expected HASH_MISMATCH, got: ${e.message.slice(0, 100)}`);
+            assert.ok(e.message.includes("hash collision"), "Error should mention collision");
+        } finally {
+            fs.unlinkSync(tmp);
+        }
+    });
+
+    it("findLine allows global relocation when full hash matches", async () => {
+        const { editFile } = await import("../lib/edit.mjs");
+        const { readSnapshot } = await import("../lib/snapshot.mjs");
+        const { fnv1a, lineTag } = await import("@levnikolaevich/hex-common/text-protocol/hash");
+        const tmp = TMP("hex-test-relocation.txt");
+
+        const uniqueLine = "this_is_a_unique_line_for_relocation_test";
+        const tag = lineTag(fnv1a(uniqueLine));
+
+        // Create file: uniqueLine at line 3
+        fs.writeFileSync(tmp, `header\npadding\n${uniqueLine}\nfooter\n`);
+        // Read to create initial snapshot with base_revision
+        const snap1 = readSnapshot(tmp);
+        const revision1 = snap1.revision;
+
+        // Mutate: insert a line at top, uniqueLine shifts to line 4
+        fs.writeFileSync(tmp, `new_top\nheader\npadding\n${uniqueLine}\nfooter\n`);
+
+        // Edit using old anchor (tag.3) with base_revision — should relocate to line 4
+        const result = editFile(tmp, [{ set_line: { anchor: `${tag}.3`, new_text: "relocated_ok" } }], { baseRevision: revision1 });
+        const content = fs.readFileSync(tmp, "utf8");
+        assert.ok(content.includes("relocated_ok"), "Relocation should succeed for genuine content move");
+        assert.ok(!content.includes(uniqueLine), "Original line should be replaced");
+    });
+});
+
 // ==================== inspect_path ====================
 
 describe("inspect_path", () => {

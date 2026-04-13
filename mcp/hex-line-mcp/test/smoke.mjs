@@ -690,7 +690,7 @@ describe("hash collision safety", () => {
             fs.writeFileSync(tmp, `header\n${lineB}\n${padding}\nfooter\n`);
 
             // Edit with baseRevision — step 5 should detect collision via full hash mismatch
-            editFile(tmp, [{ set_line: { anchor: anchorA, new_text: "replaced" } }], { baseRevision: revision1 });
+            editFile(tmp, [{ set_line: { anchor: anchorA, new_text: "replaced" } }], { baseRevision: revision1, conflictPolicy: "strict" });
             assert.fail("Should have thrown HASH_MISMATCH, not silently edited wrong line");
         } catch (e) {
             assert.ok(e.message.includes("HASH_MISMATCH"), `Expected HASH_MISMATCH, got: ${e.message.slice(0, 100)}`);

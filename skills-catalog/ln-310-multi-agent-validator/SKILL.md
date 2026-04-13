@@ -64,7 +64,7 @@ TodoWrite format (mandatory):
 - `Generate documentation updates`
 - `Apply accepted low-risk repairs`
 - `Sync agents and merge all evidence`
-- `Run bounded refinement loop`
+- `Run refinement (MANDATORY in ALL modes when Codex available — do NOT skip)`
 - `Compute verdict and write review output`
 - `Verify runtime cleanup and self-check`
 
@@ -248,6 +248,17 @@ node shared/scripts/evaluation-runtime/cli.mjs sync-agent --skill ln-310 --ident
 6. Checkpoint Phase 6 with `aggregation_summary`.
 
 ### Phase 7: Refinement
+
+> **NEVER SKIP THIS PHASE.** Phase 7 applies to ALL modes: `story`, `plan_review`, `context`.
+> The ONLY valid skip reason is Codex unavailable in health check.
+> Mode is NOT a skip reason. Complexity is NOT a skip reason. Time is NOT a skip reason.
+> If you are about to checkpoint Phase 7 without running ln-316 — STOP. You are making an error.
+
+| Mode | Phase 7 required? | Skip allowed? |
+|------|-------------------|---------------|
+| `story` | YES | NO (only if Codex unavailable) |
+| `plan_review` | YES | NO (only if Codex unavailable) |
+| `context` | YES | NO (only if Codex unavailable) |
 
 Phase 7 is MANDATORY when Codex is available. The coordinator MUST NOT checkpoint Phase 7 without a recorded `review-refinement` worker summary from ln-316. The runtime `advance` command will reject the transition if Codex was available in health check but no refinement summary exists.
 

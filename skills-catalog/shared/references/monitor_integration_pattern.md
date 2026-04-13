@@ -19,6 +19,7 @@ Use Monitor instead of `Bash` or `Bash(run_in_background=true)` when:
 | Install + verify | `{install_command} && {verify_command} 2>&1` | 300000 | false |
 | Multi-run loop | `{command} 2>&1 \| grep --line-buffered -E 'run\|result\|error'` | 600000 | false |
 | Log streaming | `docker compose logs -f 2>&1 \| grep --line-buffered -E 'ERROR\|CRITICAL'` | 300000 | true |
+| Agent wait (Codex/Gemini) | `tail -f {agent_log} \| grep --line-buffered -E 'Phase\|ERROR\|DONE'` | 120000 | false |
 
 ## Rules
 

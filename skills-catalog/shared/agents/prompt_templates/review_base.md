@@ -22,6 +22,8 @@ Before finalizing, actively research whether the proposed approach is optimal:
 - **Check if a simpler approach** exists: fewer moving parts, less code, fewer dependencies
 - **Check if a more standard approach** exists: industry patterns, well-known libraries, framework-native solutions
 - **Compare trade-offs**: if current approach has disadvantages vs alternatives, describe them concisely
+- **Centralization / Unification**: scan the codebase for duplicated logic, parallel implementations of the same concern, or patterns that could be unified into a shared module
+- **Open-source replacement**: search npm / PyPI / NuGet for maintained packages (>1k stars, active in last 6 months) that replace custom code proposed in the plan. Report under area `duplication` with package name + install size
 
 **Discard criteria** — do NOT suggest alternative if ANY condition met:
 - **Strictly dominated**: worse than chosen in ALL dimensions (no tradeoff exists)

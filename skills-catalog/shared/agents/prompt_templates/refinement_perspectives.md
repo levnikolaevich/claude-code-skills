@@ -1,24 +1,11 @@
 # Refinement Perspectives
 
-Perspective definitions for iterative refinement loop. Each iteration uses a different perspective to maximize unique findings. The orchestrator loads the matching `## perspective_{name}` section and fills `{review_perspective}` in the prompt.
+Perspective definitions for the refinement state machine. Each perspective launches an independent Codex session. The orchestrator loads the matching `## perspective_{name}` section and fills `{review_perspective}` in the prompt.
 
-**Rotation:** iter 1 = `generic_quality`, iter 2 = `dry_run_executor`, iter 3 = `new_dev_tester`, iter 4 = `adversarial_reviewer`, iter 5 = `final_sweep`.
+**Stage 1 (parallel):** `dry_run_executor`, `new_dev_tester`, `adversarial_reviewer` — 3 independent Codex sessions launched simultaneously.
+**Stage 2 (after merge):** `final_sweep` — 1 Codex session reviewing post-fix state.
 
-## perspective_generic_quality
-
-**Role:** You are a senior technical reviewer performing a comprehensive quality pass.
-
-**Core question:** "Is this plan correct, well-architected, and complete?"
-
-**Criteria:**
-1. **Correctness** — Are there factual errors? Wrong file paths, API names, library capabilities? Do referenced files/functions actually exist?
-2. **Architectural correctness** — Does the design fit the project's architecture? Correct layers, patterns, module boundaries?
-3. **Best practices** — Does it follow modern best practices (2025-2026)? Industry standards, RFC compliance?
-4. **Optimality** — Is this the optimal approach? Unnecessary complexity? Missing simpler alternatives?
-5. **Centralization/Unification** — Opportunities to deduplicate, reuse existing code, unify patterns?
-6. **Risk mitigation** — Are all implementation risks addressed? Unmitigated failure modes, data loss paths, security gaps?
-
-**Internal Reuse Check:** Before suggesting new code or patterns, search the codebase for existing utilities, helpers, or shared modules that already solve the problem. If found, report under area `unification` with file paths.
+`generic_quality` is not included — it is covered by the Phase 2 Codex review (review_base.md + mode template).
 
 ## perspective_dry_run_executor
 
@@ -50,17 +37,17 @@ Perspective definitions for iterative refinement loop. Each iteration uses a dif
 
 ## perspective_final_sweep
 
-**Role:** You are performing the final quality pass on an artifact that has already been through 4 rounds of review and fixes (generic quality, dry-run execution, new dev comprehensibility, adversarial attack). Your job is to catch regressions, side effects, and inconsistencies introduced by the fixes themselves.
+**Role:** You are performing the final quality pass on an artifact that has already been through 3 parallel specialized reviews (dry-run execution, new dev comprehensibility, adversarial attack) and their merged fixes. Your job is to catch regressions, side effects, and inconsistencies introduced by the fixes themselves.
 
 **Core question:** "After all the fixes, is the plan still consistent, aligned with its original goal, and architecturally correct?"
 
 **Criteria:**
 1. **Goal alignment** — Do all tasks still serve the original Story/plan goal? Did fixes cause scope drift or introduce unrelated changes?
-2. **Cross-task consistency** — After 4 rounds of edits, are tasks still internally consistent? No contradictions between T001 and T004 introduced by separate fixes?
+2. **Cross-task consistency** — After Stage 1 fixes, are tasks still internally consistent? No contradictions between T001 and T004 introduced by separate fixes?
 3. **Best practices compliance** — Do the applied fixes follow modern best practices (2025-2026)? Did a fix introduce an anti-pattern or legacy workaround?
 4. **Architectural integrity** — Is the overall design still clean after all modifications? No backward-compat shims, no transitional scaffolding, no unnecessary abstraction layers?
 
-**Output focus:** Focus on what CHANGED between iterations, not the original content. Compare the current state against the goal stated in the Story/plan header. Flag anything that drifted.
+**Output focus:** Focus on what CHANGED during Stage 1 fixes, not the original content. Compare the current state against the goal stated in the Story/plan header. Flag anything that drifted.
 ## perspective_adversarial_reviewer
 
 **Role:** You have two missions. Phase 1: you are a red team attacker trying to GUARANTEE this plan fails. Phase 2: you are an SRE investigating incidents 2 weeks after this plan shipped successfully.

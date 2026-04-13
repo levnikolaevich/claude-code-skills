@@ -17,11 +17,11 @@ const STABLE_HOOK_PATH = join(STABLE_HOOK_DIR, "hook.mjs").replace(/\\/g, "/");
 const NODE_COMMAND = process.execPath.replace(/\\/g, "/");
 const HOOK_COMMAND = `"${NODE_COMMAND}" "${STABLE_HOOK_PATH}"`;
 
-// Source hook.mjs location (for copying).
+// Hook location: only copy bundled hook (dist/ or lib/), never unbundled source.
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const SOURCE_HOOK = resolve(__dirname, "..", "hook.mjs");
 const DIST_HOOK = resolve(__dirname, "hook.mjs");
+const BUILT_HOOK = resolve(__dirname, "..", "dist", "hook.mjs");
 const SOURCE_STYLE = resolve(__dirname, "..", "output-style.md");
 const INSTALLED_STYLE = resolve(homedir(), ".claude", "output-styles", "hex-line.md");
 
@@ -159,8 +159,8 @@ function syncOutputStyle() {
  * First run: full install (copy files, write settings.json hooks).
  */
 export function autoSync() {
-    const hookSource = existsSync(DIST_HOOK) ? DIST_HOOK : SOURCE_HOOK;
-    if (!existsSync(hookSource)) return;
+    const hookSource = existsSync(DIST_HOOK) ? DIST_HOOK : existsSync(BUILT_HOOK) ? BUILT_HOOK : null;
+    if (!hookSource) return;
 
     const changes = [];
 

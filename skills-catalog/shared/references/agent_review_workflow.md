@@ -103,13 +103,20 @@ Repeat for each available agent (names from `--list-agents`).
 - Evaluation-platform validators use `node shared/scripts/evaluation-runtime/cli.mjs sync-agent --skill {skill} --identifier {identifier}` before merge gates
 - Merge is allowed only after every required agent is `result_ready | dead | failed | skipped`
 
-**Log-based monitoring (legacy/manual path):**
-- After launching, output: `"Agents launched: {names}. Continuing with foreground work..."`
-- Agent stdout streams to `.hex-skills/agent-review/{agent}/{identifier}_{review_type}.log` in real time
-- Every ~2 min between foreground phases: `stat` log file (growing = alive), `tail -10` for current stage
-- If agent seems stuck (log unchanged for >3 min): read last 20 lines of log to diagnose
-- Do NOT poll in a sleep-loop — the framework sends background task notifications automatically
-- When each agent completes, immediately output: `"Agent {name} completed ({duration}s). {N} suggestions found."` Then proceed to parse results.
+**Waiting for agents (MANDATORY):**
+Use the Claude `Monitor` tool with 2-minute cycles to wait for agent results. `Monitor` is a built-in Claude Code tool (available since 2.1.98+) that streams filtered shell output as conversation events.
+
+```
+Monitor(
+  command="tail -f {agent_log} | grep --line-buffered -E 'Phase|ERROR|DONE'",
+  timeout_ms=120000,
+  description="{agent_name} review"
+)
+```
+
+After each Monitor return: check result file for `<!-- END_AGENT_REVIEW_RESULT -->` marker. If not ready, start next Monitor cycle.
+Do NOT use sleep loops, `Bash(run_in_background=true)`, or ad-hoc stat polling as primary wait mechanism.
+Fallback: `Bash(run_in_background=true)` ONLY when Monitor is unavailable (Bedrock/Vertex/Foundry runtimes).
 
 > **BLOCKING MODEL:** Background agents enable foreground work in parallel. But before merging results (Critical Verification step), ALL agents must be **resolved**. Runtime-enabled skills resolve from metadata + result files through their active coordinator runtime. Manual, non-runtime skills use the liveness protocol below. Do NOT begin Critical Verification until this condition is met for every launched agent.
 
@@ -189,65 +196,64 @@ c) **Persist:** all evaluation decisions in review summary.
 
 ## Step: Iterative Refinement (MANDATORY when Codex available)
 
-After Critical Verification, run a deterministic refinement loop using Codex. This automates the manual "show to Codex -> get feedback -> fix -> repeat" cycle.
+After Critical Verification, run a 2-stage refinement using Codex. This automates the manual "show to Codex -> get feedback -> fix -> repeat" cycle.
 
-**Pre-condition:** Phase 5 merge applied all accepted suggestions. The artifact is in its "current best" state.
+**ONE PERSPECTIVE = ONE CODEX SESSION.** Each perspective launches a separate `agent_runner.mjs` process. Never combine multiple perspectives into one Codex prompt. Never use `--resume-session` — each iter{N}/ subdirectory = independent Codex process with its own PID.
+
+**Pre-condition:** Merge phase applied all accepted suggestions. The artifact is in its "current best" state.
 
 **Skip condition:** Codex unavailable in health check OR disabled in `{project_root}/.hex-skills/environment_state.json`. If skipped -> log `"Iterative Refinement: SKIPPED (Codex unavailable)"`.
 
-**Loop (max 5 iterations):**
+**Stage 1: Parallel Specialized Reviews (3 independent Codex sessions)**
 
-1. **Build artifact:** Read current state of the reviewed artifact (Story+Tasks / plan file / context docs)
-1b. **Select perspective:** Load perspective from `shared/agents/prompt_templates/refinement_perspectives.md` based on iteration:
-    - iter 1: `generic_quality`
-    - iter 2: `dry_run_executor`
-    - iter 3: `new_dev_tester`
-    - iter 4: `adversarial_reviewer`
-    - iter 5: `final_sweep`
-    Parse the matching `## perspective_{name}` section and fill `{review_perspective}` placeholder in prompt.
-2. **Build prompt:** Load `shared/agents/prompt_templates/iterative_refinement.md`, fill placeholders (`{artifact_type}`, `{artifact_content}`, `{project_context}`, `{review_perspective}`, `{iteration_number}`, `{max_iterations}`, `{previous_findings_summary}`)
-3. **Save prompt:** `.hex-skills/agent-review/refinement/{identifier}/iter{N}/prompt.md`
-3b. **Isolation:** Each iteration has its own subdirectory. No manual cleanup needed — previous iteration artifacts are isolated in their own `iter{N-1}/` folder.
-
-> **FRESH SESSION ONLY.** Every refinement iteration MUST launch Codex as a new session. NEVER use `--resume-session` in Phase 6. Codex context window fills up with prior session data (Phase 2 review accumulated ~1000 lines), leaving no room for the refinement prompt. The `_session.json` files from Phase 2 are for audit trail only — do NOT pass their session_id to refinement calls.
-4. **Send to Codex** (background):
+1. Build artifact (current state of reviewed artifact).
+2. For EACH of 3 perspectives (`dry_run_executor`, `new_dev_tester`, `adversarial_reviewer`), in parallel:
+   a. Load perspective from `shared/agents/prompt_templates/refinement_perspectives.md`.
+   b. Build prompt via `shared/agents/prompt_templates/iterative_refinement.md`.
+   c. Save prompt to `.hex-skills/agent-review/refinement/{identifier}/iter{N}/prompt.md` (iter1=dry_run, iter2=new_dev, iter3=adversarial).
+   d. Launch independent Codex process:
    ```
    node shared/agents/agent_runner.mjs --agent codex \
      --prompt-file .hex-skills/agent-review/refinement/{identifier}/iter{N}/prompt.md \
      --output-file .hex-skills/agent-review/refinement/{identifier}/iter{N}/result.md \
      --cwd {project_dir}
    ```
-4b. **Wait for result (minimum 1 minute between checks):** Do NOT poll metadata/result files in a tight loop. Codex typically takes 5-15 minutes per iteration.
-   - **First check:** wait at least **1 minute** after launch, then check log file mtime.
-   - **Subsequent checks:** minimum **1 minute** between polls. Check log mtime (growing = alive) and result file existence.
-   - **Result ready:** file exists AND contains `<!-- END_AGENT_REVIEW_RESULT -->` end marker. Partial files will NOT have this marker.
-   - **Timeout:** log stops growing for >3 min AND result file absent → run Liveness Protocol.
-5. **Parse result:** Extract JSON from `## Structured Data` section. Read the result file ONLY after end marker `<!-- END_AGENT_REVIEW_RESULT -->` is confirmed present.
-6. **Kill Codex process:** Extract `pid` from runner stdout or metadata JSON. Run `node shared/agents/agent_runner.mjs --verify-dead {pid}`. ONLY after result file is confirmed written and parsed. Never kill before results are accepted — runner writes the file after Codex exits, killing early = lost results.
-7. **Classify suggestions by impact:**
-   - HIGH: `impact_percent >= 20`
-   - MEDIUM: `impact_percent` 10-19
-   - LOW: `impact_percent < 10`
-8. **Exit conditions (evaluated in order):**
-   a. Codex failed/timed out → exit: ERROR
-      Note: "timed out" means agent_runner.mjs returned timeout status. Claude MUST NOT self-declare timeout.
-   b. 2 consecutive perspectives returned APPROVED → exit: CONVERGED
-   c. `iteration == 5` → exit: MAX_ITER (log WARNING if MEDIUM/HIGH suggestions remain unresolved)
-   d. Current perspective returned APPROVED or all-LOW → proceed to **next perspective**
-   e. Any MEDIUM or HIGH suggestions exist → apply accepted fixes, proceed to **next perspective**
+3. Wait for ALL 3 via Claude `Monitor` tool with 2-minute cycles.
+4. Parse results, merge findings (deduplicate by area+issue, keep higher confidence).
+5. Classify: HIGH (impact >= 20%), MEDIUM (10-19%), LOW (< 10%).
+6. Architecture Gate on each accepted fix.
+7. Apply accepted fixes.
+8. Kill all 3 processes: `node agent_runner.mjs --verify-dead {pid}` per session.
+9. Record cleanup evidence.
 
-   Note: a single perspective returning APPROVED does NOT exit the loop — the next perspective may find issues from a different angle. Only 2 consecutive APPROVED exits.
-9. **Apply fixes:** Claude evaluates each suggestion (AGREE/REJECT). **Architecture Gate:** before applying each accepted fix, verify: "Does this implement the correct architecture directly, without backward compatibility shims or legacy workarounds?" Reject fixes that introduce unnecessary compat layers. Apply remaining accepted fixes.
-10. **Build `{previous_findings_summary}`** for next iteration, return to step 1
+If ALL 3 fail → EXIT(ERROR), skip Stage 2.
+If some fail → continue with available results.
 
-**Post-loop display:** `"Iterative Refinement: {N} iterations, {total} suggestions, {applied} applied, exit: {reason}, remaining MEDIUM/HIGH: {count}"`
+**Stage 2: Final Sweep (1 Codex session)**
+
+1. Build artifact (post-fix state after Stage 1).
+2. Load `final_sweep` perspective.
+3. Build prompt with `{previous_findings_summary}` from Stage 1.
+4. Save prompt to `.hex-skills/agent-review/refinement/{identifier}/iter4/prompt.md`.
+5. Launch Codex (single independent session).
+6. Wait via Claude `Monitor` tool.
+7. Parse result, apply accepted fixes.
+8. Kill process, record cleanup evidence.
+
+**Exit states:**
+- `COMPLETED` — both stages done, all results merged
+- `PARTIAL_ERROR` — Stage 1 had failures but Stage 2 completed
+- `ERROR` — all Stage 1 sessions failed
+- `SKIPPED` — Codex unavailable
+
+**Post-refinement display:** `"Iterative Refinement: Stage 1 ({N}/3 perspectives), Stage 2 (final_sweep), {total} suggestions, {applied} applied, exit: {reason}"`
 
 **Append to `.hex-skills/agent-review/review_history.md`:**
 ```markdown
 ### Refinement: {identifier} | {YYYY-MM-DD}
-- Iterations: {N}/{max}, Exit: {CONVERGED|CONVERGED_LOW_IMPACT|MAX_ITER|ERROR|SKIPPED}
+- Stages: 2, Exit: {COMPLETED|PARTIAL_ERROR|ERROR|SKIPPED}
+- Stage 1 perspectives: {completed_list} (failed: {failed_list})
 - Total suggestions: {count}, Applied: {count}
-- Per-iteration: iter1 ({applied}/{total}), iter2 ({applied}/{total}), ...
 ```
 
 ## Step: Aggregate + Return
@@ -305,7 +311,7 @@ Entry format (per `shared/references/agent_review_memory.md`):
 - **Persist** per-agent prompts in `.hex-skills/agent-review/{agent}/`, results in `.hex-skills/agent-review/{agent}/` -- do NOT delete
 - Ensure `.hex-skills/agent-review/.gitignore` exists before creating files (only create if `.hex-skills/agent-review/` is new)
 - **HARD TIMEOUT (30 min default):** `agent_runner.mjs` kills the agent process after `hard_timeout_seconds` (configurable in registry, override via `--timeout`). On timeout, returns `success: false`. Monitor liveness via log file stat (growing = alive). **TaskStop is still FORBIDDEN** — the runner handles timeout internally.
-- **Optional: Agent progress streaming (2.1.98+):** `Monitor(command="tail -f {agent_log} | grep --line-buffered 'Phase|ERROR|DONE'", timeout_ms=1800000)` for real-time stage visibility. Supplementary to `run_in_background`.
+- **MANDATORY: Agent progress monitoring via Claude `Monitor` tool:** `Monitor(command="tail -f {agent_log} | grep --line-buffered 'Phase|ERROR|DONE'", timeout_ms=120000)` with 2-minute cycles. This is the primary wait mechanism, not optional. Fallback to `Bash(run_in_background=true)` only when Monitor unavailable.
 - **CRITICAL VERIFICATION:** Do NOT trust agent suggestions blindly. Claude MUST independently verify each suggestion. Accept only after verification.
 - **OUTPUT PATH GUARD:** ALL agent review artifacts (prompts, results, logs, metadata, refinement files, review history) MUST reside under `.hex-skills/agent-review/`. NEVER write agent review output to the project root directory or any path outside `.hex-skills/`.
 

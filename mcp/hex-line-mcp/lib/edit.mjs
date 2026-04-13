@@ -999,6 +999,30 @@ function applyReplaceBetweenEdit(edit, ctx) {
         return null;
     }
     replaceLogicalRange(lines, lineEndings, sliceStart, sliceStart + removeCount - 1, newLines, defaultEol);
+
+    // Boundary echo detection: auto-strip duplicate lines at replace boundaries.
+    // LLMs often pick the last line inside a block as end_anchor instead of the
+    // closing delimiter, so new_text includes e.g. "}" while the original "}" remains.
+    const insertEnd = sliceStart + newLines.length;
+    if (newLines.length > 0 && insertEnd < lines.length) {
+        const lastNew = newLines[newLines.length - 1].trim();
+        const firstAfter = lines[insertEnd].trim();
+        if (lastNew && lastNew === firstAfter) {
+            lines.splice(insertEnd, 1);
+            lineEndings.splice(insertEnd, 1);
+            ctx.corrections.push({ type: "tail_echo", line: insertEnd + 1, content: firstAfter });
+        }
+    }
+    if (newLines.length > 0 && sliceStart > 0) {
+        const firstNew = newLines[0].trim();
+        const lineBefore = lines[sliceStart - 1].trim();
+        if (firstNew && firstNew === lineBefore) {
+            lines.splice(sliceStart - 1, 1);
+            lineEndings.splice(sliceStart - 1, 1);
+            ctx.corrections.push({ type: "head_echo", line: sliceStart, content: lineBefore });
+        }
+    }
+
     return null;
 }
 
@@ -1152,6 +1176,7 @@ export function editFile(filePath, edits, opts = {}) {
         opts,
         origLines,
         staleRevision,
+        corrections: [],
     };
 
     const batchConflicts = collectBatchConflicts({
@@ -1328,7 +1353,7 @@ export function editFile(filePath, edits, opts = {}) {
     if (displayDiff) payloadKinds.push("diff");
     const semanticFactCount = semanticImpacts.reduce((sum, impact) => sum + (impact.facts?.length || 0), 0);
     const summaryLines = [
-        `summary: lines_changed=${changedSpan} diff_entries=${diffEntryCount} lines_after=${lines.length}`,
+        `summary: lines_changed=${changedSpan} diff_entries=${diffEntryCount} lines_after=${lines.length}${editContext.corrections.length > 0 ? ` boundary_echo_stripped=${editContext.corrections.length}` : ``}`,
         `payload_sections: ${payloadSections(payloadKinds)}`,
         `graph_enrichment: ${graphEnrichment}`,
         `semantic_impact_count: ${semanticImpacts.length}`,

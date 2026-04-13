@@ -402,8 +402,8 @@ function handlePreToolUse(data) {
             targetPath.includes(".claude/");
         if (!isPlanSafe) {
             block(
-                "PLAN_MODE: hex-line write tools are blocked during planning.",
-                "Use read-only tools: read_file, grep_search, outline, verify, inspect_path, changes."
+                "PLAN_MODE: You are in planning mode. Write your plan to the plan file, then call ExitPlanMode to get approval before making changes.",
+                "Do NOT try other write tools (Write, Edit, Bash). Only the plan file can be edited in plan mode. Finish planning first."
             );
         }
     }
@@ -431,21 +431,22 @@ function handlePreToolUse(data) {
         if (toolName === "Read") {
             const ext = filePath ? extOf(filePath) : "";
             const rangeHint = isPartialRead(toolInput)
-                ? " Preserve the same offset/limit or ranges in read_file."
+                ? " Preserve the same offset/limit or ranges."
                 : "";
-            const outlineHint = (filePath && OUTLINEABLE_EXT.has(ext))
-                ? `Use mcp__hex-line__outline(path="${filePath}") for structure, then mcp__hex-line__read_file(path="${filePath}") with ranges to read only what you need.${rangeHint}`
-                : filePath
-                    ? `Use mcp__hex-line__read_file(path="${filePath}") with ranges or offset/limit.${rangeHint}`
-                    : "Use mcp__hex-line__inspect_path or mcp__hex-line__read_file";
-            redirect(outlineHint, "Use hex-line for project text-file reads to keep hashes, revision metadata, and graph hints in one flow.\n" + DEFERRED_HINT);
+            const outlineTip = (filePath && OUTLINEABLE_EXT.has(ext))
+                ? ` For structure-first discovery: mcp__hex-line__outline then mcp__hex-line__read_file with ranges.`
+                : "";
+            const target = filePath
+                ? `Use mcp__hex-line__read_file(path="${filePath}").${rangeHint}${outlineTip}`
+                : "Use mcp__hex-line__read_file or mcp__hex-line__inspect_path.";
+            redirect(target, DEFERRED_HINT);
         }
 
         if (toolName === "Edit") {
             const target = filePath
-                ? `Use mcp__hex-line__grep_search or mcp__hex-line__read_file, then mcp__hex-line__edit_file with path="${filePath}"`
-                : "Use mcp__hex-line__grep_search or mcp__hex-line__read_file, then mcp__hex-line__edit_file";
-            redirect(target, "Use hash-verified edits for project text files. Locate anchors/checksums first, then call edit_file once with batched edits.\n" + DEFERRED_HINT);
+                ? `Use mcp__hex-line__edit_file(path="${filePath}"). If you need hash anchors first: mcp__hex-line__grep_search(output="content", edit_ready=true).`
+                : "Use mcp__hex-line__edit_file. If you need hash anchors first: mcp__hex-line__grep_search(output=\"content\", edit_ready=true).";
+            redirect(target, "Hash-verified edits for project text files.\n" + DEFERRED_HINT);
         }
 
         if (toolName === "Write") {
@@ -613,6 +614,7 @@ function handleSessionStart() {
         ? "Hex-line MCP available. Output style active.\n" +
             "<hex-line_instructions>\n" +
             "  <deferred_loading>If hex-line schemas not loaded, run: ToolSearch('+hex-line read edit')</deferred_loading>\n" +
+            "  <tool_map>Read\u2192mcp__hex-line__read_file, Edit\u2192mcp__hex-line__edit_file, Write\u2192mcp__hex-line__write_file, Grep\u2192mcp__hex-line__grep_search, Glob\u2192mcp__hex-line__inspect_path</tool_map>\n" +
             "  <note>Follow the active hex-line output style for primary tool choices.</note>\n" +
             "  <exceptions>Built-in tools stay OK for images, PDFs, notebooks, and text paths outside the current project root.</exceptions>\n" +
             "</hex-line_instructions>"

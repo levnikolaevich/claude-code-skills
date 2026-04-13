@@ -38,6 +38,13 @@ When reviewing technical decisions, validate against:
    - Technical feasibility of proposed implementation
 6. Focus on analysis — avoid modifying project files unless a fix is trivial and obvious.
 
+## Internal Reuse Check
+Before evaluating external alternatives, search the codebase for:
+- Utilities, helpers, or shared modules that already solve what the Tasks propose to build
+- Patterns established elsewhere in the project that Tasks should follow
+- Existing abstractions (base classes, middleware, hooks) Tasks could extend rather than duplicate
+If found, report under area `duplication` with file paths and function/class names.
+
 ## Focus Areas
 - Are Tasks achievable given the current codebase?
 - Do Tasks reference correct files/modules/patterns from the code?

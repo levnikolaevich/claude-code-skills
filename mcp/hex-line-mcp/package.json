@@ -1,6 +1,6 @@
 {
   "name": "@levnikolaevich/hex-line-mcp",
-  "version": "1.19.0",
+  "version": "1.20.0",
   "mcpName": "io.github.levnikolaevich/hex-line-mcp",
   "type": "module",
   "description": "Hash-verified file editing MCP + token efficiency hook for AI coding agents. 9 tools: inspect_path, read, edit, write, grep, outline, verify, changes, bulk_replace.",
@@ -23,7 +23,8 @@
     "scenarios": "node scenarios/index.mjs",
     "scenarios:diagnostic": "node scenarios/index.mjs --diagnostics",
     "scenarios:diagnostic:graph": "node scenarios/index.mjs --diagnostics --with-graph",
-    "check": "node --check server.mjs && node --check hook.mjs"
+    "check": "node --check server.mjs && node --check hook.mjs",
+    "prepare": "npm run build"
   },
   "_dep_notes": {
     "web-tree-sitter": "Tracks the latest stable runtime together with the repo-owned first-party grammar WASM bundle. Keep runtime upgrades coupled to grammar load/parse validation across Windows, macOS, and Linux.",

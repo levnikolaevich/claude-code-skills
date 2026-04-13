@@ -17,14 +17,19 @@ Every refinement trace entry must include:
 
 ## Required Perspectives
 
-Current standard order:
-1. `generic_quality`
-2. `dry_run_executor`
-3. `new_dev_tester`
-4. `adversarial_reviewer`
-5. `final_sweep`
+Standard perspectives (2-stage model):
 
-Later perspectives may be skipped, but they still must appear in the trace with explicit skip reasons.
+Stage 1 (parallel):
+1. `dry_run_executor`
+2. `new_dev_tester`
+3. `adversarial_reviewer`
+
+Stage 2 (after merge):
+4. `final_sweep`
+
+`generic_quality` is not included — it is covered by the Phase 2 Codex review.
+
+All 4 perspectives are mandatory when Codex is available. Each must appear in the trace; failed sessions must include the error reason.
 
 ## Valid Skip Reasons
 

@@ -26,8 +26,8 @@ export const REVERSE_TOOL_HINTS = {
 };
 
 export const TOOL_HINTS = {
-    Read: "mcp__hex-line__read_file (not Read). For writing: write_file (no prior Read needed)",
-    Edit: "mcp__hex-line__edit_file for revision-aware hash edits. Batch same-file hunks, carry base_revision, use replace_between for block rewrites",
+    Read: "mcp__hex-line__read_file (not Read). For structure-first: mcp__hex-line__outline then mcp__hex-line__read_file with ranges",
+    Edit: "mcp__hex-line__edit_file (not Edit). If you need hash anchors: mcp__hex-line__grep_search(output='content', edit_ready=true) first",
     Write: "mcp__hex-line__write_file (not Write). No prior Read needed",
     Grep: "mcp__hex-line__grep_search (not Grep). Params: output, literal, context_before, context_after, multiline",
     Glob: "mcp__hex-line__inspect_path (not Glob). Use pattern=... with an explicit path for project file discovery and name/path globbing",
@@ -45,7 +45,7 @@ export const TOOL_HINTS = {
     bulk: "mcp__hex-line__bulk_replace with path=<project root> (multi-file search-replace)",
 };
 
-export const DEFERRED_HINT = "If schemas not loaded: ToolSearch('+hex-line read edit')";
+export const DEFERRED_HINT = "Run ToolSearch('+hex-line read edit') first if hex-line tools show InputValidationError.";
 
 export const BASH_REDIRECTS = [
     { regex: /^(cat|type)\b/i, key: "cat", kind: "reader" },

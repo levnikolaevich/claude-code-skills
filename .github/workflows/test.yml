@@ -31,13 +31,6 @@ jobs:
           node skills-catalog/shared/scripts/coordinator-runtime/test/platform-regression.mjs
           node skills-catalog/shared/scripts/coordinator-runtime/test/consistency-scan.mjs
 
-      - name: Review runtime
-        run: |
-          node skills-catalog/shared/scripts/review-runtime/test/smoke.mjs
-          node skills-catalog/shared/scripts/review-runtime/test/guards-lifecycle.mjs
-          node skills-catalog/shared/scripts/review-runtime/test/guards-docs.mjs
-          node skills-catalog/shared/scripts/review-runtime/test/guards-refinement.mjs
-          node skills-catalog/shared/scripts/review-runtime/test/negative.mjs
 
       - name: Story planning runtime
         run: |
@@ -67,11 +60,6 @@ jobs:
           node skills-catalog/shared/scripts/docs-pipeline-runtime/test/negative.mjs
           node skills-catalog/shared/scripts/docs-pipeline-runtime/test/guards.mjs
 
-      - name: Audit runtime
-        run: |
-          node skills-catalog/shared/scripts/audit-runtime/test/smoke.mjs
-          node skills-catalog/shared/scripts/audit-runtime/test/negative.mjs
-          node skills-catalog/shared/scripts/audit-runtime/test/guards.mjs
 
       - name: Environment setup runtime
         run: |
@@ -100,6 +88,25 @@ jobs:
           node skills-catalog/shared/scripts/docs-runtime/test/negative.mjs
           node skills-catalog/shared/scripts/docs-runtime/test/guards.mjs
           node skills-catalog/shared/scripts/docs-quality/test/smoke.mjs
+          node skills-catalog/shared/scripts/evaluation-runtime/test/smoke.mjs
+          node skills-catalog/shared/scripts/evaluation-runtime/test/guards.mjs
+          node skills-catalog/shared/scripts/evaluation-worker-runtime/test/smoke.mjs
+          node skills-catalog/shared/scripts/dependency-runtime/test/smoke.mjs
+          node skills-catalog/shared/scripts/dependency-runtime/test/guards.mjs
+          node skills-catalog/shared/scripts/modernization-runtime/test/smoke.mjs
+          node skills-catalog/shared/scripts/modernization-runtime/test/guards.mjs
+          node skills-catalog/shared/scripts/environment-worker-runtime/test/smoke.mjs
+          node skills-catalog/shared/scripts/environment-worker-runtime/test/negative.mjs
+          node skills-catalog/shared/scripts/environment-worker-runtime/test/guards.mjs
+          node skills-catalog/shared/scripts/planning-worker-runtime/test/smoke.mjs
+          node skills-catalog/shared/scripts/planning-worker-runtime/test/guards.mjs
+          node skills-catalog/shared/scripts/quality-worker-runtime/test/smoke.mjs
+          node skills-catalog/shared/scripts/task-plan-worker-runtime/test/smoke.mjs
+          node skills-catalog/shared/scripts/task-plan-worker-runtime/test/negative.mjs
+          node skills-catalog/shared/scripts/task-worker-runtime/test/smoke.mjs
+          node skills-catalog/shared/scripts/task-worker-runtime/test/negative.mjs
+          node skills-catalog/shared/scripts/test-planning-worker-runtime/test/smoke.mjs
+          node skills-catalog/shared/scripts/benchmark-worker-runtime/test/smoke.mjs
 
       - name: Pipeline orchestrator
         run: |

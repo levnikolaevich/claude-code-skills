@@ -143,7 +143,7 @@ export function serializeSearchBlock(block, opts = {}) {
     }
     if (block.meta.summary) lines.push(`summary: ${block.meta.summary}`);
     lines.push(...renderMetaLines(Object.fromEntries(
-        Object.entries(block.meta).filter(([key]) => key !== "matchLines" && key !== "summary")
+        Object.entries(block.meta).filter(([key]) => key !== "matchLines" && key !== "summary" && key !== "graphScore")
     )));
     lines.push(...block.entries.map(entry => serializeSearchEntry(entry, opts)));
     lines.push(`checksum: ${block.checksum}`);

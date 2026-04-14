@@ -11,7 +11,7 @@ import { statSync, writeFileSync } from "node:fs";
 import { diffLines } from "diff";
 import { fnv1a, lineTag, parseChecksum, parseRef } from "@levnikolaevich/hex-common/text-protocol/hash";
 import { validatePath, normalizePath } from "./security.mjs";
-import { getGraphDB, semanticImpact, cloneWarning, getRelativePath } from "./graph-enrich.mjs";
+import { getGraphDB, semanticImpact, cloneWarning, getRelativePath, ensureGraphFreshForFile, graphUnavailableHint } from "./graph-enrich.mjs";
 import { MAX_DIFF_CHARS } from "./format.mjs";
 import {
     assertNonOverlappingTargets,
@@ -1238,7 +1238,8 @@ export function editFile(filePath, edits, opts = {}) {
         if (staleRevision && hasBaseSnapshot) msg += `\nchanged_ranges: ${describeChangedRanges(changedRanges)}`;
         msg += `\nsummary: lines_changed=${changedSpan} diff_entries=${diffEntryCount} lines_after=${lines.length}`;
         msg += `\npayload_sections: ${payloadSections(displayDiff ? ["diff"] : [])}`;
-        msg += "\ngraph_enrichment: unavailable";
+        const hint = graphUnavailableHint(real);
+        if (hint.length > 0) msg += `\n${hint.join("\n")}`;
         msg += `\nDry run: ${filePath} would change (${lines.length} lines)`;
         if (displayDiff) msg += `\n\nDiff:\n\`\`\`diff\n${displayDiff}\n\`\`\``;
         return msg;
@@ -1259,9 +1260,10 @@ export function editFile(filePath, edits, opts = {}) {
         msg += `\nremapped_refs:\n${remaps.map(({ from, to }) => `${from} -> ${to}`).join("\n")}`;
     }
     let hasPostEditBlock = false;
-    let graphEnrichment = "unavailable";
     let semanticImpacts = [];
     let cloneWarnings = [];
+    let graphDbAvailable = false;
+    let graphFresh = true;
     msg += `\nUpdated ${filePath} (${lines.length} lines)`;
 
     // Post-edit context (before diff — always visible even if output truncated)
@@ -1289,7 +1291,8 @@ export function editFile(filePath, edits, opts = {}) {
         const db = getGraphDB(real, { allowStale: true });
         const relFile = db ? getRelativePath(real) : null;
         if (db && relFile && fullDiff && minLine <= maxLine) {
-            graphEnrichment = "available";
+            graphDbAvailable = true;
+            graphFresh = ensureGraphFreshForFile(db, real);
             semanticImpacts = semanticImpact(db, relFile, minLine, maxLine);
             if (semanticImpacts.length > 0) {
                 const sections = semanticImpacts.map(impact => {
@@ -1323,26 +1326,23 @@ export function editFile(filePath, edits, opts = {}) {
             }
             cloneWarnings = cloneWarning(db, relFile, minLine, maxLine);
             if (cloneWarnings.length > 0) {
-                const list = cloneWarnings.map(c => `${c.file}:${c.line}`).join(", ");
+                const list = cloneWarnings.map(c => `${c.file}:${c.line}${c.cloneType ? ` (${c.cloneType})` : ""}`).join(", ");
                 msg += `\n\n\u26a0 ${cloneWarnings.length} clone(s): ${list}`;
             }
         }
     } catch { /* silent */ }
+    if (!graphFresh) msg += "\ngraph_fresh: stale";
 
     const payloadKinds = [];
     if (hasPostEditBlock) payloadKinds.push("post_edit");
     if (semanticImpacts.length > 0) payloadKinds.push("semantic_impact");
     if (cloneWarnings.length > 0) payloadKinds.push("clone_warning");
     if (displayDiff) payloadKinds.push("diff");
-    const semanticFactCount = semanticImpacts.reduce((sum, impact) => sum + (impact.facts?.length || 0), 0);
     const summaryLineParts = [
         `summary: lines_changed=${changedSpan} diff_entries=${diffEntryCount} lines_after=${lines.length}${editContext.corrections.length > 0 ? ` boundary_echo_stripped=${editContext.corrections.length}` : ``}`,
         `payload_sections: ${payloadSections(payloadKinds)}`,
-        `graph_enrichment: ${graphEnrichment}`,
     ];
-    if (semanticImpacts.length > 0) summaryLineParts.push(`semantic_impact_count: ${semanticImpacts.length}`);
-    if (semanticFactCount > 0) summaryLineParts.push(`semantic_fact_count: ${semanticFactCount}`);
-    if (cloneWarnings.length > 0) summaryLineParts.push(`clone_warning_count: ${cloneWarnings.length}`);
+    if (!graphDbAvailable) summaryLineParts.push(...graphUnavailableHint(real));
     const summaryLines = summaryLineParts.join("\n");
     msg = msg.replace(`\nUpdated ${filePath} (${lines.length} lines)`, `\n${summaryLines}\nUpdated ${filePath} (${lines.length} lines)`);
 

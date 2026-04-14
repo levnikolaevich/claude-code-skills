@@ -1000,11 +1000,12 @@ describe("graph enrichment", () => {
             assert.ok(editResult.includes("Semantic impact:"), "Edit reports semantic impact");
             assert.ok(editResult.includes("external callers"), "Semantic impact includes caller totals");
             assert.ok(editResult.includes("return_flow_to_symbol: run (b.mjs:2)"), "Semantic impact names concrete downstream fact");
-            assert.ok(editResult.includes("graph_enrichment: available"), "Edit advertises graph enrichment state");
-            assert.ok(editResult.includes("semantic_impact_count:"), "Edit exposes semantic impact count");
-            assert.ok(editResult.includes("semantic_fact_count:"), "Edit exposes semantic fact count");
+            assert.equal(editResult.includes("graph_enrichment: available"), false, "available state no longer emitted; presence of Semantic impact block proves availability");
+            assert.equal(editResult.includes("semantic_impact_count:"), false, "semantic_impact_count dropped (count = entries in block)");
+            assert.equal(editResult.includes("semantic_fact_count:"), false, "semantic_fact_count dropped (count = sub-bullets in block)");
+            assert.equal(editResult.includes("clone_warning_count:"), false, "clone_warning_count dropped (count = entries in clone list)");
             assert.ok(editResult.includes("payload_sections:"), "Edit exposes payload section preview");
-            assert.equal(editResult.includes("provenance_summary:"), false, "provenance_summary field is no longer emitted (duplicate of graph_enrichment)");
+            assert.equal(editResult.includes("provenance_summary:"), false, "provenance_summary field is no longer emitted");
         } finally {
             _resetGraphDBCache();
             await closeGraphRepo(repo);
@@ -1594,7 +1595,10 @@ describe("changes", () => {
         assert.ok(result.includes("status:"), "changes returns canonical status");
         assert.ok(result.includes("reason:"), "changes returns canonical reason");
         assert.ok(result.includes("summary:"), "changes returns canonical summary");
-        assert.ok(result.includes("graph_enrichment:"), "changes returns graph enrichment state");
+        if (result.includes("graph_enrichment:")) {
+            assert.ok(result.includes("graph_enrichment: unavailable"), "graph_enrichment line only appears when unavailable");
+            assert.ok(result.includes("graph_fix:"), "unavailable emits actionable graph_fix hint");
+        }
         assert.ok(!result.includes("provenance_summary:"), "provenance_summary field dropped (duplicate of graph_enrichment)");
     });
 });

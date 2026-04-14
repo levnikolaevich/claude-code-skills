@@ -6,16 +6,8 @@ import { statSync } from "node:fs";
 import { join } from "node:path";
 import { validatePath, normalizePath } from "./security.mjs";
 import { semanticGitDiff } from "@levnikolaevich/hex-common/git/semantic-diff";
-import { getGraphDB, getRelativePath, semanticImpact } from "./graph-enrich.mjs";
+import { getGraphDB, getRelativePath, semanticImpact, graphUnavailableHint } from "./graph-enrich.mjs";
 import { ACTION, REASON } from "./output-contract.mjs";
-
-function graphEnrichmentState(db) {
-    return db ? "available" : "unavailable";
-}
-
-function provenanceSummary(semanticDiffState, db) {
-    return `semantic_diff=${semanticDiffState} graph=${db ? "hex_line_contract" : "unavailable"}`;
-}
 
 function payloadSections(sections) {
     return sections.length > 0 ? sections.join(",") : "summary_only";
@@ -75,7 +67,7 @@ export async function fileChanges(filePath, compareAgainst = "HEAD") {
     if (statSync(real).isDirectory()) {
         const db = getGraphDB(join(real, "__hex-line_probe__"));
         const diff = await semanticGitDiff(real, { baseRef: compareAgainst });
-        const graphEnrichment = graphEnrichmentState(db);
+        const graphHint = graphUnavailableHint(join(real, "__hex-line_probe__"));
         if (diff.summary.changed_file_count === 0) {
             return [
                 "status: NO_CHANGES",
@@ -84,7 +76,7 @@ export async function fileChanges(filePath, compareAgainst = "HEAD") {
                 `compare_against: ${compareAgainst}`,
                 "scope: directory",
                 "summary: changed_files=0",
-                `graph_enrichment: ${graphEnrichment}`,
+                ...graphHint,
             ].join("\n");
         }
         let emittedRiskCount = 0;
@@ -98,7 +90,7 @@ export async function fileChanges(filePath, compareAgainst = "HEAD") {
             "scope: directory",
             `summary: changed_files=${diff.summary.changed_file_count}`,
             `next_action: ${ACTION.INSPECT_FILE}`,
-            `graph_enrichment: ${graphEnrichment}`,
+            ...graphHint,
             "",
         ];
         for (const file of diff.changed_files) {
@@ -121,17 +113,15 @@ export async function fileChanges(filePath, compareAgainst = "HEAD") {
         if (emittedRiskCount > 0) sectionKinds.push("risk_summary");
         if (emittedRemovedApiWarnings > 0) sectionKinds.push("removed_api_warning");
         const spliceLines = [];
-        if (emittedRiskCount > 0) spliceLines.push(`risk_summary_count: ${emittedRiskCount}`);
-        if (emittedRemovedApiWarnings > 0) spliceLines.push(`removed_api_warning_count: ${emittedRemovedApiWarnings}`);
         if (sectionKinds.length > 0) spliceLines.push(`payload_sections: ${payloadSections(sectionKinds)}`);
-        sections.splice(8, 0, ...spliceLines);
+        sections.splice(7 + graphHint.length, 0, ...spliceLines);
         return sections.join("\n");
     }
 
     const db = getGraphDB(real);
     const diff = await semanticGitDiff(real, { baseRef: compareAgainst });
     const file = diff.changed_files[0];
-    const graphEnrichment = graphEnrichmentState(db);
+    const graphHint = graphUnavailableHint(real);
     if (!file) {
         return [
             "status: NO_CHANGES",
@@ -140,7 +130,7 @@ export async function fileChanges(filePath, compareAgainst = "HEAD") {
             `compare_against: ${compareAgainst}`,
             "scope: file",
             "summary: added=0 removed=0 modified=0",
-            `graph_enrichment: ${graphEnrichment}`,
+            ...graphHint,
         ].join("\n");
     }
     if (!file.semantic_supported) {
@@ -152,7 +142,7 @@ export async function fileChanges(filePath, compareAgainst = "HEAD") {
             "scope: file",
             `summary: semantic diff unavailable for ${file.extension} files`,
             `next_action: ${ACTION.INSPECT_RAW_DIFF}`,
-            `graph_enrichment: ${graphEnrichment}`,
+            ...graphHint,
         ].join("\n");
     }
 
@@ -167,10 +157,8 @@ export async function fileChanges(filePath, compareAgainst = "HEAD") {
         `compare_against: ${compareAgainst}`,
         "scope: file",
         `summary: ${symbolCountSummary(file)}`,
-        `graph_enrichment: ${graphEnrichment}`,
+        ...graphHint,
     ];
-    if (riskLines.length > 0) parts.push(`risk_summary_count: ${riskLines.length}`);
-    if (removedApiWarnings.length > 0) parts.push(`removed_api_warning_count: ${removedApiWarnings.length}`);
 
     if (file.added_symbols.length) {
         sectionKinds.push("added");
@@ -206,7 +194,7 @@ export async function fileChanges(filePath, compareAgainst = "HEAD") {
     if (riskLines.length > 0) sectionKinds.push("risk_summary");
     if (removedApiWarnings.length > 0) sectionKinds.push("removed_api_warning");
     if (sectionKinds.length > 0) {
-        const insertIdx = 7 + (riskLines.length > 0 ? 1 : 0) + (removedApiWarnings.length > 0 ? 1 : 0);
+        const insertIdx = 6 + graphHint.length;
         parts.splice(insertIdx, 0, `payload_sections: ${payloadSections(sectionKinds)}`);
     }
     if (riskLines.length || removedApiWarnings.length) {

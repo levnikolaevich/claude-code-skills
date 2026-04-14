@@ -148,9 +148,11 @@ export function diagnoseGraph(filePath) {
     }
 }
 
-export function diagnoseGraphForProject(projectRoot) {
+export function diagnoseGraphForProject(directoryPath) {
     if (_driverUnavailable) return { reason: "driver_missing" };
     try {
+        if (!directoryPath) return { reason: "no_project_root" };
+        const projectRoot = findProjectRoot(join(directoryPath, "__hex-line_probe__"));
         if (!projectRoot) return { reason: "no_project_root" };
         const dbPath = join(projectRoot, ".hex-skills/codegraph", "index.db");
         if (!existsSync(dbPath)) return { reason: "index_missing", projectRoot };
@@ -172,9 +174,9 @@ export function diagnoseGraphForProject(projectRoot) {
     }
 }
 
-export function getGraphDBForProject(projectRoot) {
-    const { reason } = diagnoseGraphForProject(projectRoot);
-    if (reason !== "ok") return null;
+export function getGraphDBForProject(directoryPath) {
+    const { reason, projectRoot } = diagnoseGraphForProject(directoryPath);
+    if (reason !== "ok" || !projectRoot) return null;
     const dbPath = join(projectRoot, ".hex-skills/codegraph", "index.db");
     return _dbs.get(dbPath) || null;
 }

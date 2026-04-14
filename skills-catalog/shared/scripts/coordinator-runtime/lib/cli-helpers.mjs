@@ -15,11 +15,22 @@ export function failResult(result, code = 2) {
     process.exit(code);
 }
 
+function windowsTmpHint(filePath) {
+    if (process.platform !== "win32") return "";
+    if (typeof filePath !== "string") return "";
+    // Detect both raw Unix-style (/tmp/, /var/, /home/, /root/) and Git Bash
+    // MSYS-translated Windows temp paths (AppData/Local/Temp, /Temp/, Temp\).
+    const unixStyle = /^\/(tmp|var|home|root)\//.test(filePath);
+    const winTemp = /AppData[\\/]Local[\\/]Temp|[\\/]Temp[\\/]/i.test(filePath);
+    if (!unixStyle && !winTemp) return "";
+    return ` Hint: path "${filePath}" looks like a temp path on Windows. Git Bash resolves /tmp/ to a location that Node.js CLIs cannot always read (MSYS vs native path mismatch). Use a project-relative path (e.g. .hex-skills/runtime/) instead.`;
+}
+
 export function readPayload(values, readJsonFile) {
     if (values["payload-file"]) {
         const payload = readJsonFile(values["payload-file"]);
         if (payload == null) {
-            failJson(`Unable to read payload file: ${values["payload-file"]}`);
+            failJson(`Unable to read payload file: ${values["payload-file"]}.${windowsTmpHint(values["payload-file"])}`);
         }
         return payload;
     }
@@ -37,7 +48,7 @@ export function readManifestOrFail(values, readJsonFile, flagName = "manifest-fi
     const filePath = values[flagName];
     const manifest = readJsonFile(filePath);
     if (manifest == null) {
-        failJson(`Manifest file not found or invalid: ${filePath}`);
+        failJson(`Manifest file not found or invalid: ${filePath}.${windowsTmpHint(filePath)}`);
     }
     return manifest;
 }

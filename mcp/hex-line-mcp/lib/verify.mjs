@@ -120,16 +120,17 @@ function entrySummary(entry) {
     return entry.reason;
 }
 
-function renderEntry(entry, index, total) {
+function renderEntry(entry, index, total, topLevelNextAction) {
     const parts = [
         `entry: ${index}/${total}`,
         `status: ${entry.status}`,
         entry.span ? `span: ${entry.span}` : null,
         `checksum: ${entry.checksum}`,
         entry.currentChecksum && entry.currentChecksum !== entry.checksum ? `current_checksum: ${entry.currentChecksum}` : null,
-        `next_action: ${entryNextAction(entry)}`,
-        `summary: ${entrySummary(entry)}`,
     ].filter(Boolean);
+    const action = entryNextAction(entry);
+    if (action !== topLevelNextAction) parts.push(`next_action: ${action}`);
+    if (entry.status !== "VALID") parts.push(`summary: ${entrySummary(entry)}`);
     return parts.join(" | ");
 }
 
@@ -146,19 +147,21 @@ export function verifyChecksums(filePath, checksums, opts = {}) {
         : summary.stale > 0 ? STATUS.STALE
             : STATUS.OK;
     const staleRanges = results.filter((entry) => entry.status === "STALE" && entry.span).map((entry) => entry.span);
+    const topLevelNextAction = overallNextAction(summary);
+    const verboseSummary = results.length > 1 || summary.stale > 0 || summary.invalid > 0;
     const lines = [
         `status: ${status}`,
         `reason: ${overallReason(status)}`,
         `revision: ${currentSnapshot.revision}`,
-        `file: ${currentSnapshot.fileChecksum}`,
-        `summary: valid=${summary.valid} stale=${summary.stale} invalid=${summary.invalid}`,
-        `next_action: ${overallNextAction(summary)}`,
     ];
+    if (verboseSummary) lines.push(`summary: valid=${summary.valid} stale=${summary.stale} invalid=${summary.invalid}`);
+    lines.push(`next_action: ${topLevelNextAction}`);
 
-    if (opts.baseRevision) {
+    if (opts.baseRevision && opts.baseRevision !== currentSnapshot.revision) {
         lines.push(`base_revision: ${opts.baseRevision}`);
         if (hasBaseSnapshot) {
-            lines.push(`changed_ranges: ${describeChangedRanges(computeChangedRanges(baseSnapshot.lines, currentSnapshot.lines))}`);
+            const changed = describeChangedRanges(computeChangedRanges(baseSnapshot.lines, currentSnapshot.lines));
+            if (changed !== "none") lines.push(`changed_ranges: ${changed}`);
         } else {
             lines.push("base_revision_status: evicted");
         }
@@ -168,7 +171,7 @@ export function verifyChecksums(filePath, checksums, opts = {}) {
     if (suggestedReadCall) lines.push(`suggested_read_call: ${suggestedReadCall}`);
 
     if (results.length > 0) {
-        lines.push("", ...results.map((entry, index) => renderEntry(entry, index + 1, results.length)));
+        lines.push("", ...results.map((entry, index) => renderEntry(entry, index + 1, results.length, topLevelNextAction)));
     }
 
     return lines.join("\n");

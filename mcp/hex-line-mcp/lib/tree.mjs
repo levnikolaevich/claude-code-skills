@@ -138,11 +138,12 @@ function findByPattern(dirPath, opts) {
     const groups = topPatternGroups(matches);
     const lines = [
         `Found ${matches.length} match${matches.length === 1 ? "" : "es"} for "${opts.pattern}" in ${rootName}/`,
-        `match_count: ${matches.length}`,
-        `shown_count: ${shown.length}`,
-        `truncated: ${truncated}`,
     ];
-    if (groups.length > 0) {
+    if (truncated) {
+        lines.push(`shown_count: ${shown.length}`);
+        lines.push(`truncated: true`);
+    }
+    if (groups.length > 1) {
         lines.push(`top_groups: ${groups.map(([group, count]) => `${group} (${count})`).join(", ")}`);
     }
     if (truncated) {

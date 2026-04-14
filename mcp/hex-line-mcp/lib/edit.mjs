@@ -1259,7 +1259,7 @@ export function editFile(filePath, edits, opts = {}) {
     if (remaps.length > 0) {
         msg += `\nremapped_refs:\n${remaps.map(({ from, to }) => `${from} -> ${to}`).join("\n")}`;
     }
-    let hasPostEditBlock = false; // v1.23.0 smoke
+    let hasPostEditBlock = false; // v1.23.1 smoke
     let semanticImpacts = [];
     let cloneWarnings = [];
     let graphDbAvailable = false;

@@ -810,7 +810,7 @@ describe("inspect_path", () => {
         ));
         try {
             const result = inspectPath(dir, { pattern: "*.md", type: "file" });
-            assert.ok(result.includes("match_count: 70"), "reports total matches");
+            assert.ok(result.includes("Found 70"), "reports total matches");
             assert.ok(result.includes("shown_count: 60"), "reports default shown cap");
             assert.ok(result.includes("truncated: true"), "reports truncation");
             assert.ok(result.includes("next_action: narrow_path"), "includes next action");
@@ -1346,7 +1346,7 @@ describe("grep_search output modes", () => {
             const verifyResult = verifyChecksums(tmp, [csMatch[1]]);
             assert.ok(verifyResult.includes("status: OK"), `verify should report OK: ${verifyResult}`);
             assert.ok(verifyResult.includes("reason: checksums_current"), "Verify should report canonical reason");
-            assert.ok(verifyResult.includes("summary: valid=1 stale=0 invalid=0"), "Summary should classify the checksum set");
+            assert.ok(verifyResult.includes("status: VALID"), "Summary should classify the checksum set");
             assert.ok(verifyResult.includes("next_action: keep_using"), "Verify should report canonical next action");
             assert.ok(verifyResult.includes("entry: 1/1 | status: VALID | span: 1-2"), "Valid checksum entry should be listed canonically");
         } finally {
@@ -2658,7 +2658,7 @@ describe("E2E: workflow round-trips", () => {
             // Verify post-edit checksum
             const verifyResult = verifyChecksums(tmp, [postChecksum]);
             assert.ok(verifyResult.includes("status: OK"), "Verify confirms post-edit checksum is valid");
-            assert.ok(verifyResult.includes("valid=1"), "One valid checksum");
+            assert.ok(verifyResult.includes("status: VALID"), "One valid checksum");
         } finally {
             fs.unlinkSync(tmp);
         }
@@ -2683,7 +2683,7 @@ describe("E2E: workflow round-trips", () => {
             // Extract post-edit checksum and verify
             const postChecksum = editResult.match(/checksum: (\S+)/)?.[1];
             const verifyResult = verifyChecksums(tmp, [postChecksum]);
-            assert.ok(verifyResult.includes("valid=1"), "Post-edit checksum valid");
+            assert.ok(verifyResult.includes("status: VALID"), "Post-edit checksum valid"); // line 2686
         } finally {
             fs.unlinkSync(tmp);
         }
@@ -2702,7 +2702,7 @@ describe("E2E: workflow round-trips", () => {
             fs.writeFileSync(tmp, "one\ntwo\nthree\n");
             const verify = verifyChecksums(tmp, [checksum], { baseRevision });
             assert.ok(verify.includes("status: OK"), "EOL-only rewrite stays valid");
-            assert.ok(verify.includes("valid=1"), "Checksum remains current");
+            assert.ok(verify.includes("status: VALID"), "Checksum remains current");
         } finally {
             fs.unlinkSync(tmp);
         }
@@ -2763,7 +2763,7 @@ describe("remaining checklist tests", () => {
             // Verify post-edit
             const postChecksum = editResult.match(/checksum: (\S+)/)?.[1];
             const verifyResult = verifyChecksums(tmp, [postChecksum]);
-            assert.ok(verifyResult.includes("valid=1"), "Post-edit checksum valid");
+            assert.ok(verifyResult.includes("status: VALID"), "Post-edit checksum valid"); // line 2766
         } finally {
             fs.unlinkSync(tmp);
         }
@@ -2791,7 +2791,7 @@ describe("remaining checklist tests", () => {
             // Verify
             const postChecksum = editResult.match(/checksum: (\S+)/)?.[1];
             const verifyResult = verifyChecksums(tmp, [postChecksum]);
-            assert.ok(verifyResult.includes("valid=1"), "Multi-edit checksum valid");
+            assert.ok(verifyResult.includes("status: VALID"), "Multi-edit checksum valid");
         } finally {
             fs.unlinkSync(tmp);
         }

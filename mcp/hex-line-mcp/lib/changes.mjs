@@ -3,10 +3,9 @@
  */
 
 import { statSync } from "node:fs";
-import { join } from "node:path";
 import { validatePath, normalizePath } from "./security.mjs";
 import { semanticGitDiff } from "@levnikolaevich/hex-common/git/semantic-diff";
-import { getGraphDB, getRelativePath, semanticImpact, graphUnavailableHint } from "./graph-enrich.mjs";
+import { getGraphDB, getGraphDBForProject, getRelativePath, semanticImpact, graphUnavailableHint, graphUnavailableHintForProject } from "./graph-enrich.mjs";
 import { ACTION, REASON } from "./output-contract.mjs";
 
 function payloadSections(sections) {
@@ -65,9 +64,9 @@ export async function fileChanges(filePath, compareAgainst = "HEAD") {
 
     // Directory: return git diff --stat (compact file list, no content reads)
     if (statSync(real).isDirectory()) {
-        const db = getGraphDB(join(real, "__hex-line_probe__"));
+        const db = getGraphDBForProject(real);
         const diff = await semanticGitDiff(real, { baseRef: compareAgainst });
-        const graphHint = graphUnavailableHint(join(real, "__hex-line_probe__"));
+        const graphHint = graphUnavailableHintForProject(real);
         if (diff.summary.changed_file_count === 0) {
             return [
                 "status: NO_CHANGES",

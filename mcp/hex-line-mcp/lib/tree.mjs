@@ -75,7 +75,7 @@ function buildPatternRefineCall(absRoot, pattern, type, groups) {
     const args = { path: bestGroup ? join(absRoot, bestGroup) : absRoot, pattern };
     if (type && type !== "all") args.type = type;
     return JSON.stringify({
-        tool: "mcp__hex_line__inspect_path",
+        tool: "mcp__hex-line__inspect_path",
         arguments: args,
     });
 }

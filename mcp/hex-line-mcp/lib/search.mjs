@@ -114,7 +114,7 @@ export function grepSearch(pattern, opts = {}) {
 function applyListModeTotalLimit(lines, totalLimit) {
     if (!totalLimit || totalLimit <= 0 || lines.length <= totalLimit) return lines.join("\n");
     const visible = lines.slice(0, totalLimit);
-    visible.push(`OUTPUT_CAPPED: ${lines.length - totalLimit} more result line(s) omitted. Narrow with path= or glob=, or raise total_limit.`);
+    visible.push(`OUTPUT_CAPPED: ${lines.length - totalLimit} more result line(s) omitted. Narrow with path= or glob=, or raise head_limit.`);
     return visible.join("\n");
 }
 
@@ -202,14 +202,16 @@ async function summaryMode(pattern, target, opts, totalLimit) {
 
     const lines = [
         `summary: ${rawLines.length} match event(s) across ${fileHits.size} file(s)`,
-        topFiles.length ? `top_files: ${topFiles.map(([file, count]) => `${file} (${count})`).join(", ")}` : "top_files: none",
     ];
+    if (fileHits.size > 1 && topFiles.length) {
+        lines.push(`top_files: ${topFiles.map(([file, count]) => `${file} (${count})`).join(", ")}`);
+    }
     if (snippets.length > 0) {
         lines.push("snippets:");
         lines.push(...snippets.map((snippet) => `- ${snippet}`));
     }
     if (totalLimit > 0 && rawLines.length > totalLimit) {
-        lines.push(`continuation_hint: rerun grep_search with a higher total_limit or narrower path/glob to inspect ${rawLines.length - totalLimit} additional match event(s)`);
+        lines.push(`continuation_hint: rerun grep_search with a higher head_limit or narrower path/glob to inspect ${rawLines.length - totalLimit} additional match event(s)`);
     }
     return lines.join("\n");
 }
@@ -219,10 +221,10 @@ function buildSearchRefineCall(target, pattern, opts) {
     if (opts.glob) args.glob = opts.glob;
     if (opts.type) args.type = opts.type;
     return JSON.stringify({
-        tool: "mcp__hex_line__grep_search",
+        tool: "mcp__hex-line__grep_search",
         arguments: {
             ...args,
-            output: "summary",
+            output_mode: "summary",
         },
     });
 }
@@ -372,7 +374,7 @@ async function contentMode(pattern, target, opts, plain, editReady, totalLimit, 
             if (totalLimit > 0 && matchCount >= totalLimit) {
                 flushGroup();
                 blocks.push(buildDiagnosticBlock({
-                    kind: "total_limit",
+                    kind: "head_limit",
                     meta: {
                         total_matches: matchCount,
                         shown_matches: matchCount,
@@ -382,7 +384,7 @@ async function contentMode(pattern, target, opts, plain, editReady, totalLimit, 
                         next_action: "narrow_search_scope",
                         suggested_refine_call: buildSearchRefineCall(target, pattern, opts),
                     },
-                    message: `Search stopped after ${totalLimit} match event(s). Narrow the query, raise total_limit, or pass total_limit=0 to disable the cap.`,
+                    message: `Search stopped after ${totalLimit} match event(s). Narrow the query, raise head_limit, or pass head_limit=0 to disable the cap.`,
                     path: String(target).replace(/\\/g, "/"),
                 }));
                 return blocks

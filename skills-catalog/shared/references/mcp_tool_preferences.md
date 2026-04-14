@@ -33,9 +33,9 @@ Repo-level MCP policy for code files and semantic codebase analysis.
 - Do not begin with repo-root wildcard discovery such as `inspect_path(path=<repo>, pattern="*.md")` unless you explicitly need a repo-wide inventory
 - In pattern mode, treat `inspect_path` truncation metadata as a signal to narrow `path` before asking for more entries
 - `read_file` defaults to discovery-first plain output; request `edit_ready=true, verbosity="full"` before carrying `revision` and checksums into an edit workflow
-- `grep_search` defaults to `summary`; request `output="content", edit_ready=true` only when canonical search hunks/checksums are needed
-- For text search in repo files, prefer `grep_search(summary)` before any shell search; escalate to `output="content"` only after narrowing `path`, `glob`, or pattern, or when canonical hunks are required
-- `allow_large_output=true` is an explicit escape hatch for `grep_search(output="content")`; default capped output is the preferred discovery behavior
+- `grep_search` defaults to `summary`; request `output_mode="content", edit_ready=true` only when canonical search hunks/checksums are needed
+- For text search in repo files, prefer `grep_search(summary)` before any shell search; escalate to `output_mode="content"` only after narrowing `path`, `glob`, or pattern, or when canonical hunks are required
+- `allow_large_output=true` is an explicit escape hatch for `grep_search(output_mode="content")`; default capped output is the preferred discovery behavior
 - `analyze_architecture`, `audit_workspace`, and `analyze_edit_region` use `verbosity` (`minimal|compact|full`) instead of `detail_level`
 - `find_symbols` is for symbol names or partial names, not code fragments like `export function` and not unresolved member calls like `server.tool()` or `app.get(...)`
 - Do not use `find_symbols` on broad/common bare names until you can narrow by `path` or immediately refine with `name + file`

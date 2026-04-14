@@ -164,8 +164,8 @@ Read a file with progressive disclosure. Default mode is discovery-first: plain 
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `path` | string | yes | File path |
-| `paths` | string[] | no | Array of file paths to read (batch mode) |
+| `file_path` | string | yes | File path |
+| `file_paths` | string[] | no | Array of file paths to read (batch mode) |
 | `offset` | number | no | Start line, 1-indexed (default: 1) |
 | `limit` | number | no | Max lines to return (default: 200 for discovery, 2000 for edit-ready, 0 = all) |
 | `ranges` | array | no | Explicit line ranges, e.g. `[{ "start": 10, "end": 30 }]` |
@@ -211,7 +211,7 @@ Edit using revision-aware hash-verified anchors. Prefer one batched call per fil
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `path` | string | yes | File to edit |
+| `file_path` | string | yes | File to edit |
 | `edits` | string | yes | JSON array of edit operations (see below) |
 | `dry_run` | boolean | no | Preview changes without writing |
 | `restore_indent` | boolean | no | Auto-fix indentation to match anchor context (default: false) |
@@ -232,7 +232,7 @@ Edit operations (JSON array):
 
 Discipline:
 
-- Never invent `range_checksum`. Copy it from `read_file` or `grep_search(output:"content")`.
+- Never invent `range_checksum`. Copy it from `read_file` or `grep_search(output_mode:"content")`.
 - First mutation in a file: prefer `grep_search` for narrow targets, or `outline -> read_file(ranges)` for structural edits.
 - Prefer 1-2 hunks on the first pass. Once `edit_file` returns a fresh `revision`, continue from that state as `base_revision`.
 - `hex-line` preserves existing file line endings on write; repo-level line-ending cleanup should be a separate deliberate operation, not a side effect of `edit_file`.
@@ -242,12 +242,10 @@ Result footer includes:
 - `status: OK | AUTO_REBASED | CONFLICT`
 - `reason: ...` as the canonical machine-readable cause for the current status
 - `revision: ...`
-- `file: ...`
 - `summary: ...` with edited line span / diff counts on successful edits
 - `payload_sections: ...` so callers know which detailed sections follow
-- `graph_enrichment: available | unavailable`
-- `semantic_impact_count: ...`, `semantic_fact_count: ...`, and `clone_warning_count: ...` when graph-backed review data is available
-- `provenance_summary: ...` for the edit protocol + optional graph source
+- `graph_enrichment: unavailable` + `graph_fix: ...` when the project graph is missing or out of sync (silent when graph is healthy)
+- `⚠ Semantic impact:` and `⚠ N clone(s):` blocks emitted directly when graph-backed review data is available
 - `changed_ranges: ...` when relevant
 - `recovery_ranges: ...` with the narrowest recommended `read_file` ranges for retry
 - `next_action: ...` as the canonical immediate choice: `apply_retry_edit`, `apply_retry_batch`, or `reread_then_retry`
@@ -266,7 +264,7 @@ Create a new file or overwrite an existing one. Creates parent directories autom
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `path` | string | yes | File path |
+| `file_path` | string | yes | File path |
 | `content` | string | yes | File content |
 | `allow_external` | boolean | no | Allow writing a path outside the current project root |
 
@@ -280,7 +278,7 @@ Search file contents using ripgrep. Default mode is `summary` for discovery. Use
 | `path` | string | no | Directory or file to search (default: cwd) |
 | `glob` | string | no | Glob filter, e.g. `"*.ts"` |
 | `type` | string | no | File type filter, e.g. `"js"`, `"py"` |
-| `output` | enum | no | Output format: `"summary"` (default), `"content"`, `"files"`, `"count"` |
+| `output_mode` | enum | no | Output format: `"summary"` (default), `"content"`, `"files_with_matches"`, `"count"` |
 | `case_insensitive` | boolean | no | Ignore case |
 | `smart_case` | boolean | no | CI when lowercase, CS when uppercase (`-S`) |
 | `literal` | boolean | no | Literal string search, no regex (`-F`) |
@@ -289,7 +287,7 @@ Search file contents using ripgrep. Default mode is `summary` for discovery. Use
 | `context_before` | number | no | Context lines BEFORE match (`-B`) |
 | `context_after` | number | no | Context lines AFTER match (`-A`) |
 | `limit` | number | no | Max matches per file (default: 20 for `summary`, 100 for `content`) |
-| `total_limit` | number | no | Total match events across all files; multiline matches count as 1 (default: 50 for `summary`, 200 for `content`, 1000 for `files`/`count`, 0 = unlimited) |
+| `head_limit` | number | no | Total match events across all files; multiline matches count as 1 (default: 50 for `summary`, 200 for `content`, 1000 for `files_with_matches`/`count`, 0 = unlimited) |
 | `plain` | boolean | no | Omit hash tags inside block entries, return `lineNum\|content` |
 | `edit_ready` | boolean | no | Preserve hash/checksum search hunks in `content` mode |
 | `allow_large_output` | boolean | no | Bypass the default `content`-mode block/char caps when you intentionally need a larger payload |
@@ -305,7 +303,7 @@ AST-based structural outline with hash anchors for direct `edit_file` usage. Sup
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `path` | string | yes | Source file path |
+| `file_path` | string | yes | Source file path |
 
 Supported languages: JavaScript (`.js`, `.mjs`, `.cjs`, `.jsx`), TypeScript (`.ts`, `.tsx`), Python (`.py`), C# (`.cs`), and PHP (`.php`) via tree-sitter WASM.
 
@@ -317,7 +315,7 @@ Check if range checksums from prior read/search blocks are still valid, optional
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `path` | string | yes | File path |
+| `file_path` | string | yes | File path |
 | `checksums` | string[] | yes | Array of checksum strings, e.g. `["1-50:f7e2a1b0"]` |
 | `base_revision` | string | no | Prior revision to compare against latest state |
 
@@ -327,12 +325,11 @@ Example output:
 status: STALE
 reason: checksums_stale
 revision: rev-17-deadbeef
-file: 1-120:abc123ef
 summary: valid=0 stale=1 invalid=0
 next_action: reread_ranges
 base_revision: rev-16-feedcafe
 changed_ranges: 10-12(replace)
-suggested_read_call: {"tool":"mcp__hex-line__read_file","arguments":{"path":"/repo/file.ts","ranges":["10-12"]}}
+suggested_read_call: {"tool":"mcp__hex-line__read_file","arguments":{"file_path":"/repo/file.ts","ranges":["10-12"]}}
 
 entry: 1/1 | status: STALE | span: 10-12 | checksum: 10-12:oldc0de0 | current_checksum: 10-12:newc0de0 | next_action: reread_range | summary: content changed since checksum capture
 ```

@@ -33,7 +33,7 @@ function classifyChecksum(currentSnapshot, entry) {
             checksum: entry.raw,
             span: null,
             currentChecksum: null,
-            reason: `invalid checksum format: ${entry.error}`,
+            reason: entry.error.replace(/^Bad checksum:\s*/, "format error: "),
         };
     }
     const { start, end } = entry.parsed;

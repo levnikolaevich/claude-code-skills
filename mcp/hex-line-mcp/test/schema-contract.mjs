@@ -38,7 +38,7 @@ describe("schema descriptions", () => {
             const inspectPath = toolByName(result.tools, "inspect_path");
             const readFile = toolByName(result.tools, "read_file");
             const readProps = readFile.inputSchema.properties || {};
-            assert.equal(readProps.path?.description, "File path");
+            assert.equal(readProps.file_path?.description, "File path");
             assert.equal(readProps.offset?.description, "Start line (1-indexed, default: 1)");
             assert.equal(readProps.verbosity?.description, "Response budget. `minimal` is discovery-first, `compact` adds revision context, `full` preserves the richest payload.");
             assert.equal(readProps.edit_ready?.description, "Include hash/checksum edit protocol blocks explicitly. Default: false for discovery reads.");
@@ -46,7 +46,7 @@ describe("schema descriptions", () => {
 
             const grepSearch = toolByName(result.tools, "grep_search");
             const grepProps = grepSearch.inputSchema.properties || {};
-            assert.equal(grepProps.output?.description, "Output format (default: summary)");
+            assert.equal(grepProps.output_mode?.description, "Output format (default: summary)");
             assert.equal(grepProps.edit_ready?.description, "Preserve hash/checksum search hunks in `content` mode. Default: false.");
 
             const inspectProps = inspectPath.inputSchema.properties || {};

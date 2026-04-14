@@ -16,8 +16,8 @@ Apply them only when the skill actually edits code or makes semantic decisions f
 **Tools:** `outline -> read_file(verbosity="minimal", ranges)`
 
 ```text
-1. outline(path) -> get function/class structure
-2. read_file(path, verbosity="minimal", ranges=[...]) -> read only the needed section
+1. outline(file_path) -> get function/class structure
+2. read_file(file_path, verbosity="minimal", ranges=[...]) -> read only the needed section
 ```
 
 ### Verified Edit Cycle
@@ -26,9 +26,9 @@ Apply them only when the skill actually edits code or makes semantic decisions f
 **Tools:** `read_file(edit_ready=true, verbosity="full") -> edit_file(base_revision) -> verify`
 
 ```text
-1. read_file(path, edit_ready=true, verbosity="full") -> capture revision and checksums
-2. edit_file(path, edits=[...], base_revision=rev)
-3. verify(path, checksums, base_revision=rev) -> confirm no stale state before delayed or mixed-tool follow-up edits
+1. read_file(file_path, edit_ready=true, verbosity="full") -> capture revision and checksums
+2. edit_file(file_path, edits=[...], base_revision=rev)
+3. verify(file_path, checksums, base_revision=rev) -> confirm no stale state before delayed or mixed-tool follow-up edits
 4. If edit_file returns retry_edit / retry_edits / retry_checksum / retry_plan, reuse them directly
 5. changes(path=..., compare_against=...) -> review what will be handed off
 ```
@@ -99,7 +99,7 @@ Add body instruction:
 
 ```markdown
 **Hex MCP acceleration (if available):**
-- Use `outline(path)` before reading large code files
+- Use `outline(file_path)` before reading large code files
 - Use `analyze_edit_region(...)` before non-trivial edits to existing code
 - Use `analyze_changes(...)` or `changes(...)` before handoff or quality review
 - Fall back to standard reads/search only when MCP is unavailable or unsupported

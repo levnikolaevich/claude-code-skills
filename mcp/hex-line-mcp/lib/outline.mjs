@@ -73,7 +73,7 @@ function markdownOutline(sourceLines) {
     return entries;
 }
 
-function formatOutline(entries, skippedRanges, sourceLineCount, snapshot, db, relFile, note = "") {
+function formatOutline(entries, skippedRanges, _sourceLineCount, snapshot, db, relFile, note = "") {
     const lines = [];
 
     if (note) lines.push(note, "");
@@ -96,8 +96,6 @@ function formatOutline(entries, skippedRanges, sourceLineCount, snapshot, db, re
         lines.push(`${indent}${prefix}${e.start}-${e.end}: ${e.text}${suffix}`);
     }
 
-    lines.push("");
-    lines.push(`(${entries.length} symbols, ${sourceLineCount} source lines)`);
     return lines.join("\n");
 }
 

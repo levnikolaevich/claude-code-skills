@@ -74,7 +74,6 @@ export async function fileChanges(filePath, compareAgainst = "HEAD") {
                 `path: ${filePath}`,
                 `compare_against: ${compareAgainst}`,
                 "scope: directory",
-                "summary: changed_files=0",
                 ...graphHint,
             ].join("\n");
         }
@@ -128,7 +127,6 @@ export async function fileChanges(filePath, compareAgainst = "HEAD") {
             `path: ${filePath}`,
             `compare_against: ${compareAgainst}`,
             "scope: file",
-            "summary: added=0 removed=0 modified=0",
             ...graphHint,
         ].join("\n");
     }

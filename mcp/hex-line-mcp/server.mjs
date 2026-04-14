@@ -117,8 +117,8 @@ server.registerTool("read_file", {
     title: "Read File",
     description: "Read file with progressive disclosure. Default: minimal plain partial read for discovery; enable edit-ready metadata explicitly when preparing a verified edit.",
     inputSchema: z.object({
-        path: z.string().optional().describe("File path"),
-        paths: z.array(z.string()).optional().describe("Array of file paths to read (batch mode)"),
+        file_path: z.string().optional().describe("File path"),
+        file_paths: z.array(z.string()).optional().describe("Array of file paths to read (batch mode)"),
         offset: flexNum().describe("Start line (1-indexed, default: 1)"),
         limit: flexNum().describe("Max lines (default: 200 for discovery, 2000 for edit-ready, 0 = all)"),
         ranges: z.union([z.string(), z.array(readRangeSchema)]).optional().describe('Line ranges, e.g. ["10-25", {"start":40,"end":55}]'),
@@ -128,8 +128,8 @@ server.registerTool("read_file", {
     }),
     outputSchema: z.object({
         status: STATUS_ENUM,
-        path: z.string().optional(),
-        paths: z.array(z.string()).optional(),
+        file_path: z.string().optional(),
+        file_paths: z.array(z.string()).optional(),
         content: z.string().optional(),
         edit_ready: z.boolean().optional(),
         next_action: z.string().optional(),
@@ -137,7 +137,7 @@ server.registerTool("read_file", {
     }),
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
 }, async (rawParams) => {
-    const { path: p, paths: multi, offset, limit, ranges: rawRanges, plain, verbosity, edit_ready } = rawParams ?? {};
+    const { file_path: p, file_paths: multi, offset, limit, ranges: rawRanges, plain, verbosity, edit_ready } = rawParams ?? {};
     try {
         const ranges = parseReadRanges(rawRanges);
         const readVerbosity = verbosity ?? "minimal";
@@ -148,7 +148,7 @@ server.registerTool("read_file", {
             for (const fp of multi) {
                 try {
                     if (!edit_ready && readVerbosity !== "full") {
-                        results.push(`${fileInfo(fp)}\nnext_hint: read_file path="${fp}" verbosity="compact"`);
+                        results.push(`${fileInfo(fp)}\nnext_hint: read_file file_path="${fp}" verbosity="compact"`);
                     } else {
                         results.push(readFile(fp, {
                             offset,
@@ -164,9 +164,9 @@ server.registerTool("read_file", {
                 }
             }
             const content = results.join("\n\n---\n\n");
-            return result({ status: "OK", paths: multi, content, edit_ready: !!edit_ready }, { large: !!edit_ready || readVerbosity === "full" || content.length > 50_000 });
+            return result({ status: "OK", file_paths: multi, content, edit_ready: !!edit_ready }, { large: !!edit_ready || readVerbosity === "full" || content.length > 50_000 });
         }
-        if (!p) throw new Error("Either 'path' or 'paths' is required");
+        if (!p) throw new Error("Either 'file_path' or 'file_paths' is required");
         const content = readFile(p, {
             offset,
             limit: readLimit,
@@ -175,7 +175,7 @@ server.registerTool("read_file", {
             verbosity: readVerbosity,
             editReady: !!edit_ready,
         });
-        return result({ status: "OK", path: p, content, edit_ready: !!edit_ready }, { large: !!edit_ready || readVerbosity === "full" || content.length > 50_000 });
+        return result({ status: "OK", file_path: p, content, edit_ready: !!edit_ready }, { large: !!edit_ready || readVerbosity === "full" || content.length > 50_000 });
     } catch (e) {
         return errorResult(e.code || "READ_ERROR", e.message, e.recovery || "Check path and permissions");
     }
@@ -189,7 +189,7 @@ server.registerTool("edit_file", {
     title: "Edit File",
     description: "Apply hash-verified partial edits to one file. Carry base_revision on same-file follow-ups. Preserves existing line endings and trailing-newline shape; conservative conflicts return retry helpers.",
     inputSchema: z.object({
-        path: z.string().describe("File to edit"),
+        file_path: z.string().describe("File to edit"),
         edits: z.union([z.string(), z.array(z.any())]).describe(
             'JSON array of canonical edits.\n' +
             '[{"set_line":{"anchor":"ab.12","new_text":"x"}}]\n' +
@@ -203,10 +203,10 @@ server.registerTool("edit_file", {
         conflict_policy: z.enum(["strict", "conservative"]).optional().describe('Conflict handling (default: "conservative"). "conservative" returns structured CONFLICT output with recovery_ranges, retry_edit/retry_edits, suggested_read_call, and retry_plan when available.'),
         allow_external: flexBool().describe("Allow editing a path outside the current project root. Use only when you intentionally target a temp or external file."),
     }),
-    outputSchema: z.object({ status: STATUS_ENUM, path: z.string().optional(), content: z.string().optional(), reason: z.string().optional(), summary: z.string().optional(), next_action: z.string().optional(), error: ERROR_SHAPE }),
+    outputSchema: z.object({ status: STATUS_ENUM, file_path: z.string().optional(), content: z.string().optional(), reason: z.string().optional(), summary: z.string().optional(), next_action: z.string().optional(), error: ERROR_SHAPE }),
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
 }, async (rawParams) => {
-    const { path: p, edits: json, dry_run, restore_indent, base_revision, conflict_policy, allow_external } = rawParams ?? {};
+    const { file_path: p, edits: json, dry_run, restore_indent, base_revision, conflict_policy, allow_external } = rawParams ?? {};
     try {
         assertProjectScopedPath(p, { allowExternal: !!allow_external });
         let parsed;
@@ -219,7 +219,7 @@ server.registerTool("edit_file", {
             baseRevision: base_revision,
             conflictPolicy: conflict_policy,
         });
-        return lineReportResult({ path: p }, content, { large: content.length > 50_000 });
+        return lineReportResult({ file_path: p }, content, { large: content.length > 50_000 });
     } catch (e) {
         return errorResult(e.code || "EDIT_ERROR", e.message, e.recovery || "Check anchors and checksums");
     }
@@ -234,21 +234,21 @@ server.registerTool("write_file", {
         "Create a new file or overwrite existing. Creates parent dirs. " +
         "For existing files prefer edit_file (shows diff, verifies hashes).",
     inputSchema: z.object({
-        path: z.string().describe("File path"),
+        file_path: z.string().describe("File path"),
         content: z.string().describe("File content"),
         allow_external: flexBool().describe("Allow writing a path outside the current project root. Use only when you intentionally target a temp or external file."),
     }),
-    outputSchema: z.object({ status: STATUS_ENUM, path: z.string().optional(), lines: z.number().optional(), error: ERROR_SHAPE }),
+    outputSchema: z.object({ status: STATUS_ENUM, file_path: z.string().optional(), lines: z.number().optional(), error: ERROR_SHAPE }),
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
 }, async (rawParams) => {
-    const { path: p, content, allow_external } = rawParams ?? {};
+    const { file_path: p, content, allow_external } = rawParams ?? {};
     try {
         assertProjectScopedPath(p, { allowExternal: !!allow_external });
         const abs = validateWritePath(p);
         mkdirSync(dirname(abs), { recursive: true });
         writeFileSync(abs, content, "utf-8");
         const lines = content.split("\n").length;
-        return result({ status: "OK", path: p, lines });
+        return result({ status: "OK", file_path: p, lines });
     } catch (e) {
         return errorResult(e.code || "WRITE_ERROR", e.message, e.recovery || "Check path and permissions");
     }
@@ -265,7 +265,7 @@ server.registerTool("grep_search", {
         path: z.string().optional().describe("Search dir/file (default: cwd)"),
         glob: z.string().optional().describe('Glob filter (e.g. "*.ts")'),
         type: z.string().optional().describe('File type (e.g. "js", "py")'),
-        output: z.enum(["summary", "content", "files", "count"]).optional().describe('Output format (default: summary)'),
+        output_mode: z.enum(["summary", "content", "files_with_matches", "count"]).optional().describe('Output format (default: summary)'),
         case_insensitive: flexBool().describe("Ignore case (-i)"),
         smart_case: flexBool().describe("CI when pattern is all lowercase, CS if uppercase (-S)"),
         literal: flexBool().describe("Literal string search, no regex (-F)"),
@@ -274,7 +274,7 @@ server.registerTool("grep_search", {
         context_before: flexNum().describe("Context lines BEFORE match (-B)"),
         context_after: flexNum().describe("Context lines AFTER match (-A)"),
         limit: flexNum().describe("Max matches per file (default: 20 for summary discovery, 100 for content)"),
-        total_limit: flexNum().describe("Total match events across all files; multiline matches count as 1 (default: 50 for summary discovery, 200 for content, 1000 for files/count, 0 = unlimited)"),
+        head_limit: flexNum().describe("Total match events across all files; multiline matches count as 1 (default: 50 for summary discovery, 200 for content, 1000 for files_with_matches/count, 0 = unlimited)"),
         plain: flexBool().describe("Omit hash tags, return file:line:content"),
         edit_ready: flexBool().describe("Preserve hash/checksum search hunks in `content` mode. Default: false."),
         allow_large_output: flexBool().describe("Bypass the default content-mode block/char caps when you intentionally need a larger payload."),
@@ -282,12 +282,12 @@ server.registerTool("grep_search", {
     outputSchema: z.object({ status: STATUS_ENUM, pattern: z.string().optional(), content: z.string().optional(), next_action: z.string().optional(), error: ERROR_SHAPE }),
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true },
 }, async (rawParams) => {
-    const { pattern, path: p, glob, type, output, case_insensitive, smart_case, literal, multiline,
-            context, context_before, context_after, limit, total_limit, plain, edit_ready, allow_large_output } = rawParams ?? {};
+    const { pattern, path: p, glob, type, output_mode, case_insensitive, smart_case, literal, multiline,
+            context, context_before, context_after, limit, head_limit, plain, edit_ready, allow_large_output } = rawParams ?? {};
     try {
-        const resolvedOutput = output ?? "summary";
+        const resolvedOutput = (output_mode === "files_with_matches") ? "files" : (output_mode ?? "summary");
         const resolvedLimit = limit ?? (resolvedOutput === "summary" ? 20 : 100);
-        const resolvedTotalLimit = total_limit ?? (resolvedOutput === "summary" ? 50 : undefined);
+        const resolvedTotalLimit = head_limit ?? (resolvedOutput === "summary" ? 50 : undefined);
         const searchResult = await grepSearch(pattern, {
             path: p, glob, type, output: resolvedOutput, caseInsensitive: case_insensitive, smartCase: smart_case,
             literal, multiline, context, contextBefore: context_before, contextAfter: context_after,
@@ -309,15 +309,15 @@ server.registerTool("outline", {
         "AST-based structural outline with hash anchors for direct edit_file usage. " +
         "Supports JavaScript/TypeScript, Python, C#, and PHP code files plus markdown headings (.md/.mdx, fence-aware).",
     inputSchema: z.object({
-        path: z.string().describe("Source file path"),
+        file_path: z.string().describe("Source file path"),
     }),
-    outputSchema: z.object({ status: STATUS_ENUM, path: z.string().optional(), content: z.string().optional(), reason: z.string().optional(), summary: z.string().optional(), next_action: z.string().optional(), error: ERROR_SHAPE }),
+    outputSchema: z.object({ status: STATUS_ENUM, file_path: z.string().optional(), content: z.string().optional(), reason: z.string().optional(), summary: z.string().optional(), next_action: z.string().optional(), error: ERROR_SHAPE }),
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
 }, async (rawParams) => {
-    const { path: p } = rawParams ?? {};
+    const { file_path: p } = rawParams ?? {};
     try {
         const content = await fileOutline(p);
-        return lineReportResult({ path: p }, content);
+        return lineReportResult({ file_path: p }, content);
     } catch (e) {
         return errorResult(e.code || "OUTLINE_ERROR", e.message, e.recovery || "Check file path and language support");
     }
@@ -330,20 +330,20 @@ server.registerTool("verify", {
     title: "Verify Checksums",
     description: "Check if held checksums are still valid without rereading. Use before delayed or mixed-tool follow-up edits; returns canonical status, next_action, and reread guidance.",
     inputSchema: z.object({
-        path: z.string().describe("File path"),
+        file_path: z.string().describe("File path"),
         checksums: z.array(z.string()).describe('Checksum strings, e.g. ["1-50:f7e2a1b0", "51-100:abcd1234"]'),
         base_revision: z.string().optional().describe("Optional prior revision to compare against latest state."),
     }),
-    outputSchema: z.object({ status: STATUS_ENUM, path: z.string().optional(), content: z.string().optional(), reason: z.string().optional(), summary: z.string().optional(), next_action: z.string().optional(), error: ERROR_SHAPE }),
+    outputSchema: z.object({ status: STATUS_ENUM, file_path: z.string().optional(), content: z.string().optional(), reason: z.string().optional(), summary: z.string().optional(), next_action: z.string().optional(), error: ERROR_SHAPE }),
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
 }, async (rawParams) => {
-    const { path: p, checksums, base_revision } = rawParams ?? {};
+    const { file_path: p, checksums, base_revision } = rawParams ?? {};
     try {
         if (!Array.isArray(checksums) || checksums.length === 0) {
             throw new Error("checksums must be a non-empty array of strings");
         }
         const content = verifyChecksums(p, checksums, { baseRevision: base_revision });
-        return lineReportResult({ path: p }, content);
+        return lineReportResult({ file_path: p }, content);
     } catch (e) {
         return errorResult(e.code || "VERIFY_ERROR", e.message, e.recovery || "Check checksums format");
     }

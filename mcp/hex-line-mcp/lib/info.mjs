@@ -81,11 +81,12 @@ export function fileInfo(filePath) {
         : `Size: ${formatSize(size)}`;
     const timeStr = `Modified: ${mtime.toISOString().replace("T", " ").slice(0, 19)} (${relativeTime(mtime)})`;
 
-    return [
+    const lines = [
         `File: ${normalized}`,
         sizeStr,
         timeStr,
         `Type: ${typeName}`,
-        `Binary: ${isBinary ? "yes" : "no"}`,
-    ].join("\n");
+    ];
+    if (isBinary) lines.push(`Binary: yes`);
+    return lines.join("\n");
 }

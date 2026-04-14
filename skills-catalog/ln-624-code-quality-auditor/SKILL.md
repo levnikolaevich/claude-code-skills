@@ -39,7 +39,7 @@ Receives `contextStore` with: `tech_stack`, `best_practices`, `principles`, `cod
      - **Complexity + God classes:** `audit_workspace(path=scan_path, verbosity="full")` -- use returned hotspots to pre-identify complex functions and god classes.
      - **Module metrics:** `analyze_architecture(path=scan_path, verbosity="full")` -- use returned coupling metrics for cascade depth and coupling analysis.
      - Fall back to grep patterns below if graph unavailable.
-     - **Outline-first read:** `outline(path)` before reading large source files -- understand function/class structure for complexity analysis.
+     - **Outline-first read:** `outline(file_path)` before reading large source files -- understand function/class structure for complexity analysis.
    - Example: `Grep(pattern="if.*if.*if", path=scan_path)` for nesting detection
 3) **Analyze context per candidate (Layer 2 -- MANDATORY)**
    Layer 1 finding without Layer 2 = NOT a valid finding. Before reporting, ask: "Is this violation intentional or justified by design?"

@@ -441,20 +441,20 @@ function handlePreToolUse(data) {
                 ? ` For structure-first discovery: mcp__hex-line__outline then mcp__hex-line__read_file with ranges.`
                 : "";
             const target = filePath
-                ? `Use mcp__hex-line__read_file(path="${filePath}").${rangeHint}${outlineTip}`
+                ? `Use mcp__hex-line__read_file(file_path="${filePath}").${rangeHint}${outlineTip}`
                 : "Use mcp__hex-line__read_file or mcp__hex-line__inspect_path.";
             redirect(target, DEFERRED_HINT);
         }
 
         if (toolName === "Edit") {
             const target = filePath
-                ? `Use mcp__hex-line__edit_file(path="${filePath}"). If you need hash anchors first: mcp__hex-line__grep_search(output="content", edit_ready=true).`
-                : "Use mcp__hex-line__edit_file. If you need hash anchors first: mcp__hex-line__grep_search(output=\"content\", edit_ready=true).";
+                ? `Use mcp__hex-line__edit_file(file_path="${filePath}"). If you need hash anchors first: mcp__hex-line__grep_search(output_mode="content", edit_ready=true).`
+                : "Use mcp__hex-line__edit_file. If you need hash anchors first: mcp__hex-line__grep_search(output_mode=\"content\", edit_ready=true).";
             redirect(target, "Hash-verified edits for project text files.\n" + DEFERRED_HINT);
         }
 
         if (toolName === "Write") {
-            const pathNote = filePath ? ` with path="${filePath}"` : "";
+            const pathNote = filePath ? ` with file_path="${filePath}"` : "";
             redirect(`Use mcp__hex-line__write_file${pathNote}`, TOOL_HINTS.Write + "\n" + DEFERRED_HINT);
         }
 

@@ -27,7 +27,7 @@ Prefer `hex-line` for text files you may inspect or modify. Hash-annotated reads
 
 | Path | Flow |
 |------|------|
-| Surgical | `grep_search(output="summary") -> grep_search(output="content", edit_ready=true) if needed -> edit_file` |
+| Surgical | `grep_search(output_mode="summary") -> grep_search(output_mode="content", edit_ready=true) if needed -> edit_file` |
 | Exploratory | `outline -> read_file (ranges) -> edit_file(base_revision)` |
 | Multi-file | `bulk_replace(path=<project root>)` |
 | Follow-up after delay | `verify(base_revision) -> reread only if STALE -> retry with returned helpers` |
@@ -43,8 +43,8 @@ Prefer `hex-line` for text files you may inspect or modify. Hash-annotated reads
 
 ## Edit Discipline
 
-- Never invent `range_checksum`. Copy it from a fresh `read_file` or `grep_search(output:"content", edit_ready=true)` block.
-- First mutation in a file: use `grep_search(output="summary")` for narrow targets, or `outline -> read_file(ranges)` for structural edits. Escalate to `grep_search(output="content", edit_ready=true)` only when the next edit needs canonical hunks.
+- Never invent `range_checksum`. Copy it from a fresh `read_file` or `grep_search(output_mode:"content", edit_ready=true)` block.
+- First mutation in a file: use `grep_search(output_mode="summary")` for narrow targets, or `outline -> read_file(ranges)` for structural edits. Escalate to `grep_search(output_mode="content", edit_ready=true)` only when the next edit needs canonical hunks.
 - Preserve file conventions mentally: `hex-line` hashes normalized logical text, but `edit_file` preserves the file's existing line endings and trailing-newline shape on write.
 - Prefer `set_line` or `insert_after` for small local changes. Prefer `replace_between` for larger bounded block rewrites.
 - Use `replace_lines` only when you already hold the exact inclusive range checksum for that block.
@@ -54,7 +54,7 @@ Prefer `hex-line` for text files you may inspect or modify. Hash-annotated reads
 - Reuse `retry_checksum` when it is returned for the exact same target range.
 - Once `hex-line` owns a file edit session, avoid mixing built-in `Edit`/`Write` on that file unless you intentionally want a new baseline.
 - Follow `next_action` first. Treat `summary` and `snippet` as the compact local context, not as prose to reinterpret.
-- If broad `grep_search(output="content")` or pattern `inspect_path` truncates, narrow `path`, `glob`, or query shape before retrying. Use `allow_large_output=true` only when you intentionally accept a larger payload.
+- If broad `grep_search(output_mode="content")` or pattern `inspect_path` truncates, narrow `path`, `glob`, or query shape before retrying. Use `allow_large_output=true` only when you intentionally accept a larger payload.
 
 ## Exceptions
 

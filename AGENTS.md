@@ -56,8 +56,8 @@ Use `hex-line` first for repo file reads/search/edits on code, config, scripts, 
 - Preferred cheap flow: `inspect_path -> outline -> read_file(minimal, ranges)` and only request `edit_ready=true` / rich output when revisions or checksums are required.
 - Before delayed same-file follow-up edits, carry `base_revision` and run `verify` instead of rereading blindly.
 - Do not start discovery with repo-root wildcard `inspect_path` such as `pattern="*.md"` unless you intentionally need a repo inventory. Narrow `path` first.
-- For text search, prefer `grep_search(output="summary")` first. Escalate to `output="content"` only after narrowing `path`, `glob`, or pattern, or when canonical hunks/checksums are required.
-- Use `allow_large_output=true` only when a large `grep_search(output="content")` payload is explicitly needed. Default behavior is intentionally capped and should be treated as the safe path.
+- For text search, prefer `grep_search(output_mode="summary")` first. Escalate to `output_mode="content"` only after narrowing `path`, `glob`, or pattern, or when canonical hunks/checksums are required.
+- Use `allow_large_output=true` only when a large `grep_search(output_mode="content")` payload is explicitly needed. Default behavior is intentionally capped and should be treated as the safe path.
 - Do not use `find_symbols` on broad/common bare names until you narrow by `path` or can immediately refine with `name + file` or `workspace_qualified_name`.
 
 ## Quick Understanding

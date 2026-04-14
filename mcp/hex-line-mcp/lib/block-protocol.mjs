@@ -139,7 +139,12 @@ export function serializeSearchBlock(block, opts = {}) {
     const requestedSpan = renderRequestedSpan(block);
     if (requestedSpan) lines.push(requestedSpan);
     if (Array.isArray(block.meta.matchLines) && block.meta.matchLines.length > 0) {
-        lines.push(`match_lines: ${block.meta.matchLines.join(",")}`);
+        const matchLinesStr = block.meta.matchLines.join(",");
+        const spanStr = `${block.startLine}-${block.endLine}`;
+        const singleSpan = block.startLine === block.endLine ? String(block.startLine) : null;
+        if (matchLinesStr !== spanStr && matchLinesStr !== singleSpan) {
+            lines.push(`match_lines: ${matchLinesStr}`);
+        }
     }
     if (block.meta.summary) lines.push(`summary: ${block.meta.summary}`);
     lines.push(...renderMetaLines(Object.fromEntries(

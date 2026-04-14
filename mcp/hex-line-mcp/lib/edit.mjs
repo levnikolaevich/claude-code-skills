@@ -282,13 +282,13 @@ function buildConflictEntryModel({ lines, centerIdx, reason, details, recoveryRa
     };
 }
 
-function renderConflictEntry(entry) {
+function renderConflictEntry(entry, { skipRetryEdit = false } = {}) {
     let msg = "";
     if (entry.edit) msg += `edit: ${entry.edit}\n`;
     msg += `reason: ${entry.reason}`;
     if (entry.recovery_ranges?.length) msg += `\nrecovery_ranges: ${entry.recovery_ranges.join(", ")}`;
     if (entry.retry_checksum) msg += `\nretry_checksum: ${entry.retry_checksum}`;
-    if (entry.retry_edit) msg += `\nretry_edit: ${entry.retry_edit}`;
+    if (entry.retry_edit && !skipRetryEdit) msg += `\nretry_edit: ${entry.retry_edit}`;
     if (entry.remapped_refs) msg += `\nremapped_refs: ${entry.remapped_refs}`;
     msg += `\nsnippet: ${entry.snippet.range}\n${entry.snippet.text}`;
     return msg;
@@ -554,9 +554,9 @@ function buildBatchConflictMessage({
     msg += `\nnext_action: ${recovery.next_action}`;
     if (hasCompleteRetryBatch) msg += `\nretry_edits: ${JSON.stringify(recovery.retry_edits)}`;
     if (recovery.suggested_read_call) msg += `\nsuggested_read_call: ${recovery.suggested_read_call}`;
-    if (recovery.retry_plan) msg += `\nretry_plan: ${recovery.retry_plan}`;
+    if (recovery.retry_plan && conflicts.length > 1) msg += `\nretry_plan: ${recovery.retry_plan}`;
     for (const entry of entries) {
-        msg += `\n\n${renderConflictEntry(entry)}`;
+        msg += `\n\n${renderConflictEntry(entry, { skipRetryEdit: conflicts.length === 1 })}`;
     }
     return msg;
 }
@@ -1307,7 +1307,7 @@ export function editFile(filePath, edits, opts = {}) {
                     if (impact.counts.sameNameSymbols > 0) totals.push(`${impact.counts.sameNameSymbols} same-name siblings`);
                     const headline = totals.length > 0 ? totals.join(", ") : "no downstream graph facts";
                     const factLines = impact.facts.slice(0, 6).map(fact => {
-                        if (fact.fact_kind === "public_api") return "public_api: exported symbol";
+                        if (fact.fact_kind === "public_api") return null;
                         const location = fact.target_file && fact.target_line
                             ? ` (${fact.target_file}:${fact.target_line})`
                             : "";
@@ -1316,7 +1316,7 @@ export function editFile(filePath, edits, opts = {}) {
                             : `${fact.target_file}:${fact.target_line}`;
                         const via = fact.path_kind ? ` via ${fact.path_kind}` : "";
                         return `${fact.fact_kind}: ${target}${via}`;
-                    });
+                    }).filter(Boolean);
                     return [
                         `${impact.symbol}: ${headline}`,
                         ...factLines.map(line => `  ${line}`),

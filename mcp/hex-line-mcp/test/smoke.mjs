@@ -1452,7 +1452,7 @@ describe("edit_file replace removed", () => {
                 const result = await client.callTool({
                     name: "edit_file",
                     arguments: {
-                        path: tmp,
+                        file_path: tmp,
                         allow_external: true,
                         edits: JSON.stringify([{
                             type: "replace_lines",
@@ -1595,7 +1595,7 @@ describe("changes", () => {
         assert.ok(result.length > 0, "should have content");
         assert.ok(result.includes("status:"), "changes returns canonical status");
         assert.ok(result.includes("reason:"), "changes returns canonical reason");
-        assert.ok(result.includes("summary:"), "changes returns canonical summary");
+        if (result.includes("status: CHANGED")) assert.ok(result.includes("summary:"), "CHANGED returns summary");
         if (result.includes("graph_enrichment:")) {
             assert.ok(result.includes("graph_enrichment: unavailable"), "graph_enrichment line only appears when unavailable");
             assert.ok(result.includes("graph_fix:"), "unavailable emits actionable graph_fix hint");
@@ -1644,7 +1644,7 @@ describe("MCP structured status contract", () => {
             await withMcpClient(async (client) => {
                 const read = await client.callTool({
                     name: "read_file",
-                    arguments: { path: tmp, ranges: ["1-3"], edit_ready: true, verbosity: "full" },
+                    arguments: { file_path: tmp, ranges: ["1-3"], edit_ready: true, verbosity: "full" },
                 });
                 const checksum = textOf(read).match(/checksum: (\d+-\d+:[0-9a-f]{8})/)?.[1];
                 assert.ok(checksum, "read_file exposes checksum");
@@ -1652,7 +1652,7 @@ describe("MCP structured status contract", () => {
                 fs.writeFileSync(tmp, "alpha\nBETA\ngamma\n");
                 const verify = await client.callTool({
                     name: "verify",
-                    arguments: { path: tmp, checksums: [checksum] },
+                    arguments: { file_path: tmp, checksums: [checksum] },
                 });
                 assert.equal(verify.structuredContent.status, "STALE");
                 assert.equal(verify.structuredContent.next_action, "reread_ranges");
@@ -1671,7 +1671,7 @@ describe("MCP structured status contract", () => {
             await withMcpClient(async (client) => {
                 const read = await client.callTool({
                     name: "read_file",
-                    arguments: { path: tmp, ranges: ["1-1", "3-4"], edit_ready: true, verbosity: "full" },
+                    arguments: { file_path: tmp, ranges: ["1-1", "3-4"], edit_ready: true, verbosity: "full" },
                 });
                 const readText = textOf(read);
                 const baseRevision = readText.match(/revision: (\S+)/)?.[1];
@@ -1684,7 +1684,7 @@ describe("MCP structured status contract", () => {
                 await client.callTool({
                     name: "edit_file",
                     arguments: {
-                        path: tmp,
+                        file_path: tmp,
                         allow_external: true,
                         edits: JSON.stringify([{ insert_after: { anchor: headTag, text: "inserted" } }]),
                     },
@@ -1692,7 +1692,7 @@ describe("MCP structured status contract", () => {
                 const autoRebased = await client.callTool({
                     name: "edit_file",
                     arguments: {
-                        path: tmp,
+                        file_path: tmp,
                         allow_external: true,
                         base_revision: baseRevision,
                         conflict_policy: "conservative",
@@ -1713,7 +1713,7 @@ describe("MCP structured status contract", () => {
                 fs.writeFileSync(tmp, original);
                 const conflictRead = await client.callTool({
                     name: "read_file",
-                    arguments: { path: tmp, ranges: ["3-4"], edit_ready: true, verbosity: "full" },
+                    arguments: { file_path: tmp, ranges: ["3-4"], edit_ready: true, verbosity: "full" },
                 });
                 const conflictText = textOf(conflictRead);
                 const conflictBaseRevision = conflictText.match(/revision: (\S+)/)?.[1];
@@ -1724,7 +1724,7 @@ describe("MCP structured status contract", () => {
                 const conflict = await client.callTool({
                     name: "edit_file",
                     arguments: {
-                        path: tmp,
+                        file_path: tmp,
                         allow_external: true,
                         base_revision: conflictBaseRevision,
                         conflict_policy: "conservative",
@@ -2383,7 +2383,7 @@ describe("protocol: edit_file output", () => {
             await withMcpClient(async (client) => {
                 const defaultRead = await client.callTool({
                     name: "read_file",
-                    arguments: { path: tmp, ranges: ["2-3"] },
+                    arguments: { file_path: tmp, ranges: ["2-3"] },
                 });
                 const defaultText = textOf(defaultRead);
                 assert.ok(defaultText.includes("2|beta"), "default read_file is discovery-first plain output");
@@ -2391,7 +2391,7 @@ describe("protocol: edit_file output", () => {
 
                 const readResult = await client.callTool({
                     name: "read_file",
-                    arguments: { path: tmp, ranges: ["2-3"], edit_ready: true, verbosity: "full" },
+                    arguments: { file_path: tmp, ranges: ["2-3"], edit_ready: true, verbosity: "full" },
                 });
                 const readText = textOf(readResult);
                 const startAnchor = readText.match(/([a-z2-7]{2}\.2)\tbeta/)?.[1];
@@ -2402,7 +2402,7 @@ describe("protocol: edit_file output", () => {
                 const editResult = await client.callTool({
                     name: "edit_file",
                     arguments: {
-                        path: tmp,
+                        file_path: tmp,
                         allow_external: true,
                         edits: JSON.stringify([{
                             replace_lines: {
@@ -2431,7 +2431,7 @@ describe("protocol: edit_file output", () => {
             await withMcpClient(async (client) => {
                 const readResult = await client.callTool({
                     name: "read_file",
-                    arguments: { path: tmp, ranges: ["1-2"], edit_ready: true, verbosity: "full" },
+                    arguments: { file_path: tmp, ranges: ["1-2"], edit_ready: true, verbosity: "full" },
                 });
                 const readText = textOf(readResult);
                 const anchor = readText.match(/([a-z2-7]{2}\.2)\tbeta/)?.[1];
@@ -2440,7 +2440,7 @@ describe("protocol: edit_file output", () => {
                 const blocked = await client.callTool({
                     name: "edit_file",
                     arguments: {
-                        path: tmp,
+                        file_path: tmp,
                         edits: JSON.stringify([{ set_line: { anchor, new_text: "BETA" } }]),
                     },
                 });
@@ -2451,7 +2451,7 @@ describe("protocol: edit_file output", () => {
                 const allowed = await client.callTool({
                     name: "edit_file",
                     arguments: {
-                        path: tmp,
+                        file_path: tmp,
                         edits: JSON.stringify([{ set_line: { anchor, new_text: "BETA" } }]),
                         allow_external: true,
                     },
@@ -2494,7 +2494,7 @@ describe("protocol: edit_file output", () => {
 
                 const contentResult = await client.callTool({
                     name: "grep_search",
-                    arguments: { path: tmp, pattern: "AAA", output: "content", edit_ready: true },
+                    arguments: { path: tmp, pattern: "AAA", output_mode: "content", edit_ready: true },
                 });
                 const contentText = textOf(contentResult);
                 assert.ok(contentText.includes("block: search_hunk"), "explicit content mode returns search hunks");
@@ -2513,14 +2513,14 @@ describe("protocol: edit_file output", () => {
             await withMcpClient(async (client) => {
                 const blockedWrite = await client.callTool({
                     name: "write_file",
-                    arguments: { path: filePath, content: "alpha\n" },
+                    arguments: { file_path: filePath, content: "alpha\n" },
                 });
                 assert.equal(blockedWrite.isError, true, "external write should be blocked by default");
                 assert.match(errMsgOf(blockedWrite), /allow_external=true/);
 
                 const allowedWrite = await client.callTool({
                     name: "write_file",
-                    arguments: { path: filePath, content: "alpha\n", allow_external: true },
+                    arguments: { file_path: filePath, content: "alpha\n", allow_external: true },
                 });
                 assert.notEqual(allowedWrite.isError, true, "explicit override should allow external write");
 
@@ -2603,7 +2603,7 @@ describe("protocol: outline", () => {
         const result = await fileOutline(CWD + "/lib/snapshot.mjs");
         // Should contain tag.lineNum-lineNum: pattern
         assert.match(result, /[a-z2-7]{2}\.\d+-\d+:/, "Outline entries have hash anchor prefix");
-        assert.ok(result.includes("symbols"), "Shows symbol count");
+        assert.ok((result.match(/[a-z2-7]{2}\.\d+-\d+:/g) || []).length > 0, "Shows symbol entries");
     });
 
     it("markdown outline returns headings", async () => {
@@ -2615,7 +2615,7 @@ describe("protocol: outline", () => {
             assert.ok(result.includes("Title"), "Contains title heading");
             assert.ok(result.includes("Section A"), "Contains section heading");
             assert.ok(result.includes("Subsection"), "Contains subsection");
-            assert.ok(result.includes("4 symbols"), "Counts 4 headings");
+            assert.equal((result.match(/\d+-\d+:/g) || []).length, 4, "Counts 4 headings");
         } finally {
             fs.unlinkSync(tmp);
         }
@@ -2630,7 +2630,7 @@ describe("protocol: outline", () => {
             assert.ok(result.includes("Title"), "Real heading remains visible");
             assert.ok(result.includes("Real Section"), "Heading after fence remains visible");
             assert.ok(!result.includes("Fake Heading"), "Fenced code heading is ignored");
-            assert.ok(result.includes("2 symbols"), "Only real headings are counted");
+            assert.equal((result.match(/\d+-\d+:/g) || []).length, 2, "Only real headings are counted");
         } finally {
             fs.unlinkSync(tmp);
         }
@@ -2792,6 +2792,191 @@ describe("remaining checklist tests", () => {
             const postChecksum = editResult.match(/checksum: (\S+)/)?.[1];
             const verifyResult = verifyChecksums(tmp, [postChecksum]);
             assert.ok(verifyResult.includes("status: VALID"), "Multi-edit checksum valid");
+        } finally {
+            fs.unlinkSync(tmp);
+        }
+    });
+});
+
+describe("v1.24.2 regression guards", () => {
+    it("Fix 1: suggested_refine_call in inspect_path uses mcp__hex-line__* (hyphen)", async () => {
+        const { inspectPath } = await import("../lib/inspect-path.mjs");
+        const dir = makeTempRepo("hex-v1242-refine-inspect-", Object.fromEntries(
+            Array.from({ length: 70 }, (_, idx) => [`docs/f${idx}.md`, ""]),
+        ));
+        try {
+            const result = inspectPath(dir, { pattern: "*.md", type: "file" });
+            const match = result.match(/suggested_refine_call:\s*(\{.*\})/);
+            assert.ok(match, "suggested_refine_call present");
+            const parsed = JSON.parse(match[1]);
+            assert.equal(parsed.tool, "mcp__hex-line__inspect_path", "tool name uses hyphen, not underscore");
+            assert.ok(!result.includes("mcp__hex_line__"), "no underscore-typo anywhere in output");
+        } finally {
+            fs.rmSync(dir, { recursive: true, force: true });
+        }
+    });
+
+    it("Fix 1b: suggested_refine_call in grep_search uses hyphen", async () => {
+        const { grepSearch } = await import("../lib/search.mjs");
+        const dir = makeTempRepo("hex-v1242-refine-grep-", Object.fromEntries(
+            Array.from({ length: 30 }, (_, idx) => [`src/f${idx}.mjs`, `export const x${idx} = 1;\n`.repeat(80)]),
+        ));
+        try {
+            const result = await grepSearch("export const", { path: dir, output: "content" });
+            if (result.includes("suggested_refine_call:")) {
+                const match = result.match(/suggested_refine_call:\s*(\{.*\})/);
+                if (match) {
+                    const parsed = JSON.parse(match[1]);
+                    assert.equal(parsed.tool, "mcp__hex-line__grep_search", "tool name uses hyphen");
+                }
+            }
+            assert.ok(!result.includes("mcp__hex_line__"), "no underscore-typo");
+        } finally {
+            fs.rmSync(dir, { recursive: true, force: true });
+        }
+    });
+
+    it("Fix 4: batch read_file on code file does not emit Binary: no", async () => {
+        const { fileInfo } = await import("../lib/info.mjs");
+        const tmp = join(tmpdir(), `hex-v1242-binary-${Date.now()}.mjs`);
+        fs.writeFileSync(tmp, "export const x = 1;\n");
+        try {
+            const info = fileInfo(tmp);
+            assert.ok(!info.includes("Binary: no"), "Binary: no dropped for text files");
+            assert.ok(info.includes("Type:"), "Type: still present");
+        } finally {
+            fs.unlinkSync(tmp);
+        }
+    });
+
+    it("Fix 3: single-conflict batch CONFLICT omits retry_plan and per-edit retry_edit (dedup with top-level retry_edits)", async () => {
+        const { readFile } = await import("../lib/read.mjs");
+        const { editFile } = await import("../lib/edit.mjs");
+        const tmp = join(tmpdir(), `hex-v1242-single-conflict-${Date.now()}.js`);
+        fs.writeFileSync(tmp, "one\ntwo\nthree\nfour\nfive\n");
+        try {
+            const read = readFile(tmp, { ranges: ["1-5"] });
+            const anchors = [...read.matchAll(/([a-z2-7]{2}\.(?:2|4))\t(two|four)/g)].map((m) => m[1]);
+            const checksums = [...read.matchAll(/checksum: (\d+-\d+:[0-9a-f]{8})/g)].map((m) => m[1]);
+            // Stale only line 2 — line 4 still matches
+            fs.writeFileSync(tmp, "ONE\ntwo\nthree\nfour\nfive\n");
+            const result = editFile(tmp, [
+                { replace_lines: { start_anchor: anchors[0], end_anchor: anchors[0], new_text: "two!", range_checksum: checksums[0] } },
+                { set_line: { anchor: anchors[1], new_text: "four!" } },
+            ], { conflictPolicy: "conservative" });
+            assert.ok(result.includes("edit_conflicts: 1"), "single-conflict batch");
+            assert.ok(result.includes("retry_edits:"), "top-level retry_edits present");
+            assert.equal(result.includes("retry_plan:"), false, "retry_plan dropped on single-conflict (dup of retry_edits)");
+            assert.equal((result.match(/retry_edit:/g) || []).length, 0, "per-edit retry_edit dropped on single-conflict");
+        } finally {
+            fs.rmSync(tmp, { force: true });
+        }
+    });
+
+    it("Fix 5: Semantic impact block does not narrate public_api: exported symbol", { skip: !HAS_GRAPH_SQLITE }, async () => {
+        const { editFile } = await import("../lib/edit.mjs");
+        const { _resetGraphDBCache } = await import("../lib/graph-enrich.mjs");
+        const { fnv1a, lineTag } = await import("@levnikolaevich/hex-common/text-protocol/hash");
+        const repo = makeTempRepo("hex-v1242-pubapi-", {
+            "a.mjs": "export function foo() {\n  return 1;\n}\n",
+            "b.mjs": "import { foo } from \"./a.mjs\";\nexport function run() { return foo(); }\n",
+        });
+        try {
+            await indexGraphRepo(repo);
+            const anchor = `${lineTag(fnv1a("export function foo() {"))}.1`;
+            const result = editFile(join(repo, "a.mjs"), [
+                { set_line: { anchor, new_text: "export function foo() {" } },
+                { set_line: { anchor: `${lineTag(fnv1a("  return 1;"))}.2`, new_text: "  return 2;" } },
+            ]);
+            assert.ok(result.includes("Semantic impact:"), "block present");
+            assert.ok(result.includes("public API"), "headline mentions public API");
+            assert.equal(result.includes("public_api: exported symbol"), false, "no narration line");
+        } finally {
+            _resetGraphDBCache();
+            await closeGraphRepo(repo);
+            fs.rmSync(repo, { recursive: true, force: true });
+        }
+    });
+
+    it("Fix 6: grep_search summary with single-file result omits top_files", async () => {
+        const { grepSearch } = await import("../lib/search.mjs");
+        const tmp = join(tmpdir(), `hex-v1242-single-${Date.now()}.mjs`);
+        fs.writeFileSync(tmp, "export function foo() {}\n");
+        try {
+            const result = await grepSearch("function", { path: tmp, output: "summary" });
+            assert.ok(result.includes("summary:"), "summary line present");
+            assert.ok(!result.includes("top_files:"), "top_files omitted for single-file result");
+        } finally {
+            fs.unlinkSync(tmp);
+        }
+    });
+
+    it("Fix 6b: grep_search summary with multi-file result keeps top_files", async () => {
+        const { grepSearch } = await import("../lib/search.mjs");
+        const dir = makeTempRepo("hex-v1242-multi-", {
+            "a.mjs": "function foo() {}\n",
+            "b.mjs": "function bar() {}\n",
+            "c.mjs": "function baz() {}\n",
+        });
+        try {
+            const result = await grepSearch("function", { path: dir, output: "summary" });
+            assert.ok(result.includes("top_files:"), "top_files present for multi-file result");
+        } finally {
+            fs.rmSync(dir, { recursive: true, force: true });
+        }
+    });
+
+    it("Fix 7: grep_search content with context=0 omits match_lines when equal to span", async () => {
+        const { grepSearch } = await import("../lib/search.mjs");
+        const tmp = join(tmpdir(), `hex-v1242-ml-${Date.now()}.mjs`);
+        fs.writeFileSync(tmp, "const a = 1;\nconst b = 2;\nconst c = 3;\n");
+        try {
+            const result = await grepSearch("const b", { path: tmp, output: "content" });
+            assert.ok(result.includes("span: 2-2"), "span is 2-2");
+            assert.ok(!result.includes("match_lines: 2"), "match_lines omitted when == span");
+        } finally {
+            fs.unlinkSync(tmp);
+        }
+    });
+
+    it("Fix 8: outline output does not emit (N symbols, M source lines) footer", async () => {
+        const { fileOutline } = await import("../lib/outline.mjs");
+        const tmp = join(tmpdir(), `hex-v1242-outline-${Date.now()}.mjs`);
+        fs.writeFileSync(tmp, "export function a() {}\nexport function b() {}\n");
+        try {
+            const result = await fileOutline(tmp);
+            assert.ok(!/\(\d+ symbols, \d+ source lines\)/.test(result), "no symbols/lines footer");
+        } finally {
+            fs.unlinkSync(tmp);
+        }
+    });
+
+    it("Fix 9: changes NO_CHANGES on file omits added=0 removed=0 modified=0 summary", async () => {
+        const { fileChanges } = await import("../lib/changes.mjs");
+        const repo = makeTempRepo("hex-v1242-nochanges-", { "src/a.mjs": "export const x = 1;\n" });
+        try {
+            git(repo, ["init"]);
+            git(repo, ["config", "user.email", "t@t.test"]);
+            git(repo, ["config", "user.name", "t"]);
+            git(repo, ["add", "."]);
+            git(repo, ["commit", "-m", "init"]);
+            const result = await fileChanges(join(repo, "src/a.mjs"), "HEAD");
+            assert.ok(result.includes("status: NO_CHANGES"), "status NO_CHANGES");
+            assert.ok(!result.includes("summary: added=0"), "all-zeros summary dropped");
+        } finally {
+            fs.rmSync(repo, { recursive: true, force: true });
+        }
+    });
+
+    it("Fix 10: verify INVALID format error uses single phrasing", async () => {
+        const { verifyChecksums } = await import("../lib/verify.mjs");
+        const tmp = join(tmpdir(), `hex-v1242-invalid-${Date.now()}.mjs`);
+        fs.writeFileSync(tmp, "line1\nline2\n");
+        try {
+            const result = verifyChecksums(tmp, ["xx-yy:bad"]);
+            assert.ok(result.includes("status: INVALID"), "status INVALID");
+            assert.ok(result.includes("format error:"), "new phrasing present");
+            assert.ok(!result.includes("invalid checksum format: Bad checksum"), "old double-phrasing gone");
         } finally {
             fs.unlinkSync(tmp);
         }

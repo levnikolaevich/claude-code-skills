@@ -170,7 +170,7 @@ Formula: `Code Quality Score = 100 - metric_penalties - issue_penalties`
 
 7) **Analyze code for static issues (assign prefixes):**
    **MANDATORY READ:** Load `shared/references/clean_code_checklist.md`, `shared/references/destructive_operation_safety.md`
-   - For large code files, use `outline(path)` before targeted reads.
+   - For large code files, use `outline(file_path)` before targeted reads.
    - SEC-: hardcoded creds, unvalidated input, SQL injection, race conditions
    - SEC-DESTR-: unguarded destructive operations — use code-level guards table from destructive_operation_safety.md (loaded above). Check all 5 guard categories (DB, FS, MIG, ENV, FORCE).
    - MNT-: DRY violations (MNT-DRY-: duplicate logic), dead code (MNT-DC-: per checklist), complex conditionals, poor naming

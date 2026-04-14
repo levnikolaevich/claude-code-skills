@@ -2,6 +2,10 @@
 
 <!-- SCOPE: User-facing changes only. Max 5 bullets per entry. Focus: new capabilities, workflow changes, breaking changes. -->
 
+## 2026-04-14
+
+- **Gemini dropped from advisor role** — Codex is now the sole external parallel-advisor for skill_groups 200/300/310/510. Fallback is Opus self-review. Gemini CLI remains a first-class install/sync target (installer, syncer, `GEMINI.md`), just not an advisor. Cleanup across `agent_registry.json`, `agent_runner.mjs`, and the shared agent delegation/review/memory references.
+
 ## 2026-04-10
 
 - **hex-line v1.12→v1.16** — progressive disclosure read (`edit_ready`/`verbosity`), line-ending preservation (LF/CRLF/CR), `allow_external` scope boundary, graph staleness auto-refresh, summary-first grep

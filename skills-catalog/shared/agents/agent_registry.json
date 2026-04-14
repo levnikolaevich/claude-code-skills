@@ -17,23 +17,6 @@
       "health_check": "codex --version",
       "focus_hint": "Primary focus: correctness bugs, schema feasibility, data integrity, error handling, code-level edge cases"
     },
-    "gemini": {
-      "name": "Gemini CLI",
-      "command": "gemini",
-      "args": ["--approval-mode", "yolo", "-p", ""],
-      "resume_args": ["--resume", "{session_id}", "--approval-mode", "yolo", "-p", ""],
-      "resume_prompt_delivery": "flag",
-      "session_id_capture": {
-        "strategy": "from_list_command",
-        "command": "gemini --list-sessions",
-        "parse": "first_uuid"
-      },
-      "env_override": {"GOOGLE_CLOUD_PROJECT": ""},
-      "hard_timeout_seconds": 1800,
-      "skill_groups": ["200", "300", "310", "510"],
-      "health_check": "gemini --version",
-      "focus_hint": "Primary focus: performance at scale, security/isolation, resource management, architectural patterns"
-    },
     "claude-builtin": {
       "name": "Claude (built-in only)",
       "command": "claude",

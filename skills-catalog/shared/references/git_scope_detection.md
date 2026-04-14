@@ -45,3 +45,22 @@ Add file paths from task Affected Components / Existing Code Impact not already 
 ## Error Handling
 
 If all git commands fail → WARN "git scope unavailable", fall back to task metadata only.
+
+
+## Compact Output Flags
+
+Default to machine-readable / truncated forms to keep context budget tight. Escalate to full output only when the compact form is insufficient.
+
+| Verbose | Compact default | When to escalate |
+|---------|-----------------|------------------|
+| `git status` | `git status --porcelain` | Human-facing report only |
+| `git log` | `git log --oneline -N` (N = budget, typically 10–20) | Need full commit bodies |
+| `git diff` | `git diff --stat` first | Decide based on `--stat` whether to load full diff |
+| `git diff --cached` | `git diff --cached --stat` first | Same as above |
+| `git show` | `git show --stat {rev}` first | Same as above |
+
+Rules:
+
+- Never read a full diff solely to count files — `--stat` is sufficient.
+- When piping (`| head`, `| tail`), preserve exit code via `set -o pipefail` or `${PIPESTATUS[0]}`.
+- `git reflog --format="%gs"` (already used in Base Branch Detection) is the canonical compact reflog form; do not switch to full `git reflog`.

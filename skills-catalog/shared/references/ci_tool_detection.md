@@ -74,11 +74,12 @@ Resolve commands in this order (stop at first match per category):
 
 ## Execution Rules
 
-1. **Exit code:** 0 = PASS, non-zero = FAIL
-2. **Output capture:** Last 50 lines on failure (prevent context overflow)
-3. **JSON preferred:** Use `--format json` / `--json` flags where available for structured parsing
-4. **Auto-fix flow:** Run with `--fix` → re-run without `--fix` → verify zero errors
-5. **No interactive prompts:** Use CI-compatible flags (`--no-interaction`, `--ci`)
+1. **Exit code:** 0 = PASS, non-zero = FAIL. When piping through `tail`/`head`/`awk`, preserve exit code via `set -o pipefail` or `${PIPESTATUS[0]}` — truncation must never mask failure.
+2. **Output capture:** on FAIL apply the normalization chain (normalize → dedupe → group → truncate) per `output_normalization.md`; raw `tail -N` is a last resort. Keep the compact result in-context; preserve the **full** stderr/stdout artifact at `.hex-skills/logs/error_recovery/` (Pattern 6, `TOKEN_EFFICIENCY_PATTERNS.md`).
+3. **Compact output flags:** prefer framework-native compact modes before any piping — `pytest --tb=short -q`, `cargo test 2>&1 | tail -N` (with pipefail), `dotnet test --verbosity minimal`, `npm test --silent`, `go test -json`. For large directory listings use `ls | head -N`.
+4. **JSON preferred:** use `--format json` / `--json` / `--reporter=json` where available — structured output is cheaper to parse and easier to normalize than free-form text.
+5. **Auto-fix flow:** run with `--fix` → re-run without `--fix` → verify zero errors.
+6. **No interactive prompts:** use CI-compatible flags (`--no-interaction`, `--ci`).
 
 ## Graceful Degradation
 

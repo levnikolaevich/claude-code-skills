@@ -32,7 +32,7 @@ When running in Plan Mode (per `shared/references/plan_mode_pattern.md`, Workflo
 **1. Check disabled flags** (before probing):
 ```
 IF `{project_root}/.hex-skills/environment_state.json` exists and passes shared environment-state validation:
-  Read file → for each agent (codex, gemini):
+  Read file → for codex agent:
     IF agent.disabled == true → exclude from health check
   IF all agents disabled → return {verdict: "SKIPPED", reason: "all agents disabled"}
 IF file not exists: proceed with all agents (no exclusions)
@@ -87,7 +87,7 @@ Assemble the review prompt from base template + mode-specific content:
 
 ## Step: Run Agents (background, sync-before-merge)
 
-a) Launch BOTH agents as background Bash tasks (`run_in_background=true`):
+a) Launch the advisor agent (codex) as a background Bash task (`run_in_background=true`):
 
 ```
 node shared/agents/agent_runner.mjs --agent {agent_name} \
@@ -96,7 +96,7 @@ node shared/agents/agent_runner.mjs --agent {agent_name} \
   --metadata-file .hex-skills/agent-review/{agent}/{identifier}_{review_type}_metadata.json \
   --cwd {cwd}
 ```
-Repeat for each available agent (names from `--list-agents`).
+Launch per available agent from `--list-agents` (currently codex only; fallback to Opus self-review if unavailable).
 
 **Runtime-first monitoring (preferred):**
 - Register each launched agent in the active coordinator runtime with prompt/result/log/metadata paths
@@ -155,7 +155,7 @@ Only after ALL checks confirm DEAD -> mark agent as failed/timed out.
 >
 > **The ONLY path to marking an agent as failed** is the Liveness Protocol above where ALL 3 checks confirm DEAD. If any check returns ALIVE — WAIT. The hard timeout in `agent_runner.mjs` (30 min) is the only valid time boundary.
 
-b) When first agent completes (background task notification):
+b) When the agent completes (background task notification):
    - Result file is already written by agent_runner.mjs -- do NOT write or rewrite it
    - Read `.hex-skills/agent-review/{agent}/{identifier}_{review_type}_result.md`
    - The result file contains the agent's full review report (markdown analysis + `## Structured Data` with JSON) wrapped in metadata markers
@@ -166,10 +166,7 @@ b) When first agent completes (background task notification):
    - Write `.hex-skills/agent-review/{agent}/{identifier}_session.json`: `{"agent": "...", "session_id": "...", "review_type": "...", "created_at": "..."}`
    - Proceed to Critical Verification for this agent's suggestions
 
-c) When second agent completes:
-   - Read its result file, parse suggestions
-   - Run Critical Verification for second batch
-   - Merge verified suggestions from both agents
+c) (reserved — multi-agent parallel path removed; Codex is the sole external advisor.)
 
 d) If an agent fails: log failure, continue with available results
 
@@ -288,18 +285,18 @@ Entry format (per `shared/references/agent_review_memory.md`):
 - Verdict: {verdict}
 - Accepted ({count}): {1-line per accepted suggestion, max 5}
 - Rejected ({count}): {1-line per rejected suggestion, max 3}
-- Reports: codex .hex-skills/agent-review/codex/{id}_{type}_result.md, gemini .hex-skills/agent-review/gemini/{id}_{type}_result.md
-- Stats: codex ({accepted}/{total}), gemini ({accepted}/{total})
+- Reports: codex .hex-skills/agent-review/codex/{id}_{type}_result.md
+- Stats: codex ({accepted}/{total})
 ```
 
 ## Fallback Rules
 
 | Condition | Action |
 |-----------|--------|
-| Both agents succeed | Aggregate verified suggestions from both |
-| One agent fails | Use successful agent's verified suggestions, log failure |
-| Both agents fail | Return `{verdict: "SKIPPED", reason: "agents failed"}` |
-| Agent crashes immediately (< 5s, non-zero exit) | Likely MCP init failure (expired auth); log error, use other agent. If both crash -> SKIPPED + note to check agent MCP config |
+| Codex succeeds | Aggregate verified suggestions |
+| Codex fails | Fall back to Opus self-review; log failure |
+| Codex + self-review both fail | Return `{verdict: "SKIPPED", reason: "advisor failed"}` |
+| Codex crashes immediately (< 5s, non-zero exit) | Likely MCP init failure (expired auth); log error, fall back to self-review. Note to check agent MCP config. |
 | Agent result not ready after expected time | Run Liveness Protocol before declaring failed. Log growing = WAIT |
 
 ## Critical Rules

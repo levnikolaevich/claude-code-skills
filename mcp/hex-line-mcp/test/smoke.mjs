@@ -2227,6 +2227,82 @@ describe("PostToolUse RTK", () => {
         assert.equal(r.code, 0);
         assert.equal(r.stderr, "");
     });
+
+    it("error recovery: is_error=true saves log in short output", async () => {
+        const repo = fs.mkdtempSync(join(tmpdir(), "hexline-err-"));
+        try {
+            const r = await runHook("PostToolUse", "Bash", { command: "pytest" }, {
+                tool_response: { stdout: makeLines(5), is_error: true }
+            }, { cwd: repo });
+            assert.equal(r.code, 2, "short-error path should exit 2 with recovery message");
+            assert.ok(r.stderr.includes("Full output preserved at:"), "stderr should mention recovery path");
+            const logDir = join(repo, ".hex-skills", "logs", "error_recovery");
+            const files = fs.readdirSync(logDir).filter((n) => n.endsWith(".log"));
+            assert.equal(files.length, 1, "one recovery log should be created");
+            const body = fs.readFileSync(join(logDir, files[0]), "utf-8");
+            assert.ok(body.includes("line 1"), "log should contain raw output");
+            assert.ok(body.includes("# command: pytest"), "log should include command header");
+        } finally {
+            fs.rmSync(repo, { recursive: true, force: true });
+        }
+    });
+
+    it("error recovery: is_error=true saves log in long output + appends path to RTK block", async () => {
+        const repo = fs.mkdtempSync(join(tmpdir(), "hexline-err-long-"));
+        try {
+            const r = await runHook("PostToolUse", "Bash", { command: "cargo test" }, {
+                tool_response: { stderr: makeLines(120, "err"), is_error: true }
+            }, { cwd: repo });
+            assert.equal(r.code, 2);
+            assert.ok(r.stderr.includes("RTK FILTERED"), "RTK filter should run");
+            assert.ok(r.stderr.includes("Full output preserved at:"), "recovery path should be appended");
+            const logDir = join(repo, ".hex-skills", "logs", "error_recovery");
+            const files = fs.readdirSync(logDir).filter((n) => n.endsWith(".log"));
+            assert.equal(files.length, 1);
+            const body = fs.readFileSync(join(logDir, files[0]), "utf-8");
+            assert.ok(body.includes("err 60"), "full original stderr should be preserved (incl middle)");
+        } finally {
+            fs.rmSync(repo, { recursive: true, force: true });
+        }
+    });
+
+    it("error recovery: success path does not create log", async () => {
+        const repo = fs.mkdtempSync(join(tmpdir(), "hexline-success-"));
+        try {
+            const r = await runHook("PostToolUse", "Bash", { command: "npm install" }, {
+                tool_response: { stdout: makeLines(100) }
+            }, { cwd: repo });
+            assert.equal(r.code, 2, "RTK still filters long output");
+            assert.ok(!r.stderr.includes("Full output preserved at:"), "no recovery path on success");
+            const logDir = join(repo, ".hex-skills", "logs", "error_recovery");
+            assert.ok(!fs.existsSync(logDir), "no log dir should be created");
+        } finally {
+            fs.rmSync(repo, { recursive: true, force: true });
+        }
+    });
+
+    it("error recovery: rotation keeps at most 20 log files", async () => {
+        const repo = fs.mkdtempSync(join(tmpdir(), "hexline-rot-"));
+        const logDir = join(repo, ".hex-skills", "logs", "error_recovery");
+        try {
+            fs.mkdirSync(logDir, { recursive: true });
+            // Pre-seed 22 stale log files with ascending mtimes
+            for (let i = 0; i < 22; i++) {
+                const f = join(logDir, `2020-01-01T00-00-${String(i).padStart(2, "0")}-000Z_generic.log`);
+                fs.writeFileSync(f, `stale ${i}`);
+                const t = new Date(2020, 0, 1, 0, 0, i).getTime() / 1000;
+                fs.utimesSync(f, t, t);
+            }
+            const r = await runHook("PostToolUse", "Bash", { command: "pytest" }, {
+                tool_response: { stdout: makeLines(5), is_error: true }
+            }, { cwd: repo });
+            assert.equal(r.code, 2);
+            const files = fs.readdirSync(logDir).filter((n) => n.endsWith(".log"));
+            assert.ok(files.length <= 20, `expected <= 20 logs after rotation, got ${files.length}`);
+        } finally {
+            fs.rmSync(repo, { recursive: true, force: true });
+        }
+    });
 });
 
 // ==================== WASM dependency contract ====================

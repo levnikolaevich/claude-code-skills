@@ -1,6 +1,6 @@
 # Agent Delegation Pattern
 
-Standard pattern for skills delegating work to external CLI AI agents (Codex, Gemini) via `shared/agents/agent_runner.mjs`.
+Standard pattern for skills delegating work to an external CLI AI agent (Codex) via `shared/agents/agent_runner.mjs`. Opus is the native fallback.
 
 For deterministic orchestration, pair this file with the active coordinator runtime contract for the skill family. Evaluation-platform validators use `shared/references/evaluation_coordinator_runtime_contract.md`, keep run state in `.hex-skills/evaluation/`, and use `--metadata-file` for launch/finish bookkeeping.
 
@@ -14,11 +14,11 @@ For deterministic orchestration, pair this file with the active coordinator runt
 
 | Skill Group | Primary Agent | Model | Fallback | Use Case |
 |-------------|--------------|-------|----------|----------|
-| Decomposition | Gemini | Auto (Gemini 3) | Opus | Scope analysis, epic planning |
+| Decomposition | Codex | gpt-5.4 | Opus | Scope analysis, epic planning |
 | Task management | Codex | gpt-5.4 | Opus | Task decomposition, plan review |
 | Execution | Opus (native) | claude-opus-4-6 | -- | Direct code writing |
-| Validation | codex + gemini | parallel | Self-review (if both fail) | Story/Tasks + context validation |
-| Quality review | codex + gemini | parallel | Self-review (if both fail) | Code review |
+| Validation | Codex | gpt-5.4 | Self-review (if agent fails) | Story/Tasks + context validation |
+| Quality review | Codex | gpt-5.4 | Self-review (if agent fails) | Code review |
 
 ## Inline Agent Review
 
@@ -125,7 +125,7 @@ Runtime-enabled skills should prefer metadata files over ad-hoc process reasonin
 
 **Behavior:**
 - If agent writes to output file natively (codex `-o`): runner reads, wraps with metadata, rewrites
-- If agent doesn't write (gemini): runner captures stdout, parses, writes file with metadata
+- Runner always captures stdout and wraps the result file with metadata markers (codex natively writes via `-o`; the runner layers metadata on top).
 - Result file always has metadata markers regardless of agent type
 
 **Contract:** The result file is the runner's responsibility. Skills MUST NOT write or rewrite result files. Skills read the result file after the runner exits. The only file the skill writes is `{identifier}_session.json` (extracted from result file `<!-- session_id: ... -->` metadata line).
@@ -144,11 +144,11 @@ Runtime-enabled skills should prefer metadata files over ad-hoc process reasonin
 
 External agents run in non-interactive mode (`exec` / `-p`) with tool access for analysis:
 
-| Level | Codex | Gemini |
-|-------|-------|--------|
-| **CLI flags** | `--full-auto` (full tool access: read/write files, run commands, internet) | `--yolo` (auto-approve + sandbox, `permissive-open` profile — network allowed) |
-| **Output** | `--color never` (clean log) + `-o {file}` (final result to file) + `-C {cwd}` (working dir) | Auto model selection (no `-m` flag) |
-| **Prompt** | Focus on analysis; may write trivial fixes | Focus on analysis; may write trivial fixes |
+| Level | Codex |
+|-------|-------|
+| **CLI flags** | `--full-auto` (full tool access: read/write files, run commands, internet) |
+| **Output** | `--color never` (clean log) + `-o {file}` (final result to file) + `-C {cwd}` (working dir) |
+| **Prompt** | Focus on analysis; may write trivial fixes |
 
 ## Agent Timeout Policy
 
@@ -184,7 +184,7 @@ External agents may have MCP servers (Linear, GitHub, etc.) configured in their 
 1. **Prompt-level:** Templates instruct agents to use local alternatives when Linear/tools unavailable
 2. **Runner-level:** Non-zero exit code captured; `success: false` returned to skill
 3. **Skill-level:** Fallback Rules apply — one agent crash does not block the review
-4. **User-level:** If both agents crash on MCP, skill returns SKIPPED; user should check agent CLI MCP configuration (`~/.codex/config.json`, `~/.gemini/settings.json`)
+4. **User-level:** If the advisor agent crashes on MCP, skill returns SKIPPED; user should check agent CLI MCP configuration (`~/.codex/config.json`)
 
 ## Fallback Rules
 
@@ -226,23 +226,21 @@ Phase 8: REPORT
 
 ## Background Execution + Process-as-Arrive Pattern
 
-Both agents run as background tasks. First-finished agent processed immediately while second is still running.
+Codex runs as a background task. Claude continues foreground work; when the result file is ready, it proceeds to Critical Verification. If Codex fails, fall back to Opus self-review.
 
 ```
-              +-- Agent A (background) --> completes first --> Step 6: Verify --+
-Prompt ------+                                                                    +--> Merge verified suggestions
-              +-- Agent B (background) --> completes second --> Step 6: Verify --+
-                               both fail? -> Self-Review fallback
+                +-- Codex (background) --> completes --> Step 6: Verify --+
+Prompt ------+                                                             +--> Accept verified suggestions
+                                                           fails --> Self-Review fallback
 ```
 
 **Rules:**
-1. Launch BOTH agents as background Bash tasks (`run_in_background=true`) via `agent_runner.mjs` — ALL modes, including Plan Mode (agents are external OS processes, not affected by Claude Code plan mode)
-2. Both agents receive identical prompt, run simultaneously with `--output-file`
-3. When first agent completes (background task notification): read result file, proceed to Critical Verification
-4. When second agent completes: read result file, verify, merge with first batch
-5. Agents have a **hard timeout** (30 min default) — runner kills process at limit (see Agent Timeout Policy)
-6. If an agent fails: log failure, continue with available results
-7. Log all attempts for user visibility (agent name, duration, suggestion count)
+1. Launch Codex as a background Bash task (`run_in_background=true`) via `agent_runner.mjs` — ALL modes, including Plan Mode (agents are external OS processes, not affected by Claude Code plan mode)
+2. Codex receives the assembled prompt with `--output-file`
+3. When Codex completes (background task notification): read result file, proceed to Critical Verification
+4. Codex has a **hard timeout** (30 min default) — runner kills process at limit (see Agent Timeout Policy)
+5. If Codex fails: log failure, fall back to Opus self-review
+6. Log all attempts for user visibility (agent name, duration, suggestion count)
 
 ## Critical Verification
 
@@ -298,21 +296,13 @@ Standard steps before launching agents (performed inside agent review workers):
 │   ├── PROJ-123_session.json
 │   ├── PROJ-123_storyreview_result.md
 │   └── PROJ-123_codereview_result.md
-└── gemini/
-    ├── arch-proposal_contextreview_prompt.md        # Per-agent prompt (differs by {focus_hint})
-    ├── arch-proposal_session.json
-    ├── arch-proposal_contextreview_result.md
-    ├── PROJ-123_storyreview_prompt.md
-    ├── PROJ-123_session.json
-    ├── PROJ-123_storyreview_result.md
-    └── PROJ-123_codereview_result.md
 ```
 
 **Benefits:**
 - Full audit trail of what was asked and what was returned
 - Debug agent issues by comparing prompt vs result
 - Track review history across multiple Stories
-- Per-agent isolation — easy to compare Codex vs Gemini quality
+- Per-agent isolation — easy to audit Codex quality and refinement runs
 - Review artifacts show verification reasoning for transparency
 
 ## Verdict Escalation Rules

@@ -48,7 +48,7 @@
  */
 
 import { normalizeOutput } from "@levnikolaevich/hex-common/output/normalize";
-import { readFileSync, writeSync } from "node:fs";
+import { readFileSync, writeSync, writeFileSync, mkdirSync, readdirSync, statSync, unlinkSync } from "node:fs";
 import { resolve } from "node:path";
 import { homedir } from "node:os";
 import {
@@ -74,6 +74,13 @@ const HEX_LINE_MUTATING = new Set([
     "mcp__hex-line__write_file",
     "mcp__hex-line__bulk_replace",
 ]);
+
+// Folders whose contents are runtime/config artifacts, not project files.
+// Plan-mode write tools are allowed when the target path contains any of these.
+const PLAN_SAFE_FOLDERS = [
+    ".hex-skills/",
+    ".claude/",
+];
 
 // ---- Helpers ----
 
@@ -283,6 +290,59 @@ function extractBashText(response) {
     return ""; // unknown shape \u2192 fail open
 }
 
+// ---- Error recovery artifact (Pattern 6 from TOKEN_EFFICIENCY_PATTERNS.md) ----
+
+const ERROR_RECOVERY_DIR = ".hex-skills/logs/error_recovery";
+const ERROR_RECOVERY_MAX_FILES = 20;
+const ERROR_RECOVERY_MAX_BYTES = 1024 * 1024; // 1 MB
+
+function isBashFailure(response) {
+    if (!response || typeof response !== "object") return false;
+    if (response.is_error === true) return true;
+    if (response.interrupted === true) return true;
+    if (typeof response.exit_code === "number" && response.exit_code !== 0) return true;
+    return false;
+}
+
+function saveErrorArtifact(rawText, commandType, command, cwd) {
+    try {
+        const dir = resolve(cwd, ERROR_RECOVERY_DIR);
+        mkdirSync(dir, { recursive: true });
+
+        // Rotation: keep newest ERROR_RECOVERY_MAX_FILES - 1 (we're about to add one)
+        try {
+            const entries = readdirSync(dir)
+                .filter((name) => name.endsWith(".log"))
+                .map((name) => {
+                    try {
+                        return { name, mtime: statSync(resolve(dir, name)).mtimeMs };
+                    } catch {
+                        return null;
+                    }
+                })
+                .filter((e) => e !== null)
+                .sort((a, b) => b.mtime - a.mtime);
+            for (const entry of entries.slice(ERROR_RECOVERY_MAX_FILES - 1)) {
+                try { unlinkSync(resolve(dir, entry.name)); } catch { /* ignore */ }
+            }
+        } catch { /* ignore read errors */ }
+
+        // Size cap: truncate to 1 MB before write
+        let content = `# command: ${String(command).slice(0, 500)}\n# type: ${commandType}\n# timestamp: ${new Date().toISOString()}\n\n${rawText}`;
+        if (Buffer.byteLength(content, "utf-8") > ERROR_RECOVERY_MAX_BYTES) {
+            content = content.slice(0, ERROR_RECOVERY_MAX_BYTES) + "\n[TRUNCATED at 1 MB]";
+        }
+
+        const ts = new Date().toISOString().replace(/[:.]/g, "-");
+        const fileName = `${ts}_${commandType}.log`;
+        const filePath = resolve(dir, fileName);
+        writeFileSync(filePath, content, "utf-8");
+        return `${ERROR_RECOVERY_DIR}/${fileName}`;
+    } catch {
+        return null; // fail-open: hook must not break tool pipeline
+    }
+}
+
 /** Cache: null = not computed yet */
 let _hexLineDisabled = null;
 
@@ -396,10 +456,7 @@ function handlePreToolUse(data) {
     // Exception: .hex-skills/ and .claude/ are runtime/config artifacts, not project files
     if (data.permission_mode === "plan" && HEX_LINE_MUTATING.has(toolName)) {
         const targetPath = (toolInput.path || "").replace(/\\/g, "/");
-        const isPlanSafe = targetPath.includes("/.hex-skills/") ||
-            targetPath.includes(".hex-skills/") ||
-            targetPath.includes("/.claude/") ||
-            targetPath.includes(".claude/");
+        const isPlanSafe = PLAN_SAFE_FOLDERS.some((folder) => targetPath.includes(folder));
         if (!isPlanSafe) {
             block(
                 "PLAN_MODE: You are in planning mode. Write your plan to the plan file, then call ExitPlanMode to get approval before making changes.",
@@ -558,15 +615,23 @@ function handlePostToolUse(data) {
         process.exit(0);
     }
 
+    const failure = isBashFailure(data.tool_response);
+    const type = detectCommandType(command);
+    let recoveryPath = null;
+    if (failure) {
+        recoveryPath = saveErrorArtifact(rawText, type, command, process.cwd());
+    }
+
     const lines = rawText.split("\n");
     const originalCount = lines.length;
 
-    // Short output - no filtering
+    // Short output - skip RTK filter; still surface recovery path on failure
     if (originalCount < HOOK_OUTPUT_POLICY.lineThreshold) {
+        if (recoveryPath) {
+            safeExit(2, `Full output preserved at: ${recoveryPath}`, 2);
+        }
         process.exit(0);
     }
-
-    const type = detectCommandType(command);
 
     // Pipeline: normalize -> deduplicate -> smart truncate
     const filtered = normalizeOutput(lines.join("\n"), {
@@ -577,7 +642,7 @@ function handlePostToolUse(data) {
 
     const header = `RTK FILTERED: ${type} (${originalCount} lines -> ${filteredCount} lines)`;
 
-    const output = [
+    const outputParts = [
         "=".repeat(50),
         header,
         "=".repeat(50),
@@ -586,8 +651,12 @@ function handlePostToolUse(data) {
         "",
         "-".repeat(50),
         `Original: ${originalCount} lines | Filtered: ${filteredCount} lines`,
-        "=".repeat(50),
-    ].join("\n");
+    ];
+    if (recoveryPath) {
+        outputParts.push(`Full output preserved at: ${recoveryPath}`);
+    }
+    outputParts.push("=".repeat(50));
+    const output = outputParts.join("\n");
 
     safeExit(2, output, 2);
 }

@@ -51,6 +51,21 @@
             "sync_actions": { "type": "array", "items": { "type": "string" } },
             "detail": { "type": "string" }
           }
+        },
+        "antigravity": {
+          "type": "object",
+          "required": ["available"],
+          "properties": {
+            "available": { "type": "boolean" },
+            "disabled": { "type": "boolean" },
+            "version": { "type": "string" },
+            "config_synced": { "type": "boolean" },
+            "servers_synced": { "type": "integer" },
+            "hooks_synced": { "type": "integer" },
+            "workspace_skills_root": { "type": "string", "description": "Absolute path to <workspace>/.agents/skills. Optional; present only when workspace-scoped root was materialized." },
+            "sync_actions": { "type": "array", "items": { "type": "string" } },
+            "detail": { "type": "string" }
+          }
         }
       }
     },
@@ -123,6 +138,17 @@
       "properties": {
         "cursor": { "$ref": "#/$defs/ide_extension_entry" },
         "vscode": { "$ref": "#/$defs/ide_extension_entry" }
+      }
+    },
+    "mcp_providers": {
+      "type": "object",
+      "description": "Optional per-MCP language-provider health map, populated by ln-013 Phase 4a. Key is the MCP server name (e.g. `hex-graph`). Value is an object keyed by language (e.g. `python`, `typescript`) with status `installed` | `missing` | `skipped` | `not_applicable`.",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "string",
+          "enum": ["installed", "missing", "skipped", "not_applicable"]
+        }
       }
     }
   },

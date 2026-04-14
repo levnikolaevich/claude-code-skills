@@ -39,12 +39,13 @@ Related contract:
 - `scanned_at`
 - `agents.codex.available`
 - `agents.gemini.available`
+- `agents.antigravity.available` (optional: present only when Antigravity IDE is detected)
 
 ## Sections
 
 | Section | Purpose |
 |---------|---------|
-| `agents` | Agent availability, versions, sync status (codex, gemini, claude), plus Codex skill-root discovery and execution-default health |
+| `agents` | Agent availability, versions, sync status (codex, gemini, claude, optional antigravity), plus Codex skill-root discovery and execution-default health |
 | `task_management` | Provider routing (linear/file/github), provider-specific config nested under `linear` or `github` |
 | `research` | Provider, fallback_chain |
 | `claude_md` | Instruction file metadata |

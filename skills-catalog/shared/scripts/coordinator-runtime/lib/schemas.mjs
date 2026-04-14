@@ -801,6 +801,21 @@ export const environmentStateSchema = {
                         detail: { type: "string" },
                     },
                 },
+                antigravity: {
+                    type: "object",
+                    required: ["available"],
+                    properties: {
+                        available: { type: "boolean" },
+                        disabled: { type: "boolean" },
+                        version: { type: "string" },
+                        config_synced: { type: "boolean" },
+                        servers_synced: { type: "integer" },
+                        hooks_synced: { type: "integer" },
+                        workspace_skills_root: { type: "string" },
+                        sync_actions: stringArraySchema(),
+                        detail: { type: "string" },
+                    },
+                }
             },
         },
         task_management: {

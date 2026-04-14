@@ -35,6 +35,8 @@ Use `grep_search(output="summary")` first to find tests/helpers/fixtures, then e
 
 **MANDATORY READ:** Load `shared/references/environment_state_contract.md`, `shared/references/storage_mode_detection.md`, and `shared/references/input_resolution_pattern.md`
 
+**MANDATORY READ:** Load `shared/references/ci_tool_detection.md` — compact output flags, pipefail, normalization-before-truncation policy for test command execution.
+
 Extract: `task_provider` = Task Management → Provider (`linear` | `file`).
 
 | Aspect | Linear Mode | File Mode |

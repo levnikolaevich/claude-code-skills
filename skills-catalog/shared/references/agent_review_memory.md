@@ -13,8 +13,8 @@ Append-only file `.hex-skills/agent-review/review_history.md` in target project.
 - Verdict: {verdict}
 - Accepted ({count}): {1-line per accepted finding, max 5}
 - Rejected ({count}): {1-line per rejected finding, max 3}
-- Reports: codex .hex-skills/agent-review/codex/{id}_{type}_result.md, gemini .hex-skills/agent-review/gemini/{id}_{type}_result.md
-- Stats: codex ({accepted}/{total}), gemini ({accepted}/{total})
+- Reports: codex .hex-skills/agent-review/codex/{id}_{type}_result.md
+- Stats: codex ({accepted}/{total})
 ```
 
 ## Fallback

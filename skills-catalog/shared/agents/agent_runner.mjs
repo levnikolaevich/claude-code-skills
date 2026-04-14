@@ -2,7 +2,7 @@
 /**
  * Universal Agent Runner for Multi-Model Orchestration (Node.js ESM port).
  *
- * Calls external CLI AI agents (Codex, Gemini) via subprocess
+ * Calls external CLI AI agents (Codex) via subprocess
  * and returns structured JSON to stdout for Claude Code consumption.
  *
  * Streams agent stdout to a log file for real-time visibility.
@@ -12,7 +12,7 @@
  * Exit codes: 0 = success, 1 = agent error, 2 = agent not found/unavailable
  *
  * Usage:
- *     node agent_runner.mjs --agent gemini --prompt "Analyze scope..."
+ *     node agent_runner.mjs --agent codex --prompt "Analyze scope..."
  *     node agent_runner.mjs --agent codex --prompt-file /tmp/prompt.md --cwd /project
  *     node agent_runner.mjs --agent codex-review --prompt-file prompt.md --output-file result.md --cwd /project
  *     node agent_runner.mjs --agent codex-review --resume-session abc-123 --prompt-file challenge.md --output-file result.md --cwd /project

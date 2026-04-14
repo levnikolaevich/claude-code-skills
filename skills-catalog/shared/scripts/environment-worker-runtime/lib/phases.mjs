@@ -25,6 +25,7 @@ export const WORKER_PHASES = Object.freeze({
         "PHASE_2_SYNC_SKILLS_MAPPING",
         "PHASE_3_SYNC_MCP_SETTINGS",
         "PHASE_4_SYNC_HOOKS_AND_POLICY",
+        "PHASE_4A_MCP_PROVIDER_CHECK",
         "PHASE_5_WRITE_SUMMARY",
         "PHASE_6_SELF_CHECK",
     ]),

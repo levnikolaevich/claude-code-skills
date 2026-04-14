@@ -104,6 +104,7 @@
 | Enable thinking mode + Explanatory output style | Better reasoning visibility |
 | Use ASCII diagrams for architecture understanding | Complex system visualization |
 | Commit frequently | Don't lose work |
+| `/compact focus on <area>` before switching tasks | Targeted compaction keeps the relevant subtree and drops the rest (per official `/en/commands`) |
 
 ---
 
@@ -113,6 +114,11 @@
 |---------|-------|---------|
 | `outputStyle` | `"Explanatory"` | Detailed output with insight boxes |
 | `plansDirectory` | `"./plans"` | Organize plan files |
-| `env.CLAUDE_AUTOCOMPACT_PCT_OVERRIDE` | `"80"` | Auto-compact at 80% context |
+| `env.CLAUDE_AUTOCOMPACT_PCT_OVERRIDE` | `"80"` | Auto-compact at 80% context (default ≈95%) |
+| `env.CLAUDE_CODE_AUTO_COMPACT_WINDOW` | `"200000"` | Cap capacity used for auto-compact math (default = model window, 200K/1M) |
+| `env.CLAUDE_CODE_MAX_OUTPUT_TOKENS` | (model-specific) | Cap per-request output. Caveat: raising reduces context available before auto-compact |
+| `env.BASH_MAX_OUTPUT_LENGTH` | `"30000"` | Middle-truncates bash output before it enters context |
+| `env.ENABLE_TOOL_SEARCH` | `"true"` | MCP tools deferred by default on first-party hosts; non-first-party base URLs load upfront unless set; `auto` mode uses a threshold |
+| `env.CLAUDE_CODE_MAX_TOOL_USE_CONCURRENCY` | `"10"` | Parallel read-only tools / subagents (default 10) |
 | `respectGitignore` | `true` | Skip gitignored files |
 | `attribution.commit` | `"Co-Authored-By: Claude <noreply@anthropic.com>"` | Commit attribution |

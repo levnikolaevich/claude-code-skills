@@ -22,6 +22,7 @@ Use this contract when a skill:
 | Claude Code | `~/.claude/plugins/marketplaces/{marketplace}` | Active marketplace/plugin install under `marketplaces/` | `~/.claude/plugins/cache/{marketplace}/{family}/{snapshot}` | Cache is not an active install surface |
 | Gemini CLI | `~/.gemini/skills` | Symlink/junction to the chosen active skill source | No Gemini-owned skill cache under discovery root | Discovery root may be a single shared link |
 | Codex CLI | `~/.codex/skills` | `.system` plus `marketplaces/{marketplace}` under the Codex root | `~/.codex/skill-cache/{marketplace}` or another path outside `~/.codex/skills` | Cache under `~/.codex/skills/cache/**` is invalid |
+| Antigravity IDE | `~/.gemini/antigravity/skills` (global) + `<workspace>/.agents/skills` (workspace) | Symlink/junction to the active skill source | No Antigravity-owned cache under discovery root | Both global and workspace roots may be active simultaneously |
 
 ## Codex-Specific Rules
 

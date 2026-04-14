@@ -48,7 +48,7 @@ Analysis of RTK (Rust Token Killer) — CLI proxy reducing output by 60-90%.
 | 3 | SQLite token analytics (`rtk gain`) | Skip | Over-engineering. `/cost` and ccusage cover this |
 | 4 | Session history analysis (`rtk learn`) | Adapt | Pattern valuable; JSONL parsing fragile. Better as a skill reading Claude Code history |
 | 5 | Missed optimization discovery (`rtk discover`) | Skip | Specific to RTK. Concept already in ln-511, ln-640 |
-| 6 | Error output recovery (`rtk tee`) | **Adopt** | PostToolUse hook saves full output on failure. ~25 lines bash |
+| 6 | Error output recovery (`rtk tee`) | **Implemented** | PostToolUse hook saves full stderr+stdout on failure to `.hex-skills/logs/error_recovery/` (20-file rotation, 1MB cap). See `mcp/hex-line-mcp/hook.mjs` `saveErrorArtifact` (added 2026-04-14) |
 | 7 | Dual hooks: rewrite + suggest (`systemMessage`) | **Adopt** | Non-blocking `systemMessage` ideal for skill recommendations |
 | 8 | Slim awareness file (compact LLM context) | Adapt | Good idea; Claude Code already supports per-directory CLAUDE.md natively |
 | 9 | Ultra-compact mode (`--ultra-compact`) | Skip | Agent reads SKILL.md, not CLI output. Irrelevant |
@@ -60,7 +60,7 @@ Analysis of RTK (Rust Token Killer) — CLI proxy reducing output by 60-90%.
 ### Adopted Patterns Detail
 
 **Pattern 6 (Error Recovery Hook):**
-PostToolUse:Bash hook. On exit_code != 0: save full stderr+stdout to `logs/error_recovery/` with 20-file rotation, 1MB cap. Return `systemMessage` with path. Script: `hooks/error-recovery.sh` (~25 lines).
+PostToolUse:Bash hook. On `tool_response.is_error === true` / `interrupted` / non-zero `exit_code`: saves full stderr+stdout to `.hex-skills/logs/error_recovery/{ISO-ts}_{type}.log` (20-file rotation by mtime, 1 MB per file, `[TRUNCATED]` marker beyond cap). Recovery path is appended to the RTK-filtered block (long output) or returned as `systemMessage` (short output). Fail-open: any fs error silently skips save. Implementation: `mcp/hex-line-mcp/hook.mjs` (`saveErrorArtifact`, `isBashFailure`). Tests: `mcp/hex-line-mcp/test/smoke.mjs` (4 error-recovery cases).
 
 **Pattern 7 (Suggest Hook):**
 PreToolUse:Bash hook. `systemMessage`-only (no blocking, no modification). Pattern-matches Bash commands to recommend relevant skills. Example: `npm test` → "For test analysis, consider ln-513/ln-514". Script: `hooks/skill-suggest.sh` (~40 lines).
@@ -88,6 +88,7 @@ Integrated into `ln-010` assessment and verification flow. Validates: JSON synta
 | Automatic command rewriting | Hides real commands, violates "no magic parameters" principle |
 | Output compression at transport level | Agent's built-in tools (Read, Grep) already handle this |
 | Inline executable tests | Our tests are DoD checklists + ln-310 multi-agent validation |
+| External style-wrappers (headroom, caveman) | Same rationale as RTK binary §4: runtime proxies / response-style hijackers conflict with per-skill output contracts and hide failure context |
 
 ---
 **Last Updated:** 2026-03-20

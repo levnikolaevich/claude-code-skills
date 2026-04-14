@@ -40,6 +40,10 @@ const CLAUDE_HOOKS = {
         matcher: "Bash",
         hooks: [{ type: "command", command: HOOK_COMMAND, timeout: 10 }],
     },
+    PostToolUseFailure: {
+        matcher: "Bash",
+        hooks: [{ type: "command", command: HOOK_COMMAND, timeout: 5 }],
+    },
 };
 
 // ---- Helpers ----

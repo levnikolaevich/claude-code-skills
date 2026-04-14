@@ -2305,6 +2305,77 @@ describe("PostToolUse RTK", () => {
     });
 });
 
+// ==================== PostToolUseFailure (Pattern 6, real failure path) ====================
+
+describe("PostToolUseFailure", () => {
+    it("Bash failure: saves metadata log + emits additionalContext", async () => {
+        const repo = fs.mkdtempSync(join(tmpdir(), "hexline-failevent-"));
+        try {
+            const r = await runHook("PostToolUseFailure", "Bash", { command: "npm test" }, {
+                error: "Command exited with non-zero status code 1",
+                is_interrupt: false
+            }, { cwd: repo });
+            assert.equal(r.code, 0, "PostToolUseFailure handler returns exit 0 + JSON");
+            const payload = JSON.parse(r.stdout);
+            assert.equal(payload.hookSpecificOutput.hookEventName, "PostToolUseFailure");
+            assert.ok(payload.hookSpecificOutput.additionalContext.includes("Failure metadata logged at:"));
+            const logDir = join(repo, ".hex-skills", "logs", "error_recovery");
+            const files = fs.readdirSync(logDir).filter((n) => n.endsWith(".log"));
+            assert.equal(files.length, 1);
+            const body = fs.readFileSync(join(logDir, files[0]), "utf-8");
+            assert.ok(body.includes("# command: npm test"));
+            assert.ok(body.includes("error: Command exited with non-zero status code 1"));
+            assert.ok(body.includes("is_interrupt: false"));
+        } finally {
+            fs.rmSync(repo, { recursive: true, force: true });
+        }
+    });
+
+    it("Bash interrupt: is_interrupt=true is recorded", async () => {
+        const repo = fs.mkdtempSync(join(tmpdir(), "hexline-interrupt-"));
+        try {
+            const r = await runHook("PostToolUseFailure", "Bash", { command: "sleep 100" }, {
+                error: "Interrupted by user",
+                is_interrupt: true
+            }, { cwd: repo });
+            assert.equal(r.code, 0);
+            const logDir = join(repo, ".hex-skills", "logs", "error_recovery");
+            const files = fs.readdirSync(logDir).filter((n) => n.endsWith(".log"));
+            const body = fs.readFileSync(join(logDir, files[0]), "utf-8");
+            assert.ok(body.includes("is_interrupt: true"));
+        } finally {
+            fs.rmSync(repo, { recursive: true, force: true });
+        }
+    });
+
+    it("non-Bash failure: ignored", async () => {
+        const repo = fs.mkdtempSync(join(tmpdir(), "hexline-failnonbash-"));
+        try {
+            const r = await runHook("PostToolUseFailure", "Write", { file_path: "/x" }, {
+                error: "permission denied",
+                is_interrupt: false
+            }, { cwd: repo });
+            assert.equal(r.code, 0);
+            assert.equal(r.stdout, "");
+            assert.ok(!fs.existsSync(join(repo, ".hex-skills", "logs", "error_recovery")));
+        } finally {
+            fs.rmSync(repo, { recursive: true, force: true });
+        }
+    });
+
+    it("empty command + empty error: silent exit, no log", async () => {
+        const repo = fs.mkdtempSync(join(tmpdir(), "hexline-failempty-"));
+        try {
+            const r = await runHook("PostToolUseFailure", "Bash", {}, {}, { cwd: repo });
+            assert.equal(r.code, 0);
+            assert.equal(r.stdout, "");
+            assert.ok(!fs.existsSync(join(repo, ".hex-skills", "logs", "error_recovery")));
+        } finally {
+            fs.rmSync(repo, { recursive: true, force: true });
+        }
+    });
+});
+
 // ==================== WASM dependency contract ====================
 
 describe("WASM dependency contract", () => {

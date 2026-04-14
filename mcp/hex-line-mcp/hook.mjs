@@ -661,6 +661,41 @@ function handlePostToolUse(data) {
     safeExit(2, output, 2);
 }
 
+// ---- PostToolUseFailure handler (Pattern 6, real failure path) ----
+//
+// Claude Code dispatches Bash failures (non-zero exit, error, interrupt) to
+// PostToolUseFailure, NOT PostToolUse. The failure payload contains only
+// `error` (string) + `is_interrupt` (bool) + `tool_input.command` — stdout/
+// stderr are NOT exposed. So we save metadata + error message; the agent
+// already has the truncated stdout/stderr in its context from the tool reply.
+
+function handlePostToolUseFailure(data) {
+    const toolName = data.tool_name || "";
+    if (toolName !== "Bash") {
+        process.exit(0);
+    }
+    const toolInput = data.tool_input || {};
+    const command = toolInput.command || "";
+    const error = typeof data.error === "string" ? data.error : "";
+    const isInterrupt = data.is_interrupt === true;
+    if (!command && !error) {
+        process.exit(0);
+    }
+    const type = detectCommandType(command);
+    const body = `error: ${error}\nis_interrupt: ${isInterrupt}`;
+    const recoveryPath = saveErrorArtifact(body, type, command, process.cwd());
+    if (!recoveryPath) {
+        process.exit(0);
+    }
+    const output = {
+        hookSpecificOutput: {
+            hookEventName: "PostToolUseFailure",
+            additionalContext: `Failure metadata logged at: ${recoveryPath}`,
+        },
+    };
+    safeExit(1, JSON.stringify(output), 0);
+}
+
 // ---- SessionStart: inject tool preferences ----
 
 function handleSessionStart() {
@@ -772,6 +807,7 @@ if (_norm(process.argv[1]) === _norm(fileURLToPath(import.meta.url))) {
             if (event === "SessionStart") handleSessionStart();
             else if (event === "PreToolUse") handlePreToolUse(data);
             else if (event === "PostToolUse") handlePostToolUse(data);
+            else if (event === "PostToolUseFailure") handlePostToolUseFailure(data);
             else if (event === "PermissionDenied") handlePermissionDenied(data);
             else process.exit(0);
         } catch {

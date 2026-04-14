@@ -303,6 +303,21 @@ export function ensureGraphFreshForFile(db, absoluteFilePath) {
     }
 }
 
+export function isGraphFreshAtMtime(db, absoluteFilePath, mtimeMs) {
+    if (!db) return false;
+    try {
+        const projectRoot = findProjectRoot(absoluteFilePath);
+        if (!projectRoot) return true;
+        const relativeFile = normalizeRelativeFile(projectRoot, absoluteFilePath);
+        if (!relativeFile) return true;
+        const indexedMtime = lookupIndexedMtime(db, relativeFile);
+        if (indexedMtime == null) return false;
+        return mtimeMs <= indexedMtime + FRESHNESS_TOLERANCE_MS;
+    } catch {
+        return true;
+    }
+}
+
 export function fileAnnotations(db, file, { startLine = null, endLine = null, limit = 8 } = {}) {
     try {
         const hasRange = Number.isInteger(startLine) && Number.isInteger(endLine);

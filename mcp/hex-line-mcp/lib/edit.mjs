@@ -11,7 +11,7 @@ import { statSync, writeFileSync } from "node:fs";
 import { diffLines } from "diff";
 import { fnv1a, lineTag, parseChecksum, parseRef } from "@levnikolaevich/hex-common/text-protocol/hash";
 import { validatePath, normalizePath } from "./security.mjs";
-import { getGraphDB, semanticImpact, cloneWarning, getRelativePath, ensureGraphFreshForFile, graphUnavailableHint } from "./graph-enrich.mjs";
+import { getGraphDB, semanticImpact, cloneWarning, getRelativePath, isGraphFreshAtMtime, graphUnavailableHint } from "./graph-enrich.mjs";
 import { MAX_DIFF_CHARS } from "./format.mjs";
 import {
     assertNonOverlappingTargets,
@@ -1259,7 +1259,7 @@ export function editFile(filePath, edits, opts = {}) {
     if (remaps.length > 0) {
         msg += `\nremapped_refs:\n${remaps.map(({ from, to }) => `${from} -> ${to}`).join("\n")}`;
     }
-    let hasPostEditBlock = false;
+    let hasPostEditBlock = false; // v1.23.0 smoke
     let semanticImpacts = [];
     let cloneWarnings = [];
     let graphDbAvailable = false;
@@ -1292,7 +1292,7 @@ export function editFile(filePath, edits, opts = {}) {
         const relFile = db ? getRelativePath(real) : null;
         if (db && relFile && fullDiff && minLine <= maxLine) {
             graphDbAvailable = true;
-            graphFresh = ensureGraphFreshForFile(db, real);
+            graphFresh = isGraphFreshAtMtime(db, real, currentSnapshot.mtimeMs);
             semanticImpacts = semanticImpact(db, relFile, minLine, maxLine);
             if (semanticImpacts.length > 0) {
                 const sections = semanticImpacts.map(impact => {

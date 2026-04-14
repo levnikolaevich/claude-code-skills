@@ -1006,6 +1006,7 @@ describe("graph enrichment", () => {
             assert.equal(editResult.includes("clone_warning_count:"), false, "clone_warning_count dropped (count = entries in clone list)");
             assert.ok(editResult.includes("payload_sections:"), "Edit exposes payload section preview");
             assert.equal(editResult.includes("provenance_summary:"), false, "provenance_summary field is no longer emitted");
+            assert.equal(editResult.includes("graph_fresh: stale"), false, "fresh index + edit: no stale flag (fix for v1.23.0 false-positive)");
         } finally {
             _resetGraphDBCache();
             await closeGraphRepo(repo);

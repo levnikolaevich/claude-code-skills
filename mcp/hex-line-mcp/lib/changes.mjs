@@ -84,20 +84,9 @@ export async function fileChanges(filePath, compareAgainst = "HEAD") {
                 `compare_against: ${compareAgainst}`,
                 "scope: directory",
                 "summary: changed_files=0",
-                `next_action: ${ACTION.NO_ACTION}`,
                 `graph_enrichment: ${graphEnrichment}`,
-                "risk_summary_count: 0",
-                "removed_api_warning_count: 0",
-                `payload_sections: ${payloadSections([])}`,
-                `provenance_summary: ${provenanceSummary("clean", db)}`,
             ].join("\n");
         }
-        const supportedCount = diff.changed_files.filter((entry) => entry.semantic_supported).length;
-        const semanticDiffState = supportedCount === 0
-            ? "unsupported"
-            : supportedCount === diff.changed_files.length
-                ? "semantic"
-                : "mixed";
         let emittedRiskCount = 0;
         let emittedRemovedApiWarnings = 0;
         const sectionKinds = ["files"];
@@ -131,12 +120,11 @@ export async function fileChanges(filePath, compareAgainst = "HEAD") {
         }
         if (emittedRiskCount > 0) sectionKinds.push("risk_summary");
         if (emittedRemovedApiWarnings > 0) sectionKinds.push("removed_api_warning");
-        sections.splice(8, 0,
-            `risk_summary_count: ${emittedRiskCount}`,
-            `removed_api_warning_count: ${emittedRemovedApiWarnings}`,
-            `payload_sections: ${payloadSections(sectionKinds)}`,
-            `provenance_summary: ${provenanceSummary(semanticDiffState, db)}`
-        );
+        const spliceLines = [];
+        if (emittedRiskCount > 0) spliceLines.push(`risk_summary_count: ${emittedRiskCount}`);
+        if (emittedRemovedApiWarnings > 0) spliceLines.push(`removed_api_warning_count: ${emittedRemovedApiWarnings}`);
+        if (sectionKinds.length > 0) spliceLines.push(`payload_sections: ${payloadSections(sectionKinds)}`);
+        sections.splice(8, 0, ...spliceLines);
         return sections.join("\n");
     }
 
@@ -152,12 +140,7 @@ export async function fileChanges(filePath, compareAgainst = "HEAD") {
             `compare_against: ${compareAgainst}`,
             "scope: file",
             "summary: added=0 removed=0 modified=0",
-            `next_action: ${ACTION.NO_ACTION}`,
             `graph_enrichment: ${graphEnrichment}`,
-            "risk_summary_count: 0",
-            "removed_api_warning_count: 0",
-            `payload_sections: ${payloadSections([])}`,
-            `provenance_summary: ${provenanceSummary("clean", db)}`,
         ].join("\n");
     }
     if (!file.semantic_supported) {
@@ -170,10 +153,6 @@ export async function fileChanges(filePath, compareAgainst = "HEAD") {
             `summary: semantic diff unavailable for ${file.extension} files`,
             `next_action: ${ACTION.INSPECT_RAW_DIFF}`,
             `graph_enrichment: ${graphEnrichment}`,
-            "risk_summary_count: 0",
-            "removed_api_warning_count: 0",
-            `payload_sections: ${payloadSections([])}`,
-            `provenance_summary: ${provenanceSummary("unsupported", db)}`,
         ].join("\n");
     }
 
@@ -189,9 +168,9 @@ export async function fileChanges(filePath, compareAgainst = "HEAD") {
         "scope: file",
         `summary: ${symbolCountSummary(file)}`,
         `graph_enrichment: ${graphEnrichment}`,
-        `risk_summary_count: ${riskLines.length}`,
-        `removed_api_warning_count: ${removedApiWarnings.length}`,
     ];
+    if (riskLines.length > 0) parts.push(`risk_summary_count: ${riskLines.length}`);
+    if (removedApiWarnings.length > 0) parts.push(`removed_api_warning_count: ${removedApiWarnings.length}`);
 
     if (file.added_symbols.length) {
         sectionKinds.push("added");
@@ -226,10 +205,10 @@ export async function fileChanges(filePath, compareAgainst = "HEAD") {
     }
     if (riskLines.length > 0) sectionKinds.push("risk_summary");
     if (removedApiWarnings.length > 0) sectionKinds.push("removed_api_warning");
-    parts.splice(9, 0,
-        `payload_sections: ${payloadSections(sectionKinds)}`,
-        `provenance_summary: ${provenanceSummary("semantic", db)}`
-    );
+    if (sectionKinds.length > 0) {
+        const insertIdx = 7 + (riskLines.length > 0 ? 1 : 0) + (removedApiWarnings.length > 0 ? 1 : 0);
+        parts.splice(insertIdx, 0, `payload_sections: ${payloadSections(sectionKinds)}`);
+    }
     if (riskLines.length || removedApiWarnings.length) {
         parts.push("");
         parts.push("risk_summary:");

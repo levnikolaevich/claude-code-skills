@@ -87,7 +87,7 @@ test("errorResult() builds canonical error envelope", () => {
     assert.equal(r.structuredContent.error.code, "NOT_FOUND");
     assert.equal(r.structuredContent.error.message, "file missing");
     assert.equal(r.structuredContent.error.recovery, "check path");
-    assert.equal(r.structuredContent.summary, "file missing");
+    assert.equal(r.structuredContent.summary, undefined, "summary field removed from error envelope");
     assert.deepEqual(JSON.parse(r.content[0].text), r.structuredContent);
 });
 

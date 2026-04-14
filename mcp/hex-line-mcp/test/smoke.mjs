@@ -247,7 +247,7 @@ describe("edit business logic", () => {
                         range_checksum: rc
                     }
                 }], { conflictPolicy: "strict" });
-            }, /mismatch/i, "Stale content outside anchors detected");
+            }, /CONFLICT|checksums_stale|checksums_invalid|mismatch/i, "Stale content outside anchors detected");
         } finally {
             fs.unlinkSync(tmp);
         }
@@ -399,7 +399,7 @@ describe("edit business logic", () => {
             assert.ok(result.includes("recovery_ranges: 3-3"), "Conflict reports recovery range");
             assert.ok(result.includes("next_action: apply_retry_edit"), "Conflict reports canonical next action");
             assert.ok(result.includes("retry_edit:"), "Conflict reports retry edit skeleton");
-            assert.ok(result.includes("summary:"), "Conflict reports compact summary");
+            assert.ok(!result.includes("summary: "), "narration summary dropped (data is in retry_checksum / snippet)");
             assert.ok(result.includes("snippet: "), "Conflict reports compact snippet header");
             assert.ok(result.includes('retry_plan: {"steps":[{"tool":"mcp__hex-line__edit_file"'), "Conflict reports direct retry plan");
         } finally {
@@ -450,7 +450,7 @@ describe("edit business logic", () => {
             assert.ok((result.match(/recovery_ranges: 4-4/g) || []).length >= 1, "Second edit reports narrow recovery range");
             assert.ok((result.match(/retry_checksum:/g) || []).length >= 2, "Each stale replace_lines conflict reports retry checksum");
             assert.ok((result.match(/retry_edit:/g) || []).length >= 2, "Each stale replace_lines conflict reports retry edit skeleton");
-            assert.ok((result.match(/summary:/g) || []).length >= 2, "Each stale replace_lines conflict reports compact summary");
+            assert.equal(result.includes("summary: "), false, "narration summary dropped from batch conflict entries");
             assert.ok(result.includes('retry_edits: [{"replace_lines"'), "Batch conflict reports ready retry edits");
             assert.ok(result.includes('retry_plan: {"steps":[{"tool":"mcp__hex-line__edit_file"'), "Batch conflict reports direct batch retry plan");
         } finally {
@@ -489,7 +489,7 @@ describe("edit business logic", () => {
             assert.ok(result.includes("reason: batch_conflict"), "Batch conflict reason returned");
             assert.ok(result.includes("next_action: reread_then_retry"), "Batch conflict reports reread-first next action");
             assert.ok(result.includes('suggested_read_call: {"tool":"mcp__hex-line__read_file"'), "Batch conflict suggests reread call");
-            assert.ok(result.includes('retry_plan: {"steps":[{"tool":"mcp__hex-line__read_file"'), "Batch conflict falls back to reread-first plan");
+            assert.ok(!result.includes("retry_plan:"), "retry_plan omitted when it would just wrap suggested_read_call");
             assert.ok(!result.includes("retry_edits:"), "No retry_edits reported for incomplete retryable batch");
         } finally {
             fs.unlinkSync(tmp);
@@ -680,7 +680,6 @@ describe("edit business logic", () => {
 
             const statusIdx = result.indexOf("status:");
             const revisionIdx = result.indexOf("revision:");
-            const fileIdx = result.indexOf("file:");
             const updatedIdx = result.indexOf("Updated ");
             const postEditIdx = result.indexOf("block: post_edit");
             const checksumIdx = result.indexOf("checksum:", postEditIdx);
@@ -688,8 +687,7 @@ describe("edit business logic", () => {
 
             assert.ok(statusIdx === 0, "Result starts with status");
             assert.ok(revisionIdx > statusIdx, "Revision follows status");
-            assert.ok(fileIdx > revisionIdx, "File checksum follows revision");
-            assert.ok(updatedIdx > fileIdx, "Update summary follows checksum");
+            assert.ok(updatedIdx > revisionIdx, "Update summary follows revision");
             assert.ok(postEditIdx > updatedIdx, "Post-edit block follows update summary");
             assert.ok(checksumIdx > postEditIdx, "Post-edit block has checksum");
             assert.ok(diffIdx > postEditIdx, "Diff is emitted last");
@@ -1006,7 +1004,7 @@ describe("graph enrichment", () => {
             assert.ok(editResult.includes("semantic_impact_count:"), "Edit exposes semantic impact count");
             assert.ok(editResult.includes("semantic_fact_count:"), "Edit exposes semantic fact count");
             assert.ok(editResult.includes("payload_sections:"), "Edit exposes payload section preview");
-            assert.ok(editResult.includes("provenance_summary: edit_protocol=snapshot+anchors graph=hex_line_contract"), "Edit exposes provenance summary");
+            assert.equal(editResult.includes("provenance_summary:"), false, "provenance_summary field is no longer emitted (duplicate of graph_enrichment)");
         } finally {
             _resetGraphDBCache();
             await closeGraphRepo(repo);
@@ -1596,12 +1594,8 @@ describe("changes", () => {
         assert.ok(result.includes("status:"), "changes returns canonical status");
         assert.ok(result.includes("reason:"), "changes returns canonical reason");
         assert.ok(result.includes("summary:"), "changes returns canonical summary");
-        assert.ok(result.includes("next_action:"), "changes returns canonical next action");
         assert.ok(result.includes("graph_enrichment:"), "changes returns graph enrichment state");
-        assert.ok(result.includes("risk_summary_count:"), "changes returns risk count preview");
-        assert.ok(result.includes("removed_api_warning_count:"), "changes returns API warning count preview");
-        assert.ok(result.includes("payload_sections:"), "changes returns payload section preview");
-        assert.ok(result.includes("provenance_summary:"), "changes returns provenance summary");
+        assert.ok(!result.includes("provenance_summary:"), "provenance_summary field dropped (duplicate of graph_enrichment)");
     });
 });
 
@@ -1621,7 +1615,7 @@ describe("MCP structured status contract", () => {
                     arguments: { path: repo, compare_against: "HEAD" },
                 });
                 assert.equal(clean.structuredContent.status, "NO_CHANGES");
-                assert.equal(clean.structuredContent.next_action, "no_action");
+                assert.equal(clean.structuredContent.next_action, undefined, "next_action omitted on NO_CHANGES (dead constant was no_action)");
                 assertStructuredTextMirror(clean);
 
                 fs.writeFileSync(join(repo, "src/app.js"), "export const value = 2;\n");
@@ -2227,154 +2221,8 @@ describe("PostToolUse RTK", () => {
         assert.equal(r.code, 0);
         assert.equal(r.stderr, "");
     });
-
-    it("error recovery: is_error=true saves log in short output", async () => {
-        const repo = fs.mkdtempSync(join(tmpdir(), "hexline-err-"));
-        try {
-            const r = await runHook("PostToolUse", "Bash", { command: "pytest" }, {
-                tool_response: { stdout: makeLines(5), is_error: true }
-            }, { cwd: repo });
-            assert.equal(r.code, 2, "short-error path should exit 2 with recovery message");
-            assert.ok(r.stderr.includes("Full output preserved at:"), "stderr should mention recovery path");
-            const logDir = join(repo, ".hex-skills", "logs", "error_recovery");
-            const files = fs.readdirSync(logDir).filter((n) => n.endsWith(".log"));
-            assert.equal(files.length, 1, "one recovery log should be created");
-            const body = fs.readFileSync(join(logDir, files[0]), "utf-8");
-            assert.ok(body.includes("line 1"), "log should contain raw output");
-            assert.ok(body.includes("# command: pytest"), "log should include command header");
-        } finally {
-            fs.rmSync(repo, { recursive: true, force: true });
-        }
-    });
-
-    it("error recovery: is_error=true saves log in long output + appends path to RTK block", async () => {
-        const repo = fs.mkdtempSync(join(tmpdir(), "hexline-err-long-"));
-        try {
-            const r = await runHook("PostToolUse", "Bash", { command: "cargo test" }, {
-                tool_response: { stderr: makeLines(120, "err"), is_error: true }
-            }, { cwd: repo });
-            assert.equal(r.code, 2);
-            assert.ok(r.stderr.includes("RTK FILTERED"), "RTK filter should run");
-            assert.ok(r.stderr.includes("Full output preserved at:"), "recovery path should be appended");
-            const logDir = join(repo, ".hex-skills", "logs", "error_recovery");
-            const files = fs.readdirSync(logDir).filter((n) => n.endsWith(".log"));
-            assert.equal(files.length, 1);
-            const body = fs.readFileSync(join(logDir, files[0]), "utf-8");
-            assert.ok(body.includes("err 60"), "full original stderr should be preserved (incl middle)");
-        } finally {
-            fs.rmSync(repo, { recursive: true, force: true });
-        }
-    });
-
-    it("error recovery: success path does not create log", async () => {
-        const repo = fs.mkdtempSync(join(tmpdir(), "hexline-success-"));
-        try {
-            const r = await runHook("PostToolUse", "Bash", { command: "npm install" }, {
-                tool_response: { stdout: makeLines(100) }
-            }, { cwd: repo });
-            assert.equal(r.code, 2, "RTK still filters long output");
-            assert.ok(!r.stderr.includes("Full output preserved at:"), "no recovery path on success");
-            const logDir = join(repo, ".hex-skills", "logs", "error_recovery");
-            assert.ok(!fs.existsSync(logDir), "no log dir should be created");
-        } finally {
-            fs.rmSync(repo, { recursive: true, force: true });
-        }
-    });
-
-    it("error recovery: rotation keeps at most 20 log files", async () => {
-        const repo = fs.mkdtempSync(join(tmpdir(), "hexline-rot-"));
-        const logDir = join(repo, ".hex-skills", "logs", "error_recovery");
-        try {
-            fs.mkdirSync(logDir, { recursive: true });
-            // Pre-seed 22 stale log files with ascending mtimes
-            for (let i = 0; i < 22; i++) {
-                const f = join(logDir, `2020-01-01T00-00-${String(i).padStart(2, "0")}-000Z_generic.log`);
-                fs.writeFileSync(f, `stale ${i}`);
-                const t = new Date(2020, 0, 1, 0, 0, i).getTime() / 1000;
-                fs.utimesSync(f, t, t);
-            }
-            const r = await runHook("PostToolUse", "Bash", { command: "pytest" }, {
-                tool_response: { stdout: makeLines(5), is_error: true }
-            }, { cwd: repo });
-            assert.equal(r.code, 2);
-            const files = fs.readdirSync(logDir).filter((n) => n.endsWith(".log"));
-            assert.ok(files.length <= 20, `expected <= 20 logs after rotation, got ${files.length}`);
-        } finally {
-            fs.rmSync(repo, { recursive: true, force: true });
-        }
-    });
 });
 
-// ==================== PostToolUseFailure (Pattern 6, real failure path) ====================
-
-describe("PostToolUseFailure", () => {
-    it("Bash failure: saves metadata log + emits additionalContext", async () => {
-        const repo = fs.mkdtempSync(join(tmpdir(), "hexline-failevent-"));
-        try {
-            const r = await runHook("PostToolUseFailure", "Bash", { command: "npm test" }, {
-                error: "Command exited with non-zero status code 1",
-                is_interrupt: false
-            }, { cwd: repo });
-            assert.equal(r.code, 0, "PostToolUseFailure handler returns exit 0 + JSON");
-            const payload = JSON.parse(r.stdout);
-            assert.equal(payload.hookSpecificOutput.hookEventName, "PostToolUseFailure");
-            assert.ok(payload.hookSpecificOutput.additionalContext.includes("Failure metadata logged at:"));
-            const logDir = join(repo, ".hex-skills", "logs", "error_recovery");
-            const files = fs.readdirSync(logDir).filter((n) => n.endsWith(".log"));
-            assert.equal(files.length, 1);
-            const body = fs.readFileSync(join(logDir, files[0]), "utf-8");
-            assert.ok(body.includes("# command: npm test"));
-            assert.ok(body.includes("error: Command exited with non-zero status code 1"));
-            assert.ok(body.includes("is_interrupt: false"));
-        } finally {
-            fs.rmSync(repo, { recursive: true, force: true });
-        }
-    });
-
-    it("Bash interrupt: is_interrupt=true is recorded", async () => {
-        const repo = fs.mkdtempSync(join(tmpdir(), "hexline-interrupt-"));
-        try {
-            const r = await runHook("PostToolUseFailure", "Bash", { command: "sleep 100" }, {
-                error: "Interrupted by user",
-                is_interrupt: true
-            }, { cwd: repo });
-            assert.equal(r.code, 0);
-            const logDir = join(repo, ".hex-skills", "logs", "error_recovery");
-            const files = fs.readdirSync(logDir).filter((n) => n.endsWith(".log"));
-            const body = fs.readFileSync(join(logDir, files[0]), "utf-8");
-            assert.ok(body.includes("is_interrupt: true"));
-        } finally {
-            fs.rmSync(repo, { recursive: true, force: true });
-        }
-    });
-
-    it("non-Bash failure: ignored", async () => {
-        const repo = fs.mkdtempSync(join(tmpdir(), "hexline-failnonbash-"));
-        try {
-            const r = await runHook("PostToolUseFailure", "Write", { file_path: "/x" }, {
-                error: "permission denied",
-                is_interrupt: false
-            }, { cwd: repo });
-            assert.equal(r.code, 0);
-            assert.equal(r.stdout, "");
-            assert.ok(!fs.existsSync(join(repo, ".hex-skills", "logs", "error_recovery")));
-        } finally {
-            fs.rmSync(repo, { recursive: true, force: true });
-        }
-    });
-
-    it("empty command + empty error: silent exit, no log", async () => {
-        const repo = fs.mkdtempSync(join(tmpdir(), "hexline-failempty-"));
-        try {
-            const r = await runHook("PostToolUseFailure", "Bash", {}, {}, { cwd: repo });
-            assert.equal(r.code, 0);
-            assert.equal(r.stdout, "");
-            assert.ok(!fs.existsSync(join(repo, ".hex-skills", "logs", "error_recovery")));
-        } finally {
-            fs.rmSync(repo, { recursive: true, force: true });
-        }
-    });
-});
 
 // ==================== WASM dependency contract ====================
 
@@ -2611,6 +2459,20 @@ describe("protocol: edit_file output", () => {
         }
     });
 
+    it("assertProjectScopedPath allows .claude/ and .hex-skills/ paths outside project root", async () => {
+        const { assertProjectScopedPath } = await import("../lib/security.mjs");
+        // ~/.claude/plans/ — typical plan-mode artifact path, lives outside any specific project
+        const claudePath = join(tmpdir(), "hex-external-claude", ".claude", "plans", "foo.md");
+        const hexSkillsPath = join(tmpdir(), "hex-external-skills", ".hex-skills", "foo.md");
+        const externalPath = join(tmpdir(), "hex-external-other", "random.txt");
+        // Should NOT throw — auto-exempted by EXTERNAL_SAFE_FOLDERS
+        assert.doesNotThrow(() => assertProjectScopedPath(claudePath), ".claude/ outside project must pass");
+        assert.doesNotThrow(() => assertProjectScopedPath(hexSkillsPath), ".hex-skills/ outside project must pass");
+        // Plain external path still throws
+        assert.throws(() => assertProjectScopedPath(externalPath), /PATH_OUTSIDE_PROJECT/, "plain external path still blocked");
+    });
+
+
     it("grep_search defaults to summary and requires explicit edit_ready for canonical hunks", async () => {
         const tmp = join(tmpdir(), `hex-test-mcp-grep-${Date.now()}-${Math.random().toString(16).slice(2)}.js`);
         fs.writeFileSync(tmp, "const AAA = 1;\nconst BBB = 2;\nconst AAA_2 = 3;\n");
@@ -2697,7 +2559,7 @@ describe("protocol: edit_file output", () => {
             const result = editFile(tmp, [{ set_line: { anchor, new_text: "SECOND" } }]);
             assert.ok(result.includes("summary: lines_changed="), "Success output includes structured line summary");
             assert.ok(result.includes("payload_sections:"), "Success output includes payload section preview");
-            assert.ok(result.includes("provenance_summary:"), "Success output includes provenance summary");
+            assert.equal(result.includes("provenance_summary:"), false, "provenance_summary field is no longer emitted");
             assert.ok(result.includes("block: post_edit"), "Post-edit uses block protocol");
             assert.ok(result.includes("checksum:"), "Post-edit has checksum");
         } finally {
@@ -2720,7 +2582,7 @@ describe("protocol: edit_file output", () => {
                 editFile(tmp, [{ replace_lines: { start_anchor: startAnchor, end_anchor: endAnchor, new_text: "new", range_checksum: "1-3:deadbeef" } }]);
                 assert.fail("Should have thrown");
             } catch (e) {
-                assert.ok(e.message.includes("CHECKSUM_MISMATCH"), "Error is CHECKSUM_MISMATCH");
+                assert.ok(e.message.includes("CONFLICT") || e.message.includes("CHECKSUM_MISMATCH"), "Error signals CONFLICT/CHECKSUM_MISMATCH");
                 assert.ok(e.message.includes("next_action:"), "Contains canonical recovery guidance");
                 assert.ok(e.message.includes("read_file"), "Mentions read_file");
             }

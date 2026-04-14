@@ -48,7 +48,7 @@
  */
 
 import { normalizeOutput } from "@levnikolaevich/hex-common/output/normalize";
-import { readFileSync, writeSync, writeFileSync, mkdirSync, readdirSync, statSync, unlinkSync } from "node:fs";
+import { readFileSync, writeSync } from "node:fs";
 import { resolve } from "node:path";
 import { homedir } from "node:os";
 import {
@@ -288,59 +288,6 @@ function extractBashText(response) {
         return parts.join("\n") || "";
     }
     return ""; // unknown shape \u2192 fail open
-}
-
-// ---- Error recovery artifact (Pattern 6 from TOKEN_EFFICIENCY_PATTERNS.md) ----
-
-const ERROR_RECOVERY_DIR = ".hex-skills/logs/error_recovery";
-const ERROR_RECOVERY_MAX_FILES = 20;
-const ERROR_RECOVERY_MAX_BYTES = 1024 * 1024; // 1 MB
-
-function isBashFailure(response) {
-    if (!response || typeof response !== "object") return false;
-    if (response.is_error === true) return true;
-    if (response.interrupted === true) return true;
-    if (typeof response.exit_code === "number" && response.exit_code !== 0) return true;
-    return false;
-}
-
-function saveErrorArtifact(rawText, commandType, command, cwd) {
-    try {
-        const dir = resolve(cwd, ERROR_RECOVERY_DIR);
-        mkdirSync(dir, { recursive: true });
-
-        // Rotation: keep newest ERROR_RECOVERY_MAX_FILES - 1 (we're about to add one)
-        try {
-            const entries = readdirSync(dir)
-                .filter((name) => name.endsWith(".log"))
-                .map((name) => {
-                    try {
-                        return { name, mtime: statSync(resolve(dir, name)).mtimeMs };
-                    } catch {
-                        return null;
-                    }
-                })
-                .filter((e) => e !== null)
-                .sort((a, b) => b.mtime - a.mtime);
-            for (const entry of entries.slice(ERROR_RECOVERY_MAX_FILES - 1)) {
-                try { unlinkSync(resolve(dir, entry.name)); } catch { /* ignore */ }
-            }
-        } catch { /* ignore read errors */ }
-
-        // Size cap: truncate to 1 MB before write
-        let content = `# command: ${String(command).slice(0, 500)}\n# type: ${commandType}\n# timestamp: ${new Date().toISOString()}\n\n${rawText}`;
-        if (Buffer.byteLength(content, "utf-8") > ERROR_RECOVERY_MAX_BYTES) {
-            content = content.slice(0, ERROR_RECOVERY_MAX_BYTES) + "\n[TRUNCATED at 1 MB]";
-        }
-
-        const ts = new Date().toISOString().replace(/[:.]/g, "-");
-        const fileName = `${ts}_${commandType}.log`;
-        const filePath = resolve(dir, fileName);
-        writeFileSync(filePath, content, "utf-8");
-        return `${ERROR_RECOVERY_DIR}/${fileName}`;
-    } catch {
-        return null; // fail-open: hook must not break tool pipeline
-    }
 }
 
 /** Cache: null = not computed yet */
@@ -615,21 +562,13 @@ function handlePostToolUse(data) {
         process.exit(0);
     }
 
-    const failure = isBashFailure(data.tool_response);
     const type = detectCommandType(command);
-    let recoveryPath = null;
-    if (failure) {
-        recoveryPath = saveErrorArtifact(rawText, type, command, process.cwd());
-    }
 
     const lines = rawText.split("\n");
     const originalCount = lines.length;
 
-    // Short output - skip RTK filter; still surface recovery path on failure
+    // Short output - no filtering
     if (originalCount < HOOK_OUTPUT_POLICY.lineThreshold) {
-        if (recoveryPath) {
-            safeExit(2, `Full output preserved at: ${recoveryPath}`, 2);
-        }
         process.exit(0);
     }
 
@@ -642,7 +581,7 @@ function handlePostToolUse(data) {
 
     const header = `RTK FILTERED: ${type} (${originalCount} lines -> ${filteredCount} lines)`;
 
-    const outputParts = [
+    const output = [
         "=".repeat(50),
         header,
         "=".repeat(50),
@@ -651,49 +590,10 @@ function handlePostToolUse(data) {
         "",
         "-".repeat(50),
         `Original: ${originalCount} lines | Filtered: ${filteredCount} lines`,
-    ];
-    if (recoveryPath) {
-        outputParts.push(`Full output preserved at: ${recoveryPath}`);
-    }
-    outputParts.push("=".repeat(50));
-    const output = outputParts.join("\n");
+        "=".repeat(50),
+    ].join("\n");
 
     safeExit(2, output, 2);
-}
-
-// ---- PostToolUseFailure handler (Pattern 6, real failure path) ----
-//
-// Claude Code dispatches Bash failures (non-zero exit, error, interrupt) to
-// PostToolUseFailure, NOT PostToolUse. The failure payload contains only
-// `error` (string) + `is_interrupt` (bool) + `tool_input.command` — stdout/
-// stderr are NOT exposed. So we save metadata + error message; the agent
-// already has the truncated stdout/stderr in its context from the tool reply.
-
-function handlePostToolUseFailure(data) {
-    const toolName = data.tool_name || "";
-    if (toolName !== "Bash") {
-        process.exit(0);
-    }
-    const toolInput = data.tool_input || {};
-    const command = toolInput.command || "";
-    const error = typeof data.error === "string" ? data.error : "";
-    const isInterrupt = data.is_interrupt === true;
-    if (!command && !error) {
-        process.exit(0);
-    }
-    const type = detectCommandType(command);
-    const body = `error: ${error}\nis_interrupt: ${isInterrupt}`;
-    const recoveryPath = saveErrorArtifact(body, type, command, process.cwd());
-    if (!recoveryPath) {
-        process.exit(0);
-    }
-    const output = {
-        hookSpecificOutput: {
-            hookEventName: "PostToolUseFailure",
-            additionalContext: `Failure metadata logged at: ${recoveryPath}`,
-        },
-    };
-    safeExit(1, JSON.stringify(output), 0);
 }
 
 // ---- SessionStart: inject tool preferences ----
@@ -807,7 +707,6 @@ if (_norm(process.argv[1]) === _norm(fileURLToPath(import.meta.url))) {
             if (event === "SessionStart") handleSessionStart();
             else if (event === "PreToolUse") handlePreToolUse(data);
             else if (event === "PostToolUse") handlePostToolUse(data);
-            else if (event === "PostToolUseFailure") handlePostToolUseFailure(data);
             else if (event === "PermissionDenied") handlePermissionDenied(data);
             else process.exit(0);
         } catch {

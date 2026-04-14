@@ -36,7 +36,6 @@ export function errorResult(code, message, recovery, { large = false, extra = nu
     const payload = {
         status: "ERROR",
         error: { code, message, recovery },
-        summary: message,
     };
     if (extra && typeof extra === "object") {
         Object.assign(payload, extra);

@@ -13,6 +13,18 @@ import { listDirectory } from "./format.mjs";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 
+// Folders whose contents are runtime/config artifacts, not project files.
+// Edits inside these folders are allowed even when the path is outside the
+// current project root (e.g. ~/.claude/plans/, project-foreign .hex-skills/).
+const EXTERNAL_SAFE_FOLDERS = [
+    ".hex-skills/",
+    ".claude/",
+];
+
+function isInExternalSafeFolder(absPath) {
+    return EXTERNAL_SAFE_FOLDERS.some((folder) => absPath.includes(folder));
+}
+
 /**
  * Convert Git Bash /c/Users/... → c:/Users/... on Windows.
  * Node.js resolve() treats /c/ as absolute from current drive root, producing D:\c\Users.
@@ -53,7 +65,7 @@ export function assertProjectScopedPath(filePath, { allowExternal = false } = {}
     if (!filePath) throw new Error("Empty file path");
     const abs = resolveInputPath(filePath);
     if (allowExternal) return abs;
-
+    if (isInExternalSafeFolder(abs)) return abs;
     const projectRoot = resolve(process.cwd()).replace(/\\/g, "/");
     if (isWithinRoot(projectRoot, abs)) return abs;
 

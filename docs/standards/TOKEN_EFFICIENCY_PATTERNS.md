@@ -48,7 +48,7 @@ Analysis of RTK (Rust Token Killer) — CLI proxy reducing output by 60-90%.
 | 3 | SQLite token analytics (`rtk gain`) | Skip | Over-engineering. `/cost` and ccusage cover this |
 | 4 | Session history analysis (`rtk learn`) | Adapt | Pattern valuable; JSONL parsing fragile. Better as a skill reading Claude Code history |
 | 5 | Missed optimization discovery (`rtk discover`) | Skip | Specific to RTK. Concept already in ln-511, ln-640 |
-| 6 | Error output recovery (`rtk tee`) | **Implemented** | PostToolUse hook saves full stderr+stdout on failure to `.hex-skills/logs/error_recovery/` (20-file rotation, 1MB cap). See `mcp/hex-line-mcp/hook.mjs` `saveErrorArtifact` (added 2026-04-14) |
+| 6 | Error output recovery (`rtk tee`) | **Skip** | Claude Code already persists the full session transcript (JSONL at `transcript_path`) including Bash stdout/stderr for both success and failure. A custom `.hex-skills/logs/error_recovery/` duplicates that without adding actionable value — short-lived v1.21.0–1.21.1 hook reverted in v1.22.0 |
 | 7 | Dual hooks: rewrite + suggest (`systemMessage`) | **Adopt** | Non-blocking `systemMessage` ideal for skill recommendations |
 | 8 | Slim awareness file (compact LLM context) | Adapt | Good idea; Claude Code already supports per-directory CLAUDE.md natively |
 | 9 | Ultra-compact mode (`--ultra-compact`) | Skip | Agent reads SKILL.md, not CLI output. Irrelevant |
@@ -58,9 +58,6 @@ Analysis of RTK (Rust Token Killer) — CLI proxy reducing output by 60-90%.
 | 13 | Hook integrity check (`rtk init --show`) | **Adopt** | Validate hooks.json, script existence, dependencies |
 
 ### Adopted Patterns Detail
-
-**Pattern 6 (Error Recovery Hook):**
-PostToolUse:Bash + PostToolUseFailure:Bash hooks (Claude Code dispatches success vs failure to **separate** events). On `PostToolUse` failure-shaped payload (`is_error` / `interrupted` / non-zero `exit_code`) saves full stderr+stdout. On `PostToolUseFailure` saves available metadata (`command`, `error` string, `is_interrupt`) — Claude Code does NOT pass stdout/stderr in the failure event, so full output preservation is limited to the success-shaped path. Both targets `.hex-skills/logs/error_recovery/{ISO-ts}_{type}.log` (20-file rotation by mtime, 1 MB cap, `[TRUNCATED]` marker). Recovery path is appended to RTK block (PostToolUse) or returned as `additionalContext` (PostToolUseFailure). Fail-open. Implementation: `mcp/hex-line-mcp/hook.mjs` (`saveErrorArtifact`, `isBashFailure`, `handlePostToolUseFailure`); registration: `mcp/hex-line-mcp/lib/setup.mjs` `CLAUDE_HOOKS`. Tests: 8 cases in `mcp/hex-line-mcp/test/smoke.mjs`.
 
 **Pattern 7 (Suggest Hook):**
 PreToolUse:Bash hook. `systemMessage`-only (no blocking, no modification). Pattern-matches Bash commands to recommend relevant skills. Example: `npm test` → "For test analysis, consider ln-513/ln-514". Script: `hooks/skill-suggest.sh` (~40 lines).
@@ -89,6 +86,7 @@ Integrated into `ln-010` assessment and verification flow. Validates: JSON synta
 | Output compression at transport level | Agent's built-in tools (Read, Grep) already handle this |
 | Inline executable tests | Our tests are DoD checklists + ln-310 multi-agent validation |
 | External style-wrappers (headroom, caveman) | Same rationale as RTK binary §4: runtime proxies / response-style hijackers conflict with per-skill output contracts and hide failure context |
+| Custom error-recovery logs (when Claude Code transcript covers it) | Claude Code already stores tool stdout/stderr (incl. failures) in the session transcript at `transcript_path`. A separate `.hex-skills/logs/error_recovery/` directory duplicates that, costs context tokens via `additionalContext`, and adds maintenance with zero recovery benefit for the agent |
 
 ---
 **Last Updated:** 2026-03-20

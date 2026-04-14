@@ -1,6 +1,6 @@
 {
   "name": "@levnikolaevich/hex-ssh-mcp",
-  "version": "1.4.3",
+  "version": "1.5.0",
   "mcpName": "io.github.levnikolaevich/hex-ssh-mcp",
   "description": "Token-efficient SSH MCP server with hash-verified file operations. 8 tools: remote-ssh, ssh-read-lines, ssh-edit-block, ssh-search-code, ssh-write-chunk, ssh-upload, ssh-download, ssh-verify.",
   "type": "module",

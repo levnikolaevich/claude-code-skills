@@ -82,3 +82,27 @@ describe("schema descriptions", () => {
         });
     });
 });
+
+describe("output envelope validation", () => {
+    it("install_graph_providers returns a valid envelope with object evidence (no schema error)", async () => {
+        await withMcpClient(async (client) => {
+            const result = await client.callTool({
+                name: "install_graph_providers",
+                arguments: { path: CWD, mode: "check" },
+            });
+            assert.notEqual(result.isError, true, `install_graph_providers must succeed: ${JSON.stringify(result).slice(0, 300)}`);
+            assert.equal(result.structuredContent.status, "OK");
+        });
+    });
+
+    it("inspect_symbol with include_evidence:true returns a valid envelope", { skip: true }, async () => {
+        // Requires an indexed project at CWD. Kept as skipped for CI; enable when index is available.
+        await withMcpClient(async (client) => {
+            const result = await client.callTool({
+                name: "inspect_symbol",
+                arguments: { path: CWD, name: "wrapResult", file: "server.mjs", include_evidence: true },
+            });
+            assert.notEqual(result.isError, true, `inspect_symbol(include_evidence:true) must succeed: ${JSON.stringify(result).slice(0, 300)}`);
+        });
+    });
+});

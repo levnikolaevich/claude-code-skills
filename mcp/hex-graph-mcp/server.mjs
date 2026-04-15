@@ -40,7 +40,7 @@ const GRAPH_OUTPUT_SCHEMA = z.object({
     result: z.unknown().optional(),
     confidence: z.string().optional(),
     reason: z.string().optional(),
-    evidence: z.array(z.unknown()).optional(),
+    evidence: z.union([z.array(z.unknown()), z.record(z.string(), z.unknown())]).optional(),
     limits_applied: z.record(z.string(), z.unknown()).optional(),
     quality: z.record(z.string(), z.unknown()).optional(),
     next_action: z.string().optional(),

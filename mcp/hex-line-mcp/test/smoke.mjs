@@ -2982,3 +2982,22 @@ describe("v1.24.2 regression guards", () => {
         }
     });
 });
+
+describe("v1.25.1 regression guards", () => {
+    it("bulk_replace `**/*.ext` matches files at the root level (glob doublestar semantics)", async () => {
+        const { bulkReplace } = await import("../lib/bulk-replace.mjs");
+        const dir = makeTempRepo("hex-v1251-glob-", {
+            "root.ts": "const x = 1;\n",
+            "nested/deep.ts": "const y = 2;\n",
+            "skip.js": "const z = 3;\n",
+        });
+        try {
+            const result = bulkReplace(dir, "**/*.ts", [{ old: "const", new: "let" }], { dryRun: true });
+            assert.ok(result.includes("root.ts"), `root-level *.ts must match **/*.ts; got: ${result}`);
+            assert.ok(result.includes("nested/deep.ts"), "nested *.ts must match **/*.ts");
+            assert.ok(!result.includes("skip.js"), ".js must not match **/*.ts");
+        } finally {
+            fs.rmSync(dir, { recursive: true, force: true });
+        }
+    });
+});

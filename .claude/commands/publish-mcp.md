@@ -273,4 +273,65 @@ Display: package name, old → new version, npm URL (`https://www.npmjs.com/pack
 Analyze this session per protocol §7. Output per protocol format.
 
 ---
-**Last Updated:** 2026-04-12
+
+### 13. Monitor CI and verify publish
+
+After `git push --tags`, every tag triggers a `publish-hex-*.yml` workflow and `master` triggers `tests.yml`. For a multi-package release expect N+1 workflows running concurrently (one Publish per tag + one Tests).
+
+**Step 13.1 — Enumerate runs.** Within a few seconds of push:
+
+```bash
+gh run list --limit 5 --branch master
+```
+
+All release runs should be `queued` or `in_progress`. If nothing appeared after ~20 s, the tag likely did not match the workflow trigger — double-check `TAG_PREFIX`.
+
+**Step 13.2 — Wait for Publish runs (blocking gate).** For each Publish run-id, run `gh run watch` with `--exit-status`. Non-zero exit = failure. Do them in parallel via `run_in_background: true`, then continue on the task-notification:
+
+```bash
+gh run watch ${PUBLISH_RUN_ID} --exit-status
+```
+
+Publish runs typically finish in 30 s – 2 min (build + `npm publish --provenance`). Tests run may take 3–5 min; it does **not** block the npm artefact from going live, but it must also finish green before the release is considered clean.
+
+**Step 13.3 — Re-check final status.** After watch exits:
+
+```bash
+gh run list --limit 5 --branch master
+```
+
+Each release run must show `success`. For any `failure` row, fetch the failing step:
+
+```bash
+gh run view ${FAILED_RUN_ID} --log-failed
+```
+
+**Step 13.4 — Verify npm artefact.** Only after Publish reports `success`:
+
+```bash
+npm view ${PKG_NAME} version
+```
+
+Must equal `${NEW_VERSION}`. If propagation lags, retry after ~30 s before declaring failure — it is CDN-side, not a publish fault.
+
+**Step 13.5 — Failure recovery.**
+
+- **Publish failed** (bad token, provenance mismatch, version already on registry): fix the root cause. Never reuse the tag. Delete locally and remotely, bump again, re-tag, re-push:
+  ```bash
+  git tag -d ${FAILED_TAG}
+  git push origin :refs/tags/${FAILED_TAG}
+  # fix issue, bump patch, rebuild, sync server.json, re-tag, re-push
+  ```
+  Never force-push tags.
+- **Tests failed on master after Publish succeeded:** npm artefact is already live — do not try to roll back the tag. File a hotfix: bump patch, fix the test, republish.
+- **Publish `in_progress` too long (>5 min):** inspect with `gh run view ${RUN_ID} --log` — most likely stuck on `npm publish` waiting for OIDC sigstore; usually resolves, do not cancel unless clearly hung.
+
+**Step 13.6 — Final report to user.** Include:
+
+- package name + `old → new` version for each released package;
+- npm URL: `https://www.npmjs.com/package/${PKG_NAME}`;
+- Publish run URL (`gh run view ${RUN_ID} --json url --jq .url`) with `success` confirmation;
+- Tests run status (`success` / `in_progress` / `failure`) — if not green yet, tell the user it is still running.
+
+---
+**Last Updated:** 2026-04-15

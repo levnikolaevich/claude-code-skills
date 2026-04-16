@@ -112,7 +112,7 @@ Add body instruction:
 ```markdown
 **MANDATORY READ:** Load `shared/references/mcp_tool_preferences.md` and `shared/references/mcp_integration_patterns.md`
 
-Use `hex-line` as the primary path for code/config/script/test files. With the hook active, project-scoped text Read/Edit/Write/Grep/Glob are redirected there; built-in fallback remains only for MCP failure, unsupported cases, binary/media, or text paths outside the current project root.
+Use `hex-line` as the primary path for code/config/script/test files. With the hook active, project-scoped text Read/Edit/Write/Grep/Glob receive hex-line guidance by default and hard-route there only when `hooks.mode` is `blocking`; built-in fallback remains for MCP failure, unsupported cases, binary/media, plan files in Plan Mode, or text paths outside the current project root.
 ```
 
 ### Semantic Code Reasoning Skill

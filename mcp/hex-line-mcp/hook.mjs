@@ -93,6 +93,17 @@ function getFilePath(toolInput) {
     return toolInput.file_path || toolInput.path || "";
 }
 
+function getMutatingTargetPath(toolInput) {
+    return toolInput.file_path || toolInput.path || "";
+}
+
+function isPlanMarkdownFile(filePath) {
+    if (!filePath) return false;
+    const normalized = filePath.replace(/\\/g, "/");
+    const name = normalized.slice(normalized.lastIndexOf("/") + 1);
+    return /^plan_.*\.md$/i.test(name);
+}
+
 function getGlobScopePath(toolInput) {
     if (toolInput.path) return toolInput.path;
     const pattern = typeof toolInput.pattern === "string" ? toolInput.pattern : "";
@@ -329,16 +340,16 @@ let _hookMode;
 /**
  * Get hook enforcement mode for the current project.
  * Reads .hex-skills/environment_state.json -> hooks.mode.
- * Fail-closed: returns "blocking" on any error.
+ * Fail-open for usability: returns "advisory" unless blocking is explicit.
  */
 function getHookMode() {
     if (_hookMode !== undefined) return _hookMode;
-    _hookMode = "blocking";
+    _hookMode = "advisory";
     try {
         const stateFile = resolve(process.cwd(), ".hex-skills/environment_state.json");
         const data = JSON.parse(readFileSync(stateFile, "utf-8"));
-        if (data.hooks?.mode === "advisory") _hookMode = "advisory";
-    } catch { /* file missing or malformed -> default blocking */ }
+        if (data.hooks?.mode === "blocking") _hookMode = "blocking";
+    } catch { /* file missing or malformed -> default advisory */ }
     return _hookMode;
 }
 
@@ -402,7 +413,7 @@ function handlePreToolUse(data) {
     // Plan mode: block mutating hex-line tools, allow read-only
     // Exception: .hex-skills/ and .claude/ are runtime/config artifacts, not project files
     if (data.permission_mode === "plan" && HEX_LINE_MUTATING.has(toolName)) {
-        const targetPath = (toolInput.path || "").replace(/\\/g, "/");
+        const targetPath = getMutatingTargetPath(toolInput).replace(/\\/g, "/");
         const isPlanSafe = PLAN_SAFE_FOLDERS.some((folder) => targetPath.includes(folder));
         if (!isPlanSafe) {
             block(
@@ -434,23 +445,31 @@ function handlePreToolUse(data) {
 
         if (toolName === "Read") {
             const ext = filePath ? extOf(filePath) : "";
+            if (data.permission_mode === "plan" && isPlanMarkdownFile(filePath)) {
+                process.exit(0);
+            }
             const rangeHint = isPartialRead(toolInput)
                 ? " Preserve the same offset/limit or ranges."
                 : "";
             const outlineTip = (filePath && OUTLINEABLE_EXT.has(ext))
                 ? ` For structure-first discovery: mcp__hex-line__outline then mcp__hex-line__read_file with ranges.`
                 : "";
+            const editReadyTip = " If preparing an edit, call mcp__hex-line__read_file with edit_ready=true and verbosity=\"full\" to get anchors and checksums.";
             const target = filePath
-                ? `Use mcp__hex-line__read_file(file_path="${filePath}").${rangeHint}${outlineTip}`
+                ? `Use mcp__hex-line__read_file(file_path="${filePath}").${rangeHint}${outlineTip}${editReadyTip}`
                 : "Use mcp__hex-line__read_file or mcp__hex-line__inspect_path.";
             redirect(target, DEFERRED_HINT);
         }
 
         if (toolName === "Edit") {
+            if (data.permission_mode === "plan" && isPlanMarkdownFile(filePath)) {
+                process.exit(0);
+            }
+            const editShape = 'edits=[{"set_line":{"anchor":"ab.12","new_text":"replacement"}}]';
             const target = filePath
-                ? `Use mcp__hex-line__edit_file(file_path="${filePath}"). If you need hash anchors first: mcp__hex-line__grep_search(output_mode="content", edit_ready=true).`
-                : "Use mcp__hex-line__edit_file. If you need hash anchors first: mcp__hex-line__grep_search(output_mode=\"content\", edit_ready=true).";
-            redirect(target, "Hash-verified edits for project text files.\n" + DEFERRED_HINT);
+                ? `Use mcp__hex-line__edit_file(file_path="${filePath}", ${editShape}). If you need anchors first: mcp__hex-line__read_file(file_path="${filePath}", edit_ready=true, verbosity="full") or mcp__hex-line__grep_search(output_mode="content", edit_ready=true).`
+                : `Use mcp__hex-line__edit_file(${editShape}). If you need anchors first: mcp__hex-line__grep_search(output_mode="content", edit_ready=true).`;
+            redirect(target, "Hash-verified edits for project text files. In default advisory mode, built-in Edit remains available as fallback.\n" + DEFERRED_HINT);
         }
 
         if (toolName === "Write") {

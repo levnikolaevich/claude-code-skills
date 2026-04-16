@@ -7,7 +7,7 @@ Repo-level MCP policy for code files and semantic codebase analysis.
 - Use `hex-line` first when a skill materially reads or edits source code, config, scripts, or test files.
 - Use `hex-graph` first when a skill must reason about existing code semantics: symbol identity, references, edit blast radius, architecture, clone groups, or semantic diff risk.
 - Use built-in `Read/Edit/Write/Grep` only as named fallback when the relevant MCP is unavailable, unsupported for the file/task, or outside MCP scope.
-- When the `hex-line` hook is active, project-scoped text `Read/Edit/Write/Grep/Glob` are redirected to `hex-line`; built-in exceptions are binary/media and text paths outside the current project root.
+- When the `hex-line` hook is active, project-scoped text `Read/Edit/Write/Grep/Glob` receive hex-line guidance by default; explicit `hooks.mode: "blocking"` redirects them to `hex-line`. Built-in exceptions are binary/media, plan files in Plan Mode, and text paths outside the current project root.
 - Use shell only as named fallback for repo inspection when MCP is unavailable, unsupported, or outside scope.
 - Do not use shell repo-wide search or read patterns such as `rg`, `grep`, `cat`, `find`, or recursive tree dumps when `hex-line` or `hex-graph` covers the task.
 - Do not cargo-cult `hex-graph` into planning, docs, community, research, or runtime-only skills that do not make semantic code decisions.

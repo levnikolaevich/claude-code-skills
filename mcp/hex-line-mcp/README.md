@@ -46,7 +46,7 @@ Advanced / occasional:
 
 | Event | Trigger | Action |
 |-------|---------|--------|
-| **PreToolUse** | Read/Edit/Write/Grep/Glob on project text scope | Hard redirect to hex-line for project-scoped text files and file discovery; built-in tools stay available for binary/media and text paths outside the current project root |
+| **PreToolUse** | Read/Edit/Write/Grep/Glob on project text scope | Advises hex-line by default for project-scoped text files and file discovery; explicit `hooks.mode: "blocking"` hard redirects. Built-in tools stay available for binary/media, plan files in Plan Mode, and text paths outside the current project root |
 | **PreToolUse** | Bash with dangerous commands | Blocks `rm -rf /`, `git push --force`, etc. Agent must confirm with user |
 | **PostToolUse** | Bash with 50+ lines output | RTK: deduplicates, truncates, shows filtered summary to Claude as feedback |
 | **SessionStart** | Session begins | Injects a short bootstrap hint; defers to the active output style when `hex-line` style is enabled |
@@ -54,7 +54,7 @@ Advanced / occasional:
 
 ### Bash Redirects
 
-PreToolUse also intercepts project-scoped file inspection Bash commands: `cat`, `type`, `Get-Content`, `head`, `tail`, `ls`, `dir`, `tree`, `find`, `Get-ChildItem`, `stat`, `wc`, `Get-Item`, `grep`, `rg`, `findstr`, `Select-String`, `sed -i`. Targeted inspection pipelines are redirected too; Git/build/test/docker/network and stdin-filter pipelines remain allowed.
+PreToolUse also intercepts project-scoped file inspection Bash commands: `cat`, `type`, `Get-Content`, `head`, `tail`, `ls`, `dir`, `tree`, `find`, `Get-ChildItem`, `stat`, `wc`, `Get-Item`, `grep`, `rg`, `findstr`, `Select-String`, `sed -i`. Targeted inspection pipelines receive advisory hints by default and are hard redirected only in explicit blocking mode; Git/build/test/docker/network and stdin-filter pipelines remain allowed.
 ## Install
 
 ### MCP Server
@@ -360,11 +360,11 @@ The unified hook (`hook.mjs`) handles five Claude hook events:
 
 ### PreToolUse: Tool Redirect
 
-Hard-routes built-in `Read`, `Edit`, `Write`, `Grep`, and `Glob` on project-scoped text workflows to hex-line. Binary/media files (images, PDFs, notebooks, archives, executables, fonts, media) and text paths outside the current project root stay on built-in tools.
+Advises built-in `Read`, `Edit`, `Write`, `Grep`, and `Glob` on project-scoped text workflows to use hex-line. Missing or malformed hook state defaults to advisory mode; set `.hex-skills/environment_state.json` to `hooks.mode: "blocking"` to hard-route covered calls. Binary/media files (images, PDFs, notebooks, archives, executables, fonts, media), plan markdown files in Plan Mode, and text paths outside the current project root stay on built-in tools.
 
 ### PreToolUse: Bash Redirect + Dangerous Blocker
 
-Intercepts project-scoped Bash file inspection commands (`cat`, `type`, `Get-Content`, `head`, `tail`, `ls`, `dir`, `tree`, `find`, `Get-ChildItem`, `stat`, `wc`, `Get-Item`, `grep`, `rg`, `findstr`, `Select-String`, `sed -i`, etc.) and redirects covered cases to hex-line tools. Targeted inspection pipelines are redirected. Dangerous commands (`rm -rf /`, `git push --force`, `git reset --hard`, `DROP TABLE`, `chmod 777`, `mkfs`, `dd`) are blocked.
+Intercepts project-scoped Bash file inspection commands (`cat`, `type`, `Get-Content`, `head`, `tail`, `ls`, `dir`, `tree`, `find`, `Get-ChildItem`, `stat`, `wc`, `Get-Item`, `grep`, `rg`, `findstr`, `Select-String`, `sed -i`, etc.) and advises hex-line tools by default. Explicit blocking mode hard redirects covered cases. Dangerous commands (`rm -rf /`, `git push --force`, `git reset --hard`, `DROP TABLE`, `chmod 777`, `mkfs`, `dd`) are always blocked.
 
 ### PostToolUse: RTK Output Filter
 

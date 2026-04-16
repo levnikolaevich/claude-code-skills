@@ -58,8 +58,8 @@ Prefer `hex-line` for text files you may inspect or modify. Hash-annotated reads
 
 ## Exceptions
 
-- Built-in `Read`/`Edit`/`Write`/`Grep`/`Glob` are fallback only. With the hook active, project-scoped text calls and file discovery route to hex-line. Built-in OK for images, PDFs, notebooks, and text paths outside the current project root.
-- Bash is still fine for npm, node, git, docker, curl, non-inspection pipelines, and other runtime workflows. Project file inspection commands route to hex-line, including Windows-native readers/searchers/listing commands.
+- Built-in `Read`/`Edit`/`Write`/`Grep`/`Glob` are fallback only by preference. With the hook active, project-scoped text calls and file discovery receive hex-line guidance by default and hard-route only when `hooks.mode` is `blocking`. Built-in OK for images, PDFs, notebooks, plan files in Plan Mode, and text paths outside the current project root.
+- Bash is still fine for npm, node, git, docker, curl, non-inspection pipelines, and other runtime workflows. Project file inspection commands receive hex-line guidance, including Windows-native readers/searchers/listing commands.
 
 ## hex-graph
 

@@ -20,5 +20,10 @@
     "ask": [],
     "defaultMode": "bypassPermissions"
   },
+  "alwaysThinkingEnabled": true,
+  "env": {
+    "CLAUDE_CODE_DISABLE_ADAPTIVE_THINKING": "1",
+    "CLAUDE_CODE_AUTO_COMPACT_WINDOW": "400000"
+  },
   "disableAllHooks": false
 }

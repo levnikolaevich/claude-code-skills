@@ -40,7 +40,7 @@ Skills collection for Codex with config-driven Agile task management (Linear or 
 Use `hex-line` first for repo file reads/search/edits on code, config, scripts, and tests.
 - Use `hex-graph` first for symbol identity, references, architecture, edit blast radius, clone groups, and semantic diff risk.
 - Built-in `Read/Edit/Write/Grep` and shell repo inspection are fallback only when MCP is unavailable, unsupported, or outside scope.
-- When the hex-line hook is active, project-scoped text `Read/Edit/Write/Grep/Glob` are hard-routed to `hex-line`; built-in exceptions are binary/media and text paths outside the current project root.
+- When the hex-line hook is active, project-scoped text `Read/Edit/Write/Grep/Glob` receive hex-line guidance by default; explicit `hooks.mode: "blocking"` hard-routes them to `hex-line`. Built-in exceptions are binary/media, plan files in Plan Mode, and text paths outside the current project root.
 - Do not use shell repo-wide search/read patterns such as `rg`, `grep`, `cat`, `find`, or recursive tree dumps when `hex-line` or `hex-graph` covers the task.
 - Shell is still appropriate for Git history, build/test/runtime commands, package managers, Docker, images, PDFs, notebooks, and user-level `.claude/settings*.json` work outside the repo.
 

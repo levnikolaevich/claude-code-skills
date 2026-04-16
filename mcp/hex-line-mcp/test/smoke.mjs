@@ -58,6 +58,13 @@ function makeTempRepo(prefix, files) {
     return dir;
 }
 
+function makeBlockingRepo(prefix, files) {
+    return makeTempRepo(prefix, {
+        ".hex-skills/environment_state.json": JSON.stringify({ hooks: { mode: "blocking" } }, null, 2),
+        ...files,
+    });
+}
+
 function git(repo, args) {
     execFileSync("git", args, { cwd: repo, stdio: "ignore" });
 }
@@ -1801,7 +1808,7 @@ describe("isHexLineDisabled", () => {
 
 describe("hook — project Bash redirect scope", () => {
     it("redirects simple ls in the project", async () => {
-        const repo = makeTempRepo("hex-hook-bash-repo-", { "src/index.ts": "const value = 1;\n" });
+        const repo = makeBlockingRepo("hex-hook-bash-repo-", { "src/index.ts": "const value = 1;\n" });
         try {
             const r = await runHook("PreToolUse", "Bash", { command: "ls src/" }, {}, { cwd: repo });
             assert.notEqual(r.code, 0);
@@ -1810,7 +1817,7 @@ describe("hook — project Bash redirect scope", () => {
         }
     });
     it("redirects dir /s in the project", async () => {
-        const repo = makeTempRepo("hex-hook-bash-repo-", { "src/index.ts": "const value = 1;\n" });
+        const repo = makeBlockingRepo("hex-hook-bash-repo-", { "src/index.ts": "const value = 1;\n" });
         try {
             const r = await runHook("PreToolUse", "Bash", { command: "dir /s" }, {}, { cwd: repo });
             assert.notEqual(r.code, 0);
@@ -1819,7 +1826,7 @@ describe("hook — project Bash redirect scope", () => {
         }
     });
     it("redirects Get-Content on a project file", async () => {
-        const repo = makeTempRepo("hex-hook-bash-repo-", { "src/index.ts": "const value = 1;\n" });
+        const repo = makeBlockingRepo("hex-hook-bash-repo-", { "src/index.ts": "const value = 1;\n" });
         try {
             const r = await runHook("PreToolUse", "Bash", { command: "Get-Content src/index.ts" }, {}, { cwd: repo });
             assert.notEqual(r.code, 0);
@@ -1828,7 +1835,7 @@ describe("hook — project Bash redirect scope", () => {
         }
     });
     it("redirects type on a project file", async () => {
-        const repo = makeTempRepo("hex-hook-bash-repo-", { "src/index.ts": "const value = 1;\n" });
+        const repo = makeBlockingRepo("hex-hook-bash-repo-", { "src/index.ts": "const value = 1;\n" });
         try {
             const r = await runHook("PreToolUse", "Bash", { command: "type src/index.ts" }, {}, { cwd: repo });
             assert.notEqual(r.code, 0);
@@ -1837,7 +1844,7 @@ describe("hook — project Bash redirect scope", () => {
         }
     });
     it("redirects Get-ChildItem recursion in the project", async () => {
-        const repo = makeTempRepo("hex-hook-bash-repo-", { "src/index.ts": "const value = 1;\n" });
+        const repo = makeBlockingRepo("hex-hook-bash-repo-", { "src/index.ts": "const value = 1;\n" });
         try {
             const r = await runHook("PreToolUse", "Bash", { command: "Get-ChildItem src -Recurse" }, {}, { cwd: repo });
             assert.notEqual(r.code, 0);
@@ -1846,7 +1853,7 @@ describe("hook — project Bash redirect scope", () => {
         }
     });
     it("redirects Get-Item on a project file", async () => {
-        const repo = makeTempRepo("hex-hook-bash-repo-", { "src/index.ts": "const value = 1;\n" });
+        const repo = makeBlockingRepo("hex-hook-bash-repo-", { "src/index.ts": "const value = 1;\n" });
         try {
             const r = await runHook("PreToolUse", "Bash", { command: "Get-Item src/index.ts" }, {}, { cwd: repo });
             assert.notEqual(r.code, 0);
@@ -1855,7 +1862,7 @@ describe("hook — project Bash redirect scope", () => {
         }
     });
     it("redirects findstr on a project file", async () => {
-        const repo = makeTempRepo("hex-hook-bash-repo-", { "src/index.ts": "const value = 1;\n" });
+        const repo = makeBlockingRepo("hex-hook-bash-repo-", { "src/index.ts": "const value = 1;\n" });
         try {
             const r = await runHook("PreToolUse", "Bash", { command: "findstr value src/index.ts" }, {}, { cwd: repo });
             assert.notEqual(r.code, 0);
@@ -1864,7 +1871,7 @@ describe("hook — project Bash redirect scope", () => {
         }
     });
     it("redirects Select-String with -Path in the project", async () => {
-        const repo = makeTempRepo("hex-hook-bash-repo-", { "src/index.ts": "const value = 1;\n" });
+        const repo = makeBlockingRepo("hex-hook-bash-repo-", { "src/index.ts": "const value = 1;\n" });
         try {
             const r = await runHook("PreToolUse", "Bash", { command: "Select-String -Path src/index.ts -Pattern value" }, {}, { cwd: repo });
             assert.notEqual(r.code, 0);
@@ -1873,7 +1880,7 @@ describe("hook — project Bash redirect scope", () => {
         }
     });
     it("redirects targeted inspection pipelines in the project", async () => {
-        const repo = makeTempRepo("hex-hook-bash-repo-", { "src/index.ts": "const value = 1;\n" });
+        const repo = makeBlockingRepo("hex-hook-bash-repo-", { "src/index.ts": "const value = 1;\n" });
         try {
             const r = await runHook("PreToolUse", "Bash", { command: "Get-ChildItem src -Recurse | Select-String -Pattern value" }, {}, { cwd: repo });
             assert.notEqual(r.code, 0);
@@ -1906,7 +1913,7 @@ describe("hook — project Bash redirect scope", () => {
 
 describe("hook — project text redirect scope", () => {
     it("redirects project src/index.ts", async () => {
-        const repo = makeTempRepo("hex-hook-text-repo-", { "src/index.ts": "const value = 1;\n" });
+        const repo = makeBlockingRepo("hex-hook-text-repo-", { "src/index.ts": "const value = 1;\n" });
         try {
             const r = await runHook("PreToolUse", "Read", { file_path: "src/index.ts" }, {}, { cwd: repo });
             assert.notEqual(r.code, 0);
@@ -1915,7 +1922,7 @@ describe("hook — project text redirect scope", () => {
         }
     });
     it("redirects project .claude/settings.json like any other text file", async () => {
-        const repo = makeTempRepo("hex-hook-text-repo-", { ".claude/settings.json": "{\"hooks\":{}}\n" });
+        const repo = makeBlockingRepo("hex-hook-text-repo-", { ".claude/settings.json": "{\"hooks\":{}}\n" });
         try {
             const r = await runHook("PreToolUse", "Read", { file_path: ".claude/settings.json" }, {}, { cwd: repo });
             assert.notEqual(r.code, 0);
@@ -1924,7 +1931,7 @@ describe("hook — project text redirect scope", () => {
         }
     });
     it("redirects partial built-in Read on a project file", async () => {
-        const repo = makeTempRepo("hex-hook-text-repo-", { "src/index.ts": "line 1\nline 2\nline 3\n" });
+        const repo = makeBlockingRepo("hex-hook-text-repo-", { "src/index.ts": "line 1\nline 2\nline 3\n" });
         try {
             const r = await runHook("PreToolUse", "Read", { file_path: "src/index.ts", offset: 1, limit: 2 }, {}, { cwd: repo });
             assert.notEqual(r.code, 0);
@@ -1934,7 +1941,7 @@ describe("hook — project text redirect scope", () => {
         }
     });
     it("redirects full built-in Read on a project file", async () => {
-        const repo = makeTempRepo("hex-hook-text-repo-", { "src/index.ts": Array.from({ length: 1000 }, () => "const value = 1234567890;").join("\n") });
+        const repo = makeBlockingRepo("hex-hook-text-repo-", { "src/index.ts": Array.from({ length: 1000 }, () => "const value = 1234567890;").join("\n") });
         try {
             const r = await runHook("PreToolUse", "Read", { file_path: "src/index.ts" }, {}, { cwd: repo });
             assert.notEqual(r.code, 0);
@@ -1943,7 +1950,7 @@ describe("hook — project text redirect scope", () => {
         }
     });
     it("redirects built-in Edit on a project text file", async () => {
-        const repo = makeTempRepo("hex-hook-text-repo-", { "src/index.ts": "const value = 1;\n" });
+        const repo = makeBlockingRepo("hex-hook-text-repo-", { "src/index.ts": "const value = 1;\n" });
         try {
             const r = await runHook("PreToolUse", "Edit", {
                 file_path: "src/index.ts",
@@ -1957,7 +1964,7 @@ describe("hook — project text redirect scope", () => {
         }
     });
     it("redirects built-in Write on a project text file", async () => {
-        const repo = makeTempRepo("hex-hook-text-repo-", {});
+        const repo = makeBlockingRepo("hex-hook-text-repo-", {});
         try {
             const r = await runHook("PreToolUse", "Write", { file_path: "notes.txt", content: "hello" }, {}, { cwd: repo });
             assert.notEqual(r.code, 0);
@@ -1966,7 +1973,7 @@ describe("hook — project text redirect scope", () => {
         }
     });
     it("redirects built-in Grep without path as a project search", async () => {
-        const repo = makeTempRepo("hex-hook-text-repo-", { "src/index.ts": "const value = 1;\n" });
+        const repo = makeBlockingRepo("hex-hook-text-repo-", { "src/index.ts": "const value = 1;\n" });
         try {
             const r = await runHook("PreToolUse", "Grep", { pattern: "value" }, {}, { cwd: repo });
             assert.notEqual(r.code, 0);
@@ -1975,7 +1982,7 @@ describe("hook — project text redirect scope", () => {
         }
     });
     it("redirects built-in Glob without path as a project discovery", async () => {
-        const repo = makeTempRepo("hex-hook-text-repo-", { "src/index.ts": "const value = 1;\n" });
+        const repo = makeBlockingRepo("hex-hook-text-repo-", { "src/index.ts": "const value = 1;\n" });
         try {
             const r = await runHook("PreToolUse", "Glob", { pattern: "**/*.ts" }, {}, { cwd: repo });
             assert.notEqual(r.code, 0);
@@ -1985,7 +1992,7 @@ describe("hook — project text redirect scope", () => {
         }
     });
     it("redirects built-in Glob on a project path", async () => {
-        const repo = makeTempRepo("hex-hook-text-repo-", { "src/index.ts": "const value = 1;\n" });
+        const repo = makeBlockingRepo("hex-hook-text-repo-", { "src/index.ts": "const value = 1;\n" });
         try {
             const r = await runHook("PreToolUse", "Glob", { pattern: "*.ts", path: "src" }, {}, { cwd: repo });
             assert.notEqual(r.code, 0);
@@ -2063,8 +2070,13 @@ describe("hook — project text redirect scope", () => {
 
 describe("hook — regressions", () => {
     it("redirects cat file.ts", async () => {
-        const r = await runHook("PreToolUse", "Bash", { command: "cat file.ts" });
-        assert.notEqual(r.code, 0);
+        const repo = makeBlockingRepo("hex-hook-regression-", { "file.ts": "const value = 1;\n" });
+        try {
+            const r = await runHook("PreToolUse", "Bash", { command: "cat file.ts" }, {}, { cwd: repo });
+            assert.notEqual(r.code, 0);
+        } finally {
+            fs.rmSync(repo, { recursive: true, force: true });
+        }
     });
     it("blocks rm -rf /", async () => {
         const r = await runHook("PreToolUse", "Bash", { command: "rm -rf /" });
@@ -2083,9 +2095,14 @@ describe("hook — regressions", () => {
         assert.ok(!r.stdout.includes("Do not use ToolSearch"), "SessionStart does NOT suppress ToolSearch");
     });
     it("redirect messages include deferred hint", async () => {
-        const r = await runHook("PreToolUse", "Write", { file_path: "test.ts", content: "hello" });
-        assert.notEqual(r.code, 0, "Write is redirected");
-        assert.ok(r.stdout.includes("ToolSearch"), "Redirect includes ToolSearch hint");
+        const repo = makeBlockingRepo("hex-hook-regression-", {});
+        try {
+            const r = await runHook("PreToolUse", "Write", { file_path: "test.ts", content: "hello" }, {}, { cwd: repo });
+            assert.notEqual(r.code, 0, "Write is redirected");
+            assert.ok(r.stdout.includes("ToolSearch"), "Redirect includes ToolSearch hint");
+        } finally {
+            fs.rmSync(repo, { recursive: true, force: true });
+        }
     });
 });
 

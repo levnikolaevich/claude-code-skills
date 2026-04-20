@@ -18,7 +18,7 @@ import { withSftp, validateRemotePath } from "./ssh-client.mjs";
 import { assertSafeArg } from "./shell-escape.mjs";
 
 const DEFAULT_MAX_TRANSFER_BYTES = 128 * 1024 * 1024;
-const DEFAULT_TRANSFER_TIMEOUT_MS = 120_000;
+export const DEFAULT_TRANSFER_TIMEOUT_MS = 120_000;
 
 function untildifyLocalPath(localPath) {
     if (localPath === "~") return homedir();
@@ -147,13 +147,13 @@ function closeLocalHandle(filePath) {
     }
 }
 
-function getTransferTimeoutMs() {
+function getTransferTimeoutMs(override) {
+    if (Number.isFinite(override) && override > 0) return override;
     const parsed = Number(process.env.TRANSFER_TIMEOUT_MS);
     return Number.isFinite(parsed) && parsed > 0 ? parsed : DEFAULT_TRANSFER_TIMEOUT_MS;
 }
 
-function resettableTransferTimer(label, streams) {
-    const timeoutMs = getTransferTimeoutMs();
+function resettableTransferTimer(label, streams, timeoutMs) {
     let timer = null;
     let timeoutError = null;
     const listeners = [];
@@ -161,7 +161,7 @@ function resettableTransferTimer(label, streams) {
     const arm = () => {
         clearTimeout(timer);
         timer = setTimeout(() => {
-            timeoutError = new Error(`TRANSFER_TIMEOUT: ${label} exceeded TRANSFER_TIMEOUT_MS=${timeoutMs}`);
+            timeoutError = new Error(`TRANSFER_TIMEOUT: ${label} exceeded ${timeoutMs}ms`);
             for (const stream of streams) {
                 if (!stream || typeof stream.destroy !== "function" || stream.destroyed) continue;
                 try { stream.destroy(timeoutError); } catch { /* ignore destroy races */ }
@@ -197,8 +197,8 @@ function resettableTransferTimer(label, streams) {
     };
 }
 
-async function runTimedPipeline(label, source, destination) {
-    const timer = resettableTransferTimer(label, [source, destination]);
+async function runTimedPipeline(label, source, destination, timeoutMs) {
+    const timer = resettableTransferTimer(label, [source, destination], timeoutMs);
     try {
         await pipeline(source, destination);
     } catch (err) {
@@ -401,6 +401,7 @@ export async function uploadFile(connectionArgs, {
     verify,
     permissions,
     remotePlatform = "auto",
+    transferTimeoutMs,
 }) {
     assertSafeArg("remotePath", remotePath);
     const { platform, canonical: canonicalRemotePath } = validateRemotePath(remotePath, remotePlatform);
@@ -443,7 +444,7 @@ export async function uploadFile(connectionArgs, {
 
             try {
                 await once(writer, "open");
-                await runTimedPipeline(`upload ${canonicalLocalPath} -> ${canonicalRemotePath}`, reader, writer);
+                await runTimedPipeline(`upload ${canonicalLocalPath} -> ${canonicalRemotePath}`, reader, writer, getTransferTimeoutMs(transferTimeoutMs));
                 const handle = getHandle(writer);
                 const usedFsync = await durableRemoteFlush(sftp, handle);
                 if (handle) await sftpClose(sftp, handle);
@@ -485,6 +486,7 @@ export async function downloadFile(connectionArgs, {
     overwrite = false,
     verify,
     remotePlatform = "auto",
+    transferTimeoutMs,
 }) {
     assertSafeArg("remotePath", remotePath);
     const { canonical: canonicalRemotePath } = validateRemotePath(remotePath, remotePlatform);
@@ -518,7 +520,7 @@ export async function downloadFile(connectionArgs, {
             const reader = sftp.createReadStream(canonicalRemotePath);
             const writer = createWriteStream(stagedLocalPath);
 
-            await runTimedPipeline(`download ${canonicalRemotePath} -> ${canonicalLocalPath}`, reader, writer);
+            await runTimedPipeline(`download ${canonicalRemotePath} -> ${canonicalLocalPath}`, reader, writer, getTransferTimeoutMs(transferTimeoutMs));
         });
 
         closeLocalHandle(stagedLocalPath);

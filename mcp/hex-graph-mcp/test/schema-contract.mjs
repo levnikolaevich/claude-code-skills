@@ -1,4 +1,4 @@
-import { describe, it } from "node:test";
+import { before, after, describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -84,18 +84,28 @@ describe("schema descriptions", () => {
 });
 
 describe("output envelope validation", () => {
-    it("install_graph_providers returns a valid envelope with object evidence (no schema error)", async () => {
+    const ACTION_LINE_RE = /^(ok|partial|not_found|stale|error)\s+[a-z_]+/;
+    const VALID_STATUSES = new Set(["ok", "partial", "not_found", "stale", "error"]);
+
+    it("install_graph_providers emits text-only envelope with valid action-line", async () => {
         await withMcpClient(async (client) => {
             const result = await client.callTool({
                 name: "install_graph_providers",
                 arguments: { path: CWD, mode: "check" },
             });
             assert.notEqual(result.isError, true, `install_graph_providers must succeed: ${JSON.stringify(result).slice(0, 300)}`);
-            assert.equal(result.structuredContent.status, "OK");
+            // PR 1 invariant: no structuredContent mirror, single content[0].text.
+            assert.equal(result.structuredContent, undefined, "structuredContent must not be emitted");
+            assert.ok(Array.isArray(result.content) && result.content[0]?.type === "text", "content[0] must be text");
+            const text = result.content[0].text;
+            const firstLine = text.split("\n", 1)[0];
+            assert.match(firstLine, ACTION_LINE_RE, `first line must be a valid action-line, got: ${firstLine}`);
+            const status = firstLine.split(/\s+/, 1)[0];
+            assert.ok(VALID_STATUSES.has(status), `status must be one of ${[...VALID_STATUSES].join(",")}, got: ${status}`);
         });
     });
 
-    it("inspect_symbol with include_evidence:true returns a valid envelope", { skip: true }, async () => {
+    it("inspect_symbol with include_evidence:true emits text-only envelope", { skip: true }, async () => {
         // Requires an indexed project at CWD. Kept as skipped for CI; enable when index is available.
         await withMcpClient(async (client) => {
             const result = await client.callTool({
@@ -103,6 +113,171 @@ describe("output envelope validation", () => {
                 arguments: { path: CWD, name: "wrapResult", file: "server.mjs", include_evidence: true },
             });
             assert.notEqual(result.isError, true, `inspect_symbol(include_evidence:true) must succeed: ${JSON.stringify(result).slice(0, 300)}`);
+            assert.equal(result.structuredContent, undefined);
+            assert.match(result.content[0].text.split("\n", 1)[0], ACTION_LINE_RE);
         });
     });
 });
+
+// PR 5: grammar body assertions. Uses a tmpdir indexed project so the server
+// can resolve real symbols and emit #section/.row/>pointer lines.
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
+import { join } from "node:path";
+import { tmpdir } from "node:os";
+import { indexProject } from "../lib/indexer.mjs";
+import { closeAllStores } from "../lib/store.mjs";
+
+describe("grammar body contract", () => {
+    const ACTION_LINE_RE = /^(ok|partial|not_found|stale|error)\s+[a-z_]+/;
+    const POINTER_RE = /^>mcp__hex-graph__\w+(\s+\S+)*$/;
+
+    let corpus;
+    before(async () => {
+        corpus = mkdtempSync(join(tmpdir(), "hex-graph-grammar-"));
+        mkdirSync(join(corpus, "src"), { recursive: true });
+        writeFileSync(join(corpus, "src", "util.ts"), [
+            "export function computeTotal(value: number) {",
+            "  return value + 1;",
+            "}",
+            "",
+        ].join("\n"), "utf8");
+        writeFileSync(join(corpus, "src", "caller.ts"), [
+            "import { computeTotal } from \"./util\";",
+            "export const a = computeTotal(1);",
+            "export const b = computeTotal(2);",
+            "",
+        ].join("\n"), "utf8");
+        await indexProject(corpus);
+        closeAllStores();
+    });
+
+    after(() => {
+        try { closeAllStores(); } catch { /* best-effort */ }
+        try { rmSync(corpus, { recursive: true, force: true }); } catch { /* Windows WAL */ }
+    });
+
+    it("find_symbols emits action-line + .row entries with file:line and kind", async () => {
+        await withMcpClient(async (client) => {
+            const result = await client.callTool({
+                name: "find_symbols",
+                arguments: { query: "computeTotal", path: corpus },
+            });
+            assert.equal(result.structuredContent, undefined);
+            const text = result.content[0].text;
+            const [actionLine, ...body] = text.split("\n");
+            assert.match(actionLine, ACTION_LINE_RE);
+            assert.ok(!text.includes("\"status\":"), "no JSON body");
+            assert.ok(!/Found\s+\d+\s+/.test(text), "no prose 'Found N' header");
+            const rows = body.filter(line => line.startsWith("."));
+            assert.ok(rows.length >= 1, "at least one .row");
+            for (const row of rows) {
+                assert.match(row, /kind=\w+/, `row must have kind=: ${row}`);
+                assert.match(row, /:\d+\s/, `row must include file:line: ${row}`);
+            }
+        });
+    });
+
+    it("find_references emits #evidence + .ref rows with confidence", async () => {
+        await withMcpClient(async (client) => {
+            const result = await client.callTool({
+                name: "find_references",
+                arguments: { name: "computeTotal", file: "src/util.ts", path: corpus, limit: 10 },
+            });
+            assert.equal(result.structuredContent, undefined);
+            const text = result.content[0].text;
+            const [actionLine, ...body] = text.split("\n");
+            assert.match(actionLine, ACTION_LINE_RE);
+            const refRows = body.filter(line => line.startsWith(".ref "));
+            assert.ok(refRows.length >= 1, "at least one .ref row");
+            for (const row of refRows) {
+                assert.match(row, /conf=\w+/, `.ref must include conf=: ${row}`);
+                assert.match(row, /kind=\w+/, `.ref must include kind=: ${row}`);
+            }
+            const pointers = body.filter(line => line.startsWith(">"));
+            for (const ptr of pointers) {
+                assert.match(ptr, POINTER_RE, `pointer must be executable: ${ptr}`);
+            }
+        });
+    });
+
+    it("inspect_symbol emits #location + #refs + expansion pointers", async () => {
+        await withMcpClient(async (client) => {
+            const result = await client.callTool({
+                name: "inspect_symbol",
+                arguments: { name: "computeTotal", file: "src/util.ts", path: corpus, verbosity: "compact" },
+            });
+            assert.equal(result.structuredContent, undefined);
+            const text = result.content[0].text;
+            const [actionLine, ...body] = text.split("\n");
+            assert.match(actionLine, ACTION_LINE_RE);
+            assert.ok(body.some(line => line.startsWith("#location ")), "has #location header");
+            assert.ok(body.some(line => line.startsWith("#refs ")), "has #refs header");
+            const pointers = body.filter(line => line.startsWith(">"));
+            assert.ok(pointers.length >= 1, "inspect_symbol emits expansion pointers");
+            for (const ptr of pointers) {
+                assert.match(ptr, POINTER_RE, `pointer must be executable: ${ptr}`);
+            }
+        });
+    });
+
+    it("audit_workspace emits flat .clone_member rows (no indent tree)", async () => {
+        await withMcpClient(async (client) => {
+            const result = await client.callTool({
+                name: "audit_workspace",
+                arguments: { path: corpus },
+            });
+            assert.equal(result.structuredContent, undefined);
+            const text = result.content[0].text;
+            const [actionLine] = text.split("\n");
+            assert.match(actionLine, ACTION_LINE_RE);
+            // No indent-tree prefixes: every non-empty line starts with [#.>!?] or space-free prefix.
+            for (const line of text.split("\n")) {
+                if (!line) continue;
+                assert.ok(!line.startsWith("    "), `no indent-tree prefixes: ${line}`);
+            }
+            // Contract: clone members, when present, are flat .clone_member rows with group=... back-ref.
+            const cloneMembers = text.split("\n").filter(line => line.startsWith(".clone_member "));
+            for (const row of cloneMembers) {
+                assert.match(row, /group=g\d+/, `clone_member must carry group=: ${row}`);
+            }
+        });
+    });
+
+    it("find_symbols on unknown token returns ok with zero candidates and pointer-free body (or not_found shape)", async () => {
+        await withMcpClient(async (client) => {
+            const result = await client.callTool({
+                name: "find_symbols",
+                arguments: { query: "__definitely_missing_symbol__", path: corpus },
+            });
+            assert.equal(result.structuredContent, undefined);
+            const text = result.content[0].text;
+            const [actionLine, ...body] = text.split("\n");
+            assert.match(actionLine, ACTION_LINE_RE);
+            const rows = body.filter(line => line.startsWith("."));
+            assert.equal(rows.length, 0, "no .rows for unknown query");
+        });
+    });
+
+    it("no payload carries legacy derivable or prose fields", async () => {
+        await withMcpClient(async (client) => {
+            const calls = [
+                { name: "find_symbols", arguments: { query: "computeTotal", path: corpus } },
+                { name: "find_references", arguments: { name: "computeTotal", file: "src/util.ts", path: corpus } },
+                { name: "inspect_symbol", arguments: { name: "computeTotal", file: "src/util.ts", path: corpus } },
+                { name: "audit_workspace", arguments: { path: corpus } },
+            ];
+            for (const call of calls) {
+                const result = await client.callTool(call);
+                const text = result.content[0]?.text ?? "";
+                assert.ok(!text.includes("available_expansions"), `${call.name}: available_expansions leaked`);
+                assert.ok(!text.includes("suggested_params"), `${call.name}: suggested_params leaked`);
+                assert.ok(!text.includes("analyzed_rows"), `${call.name}: analyzed_rows leaked`);
+                assert.ok(!text.includes("strongest_tier"), `${call.name}: strongest_tier leaked`);
+                assert.ok(!text.includes("coverage_ratio"), `${call.name}: coverage_ratio leaked`);
+                assert.ok(!/\"payload_sections\"/.test(text), `${call.name}: payload_sections leaked`);
+                assert.ok(!/\"boundary_echo_stripped\"/.test(text), `${call.name}: boundary_echo_stripped leaked`);
+            }
+        });
+    });
+});
+

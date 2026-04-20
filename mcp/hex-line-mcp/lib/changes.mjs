@@ -8,9 +8,7 @@ import { semanticGitDiff } from "@levnikolaevich/hex-common/git/semantic-diff";
 import { getGraphDB, getGraphDBForProject, getRelativePath, semanticImpact, graphUnavailableHint, graphUnavailableHintForProject } from "./graph-enrich.mjs";
 import { ACTION, REASON } from "./output-contract.mjs";
 
-function payloadSections(sections) {
-    return sections.length > 0 ? sections.join(",") : "summary_only";
-}
+// payloadSections helper removed per PROTOCOL.md §Response grammar (no payload_sections emission).
 
 function exportedLooking(symbol) {
     return /^\s*(export|public)\b/.test(symbol.text || "");
@@ -110,9 +108,7 @@ export async function fileChanges(filePath, compareAgainst = "HEAD") {
         }
         if (emittedRiskCount > 0) sectionKinds.push("risk_summary");
         if (emittedRemovedApiWarnings > 0) sectionKinds.push("removed_api_warning");
-        const spliceLines = [];
-        if (sectionKinds.length > 0) spliceLines.push(`payload_sections: ${payloadSections(sectionKinds)}`);
-        sections.splice(7 + graphHint.length, 0, ...spliceLines);
+        // payload_sections debug marker removed per PROTOCOL.md §Response grammar.
         return sections.join("\n");
     }
 
@@ -190,10 +186,7 @@ export async function fileChanges(filePath, compareAgainst = "HEAD") {
     }
     if (riskLines.length > 0) sectionKinds.push("risk_summary");
     if (removedApiWarnings.length > 0) sectionKinds.push("removed_api_warning");
-    if (sectionKinds.length > 0) {
-        const insertIdx = 6 + graphHint.length;
-        parts.splice(insertIdx, 0, `payload_sections: ${payloadSections(sectionKinds)}`);
-    }
+    // payload_sections debug marker removed per PROTOCOL.md §Response grammar.
     if (riskLines.length || removedApiWarnings.length) {
         parts.push("");
         parts.push("risk_summary:");

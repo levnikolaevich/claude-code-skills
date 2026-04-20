@@ -65,18 +65,35 @@ All symbol/query tools also require `path` as the project anchor. Pass the index
 
 `find_symbols` is also intentionally compact for overloaded names. The default detailed slice is `8`; when more candidates exist, the response reports `candidate_count`, `shown_count`, `truncated`, `overflow_groups`, and stronger `disambiguation_hints` so the next call narrows with `path`, `name + file`, or `workspace_qualified_name`.
 
-Heavy tools now default to `verbosity: "compact"` and summary-first output. They return counts, previews, `available_expansions`, `expansion_hints`, `resolution_quality`, and `provenance_summary` first, so the client sees upfront how much a deeper expansion will return and which layer the current answer comes from. Use `expand`, `expand_limit`, `limit`, `depth`, `max_hops`, `kind`, and `min_confidence` to request a bounded deeper slice instead of dumping the whole graph in one call.
+Heavy tools default to `verbosity: "compact"` and summary-first output. They return counts, previews, `expansion_hints`, `resolution_quality`, and `provenance_summary` first, so the client sees upfront how much a deeper expansion will return and which layer the current answer comes from. Use `expand`, `expand_limit`, `limit`, `depth`, `max_hops`, `kind`, and `min_confidence` to request a bounded deeper slice instead of dumping the whole graph in one call.
 
-All public responses now use the same top-level shape:
+All responses use the text-only grammar defined in [`PROTOCOL.md`](PROTOCOL.md). The MCP envelope carries a single `content[0].text` string; there is **no** `structuredContent` mirror and **no** `outputSchema` declaration. Line 1 is the action-line:
 
-- `status`
-- `query`
-- `summary`
-- `reason`
-- `result`
-- `quality` when language/framework support matters
-- `warnings`
-- `next_actions`
+    <status> <next_action> [key=val ...]
+
+Body lines use single-char prefixes:
+
+- `#section-name kv=v kv=v` — section header (e.g. `#evidence tier_1=5 tier_2=3`, `#location src/a.ts:42-58 exported=1 kind=function`, `#refs total=8`, `#flow in=2 out=3`, `#summary unused=2 hotspots=1 clone_groups=3`).
+- `.name file:line kv=v` — primary entry (symbol, ref, impl, clone member). Path rows use `.A->B->C file:line depth=N`.
+- `>mcp__hex-graph__<tool> k=v ...` — executable follow-up pointer. Paste the literal string into the next tool call.
+- `!code=... !message=... !reason=... !warning=...` — error and advisory details.
+- `?hint=...` — verbosity=full only.
+
+Example `find_references` response:
+
+    ok keep_using total=8 conf=exact
+    #evidence precise_provider=5 parser_or_workspace=3
+    .ref src/a.ts:42 kind=calls conf=exact origin=typescript
+    .ref src/b.ts:18 kind=calls conf=medium origin=parser
+    >mcp__hex-graph__find_references expand=references expand_limit=10
+
+Example `audit_workspace` (clone members are flat rows, not an indent tree):
+
+    ok review_duplicates path=/tmp/project
+    #summary unused=2 hotspots=1 clone_groups=1
+    .clone_group id=g1 type=normalized members=3 impact=medium
+    .clone_member group=g1 file=src/foo.ts lines=42-58 name=foo callers=3
+    .clone_member group=g1 file=src/bar.ts lines=70-86 name=bar callers=1
 
 `next_action` / `next_actions` use short canonical labels, not English sentences. Typical values:
 
@@ -114,11 +131,11 @@ Errors use a compact top-level shape:
 | Tool | Best for | Key result sections |
 |------|----------|---------------------|
 | `find_symbols` | Discovery before you know the exact identity | `candidates`, `candidate_count`, `shown_count`, `truncated`, `overflow_groups`, `disambiguation_hints` |
-| `inspect_symbol` | One-stop symbol briefing | `symbol`, `resolution`, `context`, `counts`, `references_summary`, `implementations_summary`, `available_expansions`, optional `expanded` |
-| `find_references` | All semantic usages of one symbol | `total`, `total_by_kind`, `preview`, `available_expansions`, optional `expanded`, inline `quality` |
-| `find_implementations` | Override / implementation search | `total`, `preview`, `available_expansions`, optional `expanded` |
-| `trace_paths` | Blast radius and dependency paths from a concrete symbol | `path_count`, `path_previews`, `available_expansions`, optional `expanded`, inline `quality` |
-| `trace_dataflow` | Source-to-sink propagation | `source`, `sink`, `path_count`, `path_previews`, `available_expansions`, optional `expanded` |
+| `inspect_symbol` | One-stop symbol briefing | `#location`, `#refs`, `#flow`, `.ref` rows, `>expansion` pointers |
+| `find_references` | All semantic usages of one symbol | `#evidence`, `.ref` rows, `>mcp__hex-graph__find_references` pointer, inline `quality` |
+| `find_implementations` | Override / implementation search | `#evidence`, `.impl` rows, `>mcp__hex-graph__find_implementations` pointer |
+| `trace_paths` | Blast radius and dependency paths from a concrete symbol | `.A->B->C` path rows, `#provenance`, `>mcp__hex-graph__trace_paths` pointer, inline `quality` |
+| `trace_dataflow` | Source-to-sink propagation | `.A->B->C kind=...` rows, `#provenance`, `>mcp__hex-graph__trace_dataflow` pointer |
 
 ### Review and Editing
 
@@ -239,7 +256,7 @@ Inline `quality` metadata is currently surfaced by:
 ### Generated Snapshot
 
 - MCP tools registered in server contract: `14`
-- Semantic suite: `95/95` passing
+- Semantic suite: `101/101` passing
 - Corpora: `1` curated, `1` pinned external
 - Lanes: parser-first `green`, precise overlay `provider_conditional`
 

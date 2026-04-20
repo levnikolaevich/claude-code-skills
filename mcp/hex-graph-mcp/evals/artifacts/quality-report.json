@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-04-15",
+  "generated_at": "2026-04-21",
   "summary": {
     "semantic_suite": {
       "runner": "node --test test/*.mjs",
-      "passed": 95,
+      "passed": 101,
       "failed": 0,
       "status": "pass"
     },

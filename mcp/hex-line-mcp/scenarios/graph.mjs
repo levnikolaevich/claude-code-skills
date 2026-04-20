@@ -76,7 +76,7 @@ export async function runGraph(config) {
                 .replace(/\nsemantic_impact_count:.*$/m, "\nsemantic_impact_count: 0")
                 .replace(/\nsemantic_fact_count:.*$/m, "\nsemantic_fact_count: 0")
                 .replace(/\nclone_warning_count:.*$/m, "\nclone_warning_count: 0")
-                .replace(/\n\n⚠ Semantic impact:\n[\s\S]*$/m, "");
+                .replace(/\n\n#semantic_impact\n[\s\S]*$/m, "");
             graphRows.push(`| 17 | Graph: Edit + semantic impact | ${fmt(noBlastOut.length)} chars | ${fmt(editResult.length)} chars | ${formatOverhead(noBlastOut.length, editResult.length)} | 2 | 1 |`);
         } catch {
             graphRows.push(`| 17 | Graph: Edit + semantic impact | \u2014 | \u2014 | \u2014 | | |`);

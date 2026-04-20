@@ -54,12 +54,12 @@ describe("use-case wrappers", () => {
             assert.ok(inspect.result.references_summary.total >= 1);
             assert.ok(inspect.result.counts.references >= 1);
             assert.ok(Array.isArray(inspect.result.references_summary.preview));
-            assert.ok(Array.isArray(inspect.result.available_expansions));
+            assert.ok(Array.isArray(inspect.result.expansion_hints));
+            assert.ok(inspect.result.expansion_hints.every(hint => typeof hint.pointer === "string" && hint.pointer.startsWith(">mcp__hex-graph__")));
             assert.equal(inspect.result.resolution.ownership.file, "src/util.ts");
             assert.equal(inspect.result.resolution.resolution_quality.selector_specificity, "exact_id");
-            assert.ok(inspect.result.provenance_summary.total_rows >= 1);
+            assert.ok(Array.isArray(inspect.result.provenance_summary.tiers));
             assert.equal("siblings" in inspect.result.context, false);
-            assert.ok(inspect.summary.includes("reference"));
             assert.ok(inspect.next_actions.includes("find_references"));
             assert.ok(inspect.next_actions.includes("trace_paths"));
         } finally {
@@ -307,7 +307,7 @@ describe("use-case wrappers", () => {
             assert.ok(Array.isArray(references.result.preview));
             assert.ok(Array.isArray(references.result.expanded.references));
             assert.ok(references.result.expanded.references.length <= 2);
-            assert.ok(references.result.provenance_summary.analyzed_rows >= 1);
+            assert.ok(Array.isArray(references.result.provenance_summary.tiers));
 
             const implementations = runFindImplementationsUseCase(
                 { symbol_id: symbol.symbol_id },
@@ -315,7 +315,7 @@ describe("use-case wrappers", () => {
             );
             assert.ok(Array.isArray(implementations.result.preview));
             assert.ok(Array.isArray(implementations.result.expansion_hints));
-            assert.ok(implementations.result.provenance_summary.total_rows >= 0);
+            assert.ok(Array.isArray(implementations.result.provenance_summary.tiers));
         } finally {
             resolveStore(dir)?.close();
             rmSync(dir, { recursive: true, force: true });
@@ -354,7 +354,7 @@ describe("use-case wrappers", () => {
             assert.ok(Array.isArray(trace.result.path_previews));
             assert.ok(Array.isArray(trace.result.expanded.paths));
             assert.ok(trace.result.expanded.paths.length <= 2);
-            assert.ok(trace.result.provenance_summary.analyzed_rows >= 1);
+            assert.ok(Array.isArray(trace.result.provenance_summary.tiers));
 
             const dataflow = runTraceDataflowUseCase({
                 source: {

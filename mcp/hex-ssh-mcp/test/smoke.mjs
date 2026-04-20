@@ -863,3 +863,78 @@ describe("sftp transfers", () => {
         }
     });
 });
+
+// ==================== Per-call timeouts ====================
+
+describe("per-call timeouts", () => {
+    const _tmKeyDir = mkdtempSync(join(tmpdir(), "hex-ssh-tm-key-"));
+    const TM_KEY = join(_tmKeyDir, "id_fake");
+    writeFileSync(TM_KEY, "-----BEGIN OPENSSH PRIVATE KEY-----\nfake\n-----END OPENSSH PRIVATE KEY-----\n");
+
+    it("exports DEFAULT_* timeout constants", async () => {
+        const ssh = await import("../lib/ssh-client.mjs");
+        assert.equal(ssh.DEFAULT_CONNECT_TIMEOUT_MS, 20_000);
+        assert.equal(ssh.DEFAULT_KEEPALIVE_INTERVAL_MS, 30_000);
+        assert.equal(ssh.DEFAULT_EXEC_TIMEOUT_MS, 120_000);
+        const transfer = await import("../lib/transfer.mjs");
+        assert.equal(transfer.DEFAULT_TRANSFER_TIMEOUT_MS, 120_000);
+    });
+
+    it("executeCommand rejects with EXEC_TIMEOUT when execTimeoutMs elapses", async () => {
+        const { _setClientFactory, closeAllConnections, executeCommand } = await import("../lib/ssh-client.mjs");
+        _setClientFactory(() => {
+            const handlers = new Map();
+            return {
+                _sock: { writable: false },
+                on(event, cb) { handlers.set(event, cb); return this; },
+                connect() { this._sock.writable = true; defer(() => handlers.get("ready")?.()); },
+                end() { this._sock.writable = false; },
+                exec(_command, callback) {
+                    // Stream that never emits "close" on its own — forces exec timeout to fire.
+                    const stream = new EventEmitter();
+                    stream.stderr = new EventEmitter();
+                    stream.close = () => { /* real ssh2 close() is async; no-op here lets the exec timeout reject cleanly */ };
+                    defer(() => callback(null, stream));
+                },
+            };
+        });
+        try {
+            await assert.rejects(
+                () => executeCommand({
+                    host: "example.com", user: "deploy", port: 22,
+                    identityFiles: [TM_KEY],
+                    command: "sleep 5",
+                    execTimeoutMs: 25,
+                }),
+                /EXEC_TIMEOUT: command exceeded 25ms limit/
+            );
+        } finally {
+            closeAllConnections();
+        }
+    });
+
+    it("downloadFile honors per-call transferTimeoutMs overriding env default", async () => {
+        const { rmSync } = await import("node:fs");
+        const { downloadFile } = await import("../lib/transfer.mjs");
+        const { _setClientFactory, closeAllConnections } = await import("../lib/ssh-client.mjs");
+
+        const tmpDir = mkdtempSync(join(tmpdir(), "hex-ssh-percall-"));
+        const localPath = join(tmpDir, "timeout.bin");
+        const remoteFiles = new Map([["/srv/timeout.bin", Buffer.from("payload", "utf8")]]);
+        process.env.TRANSFER_TIMEOUT_MS = "10000";
+        _setClientFactory(() => makeFakeClient(remoteFiles, [], { readDelayMs: 80 }));
+        try {
+            await assert.rejects(
+                () => downloadFile(
+                    { host: "example.com", user: "deploy", port: 22, identityFiles: [TM_KEY] },
+                    { remotePath: "/srv/timeout.bin", localPath, transferTimeoutMs: 20 }
+                ),
+                /TRANSFER_TIMEOUT: .* exceeded 20ms/
+            );
+        } finally {
+            delete process.env.TRANSFER_TIMEOUT_MS;
+            closeAllConnections();
+            rmSync(tmpDir, { recursive: true, force: true });
+        }
+    });
+});

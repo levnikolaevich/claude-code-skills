@@ -538,28 +538,167 @@ describe("edit business logic", () => {
         }
     });
 
-    it("replace_between auto-strips tail boundary echo (duplicate closing brace)", async () => {
+    it("replace_between preserves lone-delimiter tail echo and emits boundary_echo_skipped warning", async () => {
         const { editFile } = await import("../lib/edit.mjs");
         const { fnv1a, lineTag } = await import("@levnikolaevich/hex-common/text-protocol/hash");
-        const tmp = TMP("hex-test-echo-tail.js");
-        const content = "if (x) {\n    doSomething();\n}\n";
+        const tmp = TMP("hex-test-echo-tail-delim.js");
+        const content = "class C {\n    m() {\n        a();\n    }\n}\n";
         fs.writeFileSync(tmp, content);
         try {
             const lines = content.split("\n");
-            // LLM picks doSomething() as end anchor instead of }
-            const startTag = lineTag(fnv1a(lines[0]));
-            const endTag = lineTag(fnv1a(lines[1]));
+            const startTag = lineTag(fnv1a(lines[1]));
+            const endTag = lineTag(fnv1a(lines[3]));
             const result = editFile(tmp, [{
                 replace_between: {
-                    start_anchor: `${startTag}.1`,
-                    end_anchor: `${endTag}.2`,
-                    new_text: "if (x) {\n    doOther();\n}",
+                    start_anchor: `${startTag}.2`,
+                    end_anchor: `${endTag}.4`,
+                    new_text: "    m() {\n        other();\n    }",
                     boundary_mode: "inclusive",
                 }
             }]);
-            assert.ok(result.includes("boundary_echo_stripped"), "Reports boundary echo correction");
             const written = fs.readFileSync(tmp, "utf-8");
-            assert.strictEqual(written, "if (x) {\n    doOther();\n}\n", "Exactly one closing brace");
+            assert.ok(written.includes("other();"), "New body written");
+            const closingBraces = (written.match(/^\}$/gm) || []).length;
+            assert.strictEqual(closingBraces, 1, "Class closing `}` preserved — still one top-level closing brace");
+            assert.ok(result.includes("boundary_echo_skipped") || result.includes("warnings:"), "boundary_echo_skipped warning surfaced");
+        } finally {
+            fs.unlinkSync(tmp);
+        }
+    });
+
+    it("replace_between still strips content-bearing tail echo (non-delimiter)", async () => {
+        const { editFile } = await import("../lib/edit.mjs");
+        const { fnv1a, lineTag } = await import("@levnikolaevich/hex-common/text-protocol/hash");
+        const tmp = TMP("hex-test-echo-tail-content.js");
+        const content = "function f() {\n    const x = 1;\n    console.log('done');\n    return x;\n}\n";
+        fs.writeFileSync(tmp, content);
+        try {
+            const lines = content.split("\n");
+            const startTag = lineTag(fnv1a(lines[1]));
+            const endTag = lineTag(fnv1a(lines[2]));
+            const result = editFile(tmp, [{
+                replace_between: {
+                    start_anchor: `${startTag}.2`,
+                    end_anchor: `${endTag}.3`,
+                    new_text: "    const x = 2;\n    console.log('done');",
+                    boundary_mode: "inclusive",
+                }
+            }]);
+            const written = fs.readFileSync(tmp, "utf-8");
+            const echoCount = (written.match(/console\.log\('done'\);/g) || []).length;
+            assert.strictEqual(echoCount, 1, "Content-bearing echo still auto-stripped");
+            assert.ok(result.includes("status: OK"), "OK status");
+        } finally {
+            fs.unlinkSync(tmp);
+        }
+    });
+
+    it("replace_between emits lone_delimiter_anchors warning when both anchors are bare `}` and no checksum", async () => {
+        const { editFile } = await import("../lib/edit.mjs");
+        const { fnv1a, lineTag } = await import("@levnikolaevich/hex-common/text-protocol/hash");
+        const tmp = TMP("hex-test-lone-delim-anchors.js");
+        const content = "class C {\n    m() {\n        a();\n    }\n}\n";
+        fs.writeFileSync(tmp, content);
+        try {
+            const lines = content.split("\n");
+            const startTag = lineTag(fnv1a(lines[3]));
+            const endTag = lineTag(fnv1a(lines[4]));
+            const result = editFile(tmp, [{
+                replace_between: {
+                    start_anchor: `${startTag}.4`,
+                    end_anchor: `${endTag}.5`,
+                    new_text: "    // changed\n    }\n}",
+                    boundary_mode: "inclusive",
+                }
+            }]);
+            assert.ok(result.includes("lone_delimiter_anchors"), "lone_delimiter_anchors warning in response");
+            assert.ok(result.includes("next_action: reread_range"), "next_action = reread_range");
+        } finally {
+            fs.unlinkSync(tmp);
+        }
+    });
+
+    it("replace_between under strict returns CONFLICT for lone-delim anchors without checksum", async () => {
+        const { editFile } = await import("../lib/edit.mjs");
+        const { fnv1a, lineTag } = await import("@levnikolaevich/hex-common/text-protocol/hash");
+        const tmp = TMP("hex-test-lone-delim-strict.js");
+        const content = "class C {\n    m() {\n        a();\n    }\n}\n";
+        fs.writeFileSync(tmp, content);
+        const before = fs.readFileSync(tmp, "utf-8");
+        try {
+            const lines = content.split("\n");
+            const startTag = lineTag(fnv1a(lines[3]));
+            const endTag = lineTag(fnv1a(lines[4]));
+            let conflict = null;
+            try {
+                editFile(tmp, [{
+                    replace_between: {
+                        start_anchor: `${startTag}.4`,
+                        end_anchor: `${endTag}.5`,
+                        new_text: "    }\n}",
+                        boundary_mode: "inclusive",
+                    }
+                }], { conflictPolicy: "strict" });
+            } catch (e) {
+                conflict = e.message;
+            }
+            assert.ok(conflict && conflict.includes("lone_delimiter_anchors"), "Strict mode raises lone_delimiter_anchors conflict");
+            const after = fs.readFileSync(tmp, "utf-8");
+            assert.strictEqual(after, before, "File unchanged under strict CONFLICT");
+        } finally {
+            fs.unlinkSync(tmp);
+        }
+    });
+
+    it("replace_between with valid range_checksum accepts the edit", async () => {
+        const { editFile } = await import("../lib/edit.mjs");
+        const { fnv1a, lineTag } = await import("@levnikolaevich/hex-common/text-protocol/hash");
+        const { readSnapshot, buildRangeChecksum } = await import("../lib/snapshot.mjs");
+        const tmp = TMP("hex-test-rb-checksum-valid.js");
+        const content = "class C {\n    m() {\n        a();\n    }\n}\n";
+        fs.writeFileSync(tmp, content);
+        try {
+            const lines = content.split("\n");
+            const startTag = lineTag(fnv1a(lines[3]));
+            const endTag = lineTag(fnv1a(lines[4]));
+            const snap = readSnapshot(tmp);
+            const checksum = buildRangeChecksum(snap, 4, 5);
+            const result = editFile(tmp, [{
+                replace_between: {
+                    start_anchor: `${startTag}.4`,
+                    end_anchor: `${endTag}.5`,
+                    new_text: "    // updated\n    }\n}",
+                    boundary_mode: "inclusive",
+                    range_checksum: checksum,
+                }
+            }]);
+            assert.ok(result.includes("status: OK"), "Valid checksum accepted");
+            assert.ok(!result.includes("lone_delimiter_anchors"), "No lone_delimiter_anchors warning when checksum provided");
+        } finally {
+            fs.unlinkSync(tmp);
+        }
+    });
+
+    it("replace_between with stale range_checksum returns CONFLICT (conservative)", async () => {
+        const { editFile } = await import("../lib/edit.mjs");
+        const { fnv1a, lineTag } = await import("@levnikolaevich/hex-common/text-protocol/hash");
+        const tmp = TMP("hex-test-rb-checksum-stale.js");
+        const content = "class C {\n    m() {\n        a();\n    }\n}\n";
+        fs.writeFileSync(tmp, content);
+        try {
+            const lines = content.split("\n");
+            const startTag = lineTag(fnv1a(lines[3]));
+            const endTag = lineTag(fnv1a(lines[4]));
+            const result = editFile(tmp, [{
+                replace_between: {
+                    start_anchor: `${startTag}.4`,
+                    end_anchor: `${endTag}.5`,
+                    new_text: "    }\n}",
+                    boundary_mode: "inclusive",
+                    range_checksum: "4-5:deadbeef",
+                }
+            }]);
+            assert.ok(result.includes("status: CONFLICT") || result.includes("stale_checksum"), "Stale checksum produces CONFLICT");
         } finally {
             fs.unlinkSync(tmp);
         }
@@ -584,7 +723,7 @@ describe("edit business logic", () => {
                     boundary_mode: "inclusive",
                 }
             }]);
-            assert.ok(!result.includes("boundary_echo_stripped"), "No false strip on empty lines");
+            assert.equal(result.includes("boundary_echo_stripped"), false, "boundary_echo_stripped marker removed per Response grammar cleanup");
             const written = fs.readFileSync(tmp, "utf-8");
             assert.ok(written.includes("\n\n"), "Empty lines preserved");
         } finally {
@@ -687,17 +826,17 @@ describe("edit business logic", () => {
 
             const statusIdx = result.indexOf("status:");
             const revisionIdx = result.indexOf("revision:");
-            const updatedIdx = result.indexOf("Updated ");
+            const summaryIdx = result.indexOf("summary:");
             const postEditIdx = result.indexOf("block: post_edit");
             const checksumIdx = result.indexOf("checksum:", postEditIdx);
-            const diffIdx = result.indexOf("Diff:");
+            // Diff block removed per Response grammar cleanup; raw diff is opt-in via `changes` mode=raw_diff.
 
             assert.ok(statusIdx === 0, "Result starts with status");
             assert.ok(revisionIdx > statusIdx, "Revision follows status");
-            assert.ok(updatedIdx > revisionIdx, "Update summary follows revision");
-            assert.ok(postEditIdx > updatedIdx, "Post-edit block follows update summary");
+            assert.ok(summaryIdx > revisionIdx, "Summary follows revision");
+            assert.ok(postEditIdx > summaryIdx, "Post-edit block follows summary");
             assert.ok(checksumIdx > postEditIdx, "Post-edit block has checksum");
-            assert.ok(diffIdx > postEditIdx, "Diff is emitted last");
+            // Diff assertion removed: Response grammar dropped the inline Diff block.
         } finally {
             fs.unlinkSync(tmp);
         }
@@ -802,7 +941,7 @@ describe("inspect_path", () => {
         assert.ok(flat.includes("lib/"), "Pattern: trailing slash for dirs");
 
         const tree = inspectPath(CWD + "/lib", { max_depth: 1 });
-        assert.ok(tree.startsWith("Directory:"), "Tree: hierarchy header");
+        assert.ok(tree.startsWith("dir="), "Tree: kv header");
     });
 
     it("returns descriptive no-match message", async () => {
@@ -844,8 +983,8 @@ describe("inspect_path", () => {
     it("returns file metadata for regular files", async () => {
         const { inspectPath } = await import("../lib/inspect-path.mjs");
         const result = inspectPath(CWD + "/package.json");
-        assert.ok(result.includes("Size:"), "file metadata includes size");
-        assert.ok(result.includes("Type:"), "file metadata includes type");
+        assert.ok(result.includes("size="), "file metadata includes size");
+        assert.ok(result.includes("type="), "file metadata includes type");
     });
 
     it("respects path-based .gitignore rules", async () => {
@@ -876,7 +1015,7 @@ describe("read_file output", () => {
         fs.writeFileSync(tmp, "const x = 1;\n");
         try {
             const result = readFile(tmp);
-            assert.match(result, /^File: .+/m, "Read includes file header");
+            // File: header removed per Response grammar cleanup — path is in input.
             assert.match(result, /^meta: .+/m, "Read includes compact metadata");
             assert.match(result, /revision: \S+/, "Read includes revision");
             assert.match(result, /file: 1-\d+:[0-9a-f]{8}/, "Read includes file checksum");
@@ -1004,14 +1143,14 @@ describe("graph enrichment", () => {
                 { set_line: { anchor, new_text: "export function foo() {" } },
                 { set_line: { anchor: `${lineTag(fnv1a("  return 1;"))}.2`, new_text: "  return 2;" } },
             ]);
-            assert.ok(editResult.includes("Semantic impact:"), "Edit reports semantic impact");
+            assert.ok(editResult.includes("#semantic_impact"), "Edit reports semantic impact");
             assert.ok(editResult.includes("external callers"), "Semantic impact includes caller totals");
-            assert.ok(editResult.includes("return_flow_to_symbol: run (b.mjs:2)"), "Semantic impact names concrete downstream fact");
+            assert.ok(editResult.includes(".return_flow_to_symbol: run (b.mjs:2)"), "Semantic impact names concrete downstream fact");
             assert.equal(editResult.includes("graph_enrichment: available"), false, "available state no longer emitted; presence of Semantic impact block proves availability");
             assert.equal(editResult.includes("semantic_impact_count:"), false, "semantic_impact_count dropped (count = entries in block)");
             assert.equal(editResult.includes("semantic_fact_count:"), false, "semantic_fact_count dropped (count = sub-bullets in block)");
             assert.equal(editResult.includes("clone_warning_count:"), false, "clone_warning_count dropped (count = entries in clone list)");
-            assert.ok(editResult.includes("payload_sections:"), "Edit exposes payload section preview");
+            assert.equal(editResult.includes("payload_sections:"), false, "payload_sections debug marker removed per Response grammar cleanup");
             assert.equal(editResult.includes("provenance_summary:"), false, "provenance_summary field is no longer emitted");
             assert.equal(editResult.includes("graph_fresh: stale"), false, "fresh index + edit: no stale flag (fix for v1.23.0 false-positive)");
         } finally {
@@ -1352,10 +1491,10 @@ describe("grep_search output modes", () => {
             assert.ok(csMatch, "read should produce a checksum");
             const verifyResult = verifyChecksums(tmp, [csMatch[1]]);
             assert.ok(verifyResult.includes("status: OK"), `verify should report OK: ${verifyResult}`);
-            assert.ok(verifyResult.includes("reason: checksums_current"), "Verify should report canonical reason");
-            assert.ok(verifyResult.includes("status: VALID"), "Summary should classify the checksum set");
+            // reason: omitted — derivable 1:1 from status.
+            assert.ok(verifyResult.match(/entry: \d+\/\d+ VALID/), "Summary should classify the checksum set");
             assert.ok(verifyResult.includes("next_action: keep_using"), "Verify should report canonical next action");
-            assert.ok(verifyResult.includes("entry: 1/1 | status: VALID | span: 1-2"), "Valid checksum entry should be listed canonically");
+            assert.ok(verifyResult.includes("entry: 1/1 VALID span: 1-2"), "Valid checksum entry should be listed canonically (space-separated per Response grammar)");
         } finally {
             fs.unlinkSync(tmp);
         }
@@ -1373,12 +1512,12 @@ describe("grep_search output modes", () => {
             fs.writeFileSync(tmp, "one\ntwo changed\nthree\n");
             const verifyResult = verifyChecksums(tmp, [checksum], { baseRevision });
             assert.ok(verifyResult.includes("status: STALE"), `verify should report stale: ${verifyResult}`);
-            assert.ok(verifyResult.includes("reason: checksums_stale"), "Verify should report canonical stale reason");
+            // reason: omitted — derivable 1:1 from status.
             assert.ok(verifyResult.includes(`base_revision: ${baseRevision}`), "Base revision should be echoed");
             assert.ok(verifyResult.includes("changed_ranges:"), "Changed ranges should be reported");
             assert.ok(verifyResult.includes("next_action: reread_ranges"), "Verify should report reread next action");
             assert.ok(verifyResult.includes('suggested_read_call: {"tool":"mcp__hex-line__read_file"'), "Verify should suggest reread call");
-            assert.ok(verifyResult.includes("entry: 1/1 | status: STALE | span: 1-2"), "Stale checksum entry should be listed canonically");
+            assert.ok(verifyResult.includes("entry: 1/1 STALE span: 1-2"), "Stale checksum entry should be listed canonically (space-separated per Response grammar)");
         } finally {
             fs.unlinkSync(tmp);
         }
@@ -1394,12 +1533,12 @@ describe("grep_search output modes", () => {
             const validChecksum = readResult.match(/checksum: (\d+-\d+:[0-9a-f]{8})/)[1];
             const verifyResult = verifyChecksums(tmp, [validChecksum, "99-120:deadbeef", "bad-checksum"]);
             assert.ok(verifyResult.includes("status: INVALID"), `mixed set should report INVALID: ${verifyResult}`);
-            assert.ok(verifyResult.includes("reason: checksums_invalid"), "Mixed invalid set should report canonical reason");
-            assert.ok(verifyResult.includes("summary: valid=1 stale=0 invalid=2"), "Summary should classify mixed set");
+            // reason: omitted — derivable 1:1 from status.
+            assert.ok(verifyResult.includes("summary: valid=1 invalid=2"), "Summary should classify mixed set (zero stale dropped)");
             assert.ok(verifyResult.includes("next_action: fix_inputs"), "Mixed invalid set should report fix_inputs");
-            assert.ok(verifyResult.includes("entry: 1/3 | status: VALID | span: 1-2"), "Valid entry should remain visible");
-            assert.ok(verifyResult.includes("entry: 2/3 | status: INVALID | span: 99-120"), "Out-of-range checksum should be classified");
-            assert.ok(verifyResult.includes("entry: 3/3 | status: INVALID | checksum: bad-checksum"), "Malformed checksum should be classified");
+            assert.ok(verifyResult.includes("entry: 1/3 VALID span: 1-2"), "Valid entry should remain visible (space-separated per Response grammar)");
+            assert.ok(verifyResult.includes("entry: 2/3 INVALID span: 99-120"), "Out-of-range checksum should be classified (space-separated per Response grammar)");
+            assert.ok(verifyResult.includes("entry: 3/3 INVALID checksum: bad-checksum"), "Malformed checksum should be classified (space-separated per Response grammar)");
         } finally {
             fs.unlinkSync(tmp);
         }
@@ -2345,7 +2484,7 @@ describe("protocol: read_file blocks", () => {
         try {
             const result = readFile(tmp, { ranges: ["1-2"] });
             assert.ok(result.includes("eol: crlf"), "Top-level read output reports EOL");
-            assert.ok(result.includes("trailing_newline: true"), "Top-level read output reports trailing newline");
+            assert.ok(!result.includes("trailing_newline:"), "Default trailing_newline=true is omitted (agents assume default)");
             assert.ok(result.includes("block: read_range"), "Read block is still emitted");
         } finally {
             fs.unlinkSync(tmp);
@@ -2506,7 +2645,7 @@ describe("protocol: edit_file output", () => {
                 });
                 const summaryText = textOf(summaryResult);
                 assert.ok(summaryText.includes("summary:"), "default grep_search returns summary output");
-                assert.ok(summaryText.includes("snippets:"), "summary output includes snippets");
+                assert.equal(summaryText.includes("snippets:"), false, "snippets prose removed per Response grammar; escalate to output_mode=content for hunks");
                 assert.ok(!summaryText.includes("block: search_hunk"), "summary output omits canonical hunks");
 
                 const contentResult = await client.callTool({
@@ -2580,7 +2719,7 @@ describe("protocol: edit_file output", () => {
             assert.ok(anchor, "Got anchor from read");
             const result = editFile(tmp, [{ set_line: { anchor, new_text: "SECOND" } }]);
             assert.ok(result.includes("summary: lines_changed="), "Success output includes structured line summary");
-            assert.ok(result.includes("payload_sections:"), "Success output includes payload section preview");
+            assert.equal(result.includes("payload_sections:"), false, "payload_sections debug marker removed per Response grammar cleanup");
             assert.equal(result.includes("provenance_summary:"), false, "provenance_summary field is no longer emitted");
             assert.ok(result.includes("block: post_edit"), "Post-edit uses block protocol");
             assert.ok(result.includes("checksum:"), "Post-edit has checksum");
@@ -2675,7 +2814,7 @@ describe("E2E: workflow round-trips", () => {
             // Verify post-edit checksum
             const verifyResult = verifyChecksums(tmp, [postChecksum]);
             assert.ok(verifyResult.includes("status: OK"), "Verify confirms post-edit checksum is valid");
-            assert.ok(verifyResult.includes("status: VALID"), "One valid checksum");
+            assert.ok(verifyResult.match(/entry: \d+\/\d+ VALID/), "One valid checksum");
         } finally {
             fs.unlinkSync(tmp);
         }
@@ -2700,7 +2839,7 @@ describe("E2E: workflow round-trips", () => {
             // Extract post-edit checksum and verify
             const postChecksum = editResult.match(/checksum: (\S+)/)?.[1];
             const verifyResult = verifyChecksums(tmp, [postChecksum]);
-            assert.ok(verifyResult.includes("status: VALID"), "Post-edit checksum valid"); // line 2686
+            assert.ok(verifyResult.match(/entry: \d+\/\d+ VALID/), "Post-edit checksum valid"); // line 2686
         } finally {
             fs.unlinkSync(tmp);
         }
@@ -2719,7 +2858,7 @@ describe("E2E: workflow round-trips", () => {
             fs.writeFileSync(tmp, "one\ntwo\nthree\n");
             const verify = verifyChecksums(tmp, [checksum], { baseRevision });
             assert.ok(verify.includes("status: OK"), "EOL-only rewrite stays valid");
-            assert.ok(verify.includes("status: VALID"), "Checksum remains current");
+            assert.ok(verify.match(/entry: \d+\/\d+ VALID/), "Checksum remains current");
         } finally {
             fs.unlinkSync(tmp);
         }
@@ -2780,7 +2919,7 @@ describe("remaining checklist tests", () => {
             // Verify post-edit
             const postChecksum = editResult.match(/checksum: (\S+)/)?.[1];
             const verifyResult = verifyChecksums(tmp, [postChecksum]);
-            assert.ok(verifyResult.includes("status: VALID"), "Post-edit checksum valid"); // line 2766
+            assert.ok(verifyResult.match(/entry: \d+\/\d+ VALID/), "Post-edit checksum valid"); // line 2766
         } finally {
             fs.unlinkSync(tmp);
         }
@@ -2808,7 +2947,7 @@ describe("remaining checklist tests", () => {
             // Verify
             const postChecksum = editResult.match(/checksum: (\S+)/)?.[1];
             const verifyResult = verifyChecksums(tmp, [postChecksum]);
-            assert.ok(verifyResult.includes("status: VALID"), "Multi-edit checksum valid");
+            assert.ok(verifyResult.match(/entry: \d+\/\d+ VALID/), "Multi-edit checksum valid");
         } finally {
             fs.unlinkSync(tmp);
         }
@@ -2860,7 +2999,7 @@ describe("v1.24.2 regression guards", () => {
         try {
             const info = fileInfo(tmp);
             assert.ok(!info.includes("Binary: no"), "Binary: no dropped for text files");
-            assert.ok(info.includes("Type:"), "Type: still present");
+            assert.ok(info.includes("type="), "type= still present");
         } finally {
             fs.unlinkSync(tmp);
         }
@@ -2905,7 +3044,7 @@ describe("v1.24.2 regression guards", () => {
                 { set_line: { anchor, new_text: "export function foo() {" } },
                 { set_line: { anchor: `${lineTag(fnv1a("  return 1;"))}.2`, new_text: "  return 2;" } },
             ]);
-            assert.ok(result.includes("Semantic impact:"), "block present");
+            assert.ok(result.includes("#semantic_impact"), "block present");
             assert.ok(result.includes("public API"), "headline mentions public API");
             assert.equal(result.includes("public_api: exported symbol"), false, "no narration line");
         } finally {

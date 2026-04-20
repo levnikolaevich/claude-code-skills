@@ -1,5 +1,8 @@
 export const STATUS = {
     OK: "OK",
+    PARTIAL: "PARTIAL",
+    NOT_FOUND: "NOT_FOUND",
+    STALE: "STALE",
     ERROR: "ERROR",
 };
 

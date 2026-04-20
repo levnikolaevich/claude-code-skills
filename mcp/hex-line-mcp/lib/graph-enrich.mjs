@@ -180,42 +180,52 @@ export function getGraphDBForProject(directoryPath) {
     const dbPath = join(projectRoot, ".hex-skills/codegraph", "index.db");
     return _dbs.get(dbPath) || null;
 }
+// Throttle graph_fix hints: emit once per (projectRoot,reason) in a process session.
+// Agents who see it once know the state; subsequent calls stay silent to save tokens.
+const _graphFixSeen = new Set();
+export function _resetGraphFixThrottle() { _graphFixSeen.clear(); }
 
 export function graphUnavailableHint(filePath) {
     const { reason, projectRoot } = diagnoseGraph(filePath);
     if (reason === "ok" || reason === "file_not_indexed") return [];
+    const throttleKey = `${projectRoot || "_"}:${reason}`;
+    if (_graphFixSeen.has(throttleKey)) return [];
+    _graphFixSeen.add(throttleKey);
     const at = projectRoot ? ` at ${projectRoot.replace(/\\/g, "/")}` : "";
     switch (reason) {
     case "driver_missing":
-        return ["graph_enrichment: unavailable", "graph_fix: install better-sqlite3 in hex-line-mcp package"];
+        return ["graph_fix: install better-sqlite3 in hex-line-mcp package"];
     case "no_project_root":
-        return ["graph_enrichment: unavailable", "graph_fix: file is outside any project root (no package.json / pyproject.toml / .git marker)"];
+        return ["graph_fix: file is outside any project root (no package.json / pyproject.toml / .git marker)"];
     case "index_missing":
-        return ["graph_enrichment: unavailable", `graph_fix: run mcp__hex-graph__index_project${at}`];
+        return [`graph_fix: run mcp__hex-graph__index_project${at}`];
     case "contract_mismatch":
-        return ["graph_enrichment: unavailable", `graph_fix: index built by incompatible hex-graph version; re-run mcp__hex-graph__index_project${at}`];
+        return [`graph_fix: index built by incompatible hex-graph version; re-run mcp__hex-graph__index_project${at}`];
     case "stale":
-        return ["graph_enrichment: unavailable", `graph_fix: file modified after last index; re-run mcp__hex-graph__index_project${at} or wait for background refresh`];
+        return [`graph_fix: file modified after last index; re-run mcp__hex-graph__index_project${at} or wait for background refresh`];
     default:
-        return ["graph_enrichment: unavailable"];
+        return [];
     }
 }
 
 export function graphUnavailableHintForProject(projectRoot) {
     const { reason } = diagnoseGraphForProject(projectRoot);
     if (reason === "ok") return [];
+    const throttleKey = `${projectRoot || "_"}:${reason}`;
+    if (_graphFixSeen.has(throttleKey)) return [];
+    _graphFixSeen.add(throttleKey);
     const at = projectRoot ? ` at ${projectRoot.replace(/\\/g, "/")}` : "";
     switch (reason) {
     case "driver_missing":
-        return ["graph_enrichment: unavailable", "graph_fix: install better-sqlite3 in hex-line-mcp package"];
+        return ["graph_fix: install better-sqlite3 in hex-line-mcp package"];
     case "no_project_root":
-        return ["graph_enrichment: unavailable", "graph_fix: directory is outside any project root"];
+        return ["graph_fix: directory is outside any project root"];
     case "index_missing":
-        return ["graph_enrichment: unavailable", `graph_fix: run mcp__hex-graph__index_project${at}`];
+        return [`graph_fix: run mcp__hex-graph__index_project${at}`];
     case "contract_mismatch":
-        return ["graph_enrichment: unavailable", `graph_fix: index built by incompatible hex-graph version; re-run mcp__hex-graph__index_project${at}`];
+        return [`graph_fix: index built by incompatible hex-graph version; re-run mcp__hex-graph__index_project${at}`];
     default:
-        return ["graph_enrichment: unavailable"];
+        return [];
     }
 }
 

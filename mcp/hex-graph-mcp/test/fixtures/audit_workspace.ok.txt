@@ -1,0 +1,8 @@
+ok review_duplicates path=/tmp/project
+#summary unused=2 hotspots=1 clone_groups=1
+.unused src/legacy.ts:42 fn=oldHelper exported=1
+.hotspot src/core.ts:150 name=process complexity=42 callers=18
+.clone_group id=g1 type=normalized members=3 impact=medium
+.clone_member group=g1 file=src/foo.ts lines=42-58 name=foo callers=3
+.clone_member group=g1 file=src/bar.ts lines=70-86 name=bar callers=1
+.clone_member group=g1 file=src/baz.ts lines=10-26 name=baz callers=2

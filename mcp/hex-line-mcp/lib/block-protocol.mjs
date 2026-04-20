@@ -33,7 +33,13 @@ function renderRequestedSpan(block) {
 
 function renderMetaLines(meta = {}) {
     return Object.entries(meta)
-        .filter(([, value]) => value !== undefined && value !== null && value !== "")
+        .filter(([key, value]) => {
+            if (value === undefined || value === null || value === "") return false;
+            // Omit platform defaults — agents assume lf + trailing newline when absent.
+            if (key === "eol" && value === "lf") return false;
+            if (key === "trailing_newline" && value === true) return false;
+            return true;
+        })
         .map(([key, value]) => `${key}: ${value}`);
 }
 
@@ -133,9 +139,10 @@ export function serializeSearchBlock(block, opts = {}) {
     if (block.type !== "edit_ready_block") return serializeDiagnosticBlock(block);
     const lines = [
         `block: ${block.kind}`,
-        `file: ${block.path}`,
-        `span: ${block.startLine}-${block.endLine}`,
     ];
+    // Skip file: line when caller signals it's a dedupe follow-up for the same file.
+    if (!opts.skipFile) lines.push(`file: ${block.path}`);
+    lines.push(`span: ${block.startLine}-${block.endLine}`);
     const requestedSpan = renderRequestedSpan(block);
     if (requestedSpan) lines.push(requestedSpan);
     if (Array.isArray(block.meta.matchLines) && block.meta.matchLines.length > 0) {

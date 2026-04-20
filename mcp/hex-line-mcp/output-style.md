@@ -47,6 +47,9 @@ Prefer `hex-line` for text files you may inspect or modify. Hash-annotated reads
 - First mutation in a file: use `grep_search(output_mode="summary")` for narrow targets, or `outline -> read_file(ranges)` for structural edits. Escalate to `grep_search(output_mode="content", edit_ready=true)` only when the next edit needs canonical hunks.
 - Preserve file conventions mentally: `hex-line` hashes normalized logical text, but `edit_file` preserves the file's existing line endings and trailing-newline shape on write.
 - Prefer `set_line` or `insert_after` for small local changes. Prefer `replace_between` for larger bounded block rewrites.
+- When either anchor of `replace_between` is a lone delimiter (`}`, `)`, `]`, `});`), switch to `replace_lines` with `range_checksum`, or pass `range_checksum` to `replace_between` directly. `replace_between` anchors use short line-content hashes and may fuzzy-match a sibling closing delimiter.
+- For inclusive `replace_between`: enumerate every `{`, `(`, `[` opened inside the replaced range and ensure `new_text` closes them all. If the range crosses a method/class/namespace boundary, prefer `set_line` + `insert_after` for each hunk.
+- After `replace_between` on C#/Java/Go/C++/Rust files, run the language build or type-check once before proceeding. Brace drift is invisible at edit time.
 - Use `replace_lines` only when you already hold the exact inclusive range checksum for that block.
 - Avoid large first-pass edit batches. Start with 1-2 hunks, then continue from the returned `revision` as `base_revision`.
 - Before a delayed follow-up edit, a formatter pass, or any mixed-tool workflow on the same file, run `verify` with the last checksums and `base_revision`.

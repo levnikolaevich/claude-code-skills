@@ -1,0 +1,5 @@
+ok keep_using total=2 conf=exact
+.useRelay->relay->computeTotal src/consumer.ts:2 depth=2
+.anotherCaller->computeTotal src/caller.ts:3 depth=1
+#provenance precise_provider=3
+>mcp__hex-graph__trace_paths expand=paths expand_limit=10 depth=3 limit=10 path_kind=calls direction=reverse

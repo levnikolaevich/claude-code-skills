@@ -35,9 +35,10 @@ import { autoSync } from "./lib/setup.mjs";
 import { fileChanges } from "./lib/changes.mjs";
 import { bulkReplace } from "./lib/bulk-replace.mjs";
 import { result, errorResult } from "@levnikolaevich/hex-common/runtime/results";
+import { STATUS_VALUES } from "./lib/output-contract.mjs";
 
 // Shared output schema fragments for all tools
-const STATUS_ENUM = z.enum(["OK", "ERROR", "AUTO_REBASED", "CONFLICT", "STALE", "INVALID", "NO_CHANGES", "CHANGED", "UNSUPPORTED"]);
+const STATUS_ENUM = z.enum(STATUS_VALUES);
 const ERROR_SHAPE = z.object({ code: z.string(), message: z.string(), recovery: z.string() }).optional();
 const LINE_REPORT_KEYS = new Set([
     "status",
@@ -57,6 +58,7 @@ const LINE_REPORT_KEYS = new Set([
     "suggested_read_call",
     "retry_plan",
     "remapped_refs",
+    "warnings",
 ]);
 
 const { server, StdioServerTransport } = await createServerRuntime({
@@ -96,7 +98,12 @@ function parseLineReport(content) {
         if (!match) continue;
         const [, key, value] = match;
         if (!LINE_REPORT_KEYS.has(key) || parsed[key] !== undefined) continue;
-        parsed[key] = value;
+        if (key === "warnings") {
+            try { parsed[key] = JSON.parse(value); }
+            catch { parsed[key] = value; }
+        } else {
+            parsed[key] = value;
+        }
     }
     return parsed;
 }
@@ -187,7 +194,7 @@ server.registerTool("read_file", {
 
 server.registerTool("edit_file", {
     title: "Edit File",
-    description: "Apply hash-verified partial edits to one file. Carry base_revision on same-file follow-ups. Preserves existing line endings and trailing-newline shape; conservative conflicts return retry helpers.",
+    description: "Apply hash-verified partial edits to one file. Carry base_revision on same-file follow-ups. Preserves existing line endings and trailing-newline shape; conservative conflicts return retry helpers. boundary_mode=inclusive deletes the anchor lines themselves; new_text must close any delimiter whose opening falls inside the replaced range.",
     inputSchema: z.object({
         file_path: z.string().describe("File to edit"),
         edits: z.union([z.string(), z.array(z.any())]).describe(
@@ -195,7 +202,8 @@ server.registerTool("edit_file", {
             '[{"set_line":{"anchor":"ab.12","new_text":"x"}}]\n' +
             '[{"replace_lines":{"start_anchor":"ab.10","end_anchor":"cd.15","new_text":"x","range_checksum":"10-15:a1b2"}}]\n' +
             '[{"insert_after":{"anchor":"ab.20","text":"x"}}]\n' +
-            '[{"replace_between":{"start_anchor":"ab.10","end_anchor":"cd.40","new_text":"x","boundary_mode":"inclusive"}}]',
+            '[{"replace_between":{"start_anchor":"ab.10","end_anchor":"cd.40","new_text":"x","boundary_mode":"inclusive","range_checksum":"10-40:a1b2"}}]\n' +
+            'Prefer replace_lines with range_checksum when either anchor is a lone delimiter (}, ), ]) — replace_between anchors use short line-content hashes and may fuzzy-match a sibling delimiter.',
         ),
         dry_run: flexBool().describe("Preview changes without writing"),
         restore_indent: flexBool().describe("Auto-fix indentation to match anchor (default: false)"),
@@ -203,7 +211,7 @@ server.registerTool("edit_file", {
         conflict_policy: z.enum(["strict", "conservative"]).optional().describe('Conflict handling (default: "conservative"). "conservative" returns structured CONFLICT output with recovery_ranges, retry_edit/retry_edits, suggested_read_call, and retry_plan when available.'),
         allow_external: flexBool().describe("Allow editing a path outside the current project root. Use only when you intentionally target a temp or external file."),
     }),
-    outputSchema: z.object({ status: STATUS_ENUM, file_path: z.string().optional(), content: z.string().optional(), reason: z.string().optional(), summary: z.string().optional(), next_action: z.string().optional(), error: ERROR_SHAPE }),
+    outputSchema: z.object({ status: STATUS_ENUM, file_path: z.string().optional(), content: z.string().optional(), reason: z.string().optional(), summary: z.string().optional(), next_action: z.string().optional(), warnings: z.array(z.object({ code: z.string() }).passthrough()).optional(), error: ERROR_SHAPE }),
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
 }, async (rawParams) => {
     const { file_path: p, edits: json, dry_run, restore_indent, base_revision, conflict_policy, allow_external } = rawParams ?? {};

@@ -125,5 +125,5 @@ export async function fileOutline(filePath) {
     }
     const db = getGraphDB(real);
     const relFile = db ? getRelativePath(real) : null;
-    return `File: ${filePath}\n\n${formatOutline(entries, skippedRanges, snapshot.lines.length, snapshot, db, relFile, note)}`;
+    return formatOutline(entries, skippedRanges, snapshot.lines.length, snapshot, db, relFile, note);
 }

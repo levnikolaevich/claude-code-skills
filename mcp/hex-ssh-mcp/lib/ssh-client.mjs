@@ -19,9 +19,9 @@ const DEFAULT_KEY_PATHS = [
     join(homedir(), ".ssh", "id_ecdsa"),
 ];
 
-const CONNECT_TIMEOUT = 20000;
-const KEEPALIVE_INTERVAL = 30000;
-const EXEC_TIMEOUT = 120_000;
+export const DEFAULT_CONNECT_TIMEOUT_MS = 20_000;
+export const DEFAULT_KEEPALIVE_INTERVAL_MS = 30_000;
+export const DEFAULT_EXEC_TIMEOUT_MS = 120_000;
 const POOL_TTL = 60_000;
 const POOL_MAX = 10;
 
@@ -34,8 +34,8 @@ let _clientFactory = () => new Client(); // injectable for tests
 /** @internal Test seam: override Client constructor. */
 export function _setClientFactory(fn) { _clientFactory = fn; }
 
-function makePoolKey(host, user, port, authId, lookupHost) {
-    return `${user}@${host}:${port}:${authId}:${lookupHost}`;
+function makePoolKey(host, user, port, authId, lookupHost, connectTimeoutMs, keepaliveIntervalMs) {
+    return `${user}@${host}:${port}:${authId}:${lookupHost}:ct${connectTimeoutMs}:ka${keepaliveIntervalMs}`;
 }
 
 function evict(key) {
@@ -264,7 +264,7 @@ const SSH_ALGORITHMS = {
  * Establish an SSH connection with a specific key.
  * @returns {Promise<Client>} Connected ssh2 Client
  */
-function connectOne({ host, user, port, privateKey, lookupHost }) {
+function connectOne({ host, user, port, privateKey, lookupHost, connectTimeoutMs, keepaliveIntervalMs }) {
     return new Promise((resolve, reject) => {
         const conn = _clientFactory();
 
@@ -280,8 +280,8 @@ function connectOne({ host, user, port, privateKey, lookupHost }) {
             privateKey,
             hostVerifier: buildHostVerifier(lookupHost, port),
             algorithms: SSH_ALGORITHMS,
-            readyTimeout: CONNECT_TIMEOUT,
-            keepaliveInterval: KEEPALIVE_INTERVAL,
+            readyTimeout: connectTimeoutMs ?? DEFAULT_CONNECT_TIMEOUT_MS,
+            keepaliveInterval: keepaliveIntervalMs ?? DEFAULT_KEEPALIVE_INTERVAL_MS,
         });
     });
 }
@@ -293,16 +293,24 @@ function connectOne({ host, user, port, privateKey, lookupHost }) {
 async function acquireConnection({
     host, user, port = 22, privateKeyPath,
     originalHost, identityFiles = [], hostKeyAlias,
+    connectTimeoutMs, keepaliveIntervalMs,
 }) {
     validateHost(host, originalHost);
     const lookupHost = hostKeyAlias || host;
 
+    const effectiveConnectTimeoutMs = connectTimeoutMs ?? DEFAULT_CONNECT_TIMEOUT_MS;
+    const effectiveKeepaliveIntervalMs = keepaliveIntervalMs ?? DEFAULT_KEEPALIVE_INTERVAL_MS;
+
     const candidateKeys = getCandidateKeys(privateKeyPath, identityFiles);
     const authId = createHash("sha256").update(candidateKeys[0]).digest("hex").slice(0, 8);
-    const key = makePoolKey(host, user, port, authId, lookupHost);
+    const key = makePoolKey(host, user, port, authId, lookupHost, effectiveConnectTimeoutMs, effectiveKeepaliveIntervalMs);
 
     const conn = await acquirePooled(key, async () => {
-        const { client } = await connectWithKeyFallback({ host, user, port, candidateKeys, lookupHost });
+        const { client } = await connectWithKeyFallback({
+            host, user, port, candidateKeys, lookupHost,
+            connectTimeoutMs: effectiveConnectTimeoutMs,
+            keepaliveIntervalMs: effectiveKeepaliveIntervalMs,
+        });
         client.on("error", () => evict(key));
         client.on("close", () => evict(key));
         return client;
@@ -316,11 +324,17 @@ async function acquireConnection({
  * On auth failure, reconnect with the next key.
  * @returns {{ client: Client, privateKey: Buffer }} Winning connection + key
  */
-async function connectWithKeyFallback({ host, user, port, candidateKeys, lookupHost }) {
+async function connectWithKeyFallback({ host, user, port, candidateKeys, lookupHost, connectTimeoutMs, keepaliveIntervalMs }) {
     const errors = [];
     for (let i = 0; i < candidateKeys.length; i++) {
         try {
-            const client = await connectOne({ host, user, port, privateKey: candidateKeys[i], lookupHost });
+            const client = await connectOne({
+                host, user, port,
+                privateKey: candidateKeys[i],
+                lookupHost,
+                connectTimeoutMs,
+                keepaliveIntervalMs,
+            });
             return { client, privateKey: candidateKeys[i] };
         } catch (err) {
             errors.push(err);
@@ -345,11 +359,15 @@ async function connectWithKeyFallback({ host, user, port, candidateKeys, lookupH
  * @param {string} [opts.originalHost] - Original alias (for error messages)
  * @param {string[]} [opts.identityFiles] - Config-derived IdentityFile paths
  * @param {string} [opts.hostKeyAlias] - HostKeyAlias for known_hosts lookup
+ * @param {number} [opts.connectTimeoutMs] - Per-call SSH handshake timeout. Defaults to DEFAULT_CONNECT_TIMEOUT_MS. Included in pool key.
+ * @param {number} [opts.keepaliveIntervalMs] - Per-call SSH keepalive interval. Defaults to DEFAULT_KEEPALIVE_INTERVAL_MS. Included in pool key.
+ * @param {number} [opts.execTimeoutMs] - Per-call command execution timeout. Defaults to DEFAULT_EXEC_TIMEOUT_MS.
  * @returns {Promise<{output: string, error: string|null, exitCode: number}>}
  */
 export async function executeCommand({
     host, user, command, privateKeyPath, port = 22,
     originalHost, identityFiles = [], hostKeyAlias,
+    connectTimeoutMs, keepaliveIntervalMs, execTimeoutMs,
 }) {
     const { conn, key } = await acquireConnection({
         host,
@@ -359,9 +377,12 @@ export async function executeCommand({
         originalHost,
         identityFiles,
         hostKeyAlias,
+        connectTimeoutMs,
+        keepaliveIntervalMs,
     });
 
-    // Execute command on pooled connection
+    const effectiveExecTimeoutMs = execTimeoutMs ?? DEFAULT_EXEC_TIMEOUT_MS;
+
     return new Promise((resolve, reject) => {
         let stdout = "";
         let stderr = "";
@@ -375,8 +396,8 @@ export async function executeCommand({
             const timer = setTimeout(() => {
                 stream.close();
                 releasePooled(key);
-                reject(new Error(`EXEC_TIMEOUT: command exceeded ${EXEC_TIMEOUT / 1000}s limit`));
-            }, EXEC_TIMEOUT);
+                reject(new Error(`EXEC_TIMEOUT: command exceeded ${effectiveExecTimeoutMs}ms limit`));
+            }, effectiveExecTimeoutMs);
 
             stream.on("close", (code) => {
                 clearTimeout(timer);
@@ -396,10 +417,14 @@ export async function executeCommand({
 /**
  * Open an SFTP session on a pooled SSH connection.
  * The callback must resolve only after all stream work is complete.
+ * Accepts optional per-call connectTimeoutMs and keepaliveIntervalMs which
+ * participate in the pool key. SFTP transfer inactivity timeout is applied
+ * per-call inside transfer.mjs (transferTimeoutMs).
  */
 export async function withSftp({
     host, user, privateKeyPath, port = 22,
     originalHost, identityFiles = [], hostKeyAlias,
+    connectTimeoutMs, keepaliveIntervalMs,
 }, handler) {
     const { conn, key } = await acquireConnection({
         host,
@@ -409,6 +434,8 @@ export async function withSftp({
         originalHost,
         identityFiles,
         hostKeyAlias,
+        connectTimeoutMs,
+        keepaliveIntervalMs,
     });
 
     return new Promise((resolve, reject) => {

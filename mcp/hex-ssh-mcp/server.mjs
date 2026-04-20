@@ -67,6 +67,10 @@ const connProps = {
     privateKeyPath: z.string().optional().describe("Path to SSH private key (optional)"),
     port: flexNum().describe("SSH port (default: 22)"),
     remotePlatform: z.enum(["auto", "posix", "windows"]).optional().describe('Remote path platform. Use "windows" for paths like C:\\\\repo\\\\file.txt. Default: auto'),
+    connectTimeoutMs: flexNum().describe("SSH handshake timeout in ms (default: 20000). Per-call override. Different values spawn separate pooled connections."),
+    keepaliveIntervalMs: flexNum().describe("SSH keepalive interval in ms (default: 30000). Per-call override. Different values spawn separate pooled connections."),
+    execTimeoutMs: flexNum().describe("Per-command execution timeout in ms (default: 120000). Used by remote-ssh and hash-verified file tools. Ignored by ssh-upload/ssh-download."),
+    transferTimeoutMs: flexNum().describe("SFTP inactivity timeout in ms (default: 120000; env TRANSFER_TIMEOUT_MS overrides default). Used by ssh-upload/ssh-download."),
 };
 
 function connSchema(extraShape) {
@@ -74,6 +78,12 @@ function connSchema(extraShape) {
         ...connProps,
         ...extraShape,
     });
+}
+
+function sanitizeTimeoutMs(v) {
+    if (v === undefined || v === null || v === "") return undefined;
+    const n = typeof v === "number" ? v : Number(v);
+    return Number.isFinite(n) && n > 0 ? n : undefined;
 }
 
 /**
@@ -90,14 +100,22 @@ function connParams(args) {
             `No user for host "${args.host}". Provide user param or set User in ~/.ssh/config.`
         );
     }
-    return resolved;
+    return {
+        ...resolved,
+        connectTimeoutMs: sanitizeTimeoutMs(args.connectTimeoutMs),
+        keepaliveIntervalMs: sanitizeTimeoutMs(args.keepaliveIntervalMs),
+    };
 }
 
 /**
  * Run an SSH command and return { output, error, exitCode }.
  */
 async function sshExec(args, command) {
-    return executeCommand({ ...connParams(args), command });
+    return executeCommand({
+        ...connParams(args),
+        command,
+        execTimeoutMs: sanitizeTimeoutMs(args.execTimeoutMs),
+    });
 }
 
 /**
@@ -641,6 +659,7 @@ server.registerTool("ssh-upload", {
             verify: args.verify,
             permissions: args.permissions,
             remotePlatform: args.remotePlatform,
+            transferTimeoutMs: sanitizeTimeoutMs(args.transferTimeoutMs),
         });
         return okResult(
             formatTransferSummary(
@@ -691,6 +710,7 @@ server.registerTool("ssh-download", {
             overwrite: args.overwrite,
             verify: args.verify,
             remotePlatform: args.remotePlatform,
+            transferTimeoutMs: sanitizeTimeoutMs(args.transferTimeoutMs),
         });
         return okResult(
             formatTransferSummary(

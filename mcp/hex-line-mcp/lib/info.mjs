@@ -7,7 +7,7 @@
 import { statSync, openSync, readSync, closeSync } from "node:fs";
 import { resolve, isAbsolute, extname, basename } from "node:path";
 import { normalizePath } from "./security.mjs";
-import { formatSize, relativeTime, countFileLines } from "./format.mjs";
+import { countFileLines } from "./format.mjs";
 
 const MAX_LINE_COUNT_SIZE = 10 * 1024 * 1024; // 10 MB
 
@@ -75,18 +75,11 @@ export function fileInfo(filePath) {
     // Line count (only for non-binary, <=10MB)
     const lineCount = !isBinary && size > 0 ? countFileLines(abs, size, MAX_LINE_COUNT_SIZE) : null;
 
-    // Format output
-    const sizeStr = lineCount !== null
-        ? `Size: ${formatSize(size)} (${lineCount} lines)`
-        : `Size: ${formatSize(size)}`;
-    const timeStr = `Modified: ${mtime.toISOString().replace("T", " ").slice(0, 19)} (${relativeTime(mtime)})`;
-
-    const lines = [
-        `File: ${normalized}`,
-        sizeStr,
-        timeStr,
-        `Type: ${typeName}`,
-    ];
-    if (isBinary) lines.push(`Binary: yes`);
-    return lines.join("\n");
+    // Format output (kv grammar)
+    const parts = [`size=${size}`];
+    if (lineCount !== null) parts.push(`lines=${lineCount}`);
+    parts.push(`mtime=${mtime.toISOString()}`);
+    parts.push(`type=${typeName}`);
+    if (isBinary) parts.push(`binary=yes`);
+    return parts.join(" ");
 }

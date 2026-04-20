@@ -119,7 +119,7 @@ If a project already has `.hex-skills/codegraph/index.db`, `hex-line` automatica
 - Grep annotations are capped and count-suffixes are deduplicated so the first label keeps the counts and later labels stay short.
 - `read_file`, `outline`, and `grep_search` stay compact: they only surface high-signal local facts such as `api`, framework entrypoints, callers, flow, and clone hints.
 - `edit_file` and `changes` surface the deeper review layer: external callers, downstream return/property flow, clone peers, public API risk, framework entrypoint risk, and same-name sibling warnings when present.
-- Both tools now expose a short top-level preview before the detailed sections: `payload_sections`, `graph_enrichment`, count fields, and `provenance_summary`.
+- Both tools surface structured sections directly; debug markers (`payload_sections`, `graph_enrichment` preview, count fields, `provenance_summary`) were removed per PROTOCOL.md §Response grammar.
 - Stale graph data never changes correctness. `hex-line` suppresses stale hints, schedules a best-effort `reindexFile(...)` for a stale file, and escalates to one background `indexProject(...)` when several files go stale inside the burst window.
 - The threshold-crossing file still keeps its point refresh so a short stale burst does not create a blind gap before the project refresh finishes.
 - `edit_file` may still use stale graph context as same-response advisory metadata when the file was just edited, but stale graph never gates the edit protocol itself.
@@ -176,8 +176,7 @@ Read a file with progressive disclosure. Default mode is discovery-first: plain 
 Default output is discovery-first:
 
 ```text
-File: lib/search.mjs
-meta: 282 lines, 10.2KB, 2 hours ago
+meta: lines=282 size=10240 mtime=2026-04-20T15:00:00.000Z
 continuation: {"kind":"offset","offset":4,"limit":200}
 
 1|import { resolve } from "node:path";
@@ -188,22 +187,22 @@ continuation: {"kind":"offset","offset":4,"limit":200}
 Explicit edit-ready output:
 
 ```
-File: lib/search.mjs
-meta: 282 lines, 10.2KB, 2 hours ago
+meta: lines=282 size=10240 mtime=2026-04-20T15:00:00.000Z
 revision: rev-12-a1b2c3d4
 file: 1-282:beefcafe
-eol: lf
-trailing_newline: true
 
 block: read_range
 span: 1-3
-eol: lf
-trailing_newline: true
-ab.1    import { resolve } from "node:path";
-cd.2    import { readFileSync } from "node:fs";
-ef.3    ...
+ab.1\timport { resolve } from "node:path";
+cd.2\timport { readFileSync } from "node:fs";
+ef.3\t...
 checksum: 1-3:f7e2a1b0
 ```
+
+Note: default `eol=lf` and `trailing_newline=true` are assumed when those keys
+are absent from block meta. Non-default values (e.g. `eol: crlf`) are still
+emitted explicitly. The `File: <path>` header was dropped — path is already in
+the caller's input.
 
 ### edit_file
 
@@ -243,9 +242,7 @@ Result footer includes:
 - `reason: ...` as the canonical machine-readable cause for the current status
 - `revision: ...`
 - `summary: ...` with edited line span / diff counts on successful edits
-- `payload_sections: ...` so callers know which detailed sections follow
-- `graph_enrichment: unavailable` + `graph_fix: ...` when the project graph is missing or out of sync (silent when graph is healthy)
-- `⚠ Semantic impact:` and `⚠ N clone(s):` blocks emitted directly when graph-backed review data is available
+- `#semantic_impact` sections and `!clone_siblings count=N list=...` lines emitted directly when graph-backed review data is available
 - `changed_ranges: ...` when relevant
 - `recovery_ranges: ...` with the narrowest recommended `read_file` ranges for retry
 - `next_action: ...` as the canonical immediate choice: `apply_retry_edit`, `apply_retry_batch`, or `reread_then_retry`

@@ -206,12 +206,9 @@ async function summaryMode(pattern, target, opts, totalLimit) {
     if (fileHits.size > 1 && topFiles.length) {
         lines.push(`top_files: ${topFiles.map(([file, count]) => `${file} (${count})`).join(", ")}`);
     }
-    if (snippets.length > 0) {
-        lines.push("snippets:");
-        lines.push(...snippets.map((snippet) => `- ${snippet}`));
-    }
+    // snippets prose removed per PROTOCOL.md §Response grammar; escalate to output_mode=content for hunks.
     if (totalLimit > 0 && rawLines.length > totalLimit) {
-        lines.push(`continuation_hint: rerun grep_search with a higher head_limit or narrower path/glob to inspect ${rawLines.length - totalLimit} additional match event(s)`);
+        lines.push(`truncated: ${rawLines.length - totalLimit}`);
     }
     return lines.join("\n");
 }
@@ -407,13 +404,16 @@ async function contentMode(pattern, target, opts, plain, editReady, totalLimit, 
     let capped = false;
     let shownBlocks = 0;
     let shownMatches = 0;
+    // Track last emitted file path so consecutive same-file hunks can dedupe the `file:` line.
+    let lastPath = null;
     for (const block of blocks) {
         if (block.type === "edit_ready_block" && shownBlocks >= contentBlockLimit) {
             capped = true;
             break;
         }
+        const sameFile = block.type === "edit_ready_block" && block.path === lastPath;
         const serialized = block.type === "edit_ready_block"
-            ? serializeSearchBlock(block, { plain: plainOutput })
+            ? serializeSearchBlock(block, { plain: plainOutput, skipFile: sameFile })
             : serializeDiagnosticBlock(block);
         if (parts.length > 0 && budget - serialized.length < 0) {
             capped = true;
@@ -424,6 +424,9 @@ async function contentMode(pattern, target, opts, plain, editReady, totalLimit, 
         if (block.type === "edit_ready_block") {
             shownBlocks++;
             shownMatches += Array.isArray(block.meta.matchLines) ? block.meta.matchLines.length : 0;
+            lastPath = block.path;
+        } else {
+            lastPath = null; // diagnostic interrupts file-grouping
         }
     }
     if (capped) {

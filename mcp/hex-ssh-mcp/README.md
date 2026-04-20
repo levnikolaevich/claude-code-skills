@@ -130,9 +130,18 @@ Remote paths must be absolute for their platform. POSIX paths use `/...`; Window
 
 Local transfer paths for `ssh-upload` and `ssh-download` must be absolute paths or `~/...`. When `ALLOWED_LOCAL_DIRS` is set, local paths are canonicalized and checked against that allowlist before the transfer starts.
 
-### Exec Timeout
+### Per-call Timeouts
 
-SSH commands are terminated after 120 seconds (`EXEC_TIMEOUT` error).
+All tools accept four optional timeout fields (in milliseconds). Missing/invalid values fall back to the default.
+
+| Field | Default | Applies to | Notes |
+|---|---|---|---|
+| `connectTimeoutMs` | `20000` | connection handshake (new connection only) | Different values create separate pooled connections (max 10 per host). Changes ignored for cached connections. |
+| `keepaliveIntervalMs` | `30000` | SSH keepalive on new connection | Same pool-key behavior as `connectTimeoutMs`. |
+| `execTimeoutMs` | `120000` | per-command exec timeout | Used by `remote-ssh` and all hash-verified file tools. Ignored by `ssh-upload`/`ssh-download`. On expiry: `EXEC_TIMEOUT` error. |
+| `transferTimeoutMs` | `120000` (env `TRANSFER_TIMEOUT_MS` overrides default) | SFTP transfer inactivity | Used by `ssh-upload`/`ssh-download`. Resets on each data chunk. On expiry: `TRANSFER_TIMEOUT` error. |
+
+Priority for `transferTimeoutMs`: per-call arg > `TRANSFER_TIMEOUT_MS` env var > built-in default. The other three have no env override — pass the arg to change them.
 
 ### Atomic File Writes
 
@@ -181,7 +190,7 @@ MAX_TRANSFER_BYTES=134217728
 
 ### TRANSFER_TIMEOUT_MS (optional)
 
-Maximum allowed inactivity window for `ssh-upload` and `ssh-download`. If no transfer progress is observed before the timeout expires, the transfer fails with `TRANSFER_TIMEOUT`.
+Default transfer inactivity window for `ssh-upload` and `ssh-download` when no per-call `transferTimeoutMs` is supplied. If no transfer progress is observed before the timeout expires, the transfer fails with `TRANSFER_TIMEOUT`. Per-call `transferTimeoutMs` always overrides this. See "Per-call Timeouts" above.
 
 ```bash
 TRANSFER_TIMEOUT_MS=120000

@@ -123,15 +123,18 @@ function entrySummary(entry) {
 function renderEntry(entry, index, total, topLevelNextAction) {
     const parts = [
         `entry: ${index}/${total}`,
-        `status: ${entry.status}`,
+        entry.status,
         entry.span ? `span: ${entry.span}` : null,
         `checksum: ${entry.checksum}`,
         entry.currentChecksum && entry.currentChecksum !== entry.checksum ? `current_checksum: ${entry.currentChecksum}` : null,
     ].filter(Boolean);
-    const action = entryNextAction(entry);
-    if (action !== topLevelNextAction) parts.push(`next_action: ${action}`);
-    if (entry.status !== "VALID") parts.push(`summary: ${entrySummary(entry)}`);
-    return parts.join(" | ");
+    // Per-entry next_action only when it disambiguates (INVALID has two variants).
+    // VALID↔KEEP_USING and STALE↔REREAD_RANGE are 1:1 with status — agents infer from status alone.
+    if (entry.status === "INVALID") parts.push(`next_action: ${entryNextAction(entry)}`);
+    // For INVALID entries the summary carries the real error detail (format error / range info);
+    // VALID/STALE entries are fully described by status alone, so skip duplicate prose.
+    if (entry.status === "INVALID") parts.push(`summary: ${entrySummary(entry)}`);
+    return parts.join(" ");
 }
 
 export function verifyChecksums(filePath, checksums, opts = {}) {
@@ -151,10 +154,15 @@ export function verifyChecksums(filePath, checksums, opts = {}) {
     const verboseSummary = results.length > 1 || summary.stale > 0 || summary.invalid > 0;
     const lines = [
         `status: ${status}`,
-        `reason: ${overallReason(status)}`,
         `revision: ${currentSnapshot.revision}`,
     ];
-    if (verboseSummary) lines.push(`summary: valid=${summary.valid} stale=${summary.stale} invalid=${summary.invalid}`);
+    // reason: omitted — 1:1 with status (OK↔checksums_current, STALE↔checksums_stale, INVALID↔checksums_invalid).
+    if (verboseSummary) {
+        const sumParts = [`valid=${summary.valid}`];
+        if (summary.stale > 0) sumParts.push(`stale=${summary.stale}`);
+        if (summary.invalid > 0) sumParts.push(`invalid=${summary.invalid}`);
+        lines.push(`summary: ${sumParts.join(" ")}`);
+    }
     lines.push(`next_action: ${topLevelNextAction}`);
 
     if (opts.baseRevision && opts.baseRevision !== currentSnapshot.revision) {

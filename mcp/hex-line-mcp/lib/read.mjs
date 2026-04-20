@@ -5,7 +5,7 @@
 import { statSync } from "node:fs";
 import { validatePath, normalizePath } from "./security.mjs";
 import { getGraphDB, fileAnnotations, getRelativePath } from "./graph-enrich.mjs";
-import { formatSize, relativeTime, MAX_OUTPUT_CHARS } from "./format.mjs";
+import { MAX_OUTPUT_CHARS } from "./format.mjs";
 import { readSnapshot } from "./snapshot.mjs";
 import { hashLine } from "@levnikolaevich/hex-common/text-protocol/hash";
 import {
@@ -178,9 +178,8 @@ export function readFile(filePath, opts = {}) {
         else normalizedRanges.push(normalized);
     }
 
-    const sizeText = formatSize(stat.size);
-    const ago = relativeTime(stat.mtime);
-    let meta = `${total} lines, ${sizeText}, ${ago}`;
+    // Structured meta (raw bytes + ISO mtime) per PROTOCOL.md §Removed noise.
+    let meta = `lines=${total} size=${stat.size} mtime=${stat.mtime.toISOString()}`;
     const rangeForMeta = normalizedRanges.length === 1 ? normalizedRanges[0] : null;
     if (rangeForMeta) {
         if (rangeForMeta.startLine > 1 || rangeForMeta.endLine < total) meta += `, showing ${rangeForMeta.startLine}-${rangeForMeta.endLine}`;
@@ -241,7 +240,7 @@ export function readFile(filePath, opts = {}) {
         const diagnosticsText = diagnostics.map(block => serializeDiagnosticBlock(block)).join("\n\n");
         const body = [sections.join("\n\n"), diagnosticsText].filter(Boolean).join("\n\n");
         const revisionLine = verbosity === "compact" ? `revision: ${snapshot.revision}\n` : "";
-        return `File: ${filePath}${graphLine}\nmeta: ${meta}\n${revisionLine}${buildContinuation({ nextOffset, limit: opts.limit && opts.limit > 0 ? opts.limit : DEFAULT_LIMIT })}\n${body}`.trim();
+        return `meta: ${meta}${graphLine}\n${revisionLine}${buildContinuation({ nextOffset, limit: opts.limit && opts.limit > 0 ? opts.limit : DEFAULT_LIMIT })}\n${body}`.trim();
     }
 
     const blocks = [];
@@ -276,5 +275,5 @@ export function readFile(filePath, opts = {}) {
             requestedEndLine: cappedAtLine,
         })));
     }
-    return `File: ${filePath}${graphLine}\nmeta: ${meta}\nrevision: ${snapshot.revision}\nfile: ${snapshot.fileChecksum}\neol: ${snapshot.eol}\ntrailing_newline: ${snapshot.trailingNewline}\n\n${serializedBlocks.join("\n\n")}`.trim();
+    return `meta: ${meta}${graphLine}\nrevision: ${snapshot.revision}\nfile: ${snapshot.fileChecksum}\n\n${serializedBlocks.join("\n\n")}`.trim();
 }

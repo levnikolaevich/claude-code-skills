@@ -8,7 +8,7 @@
 
 import { readdirSync, readFileSync, statSync, existsSync } from "node:fs";
 import { resolve, basename, join, relative } from "node:path";
-import { formatSize, relativeTime, countFileLines } from "./format.mjs";
+import { countFileLines } from "./format.mjs";
 import { normalizePath } from "./security.mjs";
 import ignore from "ignore";
 
@@ -229,18 +229,18 @@ export function directoryTree(dirPath, opts = {}) {
                 if (compact) {
                     lines.push(`${prefix}${name}`);
                 } else {
-                    let size = 0, mtime = null, lineCount = null;
+                    let size = 0, lineCount = null;
                     try {
                         const st = statSync(full);
                         size = st.size;
-                        mtime = st.mtime;
+                        // mtime not used in tree output; see file mode for mtime details.
                     } catch { /* skip */ }
                     totalSize += size;
                     lineCount = countFileLines(full, size);
                     const parts = [];
                     if (lineCount !== null) parts.push(`${lineCount}L`);
-                    parts.push(formatSize(size));
-                    if (mtime) parts.push(relativeTime(mtime, true));
+                    parts.push(`size=${size}`);
+                    // mtime omitted from default tree output — agents rarely need it here; inspect_path file mode still emits it.
                     lines.push(`${prefix}${name} (${parts.join(", ")})`);
                 }
             }
@@ -275,7 +275,7 @@ export function directoryTree(dirPath, opts = {}) {
     walk(abs, "  ", 1);
 
     const header = compact
-        ? `Directory: ${rootName}/ (${totalFiles} files)`
-        : `Directory: ${rootName}/ (${totalFiles} files, ${formatSize(totalSize)})`;
-    return `${header}\n\n${rootName}/\n${lines.join("\n")}`;
+        ? `dir=${rootName}/ files=${totalFiles}`
+        : `dir=${rootName}/ files=${totalFiles} total_bytes=${totalSize}`;
+    return `${header}\n${lines.join("\n")}`;
 }

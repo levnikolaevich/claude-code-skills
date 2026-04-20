@@ -95,3 +95,77 @@ export function validateChecksumCoverage(rangeChecksum, actualStart, actualEnd) 
     }
     return { ok: true, start, end, reason: null };
 }
+
+/**
+ * Predicate: does `line` look like a structurally-significant closing delimiter
+ * whose content hash is indistinguishable from every other lone-delimiter line?
+ *
+ * Used to skip boundary-echo auto-strip for such lines (sibling `}` of class vs
+ * method), and to signal ambiguity when both replace_between anchors land on
+ * such lines (hash-only match can resolve to the wrong sibling).
+ *
+ * Deliberately narrow: a trimmed line that is only a closing delimiter optionally
+ * followed by one `;` or `,`, plus a small set of language-agnostic block closers.
+ * Does NOT match short content like `if`, `do`, `fi` when those appear as code.
+ */
+const AMBIGUOUS_DELIMITER_RE = /^[)\]}](?:[;,])?$|^[)\]}]{2,}[;,]?$|^\}\);?$|^\}\)\);?$/;
+const KNOWN_BLOCK_CLOSERS = new Set(["end", "esac", "loop", "endif", "endfor", "endwhile"]);
+
+export function isAmbiguousDelimiter(line) {
+    const trimmed = String(line ?? "").trim();
+    if (!trimmed) return false;
+    if (AMBIGUOUS_DELIMITER_RE.test(trimmed)) return true;
+    if (KNOWN_BLOCK_CLOSERS.has(trimmed)) return true;
+    return false;
+}
+
+/**
+ * Lexical character counter for structural delimiters. Used only as an
+ * advisory heuristic: ignores string/template/JSX/comment lexical context,
+ * so callers must gate emission on a structural-risk signal.
+ */
+function countDelimChars(lines) {
+    let open = 0, close = 0, paren = 0, cparen = 0, bracket = 0, cbracket = 0;
+    for (const line of lines) {
+        const s = String(line ?? "");
+        for (let i = 0; i < s.length; i++) {
+            const ch = s.charCodeAt(i);
+            if (ch === 123) open++;           // {
+            else if (ch === 125) close++;     // }
+            else if (ch === 40) paren++;      // (
+            else if (ch === 41) cparen++;     // )
+            else if (ch === 91) bracket++;    // [
+            else if (ch === 93) cbracket++;   // ]
+        }
+    }
+    return { open, close, paren, cparen, bracket, cbracket };
+}
+
+export function lexicalBraceCounts(lines) {
+    return countDelimChars(lines);
+}
+
+export function isFileGloballyBalanced(counts) {
+    return (
+        counts.open === counts.close &&
+        counts.paren === counts.cparen &&
+        counts.bracket === counts.cbracket
+    );
+}
+
+/**
+ * Absolute delimiter delta between orig range and new lines (advisory only).
+ */
+export function braceDelta(origLines, newLines) {
+    const before = countDelimChars(origLines);
+    const after = countDelimChars(newLines);
+    const bd = (after.open - after.close) - (before.open - before.close);
+    const pd = (after.paren - after.cparen) - (before.paren - before.cparen);
+    const kd = (after.bracket - after.cbracket) - (before.bracket - before.cbracket);
+    return {
+        brace: bd,
+        paren: pd,
+        bracket: kd,
+        totalAbs: Math.abs(bd) + Math.abs(pd) + Math.abs(kd),
+    };
+}

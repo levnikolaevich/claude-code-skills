@@ -18,7 +18,7 @@ import {
 } from "./store.mjs";
 import { findUnusedExports } from "./unused.mjs";
 import { ACTION, nextActions } from "./output-contract.mjs";
-import { confidenceRank, normalizeConfidence } from "./confidence.mjs";
+import { normalizeConfidence } from "./confidence.mjs";
 
 const QUERY_PATH_RECOVERY = "Run index_project on the project root first; symbol/query tools then accept that root or a file/subdirectory inside it as path";
 
@@ -190,6 +190,7 @@ function buildPathPreview(path) {
 }
 
 function buildExpansionHint({
+    toolName,
     expansion,
     total,
     returnedByDefault,
@@ -197,17 +198,19 @@ function buildExpansionHint({
     includeEvidence = false,
     extra = {},
 }) {
+    const remaining = Math.max(0, total - returnedByDefault);
+    const limit = Math.min(expandLimit, Math.max(total, returnedByDefault, 1));
+    const parts = [`>mcp__hex-graph__${toolName}`, `expand=${expansion}`, `expand_limit=${limit}`];
+    if (includeEvidence) parts.push("include_evidence=1");
+    for (const [key, value] of Object.entries(extra)) {
+        if (value === null || value === undefined) continue;
+        parts.push(`${key}=${value}`);
+    }
     return {
         expansion,
         total,
-        returned_by_default: returnedByDefault,
-        remaining: Math.max(0, total - returnedByDefault),
-        suggested_params: {
-            expand: [expansion],
-            expand_limit: Math.min(expandLimit, Math.max(total, returnedByDefault, 1)),
-            include_evidence: includeEvidence,
-            ...extra,
-        },
+        remaining,
+        pointer: parts.join(" "),
     };
 }
 
@@ -234,35 +237,19 @@ function classifyProvenanceTier(origin) {
     return "parser_or_workspace";
 }
 
-function buildProvenanceSummary(rows, { totalRows = null, originLimit = 5 } = {}) {
+function buildProvenanceSummary(rows, { originLimit = 5 } = {}) {
     const sourceRows = rows.filter(Boolean);
     const byOrigin = new Map();
     const byTier = new Map();
     const byConfidence = new Map();
-    let strongestConfidence = "low";
-    let strongestTier = "unknown";
     for (const row of sourceRows) {
         const confidence = normalizeConfidence(row.confidence);
         const tier = classifyProvenanceTier(row.origin);
         incrementCount(byOrigin, row.origin || "unknown");
         incrementCount(byTier, tier);
         incrementCount(byConfidence, confidence);
-        if (confidenceRank(confidence) > confidenceRank(strongestConfidence)) {
-            strongestConfidence = confidence;
-        }
-        if ((byTier.get(tier) || 0) > 0 && (byTier.get(strongestTier) || 0) === 0) {
-            strongestTier = tier;
-        }
     }
-    const analyzedRows = sourceRows.length;
-    const expectedTotal = totalRows ?? analyzedRows;
     return {
-        total_rows: expectedTotal,
-        analyzed_rows: analyzedRows,
-        remaining_rows: Math.max(0, expectedTotal - analyzedRows),
-        coverage_ratio: expectedTotal > 0 ? Number((analyzedRows / expectedTotal).toFixed(2)) : 1,
-        strongest_confidence: strongestConfidence,
-        strongest_tier: strongestTier,
         tiers: summarizeCounts(byTier, originLimit),
         confidences: summarizeCounts(byConfidence, originLimit),
         origins: summarizeCounts(byOrigin, originLimit),
@@ -404,12 +391,8 @@ export function runFindSymbolsUseCase(query, { kind, limit = 20, path } = {}) {
     )
         ? [`"${query}" is a broad bare symbol query. Narrow path or refine with name + file before deeper graph inspection.`]
         : [];
-    const summary = candidates.length
-        ? `Found ${summarizeCount(candidates.length, "candidate symbol")} for "${query}"${candidates.length > shownCandidates.length ? `; showing top ${shownCandidates.length}.` : "."}`
-        : `No candidate symbols matched "${query}".`;
     return {
         query: base.query,
-        summary,
         result: {
             candidates: shownCandidates,
             candidate_count: candidates.length,
@@ -517,11 +500,6 @@ export function runInspectSymbolUseCase(selector, {
             reference_limit: referenceLimit,
             implementation_limit: implementationLimit,
         },
-        summary: buildSymbolSummary(
-            symbol,
-            referencesResult.result,
-            implementationsResult.result.implementations || [],
-        ),
         result: {
             symbol,
             resolution: buildResolutionPayload(resolutionResult.result, symbol),
@@ -548,17 +526,14 @@ export function runInspectSymbolUseCase(selector, {
             provenance_summary: buildProvenanceSummary([
                 ...referencesResult.result.references,
                 ...implementationsResult.result.implementations,
-            ], {
-                totalRows: totalReferences + totalImplementations,
-            }),
+            ]),
             framework_roles: frameworkOrigins,
-            available_expansions: ["siblings", "incoming", "outgoing", "references", "implementations"],
             expansion_hints: [
-                buildExpansionHint({ expansion: "siblings", total: siblings.length, returnedByDefault: 0, expandLimit: detailLimit, includeEvidence }),
-                buildExpansionHint({ expansion: "incoming", total: incoming.length, returnedByDefault: 0, expandLimit: detailLimit, includeEvidence }),
-                buildExpansionHint({ expansion: "outgoing", total: outgoing.length, returnedByDefault: 0, expandLimit: detailLimit, includeEvidence }),
-                buildExpansionHint({ expansion: "references", total: totalReferences, returnedByDefault: referencesPreview.length, expandLimit: detailLimit, includeEvidence }),
-                buildExpansionHint({ expansion: "implementations", total: totalImplementations, returnedByDefault: implementationsPreview.length, expandLimit: detailLimit, includeEvidence }),
+                buildExpansionHint({ toolName: "inspect_symbol", expansion: "siblings", total: siblings.length, returnedByDefault: 0, expandLimit: detailLimit, includeEvidence }),
+                buildExpansionHint({ toolName: "inspect_symbol", expansion: "incoming", total: incoming.length, returnedByDefault: 0, expandLimit: detailLimit, includeEvidence }),
+                buildExpansionHint({ toolName: "inspect_symbol", expansion: "outgoing", total: outgoing.length, returnedByDefault: 0, expandLimit: detailLimit, includeEvidence }),
+                buildExpansionHint({ toolName: "find_references", expansion: "references", total: totalReferences, returnedByDefault: referencesPreview.length, expandLimit: detailLimit, includeEvidence }),
+                buildExpansionHint({ toolName: "find_implementations", expansion: "implementations", total: totalImplementations, returnedByDefault: implementationsPreview.length, expandLimit: detailLimit, includeEvidence }),
             ],
             ...(Object.keys(expanded).length ? { expanded } : {}),
         },
@@ -620,19 +595,15 @@ export function runFindReferencesUseCase(selector, {
         : null;
     return {
         query: base.query,
-        summary: base.result.total
-            ? `Found ${summarizeCount(base.result.total, "semantic reference")} across ${Object.keys(base.result.total_by_kind || {}).length || 1} kind(s).`
-            : "No semantic reference matched the requested symbol.",
         result: {
             symbol: base.result.symbol,
             provider_status: base.result.provider_status,
             total: base.result.total,
             total_by_kind: base.result.total_by_kind,
             preview,
-            provenance_summary: buildProvenanceSummary(base.result.references, { totalRows: base.result.total }),
-            available_expansions: ["references"],
+            provenance_summary: buildProvenanceSummary(base.result.references),
             expansion_hints: [
-                buildExpansionHint({ expansion: "references", total: base.result.total, returnedByDefault: preview.length, expandLimit: detailLimit, includeEvidence }),
+                buildExpansionHint({ toolName: "find_references", expansion: "references", total: base.result.total, returnedByDefault: preview.length, expandLimit: detailLimit, includeEvidence }),
             ],
             ...(expanded ? { expanded } : {}),
         },
@@ -680,17 +651,13 @@ export function runFindImplementationsUseCase(selector, {
         : null;
     return {
         query: { ...base.query, limit: fetchLimit },
-        summary: base.result.total
-            ? `Found ${summarizeCount(base.result.total, "implementation relation")} for the requested symbol.`
-            : "No implementation or override relation matched the requested symbol.",
         result: {
             symbol: base.result.symbol,
             total: base.result.total,
             preview,
-            provenance_summary: buildProvenanceSummary(base.result.implementations, { totalRows: base.result.total }),
-            available_expansions: ["implementations"],
+            provenance_summary: buildProvenanceSummary(base.result.implementations),
             expansion_hints: [
-                buildExpansionHint({ expansion: "implementations", total: base.result.total, returnedByDefault: preview.length, expandLimit: detailLimit, includeEvidence }),
+                buildExpansionHint({ toolName: "find_implementations", expansion: "implementations", total: base.result.total, returnedByDefault: preview.length, expandLimit: detailLimit, includeEvidence }),
             ],
             ...(expanded ? { expanded } : {}),
         },
@@ -750,17 +717,14 @@ export function runTracePathsUseCase(selector, {
         : null;
     return {
         query: base.query,
-        summary: pathRows.length
-            ? `Found ${summarizeCount(pathRows.length, "graph path")} through ${pathKind} edges.`
-            : "No path matched the requested traversal.",
         result: {
             path_count: pathRows.length,
             target_found: target ? pathRows.length > 0 : null,
             path_previews: pathPreviews,
-            provenance_summary: buildProvenanceSummary(traceRowsForProvenance(pathRows), { totalRows: traceRowsForProvenance(pathRows).length }),
-            available_expansions: ["paths"],
+            provenance_summary: buildProvenanceSummary(traceRowsForProvenance(pathRows)),
             expansion_hints: [
                 buildExpansionHint({
+                    toolName: "trace_paths",
                     expansion: "paths",
                     total: pathRows.length,
                     returnedByDefault: pathPreviews.length,
@@ -817,19 +781,16 @@ export function runTraceDataflowUseCase(selector, {
         : null;
     return {
         query: base.query,
-        summary: flows.length
-            ? `Found ${summarizeCount(flows.length, "dataflow path")} from the requested source.`
-            : "No dataflow path matched the requested source/sink anchors.",
         result: {
             source: base.result?.source,
             sink: base.result?.sink,
             path_count: flows.length,
             target_found: base.evidence?.target_found ?? null,
             path_previews: flows.slice(0, previewLimit).map(buildPathPreview),
-            provenance_summary: buildProvenanceSummary(traceRowsForProvenance(flows), { totalRows: traceRowsForProvenance(flows).length }),
-            available_expansions: ["paths"],
+            provenance_summary: buildProvenanceSummary(traceRowsForProvenance(flows)),
             expansion_hints: [
                 buildExpansionHint({
+                    toolName: "trace_dataflow",
                     expansion: "paths",
                     total: flows.length,
                     returnedByDefault: Math.min(previewLimit, flows.length),

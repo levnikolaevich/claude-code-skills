@@ -880,6 +880,47 @@ describe("per-call timeouts", () => {
         assert.equal(transfer.DEFAULT_TRANSFER_TIMEOUT_MS, 120_000);
     });
 
+    it("passes connect and keepalive timeouts to ssh2 and separates pooled connections", async () => {
+        const { _setClientFactory, closeAllConnections, executeCommand } = await import("../lib/ssh-client.mjs");
+        const connectOptions = [];
+        _setClientFactory(() => {
+            const handlers = new Map();
+            return {
+                _sock: { writable: false },
+                on(event, cb) { handlers.set(event, cb); return this; },
+                connect(options) {
+                    connectOptions.push(options);
+                    this._sock.writable = true;
+                    defer(() => handlers.get("ready")?.());
+                },
+                end() { this._sock.writable = false; },
+                exec(_command, callback) {
+                    defer(() => callback(null, makeExecStream("ok\n", "", 0)));
+                },
+            };
+        });
+        try {
+            const base = {
+                host: "example.com",
+                user: "deploy",
+                port: 22,
+                identityFiles: [TM_KEY],
+                command: "true",
+            };
+            await executeCommand({ ...base, connectTimeoutMs: 1000, keepaliveIntervalMs: 11000 });
+            await executeCommand({ ...base, connectTimeoutMs: 1000, keepaliveIntervalMs: 11000 });
+            await executeCommand({ ...base, connectTimeoutMs: 2000, keepaliveIntervalMs: 22000 });
+
+            assert.equal(connectOptions.length, 2, "same timeout tuple reuses pool; changed tuple opens a new connection");
+            assert.equal(connectOptions[0].readyTimeout, 1000);
+            assert.equal(connectOptions[0].keepaliveInterval, 11000);
+            assert.equal(connectOptions[1].readyTimeout, 2000);
+            assert.equal(connectOptions[1].keepaliveInterval, 22000);
+        } finally {
+            closeAllConnections();
+        }
+    });
+
     it("executeCommand rejects with EXEC_TIMEOUT when execTimeoutMs elapses", async () => {
         const { _setClientFactory, closeAllConnections, executeCommand } = await import("../lib/ssh-client.mjs");
         _setClientFactory(() => {

@@ -183,7 +183,7 @@ async function summaryMode(pattern, target, opts, totalLimit) {
     if (code === 1) return "No matches found.";
     if (code !== 0 && code !== null) throw new Error(`GREP_ERROR: rg exit ${code} — ${stderr.trim() || "unknown error"}`);
 
-    const rawLines = stdout.trimEnd().split("\n").filter(Boolean);
+    const rawLines = stdout.trimEnd().split(/\r?\n/).filter(Boolean);
     const visible = totalLimit > 0 ? rawLines.slice(0, totalLimit) : rawLines;
     const fileHits = new Map();
     const snippets = [];

@@ -72,6 +72,7 @@ Use `hex-graph` only for semantic code questions:
 - `find_references` and `trace_paths` for usage and blast radius
 - `analyze_changes`, `audit_workspace`, and `analyze_architecture` for review and audit work
 - Always include `path` for `hex-graph` queries, using the active project root by default.
+- For `audit_workspace`, start bounded: `verbosity="minimal"`, add `scope` when known, and increase `limit` or `clone_member_limit` only for intentional deeper review.
 
 # Response Style
 

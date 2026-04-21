@@ -68,6 +68,9 @@ async function main() {
 
     // Build config shared across all benchmark modules
     const config = { allFiles, cats, largeFiles, tmpPath, tmpContent, tmpLines, repoRoot, ts };
+    const workflowMode = getFileLines(resolve(repoRoot, "hook.mjs")) && getFileLines(resolve(repoRoot, "lib", "setup.mjs"))
+        ? "self-fixture"
+        : "generic external repo";
 
     // Run benchmark suites
     const workflowResults = await runWorkflows(config);
@@ -88,7 +91,7 @@ async function main() {
     out.push(`Date: ${new Date().toISOString().slice(0, 10)}  `);
     out.push(`Runs per scenario: ${RUNS} (median)  `);
     out.push("");
-    out.push("Mode: hex-line workflow benchmark");
+    out.push(`Mode: hex-line workflow benchmark (${workflowMode})`);
     out.push("");
     out.push("## Workflow Scenarios");
     out.push("");

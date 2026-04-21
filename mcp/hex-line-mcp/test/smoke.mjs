@@ -1335,6 +1335,26 @@ describe("grep_search output modes", () => {
         assert.ok(!result.includes("block: search_hunk"), "summary mode omits canonical hunks");
     });
 
+    it("summary mode counts files for Windows ripgrep CRLF output", async () => {
+        const { grepSearch } = await import("../lib/search.mjs");
+        const dir = makeTempRepo("hex-test-grep-summary-crlf-", {
+            "src/one.ts": "export function alpha() { return 1; }\n",
+            "src/two.ts": "export function beta() { return 2; }\n",
+        });
+        try {
+            const result = await grepSearch("export function", {
+                path: dir,
+                output: "summary",
+                limit: 20,
+                totalLimit: 20,
+            });
+            assert.match(result, /summary: 2 match event\(s\) across 2 file\(s\)/);
+            assert.ok(result.includes("top_files:"), `summary should include top files: ${result}`);
+        } finally {
+            fs.rmSync(dir, { recursive: true, force: true });
+        }
+    });
+
     it("files mode returns only paths, count mode returns counts", async () => {
         const { grepSearch } = await import("../lib/search.mjs");
         const files = await grepSearch("export", { path: CWD + "/lib", output: "files" });

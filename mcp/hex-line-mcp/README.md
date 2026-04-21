@@ -106,6 +106,8 @@ The diagnostics run reports graph payload overhead and auto-refresh telemetry. R
 
 Comparative built-in vs hex-line benchmarks are maintained outside this package. External-baseline comparisons must reuse the same scenario suite and correctness contract before making broader claims.
 
+When `--repo` points at a repository outside `hex-line-mcp`, the scenario runner uses a generic external-repo suite instead of package-specific fixtures. The report labels the mode explicitly.
+
 ### Optional Graph Enrichment
 
 If a project already has `.hex-skills/codegraph/index.db`, `hex-line` automatically adds lightweight graph hints to `read_file`, `outline`, `grep_search`, `edit_file`, and `changes`.
@@ -289,7 +291,7 @@ Search file contents using ripgrep. Default mode is `summary` for discovery. Use
 | `edit_ready` | boolean | no | Preserve hash/checksum search hunks in `content` mode |
 | `allow_large_output` | boolean | no | Bypass the default `content`-mode block/char caps when you intentionally need a larger payload |
 
-`summary` mode returns counts, top files, and a few plain snippets. `content` mode returns canonical `search_hunk` blocks with per-hunk checksums enabling direct `replace_lines` from grep results without intermediate `read_file`.
+`summary` mode returns counts and top files without canonical hunks. `content` mode returns canonical `search_hunk` blocks with per-hunk checksums enabling direct `replace_lines` from grep results without intermediate `read_file`.
 
 - Default `content` mode is intentionally capped to keep discovery cheap. When truncation happens, the diagnostic block includes `shown_matches`, `file_count`, `truncated`, `next_action`, and `suggested_refine_call`.
 - Treat `allow_large_output: true` as an explicit override for review/debug workflows, not as the normal discovery path.

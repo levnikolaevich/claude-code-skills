@@ -132,16 +132,16 @@ Local transfer paths for `ssh-upload` and `ssh-download` must be absolute paths 
 
 ### Per-call Timeouts
 
-All tools accept four optional timeout fields (in milliseconds). Missing/invalid values fall back to the default.
+Timeout fields are scoped to the operation type. Missing or invalid values fall back to the default.
 
 | Field | Default | Applies to | Notes |
 |---|---|---|---|
-| `connectTimeoutMs` | `20000` | connection handshake (new connection only) | Different values create separate pooled connections (max 10 per host). Changes ignored for cached connections. |
-| `keepaliveIntervalMs` | `30000` | SSH keepalive on new connection | Same pool-key behavior as `connectTimeoutMs`. |
-| `execTimeoutMs` | `120000` | per-command exec timeout | Used by `remote-ssh` and all hash-verified file tools. Ignored by `ssh-upload`/`ssh-download`. On expiry: `EXEC_TIMEOUT` error. |
-| `transferTimeoutMs` | `120000` (env `TRANSFER_TIMEOUT_MS` overrides default) | SFTP transfer inactivity | Used by `ssh-upload`/`ssh-download`. Resets on each data chunk. On expiry: `TRANSFER_TIMEOUT` error. |
+| `connectTimeoutMs` | `20000` | all tools, connection handshake (new connection only) | Different values create separate pooled connections (max 10 per host). Changes ignored for cached connections. |
+| `keepaliveIntervalMs` | `30000` | all tools, SSH keepalive on new connection | Same pool-key behavior as `connectTimeoutMs`. |
+| `execTimeoutMs` | `120000` | `remote-ssh`, `ssh-read-lines`, `ssh-edit-block`, `ssh-search-code`, `ssh-write-chunk`, `ssh-verify` | Per-command timeout. On expiry: `EXEC_TIMEOUT` error. |
+| `transferTimeoutMs` | `120000` (env `TRANSFER_TIMEOUT_MS` overrides default) | `ssh-upload`, `ssh-download` | SFTP inactivity timeout. Resets on each data chunk. On expiry: `TRANSFER_TIMEOUT` error. |
 
-Priority for `transferTimeoutMs`: per-call arg > `TRANSFER_TIMEOUT_MS` env var > built-in default. The other three have no env override — pass the arg to change them.
+Priority for `transferTimeoutMs`: per-call arg > `TRANSFER_TIMEOUT_MS` env var > built-in default. The other timeout fields have no env override; pass the arg to change them.
 
 ### Atomic File Writes
 

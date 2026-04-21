@@ -30,6 +30,10 @@ function toolByName(tools, name) {
     return tool;
 }
 
+function propNames(tool) {
+    return Object.keys(tool.inputSchema.properties || {});
+}
+
 describe("schema descriptions", () => {
     it("listTools preserves SSH property descriptions under Zod 4", async () => {
         await withMcpClient(async (client) => {
@@ -39,6 +43,35 @@ describe("schema descriptions", () => {
             assert.equal(readProps.host?.description, "SSH host - alias from ~/.ssh/config or hostname/IP");
             assert.equal(readProps.filePath?.description, "Path to file on remote server");
             assert.equal(readProps.maxLines?.description, "Max lines to read (default: 200)");
+        });
+    });
+
+    it("exposes only timeout fields that each tool can use", async () => {
+        await withMcpClient(async (client) => {
+            const result = await client.listTools();
+            const execTools = [
+                "remote-ssh",
+                "ssh-read-lines",
+                "ssh-edit-block",
+                "ssh-search-code",
+                "ssh-write-chunk",
+                "ssh-verify",
+            ];
+            for (const name of execTools) {
+                const props = propNames(toolByName(result.tools, name));
+                assert.ok(props.includes("connectTimeoutMs"), `${name} should accept connectTimeoutMs`);
+                assert.ok(props.includes("keepaliveIntervalMs"), `${name} should accept keepaliveIntervalMs`);
+                assert.ok(props.includes("execTimeoutMs"), `${name} should accept execTimeoutMs`);
+                assert.ok(!props.includes("transferTimeoutMs"), `${name} should not expose transferTimeoutMs`);
+            }
+
+            for (const name of ["ssh-upload", "ssh-download"]) {
+                const props = propNames(toolByName(result.tools, name));
+                assert.ok(props.includes("connectTimeoutMs"), `${name} should accept connectTimeoutMs`);
+                assert.ok(props.includes("keepaliveIntervalMs"), `${name} should accept keepaliveIntervalMs`);
+                assert.ok(props.includes("transferTimeoutMs"), `${name} should accept transferTimeoutMs`);
+                assert.ok(!props.includes("execTimeoutMs"), `${name} should not expose execTimeoutMs`);
+            }
         });
     });
 });

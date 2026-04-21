@@ -61,7 +61,7 @@ const { server, StdioServerTransport } = await createServerRuntime({
 
 // --- Common connection args for reuse ---
 
-const connProps = {
+const baseConnProps = {
     host: z.string().describe("SSH host - alias from ~/.ssh/config or hostname/IP"),
     user: z.string().optional().describe("SSH username (optional if set in ~/.ssh/config)"),
     privateKeyPath: z.string().optional().describe("Path to SSH private key (optional)"),
@@ -69,13 +69,20 @@ const connProps = {
     remotePlatform: z.enum(["auto", "posix", "windows"]).optional().describe('Remote path platform. Use "windows" for paths like C:\\\\repo\\\\file.txt. Default: auto'),
     connectTimeoutMs: flexNum().describe("SSH handshake timeout in ms (default: 20000). Per-call override. Different values spawn separate pooled connections."),
     keepaliveIntervalMs: flexNum().describe("SSH keepalive interval in ms (default: 30000). Per-call override. Different values spawn separate pooled connections."),
-    execTimeoutMs: flexNum().describe("Per-command execution timeout in ms (default: 120000). Used by remote-ssh and hash-verified file tools. Ignored by ssh-upload/ssh-download."),
+};
+
+const execTimeoutProps = {
+    execTimeoutMs: flexNum().describe("Per-command execution timeout in ms (default: 120000). Used by remote-ssh and hash-verified file tools."),
+};
+
+const transferTimeoutProps = {
     transferTimeoutMs: flexNum().describe("SFTP inactivity timeout in ms (default: 120000; env TRANSFER_TIMEOUT_MS overrides default). Used by ssh-upload/ssh-download."),
 };
 
-function connSchema(extraShape) {
+function connSchema(extraShape, timeoutProps = {}) {
     return z.object({
-        ...connProps,
+        ...baseConnProps,
+        ...timeoutProps,
         ...extraShape,
     });
 }
@@ -173,7 +180,7 @@ server.registerTool("remote-ssh", {
         "Set REMOTE_SSH_MODE=safe or REMOTE_SSH_MODE=open to enable.",
     inputSchema: connSchema({
         command: z.string().describe("Shell command to execute"),
-    }),
+    }, execTimeoutProps),
     outputSchema: SSH_OUTPUT_SCHEMA,
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
 }, async (rawArgs) => {
@@ -214,7 +221,7 @@ server.registerTool("ssh-read-lines", {
         endLine: flexNum().describe("End line (optional, reads to limit if not set)"),
         maxLines: flexNum().describe("Max lines to read (default: 200)"),
         plain: flexBool().describe("Omit hashes (lineNum|content)"),
-    }),
+    }, execTimeoutProps),
     outputSchema: SSH_OUTPUT_SCHEMA,
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true },
 }, async (rawArgs) => {
@@ -319,7 +326,7 @@ server.registerTool("ssh-edit-block", {
         startAnchor: z.string().optional().describe("Start hash anchor 'ab.42' for range replace"),
         endAnchor: z.string().optional().describe("End hash anchor 'cd.45' for range replace"),
         insertAfter: z.string().optional().describe("Hash anchor 'ab.42' to insert after"),
-    }),
+    }, execTimeoutProps),
     outputSchema: SSH_OUTPUT_SCHEMA,
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
 }, async (rawArgs) => {
@@ -499,7 +506,7 @@ server.registerTool("ssh-search-code", {
         ignoreCase: flexBool().describe("Case-insensitive search (default: false)"),
         maxResults: flexNum().describe("Max result lines (default: 50)"),
         contextLines: flexNum().describe("Context lines around matches (default: 0)"),
-    }),
+    }, execTimeoutProps),
     outputSchema: SSH_OUTPUT_SCHEMA,
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true },
 }, async (rawArgs) => {
@@ -583,7 +590,7 @@ server.registerTool("ssh-write-chunk", {
         filePath: z.string().describe("Path to file on remote server"),
         content: z.string().describe("Content to write"),
         mode: z.enum(["rewrite", "append"]).optional().describe("Write mode (default: rewrite)"),
-    }),
+    }, execTimeoutProps),
     outputSchema: SSH_OUTPUT_SCHEMA,
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true },
 }, async (rawArgs) => {
@@ -642,7 +649,7 @@ server.registerTool("ssh-upload", {
         overwrite: z.boolean().optional().describe("Replace existing destination when true. Default: false"),
         verify: z.enum(["none", "stat"]).optional().describe("Post-transfer verification mode. Default: stat"),
         permissions: z.string().optional().describe("Optional octal file mode for uploaded file, e.g. 0644"),
-    }),
+    }, transferTimeoutProps),
     outputSchema: SSH_OUTPUT_SCHEMA,
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
 }, async (rawArgs) => {
@@ -694,7 +701,7 @@ server.registerTool("ssh-download", {
         localPath: z.string().describe("Absolute local destination path or ~/path"),
         overwrite: z.boolean().optional().describe("Replace existing destination when true. Default: false"),
         verify: z.enum(["none", "stat"]).optional().describe("Post-transfer verification mode. Default: stat"),
-    }),
+    }, transferTimeoutProps),
     outputSchema: SSH_OUTPUT_SCHEMA,
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
 }, async (rawArgs) => {
@@ -743,7 +750,7 @@ server.registerTool("ssh-verify", {
     inputSchema: connSchema({
         filePath: z.string().describe("Path to file on remote server"),
         checksums: z.string().describe('JSON array of checksum strings, e.g. ["1-50:f7e2a1b0", "51-100:abcd1234"]'),
-    }),
+    }, execTimeoutProps),
     outputSchema: SSH_OUTPUT_SCHEMA,
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true },
 }, async (rawArgs) => {

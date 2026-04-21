@@ -1738,6 +1738,27 @@ class Store {
         this.db.exec("DELETE FROM module_edges WHERE target_file NOT IN (SELECT path FROM files)");
     }
 
+    resetProjectGraph() {
+        const tx = this.db.transaction(() => {
+            this.db.exec(`
+                DELETE FROM package_edges;
+                DELETE FROM module_edges;
+                DELETE FROM flow_facts;
+                DELETE FROM flow_summaries;
+                DELETE FROM clone_lsh;
+                DELETE FROM clone_blocks;
+                DELETE FROM edges;
+                DELETE FROM nodes;
+                INSERT INTO nodes_fts(nodes_fts) VALUES('rebuild');
+                DELETE FROM files;
+                DELETE FROM workspace_modules;
+                DELETE FROM packages;
+                DELETE FROM provider_runs;
+            `);
+        });
+        tx();
+    }
+
     moduleEdgesBySource(file) {
         return this._moduleEdgesBySource.all(file);
     }

@@ -29,7 +29,7 @@ export async function runAmortization(store, config) {
     const { repoRoot, searchSym, contextSym, impactSym, traceSym } = config;
     const selectorFor = (sym) => ({ name: sym.name, file: sym.file });
 
-    // Measure index time (re-index -- mostly skips unchanged files)
+    // Measure full rebuild index time.
     const t0 = performance.now();
     await indexProject(repoRoot);
     const indexTimeMs = performance.now() - t0;

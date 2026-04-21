@@ -382,6 +382,22 @@ export class B {
             let store = getStore(dir);
             assert.ok(store.getFile("src/app.mjs"), "regular source indexed before ignore rule");
             assert.ok(store.getFile("ignored-vendor/ghost.mjs"), "source indexed before ignore rule exists");
+            const stalePkg = store.ensurePackage({
+                package_key: "js:ignored-vendor",
+                name: "ignored-vendor",
+                language: "javascript",
+                root_path: "ignored-vendor",
+                is_external: 0,
+            });
+            store.ensureWorkspaceModule({
+                module_key: "js-module:ignored-vendor",
+                name: "ignored-vendor",
+                package_id: stalePkg.id,
+                package_key: stalePkg.package_key,
+                language: "javascript",
+                root_path: "ignored-vendor",
+                is_external: 0,
+            });
             store.close();
 
             writeFileSync(join(dir, ".gitignore"), "ignored-vendor/\n");
@@ -389,6 +405,16 @@ export class B {
             store = getStore(dir);
             assert.ok(store.getFile("src/app.mjs"), "regular source remains indexed");
             assert.equal(store.getFile("ignored-vendor/ghost.mjs"), undefined, "ignored source purged from graph");
+            assert.equal(
+                store.db.prepare("SELECT COUNT(*) AS count FROM workspace_modules WHERE root_path = 'ignored-vendor'").get().count,
+                0,
+                "full index rebuild purges stale workspace modules",
+            );
+            assert.equal(
+                store.db.prepare("SELECT COUNT(*) AS count FROM packages WHERE root_path = 'ignored-vendor'").get().count,
+                0,
+                "full index rebuild purges stale packages",
+            );
             store.close();
         } finally {
             try { rmSync(dir, { recursive: true, force: true }); } catch { /* Windows WAL lock */ }

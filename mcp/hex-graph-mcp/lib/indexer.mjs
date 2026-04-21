@@ -1,13 +1,13 @@
 /**
  * 4-pass indexing pipeline for code knowledge graph.
  *
- * Pass 0: PURGE — remove files no longer on disk (CASCADE cleanup)
- * Pass 1: SCAN — walk directory, skip unchanged files (mtime check)
+ * Pass 0: RESET — full index_project rebuilds graph DB content from scratch
+ * Pass 1: SCAN — discover source files through Git-aware project inventory
  * Pass 2: PARSE — tree-sitter AST -> definitions + imports + calls
  * Pass 3: RESOLVE — link imports to target files, build call edges
  *
- * Idempotent: re-running skips unchanged files.
- * Incremental: can reindex a single file (for watcher).
+ * Idempotent: re-running produces graph state for the current source inventory.
+ * Incremental: watcher-driven reindexFile reparses a single edited file.
  */
 
 import { readFileSync, statSync, existsSync, mkdirSync } from "node:fs";
@@ -73,25 +73,16 @@ export async function indexProject(projectPath, { languages } = {}) {
     const allowedSet = new Set(allowedExts);
 
     const discoverableSourceFiles = discoverSourceFiles(absPath, new Set(supportedExtensions()));
-    const discoverablePathSet = new Set(discoverableSourceFiles.map(file => file.relPath));
     const allSourceFiles = languages
         ? discoverableSourceFiles.filter(file => allowedSet.has(extname(file.relPath).toLowerCase()))
         : discoverableSourceFiles;
 
-    // Pass 0: PURGE deleted or newly ignored files
-    const existingPaths = store.allFilePaths();
-    let purged = 0;
-    for (const p of existingPaths) {
-        const fullPath = resolve(absPath, p);
-        if (!existsSync(fullPath) || !discoverablePathSet.has(p)) {
-            store.deleteFile(p);
-            purged++;
-        }
-    }
-    if (purged > 0) store.cleanupOrphanModuleEdges();
+    // Pass 0: RESET. Full indexing is a deterministic rebuild, not an
+    // accumulation pass, so old ignored packages/modules cannot leak forward.
+    store.resetProjectGraph();
 
     // Pass 1: SCAN
-    const filesToIndex = changedSourceFiles(store, allSourceFiles);
+    const filesToIndex = allSourceFiles;
     const workspace = persistWorkspace(store, discoverWorkspace(absPath, allSourceFiles));
     const projectLanguages = [...new Set(allSourceFiles.map(file => file.language).filter(Boolean))];
 
@@ -174,8 +165,8 @@ export async function indexProject(projectPath, { languages } = {}) {
 
         return [
             `Indexed ${stats.files} files, ${stats.nodes} symbols, ${stats.edges} edges in ${elapsed}ms`,
-            purged > 0 ? `Purged ${purged} deleted files` : null,
-            `Parsed ${parsed} files (${filesToIndex.length - parsed} skipped, unchanged)`,
+            "Rebuilt graph DB from current source inventory",
+            `Parsed ${parsed} files (${filesToIndex.length - parsed} read/parse skipped)`,
             `Built ${edgeCount} new call edges`,
             precise.precise_edges > 0 ? `Added ${precise.precise_edges} precise overlay edges` : null,
             framework.edge_count > 0 ? `Added ${framework.edge_count} framework overlay edges` : null,
@@ -848,13 +839,6 @@ function discoverSourceFiles(projectPath, allowedExts) {
         results.push({ relPath, fullPath, mtime: stat.mtimeMs, language: languageFor(ext) });
     }
     return results;
-}
-
-function changedSourceFiles(store, sourceFiles) {
-    return sourceFiles.filter(({ relPath, mtime }) => {
-        const existing = store.getFile(relPath);
-        return !existing || Math.abs(existing.mtime - mtime) >= 1;
-    });
 }
 
 function findEnclosingDefinition(line, definitions) {

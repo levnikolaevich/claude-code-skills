@@ -3,8 +3,9 @@
  */
 
 import { execFileSync, execSync } from "node:child_process";
-import { readdirSync, statSync } from "node:fs";
+import { statSync } from "node:fs";
 import { resolve, extname } from "node:path";
+import { listProjectFiles } from "../lib/file-discovery.mjs";
 
 export const CODE_EXTS = new Set([".js", ".mjs", ".cjs", ".jsx", ".ts", ".tsx", ".py", ".cs", ".php"]);
 export const RUNS = 3;
@@ -19,24 +20,16 @@ export function pctSavings(without, withG) {
     return pct >= 0 ? `${pct.toFixed(0)}%` : `-${Math.abs(pct).toFixed(0)}%`;
 }
 
-export function walkDir(dir, depth = 0) {
-    if (depth > 10) return [];
+export function walkDir(dir) {
+    const root = resolve(dir);
     const results = [];
-    let entries;
-    try { entries = readdirSync(dir, { withFileTypes: true }); }
-    catch { return results; }
-    for (const e of entries) {
-        const full = resolve(dir, e.name);
-        if (e.isDirectory()) {
-            if (e.name.startsWith(".") || e.name === "node_modules" || e.name === "vendor"
-                || e.name === "dist" || e.name === "__pycache__" || e.name === "target") continue;
-            results.push(...walkDir(full, depth + 1));
-        } else if (e.isFile() && CODE_EXTS.has(extname(e.name).toLowerCase())) {
-            try {
-                const st = statSync(full);
-                if (st.size > 0 && st.size < 1_000_000) results.push(full);
-            } catch { /* skip */ }
-        }
+    for (const relPath of listProjectFiles(root)) {
+        if (!CODE_EXTS.has(extname(relPath).toLowerCase())) continue;
+        const full = resolve(root, relPath);
+        try {
+            const st = statSync(full);
+            if (st.size > 0 && st.size < 1_000_000) results.push(full);
+        } catch { /* skip */ }
     }
     return results;
 }

@@ -3,9 +3,9 @@
   "summary": {
     "semantic_suite": {
       "runner": "node --test test/*.mjs",
-      "passed": 102,
+      "passed": 103,
       "skipped": 0,
-      "total": 102,
+      "total": 103,
       "failed": 0,
       "status": "pass"
     },

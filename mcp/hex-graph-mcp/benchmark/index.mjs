@@ -197,7 +197,7 @@ async function main() {
         if (amort) {
             out.push("### Latency Diagnostics");
             out.push("");
-            out.push(`Index time: ${fmt(Math.round(amort.indexTimeMs))}ms for ${fmt(stats.files)} files`);
+            out.push(`Index time: ${fmt(Math.round(amort.indexTimeMs))}ms for ${fmt(allFiles.length)} source files`);
             out.push(`Average query: ${amort.avgQueryMs.toFixed(1)}ms`);
             out.push(`Built-in comparison query: ${amort.avgBuiltinMs.toFixed(1)}ms`);
             out.push("");

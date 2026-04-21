@@ -790,7 +790,7 @@ function auditQuality(result) {
 
 server.registerTool("index_project", {
     title: "Index Project",
-    description: "Scan and index a project into the graph kernel, including precise and framework-aware overlays when available.",
+    description: "Scan and index a project into the graph kernel, honoring Git excludes by default and including precise/framework overlays when available.",
     inputSchema: z.object({
         path: z.string().describe("Project root directory"),
         languages: z.array(z.string()).optional().describe("Filter indexed languages"),

@@ -10,7 +10,7 @@
  * Incremental: can reindex a single file (for watcher).
  */
 
-import { readFileSync, statSync, readdirSync, existsSync, mkdirSync } from "node:fs";
+import { readFileSync, statSync, existsSync, mkdirSync } from "node:fs";
 import { resolve, extname, relative, join, basename } from "node:path";
 import { createHash } from "node:crypto";
 import { getStore, hasOpenStore, CODEGRAPH_DIR } from "./store.mjs";
@@ -19,12 +19,7 @@ import { parseFile, languageFor, supportedExtensions } from "./parser.mjs";
 import { discoverWorkspace, persistWorkspace } from "./workspace.mjs";
 import { runPreciseOverlay } from "./precise/index.mjs";
 import { extractParamNames, normalizeAnchor } from "./flow.mjs";
-
-const IGNORE_DIRS = new Set([
-    "node_modules", ".git", "dist", "build", "out", ".next",
-    "__pycache__", ".venv", "venv", "vendor", "target",
-    CODEGRAPH_DIR, ".vs", "bin", "obj",
-]);
+import { listProjectFiles } from "./file-discovery.mjs";
 
 const MAX_FILE_SIZE = 500_000; // 500KB
 
@@ -77,12 +72,18 @@ export async function indexProject(projectPath, { languages } = {}) {
         : supportedExtensions();
     const allowedSet = new Set(allowedExts);
 
-    // Pass 0: PURGE deleted files
+    const discoverableSourceFiles = discoverSourceFiles(absPath, new Set(supportedExtensions()));
+    const discoverablePathSet = new Set(discoverableSourceFiles.map(file => file.relPath));
+    const allSourceFiles = languages
+        ? discoverableSourceFiles.filter(file => allowedSet.has(extname(file.relPath).toLowerCase()))
+        : discoverableSourceFiles;
+
+    // Pass 0: PURGE deleted or newly ignored files
     const existingPaths = store.allFilePaths();
     let purged = 0;
     for (const p of existingPaths) {
         const fullPath = resolve(absPath, p);
-        if (!existsSync(fullPath)) {
+        if (!existsSync(fullPath) || !discoverablePathSet.has(p)) {
             store.deleteFile(p);
             purged++;
         }
@@ -90,9 +91,7 @@ export async function indexProject(projectPath, { languages } = {}) {
     if (purged > 0) store.cleanupOrphanModuleEdges();
 
     // Pass 1: SCAN
-    const filesToIndex = [];
-    const allSourceFiles = [];
-    walkDir(absPath, absPath, allowedSet, store, filesToIndex, allSourceFiles);
+    const filesToIndex = changedSourceFiles(store, allSourceFiles);
     const workspace = persistWorkspace(store, discoverWorkspace(absPath, allSourceFiles));
     const projectLanguages = [...new Set(allSourceFiles.map(file => file.language).filter(Boolean))];
 
@@ -201,40 +200,46 @@ export async function indexProject(projectPath, { languages } = {}) {
 export async function reindexFile(projectPath, filePath) {
     const absPath = resolve(projectPath);
     const fullPath = resolve(absPath, filePath);
+    const relPath = relative(absPath, fullPath).replace(/\\/g, "/");
     let store;
     const shouldCloseStore = !hasOpenStore(absPath, { mode: "write" });
 
     try {
         if (!existsSync(fullPath)) {
             store = getStore(absPath);
-            store.deleteFile(filePath);
+            store.deleteFile(relPath);
+            return;
+        }
+
+        const allSourceFiles = discoverSourceFiles(absPath, new Set(supportedExtensions()));
+        if (!allSourceFiles.some(file => file.relPath === relPath)) {
+            store = getStore(absPath);
+            store.deleteFile(relPath);
             return;
         }
 
         const source = readFileSync(fullPath, "utf-8").replace(/\r\n/g, "\n");
         const hash = createHash("md5").update(source).digest("hex").slice(0, 12);
         const stat = statSync(fullPath);
-        const language = languageFor(extname(filePath).toLowerCase());
+        const language = languageFor(extname(relPath).toLowerCase());
         if (!language) return;
 
         store = getStore(absPath);
-        const allSourceFiles = [];
-        walkDir(absPath, absPath, new Set(supportedExtensions()), store, [], allSourceFiles);
         const workspace = persistWorkspace(store, discoverWorkspace(absPath, allSourceFiles));
         const projectLanguages = [...new Set(allSourceFiles.map(file => file.language).filter(Boolean))];
         const { definitions, imports, calls, references, flow_ir, exports: fileExports, defaultExport, reexports } = await parseFile(fullPath, source, { cloneDetection: true });
         const nodeIds = store.bulkInsert(
-            filePath,
+            relPath,
             stat.mtimeMs,
             hash,
             language,
             definitions,
             imports,
-            workspace.ownershipIds.get(filePath) || null,
+            workspace.ownershipIds.get(relPath) || null,
         );
 
         persistCloneData(store, definitions, nodeIds);
-        resolveFileEdges(store, workspace, filePath, {
+        resolveFileEdges(store, workspace, relPath, {
             source, definitions, imports, calls, references, flow_ir,
             exports: fileExports, defaultExport, reexports, nodeIds, language,
         });
@@ -825,46 +830,31 @@ function persistCloneData(store, definitions, nodeIds) {
     }
 }
 
-function walkDir(dir, root, allowedExts, store, changedResults, allResults, depth = 0) {
-    if (depth > 12) return;
+function discoverSourceFiles(projectPath, allowedExts) {
+    const results = [];
+    for (const relPath of listProjectFiles(projectPath)) {
+        const ext = extname(relPath).toLowerCase();
+        if (!allowedExts.has(ext)) continue;
 
-    let entries;
-    try {
-        entries = readdirSync(dir, { withFileTypes: true });
-    } catch {
-        return;
-    }
-
-    for (const entry of entries) {
-        const fullPath = resolve(dir, entry.name);
-
-        if (entry.isDirectory()) {
-            if (IGNORE_DIRS.has(entry.name) || entry.name.startsWith(".")) continue;
-            walkDir(fullPath, root, allowedExts, store, changedResults, allResults, depth + 1);
-        } else if (entry.isFile()) {
-            const ext = extname(entry.name).toLowerCase();
-            if (!allowedExts.has(ext)) continue;
-
-            let stat;
-            try {
-                stat = statSync(fullPath);
-            } catch {
-                continue;
-            }
-
-            if (stat.size > MAX_FILE_SIZE || stat.size === 0) continue;
-
-            const relPath = relative(root, fullPath).replace(/\\/g, "/");
-
-            allResults.push({ relPath, fullPath, mtime: stat.mtimeMs, language: languageFor(ext) });
-
-            // Check if file changed (mtime comparison)
-            const existing = store.getFile(relPath);
-            if (existing && Math.abs(existing.mtime - stat.mtimeMs) < 1) continue;
-
-            changedResults.push({ relPath, fullPath, mtime: stat.mtimeMs, language: languageFor(ext) });
+        const fullPath = resolve(projectPath, relPath);
+        let stat;
+        try {
+            stat = statSync(fullPath);
+        } catch {
+            continue;
         }
+
+        if (stat.size > MAX_FILE_SIZE || stat.size === 0) continue;
+        results.push({ relPath, fullPath, mtime: stat.mtimeMs, language: languageFor(ext) });
     }
+    return results;
+}
+
+function changedSourceFiles(store, sourceFiles) {
+    return sourceFiles.filter(({ relPath, mtime }) => {
+        const existing = store.getFile(relPath);
+        return !existing || Math.abs(existing.mtime - mtime) >= 1;
+    });
 }
 
 function findEnclosingDefinition(line, definitions) {

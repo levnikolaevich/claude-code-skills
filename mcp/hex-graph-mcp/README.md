@@ -123,7 +123,7 @@ Errors use the same grammar, not a JSON error envelope:
 
 | Tool | What it returns |
 |------|-----------------|
-| `index_project` | Index summary, languages, providers, framework overlays, warnings, and next actions |
+| `index_project` | Gitignore-aware index summary, languages, providers, framework overlays, warnings, and next actions |
 | `install_graph_providers` | Detected stack, provider status, SCIP exporter status, install plan, remediation steps, and agent-ready instructions |
 
 ### Symbol Navigation
@@ -206,6 +206,7 @@ hex-graph-mcp/
 
 ### Parsing
 
+- File discovery honors Git excludes by default. Git repositories use `git ls-files -co --exclude-standard`; non-Git directories use the deterministic fallback walker with root `.gitignore` rules and generated-directory exclusions.
 - **tree-sitter WASM** via `web-tree-sitter` and repo-owned grammar artifacts from `hex-common/artifacts/tree-sitter`
 - Extracts definitions, imports, exports, calls, references, and explicit inheritance syntax
 - Feeds a shared pipeline used by both full indexing and watcher-driven reindexing
@@ -256,7 +257,7 @@ Inline `quality` metadata is currently surfaced by:
 ### Generated Snapshot
 
 - MCP tools registered in server contract: `14`
-- Semantic suite: `102/102` passing
+- Semantic suite: `103/103` passing
 - Corpora: `1` curated, `1` pinned external
 - Lanes: parser-first `green`, precise overlay `provider_conditional`
 

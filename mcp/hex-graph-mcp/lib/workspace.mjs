@@ -1,5 +1,6 @@
-import { readFileSync, readdirSync } from "node:fs";
-import { basename, dirname, extname, join, relative, resolve } from "node:path";
+import { readFileSync } from "node:fs";
+import { basename, dirname, join, resolve } from "node:path";
+import { listProjectFiles } from "./file-discovery.mjs";
 
 const META_FILE_NAMES = new Set([
     "package.json",
@@ -12,13 +13,7 @@ const META_FILE_NAMES = new Set([
 ]);
 
 const SOURCE_ROOT_HINTS = ["src"];
-const CODE_EXTENSIONS = new Set([".js", ".mjs", ".cjs", ".jsx", ".ts", ".tsx", ".py", ".cs", ".php"]);
 const RESOLVE_EXTENSIONS = [".ts", ".tsx", ".js", ".mjs", ".cjs", ".jsx", ".py", ".cs", ".php"];
-const IGNORE_DIRS = new Set([
-    "node_modules", ".git", "dist", "build", "out", ".next",
-    "__pycache__", ".venv", "venv", "vendor", "target",
-    ".hex-skills", ".vs", "bin", "obj",
-]);
 
 export function discoverWorkspace(projectPath, sourceEntries) {
     const absPath = resolve(projectPath);
@@ -530,34 +525,11 @@ function ensurePackageAndModule(packages, modules, item) {
     }
 }
 
-function collectMetadataFiles(projectPath, dir = projectPath, depth = 0, results = []) {
-    if (depth > 12) return results;
-    let entries = [];
-    try {
-        entries = readdirSync(dir, { withFileTypes: true });
-    } catch {
-        return results;
-    }
-    for (const entry of entries) {
-        const fullPath = join(dir, entry.name);
-        if (entry.isDirectory()) {
-            if (IGNORE_DIRS.has(entry.name) || entry.name.startsWith(".")) continue;
-            collectMetadataFiles(projectPath, fullPath, depth + 1, results);
-            continue;
-        }
-        if (!entry.isFile()) continue;
-        const ext = extname(entry.name).toLowerCase();
-        if (META_FILE_NAMES.has(entry.name) || entry.name.endsWith(".csproj")) {
-            results.push(normalizeFile(relative(projectPath, fullPath)));
-            continue;
-        }
-        if (entry.name === "__init__.py") {
-            results.push(normalizeFile(relative(projectPath, fullPath)));
-            continue;
-        }
-        if (!CODE_EXTENSIONS.has(ext)) continue;
-    }
-    return results;
+function collectMetadataFiles(projectPath) {
+    return listProjectFiles(projectPath).filter(relPath => {
+        const name = basename(relPath);
+        return META_FILE_NAMES.has(name) || name.endsWith(".csproj") || name === "__init__.py";
+    });
 }
 
 function readJsonFile(filePath) {

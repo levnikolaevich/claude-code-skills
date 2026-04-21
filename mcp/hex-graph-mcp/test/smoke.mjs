@@ -368,6 +368,32 @@ export class B {
             try { rmSync(dir, { recursive: true, force: true }); } catch { /* Windows WAL lock */ }
         }
     });
+
+    it("indexProject excludes .gitignore entries and purges previously indexed ignored files", async () => {
+        const dir = makeTempDir();
+        try {
+            mkdirSync(join(dir, "src"), { recursive: true });
+            mkdirSync(join(dir, "ignored-vendor"), { recursive: true });
+            writeFileSync(join(dir, "src/app.mjs"), "export function app() { return 1; }\n");
+            writeFileSync(join(dir, "ignored-vendor/ghost.mjs"), "export function ghost() { return 2; }\n");
+
+            cleanDb(dir);
+            await indexProject(dir);
+            let store = getStore(dir);
+            assert.ok(store.getFile("src/app.mjs"), "regular source indexed before ignore rule");
+            assert.ok(store.getFile("ignored-vendor/ghost.mjs"), "source indexed before ignore rule exists");
+            store.close();
+
+            writeFileSync(join(dir, ".gitignore"), "ignored-vendor/\n");
+            await indexProject(dir);
+            store = getStore(dir);
+            assert.ok(store.getFile("src/app.mjs"), "regular source remains indexed");
+            assert.equal(store.getFile("ignored-vendor/ghost.mjs"), undefined, "ignored source purged from graph");
+            store.close();
+        } finally {
+            try { rmSync(dir, { recursive: true, force: true }); } catch { /* Windows WAL lock */ }
+        }
+    });
 });
 
 // ==================== hotspot analysis substrate ====================

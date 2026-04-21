@@ -74,7 +74,7 @@ Route based on user intent:
 
 **Query boundary rule:** `find_symbols` is name-based discovery only. For code fragments like `export function` or unresolved member-call patterns like `app.get(...)`, use `grep_search` instead of treating them as symbols.
 
-**Ambiguity rule:** if `find_symbols` returns `truncated: true` or a large `candidate_count`, refine with `path`, then `name + file` or `workspace_qualified_name` instead of widening the graph query.
+**Ambiguity rule:** if `find_symbols` returns `partial ... truncated=1` or shows more total results than returned rows, refine with `path`, then `name + file` or `workspace_qualified_name` instead of widening the graph query.
 
 **Path rule:** `path` may be the indexed project root or any file/subdirectory inside that indexed project.
 
@@ -88,11 +88,11 @@ Route based on user intent:
 
 ### Phase 3: Present Results
 
-1. Show MCP tool output directly (markdown tables)
+1. Show MCP tool output directly; `hex-graph` uses a compact line grammar with action-line, `#section`, `.row`, `!detail`, and executable `>` follow-up pointers
 2. For code snippets referenced in results, use `hex-line read_file` with line ranges; add `edit_ready=true, verbosity="full"` only when you intend to carry revision/checksums into an edit
 3. Suggest follow-up queries based on results:
   - After `find_symbols` with a clean top match → suggest `inspect_symbol` with `workspace_qualified_name`
-  - After `find_symbols` with `truncated: true` → suggest narrowing `path` or switching to `name + file` before any deeper graph tool
+  - After `find_symbols` with `partial ... truncated=1` → suggest narrowing `path` or switching to `name + file` before any deeper graph tool
    - After `inspect_symbol` → suggest `trace_paths` if refactoring
    - After `trace_paths` → suggest `find_references` or `find_implementations` depending on symbol kind
    - After empty `trace_paths` from a broad or module-level selector → suggest `inspect_symbol` or `analyze_architecture` instead of assuming there are no dependencies

@@ -63,7 +63,7 @@ All symbol/query tools also require `path` as the project anchor. Pass the index
 
 `find_symbols` is name-oriented discovery, not free-form code search. If the input looks like `export function`, `server.tool()`, `app.get(...)`, or another raw code fragment, use `grep_search` or a framework-aware graph query instead.
 
-`find_symbols` is also intentionally compact for overloaded names. The default detailed slice is `8`; when more candidates exist, the response reports `candidate_count`, `shown_count`, `truncated`, `overflow_groups`, and stronger `disambiguation_hints` so the next call narrows with `path`, `name + file`, or `workspace_qualified_name`.
+`find_symbols` is also intentionally compact for overloaded names. The default detailed slice is `8`; when more candidates exist, the action-line reports `partial ... total=N returned=M truncated=1` and the body carries warning/detail rows so the next call narrows with `path`, `name + file`, or `workspace_qualified_name`.
 
 Heavy tools default to `verbosity: "compact"` and summary-first output. They return counts, previews, provenance sections, quality metadata, and executable `>` follow-up pointers first, so the client sees upfront how much a deeper expansion will return and which layer the current answer comes from. Use `expand`, `expand_limit`, `limit`, `depth`, `max_hops`, `kind`, and `min_confidence` to request a bounded deeper slice instead of dumping the whole graph in one call.
 

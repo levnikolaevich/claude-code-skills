@@ -59,9 +59,9 @@ Apply them only when the skill actually edits code or makes semantic decisions f
 Notes:
 - `find_symbols` expects a symbol name or partial name, not a code fragment or unresolved member call such as `server.tool()`
 - Narrow `path` before `find_symbols` whenever you can; broad project-root symbol discovery is a fallback, not the default
-- If `find_symbols` returns `truncated: true` or a large `candidate_count`, refine to `name + file` or `workspace_qualified_name` before treating the result as authoritative
+- If `find_symbols` returns `partial ... truncated=1` or shows more total results than returned rows, refine to `name + file` or `workspace_qualified_name` before treating the result as authoritative
 - For raw method-call patterns or regex-like code search, use `grep_search`
-- `grep_search` returns `summary` by default; switch to `output="content", edit_ready=true` only when you need canonical hunks for follow-up edits
+- `grep_search` returns `summary` by default; switch to `output_mode="content", edit_ready=true` only when you need canonical hunks for follow-up edits
 - Treat `allow_large_output=true` as an explicit escape hatch after narrowing `path`, `glob`, or query shape
 - Path-scoped graph queries may use `path=project_root`, `path=subdirectory`, or `path=file` as long as the target stays inside the indexed project
 

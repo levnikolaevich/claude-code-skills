@@ -9,7 +9,7 @@
 
   "metadata": {
     "description": "Agile workflow (Planning, Execution, Quality) + Documentation pipeline + Codebase audit suite + Project Bootstrap (scaffolding, Docker, CI/CD) + Optimization suite (Performance, Dependencies, Modernization) + Community engagement (Announcements, RFC debates, Triage) + Setup environment (agent install, MCP config, settings sync).",
-    "version": "2026.04.10"
+    "version": "2026.04.21"
   },
   "plugins": [
     {

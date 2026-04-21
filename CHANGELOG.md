@@ -2,6 +2,14 @@
 
 <!-- SCOPE: User-facing changes only. Max 5 bullets per entry. Focus: new capabilities, workflow changes, breaking changes. -->
 
+## 2026-04-21
+
+- **hex-line v1.17→v1.27** — PROTOCOL.md Response grammar (action-line + section/entry/detail prefixes), prose-noise cleanup (-37% output bytes), boundary-echo auto-strip preserves structural `}`/`)`/`]`/`});` delimiters, post-edit lexical brace-balance advisory, `range_checksum` on `replace_between`, new `warnings` field on `edit_file`
+- **hex-graph v0.13.0→v0.15.0** — text-only MCP protocol (`content[0].text` grammar; `structuredContent`/`outputSchema` retired), expansion pointers carry canonical selectors (`symbol_id > workspace_qualified_name > qualified_name > name+file`), new `#quality` section exposing family/support tier/languages, 102/102 semantic tests
+- **hex-ssh v1.4.2→v1.6.0** — per-tool timeout field scoping (exec-path tools expose `execTimeoutMs`, transfer tools expose `transferTimeoutMs`), per-call timeout overrides for connect/keepalive/exec/transfer
+- **Response grammar migration** — hex-line graph-enrich output drops emoji prose (`⚠ Semantic impact:` → `#semantic_impact`, indented facts → `.` prefix, `⚠ N clone(s):` → `!clone_siblings count=N list=...`); MCP output families documented (structured vs text-grammar) in MCP_OUTPUT_CONTRACT_GUIDE and MCP_TOOL_DESIGN_GUIDE
+- **Docs & CI** — five Claude hook events documented, plan-mode enforcement for mutating MCP tools, Monitor pattern docs, AGENTS docs unified with MCP result envelope, CI test suite repaired (hash collision test, 11 missing suites, deleted-runtime cleanup), Windows temp-path hint in coordinator CLI errors
+
 ## 2026-04-14
 
 - **Gemini dropped from advisor role** — Codex is now the sole external parallel-advisor for skill_groups 200/300/310/510. Fallback is Opus self-review. Gemini CLI remains a first-class install/sync target (installer, syncer, `GEMINI.md`), just not an advisor. Cleanup across `agent_registry.json`, `agent_runner.mjs`, and the shared agent delegation/review/memory references.

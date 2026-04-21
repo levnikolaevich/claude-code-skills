@@ -15,14 +15,14 @@ MCP prepends `mcp__<server>__` automatically. Name the tool itself without the s
 | Underscore case | `grep_search` | MCP convention | No camelCase |
 | Group by system | `read_file` | Shared family | Agents can allow `mcp__hex-line__*` |
 
-## 2. Response Format — support `format: "compact"|"full"` for verbose tools
+## 2. Response Format -- make verbose tools bounded by default
 
 | Parameter | Behavior | Example |
 |-----------|----------|---------|
 | `plain` (boolean) | Omit hash annotations, return `lineNum\|content` | `read_file` with `plain: true` |
 | `limit` (number) | Cap returned lines | `read_file` with `limit: 50` |
 | `max_entries` (number) | Cap broad pattern/path discovery results | `inspect_path` with `pattern: "*.ts", max_entries: 60` |
-| `format` (proposed) | Compact = summary + counts; Full = all data | Large result tools |
+| `verbosity` | Controls compact/full evidence detail without changing the output family | `hex-graph` with `verbosity: "compact"` |
 
 Rule: if a tool can return >100 lines, it MUST support truncation or a compact mode and return a concrete next-step hint (`next_action`, refine suggestion, or equivalent).
 
@@ -113,9 +113,11 @@ MCP SDK 1.x annotation hints declare tool behavior shape. Claude Code uses these
 
 Set all applicable hints on every tool registration.
 
-## 11. outputSchema -- declare structured output
+## 11. Output Schema -- declare only for structured output
 
-Every tool MUST declare `outputSchema` alongside `inputSchema`. Handlers return `{content, structuredContent}` where `structuredContent` matches the schema. `content[0].text` is auto-generated as `JSON.stringify(structuredContent)` per MCP spec backward-compat requirement.
+Structured-output tools declare `outputSchema` alongside `inputSchema`. Handlers return `{content, structuredContent}` where `structuredContent` matches the schema.
+
+Text-grammar tools do not declare `outputSchema`; MCP requires `structuredContent` when an output schema is present. Use this shape only when the grammar is the primary contract and is covered by schema/grammar tests.
 
 Canonical fields (match [MCP_OUTPUT_CONTRACT_GUIDE.md](./MCP_OUTPUT_CONTRACT_GUIDE.md)):
 
@@ -125,7 +127,7 @@ Canonical fields (match [MCP_OUTPUT_CONTRACT_GUIDE.md](./MCP_OUTPUT_CONTRACT_GUI
 - `error: {code, message, recovery}` -- only when status is ERROR
 - domain-specific payload -- tool-owned fields (matches, outline, etc.)
 
-Domain envelopes (e.g., hex-graph `{query, result, evidence, limits_applied}`) are valid as outputSchema shapes -- do not flatten established envelopes.
+Domain envelopes are valid as outputSchema shapes for structured-output tools; do not flatten established envelopes. For text-grammar tools such as `hex-graph`, the domain envelope is replaced by the grammar documented in the package protocol file.
 
 ## 12. Large results -- `_meta` override
 
@@ -135,7 +137,7 @@ Decision rule (`large: true`) when any of:
 - `edit_ready=true` flag is set
 - `verbosity="full"` is requested
 - actual `JSON.stringify(structured).length > 50_000`
-- domain-specific full-output flags (`allow_large_output`, `format="full"`)
+- domain-specific full-output flags (`allow_large_output`, `verbosity="full"`)
 
 Shared runtime `result(structured, { large })` handles the mechanics.
 

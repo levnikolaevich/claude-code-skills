@@ -1,12 +1,12 @@
 # MCP Output Contract Guide
 
-> **SCOPE:** Maintainer reference for public MCP output contracts. Defines canonical `status`, `reason`, `next_action`, `next_actions`, `summary`, and error envelope vocabulary for repo-owned MCP servers. These fields live in `structuredContent` (primary payload). Repo-owned MCP servers mirror `structuredContent` into `content[0].text` as JSON for backward-compatible agent consumption.
+> **SCOPE:** Maintainer reference for public MCP output contracts. Defines canonical `status`, `reason`, `next_action`, `next_actions`, `summary`, and error vocabulary for repo-owned MCP servers. Repo-owned servers use one of two output families: structured MCP output (`structuredContent` + `outputSchema`) or a text-only grammar (`content[0].text` only, no `outputSchema`).
 
 This guide exists to stop drift. New MCP tools and edits to existing ones should reuse the same public vocabulary instead of inventing fresh wording.
 
 ## 1. Public Contract First
 
-These rules apply to `structuredContent` fields returned by repo-owned MCP tools:
+These rules apply to public output fields returned by repo-owned MCP tools:
 
 - MCP server tool responses
 - public README tool examples
@@ -18,6 +18,15 @@ These rules do not apply to:
 - parser/provider substrate internals
 - benchmark or quality-report prose
 - historical changelog entries
+
+### Output families
+
+| Family | Use when | MCP shape |
+|--------|----------|-----------|
+| Structured output | The result is naturally object-shaped and agents benefit from schema validation (`hex-line`, `hex-ssh`) | `structuredContent` plus matching `outputSchema`; `content[0].text` carries the compact agent-facing text |
+| Text grammar | The result is graph-like, row-oriented, and cheaper as a parseable line protocol (`hex-graph`) | `content[0].text` only; no `structuredContent`; no `outputSchema` |
+
+Declare `outputSchema` only when `structuredContent` is the primary payload. Do not declare `outputSchema` for text-only grammar tools because MCP requires `structuredContent` when an output schema is present.
 
 ## 2. Canonical Field Order
 
@@ -184,9 +193,9 @@ Bad:
 - advice that belongs in `next_action`
 - repeated copies of `summary`
 
-## 7. Error Envelope
+## 7. Error Output
 
-Repo-owned MCP errors should use this public shape in `structuredContent`:
+Structured-output MCP errors should use this public shape in `structuredContent`:
 
 - `status: "ERROR"`
 - `code`
@@ -197,18 +206,20 @@ Repo-owned MCP errors should use this public shape in `structuredContent`:
 
 `summary` explains what failed. `next_action` names the immediate category of recovery. `recovery` gives the human-readable instruction.
 
-On the MCP envelope level, ALSO set `isError: true` (see §8).
+On the MCP envelope level, ALSO set `isError: true` (see section 8).
 
 Do not return raw stack traces in public tool outputs.
 
+Text-grammar servers express errors inside their grammar. For `hex-graph`, the first line is `error <next_action> ...` and body lines carry details such as `!code=<CODE>` and `!message=<text>`.
+
 ## 8. MCP Envelope
 
-Every tool response has this shape:
+Structured-output tools use this shape:
 
 ```json
 {
   "content": [{"type": "text", "text": "<JSON.stringify(structuredContent)>"}],
-  "structuredContent": { /* matches outputSchema, uses vocabulary from §3-6 */ },
+  "structuredContent": { /* matches outputSchema, uses vocabulary from sections 3-6 */ },
   "isError": true,
   "_meta": {"anthropic/maxResultSizeChars": 500000}
 }
@@ -217,7 +228,17 @@ Every tool response has this shape:
 - `structuredContent` is the primary payload consumed by agents and validated against `outputSchema`.
 - `content[0].text` is `JSON.stringify(structuredContent)` by repo convention. The MCP spec requires unstructured `content` and allows optional `structuredContent`; it does not require this exact mirror.
 - `isError: true` whenever `structuredContent.status === "ERROR"`.
-- `_meta` is present only for large results (see §9).
+- `_meta` is present only for large results (see section 9).
+
+Text-grammar tools use:
+
+```json
+{
+  "content": [{"type": "text", "text": "<line protocol>"}]
+}
+```
+
+For text-grammar tools, business-level errors are represented in the grammar and normally do not set `isError: true`; reserve MCP-level `isError` for transport/protocol failures.
 
 ### Envelope layering
 
@@ -230,7 +251,7 @@ On error: set BOTH. On success: omit `isError`, use `status: "OK"` or other succ
 
 ### Domain envelopes
 
-Domain-specific envelopes (e.g., hex-graph `{status, query, result, evidence, limits_applied}`) live INSIDE `structuredContent`. They are valid outputSchema shapes and should not be flattened to match a shared base schema.
+Domain-specific envelopes live INSIDE `structuredContent` for structured-output tools. Text-grammar tools such as `hex-graph` intentionally do not have a structured domain envelope; their domain contract is the grammar document (`mcp/hex-graph-mcp/PROTOCOL.md`).
 
 ## 9. Result metadata (`_meta`)
 
@@ -259,8 +280,9 @@ Before merging MCP output changes, check:
 - `reason` is snake_case and stable
 - `next_action` / `next_actions` use labels, not prose
 - `summary` is compact and non-redundant
-- error outputs set BOTH `isError: true` and `structuredContent.status: "ERROR"`
-- `outputSchema` matches actual `structuredContent` shape (schema-contract tests)
+- structured error outputs set BOTH `isError: true` and `structuredContent.status: "ERROR"`
+- structured tools declare `outputSchema` that matches actual `structuredContent` shape (schema-contract tests)
+- text-grammar tools do not declare `outputSchema` and have grammar contract tests
 - large results set `_meta["anthropic/maxResultSizeChars"]`
 - README examples match the live output
 - tests assert the public contract, not only implementation detail

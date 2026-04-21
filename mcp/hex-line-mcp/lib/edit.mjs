@@ -12,7 +12,6 @@ import { diffLines } from "diff";
 import { fnv1a, lineTag, parseChecksum, parseRef } from "@levnikolaevich/hex-common/text-protocol/hash";
 import { validatePath, normalizePath } from "./security.mjs";
 import { getGraphDB, semanticImpact, cloneWarning, getRelativePath, graphUnavailableHint } from "./graph-enrich.mjs";
-import { MAX_DIFF_CHARS } from "./format.mjs";
 import {
     assertNonOverlappingTargets,
     braceDelta,
@@ -394,7 +393,7 @@ function buildSuggestedReadCall(filePath, recoveryRanges) {
     return JSON.stringify({
         tool: "mcp__hex-line__read_file",
         arguments: {
-            path: filePath,
+            file_path: filePath,
             ranges: dedupeRanges(recoveryRanges),
         }
     });
@@ -463,13 +462,6 @@ function summarizeChangedSpan(minLine, maxLine) {
         ? `${minLine}-${maxLine}`
         : "unknown";
 }
-
-function countDiffEntries(fullDiff) {
-    if (!fullDiff) return 0;
-    return fullDiff.split("\n").filter((line) => /^[+-]\d+\|/.test(line)).length;
-}
-
-// payloadSections helper removed per PROTOCOL.md §Response grammar (no payload_sections emission).
 
 function buildRetryEdit(edit, lines, options = {}) {
     const retryChecksum = options.retryChecksum || null;
@@ -1343,12 +1335,6 @@ export function editFile(filePath, edits, opts = {}) {
 
 
     const fullDiff = simpleDiff(origLines, lines);
-    let displayDiff = fullDiff;
-    if (displayDiff && displayDiff.length > MAX_DIFF_CHARS) {
-        displayDiff = displayDiff.slice(0, MAX_DIFF_CHARS) + `\n... (diff truncated, ${displayDiff.length} chars total)`;
-    }
-
-    // Compute changed line range from fullDiff (used by post-edit + semantic impact)
     const newLinesAll = lines;
     let minLine = Infinity, maxLine = 0;
     if (fullDiff) {
@@ -1361,18 +1347,15 @@ export function editFile(filePath, edits, opts = {}) {
             }
         }
     }
-    const diffEntryCount = countDiffEntries(fullDiff);
     const changedSpan = summarizeChangedSpan(minLine, maxLine);
 
     if (opts.dryRun) {
         let msg = `status: ${autoRebased ? STATUS.AUTO_REBASED : STATUS.OK}\nreason: ${REASON.DRY_RUN_PREVIEW}\nrevision: ${currentSnapshot.revision}`;
         if (staleRevision && hasBaseSnapshot) msg += `\nchanged_ranges: ${describeChangedRanges(changedRanges)}`;
         msg += `\nsummary: lines_changed=${changedSpan} lines_after=${lines.length}`;
-        // Diff block, graph hints, and payload_sections removed per Response grammar cleanup.
         const hint = graphUnavailableHint(real);
         if (hint.length > 0) msg += `\n${hint.join("\n")}`;
         msg += `\nDry run: ${filePath} would change (${lines.length} lines)`;
-        // Raw diff block removed (opt-in via `changes` mode=raw_diff).
         return msg;
     }
 
@@ -1406,12 +1389,9 @@ export function editFile(filePath, edits, opts = {}) {
     if (warnings.length > 0) {
         msg += `\nwarnings: ${JSON.stringify(warnings)}`;
     }
-    let hasPostEditBlock = false; // v1.23.1 smoke
     let semanticImpacts = [];
     let cloneWarnings = [];
     let graphDbAvailable = false;
-    // graphFresh tracking removed: staleness is now conveyed by absence of semantic_impact block, not a prose marker.
-    // prose `Updated <path>` removed — path is in input; summary follows.
 
     // Post-edit context (before diff — always visible even if output truncated)
     if (fullDiff && minLine <= maxLine) {
@@ -1428,7 +1408,6 @@ export function editFile(filePath, edits, opts = {}) {
                     trailing_newline: nextSnapshot.trailingNewline,
                 },
             });
-            hasPostEditBlock = true;
             msg += `\n\n${serializeReadBlock(block)}`;
         }
     }
@@ -1439,7 +1418,6 @@ export function editFile(filePath, edits, opts = {}) {
         const relFile = db ? getRelativePath(real) : null;
         if (db && relFile && fullDiff && minLine <= maxLine) {
             graphDbAvailable = true;
-            // graphFresh = isGraphFreshAtMtime(db, real, currentSnapshot.mtimeMs);  // no longer emitted
             semanticImpacts = semanticImpact(db, relFile, minLine, maxLine);
             if (semanticImpacts.length > 0) {
                 const sections = semanticImpacts.map(impact => {
@@ -1478,21 +1456,13 @@ export function editFile(filePath, edits, opts = {}) {
             }
         }
     } catch { /* silent */ }
-    // graph_fresh prose marker removed; staleness conveyed by absence of `?` advisory line.
 
-    const payloadKinds = [];
-    if (hasPostEditBlock) payloadKinds.push("post_edit");
-    if (semanticImpacts.length > 0) payloadKinds.push("semantic_impact");
-    if (cloneWarnings.length > 0) payloadKinds.push("clone_warning");
-    if (displayDiff) payloadKinds.push("diff");
     const summaryLineParts = [
         `summary: lines_changed=${changedSpan} lines_after=${lines.length}`,
     ];
     if (!graphDbAvailable) summaryLineParts.push(...graphUnavailableHint(real));
     const summaryLines = summaryLineParts.join("\n");
     msg = msg.replace(/\nrevision: ([^\n]+)/, `\nrevision: $1\n${summaryLines}`);
-
-    // Diff block removed per Response grammar. Opt-in via `changes` tool with mode=raw_diff.
 
     return msg;
 }

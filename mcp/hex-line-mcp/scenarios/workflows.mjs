@@ -51,7 +51,8 @@ export async function runWorkflows(config) {
             sourceLines,
             (line) =>
                 line.includes("ls -R, ls -laR (recursive only)")
-                || line.includes("Bash redirect: blocks simple cat/head/tail/ls/grep/sed/diff"),
+                || line.includes("Bash redirect: blocks simple cat/head/tail/ls/grep/sed/diff")
+                || line.includes("Bash redirect: blocks project-scoped file inspection commands"),
             "hook redirect comment",
         );
         const tempPath = resolve(tmpdir(), `hex-line-wf1-${Date.now()}.mjs`);
@@ -59,7 +60,9 @@ export async function runWorkflows(config) {
 
         const updatedLine = sourceLines[targetIdx].includes("recursive only")
             ? sourceLines[targetIdx].replace("recursive only", "recursive listing only")
-            : sourceLines[targetIdx].replace("grep/sed/diff", "grep/sed/diff/find");
+            : sourceLines[targetIdx].includes("file inspection commands")
+                ? sourceLines[targetIdx].replace("file inspection commands", "project file inspection commands")
+                : sourceLines[targetIdx].replace("grep/sed/diff", "grep/sed/diff/find");
 
         const { value: chars } = runN(() => {
             let total = 0;
@@ -177,7 +180,7 @@ export async function runWorkflows(config) {
         if (largeLines && largeLines.length > 100) {
             const targetIdx = ensureLine(
                 largeLines,
-                (line) => line.includes("describe(\"hook — ls redirect\""),
+                (line) => line.includes("describe(\"hook — project Bash redirect scope\""),
                 "large smoke test anchor",
             );
             const sliceStart = Math.max(0, targetIdx - 5);

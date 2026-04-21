@@ -12,7 +12,7 @@ import {
     getSnapshotByRevision,
     readSnapshot,
 } from "./snapshot.mjs";
-import { ACTION, REASON, STATUS } from "./output-contract.mjs";
+import { ACTION, STATUS } from "./output-contract.mjs";
 
 function parseChecksumEntry(raw) {
     try {
@@ -88,7 +88,7 @@ function buildSuggestedReadCall(filePath, ranges) {
     return JSON.stringify({
         tool: "mcp__hex-line__read_file",
         arguments: {
-            path: filePath,
+            file_path: filePath,
             ranges: deduped,
         }
     });
@@ -108,19 +108,11 @@ function overallNextAction(summary) {
     return ACTION.KEEP_USING;
 }
 
-function overallReason(status) {
-    if (status === STATUS.OK) return REASON.CHECKSUMS_CURRENT;
-    if (status === STATUS.STALE) return REASON.CHECKSUMS_STALE;
-    return REASON.CHECKSUMS_INVALID;
-}
-
 function entrySummary(entry) {
-    if (entry.status === "VALID") return "checksum still current";
-    if (entry.status === "STALE") return "content changed since checksum capture";
     return entry.reason;
 }
 
-function renderEntry(entry, index, total, topLevelNextAction) {
+function renderEntry(entry, index, total) {
     const parts = [
         `entry: ${index}/${total}`,
         entry.status,
@@ -128,11 +120,7 @@ function renderEntry(entry, index, total, topLevelNextAction) {
         `checksum: ${entry.checksum}`,
         entry.currentChecksum && entry.currentChecksum !== entry.checksum ? `current_checksum: ${entry.currentChecksum}` : null,
     ].filter(Boolean);
-    // Per-entry next_action only when it disambiguates (INVALID has two variants).
-    // VALID↔KEEP_USING and STALE↔REREAD_RANGE are 1:1 with status — agents infer from status alone.
     if (entry.status === "INVALID") parts.push(`next_action: ${entryNextAction(entry)}`);
-    // For INVALID entries the summary carries the real error detail (format error / range info);
-    // VALID/STALE entries are fully described by status alone, so skip duplicate prose.
     if (entry.status === "INVALID") parts.push(`summary: ${entrySummary(entry)}`);
     return parts.join(" ");
 }
@@ -156,7 +144,6 @@ export function verifyChecksums(filePath, checksums, opts = {}) {
         `status: ${status}`,
         `revision: ${currentSnapshot.revision}`,
     ];
-    // reason: omitted — 1:1 with status (OK↔checksums_current, STALE↔checksums_stale, INVALID↔checksums_invalid).
     if (verboseSummary) {
         const sumParts = [`valid=${summary.valid}`];
         if (summary.stale > 0) sumParts.push(`stale=${summary.stale}`);
@@ -179,7 +166,7 @@ export function verifyChecksums(filePath, checksums, opts = {}) {
     if (suggestedReadCall) lines.push(`suggested_read_call: ${suggestedReadCall}`);
 
     if (results.length > 0) {
-        lines.push("", ...results.map((entry, index) => renderEntry(entry, index + 1, results.length, topLevelNextAction)));
+        lines.push("", ...results.map((entry, index) => renderEntry(entry, index + 1, results.length)));
     }
 
     return lines.join("\n");

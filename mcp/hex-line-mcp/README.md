@@ -320,15 +320,14 @@ Example output:
 
 ```text
 status: STALE
-reason: checksums_stale
 revision: rev-17-deadbeef
-summary: valid=0 stale=1 invalid=0
+summary: valid=0 stale=1
 next_action: reread_ranges
 base_revision: rev-16-feedcafe
 changed_ranges: 10-12(replace)
 suggested_read_call: {"tool":"mcp__hex-line__read_file","arguments":{"file_path":"/repo/file.ts","ranges":["10-12"]}}
 
-entry: 1/1 | status: STALE | span: 10-12 | checksum: 10-12:oldc0de0 | current_checksum: 10-12:newc0de0 | next_action: reread_range | summary: content changed since checksum capture
+entry: 1/1 STALE span: 10-12 checksum: 10-12:oldc0de0 current_checksum: 10-12:newc0de0
 ```
 
 ### inspect_path

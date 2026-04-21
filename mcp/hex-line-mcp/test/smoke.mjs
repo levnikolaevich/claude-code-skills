@@ -917,7 +917,7 @@ describe("hash collision safety", () => {
         fs.writeFileSync(tmp, `new_top\nheader\npadding\n${uniqueLine}\nfooter\n`);
 
         // Edit using old anchor (tag.3) with base_revision — should relocate to line 4
-        const result = editFile(tmp, [{ set_line: { anchor: `${tag}.3`, new_text: "relocated_ok" } }], { baseRevision: revision1 });
+        editFile(tmp, [{ set_line: { anchor: `${tag}.3`, new_text: "relocated_ok" } }], { baseRevision: revision1 });
         const content = fs.readFileSync(tmp, "utf8");
         assert.ok(content.includes("relocated_ok"), "Relocation should succeed for genuine content move");
         assert.ok(!content.includes(uniqueLine), "Original line should be replaced");

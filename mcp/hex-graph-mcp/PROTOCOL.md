@@ -26,7 +26,7 @@ This matches the design direction of `hex-line-mcp` and extends it one step furt
 - edit transactions
 - file-hash integrity
 
-Graph advisory into `hex-line` is through the SQLite views contract, NOT through MCP tool responses. The hex-line ↔ hex-graph seam is stable across this protocol migration.
+Graph advisory into `hex-line` is through the SQLite views contract, NOT through MCP tool responses. The hex-line / hex-graph interface is stable across this protocol.
 
 ## MCP envelope policy
 
@@ -48,7 +48,7 @@ First line of every response:
     <status> <next_action> [key=val ...]
 
 - `status` ∈ `ok | partial | not_found | stale | error`
-- `next_action` ∈ `keep_using | expand | widen_query | widen_range | index_project | adjust_query | fix_db_lock | fix_db_access | fix_path | check_provider_setup | check_scip_inputs | review_deleted_api | review_duplicates | none`
+- `next_action` is a short canonical label. It may be a tool-like next step (`find_references`, `trace_paths`, `audit_workspace`) or a recovery/action label (`expand`, `widen_query`, `index_project`, `fix_path`, `review_deleted_api`, `review_duplicates`, `none`).
 - `key=val` carries minimal context: `rev=idx-<ts>`, `total=42`, `returned=20`, `truncated=1`, `cov=0.87`, `tier=t1`, `mode=compact|evidence`, `path=...`, `limit=N`, `expand_limit=N`, `conf=<level>` (only non-default)
 
 `reason=<code>` appears only as `!reason=<code>` in body for `status ∈ {not_found, stale, error}`. For success variants (`ok`, `partial`) use explicit `key=val` on the action-line.
@@ -61,15 +61,15 @@ After the action-line, each body line starts with one of:
 |--------|-----------|
 | `#` | section header / block label (one line): `#evidence`, `#provenance`, `#location`, `#refs`, `#callers`, `#flow`, `#paths`, `#clones`, `#summary`, `#quality` |
 | `.` | primary entry: symbol, reference, path, edge, clone group, unused export, hotspot |
-| `>` | pointer — literal follow-up tool call: `>mcp__hex-graph__find_references symbol=X` |
+| `>` | pointer - literal follow-up tool call with `path` and selector when symbol-scoped: `>mcp__hex-graph__find_references path=/repo symbol_id=42 expand=references` |
 | `!` | warning / error / stale detail: `!code=DB_LOCK`, `!reason=no_matches`, `!index_built=<ts>` |
 | `?` | advisory — emitted only under `verbosity=full`: stale-index hint, coverage gap |
 
 Canonical `.`-prefix rows are kv-oriented: `.calculateTotal src/a.ts:42 kind=call tier=t1`. Path rows use `A->B->C` arrow notation with trailing kv.
 
-### Envelope-field → grammar mapping
+### Legacy Envelope Field To Grammar Mapping
 
-Current JSON envelope fields map to the following grammar locations. This table is **authoritative** for PR 1 and all subsequent per-tool formatters.
+Historical JSON envelope fields map to the following grammar locations. New code emits only the grammar.
 
 | Envelope field | Grammar location | Condition |
 |---|---|---|
@@ -101,8 +101,8 @@ Current JSON envelope fields map to the following grammar locations. This table 
 ### Universal variants
 
 - **Success**: `ok keep_using rev=idx-<ts> total=N [returned=M]`
-- **Partial/truncated**: `partial expand rev=<ts> total=50 returned=20 truncated=1 expand_limit=50` + `>mcp__hex-graph__<tool> ... expand_limit=50`
-- **Not found**: `not_found widen_query` + `!reason=no_matches` + `>mcp__hex-graph__<tool> ... fuzzy=1`
+- **Partial/truncated**: `partial expand rev=<ts> total=50 returned=20 truncated=1 expand_limit=50` + `>mcp__hex-graph__<tool> path=/repo symbol_id=42 expand_limit=50`
+- **Not found**: `not_found widen_query` + `!reason=no_matches` + `>mcp__hex-graph__<tool> path=/repo name=calculateTotal fuzzy=1`
 - **Stale**: `stale index_project` + `!index_built=<ts> latest_change=<ts>` + `>mcp__hex-graph__index_project path=...`
 - **Error**: `error none` + `!code=<CODE> message=<text>` + `>mcp__hex-graph__<recovery_action>`
 
@@ -145,8 +145,8 @@ ok keep_using rev=idx-2026-04-20 sym=calculateTotal kind=function
 #refs total=8 def_sites=1
 #callers total=4 entrypoints=1
 #flow in=2 out=3 thru=1
->mcp__hex-graph__find_references symbol=calculateTotal
->mcp__hex-graph__trace_paths from=calculateTotal
+>mcp__hex-graph__find_references path=/repo symbol_id=42
+>mcp__hex-graph__trace_paths path=/repo symbol_id=42
 ```
 
 ### Example: `audit_workspace`
@@ -160,8 +160,6 @@ ok review_duplicates rev=idx-2026-04-20 files=342
 .clone_member group=g1 file=src/foo.ts lines=42-58 name=foo callers=3
 .clone_member group=g1 file=src/bar.ts lines=70-86 name=bar callers=1
 .clone_member group=g1 file=src/baz.ts lines=10-26 name=baz callers=2
->mcp__hex-graph__review_deleted_api
->mcp__hex-graph__review_duplicates
 ```
 
 Note: clone members are flat `.clone_member` rows with `group=<id>` back-reference. NO indent-tree.
@@ -182,10 +180,6 @@ The following are forbidden by grammar and must not appear in any tool payload:
 - Emoji, ASCII art, status glyphs other than `+/-/~` in `analyze_changes`
 - Prose `summary` fields in `inspect_symbol`, `trace_paths`, `audit_workspace`
 
-## Observability
-
-A temporary counter `nonconforming_responses_total` is added to `server.mjs` in PR 1 and removed in PR 5. It counts responses whose `content[0].text` does not begin with a valid `<status> <next_action>` action-line. Any non-zero count is a release blocker.
-
 ## Invariants
 
 - Every tool response is a single `content[0].text` string conforming to the grammar above.
@@ -193,7 +187,7 @@ A temporary counter `nonconforming_responses_total` is added to `server.mjs` in 
 - Body lines never appear before the action-line.
 - `#section` labels are always one line, never multi-line.
 - `.row` entries are always kv-oriented after the leading symbol name or span, never prose.
-- `>` pointers are always parseable as literal MCP tool calls.
+- `>` pointers are always parseable as literal MCP tool calls and always name a registered `mcp__hex-graph__*` tool.
 - Derivable fields (`total - returned`, `coverage_ratio`, `strongest_tier`) are NEVER emitted — the agent computes them.
 - No field reflects the request (`query` echo) — the agent already knows what it sent.
 - Hex-line SQLite views contract is unchanged — hex-line and hex-graph release cycles remain independent.

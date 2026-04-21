@@ -68,9 +68,40 @@ function kvString(kvs) {
     return parts.join(" ");
 }
 
-function pointerFromHint(hint) {
+function pointerHasKey(pointer, key) {
+    return new RegExp(`(?:^|\\s)${key}=`).test(pointer);
+}
+
+function appendPointerKv(pointer, key, value) {
+    if (value === null || value === undefined || value === "" || pointerHasKey(pointer, key)) {
+        return pointer;
+    }
+    return `${pointer} ${key}=${escapeValue(value)}`;
+}
+
+function canonicalSelectorForPointer(payload) {
+    const symbol = payload?.result?.symbol || {};
+    const query = payload?.query || {};
+    if (symbol.symbol_id != null) return { symbol_id: symbol.symbol_id };
+    if (symbol.workspace_qualified_name) return { workspace_qualified_name: symbol.workspace_qualified_name };
+    if (symbol.qualified_name) return { qualified_name: symbol.qualified_name };
+    if (query.symbol_id != null) return { symbol_id: query.symbol_id };
+    if (query.workspace_qualified_name) return { workspace_qualified_name: query.workspace_qualified_name };
+    if (query.qualified_name) return { qualified_name: query.qualified_name };
+    const name = symbol.name || query.name;
+    const file = symbol.file || query.file;
+    return name && file ? { name, file } : {};
+}
+
+function pointerFromHint(hint, payload) {
     if (hint && typeof hint.pointer === "string" && hint.pointer.startsWith(">mcp__hex-graph__")) {
-        return hint.pointer;
+        let pointer = hint.pointer;
+        pointer = appendPointerKv(pointer, "path", payload?.query?.path);
+        const selector = canonicalSelectorForPointer(payload);
+        for (const [key, value] of Object.entries(selector)) {
+            pointer = appendPointerKv(pointer, key, value);
+        }
+        return pointer;
     }
     return null;
 }
@@ -124,7 +155,7 @@ function emitWarningsAndPointers(payload, lines) {
     }
     const hints = payload?.result?.expansion_hints || [];
     for (const hint of hints) {
-        const ptr = pointerFromHint(hint);
+        const ptr = pointerFromHint(hint, payload);
         if (ptr) lines.push(ptr);
     }
 }
@@ -368,6 +399,19 @@ function renderIndexProject(payload, lines) {
     lines.push(`#index rev=${rev} files=${files} symbols=${symbols}`);
 }
 
+function renderQuality(payload, lines) {
+    const quality = payload?.quality;
+    if (!quality) return;
+    const parts = [];
+    if (quality.query_family) parts.push(`family=${quality.query_family}`);
+    if (quality.support_tier) parts.push(`tier=${quality.support_tier}`);
+    if (Array.isArray(quality.languages) && quality.languages.length) parts.push(`langs=${quality.languages.join(",")}`);
+    if (Array.isArray(quality.frameworks) && quality.frameworks.length) parts.push(`frameworks=${quality.frameworks.join(",")}`);
+    if (Array.isArray(quality.quality_basis) && quality.quality_basis.length) parts.push(`basis=${quality.quality_basis.join(",")}`);
+    if (Array.isArray(quality.known_limitations) && quality.known_limitations.length) parts.push(`limitations=${quality.known_limitations.length}`);
+    if (parts.length) lines.push(`#quality ${parts.join(" ")}`);
+}
+
 const TOOL_RENDERERS = {
     find_symbols: renderFindSymbols,
     inspect_symbol: renderInspectSymbol,
@@ -410,6 +454,7 @@ function renderGrammar(payload, toolName) {
             lines.push(`!code=RENDER_FALLBACK`);
             lines.push(`?debug=${escapeValue(JSON.stringify(payload).slice(0, 4000))}`);
         }
+        renderQuality(payload, lines);
         emitWarningsAndPointers(payload, lines);
     } catch (err) {
         lines.push(`!code=RENDER_FALLBACK`);
@@ -585,14 +630,71 @@ function pruneForVerbosity(payload, verbosity = "full") {
     return pruneEmpty(next) || {};
 }
 
-function wrapResult(useCaseResult, toolName, _format = "json", verbosity = "full") {
+function previewCount(result) {
+    if (!result || typeof result !== "object") return null;
+    if (Array.isArray(result.candidates)) return result.candidates.length;
+    if (Array.isArray(result.preview)) return result.preview.length;
+    if (Array.isArray(result.path_previews)) return result.path_previews.length;
+    return null;
+}
+
+function resultTotal(result) {
+    if (!result || typeof result !== "object") return null;
+    return result.total ?? result.path_count ?? result.candidate_count ?? null;
+}
+
+function isPartialPayload(payload) {
+    const result = payload?.result || {};
+    if (result.truncated || payload?.limits_applied?.truncated) return true;
+    const total = resultTotal(result);
+    const returned = result.shown_count ?? previewCount(result);
+    return total != null && returned != null && total > returned;
+}
+
+function isNotFoundPayload(payload, toolName) {
+    const result = payload?.result || {};
+    if (toolName === "find_symbols") return result.candidate_count === 0;
+    if (toolName === "find_references" || toolName === "find_implementations") return result.total === 0;
+    if (toolName === "trace_paths" || toolName === "trace_dataflow") return result.path_count === 0;
+    if (toolName === "analyze_edit_region") return Array.isArray(result.edited_symbols) && result.edited_symbols.length === 0;
+    return false;
+}
+
+function deriveStatus(payload, toolName) {
+    if (payload?.status && payload.status !== STATUS.OK) return payload.status;
+    if (isNotFoundPayload(payload, toolName)) return STATUS.NOT_FOUND;
+    if (isPartialPayload(payload)) return STATUS.PARTIAL;
+    return STATUS.OK;
+}
+
+function selectNextAction(payload, toolName) {
+    if (payload?.next_action) return payload.next_action;
+    const actions = payload?.next_actions || [];
+    const status = deriveStatus(payload, toolName);
+    if (status === STATUS.PARTIAL) return "expand";
+    if (status === STATUS.NOT_FOUND) {
+        return actions.find(action => [ACTION.WIDEN_QUERY, ACTION.ADJUST_QUERY, ACTION.INDEX_PROJECT, ACTION.WIDEN_RANGE].includes(action))
+            || ACTION.WIDEN_QUERY;
+    }
+    if (actions.length) return actions[0];
+    return "keep_using";
+}
+
+function preparePayload(useCaseResult, toolName) {
+    const payload = pruneEmpty({
+        status: STATUS.OK,
+        ...useCaseResult,
+    }) || {};
+    payload.status = deriveStatus(payload, toolName);
+    payload.next_action = selectNextAction(payload, toolName);
+    return payload;
+}
+
+function wrapResult(useCaseResult, toolName, verbosity = "full") {
     if (useCaseResult?.error) {
         return graphError(useCaseResult.error);
     }
-    const payload = pruneForVerbosity(pruneEmpty({
-        status: STATUS.OK,
-        ...useCaseResult,
-    }) || {}, verbosity);
+    const payload = pruneForVerbosity(preparePayload(useCaseResult, toolName), verbosity);
     const text = renderGrammar(payload, toolName);
     const large = text.length > 50_000;
     return textResult(text, { large });
@@ -701,7 +803,7 @@ server.registerTool("index_project", {
             reason: "index_project_completed",
             evidence: {},
             limits_applied: {},
-        }, "index_project", "json", "full");
+        }, "index_project", "full");
     } catch (e) {
         const message = e?.message || String(e);
         if (e?.code === "GRAPH_DB_UNREADABLE") {
@@ -721,11 +823,10 @@ server.registerTool("install_graph_providers", {
         path: z.string().describe("Project root used for language detection and provider planning"),
         mode: z.enum(["check", "install"]).default("check").describe("`check` reports the plan and remediation steps only. `install` runs the provider install commands when they are available for the current platform."),
         include_optional_scip: z.boolean().default(true).describe("Include optional SCIP exporter checks alongside precise providers."),
-        format: z.enum(["json", "text"]).default("json"),
     }),
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true },
 }, async (rawParams) => {
-    const { path, mode, include_optional_scip, format } = rawParams;
+    const { path, mode, include_optional_scip } = rawParams;
     try {
         const result = installGraphProviders({
             path,
@@ -743,7 +844,7 @@ server.registerTool("install_graph_providers", {
             reason: mode === "install" ? "graph_providers_install_attempted" : "graph_providers_checked",
             evidence: { layer: "environment", origin: "graph_provider_planner" },
             limits_applied: {},
-        }, "install_graph_providers", format, "full");
+        }, "install_graph_providers", "full");
     } catch (error) {
         return graphError("GRAPH_PROVIDER_SETUP_FAILED", error.message, "Verify the project path exists, then rerun install_graph_providers in `check` mode to inspect remediation steps.");
     }
@@ -762,7 +863,6 @@ server.registerTool("export_scip", {
         target_only: z.string().optional().describe("Python only: optional subdirectory to index instead of the full project."),
         environment_path: z.string().optional().describe("Python only: optional path to a scip-python environment JSON file."),
         working_directory: z.string().optional().describe("C# only: optional working directory passed through to scip-dotnet."),
-        format: z.enum(["json", "text"]).default("json"),
     }),
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true },
 }, async (rawParams) => {
@@ -776,7 +876,6 @@ server.registerTool("export_scip", {
         target_only,
         environment_path,
         working_directory,
-        format,
     } = rawParams;
     try {
         const result = await exportScip({
@@ -807,7 +906,7 @@ server.registerTool("export_scip", {
             reason: "scip_export_completed",
             evidence: { layer: "interop", origin: "scip_export" },
             limits_applied: {},
-        }, "export_scip", format, "full");
+        }, "export_scip", "full");
     } catch (error) {
         return graphError("SCIP_EXPORT_FAILED", error.message, "Run index_project first, verify the output path is writable, and install the required upstream SCIP indexer when using Python, PHP, or C#");
     }
@@ -820,11 +919,10 @@ server.registerTool("import_scip_overlay", {
         path: z.string().describe("Indexed project root"),
         artifact_path: z.string().describe("Path to a `.scip` artifact. Relative paths resolve from the project root."),
         replace_existing: z.boolean().default(true).describe("Clear prior `scip_import` overlay edges before importing this artifact."),
-        format: z.enum(["json", "text"]).default("json"),
     }),
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true },
 }, async (rawParams) => {
-    const { path, artifact_path, replace_existing, format } = rawParams;
+    const { path, artifact_path, replace_existing } = rawParams;
     try {
         const result = await importScipOverlay({
             path,
@@ -838,7 +936,7 @@ server.registerTool("import_scip_overlay", {
             reason: "scip_import_completed",
             evidence: { layer: "interop", origin: "scip_import" },
             limits_applied: {},
-        }, "import_scip_overlay", format, "full");
+        }, "import_scip_overlay", "full");
     } catch (error) {
         return graphError("SCIP_IMPORT_FAILED", error.message, "Run index_project first, verify the SCIP artifact path, and ensure the artifact contains supported document languages");
     }
@@ -852,13 +950,12 @@ server.registerTool("find_symbols", {
         kind: z.string().optional().describe("Optional kind filter"),
         limit: flexNum().describe("Max detailed candidate symbols to return (default: 8)"),
         path: z.string().describe("Indexed project root or a file/directory inside the indexed project"),
-        format: z.enum(["json", "text"]).default("json"),
     }),
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
 }, async (rawParams) => {
-    const { query, kind, limit, path, format } = rawParams;
+    const { query, kind, limit, path } = rawParams;
     const result = runFindSymbolsUseCase(query, { kind, limit: limit ?? 8, path });
-    return wrapResult(result, "find_symbols", format, "minimal");
+    return wrapResult(result, "find_symbols", "minimal");
 });
 
 server.registerTool("inspect_symbol", {
@@ -872,11 +969,10 @@ server.registerTool("inspect_symbol", {
         expand_limit: expandLimitSchema(),
         include_evidence: includeEvidenceSchema(),
         path: z.string().describe("Indexed project root or a file/directory inside the indexed project"),
-        format: z.enum(["json", "text"]).default("json"),
     }),
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
 }, async (rawParams) => {
-    const { path, format, min_confidence, verbosity, expand, expand_limit, include_evidence, ...selector } = rawParams;
+    const { path, min_confidence, verbosity, expand, expand_limit, include_evidence, ...selector } = rawParams;
     const result = runInspectSymbolUseCase(selector, {
         path,
         minConfidence: min_confidence ?? null,
@@ -885,7 +981,7 @@ server.registerTool("inspect_symbol", {
         expandLimit: expand_limit ?? null,
         includeEvidence: include_evidence ?? false,
     });
-    return wrapResult(withQuality(result, inspectQuality(result)), "inspect_symbol", format, verbosity ?? "compact");
+    return wrapResult(withQuality(result, inspectQuality(result)), "inspect_symbol", verbosity ?? "compact");
 });
 
 server.registerTool("trace_paths", {
@@ -904,11 +1000,10 @@ server.registerTool("trace_paths", {
         expand_limit: expandLimitSchema(),
         include_evidence: includeEvidenceSchema(),
         path: z.string().describe("Indexed project root or a file/directory inside the indexed project"),
-        format: z.enum(["json", "text"]).default("json"),
     }),
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
 }, async (rawParams) => {
-    const { path, format, path_kind, direction, depth, limit, min_confidence, verbosity, expand, expand_limit, include_evidence, ...selector } = rawParams;
+    const { path, path_kind, direction, depth, limit, min_confidence, verbosity, expand, expand_limit, include_evidence, ...selector } = rawParams;
     const target = buildTargetSelector(selector);
     delete selector.to_symbol_id;
     delete selector.to_workspace_qualified_name;
@@ -928,7 +1023,7 @@ server.registerTool("trace_paths", {
         expandLimit: expand_limit ?? null,
         includeEvidence: include_evidence ?? false,
     });
-    return wrapResult(withQuality(result, traceQuality(result)), "trace_paths", format, verbosity ?? "compact");
+    return wrapResult(withQuality(result, traceQuality(result)), "trace_paths", verbosity ?? "compact");
 });
 
 server.registerTool("find_references", {
@@ -944,11 +1039,10 @@ server.registerTool("find_references", {
         expand_limit: expandLimitSchema(),
         include_evidence: includeEvidenceSchema(),
         path: z.string().describe("Indexed project root or a file/directory inside the indexed project"),
-        format: z.enum(["json", "text"]).default("json"),
     }),
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
 }, async (rawParams) => {
-    const { path, format, kind, limit, min_confidence, verbosity, expand, expand_limit, include_evidence, ...selector } = rawParams;
+    const { path, kind, limit, min_confidence, verbosity, expand, expand_limit, include_evidence, ...selector } = rawParams;
     const result = runFindReferencesUseCase(selector, {
         kind: kind ?? "all",
         limit: limit ?? 10,
@@ -959,7 +1053,7 @@ server.registerTool("find_references", {
         expandLimit: expand_limit ?? null,
         includeEvidence: include_evidence ?? false,
     });
-    return wrapResult(withQuality(result, referencesQuality(result)), "find_references", format, verbosity ?? "compact");
+    return wrapResult(withQuality(result, referencesQuality(result)), "find_references", verbosity ?? "compact");
 });
 
 server.registerTool("find_implementations", {
@@ -973,11 +1067,10 @@ server.registerTool("find_implementations", {
         expand_limit: expandLimitSchema(),
         include_evidence: includeEvidenceSchema(),
         path: z.string().describe("Indexed project root or a file/directory inside the indexed project"),
-        format: z.enum(["json", "text"]).default("json"),
     }),
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
 }, async (rawParams) => {
-    const { path, format, limit, verbosity, expand, expand_limit, include_evidence, ...selector } = rawParams;
+    const { path, limit, verbosity, expand, expand_limit, include_evidence, ...selector } = rawParams;
     const result = runFindImplementationsUseCase(selector, {
         path,
         limit: limit ?? 10,
@@ -986,7 +1079,7 @@ server.registerTool("find_implementations", {
         expandLimit: expand_limit ?? null,
         includeEvidence: include_evidence ?? false,
     });
-    return wrapResult(result, "find_implementations", format, verbosity ?? "compact");
+    return wrapResult(result, "find_implementations", verbosity ?? "compact");
 });
 
 server.registerTool("trace_dataflow", {
@@ -1004,11 +1097,10 @@ server.registerTool("trace_dataflow", {
         expand_limit: expandLimitSchema(),
         include_evidence: includeEvidenceSchema(),
         path: z.string().describe("Indexed project root or a file/directory inside the indexed project"),
-        format: z.enum(["json", "text"]).default("json"),
     }),
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
 }, async (rawParams) => {
-    const { path, format, source, sink, flow_kind, max_hops, limit, min_confidence, verbosity, expand, expand_limit, include_evidence } = rawParams;
+    const { path, source, sink, flow_kind, max_hops, limit, min_confidence, verbosity, expand, expand_limit, include_evidence } = rawParams;
     const result = runTraceDataflowUseCase({
         source,
         sink,
@@ -1023,7 +1115,7 @@ server.registerTool("trace_dataflow", {
         expandLimit: expand_limit ?? null,
         includeEvidence: include_evidence ?? false,
     });
-    return wrapResult(result, "trace_dataflow", format, verbosity ?? "compact");
+    return wrapResult(result, "trace_dataflow", verbosity ?? "compact");
 });
 
 server.registerTool("analyze_changes", {
@@ -1036,11 +1128,10 @@ server.registerTool("analyze_changes", {
         include_paths: z.boolean().default(false).describe("Include reverse mixed graph paths for the returned symbols. Default is false to keep the snapshot compact."),
         max_symbols: flexNum().describe("Maximum changed symbols to return after risk ranking (default: 10)"),
         max_paths: flexNum().describe("Maximum supporting paths per symbol when `include_paths` is true (default: 3)"),
-        format: z.enum(["json", "text"]).default("json"),
     }),
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
 }, async (rawParams) => {
-    const { path, base_ref, head_ref, include_paths, max_symbols, max_paths, format } = rawParams;
+    const { path, base_ref, head_ref, include_paths, max_symbols, max_paths } = rawParams;
     try {
         const result = await runAnalyzeChangesUseCase({
             path,
@@ -1053,7 +1144,7 @@ server.registerTool("analyze_changes", {
         if (result?.error) {
             return graphError(result.error);
         }
-        return wrapResult(withQuality(result, changesQuality(result)), "analyze_changes", format, "minimal");
+        return wrapResult(withQuality(result, changesQuality(result)), "analyze_changes", "minimal");
     } catch (error) {
         return graphError("ANALYZE_CHANGES_FAILED", error.message, "Run index_project first, then verify the git refs and project path.");
     }
@@ -1068,11 +1159,10 @@ server.registerTool("analyze_edit_region", {
         line_start: flexNum().describe("1-based starting line of the edited region"),
         line_end: flexNum().describe("1-based ending line of the edited region"),
         verbosity: verbositySchema(),
-        format: z.enum(["json", "text"]).default("json"),
     }),
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
 }, async (rawParams) => {
-    const { path, file, line_start, line_end, verbosity, format } = rawParams;
+    const { path, file, line_start, line_end, verbosity } = rawParams;
     const result = runAnalyzeEditRegionUseCase({
         path,
         file,
@@ -1083,7 +1173,7 @@ server.registerTool("analyze_edit_region", {
     if (result?.error) {
         return graphError(result.error);
     }
-    return wrapResult(withQuality(result, editRegionQuality(result)), "analyze_edit_region", format, verbosity ?? "compact");
+    return wrapResult(withQuality(result, editRegionQuality(result)), "analyze_edit_region", verbosity ?? "compact");
 });
 
 server.registerTool("analyze_architecture", {
@@ -1094,11 +1184,10 @@ server.registerTool("analyze_architecture", {
         scope: z.string().optional().describe("Optional file path prefix filter"),
         limit: flexNum().describe("Max module, cycle, coupling, and hotspot rows to surface (default: 5)"),
         verbosity: verbositySchema(),
-        format: z.enum(["json", "text"]).default("json"),
     }),
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
 }, async (rawParams) => {
-    const { path, scope, limit, verbosity, format } = rawParams;
+    const { path, scope, limit, verbosity } = rawParams;
     const result = runAnalyzeArchitectureUseCase({
         path,
         scope: scope || null,
@@ -1108,7 +1197,7 @@ server.registerTool("analyze_architecture", {
     if (result?.error) {
         return graphError(result.error);
     }
-    return wrapResult(withQuality(result, architectureQuality(result)), "analyze_architecture", format, verbosity ?? "minimal");
+    return wrapResult(withQuality(result, architectureQuality(result)), "analyze_architecture", verbosity ?? "minimal");
 });
 
 server.registerTool("audit_workspace", {
@@ -1119,11 +1208,10 @@ server.registerTool("audit_workspace", {
         scope: z.string().optional().describe("Optional file path prefix filter"),
         verbosity: verbositySchema(),
         show_suppressed: flexBool().describe("Include suppressed unused exports in the visible result"),
-        format: z.enum(["json", "text"]).default("json"),
     }),
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
 }, async (rawParams) => {
-    const { path, scope, verbosity, show_suppressed, format } = rawParams;
+    const { path, scope, verbosity, show_suppressed } = rawParams;
     const result = runAuditWorkspaceUseCase({
         path,
         scope: scope || null,
@@ -1133,7 +1221,7 @@ server.registerTool("audit_workspace", {
     if (result?.error) {
         return graphError(result.error);
     }
-    return wrapResult(withQuality(result, auditQuality(result)), "audit_workspace", format, verbosity ?? "minimal");
+    return wrapResult(withQuality(result, auditQuality(result)), "audit_workspace", verbosity ?? "minimal");
 });
 
 const transport = new StdioServerTransport();

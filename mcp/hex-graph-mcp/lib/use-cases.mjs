@@ -330,16 +330,6 @@ function classifyFindSymbolsQuery(query) {
     return warnings;
 }
 
-function buildSymbolSummary(symbol, references, implementations) {
-    const parts = [
-        `${symbol.kind} \`${symbol.display_name || symbol.name}\``,
-        `in ${symbol.file}:${symbol.line_start}`,
-        `${summarizeCount(references.total || 0, "reference")}`,
-        `${summarizeCount(implementations.length || 0, "implementation link")}`,
-    ];
-    return parts.join(", ");
-}
-
 function directoryBucket(file) {
     if (!file) return ".";
     const normalized = String(file).replace(/\\/g, "/");
@@ -392,7 +382,7 @@ export function runFindSymbolsUseCase(query, { kind, limit = 20, path } = {}) {
         ? [`"${query}" is a broad bare symbol query. Narrow path or refine with name + file before deeper graph inspection.`]
         : [];
     return {
-        query: base.query,
+        query: { ...base.query, path },
         result: {
             candidates: shownCandidates,
             candidate_count: candidates.length,
@@ -497,6 +487,7 @@ export function runInspectSymbolUseCase(selector, {
     return {
         query: {
             ...symbolResult.query,
+            path,
             reference_limit: referenceLimit,
             implementation_limit: implementationLimit,
         },
@@ -594,7 +585,7 @@ export function runFindReferencesUseCase(selector, {
         }
         : null;
     return {
-        query: base.query,
+        query: { ...base.query, path },
         result: {
             symbol: base.result.symbol,
             provider_status: base.result.provider_status,
@@ -650,7 +641,7 @@ export function runFindImplementationsUseCase(selector, {
         }
         : null;
     return {
-        query: { ...base.query, limit: fetchLimit },
+        query: { ...base.query, path, limit: fetchLimit },
         result: {
             symbol: base.result.symbol,
             total: base.result.total,
@@ -716,7 +707,7 @@ export function runTracePathsUseCase(selector, {
         }
         : null;
     return {
-        query: base.query,
+        query: { ...base.query, path },
         result: {
             path_count: pathRows.length,
             target_found: target ? pathRows.length > 0 : null,
@@ -780,7 +771,7 @@ export function runTraceDataflowUseCase(selector, {
         }
         : null;
     return {
-        query: base.query,
+        query: { ...base.query, path },
         result: {
             source: base.result?.source,
             sink: base.result?.sink,
@@ -839,7 +830,7 @@ export async function runAnalyzeChangesUseCase({
     const summary = base.result.summary;
     const highRiskItems = (base.result.symbols || []).filter(symbol => symbol.risk_level === "high");
     return {
-        query: base.query,
+        query: { ...base.query, path },
         summary: [
             `${summarizeCount(summary.changed_file_count, "changed file")}`,
             `${summarizeCount(summary.changed_symbol_count, "changed symbol")}`,

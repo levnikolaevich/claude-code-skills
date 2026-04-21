@@ -60,6 +60,25 @@ export function countTestCases(root = paths.testDir) {
     return count;
 }
 
+export function countAlwaysSkippedTestCases(root = paths.testDir) {
+    let count = 0;
+    const stack = [root];
+    while (stack.length) {
+        const current = stack.pop();
+        for (const entry of readdirSync(current, { withFileTypes: true })) {
+            const fullPath = join(current, entry.name);
+            if (entry.isDirectory()) {
+                stack.push(fullPath);
+                continue;
+            }
+            if (!entry.name.endsWith(".mjs")) continue;
+            const source = readFileSync(fullPath, "utf8");
+            count += (source.match(/^\s*(?:it|test)\([^,\n]+,\s*\{\s*skip:\s*true\s*\}/gm) || []).length;
+        }
+    }
+    return count;
+}
+
 export function getDefaultCorpusCacheDir() {
     if (process.env.HEX_GRAPH_CORPUS_CACHE_DIR) {
         return resolve(process.env.HEX_GRAPH_CORPUS_CACHE_DIR);
@@ -139,7 +158,9 @@ export function buildQualityReport({
     corporaManifest,
     generatedAt = todayIso(),
     testCount = countTestCases(paths.testDir),
+    skippedTestCount = countAlwaysSkippedTestCases(paths.testDir),
 } = {}) {
+    const passedTestCount = Math.max(0, testCount - skippedTestCount);
     const external = corporaManifest.external || [];
     const knownGaps = [
         "Latency bands are targets today; artifact-backed trend history will land in follow-up eval runs.",
@@ -153,7 +174,9 @@ export function buildQualityReport({
         summary: {
             semantic_suite: {
                 runner: "node --test test/*.mjs",
-                passed: testCount,
+                passed: passedTestCount,
+                skipped: skippedTestCount,
+                total: testCount,
                 failed: 0,
                 status: "pass",
             },
@@ -207,7 +230,7 @@ export function renderPackageQualityBlock(inputs) {
         "### Generated Snapshot",
         "",
         `- MCP tools registered in server contract: \`${toolCount}\``,
-        `- Semantic suite: \`${qualityReport.summary.semantic_suite.passed}/${qualityReport.summary.semantic_suite.passed}\` passing`,
+        `- Semantic suite: \`${qualityReport.summary.semantic_suite.passed}/${qualityReport.summary.semantic_suite.total || qualityReport.summary.semantic_suite.passed}\` passing`,
         `- Corpora: \`${corporaManifest.curated.length}\` curated, \`${corporaManifest.external.length}\` pinned external`,
         `- Lanes: parser-first \`${formatLaneStatus(qualityReport.lanes.parser_first.status)}\`, precise overlay \`${formatLaneStatus(qualityReport.lanes.precise_overlay.status)}\``,
         "",
@@ -235,7 +258,7 @@ export function renderPackageQualityBlock(inputs) {
 
 export function renderRootStatusBlock(inputs) {
     const { corporaManifest, qualityReport } = inputs;
-    return `\`hex-graph-mcp\` quality snapshot: \`${qualityReport.summary.semantic_suite.passed}/${qualityReport.summary.semantic_suite.passed}\` tests passing, \`${corporaManifest.curated.length}\` curated corpus, \`${corporaManifest.external.length}\` pinned external corpora, parser-first \`${qualityReport.lanes.parser_first.status}\`.`;
+    return `\`hex-graph-mcp\` quality snapshot: \`${qualityReport.summary.semantic_suite.passed}/${qualityReport.summary.semantic_suite.total || qualityReport.summary.semantic_suite.passed}\` tests passing, \`${corporaManifest.curated.length}\` curated corpus, \`${corporaManifest.external.length}\` pinned external corpora, parser-first \`${qualityReport.lanes.parser_first.status}\`.`;
 }
 
 export function renderRootHexGraphRow(inputs) {

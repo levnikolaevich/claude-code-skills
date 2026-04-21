@@ -4,7 +4,7 @@ import fs from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { setTimeout as delay } from "node:timers/promises";
-import { countTestCases } from "../scripts/quality-support.mjs";
+import { countAlwaysSkippedTestCases, countTestCases } from "../scripts/quality-support.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 // ==================== clone analysis substrate ====================
@@ -2431,7 +2431,11 @@ describe("quality artifacts", () => {
         assert.ok(capabilities.query_families.find_references, "find_references capability exists");
         assert.equal(capabilities.query_families.scip_interop.default.tier, "experimental", "SCIP interop is surfaced as an experimental lane");
         assert.ok(targets.lanes.parser_first, "parser_first targets exist");
-        assert.equal(report.summary.semantic_suite.passed, countTestCases(resolve(__dirname)), "quality report keeps semantic suite summary");
+        const totalTests = countTestCases(resolve(__dirname));
+        const skippedTests = countAlwaysSkippedTestCases(resolve(__dirname));
+        assert.equal(report.summary.semantic_suite.total, totalTests, "quality report keeps semantic suite total");
+        assert.equal(report.summary.semantic_suite.skipped, skippedTests, "quality report keeps semantic suite skipped count");
+        assert.equal(report.summary.semantic_suite.passed, totalTests - skippedTests, "quality report keeps semantic suite passed count");
         assert.equal(corpora.curated[0].path, "test/smoke.mjs");
         assert.equal(listQualityCorpora("curated").length, 1, "curated corpus list is exposed");
         assert.ok(listQualityCorpora("external").length >= 1, "external corpus list is exposed");

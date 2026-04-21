@@ -2,4 +2,4 @@ partial expand total=50 returned=20 truncated=1 expand_limit=50 conf=exact
 #evidence precise_provider=18 parser_or_workspace=2
 .ref src/caller.ts:2 kind=calls conf=exact origin=typescript
 .ref src/caller.ts:3 kind=calls conf=exact origin=typescript
->mcp__hex-graph__find_references expand=references expand_limit=50
+>mcp__hex-graph__find_references path=/repo symbol_id=42 expand=references expand_limit=50

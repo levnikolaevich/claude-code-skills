@@ -3,7 +3,9 @@
   "summary": {
     "semantic_suite": {
       "runner": "node --test test/*.mjs",
-      "passed": 101,
+      "passed": 102,
+      "skipped": 0,
+      "total": 102,
       "failed": 0,
       "status": "pass"
     },
@@ -13,7 +15,7 @@
       "status": "seeded"
     },
     "workflow_benchmark": {
-      "average_token_savings_ratio": 0.49,
+      "average_token_savings_ratio": 0.91,
       "operations_before": 45,
       "operations_after": 11,
       "steps_before": 43,

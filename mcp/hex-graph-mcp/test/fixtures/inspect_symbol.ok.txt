@@ -5,8 +5,8 @@ ok keep_using conf=exact sym=computeTotal
 #provenance precise_provider=2
 .ref src/caller.ts:2 kind=calls conf=exact origin=typescript
 .ref src/caller.ts:3 kind=calls conf=exact origin=typescript
->mcp__hex-graph__inspect_symbol expand=siblings expand_limit=1
->mcp__hex-graph__inspect_symbol expand=incoming expand_limit=1
->mcp__hex-graph__inspect_symbol expand=outgoing expand_limit=1
->mcp__hex-graph__find_references expand=references expand_limit=5
->mcp__hex-graph__find_implementations expand=implementations expand_limit=1
+>mcp__hex-graph__inspect_symbol path=/repo symbol_id=42 expand=siblings expand_limit=1
+>mcp__hex-graph__inspect_symbol path=/repo symbol_id=42 expand=incoming expand_limit=1
+>mcp__hex-graph__inspect_symbol path=/repo symbol_id=42 expand=outgoing expand_limit=1
+>mcp__hex-graph__find_references path=/repo symbol_id=42 expand=references expand_limit=5
+>mcp__hex-graph__find_implementations path=/repo symbol_id=42 expand=implementations expand_limit=1

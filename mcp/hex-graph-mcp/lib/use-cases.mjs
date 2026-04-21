@@ -979,6 +979,8 @@ export function runAuditWorkspaceUseCase({
     detailLevel = "compact",
     verbosity = null,
     showSuppressed = false,
+    limit = null,
+    cloneMemberLimit = null,
     cloneType = "all",
     cloneThreshold = 0.80,
     cloneMinStmts = null,
@@ -988,7 +990,8 @@ export function runAuditWorkspaceUseCase({
             return { error: { code: "NOT_INDEXED", message: "No project indexed", recovery: QUERY_PATH_RECOVERY } };
         }
         const responseVerbosity = verbosity || detailLevel;
-        const discoveryLimit = responseVerbosity === "full" ? 15 : 5;
+        const discoveryLimit = clampLimit(limit, 5, 25);
+        const memberLimit = clampLimit(cloneMemberLimit, responseVerbosity === "full" ? 10 : 3, 25);
         const unused = findUnusedExports(store, { scopePath: scope, kind: "all" });
         const visibleUnused = showSuppressed ? unused.unused : unused.unused.filter(item => !item.suppressed);
         const hotspots = getHotspots({ path, scopePath: scope, minCallers: 2, minComplexity: 15, limit: 20 });
@@ -1002,12 +1005,24 @@ export function runAuditWorkspaceUseCase({
             format: "json",
             suppress: true,
         });
+        const previewCloneGroup = (group) => {
+            const members = Array.isArray(group.members) ? group.members : [];
+            return {
+                ...group,
+                members: members.slice(0, memberLimit),
+                members_total: members.length,
+                members_shown: Math.min(members.length, memberLimit),
+                members_omitted: Math.max(0, members.length - memberLimit),
+            };
+        };
         return {
             query: {
                 path,
                 scope,
                 verbosity: responseVerbosity,
                 show_suppressed: showSuppressed,
+                limit: discoveryLimit,
+                clone_member_limit: memberLimit,
                 clone_type: cloneType,
             },
             summary: [
@@ -1016,12 +1031,12 @@ export function runAuditWorkspaceUseCase({
                 `${summarizeCount(clones.summary?.total_groups || 0, "clone group")}`,
             ].join(", "),
             result: {
-                unused_exports: trimForDetail(visibleUnused, responseVerbosity, discoveryLimit),
+                unused_exports: visibleUnused.slice(0, discoveryLimit),
                 uncertain_unused_exports: responseVerbosity === "minimal"
                     ? []
-                    : trimForDetail(unused.uncertain || [], responseVerbosity, discoveryLimit),
-                hotspots: trimForDetail(hotspots, responseVerbosity, discoveryLimit),
-                clones: trimForDetail(clones.groups || [], responseVerbosity, discoveryLimit),
+                    : (unused.uncertain || []).slice(0, discoveryLimit),
+                hotspots: hotspots.slice(0, discoveryLimit),
+                clones: (clones.groups || []).slice(0, discoveryLimit).map(previewCloneGroup),
                 risk_summary: {
                     unused_exports: visibleUnused.length,
                     uncertain_unused_exports: unused.uncertain.length,
@@ -1029,7 +1044,7 @@ export function runAuditWorkspaceUseCase({
                     clone_groups: clones.summary?.total_groups || 0,
                 },
                 suppressed_items: showSuppressed && responseVerbosity !== "minimal"
-                    ? trimForDetail(unused.unused.filter(item => item.suppressed), responseVerbosity, discoveryLimit)
+                    ? unused.unused.filter(item => item.suppressed).slice(0, discoveryLimit)
                     : [],
             },
             warnings: nextActions([
@@ -1048,7 +1063,7 @@ export function runAuditWorkspaceUseCase({
                 hotspot_count: hotspots.length,
                 clone_group_count: clones.summary?.total_groups || 0,
             },
-            limits_applied: { verbosity: responseVerbosity },
+            limits_applied: { verbosity: responseVerbosity, limit: discoveryLimit, clone_member_limit: memberLimit },
         };
     });
 }

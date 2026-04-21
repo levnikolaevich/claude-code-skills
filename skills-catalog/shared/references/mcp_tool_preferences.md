@@ -37,6 +37,7 @@ Repo-level MCP policy for code files and semantic codebase analysis.
 - For text search in repo files, prefer `grep_search(summary)` before any shell search; escalate to `output_mode="content"` only after narrowing `path`, `glob`, or pattern, or when canonical hunks are required
 - `allow_large_output=true` is an explicit escape hatch for `grep_search(output_mode="content")`; default capped output is the preferred discovery behavior
 - `analyze_architecture`, `audit_workspace`, and `analyze_edit_region` use `verbosity` (`minimal|compact|full`) instead of `detail_level`
+- Use `audit_workspace` as a bounded maintenance preview: start with `verbosity="minimal"` and a `scope` when known; raise `limit` or `clone_member_limit` only for a deliberate deeper review
 - `find_symbols` is for symbol names or partial names, not code fragments like `export function` and not unresolved member calls like `server.tool()` or `app.get(...)`
 - Do not use `find_symbols` on broad/common bare names until you can narrow by `path` or immediately refine with `name + file`
 - Path-scoped `hex-graph` query tools accept the indexed project root or any file/subdirectory inside that indexed project

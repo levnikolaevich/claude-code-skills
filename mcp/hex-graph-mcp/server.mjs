@@ -357,10 +357,15 @@ function renderAuditWorkspace(payload, lines) {
     for (const group of clones) {
         const id = group.id || "?";
         const members = group.members || [];
-        lines.push(`.clone_group id=${id} type=${group.type || "?"} members=${members.length} impact=${group.impact || "?"}`);
+        const totalMembers = group.members_total ?? members.length;
+        const omittedMembers = group.members_omitted ?? Math.max(0, totalMembers - members.length);
+        lines.push(`.clone_group id=${id} type=${group.type || "?"} members=${totalMembers} shown=${members.length} impact=${group.impact || "?"}`);
         for (const member of members) {
             const linesPair = Array.isArray(member.lines) ? `${member.lines[0]}-${member.lines[1]}` : "?";
             lines.push(`.clone_member group=${id} file=${member.file || "?"} lines=${linesPair} name=${member.name || "?"} callers=${member.callers ?? "?"}`);
+        }
+        if (omittedMembers > 0) {
+            lines.push(`.clone_members_more group=${id} omitted=${omittedMembers}`);
         }
     }
 }
@@ -1207,16 +1212,20 @@ server.registerTool("audit_workspace", {
         path: z.string().describe("Indexed project root"),
         scope: z.string().optional().describe("Optional file path prefix filter"),
         verbosity: verbositySchema(),
+        limit: flexNum().describe("Max unused, hotspot, and clone group rows to surface (default: 5, capped at 25)"),
+        clone_member_limit: flexNum().describe("Max clone members per group to surface (default: 3, or 10 with verbosity=full, capped at 25)"),
         show_suppressed: flexBool().describe("Include suppressed unused exports in the visible result"),
     }),
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
 }, async (rawParams) => {
-    const { path, scope, verbosity, show_suppressed } = rawParams;
+    const { path, scope, verbosity, show_suppressed, limit, clone_member_limit } = rawParams;
     const result = runAuditWorkspaceUseCase({
         path,
         scope: scope || null,
         verbosity: verbosity ?? "minimal",
         showSuppressed: show_suppressed ?? false,
+        limit,
+        cloneMemberLimit: clone_member_limit,
     });
     if (result?.error) {
         return graphError(result.error);

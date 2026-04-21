@@ -22,17 +22,17 @@ Fast, automated scan using Grep/Glob/Bash tools.
 When hex-graph is available (project indexed via `mcp__hex-graph__index_project`), use `mcp__hex-graph__audit_workspace` for Layer 1 DRY candidate detection instead of Grep:
 
 ```
-audit_workspace(path, verbosity="full")
+audit_workspace(path, verbosity="minimal", limit=5, clone_member_limit=3)
 ```
 
 | Output field | Use |
 |---|---|
 | `groups[].type` | exact = identical copy, normalized = renamed vars, near_miss = modified structure |
-| `groups[].members[]` | file, name, lines, stmt_count, callers |
+| `groups[].members[]` | bounded preview: file, name, lines, stmt_count, callers |
 | `groups[].impact` | Refactoring priority (callers x size) |
 | `groups[].suppressed` | true = test-fixture (skip), false + hints = review needed |
 
-Layer 2 verification still required: read actual code, confirm refactoring value.
+Layer 2 verification still required: raise `limit` / `clone_member_limit` only when needed, then read actual code and confirm refactoring value.
 
 **Fall back to Grep when:** hex-graph not indexed, or domain-specific duplication (validation logic, error messages, SQL) — `audit_workspace` surfaces structural clone groups, not arbitrary semantic similarity.
 **Output:** List of candidate locations (file:line) with matched pattern.

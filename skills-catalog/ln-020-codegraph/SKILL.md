@@ -57,7 +57,7 @@ Route based on user intent:
 | "Project structure" / "Architecture" | `analyze_architecture` | `{ path: "{project_path}", scope?: "src/" }` |
 | "Find symbol X" | `find_symbols` | `{ path: "{project_path}", query: "X" }` |
 | "Find `app.get(...)` / `router.use(...)` / `server.registerTool(...)` pattern" | `grep_search` | `{ path: "{project_path}", pattern: "app\\.get\\(|router\\.use\\(|server\\.registerTool\\(" }` |
-| "Find duplicate code / hotspots / unused exports" | `audit_workspace` | `{ path: "{project_path}", scope?: "src/", verbosity: "full" }` |
+| "Find duplicate code / hotspots / unused exports" | `audit_workspace` | `{ path: "{project_path}", scope?: "src/", verbosity: "minimal", limit: 5, clone_member_limit: 3 }` |
 | "Circular dependencies / module coupling" | `analyze_architecture` | `{ path: "{project_path}", verbosity: "full" }` |
 | "Implementations / overrides" | `find_implementations` | `{ name: "X", file: "...", path: "{project_path}" }` |
 | "Dataflow / propagation" | `trace_dataflow` | `{ source: { symbol: { name: "X", file: "..." }, anchor: { kind: "param", name: "input" } }, sink?: { symbol: { name: "X", file: "..." }, anchor: { kind: "return" } }, path: "{project_path}" }` |

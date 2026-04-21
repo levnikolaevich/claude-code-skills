@@ -16,7 +16,7 @@ import {
 } from "../lib/store.mjs";
 import { findClones } from "../lib/clones.mjs";
 import { findCycles } from "../lib/cycles.mjs";
-import { findUnusedExports } from "../lib/unused.mjs";
+import { runAuditWorkspaceUseCase } from "../lib/use-cases.mjs";
 
 /**
  * @param {object} store  — initialized graph store
@@ -289,7 +289,12 @@ export function runAtomic(store, config) {
         });
 
         const withChars = runN(() => {
-            const result = findUnusedExports(store);
+            const result = runAuditWorkspaceUseCase({
+                path: repoRoot,
+                verbosity: "minimal",
+                limit: 5,
+                cloneMemberLimit: 3,
+            });
             return JSON.stringify(result).length;
         });
 

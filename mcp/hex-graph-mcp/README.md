@@ -65,7 +65,7 @@ All symbol/query tools also require `path` as the project anchor. Pass the index
 
 `find_symbols` is also intentionally compact for overloaded names. The default detailed slice is `8`; when more candidates exist, the action-line reports `partial ... total=N returned=M truncated=1` and the body carries warning/detail rows so the next call narrows with `path`, `name + file`, or `workspace_qualified_name`.
 
-Heavy tools default to `verbosity: "compact"` and summary-first output. They return counts, previews, provenance sections, quality metadata, and executable `>` follow-up pointers first, so the client sees upfront how much a deeper expansion will return and which layer the current answer comes from. Use `expand`, `expand_limit`, `limit`, `depth`, `max_hops`, `kind`, and `min_confidence` to request a bounded deeper slice instead of dumping the whole graph in one call.
+Heavy tools use summary-first output. They return counts, bounded previews, provenance sections, quality metadata, and executable `>` follow-up pointers first, so the client sees upfront how much a deeper expansion will return and which layer the current answer comes from. Use `expand`, `expand_limit`, `limit`, `clone_member_limit`, `depth`, `max_hops`, `kind`, and `min_confidence` to request a bounded deeper slice instead of dumping the whole graph in one call.
 
 All responses use the text-only grammar defined in [`PROTOCOL.md`](PROTOCOL.md). The MCP envelope carries a single `content[0].text` string; there is **no** `structuredContent` mirror and **no** `outputSchema` declaration. Line 1 is the action-line:
 
@@ -91,9 +91,11 @@ Example `audit_workspace` (clone members are flat rows, not an indent tree):
 
     ok review_duplicates path=/tmp/project
     #summary unused=2 hotspots=1 clone_groups=1
-    .clone_group id=g1 type=normalized members=3 impact=medium
+    .clone_group id=g1 type=normalized members=12 shown=3 impact=medium
     .clone_member group=g1 file=src/foo.ts lines=42-58 name=foo callers=3
     .clone_member group=g1 file=src/bar.ts lines=70-86 name=bar callers=1
+    .clone_member group=g1 file=src/baz.ts lines=21-37 name=baz callers=1
+    .clone_members_more group=g1 omitted=9
 
 `next_action` / `next_actions` use short canonical labels, not English sentences. Typical values:
 
@@ -147,7 +149,7 @@ Errors use the same grammar, not a JSON error envelope:
 | Tool | Best for | Key result sections |
 |------|----------|---------------------|
 | `analyze_architecture` | Workspace overview | `#summary`, `.module`, `.cycle`, `.coupling`, `.framework`, `.risk` |
-| `audit_workspace` | Cleanup / maintainability review | `#summary`, `.unused`, `.hotspot`, `.clone_group`, `.clone_member`, `!warning` suppressed/uncertain items |
+| `audit_workspace` | Cleanup / maintainability review | `#summary`, bounded `.unused`, `.hotspot`, `.clone_group`, `.clone_member`, `.clone_members_more`, `!warning` suppressed/uncertain items |
 
 ### Interop
 

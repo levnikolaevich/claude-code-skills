@@ -244,6 +244,16 @@ describe("use-case wrappers", () => {
                 "}",
                 "",
             ].join("\n"), "utf8");
+            for (let idx = 3; idx <= 7; idx++) {
+                writeFileSync(join(dir, "src", `dup-${idx}.js`), [
+                    `export function duplicateExtra${idx}(input) {`,
+                    "  const trimmed = input.trim();",
+                    "  if (!trimmed) return null;",
+                    "  return trimmed.toUpperCase();",
+                    "}",
+                    "",
+                ].join("\n"), "utf8");
+            }
             await indexProject(dir);
 
             const architecture = runAnalyzeArchitectureUseCase({ path: dir, verbosity: "minimal", limit: 3 });
@@ -259,9 +269,22 @@ describe("use-case wrappers", () => {
             assert.ok(Array.isArray(audit.result.unused_exports), "minimal audit still returns visible cleanup targets");
             assert.ok(Array.isArray(audit.result.hotspots), "minimal audit still returns hotspots");
             assert.ok(Array.isArray(audit.result.clones), "minimal audit still returns clone groups");
+            assert.ok(audit.result.clones.length <= 5, "minimal audit bounds clone groups");
+            assert.ok(
+                audit.result.clones.every(group => (group.members || []).length <= 3),
+                "minimal audit bounds clone members per group",
+            );
+            assert.ok(
+                audit.result.clones.some(group => group.members_omitted > 0),
+                "large clone groups report omitted member counts",
+            );
             assert.deepEqual(audit.result.uncertain_unused_exports, [], "minimal audit omits uncertain exports");
             assert.deepEqual(audit.result.suppressed_items, [], "minimal audit omits suppressed detail");
             assert.equal(audit.query.verbosity, "minimal");
+            assert.equal(audit.query.limit, 5);
+            assert.equal(audit.query.clone_member_limit, 3);
+            assert.equal(audit.limits_applied.limit, 5);
+            assert.equal(audit.limits_applied.clone_member_limit, 3);
         } finally {
             resolveStore(dir)?.close();
             rmSync(dir, { recursive: true, force: true });

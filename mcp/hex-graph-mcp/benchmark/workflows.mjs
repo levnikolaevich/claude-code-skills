@@ -16,8 +16,8 @@ import {
     getReferencesBySelector,
 } from "../lib/store.mjs";
 import { findCycles } from "../lib/cycles.mjs";
-import { findUnusedExports } from "../lib/unused.mjs";
 import { getPrImpact } from "../lib/pr-impact.mjs";
+import { runAuditWorkspaceUseCase } from "../lib/use-cases.mjs";
 
 /**
  * @param {object} store  — initialized graph store
@@ -102,7 +102,12 @@ export async function runWorkflows(store, config) {
 
         const withChars = runN(() => {
             let total = 0;
-            total += JSON.stringify(findUnusedExports(store)).length;
+            total += JSON.stringify(runAuditWorkspaceUseCase({
+                path: repoRoot,
+                verbosity: "minimal",
+                limit: 5,
+                cloneMemberLimit: 3,
+            })).length;
             total += JSON.stringify(findCycles(store)).length;
             total += JSON.stringify(getHotspots({ limit: 10 })).length;
             total += JSON.stringify(getModuleMetricsReport()).length;

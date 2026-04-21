@@ -61,6 +61,8 @@ describe("schema descriptions", () => {
             const audit = toolByName(result.tools, "audit_workspace");
             const auditProps = audit.inputSchema.properties || {};
             assert.equal(auditProps.show_suppressed?.description, "Include suppressed unused exports in the visible result");
+            assert.equal(auditProps.limit?.description, "Max unused, hotspot, and clone group rows to surface (default: 5, capped at 25)");
+            assert.equal(auditProps.clone_member_limit?.description, "Max clone members per group to surface (default: 3, or 10 with verbosity=full, capped at 25)");
 
             const inspect = toolByName(result.tools, "inspect_symbol");
             const inspectProps = inspect.inputSchema.properties || {};

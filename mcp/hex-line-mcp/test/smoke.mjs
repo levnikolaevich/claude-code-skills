@@ -2755,8 +2755,8 @@ describe("protocol: edit_file output", () => {
         fs.writeFileSync(tmp, "aaa\nbbb\nccc\n");
         try {
             const read = readFile(tmp, { ranges: ["1-3"] });
-            const startAnchor = read.match(/([a-z2-7]{2}\.1)/)?.[1];
-            const endAnchor = read.match(/([a-z2-7]{2}\.3)/)?.[1];
+            const startAnchor = read.match(/([a-z2-7]{2}\.1)\taaa/)?.[1];
+            const endAnchor = read.match(/([a-z2-7]{2}\.3)\tccc/)?.[1];
             // Mutate the file to make checksum stale
             fs.writeFileSync(tmp, "aaa\nXXX\nccc\n");
             try {
@@ -2823,7 +2823,7 @@ describe("E2E: workflow round-trips", () => {
         try {
             // Read
             const read = readFile(tmp, { ranges: ["1-3"] });
-            const anchor = read.match(/([a-z2-7]{2}\.2)/)?.[1];
+            const anchor = read.match(/([a-z2-7]{2}\.2)\tconst y = 2;/)?.[1];
             assert.ok(anchor, "Got anchor from read");
             // Edit
             const editResult = editFile(tmp, [{ set_line: { anchor, new_text: "const y = 42;" } }]);

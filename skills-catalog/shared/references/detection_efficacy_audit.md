@@ -26,7 +26,7 @@ Static reference — what each pipeline step CAN and CANNOT detect:
 | Task Review | task reviewer step 4 | Architecture alignment, conventions, AC, side-effects, destructive ops, algorithm correctness (basic) | Deep performance patterns, domain-specific invariants |
 | Code Metrics | code quality checker | Cyclomatic complexity, DRY, KISS, YAGNI, PERF-ALG (O(n^2)), PERF-DB (N+1), unbounded memory, ARCH-*, SEC-* | Data structure semantics, custom algorithm verification |
 | MCP Ref Research | code quality checker MCP research levels | Library best practices, optimality, performance config, known pitfalls | Custom algorithm correctness, project-specific invariants |
-| Agent Review | quality coordinator agent review phase (Codex+Gemini) | Correctness, security, performance, architecture, best practices | Limited by prompt scope, model reasoning depth, context window |
+| Agent Review | quality coordinator agent review phase (registry-configured external agents; Codex by default) | Correctness, security, performance, architecture, best practices | Limited by prompt scope, model reasoning depth, context window |
 | Regression Tests | regression checker | Regressions in existing test suite | New untested code paths, missing test scenarios |
 | Criteria Validation | quality coordinator criteria validation phase | Story deps, AC-Task coverage, DB creation principle | Code correctness, implementation quality |
 | NFR Validation | story quality gate NFR validation phase | Security, performance, maintainability (high-level) | Algorithm-level bugs, data structure correctness |

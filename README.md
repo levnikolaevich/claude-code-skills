@@ -10,7 +10,7 @@
 > Works standalone or as a complete Agile pipeline.
 
 > [!TIP]
-> **Multi-Model AI Review** — Delegate code & story reviews to Codex and Gemini agents running in parallel, with automatic fallback to Claude Opus. Ship faster with 3x review coverage.
+> **External AI Review** — Delegate code & story reviews to registry-configured external agents. The bundled registry currently enables Codex for review flows, with Claude Opus fallback when no external agent is available.
 
 [Plugins](#plugins) · [Installation](#installation) · [Quick Start](#quick-start) · [Workflow](#workflow) · [MCP](#mcp-servers-optional) · [AI Review](#ai-review-models-optional) · [FAQ](#faq) · [Full Skill Tree](#whats-inside) · [Links](#links)
 
@@ -171,29 +171,24 @@ Hooks and output style auto-sync on `hex-line-mcp` startup. First run after inst
 
 ## AI Review Models (Optional)
 
-Multi-model review uses external AI agents (Codex + Gemini) for parallel code/story analysis. Both agents run simultaneously with automatic fallback to Claude Opus if unavailable.
+External-agent review uses registry-configured AI agents for code/story analysis. In the bundled registry, Codex is enabled for the main review flows and skills fall back to Claude Opus self-review when no external agent is available.
 
 | Model | CLI | Version | Used by | Settings |
 |-------|-----|---------|---------|----------|
-| **[Codex](https://github.com/anthropics/codex-cli)** | `codex` | gpt-5.4 | ln-310, ln-510, ln-813 | `--json --full-auto` (read-only, internet access) |
-| **[Gemini](https://github.com/google/gemini-cli)** | `gemini` | Auto (Gemini 3) | ln-310, ln-510, ln-813 | `--yolo` (sandbox, auto-approve, auto model selection) |
+| **[Codex](https://github.com/openai/codex)** | `codex` | Latest installed Codex CLI runtime default | ln-310, ln-510 | `exec --full-auto` (registry-driven review agent) |
 
 **Review Workflow:**
-1. **Parallel Execution** — Both agents run simultaneously (background tasks)
+1. **Background Execution** — Launch registry-configured external agents in the background
 2. **Critical Verification** — Claude validates each suggestion (AGREE/DISAGREE/UNCERTAIN)
 3. **Debate Protocol** — Challenge rounds (max 2) for controversial findings
 4. **Filtering** — Only high-confidence (≥90%), high-impact (>2%) suggestions surface
-5. **Fallback** — Self-Review (Claude Opus) if agents unavailable
+5. **Fallback** — Self-Review (Claude Opus) if no external agent is available
 
 **Installation:**
 ```bash
 # Codex (OpenAI)
-npm install -g @anthropic/codex-cli
+npm install -g @openai/codex
 codex login
-
-# Gemini (Google)
-npm install -g @google/gemini-cli
-gemini auth login
 ```
 
 **Configuration:**
@@ -203,20 +198,20 @@ Review agents auto-configure via `shared/agents/agent_registry.json`. No manual 
 All prompts/results saved to `.agent-review/{agent}/` for transparency:
 ```
 .agent-review/
-├── codex/
-│   ├── PROJ-123_storyreview_prompt.md
-│   ├── PROJ-123_storyreview_result.md
-│   └── PROJ-123_session.json
-└── gemini/
-    └── (same structure)
+└── codex/
+    ├── PROJ-123_storyreview_prompt.md
+    ├── PROJ-123_storyreview_result.md
+    └── PROJ-123_session.json
 ```
+
+Additional configured agents use the same per-agent directory structure.
 
 <details>
 <summary><b>Skills using external AI review</b></summary>
 
-- **ln-310-multi-agent-validator** — Story/Tasks validation with inline agent review (Codex + Gemini)
-- **ln-510-quality-coordinator** — Code implementation review with inline agent review (Codex + Gemini)
-- **ln-813-optimization-plan-validator** — Optimization plan review before strike execution (Codex + Gemini)
+- **ln-310-multi-agent-validator** — Story/Tasks validation with inline external-agent review (Codex in the bundled registry)
+- **ln-510-quality-coordinator** — Code implementation review with inline external-agent review (Codex in the bundled registry)
+- **ln-813-optimization-plan-validator** — Optimization plan review with external-agent input when separately configured
 
 All skills support:
 - Session Resume for multi-round debates
@@ -361,7 +356,7 @@ Through automated review loops. `ln-402-task-reviewer` checks every task output,
 <details>
 <summary><b>Does it replace human code review?</b></summary>
 
-No — it augments human review. Multi-model cross-checking (Claude + Codex + Gemini) catches issues before human reviewers see the code. Human approval points are built into the workflow at Story validation (`ln-310`) and quality gates (`ln-500`). The goal is to reduce reviewer burden, not eliminate oversight.
+No — it augments human review. Cross-checking between Claude and the configured external review agent (Codex in the bundled registry) catches issues before human reviewers see the code. Human approval points are built into the workflow at Story validation (`ln-310`) and quality gates (`ln-500`). The goal is to reduce reviewer burden, not eliminate oversight.
 
 </details>
 
@@ -389,7 +384,7 @@ Bootstrap skills (`ln-7XX`) support React, .NET, and Python project structures. 
 <details>
 <summary><b>What AI models does it use?</b></summary>
 
-Claude Opus is the primary model. For code and story reviews, skills delegate to external agents (OpenAI Codex, Google Gemini) for parallel multi-model review with automatic fallback to Claude Opus if external agents are unavailable.
+Claude Opus is the primary model. For code and story reviews, skills can delegate to registry-configured external agents; the bundled registry currently enables OpenAI Codex for `ln-310` and `ln-510`, with Claude Opus fallback when no external agent is available.
 
 </details>
 
@@ -583,7 +578,7 @@ claude-code-skills/                      # MARKETPLACE
 |   |-- ln-810-performance-optimizer/       # Performance optimization:
 |   |   |-- ln-811-performance-profiler/     # Full-stack request tracing, bottleneck classification
 |   |   |-- ln-812-optimization-researcher/  # Competitive benchmarks, solution research, hypotheses
-|   |   |-- ln-813-optimization-plan-validator/ # Agent-validated plan review (Codex + Gemini)
+|   |   |-- ln-813-optimization-plan-validator/ # Research-backed plan review with optional external-agent input
 |   |   |-- ln-814-optimization-executor/    # Strike-first hypothesis execution (keep/discard)
 |   |-- ln-820-dependency-optimization-coordinator/  # Dependency upgrades:
 |   |   |-- ln-821-npm-upgrader/             # npm/yarn/pnpm with breaking change handling

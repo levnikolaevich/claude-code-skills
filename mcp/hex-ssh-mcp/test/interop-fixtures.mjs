@@ -194,8 +194,12 @@ async function waitForSshReady(port, timeoutMs = 15_000) {
 
 export async function isDockerConfigured() {
     try {
-        const result = await runProcess("docker", ["compose", "version"], { allowFailure: true });
-        return result.code === 0;
+        const compose = await runProcess("docker", ["compose", "version"], { allowFailure: true });
+        if (compose.code !== 0) {
+            return false;
+        }
+        const daemon = await runProcess("docker", ["info"], { allowFailure: true });
+        return daemon.code === 0;
     } catch {
         return false;
     }

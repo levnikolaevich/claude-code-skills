@@ -72,7 +72,10 @@ afterEach(() => {
 
 describe("hex-ssh interop", () => {
     it("exercises OpenSSH upload durability, overwrite handling, and remote allowlists", async (t) => {
-        if (!dockerAvailable || !opensshFixture) t.skip("Docker-backed OpenSSH fixture is unavailable");
+        if (!dockerAvailable || !opensshFixture) {
+            t.skip("Docker-backed OpenSSH fixture is unavailable");
+            return;
+        }
         await withOpenSshLogsOnFailure(async () => {
             primeInteropEnv(opensshFixture.fingerprint);
             process.env.ALLOWED_DIRS = "/tmp/hex-ssh-allowed";
@@ -119,7 +122,10 @@ describe("hex-ssh interop", () => {
     });
 
     it("exercises OpenSSH download success and local allowlists", async (t) => {
-        if (!dockerAvailable || !opensshFixture) t.skip("Docker-backed OpenSSH fixture is unavailable");
+        if (!dockerAvailable || !opensshFixture) {
+            t.skip("Docker-backed OpenSSH fixture is unavailable");
+            return;
+        }
         await withOpenSshLogsOnFailure(async () => {
             primeInteropEnv(opensshFixture.fingerprint);
 

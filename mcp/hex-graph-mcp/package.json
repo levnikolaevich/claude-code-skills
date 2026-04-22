@@ -1,6 +1,6 @@
 {
   "name": "@levnikolaevich/hex-graph-mcp",
-  "version": "0.18.0",
+  "version": "0.19.0",
   "mcpName": "io.github.levnikolaevich/hex-graph-mcp",
   "type": "module",
   "description": "Deterministic layered code graph MCP server. Indexes codebases into a SQLite graph via tree-sitter AST, canonical symbol identities, semantic overlays, capability-first quality tooling, and optional SCIP interoperability.",

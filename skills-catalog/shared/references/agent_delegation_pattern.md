@@ -14,11 +14,11 @@ For deterministic orchestration, pair this file with the active coordinator runt
 
 | Skill Group | Primary Agent | Model | Fallback | Use Case |
 |-------------|--------------|-------|----------|----------|
-| Decomposition | Codex | gpt-5.4 | Opus | Scope analysis, epic planning |
-| Task management | Codex | gpt-5.4 | Opus | Task decomposition, plan review |
+| Decomposition | Codex | Codex CLI runtime default | Opus | Scope analysis, epic planning |
+| Task management | Codex | Codex CLI runtime default | Opus | Task decomposition, plan review |
 | Execution | Opus (native) | claude-opus-4-6 | -- | Direct code writing |
-| Validation | Codex | gpt-5.4 | Self-review (if agent fails) | Story/Tasks + context validation |
-| Quality review | Codex | gpt-5.4 | Self-review (if agent fails) | Code review |
+| Validation | Codex | Codex CLI runtime default | Self-review (if agent fails) | Story/Tasks + context validation |
+| Quality review | Codex | Codex CLI runtime default | Self-review (if agent fails) | Code review |
 
 ## Inline Agent Review
 

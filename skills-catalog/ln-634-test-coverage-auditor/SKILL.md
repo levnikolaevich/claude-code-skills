@@ -1,7 +1,7 @@
 ---
 name: ln-634-test-coverage-auditor
 description: "Identifies missing tests for critical paths (money, security, data integrity, core flows). Use when auditing test coverage gaps."
-allowed-tools: Read, Grep, Glob, Bash, mcp__hex-graph__audit_workspace
+allowed-tools: Read, Grep, Glob, Bash, mcp__hex-graph__audit_workspace, mcp__hex-line__read_file, mcp__hex-line__grep_search, mcp__hex-line__outline
 license: MIT
 model: claude-haiku-4-5
 ---
@@ -24,10 +24,13 @@ Specialized worker identifying missing tests for critical business logic.
 ## Inputs
 
 **MANDATORY READ:** Load `shared/references/audit_worker_core_contract.md`.
+**MANDATORY READ:** Load `shared/references/mcp_tool_preferences.md` and `shared/references/mcp_integration_patterns.md`
 
 Receives `contextStore` with: `tech_stack`, `testFilesMetadata`, `codebase_root`, `output_dir`.
 
 **Domain-aware:** Supports `domain_mode` + `current_domain` (see `audit_output_schema.md#domain-aware-worker-output`).
+
+Use `hex-graph` first when hotspots materially improve coverage-gap discovery. Use `hex-line` first for local code and test reads when available. If MCP is unavailable, unsupported, or not indexed, continue with built-in `Read/Grep/Glob/Bash` and state the fallback in the report.
 
 ## Workflow
 

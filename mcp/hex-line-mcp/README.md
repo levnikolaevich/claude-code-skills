@@ -42,7 +42,7 @@ Advanced / occasional:
 | `changes` | Compare file against git ref, shows added/removed/modified symbols | AST-level semantic diff with risk/provenance preview |
 | `bulk_replace` | Search-and-replace across multiple files inside an explicit root path | Compact summary (default) or capped diffs via `format`, dry_run, max_files |
 
-### Hooks (SessionStart + PreToolUse + PostToolUse)
+### Hooks (SessionStart + PreToolUse + PostToolUse + ConfigChange + PermissionDenied)
 
 | Event | Trigger | Action |
 |-------|---------|--------|
@@ -406,7 +406,7 @@ Logs when Claude denies a tool call after the hook delivered a redirect hint. Re
 ```
 hex-line-mcp/
   server.mjs          MCP server (stdio transport, 9 tools)
-  hook.mjs            Unified hook (PreToolUse + PostToolUse + SessionStart)
+  hook.mjs            Unified hook (SessionStart + PreToolUse + PostToolUse + ConfigChange + PermissionDenied)
   package.json
   lib/
     hook-policy.mjs   Shared hook policy: redirects, thresholds, danger patterns

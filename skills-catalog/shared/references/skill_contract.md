@@ -56,6 +56,7 @@ Path resolution:
 
 Reference rules:
 - file references that matter for execution must use `**MANDATORY READ:** Load ...`
+- do not rely on `@path` imports as the execution contract for `SKILL.md`; use explicit `**MANDATORY READ:** Load ...` for any file the agent must read before acting
 - group multiple `MANDATORY READ` targets into one block at the section start
 - move reusable logic to `shared/references/`
 - keep skill-specific logic in the local `SKILL.md` or local `references/`

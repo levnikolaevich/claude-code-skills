@@ -1,7 +1,7 @@
 ---
 name: ln-402-task-reviewer
 description: "Reviews task implementation for quality, code standards, and test coverage. Use when task is in To Review. Sets task Done or To Rework."
-allowed-tools: Read, Grep, Glob, Bash, WebFetch, mcp__context7, mcp__hex-graph__audit_workspace, mcp__hex-graph__find_references, mcp__hex-graph__analyze_changes, mcp__hex-line__changes
+allowed-tools: Read, Grep, Glob, Bash, WebFetch, mcp__context7, mcp__hex-graph__audit_workspace, mcp__hex-graph__find_references, mcp__hex-graph__analyze_changes, mcp__hex-line__read_file, mcp__hex-line__grep_search, mcp__hex-line__outline, mcp__hex-line__changes
 license: MIT
 ---
 
@@ -65,6 +65,7 @@ Detect operating mode at startup:
 ## Plan Mode Support
 
 **MANDATORY READ:** Load `shared/references/plan_mode_pattern.md` Workflow A (Preview-Only) for plan mode behavior.
+**MANDATORY READ:** Load `shared/references/mcp_tool_preferences.md` and `shared/references/mcp_integration_patterns.md`
 
 **CRITICAL: In Plan Mode, plan file = REVIEW PLAN (what will be checked). NEVER write review findings or verdicts to plan file.**
 
@@ -155,6 +156,8 @@ Step 9: Update & Commit
 ```
 
 ## Workflow (concise)
+Use `hex-graph` first when semantic diff, clone groups, references, or review blast radius matter. Use `hex-line` first for local code/config/script/test reads when available. If MCP is unavailable, unsupported, or not indexed, continue with built-in `Read/Grep/Glob/Bash` and record the fallback in the review instead of blocking.
+
 1) **Resolve taskId:** Run Task Resolution Chain per guide (status filter: [To Review]).
 2) **Load task:** Load full task and parent Story independently. Detect type (label "tests" -> test task, else implementation/refactor).
 3) **Read context:** Full task + parent Story; load affected components/docs; review diffs if available.

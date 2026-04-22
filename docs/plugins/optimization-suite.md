@@ -23,7 +23,7 @@ Three optimization tracks: Performance (profile -> research -> validate -> execu
 | ln-810-performance-optimizer | Multi-cycle diagnostic pipeline coordinator |
 | ln-811-performance-profiler | Runtime profiling with multi-metric measurement |
 | ln-812-optimization-researcher | Competitive benchmarks and solution research |
-| ln-813-optimization-plan-validator | Validate plan via Codex + Gemini review |
+| ln-813-optimization-plan-validator | Validate plan via research-backed feasibility review and optional external-agent input |
 | ln-814-optimization-executor | Hypothesis testing with keep/discard loop |
 | ln-820-dependency-optimization-coordinator | Coordinate upgrades across package managers |
 | ln-821-npm-upgrader | Upgrade npm/yarn/pnpm dependencies |

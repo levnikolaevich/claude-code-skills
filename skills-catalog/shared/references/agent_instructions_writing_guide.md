@@ -18,6 +18,8 @@ Both Claude Code and Gemini CLI solve this with a native `@path` import syntax. 
 
 **The pattern:** keep a single canonical `AGENTS.md` at the repo root with all shared content. Make `CLAUDE.md` and `GEMINI.md` thin stubs that `@AGENTS.md` and add only harness-specific deltas. Anthropic documents this pattern verbatim with an example at <https://code.claude.com/docs/en/memory#agents-md>.
 
+Scope boundary: this native `@path` import behavior is the right pattern for harness memory/context files such as `CLAUDE.md`, `GEMINI.md`, and `ANTIGRAVITY.md`. It is not the repository's canonical execution contract for `SKILL.md`; skills should still use explicit `**MANDATORY READ:** Load ...` for execution-critical references.
+
 ```markdown
 # CLAUDE.md
 @AGENTS.md

@@ -9,7 +9,7 @@ Quick-reference for understanding how the validator works at runtime. For implem
 | **Input** | Story ID (Backlog) | Plan file (auto-detect) | Conversation + git diff |
 | **Phases** | 0 → 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 | 0 → 1 → 2 → 3 → 5 → 6 → 8 | 0 → 1 → 2 → 3 → 5 → 6 → 8 |
 | **Phase 3 work** | 30-criteria audit + display | MCP Ref research | MCP Ref research |
-| **Agents** | Codex + Gemini (background) | Codex + Gemini (background) | Codex + Gemini (background) |
+| **Agents** | Registry-configured external agents (Codex by default) | Registry-configured external agents (Codex by default) | Registry-configured external agents (Codex by default) |
 | **Output** | GO/NO-GO, Story → Todo | Advisory corrections | Advisory corrections |
 | **Prompt template** | `modes/story.md` | `modes/plan_review.md` | `modes/context.md` |
 
@@ -75,7 +75,7 @@ Phase 2                           Phases 3-4 (foreground)           Phase 5
 │                    │  │  mode=plan_review/context:                │  │ 2nd agent → │
 │ Launch:            │  │    MCP Ref research (3-5 topics)  │  │  merge      │
 │  ├─ Codex CLI ─────┼──┼──── runs in background ──────────┼──┼→ parse      │
-│  └─ Gemini CLI ────┼──┼──── runs in background ──────────┼──┼→ parse      │
+│  └─ Extra agent* ──┼──┼──── runs in background ──────────┼──┼→ parse      │
 └────────────────────┘  └───────────────────────────────────┘  │             │
                                                                 │ Dedup vs   │
                                                                 │ own + hist │
@@ -87,10 +87,12 @@ Phase 2                           Phases 3-4 (foreground)           Phase 5
                                                                 └─────────────┘
 ```
 
+*Optional, only when configured in the review registry.
+
 ## Agent Review Lifecycle
 
 ```
-Claude                           Codex CLI                    Gemini CLI
+Claude                           Codex CLI                    Extra Agent*
   │                                 │                             │
   ├─ agent_runner.mjs ─────────────→│ LAUNCHED                    │
   ├─ agent_runner.mjs ─────────────→│                             │ LAUNCHED

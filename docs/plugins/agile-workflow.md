@@ -30,7 +30,7 @@ Automates the full Agile delivery cycle. Coordinators advance only from machine-
 | ln-300-task-coordinator | Artifact-first task planning coordinator (1-8 tasks) |
 | ln-301-task-creator | Stateful task-plan worker for task creation |
 | ln-302-task-replanner | Stateful task-plan worker for replanning |
-| ln-310-multi-agent-validator | Parallel review via Codex + Gemini agents |
+| ln-310-multi-agent-validator | Validator with registry-configured external-agent review |
 | ln-400-story-executor | Artifact-first execution coordinator |
 | ln-401-task-executor | Stateful implementation worker |
 | ln-402-task-reviewer | Stateful review worker and final task outcome |
@@ -56,7 +56,7 @@ ln-200 (scope) -> ln-300 (tasks) -> ln-310 (validate)
     -> ln-500 (quality gate)
 ```
 
-`ln-220`, `ln-300`, `ln-400`, `ln-510`, and `ln-520` keep coordinator runtime state and checkpoint child worker runs for resume. `ln-221/222`, `ln-301/302`, `ln-401..404`, `ln-511..514`, and `ln-521..523` remain standalone-capable workers with their own run-scoped state and summaries. `ln-1000` advances only from coordinator stage artifacts, while multi-agent validation (`ln-310`) still runs Codex and Gemini in parallel before execution begins.
+`ln-220`, `ln-300`, `ln-400`, `ln-510`, and `ln-520` keep coordinator runtime state and checkpoint child worker runs for resume. `ln-221/222`, `ln-301/302`, `ln-401..404`, `ln-511..514`, and `ln-521..523` remain standalone-capable workers with their own run-scoped state and summaries. `ln-1000` advances only from coordinator stage artifacts, while `ln-310` runs registry-configured external-agent review before execution begins.
 
 ## Quick start
 

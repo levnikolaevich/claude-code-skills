@@ -1,11 +1,11 @@
 # Refinement Perspectives
 
-Perspective definitions for the refinement state machine. Each perspective launches an independent Codex session. The orchestrator loads the matching `## perspective_{name}` section and fills `{review_perspective}` in the prompt.
+Perspective definitions for the refinement state machine. Each perspective launches an independent advisor session. The orchestrator loads the matching `## perspective_{name}` section and fills `{review_perspective}` in the prompt.
 
-**Stage 1 (parallel):** `dry_run_executor`, `new_dev_tester`, `adversarial_reviewer` — 3 independent Codex sessions launched simultaneously.
-**Stage 2 (after merge):** `final_sweep` — 1 Codex session reviewing post-fix state.
+**Stage 1 (parallel):** `dry_run_executor`, `new_dev_tester`, `adversarial_reviewer` — 3 independent advisor sessions launched simultaneously.
+**Stage 2 (after merge):** `final_sweep` — 1 advisor session reviewing post-fix state.
 
-`generic_quality` is not included — it is covered by the Phase 2 Codex review (review_base.md + mode template).
+`generic_quality` is not included — it is covered by the Phase 2 advisor review (review_base.md + mode template).
 
 ## perspective_dry_run_executor
 

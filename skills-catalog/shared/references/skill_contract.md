@@ -117,7 +117,7 @@ Heuristics, not hard law:
 Additional enforced rules:
 - no hardcoded aggregate counts outside allowed locations
 - no stale references to removed skills or files
-- no deprecated platform APIs in active skills
+- no unsupported platform APIs in active skills
 - no contradictions between caller and callee contracts
 - MCP usage must match `shared/references/mcp_applicability_matrix.md`
 - skills that edit code/config/scripts must make `hex-line` primary and name built-in tools as fallback only

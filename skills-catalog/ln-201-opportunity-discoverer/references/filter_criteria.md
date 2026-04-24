@@ -116,7 +116,7 @@ WebSearch: "best [idea] tools"
 - Targets same customer segment
 
 **Exclude:**
-- Deprecated/abandoned products
+- Unsupported/abandoned products
 - Enterprise-only (no public pricing)
 - Different market segment
 - Open source without commercial offering

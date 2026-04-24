@@ -55,7 +55,7 @@ Pattern: `(.+)\((\d+),(\d+)\): error (TS\d+): (.+)`
 
 ---
 
-## 2. Deprecation Warnings
+## 2. Unsupported API Warnings
 
 ### Detection Commands
 
@@ -71,19 +71,19 @@ Pattern: `(.+)\((\d+),(\d+)\): error (TS\d+): (.+)`
 
 | Pattern | Description |
 |---------|-------------|
-| `@deprecated` (Java/JS/TS) | Deprecated function annotation |
-| `DeprecationWarning` (Python) | Runtime deprecation warning |
-| `#[deprecated]` (Rust) | Deprecated attribute |
+| `@obsolete` (Java/JS/TS) | Unsupported function annotation |
+| `UnsupportedApiWarning` (Python) | Runtime deprecation warning |
+| `#[obsolete]` (Rust) | Unsupported attribute |
 | `obsolete` (C#) | Obsolete attribute |
 
 ### Severity by Version Gap
 
 | Gap | Severity | Example |
 |-----|----------|---------|
-| Breaking change in next major | CRITICAL | Current: 2.5.0, Deprecated removed in: 3.0.0 |
-| Deprecated >1 year ago | HIGH | Marked deprecated: 2022, Current: 2024 |
+| Breaking change in next major | CRITICAL | Current: 2.5.0, Unsupported removed in: 3.0.0 |
+| Unsupported >1 year ago | HIGH | Marked unsupported: 2022, Current: 2024 |
 | Soft deprecation | MEDIUM | Still works, alternative suggested |
-| No removal timeline | LOW | Deprecated but maintained |
+| No removal timeline | LOW | Unsupported but maintained |
 
 ---
 

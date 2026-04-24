@@ -22,9 +22,9 @@ Sets up and maintains the multi-agent development environment. The coordinator i
 |-------|-------------|
 | ln-001-push-all | Commit and push all changes to remote |
 | ln-010-dev-environment-setup | Full environment setup coordinator |
-| ln-011-agent-installer | Install or update Codex CLI, Gemini CLI, and Claude Code |
+| ln-011-agent-installer | Install or update Codex CLI and Claude Code |
 | ln-012-mcp-configurator | Configure Claude-side MCP registration, hooks, permissions, and migrations |
-| ln-013-config-syncer | Sync Gemini/Codex config from Claude and align Codex execution defaults |
+| ln-013-config-syncer | Align Claude and Codex config and Codex execution defaults |
 | ln-014-agent-instructions-manager | Single owner of instruction file creation, audit, and MCP Tool Preferences sync |
 | ln-015-hex-line-uninstaller | Remove Claude-side hex-line registration, permissions, hooks, and output style |
 | ln-020-codegraph | Code knowledge graph for dependency analysis and impact checking |

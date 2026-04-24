@@ -1,6 +1,6 @@
 # Hook Design Guide
 
-> **SCOPE:** Architecture guide for Claude Code / Gemini hooks. Event model, output protocol, patterns. Based on hex-line `hook.mjs` experience.
+> **SCOPE:** Architecture guide for Claude Code hooks. Event model, output protocol, patterns. Based on hex-line `hook.mjs` experience.
 
 ## 1. Event Types (hex-line hook subset)
 
@@ -71,7 +71,6 @@ Multiple entries with different matchers can point to the same hook file.
 |-------|----------------|--------|
 | Claude Code | `.claude/settings.local.json` -> `hooks` | `event -> [{matcher, hooks: [{type, command, timeout}]}]` |
 | Claude (plugin) | Plugin's own hook declaration | Plugin-managed format |
-| Gemini CLI | `settings.json` -> `hooks` | Similar, different event names |
 
 ```json
 {"hooks":{"PreToolUse":[{"matcher":"Read|Edit|Write|Grep","hooks":[{"type":"command","command":"node hook.mjs","timeout":5}]}]}}
@@ -79,16 +78,16 @@ Multiple entries with different matchers can point to the same hook file.
 
 ## 6. Cross-Agent Compatibility
 
-| Feature | Claude Code | Gemini CLI | Codex (0.120+) |
-|---------|-------------|------------|----------------|
-| Pre-tool hook | `PreToolUse` | `BeforeTool` | N/A |
-| Post-tool hook | `PostToolUse` | `AfterTool` | N/A |
-| Session start | `SessionStart` (source: startup/resume/clear/compact) | `SessionStart` | `SessionStart` (since 0.120, distinguishes `/clear`) |
-| Config change | `ConfigChange` | N/A | N/A |
-| Permission denied | `PermissionDenied` | N/A | N/A |
-| Input format | JSON on stdin | JSON on stdin | JSON on stdin |
+| Feature | Claude Code | Codex (0.120+) |
+|---------|-------------|----------------|
+| Pre-tool hook | `PreToolUse` | N/A |
+| Post-tool hook | `PostToolUse` | N/A |
+| Session start | `SessionStart` (source: startup/resume/clear/compact) | `SessionStart` (since 0.120, distinguishes `/clear`) |
+| Config change | `ConfigChange` | N/A |
+| Permission denied | `PermissionDenied` | N/A |
+| Input format | JSON on stdin | JSON on stdin |
 
-Strategy: hooks for Claude/Gemini; Codex gained `SessionStart` hook support in CLI 0.120 (2026-04-11). `AGENTS.md` instructions remain the no-hooks fallback.
+Strategy: hooks for Claude; Codex gained `SessionStart` hook support in CLI 0.120 (2026-04-11). `AGENTS.md` instructions remain the no-hooks fallback.
 
 ## 7. One File Pattern -- one `hook.mjs` routes all events
 

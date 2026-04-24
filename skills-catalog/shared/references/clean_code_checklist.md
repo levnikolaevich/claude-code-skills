@@ -30,11 +30,11 @@ Large code blocks in comments (>5 lines with code syntax). Git preserves history
 |---------|---------|----------|
 | Old aliases | `const oldName = newName` | medium |
 | Wrapper functions | `function oldFunc() { return newFunc() }` | medium |
-| Deprecated re-exports | `export { newModule as oldModule }` | medium |
+| Unsupported re-exports | `export { newModule as oldModule }` | medium |
 | Migration shims/adapters | `LegacyAdapter`, `*Compat`, `*Shim` | high if critical path |
 | Version conditionals | `if (isOldVersion) { oldFunc() }` | medium |
-| Legacy naming | `_old*`, `_legacy*`, `_compat*`, `_deprecated*` | medium |
-| Legacy markers in comments | `// backward compat`, `// deprecated`, `// TODO: remove in v` | low |
+| Legacy naming | `_old*`, `_legacy*`, `_compat*`, `_unsupported*` | medium |
+| Legacy markers in comments | `// backward compat`, `// unsupported`, `// TODO: remove in v` | low |
 
 ## Replacement Rule
 
@@ -52,7 +52,7 @@ When implementation replaces old code:
 
 | Exception | When OK |
 |-----------|---------|
-| Published packages (npm/NuGet) | Deprecation cycle required (major version bump) |
+| Published packages (npm/NuGet) | Unsupported API cycle required (major version bump) |
 | Active migration (<3 months) | Clear removal timeline documented |
 | External API contract | Consumers not yet migrated (tracked as tech debt) |
 
@@ -62,7 +62,7 @@ When implementation replaces old code:
 [] No unused imports/variables/functions
 [] No commented-out code blocks (>5 lines)
 [] No backward-compat wrappers or aliases
-[] No deprecated re-exports
+[] No unsupported re-exports
 [] No _old/_legacy/_compat naming
 [] All callers updated to new API
 [] Old files deleted (not just emptied)

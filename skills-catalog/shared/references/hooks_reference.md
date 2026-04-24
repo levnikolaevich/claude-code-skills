@@ -30,7 +30,7 @@ Source: [Claude Code Docs](https://code.claude.com/docs/en/hooks) (verified 2026
 | 20 | `ElicitationResult` | User responds to elicitation | `mcp_server_name` | `action`, `content` |
 | 21 | `PermissionDenied` | Auto-mode denied a tool call | `tool_name` | `reason`, `tool_use_id` |
 
-**Repository note:** experimental team-only hook events (TaskCreated, TaskCompleted, StopFailure, TeammateIdle, CwdChanged, FileChanged) are intentionally excluded because this repository does not use team-session orchestration.
+**Repository note:** non-standard team-session hook events are intentionally excluded because this repository does not use team-session orchestration.
 
 ## Hook Types (4)
 

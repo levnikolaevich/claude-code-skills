@@ -3,6 +3,7 @@
   "agents": {
     "codex": {
       "name": "Codex CLI",
+      "family": "codex",
       "command": "codex",
       "args": ["exec", "--full-auto", "--color", "never", "-C", "{cwd}", "-o", "{output_file}"],
       "resume_args": ["exec", "resume", "{session_id}", "--full-auto", "-o", "{output_file}"],
@@ -17,25 +18,26 @@
       "health_check": "codex --version",
       "focus_hint": "Primary focus: correctness bugs, schema feasibility, data integrity, error handling, code-level edge cases"
     },
-    "claude-builtin": {
-      "name": "Claude (built-in only)",
+    "claude": {
+      "name": "Claude Code CLI",
+      "family": "claude",
       "command": "claude",
-      "args": ["-p", "--strict-mcp-config", "--settings", "{\"disableAllHooks\":true}", "--output-format", "json", "--dangerously-skip-permissions", "--max-turns", "30"],
-      "hard_timeout_seconds": 600,
+      "args": ["-p", "--output-format", "json", "--dangerously-skip-permissions", "--max-turns", "30"],
+      "resume_args": ["-p", "--resume", "{session_id}", "--output-format", "json", "--dangerously-skip-permissions", "--max-turns", "30"],
+      "resume_prompt_delivery": "positional",
+      "hard_timeout_seconds": 1800,
       "normal_prompt_delivery": "positional",
-      "skill_groups": ["840"],
+      "response_capture": {
+        "strategy": "from_json_field",
+        "field_path": "result"
+      },
+      "session_id_capture": {
+        "strategy": "from_json_field",
+        "field_path": "session_id"
+      },
+      "skill_groups": ["310", "510", "813", "840"],
       "health_check": "claude --version",
-      "focus_hint": "Built-in tools only (Read, Edit, Grep, Write, Bash, Glob). No MCP servers."
-    },
-    "claude-hexline": {
-      "name": "Claude (hex-line)",
-      "command": "claude",
-      "args": ["-p", "--strict-mcp-config", "--mcp-config", "skills-catalog/ln-840-benchmark-compare/references/mcp-bench.json", "--output-format", "json", "--dangerously-skip-permissions", "--max-turns", "30"],
-      "hard_timeout_seconds": 600,
-      "normal_prompt_delivery": "positional",
-      "skill_groups": ["840"],
-      "health_check": "claude --version",
-      "focus_hint": "Hex-line MCP tools (read_file, edit_file, grep_search, outline, verify, bulk_replace, etc.)"
+      "focus_hint": "Primary focus: architecture consistency, implementation simplicity, maintainability, and review judgment"
     }
   }
 }

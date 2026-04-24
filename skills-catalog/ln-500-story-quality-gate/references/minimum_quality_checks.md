@@ -13,7 +13,7 @@ API-535 post-mortem: inline QG implementation skipped agent code review. Result:
 | 1 | Static analysis (lint + typecheck) | ruff, mypy, or project equivalent | NO | Syntax, types, dead code |
 | 2 | Regression tests | Project test suite | NO | Broken existing behavior |
 | 3 | Task-level review | ln-402 or equivalent checklist | NO | Architecture, conventions, DRY |
-| 4 | **Agent code review** | **At least 1 external agent** (Codex, Gemini, or equivalent) with `shared/agents/prompt_templates/modes/code.md` | **NO** | **Algorithm logic, performance, domain correctness, security** |
+| 4 | **Agent code review** | **At least 1 external agent** (Claude or Codex) with `shared/agents/prompt_templates/modes/code.md` | **NO** | **Algorithm logic, performance, domain correctness, security** |
 
 ## Agent Code Review Requirements
 

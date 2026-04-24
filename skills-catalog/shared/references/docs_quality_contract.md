@@ -102,7 +102,6 @@ Required default mapping:
 |------|----------|----------|
 | `AGENTS.md` | `index` | `canonical` |
 | `CLAUDE.md` | `index` | `derived` |
-| `GEMINI.md` | `index` | `derived` |
 | `docs/README.md` | `index` | `canonical` |
 | `docs/documentation_standards.md` | `reference` | `canonical` |
 | `docs/principles.md` | `explanation` | `canonical` |

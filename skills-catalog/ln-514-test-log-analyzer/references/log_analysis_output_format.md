@@ -41,7 +41,7 @@ Quick snapshot for user. All values computed from sections below.
 | Field | Values |
 |-------|--------|
 | Priority | CRITICAL, HIGH, MEDIUM, LOW (per `error_taxonomy.md` severity rules) |
-| Category | One of 9 from `error_taxonomy.md` (CRASH, TIMEOUT, AUTH, DB, NETWORK, VALIDATION, CONFIG, RESOURCE, DEPRECATION) |
+| Category | One of 9 from `error_taxonomy.md` (CRASH, TIMEOUT, AUTH, DB, NETWORK, VALIDATION, CONFIG, RESOURCE, UNSUPPORTED_API) |
 | Source | `file:line` extracted from stack trace |
 | Fix | Concrete, actionable recommendation |
 

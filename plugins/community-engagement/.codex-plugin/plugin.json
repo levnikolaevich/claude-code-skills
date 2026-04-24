@@ -1,0 +1,36 @@
+{
+  "name": "community-engagement",
+  "version": "1.0.0",
+  "description": "Community engagement: Analyze repo health, compose announcements, launch RFC debates, respond to discussions, triage issues/PRs/discussions. Portable across repositories with dynamic GitHub Discovery.",
+  "author": {
+    "name": "Lev Nikolaevich",
+    "email": "levnikolaevich.com@gmail.com",
+    "url": "https://github.com/levnikolaevich"
+  },
+  "homepage": "https://github.com/levnikolaevich/claude-code-skills/blob/main/docs/plugins/community-engagement.md",
+  "repository": "https://github.com/levnikolaevich/claude-code-skills",
+  "license": "MIT",
+  "keywords": [
+    "codex",
+    "skills",
+    "community-engagement"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Community Engagement",
+    "shortDescription": "Community engagement: Analyze repo health, compose announcements, launch RFC debates, respond to discussions, triage issues/PRs/discussions. Portable across repositories with dynamic GitHub Discovery.",
+    "longDescription": "Community engagement: Analyze repo health, compose announcements, launch RFC debates, respond to discussions, triage issues/PRs/discussions. Portable across repositories with dynamic GitHub Discovery.",
+    "developerName": "Lev Nikolaevich",
+    "category": "Productivity",
+    "capabilities": [
+      "Interactive",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/levnikolaevich/claude-code-skills",
+    "defaultPrompt": [
+      "Use community-engagement for this repository.",
+      "Run the community-engagement workflow."
+    ],
+    "brandColor": "#2563EB"
+  }
+}

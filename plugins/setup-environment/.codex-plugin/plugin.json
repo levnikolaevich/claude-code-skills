@@ -1,0 +1,36 @@
+{
+  "name": "setup-environment",
+  "version": "1.0.0",
+  "description": "Setup environment: Install CLI agents (Codex, Claude), configure MCP servers, align settings across agents, audit instruction files. One-command setup for two-agent workflows.",
+  "author": {
+    "name": "Lev Nikolaevich",
+    "email": "levnikolaevich.com@gmail.com",
+    "url": "https://github.com/levnikolaevich"
+  },
+  "homepage": "https://github.com/levnikolaevich/claude-code-skills/blob/main/docs/plugins/setup-environment.md",
+  "repository": "https://github.com/levnikolaevich/claude-code-skills",
+  "license": "MIT",
+  "keywords": [
+    "codex",
+    "skills",
+    "setup-environment"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Setup Environment",
+    "shortDescription": "Setup environment: Install CLI agents (Codex, Claude), configure MCP servers, align settings across agents, audit instruction files. One-command setup for two-agent workflows.",
+    "longDescription": "Setup environment: Install CLI agents (Codex, Claude), configure MCP servers, align settings across agents, audit instruction files. One-command setup for two-agent workflows.",
+    "developerName": "Lev Nikolaevich",
+    "category": "Productivity",
+    "capabilities": [
+      "Interactive",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/levnikolaevich/claude-code-skills",
+    "defaultPrompt": [
+      "Use setup-environment for this repository.",
+      "Run the setup-environment workflow."
+    ],
+    "brandColor": "#2563EB"
+  }
+}

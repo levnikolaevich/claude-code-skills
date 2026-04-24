@@ -762,7 +762,7 @@ export const environmentStateSchema = {
         scanned_at: { type: "string", format: "date-time" },
         agents: {
             type: "object",
-            required: ["codex", "gemini"],
+            required: ["claude", "codex"],
             properties: {
                 claude: {
                     type: "object",
@@ -783,35 +783,6 @@ export const environmentStateSchema = {
                         version: { type: "string" },
                         config_synced: { type: "boolean" },
                         servers_synced: { type: "integer" },
-                        sync_actions: stringArraySchema(),
-                        detail: { type: "string" },
-                    },
-                },
-                gemini: {
-                    type: "object",
-                    required: ["available"],
-                    properties: {
-                        available: { type: "boolean" },
-                        disabled: { type: "boolean" },
-                        version: { type: "string" },
-                        config_synced: { type: "boolean" },
-                        servers_synced: { type: "integer" },
-                        hooks_synced: { type: "integer" },
-                        sync_actions: stringArraySchema(),
-                        detail: { type: "string" },
-                    },
-                },
-                antigravity: {
-                    type: "object",
-                    required: ["available"],
-                    properties: {
-                        available: { type: "boolean" },
-                        disabled: { type: "boolean" },
-                        version: { type: "string" },
-                        config_synced: { type: "boolean" },
-                        servers_synced: { type: "integer" },
-                        hooks_synced: { type: "integer" },
-                        workspace_skills_root: { type: "string" },
                         sync_actions: stringArraySchema(),
                         detail: { type: "string" },
                     },

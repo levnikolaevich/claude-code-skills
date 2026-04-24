@@ -12,7 +12,7 @@
 
 ## 2026-04-14
 
-- **Gemini dropped from advisor role** — Codex is now the sole external parallel-advisor for skill_groups 200/300/310/510. Fallback is Opus self-review. Gemini CLI remains a first-class install/sync target (installer, syncer, `GEMINI.md`), just not an advisor. Cleanup across `agent_registry.json`, `agent_runner.mjs`, and the shared agent delegation/review/memory references.
+- **Advisor routing simplified** — external advisor routing now uses the active registry and self-review fallback. Cleanup across `agent_registry.json`, `agent_runner.mjs`, and the shared agent delegation/review/memory references.
 
 ## 2026-04-10
 
@@ -38,7 +38,7 @@
 
 ## 2026-03-31
 
-- **Gemini auto-model selection** — removed hardcoded `-m gemini-3-flash-preview` from agent registry; Gemini CLI now auto-selects best available model. ln-011 post-install disables Conseca safety checker
+- **Advisor model selection cleanup** — removed hardcoded external advisor model flags from the agent registry. ln-011 post-install disables Conseca safety checker
 - **hex-line search output cap** — block-aware 80K char limit prevents CC truncation on large search results; emits `OUTPUT_CAPPED` diagnostic with narrowing guidance
 - **Agent review suggestion schema v2** — added `file`, `line_start`, `line_end`, `recommended_action` fields to all review schemas and prompt templates; relaxed read-only constraint to allow trivial fixes
 - **model: claude-sonnet-4-6 in skills** — 32 SKILL.md files now declare explicit model; skills run on Sonnet 4.6 by default instead of inheriting parent model
@@ -66,7 +66,7 @@
 - **hex-line auto-sync** — `setup_hooks` tool removed; hooks and output style now auto-sync on MCP server startup via content comparison
 
 ## 2026-03-27
-- **Marketplace install docs** — updated README, plugin docs, and GitHub Pages site to use the current Claude Code marketplace flow (`/plugin marketplace add` + `/plugin install plugin@marketplace`) instead of deprecated `/plugin add`
+- **Marketplace install docs** — updated README, plugin docs, and GitHub Pages site to use the current Claude Code marketplace flow (`/plugin marketplace add` + `/plugin install plugin@marketplace`) instead of unsupported `/plugin add`
 - **Audit runtime unification** — 6XX coordinators and workers migrated to run-scoped artifacts, evaluation runtime CLIs, and JSON summary contract with `summaryArtifactPath`
 - **Runtime status catalog** — canonical status sets codified across active runtime contracts (story-gate, optimization, evaluation, environment)
 - **Worker independence cleanup** — removed 36 coordinator-aware DoD references, fixed 3 false positives in review-skills checks (R12/R13/R16)
@@ -97,7 +97,7 @@
 - **ln-150 removed** — presentation-creator skill deleted; all references cleaned from pipeline, marketplace, site, docs
 - **ln-162 Check 18** — new automated check verifies every SKILL.md has `**Type:**` line; prevents silent bypass of Check 9/17
 - **run_checks.sh hardened** — Check 5 scoped to skills-catalog/ paths only; Check 9/17 exclude Workers from coordinator-only requirements
-- **ln-014 auditor → manager** — renamed to ln-014-agent-instructions-manager; creates missing CLAUDE.md, AGENTS.md, GEMINI.md
+- **ln-014 auditor → manager** — renamed to ln-014-agent-instructions-manager; creates missing CLAUDE.md and AGENTS.md
 
 ## 2026-03-22
 
@@ -110,7 +110,7 @@
 
 ## 2026-03-21
 
-- **ln-012 MCP configurator** — 3 critical phases added: hooks+outputStyle install (Phase 4b), allowed-tools REPLACE strategy with mcp__* preservation (Phase 4d), MCP Tool Preferences auto-write to CLAUDE.md/GEMINI.md/AGENTS.md (Phase 4e)
+- **ln-012 MCP configurator** — 3 critical phases added: hooks+outputStyle install (Phase 4b), allowed-tools REPLACE strategy with mcp__* preservation (Phase 4d), MCP Tool Preferences auto-write to CLAUDE.md/AGENTS.md (Phase 4e)
 - **01X consistency audit** — ln-010 delegation table and rules aligned with ln-012 sanctioned write paths; ln-013 hooks mentioned in description, duplicate tool mapping removed
 
 ## 2026-03-20
@@ -125,7 +125,7 @@
 - **hex MCP family** — 3 bundled MCP servers: hex-line (hash-verified file editing, 10 tools), hex-ssh (remote file ops over SSH, 6 tools), hex-graph (code knowledge graph with tree-sitter AST, 7 tools); FNV-1a hashing, security boundaries; npm publishable
 - **Agent runner overhaul** — Windows spawn fix (whichSync PATHEXT), heartbeat removed (log-based monitoring), registry 4→2 agents with focus_hint, `--approval-mode yolo` ⚠️ BREAKING
 - **Python → Node.js ESM** — all runtime scripts (.py) replaced with .mjs: agent_runner, 3 hooks, analyze_test_logs; Python dependency eliminated ⚠️ BREAKING
-- **ln-1000 redesign** — TeamCreate/heartbeat replaced with sequential Skill() calls; quality gate (ln-500) and test planning (ln-520) can no longer be skipped ⚠️ BREAKING
+- **ln-1000 redesign** — pipeline orchestration uses sequential Skill() calls; quality gate (ln-500) and test planning (ln-520) can no longer be skipped
 - **GitHub Actions** — npm auto-publish for hex-line-mcp on tag `hex-line-v*`
 
 ## 2026-03-18
@@ -150,7 +150,7 @@
 
 ## 2026-03-14
 
-- **Agent sandbox fix** — plan files from outside project workspace now materialized for agent access (Gemini CLI CWD restriction)
+- **Agent sandbox fix** — plan files from outside project workspace now materialized for agent access when advisor CLIs require project-local inputs
 
 ## 2026-03-13
 
@@ -187,19 +187,19 @@
 
 ## 2026-02-13
 
-- **Pipeline Orchestrator** — one command drives a Story through the full lifecycle: task planning → validation → implementation → quality gate → merge to develop. Uses Agent Teams for parallel worker coordination
+- **Pipeline Orchestrator** — one command drives a Story through the full lifecycle: task planning → validation → implementation → quality gate → merge to develop
 
 ---
 
 ## 2026-02-12
 
-- **Multi-round agent debate** — Codex/Gemini sessions now persist across challenge rounds, preserving full reasoning context during disagreements
+- **Multi-round agent debate** — advisor sessions now persist across challenge rounds, preserving full reasoning context during disagreements
 
 ---
 
 ## 2026-02-11
 
-- **Multi-model code review** — parallel Codex + Gemini analysis with Critical Verification: Claude independently validates each suggestion and debates controversial findings (max 2 rounds)
+- **Multi-model code review** — parallel advisor analysis with Critical Verification: the host independently validates each suggestion and debates controversial findings (max 2 rounds)
 - **Risk Analysis in validation** — 6 risk categories with Impact × Probability scoring before Story approval
 - **Persistence performance audit** — new skills for query efficiency, transaction correctness, blocking I/O, resource lifecycle analysis
 

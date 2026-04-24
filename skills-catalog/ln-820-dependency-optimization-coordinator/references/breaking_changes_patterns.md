@@ -16,15 +16,15 @@ Common breaking changes and migration patterns for major package upgrades.
 | Change | Migration |
 |--------|-----------|
 | `ReactDOM.render()` removed | Use `createRoot().render()` |
-| `React.FC<Props>` deprecated | Direct function with props type |
-| `forwardRef` deprecated | Use `ref` as regular prop |
+| `React.FC<Props>` unsupported | Direct function with props type |
+| `forwardRef` unsupported | Use `ref` as regular prop |
 | JSX Transform required | Update tsconfig.json: `"jsx": "react-jsx"` |
 
 ### ESLint 8 → 9
 
 | Change | Migration |
 |--------|-----------|
-| `.eslintrc.*` deprecated | Use `eslint.config.js` (flat config) |
+| `.eslintrc.*` unsupported | Use `eslint.config.js` (flat config) |
 | `extends` array removed | Direct imports of configs |
 | `plugins` as strings | Use plugin objects |
 

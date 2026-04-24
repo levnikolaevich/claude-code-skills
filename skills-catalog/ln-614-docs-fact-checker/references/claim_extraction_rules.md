@@ -127,7 +127,7 @@ grep -oE '\|\s*(GET|POST|PUT|DELETE|PATCH)\s*\|\s*`?(/[\w/{}\-:.]+)`?' "$doc"
 
 ### FP Exclusions
 
-- Deprecated endpoints marked as such
+- Unsupported endpoints marked as such
 - Endpoints in "planned" or "future" sections
 - External API references (third-party services)
 

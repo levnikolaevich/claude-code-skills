@@ -32,7 +32,7 @@ When running in Plan Mode (per `shared/references/plan_mode_pattern.md`, Workflo
 **1. Check disabled flags** (before probing):
 ```
 IF `{project_root}/.hex-skills/environment_state.json` exists and passes shared environment-state validation:
-  Read file → for codex agent:
+  Read file → for each configured advisor agent:
     IF agent.disabled == true → exclude from health check
   IF all agents disabled → return {verdict: "SKIPPED", reason: "all agents disabled"}
 IF file not exists: proceed with all agents (no exclusions)
@@ -40,10 +40,12 @@ IF file not exists: proceed with all agents (no exclusions)
 
 **2. Probe remaining agents:**
 ```
-node shared/agents/agent_runner.mjs --health-check --json
+node shared/agents/agent_runner.mjs --health-check --json --host-agent {host_agent}
 ```
 
-- If 0 agents available (after disabled exclusions) -> return `{verdict: "SKIPPED", reason: "no agents available"}`
+- If 0 advisor agents are available (after disabled exclusions) -> return `{verdict: "SKIPPED", reason: "no agents available"}`
+- `{host_agent}` is per run/session (`claude` or `codex`), not project-global state.
+- The runner skips the current host family so a Claude host can call Codex and a Codex host can call Claude without self-calling.
 - Runtime-enabled skills should checkpoint: `health_check_done`, `agents_available`, `agents_required`, optional `agents_skipped_reason`
 
 ## Step: Ensure .hex-skills/agent-review/
@@ -70,12 +72,12 @@ Assemble the review prompt from base template + mode-specific content:
 4. Replace all `{mode_*}` placeholders in base with corresponding mode content
 5. Fill instance variables: `{story_ref}`, `{task_refs}` (code/story) or `{review_title}`, `{context_refs}`, `{focus_areas}` (context) or `{plan_ref}`, `{codebase_context}`, `{focus_areas}` (plan_review)
    > **External file rule:** Any file referenced in agent prompts that resides outside the project CWD MUST be copied to `.hex-skills/agent-review/context/` before use as placeholder value. Agents are sandboxed to project CWD and cannot read external paths. Use the materialized local path in the prompt.
-6. Assemble `{review_goal}` — Claude formulates 1-2 sentence review goal based on:
+6. Assemble `{review_goal}` — the host agent formulates 1-2 sentence review goal based on:
    - Story/Tasks analysis from validation phases
    - Known project risks and patterns
    - What a surface-level review would miss
    Example: `"Catch correctness bugs in 5-level TM/cache lookup: schema constraints impossible in PostgreSQL, cache key collisions, batch bottlenecks."`
-7. Assemble `{project_context}` — Claude builds compact context (~300 tokens):
+7. Assemble `{project_context}` — the host agent builds compact context (~300 tokens):
    - Architecture: from CLAUDE.md or docs/architecture.md (1 line)
    - Principles: from CLAUDE.md (1 line, key constraints)
    - Tech stack: from docs/tech_stack.md or CLAUDE.md (1 line)
@@ -87,7 +89,7 @@ Assemble the review prompt from base template + mode-specific content:
 
 ## Step: Run Agents (background, sync-before-merge)
 
-a) Launch the advisor agent (codex) as a background Bash task (`run_in_background=true`):
+a) Launch each available advisor agent as a background Bash task (`run_in_background=true`):
 
 ```
 node shared/agents/agent_runner.mjs --agent {agent_name} \
@@ -96,7 +98,7 @@ node shared/agents/agent_runner.mjs --agent {agent_name} \
   --metadata-file .hex-skills/agent-review/{agent}/{identifier}_{review_type}_metadata.json \
   --cwd {cwd}
 ```
-Launch per available agent from `--list-agents` (currently codex only; fallback to Opus self-review if unavailable).
+Launch per available agent from health-check output. Fallback to host self-review if unavailable.
 
 **Runtime-first monitoring (preferred):**
 - Register each launched agent in the active coordinator runtime with prompt/result/log/metadata paths
@@ -104,7 +106,7 @@ Launch per available agent from `--list-agents` (currently codex only; fallback 
 - Merge is allowed only after every required agent is `result_ready | dead | failed | skipped`
 
 **Waiting for agents (MANDATORY):**
-Use the Claude `Monitor` tool with 2-minute cycles to wait for agent results. `Monitor` is a built-in Claude Code tool (available since 2.1.98+) that streams filtered shell output as conversation events.
+Use the active coordinator runtime `sync-agent` command before merge gates. When running under Claude Code, the `Monitor` tool may be used for 2-minute observability cycles; it is not required for Codex-hosted runs.
 
 ```
 Monitor(
@@ -114,9 +116,8 @@ Monitor(
 )
 ```
 
-After each Monitor return: check result file for `<!-- END_AGENT_REVIEW_RESULT -->` marker. If not ready, start next Monitor cycle.
-Do NOT use sleep loops, `Bash(run_in_background=true)`, or ad-hoc stat polling as primary wait mechanism.
-Fallback: `Bash(run_in_background=true)` ONLY when Monitor is unavailable (Bedrock/Vertex/Foundry runtimes).
+After each sync/monitor cycle: check result file for `<!-- END_AGENT_REVIEW_RESULT -->` marker. If not ready, continue via runtime sync or the liveness protocol below.
+Do NOT use sleep loops or ad-hoc stat polling as the primary wait mechanism.
 
 > **BLOCKING MODEL:** Background agents enable foreground work in parallel. But before merging results (Critical Verification step), ALL agents must be **resolved**. Runtime-enabled skills resolve from metadata + result files through their active coordinator runtime. Manual, non-runtime skills use the liveness protocol below. Do NOT begin Critical Verification until this condition is met for every launched agent.
 
@@ -145,7 +146,7 @@ Only after ALL checks confirm DEAD -> mark agent as failed/timed out.
 | > 3 min | last line = work | ALIVE | WAIT -- agent may be in long operation |
 
 > **PATIENCE REQUIREMENT — DO NOT PREMATURELY SKIP AGENTS:**
-> Codex typically takes 10-20 minutes for complex reviews. This is NORMAL, not a sign of failure.
+> Advisor agents may take 10-20 minutes for complex reviews. This is NORMAL, not a sign of failure.
 >
 > **Prohibited behaviors:**
 > - Deciding an agent is "stuck" because it has been running for 5, 10, or even 20 minutes
@@ -166,7 +167,7 @@ b) When the agent completes (background task notification):
    - Write `.hex-skills/agent-review/{agent}/{identifier}_session.json`: `{"agent": "...", "session_id": "...", "review_type": "...", "created_at": "..."}`
    - Proceed to Critical Verification for this agent's suggestions
 
-c) (reserved — multi-agent parallel path removed; Codex is the sole external advisor.)
+c) Multiple advisor agents are allowed only when health-check returns multiple non-host advisors. Each advisor gets its own prompt/result/log/metadata paths.
 
 d) If an agent fails: log failure, continue with available results
 
@@ -174,9 +175,9 @@ d) If an agent fails: log failure, continue with available results
 
 For EACH suggestion from agent results:
 
-a) **Claude Evaluation:** Independently assess against the actual code -- is the issue real? Actionable? Conflicts with project patterns? Read the agent's Analysis Process and Evidence sections from the report for deeper understanding of the suggestion's basis.
+a) **Host Evaluation:** Independently assess against the actual code -- is the issue real? Actionable? Conflicts with project patterns? Read the agent's Analysis Process and Evidence sections from the report for deeper understanding of the suggestion's basis.
 
-b) **AGREE** -> accept as-is. **REJECT** -> skip (Claude's independent judgment is final).
+b) **AGREE** -> accept as-is. **REJECT** -> skip (the host agent's independent judgment is final).
 
 **Architecture Gate (MANDATORY for every AGREE'd suggestion):**
 Before applying any accepted suggestion, explicitly verify:
@@ -191,31 +192,31 @@ c) **Persist:** all evaluation decisions in review summary.
 - Required: Restate the technical issue → verify against actual code → AGREE (implement) or REJECT (push back with code/test evidence)
 - When disagreeing: cite specific code lines or test results, not opinions
 
-## Step: Iterative Refinement (MANDATORY when Codex available)
+## Step: Iterative Refinement (MANDATORY when an advisor is available)
 
-After Critical Verification, run a 2-stage refinement using Codex. This automates the manual "show to Codex -> get feedback -> fix -> repeat" cycle.
+After Critical Verification, run a 2-stage refinement using the selected advisor agent. This automates the manual "show to another agent -> get feedback -> fix -> repeat" cycle.
 
-**ONE PERSPECTIVE = ONE CODEX SESSION.** Each perspective launches a separate `agent_runner.mjs` process. Never combine multiple perspectives into one Codex prompt. Never use `--resume-session` — each iter{N}/ subdirectory = independent Codex process with its own PID.
+**ONE PERSPECTIVE = ONE ADVISOR SESSION.** Each perspective launches a separate `agent_runner.mjs` process. Never combine multiple perspectives into one advisor prompt. Never use `--resume-session` — each iter{N}/ subdirectory = independent advisor process with its own PID.
 
 **Pre-condition:** Merge phase applied all accepted suggestions. The artifact is in its "current best" state.
 
-**Skip condition:** Codex unavailable in health check OR disabled in `{project_root}/.hex-skills/environment_state.json`. If skipped -> log `"Iterative Refinement: SKIPPED (Codex unavailable)"`.
+**Skip condition:** no non-host advisor is available in health check OR disabled in `{project_root}/.hex-skills/environment_state.json`. If skipped -> log `"Iterative Refinement: SKIPPED (no advisor available)"`.
 
-**Stage 1: Parallel Specialized Reviews (3 independent Codex sessions)**
+**Stage 1: Parallel Specialized Reviews (3 independent advisor sessions)**
 
 1. Build artifact (current state of reviewed artifact).
 2. For EACH of 3 perspectives (`dry_run_executor`, `new_dev_tester`, `adversarial_reviewer`), in parallel:
    a. Load perspective from `shared/agents/prompt_templates/refinement_perspectives.md`.
    b. Build prompt via `shared/agents/prompt_templates/iterative_refinement.md`.
    c. Save prompt to `.hex-skills/agent-review/refinement/{identifier}/iter{N}/prompt.md` (iter1=dry_run, iter2=new_dev, iter3=adversarial).
-   d. Launch independent Codex process:
+   d. Launch independent advisor process:
    ```
-   node shared/agents/agent_runner.mjs --agent codex \
+   node shared/agents/agent_runner.mjs --agent {advisor_agent} \
      --prompt-file .hex-skills/agent-review/refinement/{identifier}/iter{N}/prompt.md \
      --output-file .hex-skills/agent-review/refinement/{identifier}/iter{N}/result.md \
      --cwd {project_dir}
    ```
-3. Wait for ALL 3 via Claude `Monitor` tool with 2-minute cycles.
+3. Wait for ALL 3 via runtime `sync-agent` cycles; Claude hosts may use `Monitor` for observability.
 4. Parse results, merge findings (deduplicate by area+issue, keep higher confidence).
 5. Classify: HIGH (impact >= 20%), MEDIUM (10-19%), LOW (< 10%).
 6. Architecture Gate on each accepted fix.
@@ -226,14 +227,14 @@ After Critical Verification, run a 2-stage refinement using Codex. This automate
 If ALL 3 fail → EXIT(ERROR), skip Stage 2.
 If some fail → continue with available results.
 
-**Stage 2: Final Sweep (1 Codex session)**
+**Stage 2: Final Sweep (1 advisor session)**
 
 1. Build artifact (post-fix state after Stage 1).
 2. Load `final_sweep` perspective.
 3. Build prompt with `{previous_findings_summary}` from Stage 1.
 4. Save prompt to `.hex-skills/agent-review/refinement/{identifier}/iter4/prompt.md`.
-5. Launch Codex (single independent session).
-6. Wait via Claude `Monitor` tool.
+5. Launch advisor (single independent session).
+6. Wait via runtime `sync-agent`; Claude hosts may use `Monitor` for observability.
 7. Parse result, apply accepted fixes.
 8. Kill process, record cleanup evidence.
 
@@ -241,7 +242,7 @@ If some fail → continue with available results.
 - `COMPLETED` — both stages done, all results merged
 - `PARTIAL_ERROR` — Stage 1 had failures but Stage 2 completed
 - `ERROR` — all Stage 1 sessions failed
-- `SKIPPED` — Codex unavailable
+- `SKIPPED` — no advisor available
 
 **Post-refinement display:** `"Iterative Refinement: Stage 1 ({N}/3 perspectives), Stage 2 (final_sweep), {total} suggestions, {applied} applied, exit: {reason}"`
 
@@ -272,7 +273,7 @@ node shared/agents/agent_runner.mjs --verify-dead {pid}
 4. If exit code 1 (process alive after cleanup attempt): runner auto-kills it. Re-run `--verify-dead` to confirm. If still alive after second attempt → log ERROR.
 5. Display: `"Agent cleanup: {agent} PID {pid} DEAD"` for each agent
 
-**Note:** `agent_runner.mjs` kills process trees automatically on both completion and timeout. Per-call cleanup (step 4b in Iterative Refinement) handles most cases. This final step is a sweep for any missed PIDs — especially from Phase 2 background agents. On Windows, Codex processes accumulate if not explicitly killed via `--verify-dead`.
+**Note:** `agent_runner.mjs` kills process trees automatically on both completion and timeout. Per-call cleanup (step 4b in Iterative Refinement) handles most cases. This final step is a sweep for any missed PIDs — especially from Phase 2 background agents. On Windows, CLI advisor processes can accumulate if not explicitly killed via `--verify-dead`.
 
 ## Step: Save Review Summary
 
@@ -285,18 +286,18 @@ Entry format (per `shared/references/agent_review_memory.md`):
 - Verdict: {verdict}
 - Accepted ({count}): {1-line per accepted suggestion, max 5}
 - Rejected ({count}): {1-line per rejected suggestion, max 3}
-- Reports: codex .hex-skills/agent-review/codex/{id}_{type}_result.md
-- Stats: codex ({accepted}/{total})
+- Reports: {agent} .hex-skills/agent-review/{agent}/{id}_{type}_result.md
+- Stats: {agent} ({accepted}/{total})
 ```
 
 ## Fallback Rules
 
 | Condition | Action |
 |-----------|--------|
-| Codex succeeds | Aggregate verified suggestions |
-| Codex fails | Fall back to Opus self-review; log failure |
-| Codex + self-review both fail | Return `{verdict: "SKIPPED", reason: "advisor failed"}` |
-| Codex crashes immediately (< 5s, non-zero exit) | Likely MCP init failure (expired auth); log error, fall back to self-review. Note to check agent MCP config. |
+| Advisor succeeds | Aggregate verified suggestions |
+| Advisor fails | Fall back to host self-review; log failure |
+| Advisor + self-review both fail | Return `{verdict: "SKIPPED", reason: "advisor failed"}` |
+| Advisor crashes immediately (< 5s, non-zero exit) | Likely MCP init failure (expired auth); log error, fall back to self-review. Note to check agent MCP config. |
 | Agent result not ready after expected time | Run Liveness Protocol before declaring failed. Log growing = WAIT |
 
 ## Critical Rules
@@ -308,8 +309,8 @@ Entry format (per `shared/references/agent_review_memory.md`):
 - **Persist** per-agent prompts in `.hex-skills/agent-review/{agent}/`, results in `.hex-skills/agent-review/{agent}/` -- do NOT delete
 - Ensure `.hex-skills/agent-review/.gitignore` exists before creating files (only create if `.hex-skills/agent-review/` is new)
 - **HARD TIMEOUT (30 min default):** `agent_runner.mjs` kills the agent process after `hard_timeout_seconds` (configurable in registry, override via `--timeout`). On timeout, returns `success: false`. Monitor liveness via log file stat (growing = alive). **TaskStop is still FORBIDDEN** — the runner handles timeout internally.
-- **MANDATORY: Agent progress monitoring via Claude `Monitor` tool:** `Monitor(command="tail -f {agent_log} | grep --line-buffered 'Phase|ERROR|DONE'", timeout_ms=120000)` with 2-minute cycles. This is the primary wait mechanism, not optional. Fallback to `Bash(run_in_background=true)` only when Monitor unavailable.
-- **CRITICAL VERIFICATION:** Do NOT trust agent suggestions blindly. Claude MUST independently verify each suggestion. Accept only after verification.
+- **MANDATORY: Agent progress monitoring:** runtime-enabled skills use `sync-agent`; Claude hosts may add `Monitor(command="tail -f {agent_log} | grep --line-buffered 'Phase|ERROR|DONE'", timeout_ms=120000)` with 2-minute observability cycles.
+- **CRITICAL VERIFICATION:** Do NOT trust agent suggestions blindly. The host agent MUST independently verify each suggestion. Accept only after verification.
 - **OUTPUT PATH GUARD:** ALL agent review artifacts (prompts, results, logs, metadata, refinement files, review history) MUST reside under `.hex-skills/agent-review/`. NEVER write agent review output to the project root directory or any path outside `.hex-skills/`.
 
 ## Definition of Done
@@ -317,10 +318,10 @@ Entry format (per `shared/references/agent_review_memory.md`):
 - All available agents launched as background tasks (or gracefully failed with logged reason)
 - Per-agent prompts persisted in `.hex-skills/agent-review/{agent}/` (differ only by `{focus_hint}`)
 - Raw results persisted in `.hex-skills/agent-review/{agent}/` (no cleanup)
-- Each suggestion critically verified by Claude (AGREE or REJECT)
+- Each suggestion critically verified by the host agent (AGREE or REJECT)
 - Deduplicated verified suggestions returned with verdict and agent_stats
 - `.hex-skills/agent-review/.gitignore` exists (created only if `.hex-skills/agent-review/` was new)
-- Iterative Refinement executed (or SKIPPED if Codex unavailable)
+- Iterative Refinement executed (or SKIPPED if no advisor is available)
 - Refinement artifacts persisted in `.hex-skills/agent-review/refinement/`
 - Review summary appended to `.hex-skills/agent-review/review_history.md`
 - Agent process trees verified dead after results collection (Step: Verify Agent Cleanup)

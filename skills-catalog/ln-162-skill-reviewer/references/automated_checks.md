@@ -142,12 +142,10 @@ done
 ## Check 13: Platform API Compatibility
 ```bash
 for f in {scoped SKILL.md files}; do
-  grep -n 'Agent(resume:' "$f" && echo "FAIL: deprecated Agent(resume:) in $f — use SendMessage({to: agentId})"
-  grep -nE 'effort.*"max"|effort: max' "$f" && echo "FAIL: deprecated effort \"max\" in $f — use low/medium/high"
+  grep -n 'Agent(resume:' "$f" && echo "FAIL: unsupported Agent(resume:) in $f — use SendMessage({to: agentId})"
+  grep -nE 'effort.*"max"|effort: max' "$f" && echo "FAIL: unsupported effort \"max\" in $f — use low/medium/high"
 done
 ```
-
-**Maintained in:** `references/deprecated_apis.md`
 
 ## Check 17: Worker invocation enforcement (D8b)
 ```bash

@@ -136,13 +136,13 @@ Note: hex packages run via `npx -y`, NOT global install. Never probe global npm 
 
 ### Phase 2: Register & Configure
 
-One pass: use Phase 1 state (do NOT re-run `claude mcp list`) -> remove deprecated -> register/update -> verify.
+One pass: use Phase 1 state (do NOT re-run `claude mcp list`) -> remove unsupported -> register/update -> verify.
 
 1. **Reuse Phase 1 state** — server map from Step 1a already has registration + connection status
    - Fallback (standalone only): read `~/.claude.json` + `~/.claude/settings.json`
-2. Remove deprecated servers:
+2. Remove unsupported servers:
 
-| Deprecated Server | Action |
+| Unsupported Server | Action |
 |-------------------|--------|
 | hashline-edit | Remove if found |
 | pencil | Remove if found |
@@ -379,7 +379,7 @@ Scan project commands/skills to replace built-in tools with hex-line equivalents
 
 ### Phase 6: Grant Permissions
 
-Instruction files and `MCP Tool Preferences` content are owned by `ln-014-agent-instructions-manager`. This skill must not create or rewrite `CLAUDE.md`, `AGENTS.md`, or `GEMINI.md`.
+Instruction files and `MCP Tool Preferences` content are owned by `ln-014-agent-instructions-manager`. This skill must not create or rewrite `CLAUDE.md` or `AGENTS.md`.
 
 Ensure built-in tools and MCP server prefixes are in `~/.claude/settings.json` -> `permissions.allow[]`.
 
@@ -519,7 +519,7 @@ IDE Extension Permission Mode:
 2. **Verify after add.** Always run `claude mcp list` after registration to confirm connection
 3. **Ask before optional servers.** Linear requires explicit user consent
 4. **npx -y for all hex MCP.** Never `npm i -g` — npx provides process isolation and avoids EBUSY on Windows. On Windows, wrap with `cmd /c npx` (see Phase 2 OS prefix table)
-5. **Remove deprecated servers.** Clean up servers no longer in the registry
+5. **Remove unsupported servers.** Clean up servers no longer in the registry
 6. **Grant permissions.** After registration, add `mcp__{server}` to user settings
 7. **Minimize `claude mcp list` calls.** Phase 1 runs it once (discovery). Phase 2 reuses that data. Only Phase 2 Step 4 runs it again (post-mutation verify). Max 2 calls total
 8. **Always check npm drift.** Connected != up to date. Compare npm latest against the newest locally cached npx package version before skipping
@@ -536,7 +536,7 @@ IDE Extension Permission Mode:
 | Write arbitrary fields to `~/.claude.json` | Use `claude mcp add` for servers; rely on `hex-line` startup autosync for hooks/style |
 | Skip verification after add | Always check `claude mcp list` after mutations |
 | Auto-add optional servers | Ask user for Linear and other optional servers |
-| Leave deprecated servers | Remove hashline-edit, pencil, etc. |
+| Leave unsupported servers | Remove hashline-edit, pencil, etc. |
 | Calculate token budget | Not this worker's responsibility |
 | Run `claude mcp list` in every phase | Run once in Phase 1, reuse in Phase 2, verify once after mutations |
 | Assume connected = up to date | Check `npm view` version vs newest cached npx package version |

@@ -58,8 +58,8 @@ try {
     }
 
     const secondManifestPath = join(projectRoot, "manifest-second.json");
-    writeJson(secondManifestPath, { targets: ["gemini"], dry_run: false });
-    run(["start", "--project-root", projectRoot, "--identifier", "targets-gemini", "--manifest-file", secondManifestPath]);
+    writeJson(secondManifestPath, { targets: ["claude"], dry_run: false });
+    run(["start", "--project-root", projectRoot, "--identifier", "targets-claude", "--manifest-file", secondManifestPath]);
     const ambiguousStatus = run(["status", "--project-root", projectRoot], { allowFailure: true });
     if (!String(ambiguousStatus.error || "").includes("Multiple active ln-010 runs found")) {
         throw new Error(`Expected ambiguous status failure, got: ${JSON.stringify(ambiguousStatus)}`);

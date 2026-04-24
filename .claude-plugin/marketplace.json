@@ -189,7 +189,7 @@
     ,
     {
       "name": "setup-environment",
-      "description": "Setup environment: Install CLI agents (Codex, Gemini, Claude), configure MCP servers, sync settings across agents, audit instruction files. One-command setup for multi-agent workflows.",
+      "description": "Setup environment: Install CLI agents (Codex, Claude), configure MCP servers, align settings across agents, audit instruction files. One-command setup for two-agent workflows.",
       "source": "./",
       "strict": false,
       "skills": [

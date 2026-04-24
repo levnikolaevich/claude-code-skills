@@ -506,7 +506,7 @@ function suggestAction(ng) {
   }
   if (
     ng.level === "WARNING" &&
-    ["rate_limit", "429", "validation", "deprecated"].some((kw) =>
+    ["rate_limit", "429", "validation", "unsupported"].some((kw) =>
       tpl.includes(kw)
     )
   ) {

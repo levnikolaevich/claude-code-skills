@@ -86,7 +86,7 @@ Classify each error group from script JSON output:
 - Errors correlate with test execution timestamps from regression test output
 - Patterns matching `tests/manual/` scripts
 
-**Error taxonomy per** `references/error_taxonomy.md` **(9 categories: CRASH, TIMEOUT, AUTH, DB, NETWORK, VALIDATION, CONFIG, RESOURCE, DEPRECATION).**
+**Error taxonomy per** `references/error_taxonomy.md` **(9 categories: CRASH, TIMEOUT, AUTH, DB, NETWORK, VALIDATION, CONFIG, RESOURCE, UNSUPPORTED_API).**
 
 ### Phase 3: Log Quality Assessment
 

@@ -24,7 +24,7 @@ Do NOT rely on training data alone for these claim types. Use MCP tools or flag 
 |---------|----------|-----------------|
 | Version numbers | "v5.2.0", "latest stable" | Context7 or project manifest |
 | API signatures | Method names, parameters, return types | Ref or Context7 docs |
-| Deprecation claims | "X deprecated", "Y replaced Z" | MCP Ref for current status |
+| Unsupported API claims | "X unsupported", "Y replaced Z" | MCP Ref for current status |
 | Existence claims | "Library X exists", "Library X has method Y" | Context7 docs or WebSearch |
 | Security standards | OWASP rule numbers, CVE IDs | MCP Ref |
 | Market data | Market size, shares, trends | WebSearch required |

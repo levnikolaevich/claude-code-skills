@@ -14,8 +14,8 @@
  * Usage:
  *     node agent_runner.mjs --agent codex --prompt "Analyze scope..."
  *     node agent_runner.mjs --agent codex --prompt-file /tmp/prompt.md --cwd /project
- *     node agent_runner.mjs --agent codex-review --prompt-file prompt.md --output-file result.md --cwd /project
- *     node agent_runner.mjs --agent codex-review --resume-session abc-123 --prompt-file challenge.md --output-file result.md --cwd /project
+ *     node agent_runner.mjs --agent claude --prompt-file prompt.md --output-file result.md --cwd /project
+ *     node agent_runner.mjs --agent codex --resume-session abc-123 --prompt-file challenge.md --output-file result.md --cwd /project
  *     node agent_runner.mjs --health-check
  *     node agent_runner.mjs --health-check --json
  *     node agent_runner.mjs --list-agents
@@ -45,8 +45,22 @@ function loadRegistry() {
 }
 
 
-function buildEnv(agentCfg) {
+function parseAdvisorDepth(value) {
+    const parsed = parseInt(value || "0", 10);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+}
+
+
+function buildEnv(agentCfg, agentName) {
     const env = Object.assign({}, process.env);
+    const childHost = agentCfg.family || agentName;
+    if (childHost) {
+        env.SKILLS_HOST_AGENT = childHost;
+    }
+    env.SKILLS_ADVISOR_DEPTH = String(
+        parseAdvisorDepth(process.env.SKILLS_ADVISOR_DEPTH) + 1
+    );
+
     const overrides = agentCfg.env_override || {};
     for (const [key, val] of Object.entries(overrides)) {
         env[key] = val;
@@ -240,6 +254,16 @@ function captureSessionId(agentCfg, rawOutput) {
         return uuidMatch ? uuidMatch[0] : null;
     }
 
+    if (strategy === "from_json_field") {
+        const fieldPath = captureCfg.field_path || "session_id";
+        const value = extractJsonField(rawOutput, fieldPath);
+        if (value && typeof value === "string") {
+            return value;
+        }
+        const uuidMatch = UUID_PATTERN.exec(rawOutput);
+        return uuidMatch ? uuidMatch[0] : null;
+    }
+
     if (strategy === "from_list_command") {
         const listCmd = captureCfg.command || "";
         if (!listCmd) return null;
@@ -266,6 +290,38 @@ function captureSessionId(agentCfg, rawOutput) {
     }
 
     return null;
+}
+
+
+function extractJsonField(rawOutput, fieldPath) {
+    if (!rawOutput) return null;
+    try {
+        let value = JSON.parse(rawOutput.trim());
+        for (const part of fieldPath.split(".")) {
+            if (value && typeof value === "object" && !Array.isArray(value)) {
+                value = value[part];
+            } else {
+                return null;
+            }
+        }
+        return value;
+    } catch {
+        return null;
+    }
+}
+
+
+function normalizeAgentResponse(agentCfg, rawResponse) {
+    const captureCfg = agentCfg.response_capture;
+    if (!captureCfg || !rawResponse) return rawResponse;
+    if (captureCfg.strategy !== "from_json_field") return rawResponse;
+
+    const fieldPath = captureCfg.field_path || "result";
+    const value = extractJsonField(rawResponse, fieldPath);
+    if (typeof value === "string") {
+        return value.trim();
+    }
+    return rawResponse;
 }
 
 
@@ -311,19 +367,45 @@ function checkAgentHealth(agentName, registry) {
 }
 
 
-function buildHealthCheckReport(registry) {
+function buildHealthCheckReport(registry, hostAgent) {
     const agents = [];
     let availableCount = 0;
+    let skippedCount = 0;
+    let unavailableCount = 0;
+    const advisorDepth = parseAdvisorDepth(process.env.SKILLS_ADVISOR_DEPTH);
+    const nestedBlocked = (
+        advisorDepth > 0
+        && process.env.SKILLS_ALLOW_NESTED_ADVISORS !== "1"
+    );
     for (const name of Object.keys(registry.agents)) {
+        const cfg = registry.agents[name];
+        if (nestedBlocked) {
+            skippedCount++;
+            agents.push({
+                name,
+                status: "SKIPPED",
+                info: "nested advisor disabled",
+            });
+            continue;
+        }
+        if (hostAgent && (cfg.family === hostAgent || name === hostAgent)) {
+            skippedCount++;
+            agents.push({ name, status: "SKIPPED", info: "same as host agent" });
+            continue;
+        }
         const { ok, info } = checkAgentHealth(name, registry);
         const status = ok ? "OK" : "UNAVAILABLE";
         agents.push({ name, status, info });
         if (ok) availableCount++;
+        if (!ok) unavailableCount++;
     }
     return {
-        ok: availableCount === agents.length,
+        ok: availableCount > 0,
         available_count: availableCount,
-        unavailable_count: agents.length - availableCount,
+        unavailable_count: unavailableCount,
+        skipped_count: skippedCount,
+        host_agent: hostAgent || null,
+        advisor_depth: advisorDepth,
         agents,
     };
 }
@@ -432,6 +514,7 @@ function executeAgent(agentCfg, cmd, stdinPrompt, hardTimeout,
         let logFh = null;
         let timedOut = false;
         let rawStdout = "";
+        let rawStderr = "";
         let childExited = false;
         let childExitCode = null;
         let hardTimeoutTimer = null;
@@ -461,7 +544,7 @@ function executeAgent(agentCfg, cmd, stdinPrompt, hardTimeout,
             stdio: [
                 stdinPrompt ? "pipe" : "ignore",   // stdin
                 logFh ? "pipe" : "pipe",            // stdout (always pipe, we route manually)
-                "pipe",                             // stderr (merge into stdout stream)
+                "pipe",                             // stderr (logged separately from stdout capture)
             ],
         };
 
@@ -550,24 +633,20 @@ function executeAgent(agentCfg, cmd, stdinPrompt, hardTimeout,
 
         // Route stdout
         if (child.stdout) {
-            if (logFh) {
-                child.stdout.pipe(logFh);
-            } else {
-                child.stdout.on("data", (chunk) => {
-                    rawStdout += chunk.toString("utf-8");
-                });
-            }
+            child.stdout.on("data", (chunk) => {
+                const text = chunk.toString("utf-8");
+                rawStdout += text;
+                if (logFh) logFh.write(text);
+            });
         }
 
-        // Route stderr into same stream
+        // Route stderr to the log without contaminating machine-readable stdout.
         if (child.stderr) {
-            if (logFh) {
-                child.stderr.pipe(logFh, { end: false });
-            } else {
-                child.stderr.on("data", (chunk) => {
-                    rawStdout += chunk.toString("utf-8");
-                });
-            }
+            child.stderr.on("data", (chunk) => {
+                const text = chunk.toString("utf-8");
+                rawStderr += text;
+                if (logFh) logFh.write(text);
+            });
         }
 
         // Hard timeout
@@ -616,10 +695,7 @@ function executeAgent(agentCfg, cmd, stdinPrompt, hardTimeout,
                 }
             }
 
-            // For agents with log files, log content serves as raw output
-            if (logFh && !rawStdout) {
-                rawStdout = logContent;
-            }
+            // Keep stdout as the machine-readable channel. logContent is for liveness only.
 
             if (timedOut) {
                 writeMetadataFile(metadataFile, {
@@ -662,11 +738,16 @@ function executeAgent(agentCfg, cmd, stdinPrompt, hardTimeout,
 
             let response;
             if (agentWroteFile) {
-                response = fs.readFileSync(outputFile, "utf-8").trim();
+                response = normalizeAgentResponse(
+                    agentCfg,
+                    fs.readFileSync(outputFile, "utf-8").trim()
+                );
                 writeResultFile(outputFile, agentName, response,
                     duration, code, sessionId);
             } else {
-                response = rawStdout ? rawStdout.trim() : null;
+                response = rawStdout
+                    ? normalizeAgentResponse(agentCfg, rawStdout.trim())
+                    : null;
                 if (outputFile && response) {
                     writeResultFile(outputFile, agentName, response,
                         duration, code, sessionId);
@@ -693,7 +774,9 @@ function executeAgent(agentCfg, cmd, stdinPrompt, hardTimeout,
                 agent: agentName,
                 response: response || null,
                 duration_seconds: duration,
-                error: code !== 0 ? "Exit code " + code : null,
+                error: code !== 0
+                    ? ("Exit code " + code + (rawStderr ? ": " + rawStderr.trim() : ""))
+                    : null,
                 session_id: sessionId,
                 pid: child.pid || null,
                 log_file: logPath,
@@ -761,7 +844,7 @@ async function runAgent(agentName, prompt, cwd, timeout, registry,
     }
 
     const logPath = logFile || getLogPath(outputFile);
-    const env = buildEnv(agentCfg);
+    const env = buildEnv(agentCfg, agentName);
 
     // Try resume mode if session ID provided and agent supports it
     const useResume = resumeSession && agentCfg.resume_args;
@@ -828,9 +911,6 @@ async function runAgent(agentName, prompt, cwd, timeout, registry,
     const resolvedArgs = resolveArgPlaceholders(
         agentCfg.args || [], context
     );
-    const subprocessCwd = resolvedArgs.includes("-C") ? null : cwd;
-    const cmd = buildCommand(agentCfg, resolvedArgs);
-
     // Support positional prompt delivery (e.g. claude -p "prompt")
     const delivery = agentCfg.normal_prompt_delivery || "stdin";
     let stdinPrompt;
@@ -840,6 +920,9 @@ async function runAgent(agentName, prompt, cwd, timeout, registry,
     } else {
         stdinPrompt = prompt;
     }
+
+    const subprocessCwd = resolvedArgs.includes("-C") ? null : cwd;
+    const cmd = buildCommand(agentCfg, resolvedArgs);
 
     const result = await executeAgent(
         agentCfg, cmd, stdinPrompt, hardTimeout,
@@ -882,6 +965,7 @@ async function main() {
                 cwd: { type: "string" },
                 timeout: { type: "string" },
                 "resume-session": { type: "string" },
+                "host-agent": { type: "string" },
                 "health-check": { type: "boolean", default: false },
                 json: { type: "boolean", default: false },
                 "list-agents": { type: "boolean", default: false },
@@ -928,7 +1012,7 @@ async function main() {
 
     // --health-check
     if (opts["health-check"]) {
-        const report = buildHealthCheckReport(registry);
+        const report = buildHealthCheckReport(registry, opts["host-agent"] || process.env.SKILLS_HOST_AGENT || null);
         if (opts.json) {
             process.stdout.write(JSON.stringify(report) + "\n");
         } else {

@@ -51,22 +51,22 @@ Receives `contextStore` with: `tech_stack`, `project_root`, `output_dir`.
 | 2 | **Single Source of Truth** | No content duplication; duplicates replaced with links to source; clear ownership |
 | 3 | **Proactive Compression** | Eliminate verbose/redundant content; prose to tables; remove meaningless info; compress even under-limit files; see [size_limits.md](references/size_limits.md) |
 | 4 | **Requirements Compliance** | Correct header markers, correct top sections, within size limits, no illegal code blocks, stack-appropriate doc links |
-| 5 | **Freshness Indicators** | Detect staleness signals: dates >6 months in content, deprecated API/tool references, TODO/FIXME markers, placeholder text left in place; deep fact-checking handled by dedicated worker |
-| 6 | **Legacy Cleanup** | No history sections; no "was changed" notes; no deprecated info; current state only |
+| 5 | **Freshness Indicators** | Detect staleness signals: dates >6 months in content, unsupported API/tool references, TODO/FIXME markers, placeholder text left in place; deep fact-checking handled by dedicated worker |
+| 6 | **Legacy Cleanup** | No history sections; no "was changed" notes; no unsupported info; current state only |
 | 7 | **Stack Adaptation** | Links/refs match project stack; no Python examples in .NET project; official docs for correct platform |
-| 8 | **Import Pattern Compliance** | When `AGENTS.md` exists at repo root, `CLAUDE.md` and `GEMINI.md` must each contain exactly one `@AGENTS.md` line and a bounded harness-specific delta (≤50 lines total per file). Any content in CLAUDE.md or GEMINI.md that duplicates AGENTS.md is drift. See `shared/references/agent_instructions_writing_guide.md` for rationale |
+| 8 | **Import Pattern Compliance** | When `AGENTS.md` exists at repo root, `CLAUDE.md` must contain exactly one `@AGENTS.md` line and a bounded harness-specific delta (≤50 lines total). Any content in CLAUDE.md that duplicates AGENTS.md is drift. See `shared/references/agent_instructions_writing_guide.md` for rationale |
 
 ### Severity Mapping
 
 | Issue Type | Severity |
 |------------|----------|
-| Staleness indicators (old dates, deprecated refs, TODO markers) | MEDIUM |
+| Staleness indicators (old dates, unsupported refs, TODO markers) | MEDIUM |
 | Broken links, orphaned docs | HIGH |
 | Content duplication | MEDIUM |
 | Missing compression opportunity | LOW |
 | Legacy/history content | MEDIUM |
 | Wrong stack references | HIGH |
-| Import pattern drift (duplicated AGENTS.md content in CLAUDE.md / GEMINI.md, oversized stub, missing `@AGENTS.md` line) | HIGH |
+| Import pattern drift (duplicated AGENTS.md content in CLAUDE.md, oversized stub, missing `@AGENTS.md` line) | HIGH |
 
 ## Scoring Algorithm
 
@@ -90,7 +90,7 @@ Standalone mode still writes the same JSON summary to a worker-owned run-scoped 
 
 - **Do not auto-fix:** Report violations only; coordinator aggregates for user
 - **Tech stack aware:** Use contextStore `tech_stack` to apply stack-specific checks (e.g., .NET vs Node.js doc standards)
-- **No deep fact-checking:** Detect staleness signals only (dates, deprecated refs, TODO markers)
+- **No deep fact-checking:** Detect staleness signals only (dates, unsupported refs, TODO markers)
 - **Compress always:** Size limits are upper bounds, not targets. A 100-line file instead of 300 is a win
 - **No code in docs:** Documents describe algorithms in tables or ASCII diagrams. Code belongs in codebase
 - **Code is truth:** When docs contradict code, report docs as needing update (not code)

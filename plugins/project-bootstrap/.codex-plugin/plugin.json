@@ -1,0 +1,36 @@
+{
+  "name": "project-bootstrap",
+  "version": "1.0.0",
+  "description": "Project bootstrap: CREATE new or TRANSFORM existing projects to production-ready Clean Architecture with Docker, CI/CD, linters, security scanning, verification. Works without Linear.",
+  "author": {
+    "name": "Lev Nikolaevich",
+    "email": "levnikolaevich.com@gmail.com",
+    "url": "https://github.com/levnikolaevich"
+  },
+  "homepage": "https://github.com/levnikolaevich/claude-code-skills/blob/main/docs/plugins/project-bootstrap.md",
+  "repository": "https://github.com/levnikolaevich/claude-code-skills",
+  "license": "MIT",
+  "keywords": [
+    "codex",
+    "skills",
+    "project-bootstrap"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Project Bootstrap",
+    "shortDescription": "Project bootstrap: CREATE new or TRANSFORM existing projects to production-ready Clean Architecture with Docker, CI/CD, linters, security scanning, verification. Works without Linear.",
+    "longDescription": "Project bootstrap: CREATE new or TRANSFORM existing projects to production-ready Clean Architecture with Docker, CI/CD, linters, security scanning, verification. Works without Linear.",
+    "developerName": "Lev Nikolaevich",
+    "category": "Productivity",
+    "capabilities": [
+      "Interactive",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/levnikolaevich/claude-code-skills",
+    "defaultPrompt": [
+      "Use project-bootstrap for this repository.",
+      "Run the project-bootstrap workflow."
+    ],
+    "brandColor": "#2563EB"
+  }
+}

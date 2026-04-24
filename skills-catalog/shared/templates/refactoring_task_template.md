@@ -476,7 +476,7 @@ DO NOT create new tests here. New tests were created in Story's final test task 
 
 ### Documentation to Update
 - `{{DOCS_PATH}}/file.md` - [Existing docs to update - e.g., "Update architecture diagram"]
-- `README.md` - [What to update - e.g., "Remove references to deprecated pattern"]
+- `README.md` - [What to update - e.g., "Remove references to unsupported pattern"]
 
 ---
 

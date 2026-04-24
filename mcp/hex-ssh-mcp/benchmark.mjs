@@ -68,7 +68,7 @@ function generateNpmInstallLog(count) {
         if (r < 3) {
             // Repeated "added" lines with different versions
             const pkg = pkgs[i % pkgs.length];
-            lines.push(`npm warn deprecated ${pkg}@${1 + (i % 5)}.${i % 10}.${i % 3}: use newer version`);
+            lines.push(`npm warn unsupported ${pkg}@${1 + (i % 5)}.${i % 10}.${i % 3}: use newer version`);
         } else if (r < 5) {
             // Timestamp + UUID lines
             const uuid = `${hex8()}-${hex4()}-${hex4()}-${hex4()}-${hex12()}`;

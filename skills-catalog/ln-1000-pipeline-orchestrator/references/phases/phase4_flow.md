@@ -49,7 +49,7 @@ Lead writes `.hex-skills/pipeline/stage_N_notes_{id}.md` after each Skill() call
 - {Created files, URLs, commit SHAs}
 ```
 
-**Agents info extraction:** Read from `.hex-skills/agent-review/review_history.md` (last entry) or parse from Skill output (look for "Agent Review:" display line). Format: `codex(2/3),gemini(1/2)` or `SKIPPED({reason})` or `N/A`.
+**Agents info extraction:** Read from `.hex-skills/agent-review/review_history.md` (last entry) or parse from Skill output (look for "Agent Review:" display line). Format: `codex(2/3),claude(1/2)` or `SKIPPED({reason})` or `N/A`.
 
 ## 5. Agents Info Format
 
@@ -57,8 +57,8 @@ Pipeline Report uses this format for agent review results:
 
 | Value | Meaning |
 |-------|---------|
-| `codex(2/3),gemini(1/2)` | Both agents used; accepted/total suggestions |
-| `codex(1/2),gemini(FAILED)` | One agent failed |
+| `codex(2/3),claude(1/2)` | Both agents used; accepted/total suggestions |
+| `codex(1/2),claude(FAILED)` | One agent failed |
 | `SKIPPED(no agents available)` | Health check returned 0 agents |
 | `SKIPPED(fast-track)` | Fast-track mode reduced agent review |
 | `N/A` | No agent info found |

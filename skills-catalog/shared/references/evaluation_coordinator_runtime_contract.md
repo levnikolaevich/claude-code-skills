@@ -121,7 +121,7 @@ The runtime must block transitions when:
 - cleanup is incomplete
 - self-check has not passed
 - coordinator summary is missing
-- a phase listed in `required_phases_when_codex_available` is checkpointed as SKIPPED while the corresponding agent was marked available in the health check
+- a phase listed in `required_phases_when_advisor_available` is checkpointed as SKIPPED while a corresponding advisor was marked available in the health check
 
 ## Cleanup Evidence
 

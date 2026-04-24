@@ -1,6 +1,6 @@
 # Agent Delegation Pattern
 
-Standard pattern for skills delegating work to an external CLI AI agent (Codex) via `shared/agents/agent_runner.mjs`. Opus is the native fallback.
+Standard pattern for skills delegating work to a non-host external CLI AI advisor via `shared/agents/agent_runner.mjs`. Host self-review is the native fallback.
 
 For deterministic orchestration, pair this file with the active coordinator runtime contract for the skill family. Evaluation-platform validators use `shared/references/evaluation_coordinator_runtime_contract.md`, keep run state in `.hex-skills/evaluation/`, and use `--metadata-file` for launch/finish bookkeeping.
 
@@ -8,17 +8,17 @@ For deterministic orchestration, pair this file with the active coordinator runt
 
 - Skill benefits from model specialization (planning, code analysis, structured review)
 - Second opinion on generated plans or validation results
-- Claude Opus remains meta-orchestrator; external agents are workers
+- The current host agent remains meta-orchestrator; external advisors are workers
 
 ## Agent Selection Matrix
 
 | Skill Group | Primary Agent | Model | Fallback | Use Case |
 |-------------|--------------|-------|----------|----------|
-| Decomposition | Codex | Codex CLI runtime default | Opus | Scope analysis, epic planning |
-| Task management | Codex | Codex CLI runtime default | Opus | Task decomposition, plan review |
-| Execution | Opus (native) | claude-opus-4-6 | -- | Direct code writing |
-| Validation | Codex | Codex CLI runtime default | Self-review (if agent fails) | Story/Tasks + context validation |
-| Quality review | Codex | Codex CLI runtime default | Self-review (if agent fails) | Code review |
+| Decomposition | Non-host advisor | Agent registry runtime default | Host self-review | Scope analysis, epic planning |
+| Task management | Non-host advisor | Agent registry runtime default | Host self-review | Task decomposition, plan review |
+| Execution | Host agent | Current runtime | -- | Direct code writing |
+| Validation | Non-host advisor | Agent registry runtime default | Host self-review (if advisor fails) | Story/Tasks + context validation |
+| Quality review | Non-host advisor | Agent registry runtime default | Host self-review (if advisor fails) | Code review |
 
 ## Inline Agent Review
 
@@ -37,25 +37,28 @@ All modes assembled with `review_base.md` + mode file per "Step: Build Prompt" i
 - No indirection: parent skill launches agents directly, no Skill() delegation overhead
 - Parallel architecture: agents run in background while parent does its own validation
 - Reference passing: Story/Tasks provided as Linear URLs or local file paths
-- Critical verification: Claude independently evaluates each suggestion and either accepts or rejects
+- Critical verification: the host agent independently evaluates each suggestion and either accepts or rejects
 
 ## Invocation Pattern
 
 ```bash
 # Short prompt
-node shared/agents/agent_runner.mjs --agent codex --prompt "Review this plan..."
+node shared/agents/agent_runner.mjs --agent {advisor_agent} --prompt "Review this plan..."
 
 # Large context via file with output (recommended)
-node shared/agents/agent_runner.mjs --agent codex --prompt-file prompt.md --output-file result.md --cwd /project
+node shared/agents/agent_runner.mjs --agent {advisor_agent} --prompt-file prompt.md --output-file result.md --cwd /project
 
 # Large context with deterministic metadata
-node shared/agents/agent_runner.mjs --agent codex --prompt-file prompt.md --output-file result.md --metadata-file result.meta.json --cwd /project
+node shared/agents/agent_runner.mjs --agent {advisor_agent} --prompt-file prompt.md --output-file result.md --metadata-file result.meta.json --cwd /project
 
 # Resume session (continues prior conversation context)
-node shared/agents/agent_runner.mjs --agent codex --resume-session abc-123 --prompt-file followup.md --output-file result.md --cwd /project
+node shared/agents/agent_runner.mjs --agent {advisor_agent} --resume-session abc-123 --prompt-file followup.md --output-file result.md --cwd /project
 
-# Health check
-node shared/agents/agent_runner.mjs --health-check
+# Health check for a Claude host
+node shared/agents/agent_runner.mjs --health-check --json --host-agent claude
+
+# Health check for a Codex host
+node shared/agents/agent_runner.mjs --health-check --json --host-agent codex
 ```
 
 ## Runner Output Contract
@@ -65,15 +68,15 @@ node shared/agents/agent_runner.mjs --health-check
 ```json
 {
   "success": true,
-  "agent": "codex",
+  "agent": "{advisor_agent}",
   "response": "...",
   "duration_seconds": 12.4,
   "error": null,
   "session_id": "7f9f9a2e-1b3c-4c7a-9b0e-...",
   "session_resumed": false,
   "pid": 12345,
-  "log_file": ".hex-skills/agent-review/codex/PROJ-123_storyreview.log",
-  "output_file": ".hex-skills/agent-review/codex/PROJ-123_storyreview_result.md",
+  "log_file": ".hex-skills/agent-review/{advisor_agent}/PROJ-123_storyreview.log",
+  "output_file": ".hex-skills/agent-review/{advisor_agent}/PROJ-123_storyreview_result.md",
   "started_at": "2026-03-26T12:00:00Z",
   "finished_at": "2026-03-26T12:00:12Z",
   "exit_code": 0
@@ -90,7 +93,7 @@ This file is written by `agent_runner.mjs`. Review runtime may later resolve the
 
 ```json
 {
-  "agent": "codex",
+  "agent": "{advisor_agent}",
   "status": "launched | result_ready | failed",
   "pid": 12345,
   "started_at": "2026-03-26T12:00:00Z",
@@ -110,7 +113,7 @@ Runtime-enabled skills should prefer metadata files over ad-hoc process reasonin
 
 ```markdown
 <!-- AGENT_REVIEW_RESULT -->
-<!-- agent: codex -->
+<!-- agent: {advisor_agent} -->
 <!-- timestamp: 2026-02-11T14:30:00Z -->
 <!-- duration_seconds: 12.40 -->
 <!-- exit_code: 0 -->
@@ -124,8 +127,8 @@ Runtime-enabled skills should prefer metadata files over ad-hoc process reasonin
 - `session_id` line is included only when captured (omitted if null)
 
 **Behavior:**
-- If agent writes to output file natively (codex `-o`): runner reads, wraps with metadata, rewrites
-- Runner always captures stdout and wraps the result file with metadata markers (codex natively writes via `-o`; the runner layers metadata on top).
+- If agent writes to output file natively (advisor native output): runner reads, wraps with metadata, rewrites
+- Runner always captures stdout and wraps the result file with metadata markers (when an advisor natively writes via `-o`, the runner layers metadata on top).
 - Result file always has metadata markers regardless of agent type
 
 **Contract:** The result file is the runner's responsibility. Skills MUST NOT write or rewrite result files. Skills read the result file after the runner exits. The only file the skill writes is `{identifier}_session.json` (extracted from result file `<!-- session_id: ... -->` metadata line).
@@ -144,9 +147,9 @@ Runtime-enabled skills should prefer metadata files over ad-hoc process reasonin
 
 External agents run in non-interactive mode (`exec` / `-p`) with tool access for analysis:
 
-| Level | Codex |
+| Level | Advisor CLI |
 |-------|-------|
-| **CLI flags** | `--full-auto` (full tool access: read/write files, run commands, internet) |
+| **CLI flags** | Registry-defined non-interactive flags for analysis |
 | **Output** | `--color never` (clean log) + `-o {file}` (final result to file) + `-C {cwd}` (working dir) |
 | **Prompt** | Focus on analysis; may write trivial fixes |
 
@@ -161,7 +164,7 @@ External agents run in non-interactive mode (`exec` / `-p`) with tool access for
 | Log file growing (mtime changes) | Healthy — agent actively working |
 | Log static for 3+ min | Possibly stuck — read last 20 lines to diagnose |
 | Agent exceeds hard timeout | Runner kills process, returns `success: false, error: "Hard timeout"` |
-| Agent exited with error (non-zero) | Mark as FAILED, use other agent's results |
+| Agent exited with error (non-zero) | Mark as FAILED, use available results |
 | Agent process crashed/disappeared | Mark as FAILED |
 
 **FORBIDDEN:** Using TaskStop to kill agent background tasks. The runner handles timeout internally.
@@ -176,7 +179,7 @@ External agents may have MCP servers (Linear, GitHub, etc.) configured in their 
 
 | Failure Mode | Symptom | Handling |
 |-------------|---------|----------|
-| MCP auth expired | Agent exits non-zero immediately (< 5s) | Treat as agent crash; use other agent's results |
+| MCP auth expired | Agent exits non-zero immediately (< 5s) | Treat as agent crash; use available results |
 | MCP server timeout | Agent hangs during init, eventually crashes | Same — crash handling via Fallback Rules |
 | MCP tool call fails mid-review | Agent may skip tool or error in output | Agent prompted to degrade gracefully (use local files) |
 
@@ -184,11 +187,11 @@ External agents may have MCP servers (Linear, GitHub, etc.) configured in their 
 1. **Prompt-level:** Templates instruct agents to use local alternatives when Linear/tools unavailable
 2. **Runner-level:** Non-zero exit code captured; `success: false` returned to skill
 3. **Skill-level:** Fallback Rules apply — one agent crash does not block the review
-4. **User-level:** If the advisor agent crashes on MCP, skill returns SKIPPED; user should check agent CLI MCP configuration (`~/.codex/config.json`)
+4. **User-level:** If the advisor agent crashes on MCP, skill returns SKIPPED; user should check the advisor CLI MCP configuration
 
 ## Fallback Rules
 
-Per `shared/references/agent_review_workflow.md` Fallback Rules section. For non-review agent invocations (200/300 groups): on failure, fall back to Opus (native Claude).
+Per `shared/references/agent_review_workflow.md` Fallback Rules section. For non-review agent invocations (200/300 groups): on failure, fall back to host self-review.
 
 ## Integration Points in Orchestrator Lifecycle
 
@@ -197,7 +200,7 @@ Phase 1: DISCOVERY
 Phase 2: PLAN ← external agent for analysis/decomposition
 Phase 3: MODE DETECTION
 Phase 4: AUTO-FIX ← 20 criteria, Penalty Points = 0 (story validation)
-Phase 5: MERGE ← inline agent review results + Claude's own findings
+Phase 5: MERGE ← inline agent review results + host findings
 Phase 6: DELEGATE
 Phase 7: AGGREGATE
 Phase 8: REPORT
@@ -211,7 +214,7 @@ Phase 8: REPORT
 
 **HARD RULES:**
 1. **Check `{project_root}/.hex-skills/environment_state.json` disabled flags BEFORE running health-check.** Disabled agents are never probed. Validate against the shared environment-state contract first. **File not found → proceed with all agents (default=enabled).**
-2. **ALWAYS execute the agent runner health check**. Runtime-enabled skills should use `node shared/agents/agent_runner.mjs --health-check --json`; manual skills may use text mode.
+2. **ALWAYS execute the agent runner health check**. Runtime-enabled skills should use `node shared/agents/agent_runner.mjs --health-check --json --host-agent {host_agent}`; manual skills may use text mode.
 3. **Do NOT invent alternative checks** (e.g., `where`, `which`, `--version`, PATH lookup). ONLY the command above is valid.
 4. **Only command output determines availability.** Do NOT reason about file existence, environment, or installation — run the command and read its output.
 5. **If command fails** (file not found, import error, any exception) → treat as "all agents unavailable" → return SKIPPED verdict.
@@ -226,35 +229,35 @@ Phase 8: REPORT
 
 ## Background Execution + Process-as-Arrive Pattern
 
-Codex runs as a background task. Claude continues foreground work; when the result file is ready, it proceeds to Critical Verification. If Codex fails, fall back to Opus self-review.
+The advisor runs as a background task. The host continues foreground work; when the result file is ready, it proceeds to Critical Verification. If the advisor fails, fall back to host self-review.
 
 ```
-                +-- Codex (background) --> completes --> Step 6: Verify --+
+                +-- Advisor (background) --> completes --> Step 6: Verify --+
 Prompt ------+                                                             +--> Accept verified suggestions
                                                            fails --> Self-Review fallback
 ```
 
 **Rules:**
-1. Launch Codex as a background Bash task (`run_in_background=true`) via `agent_runner.mjs` — ALL modes, including Plan Mode (agents are external OS processes, not affected by Claude Code plan mode)
-2. Codex receives the assembled prompt with `--output-file`
-3. When Codex completes (background task notification): read result file, proceed to Critical Verification
-4. Codex has a **hard timeout** (30 min default) — runner kills process at limit (see Agent Timeout Policy)
-5. If Codex fails: log failure, fall back to Opus self-review
+1. Launch advisor as a background Bash task (`run_in_background=true`) via `agent_runner.mjs` — ALL modes, including read-only plan modes (agents are external OS processes, not affected by the host's planning state)
+2. Advisor receives the assembled prompt with `--output-file`
+3. When advisor completes (background task notification): read result file, proceed to Critical Verification
+4. Advisor has a **hard timeout** (30 min default) — runner kills process at limit (see Agent Timeout Policy)
+5. If advisor fails: log failure, fall back to host self-review
 6. Log all attempts for user visibility (agent name, duration, suggestion count)
 
 ## Critical Verification
 
-Claude MUST independently verify each agent suggestion. Do NOT trust blindly.
+The host agent MUST independently verify each agent suggestion. Do NOT trust blindly.
 
 ```
-Agent Suggestion --> Claude Evaluation --> AGREE? --> Accept as-is
+Agent Suggestion --> Host Evaluation --> AGREE? --> Accept as-is
                                       --> REJECT? --> Reject with reason (final)
 ```
 
 **Verification criteria:**
 - Is the suggestion factually correct? (check code, docs, standards)
 - Does it align with project architecture and conventions?
-- Does Claude's own analysis support or contradict the suggestion?
+- Does the host agent's own analysis support or contradict the suggestion?
 
 | Evaluation | Action |
 |------------|--------|
@@ -288,7 +291,7 @@ Standard steps before launching agents (performed inside agent review workers):
 ├── context/                                         # Materialized files for agent access (context, plans)
 │   ├── arch-proposal_context.md
 │   └── velvet-giggling-acorn_plan.md
-├── codex/
+├── {advisor_agent}/
 │   ├── arch-proposal_contextreview_prompt.md        # Per-agent prompt (differs by {focus_hint})
 │   ├── arch-proposal_session.json                   # Session tracking for resume
 │   ├── arch-proposal_contextreview_result.md        # Result (written by agent_runner.mjs)
@@ -302,7 +305,7 @@ Standard steps before launching agents (performed inside agent review workers):
 - Full audit trail of what was asked and what was returned
 - Debug agent issues by comparing prompt vs result
 - Track review history across multiple Stories
-- Per-agent isolation — easy to audit Codex quality and refinement runs
+- Per-agent isolation — easy to audit advisor quality and refinement runs
 - Review artifacts show verification reasoning for transparency
 
 ## Verdict Escalation Rules
@@ -320,10 +323,10 @@ Standard steps before launching agents (performed inside agent review workers):
 | Embed full story/task content in prompt | Pass references (Linear URLs / file paths) |
 | Delete review artifacts after agents complete | Persist per-agent prompts and results in `.hex-skills/agent-review/{agent}/` |
 | Write/rewrite result files from skill | Result files are runner's responsibility; skill only reads them and writes `_session.json` |
-| Trust agent output blindly | Claude critically verifies each suggestion independently |
+| Trust agent output blindly | The host critically verifies each suggestion independently |
 | Use agents for project file writes | Agents write only to `-o` output file; analysis-only |
 | Chain multiple agent calls | One call per task; use `--resume-session` only for context continuity |
-| Hard-depend on agent availability | Always have Opus fallback |
+| Hard-depend on agent availability | Always have host self-review fallback |
 | Run health check separately from agent launch | Health check is first step of inline agent review |
 | Kill agent tasks with TaskStop | Runner handles hard timeout internally; TaskStop is forbidden |
 | Assume `proc.kill()` kills child processes | Runner uses process tree kill (`taskkill /T` on Windows, `os.killpg` on Unix) |

@@ -464,7 +464,7 @@ Before adding new tests, update existing tests that might have broken due to log
 **Why Safe to Remove:**
 - [Justification: functionality now covered by new implementation]
 - [Verification: tests confirm new code provides same behavior]
-- [Risk assessment: Low - deprecated since [date/version]]
+- [Risk assessment: Low - unsupported since [date/version]]
 
 **Verification:**
 - [ ] All tests pass after removal
@@ -477,7 +477,7 @@ Before adding new tests, update existing tests that might have broken due to log
 
 **What to Remove:**
 - [Backward compatibility shims no longer needed]
-- [Deprecated patterns replaced by new approach]
+- [Unsupported patterns replaced by new approach]
 
 **Why Safe to Remove:**
 - [Reason: all clients migrated to new API]
@@ -487,7 +487,7 @@ Before adding new tests, update existing tests that might have broken due to log
 - [ ] Tests confirm removal safe
 - [ ] Documentation updated (no references to old pattern)
 
-### Deprecated Patterns
+### Unsupported Patterns
 
 **Patterns to Replace:**
 
@@ -509,7 +509,7 @@ Before adding new tests, update existing tests that might have broken due to log
 - [ ] All instances found (grep/search)
 - [ ] All replaced with new pattern
 - [ ] Tests updated to use new pattern
-- [ ] Old pattern documented as deprecated (if can't remove immediately)
+- [ ] Old pattern documented as unsupported (if can't remove immediately)
 
 ### Dead Code
 

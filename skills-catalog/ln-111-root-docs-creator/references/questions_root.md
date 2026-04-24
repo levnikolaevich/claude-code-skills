@@ -1,9 +1,9 @@
 # Root Documentation Questions (Q1-Q22)
 
-<!-- SCOPE: Interactive questions for 6 root docs (AGENTS.md canonical, CLAUDE.md + GEMINI.md @AGENTS.md import stubs, docs/README.md, documentation_standards.md, principles.md) ONLY. -->
+<!-- SCOPE: Interactive questions for root docs (AGENTS.md canonical, CLAUDE.md @AGENTS.md import stub, docs/README.md, documentation_standards.md, principles.md) ONLY. -->
 <!-- DO NOT add here: question logic → ln-111-root-docs-creator SKILL.md, other doc questions → questions_core.md, questions_backend.md -->
 
-**Purpose:** Validation questions for 6 root documentation files.
+**Purpose:** Validation questions for root documentation files.
 
 **Format:** Document -> Rules -> Questions -> Validation Heuristics -> Auto-Discovery
 
@@ -15,7 +15,6 @@
 |----------|-----------|----------------|----------|
 | [AGENTS.md](#agentsmd) | Q1-Q6 (6) | Medium | Critical |
 | [CLAUDE.md](#claudemd) | Q6a (stub shape) | None | Critical |
-| [GEMINI.md](#geminimd) | Q6b (stub shape) | None | Critical |
 | [docs/README.md](#docsreadmemd) | Q7-Q13 (7) | Low | High |
 | [docs/documentation_standards.md](#docsdocumentation_standardsmd) | Q14-Q16 (3) | None | Medium |
 | [docs/principles.md](#docsprinciplesmd) | Q17-Q22 (6) | None | High |
@@ -34,7 +33,7 @@ Q6a and Q6b are sub-questions of the stub-shape check (not separate full questio
 - Must have SCOPE tag in first 10 lines
 - Must have the standard header metadata (`DOC_KIND`, `DOC_ROLE: canonical`, `READ_WHEN`, `SKIP_WHEN`, `PRIMARY_SOURCES`)
 - Must link to docs/README.md
-- Canonical root (DAG origin); CLAUDE.md and GEMINI.md re-use this content via `@AGENTS.md` imports
+- Canonical root (DAG origin); CLAUDE.md re-uses this content via `@AGENTS.md` import
 
 ---
 
@@ -176,49 +175,6 @@ Q6a and Q6b are sub-questions of the stub-shape check (not separate full questio
 - No content that duplicates AGENTS.md sections
 
 <!-- DOCUMENT_END: CLAUDE.md -->
-
----
-
-<!-- DOCUMENT_START: GEMINI.md -->
-## GEMINI.md
-
-**File:** GEMINI.md (project root) — Gemini CLI stub that imports AGENTS.md
-**Target Shape:** `@AGENTS.md` import + `## Gemini CLI` harness delta
-
-**Rules:**
-- Has SCOPE tag in HTML comment at top
-- Has the standard header metadata (`DOC_KIND`, `DOC_ROLE: derived`, `READ_WHEN`, `SKIP_WHEN`, `PRIMARY_SOURCES: AGENTS.md`)
-- Contains exactly one `@AGENTS.md` line (Gemini CLI natively supports the same `@file.md` import syntax with 5-hop recursion)
-- Has a `## Gemini CLI` section with harness-specific delta (e.g., context-compression preservation order, `/memory show` and `/memory reload` pointers)
-- ≤50 lines total, ideally ≤20
-- No content that duplicates AGENTS.md sections
-
----
-
-<!-- QUESTION_START: 6b -->
-### Question 6b: Is GEMINI.md a valid Gemini CLI import stub?
-
-**Expected Answer:** Confirm the file matches the stub shape documented in `skills-catalog/shared/references/agent_instructions_writing_guide.md`
-**Target Shape:** `@AGENTS.md` import + `## Gemini CLI` delta
-
-**Validation Heuristics:**
-- `grep -c '^@AGENTS\.md$' GEMINI.md` returns exactly 1
-- Has `## Gemini CLI` heading
-- Total line count ≤50 (WARN 21-50, PASS ≤20)
-- No section headings that duplicate AGENTS.md
-
-**Auto-Discovery:** None (structural check)
-<!-- QUESTION_END: 6b -->
-
----
-
-**Overall File Validation:**
-- Exactly one `^@AGENTS\.md$` line
-- Has `## Gemini CLI` section
-- ≤50 lines
-- No content that duplicates AGENTS.md sections
-
-<!-- DOCUMENT_END: GEMINI.md -->
 
 ---
 
@@ -517,9 +473,5 @@ Q6a and Q6b are sub-questions of the stub-shape check (not separate full questio
 
 ---
 
-**Total Questions:** 22 (Q1-Q6 for AGENTS.md, Q6a/Q6b for CLAUDE.md and GEMINI.md stub shape, Q7-Q13 for docs/README.md, Q14-Q16 for documentation_standards.md, Q17-Q22 for principles.md)
-**Total Documents:** 6
-
----
 **Version:** 1.0.0
 **Last Updated:** 2025-12-19

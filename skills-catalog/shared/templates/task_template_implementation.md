@@ -91,7 +91,7 @@
 
 ### Known Limitations
 - [Limitation 1: e.g., no async support, memory constraints] - [workaround or mitigation if any]
-- [Limitation 2: e.g., compatibility issue, deprecated feature] - [impact on implementation]
+- [Limitation 2: e.g., compatibility issue, unsupported feature] - [impact on implementation]
 
 ### Error Handling Strategy
 

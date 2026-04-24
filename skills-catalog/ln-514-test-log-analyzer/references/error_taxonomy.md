@@ -14,7 +14,7 @@ Reference for error classification, detection patterns, severity rules, and log 
 | VALIDATION | MEDIUM | `422`, `400`, `validation error`, `invalid input`, `schema mismatch`, `BadRequest` |
 | CONFIG | MEDIUM | `missing env`, `config not found`, `undefined variable`, `ENOENT` for config files, `KeyError` for settings |
 | RESOURCE | HIGH | `out of memory`, `OOM`, `disk full`, `EMFILE`, `too many open files`, `heap out of memory` |
-| DEPRECATION | LOW | `deprecated`, `will be removed`, `use X instead`, `DeprecationWarning` |
+| UNSUPPORTED_API | LOW | `unsupported`, `will be removed`, `use X instead`, `UnsupportedApiWarning` |
 
 ## 2. Language-Specific Stack Trace Patterns
 
@@ -109,7 +109,7 @@ Sources: Google Cloud LogSeverity (9 levels), OpenTelemetry Logs spec (severity 
 
 | Criterion | Value |
 |-----------|-------|
-| Content | One-time issues (startup only), potential problems, deprecated usage, resource exhaustion approaching |
+| Content | One-time issues (startup only), potential problems, unsupported usage, resource exhaustion approaching |
 | Volume (prod) | RARE — each WARNING must be actionable |
 | Noise threshold | >1% of all logs = too many; repeated same condition = flooding |
 | Required context | resource_name, threshold, recommendation |

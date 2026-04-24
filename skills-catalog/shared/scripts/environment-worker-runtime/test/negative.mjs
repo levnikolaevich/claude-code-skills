@@ -45,7 +45,7 @@ try {
         throw new Error(`Expected summary kind failure, got: ${JSON.stringify(wrongSummaryKind)}`);
     }
 
-    const firstStarted = run(["start", "--project-root", projectRoot, "--skill", "ln-013", "--identifier", "targets-gemini", "--manifest-file", manifestPath]);
+    const firstStarted = run(["start", "--project-root", projectRoot, "--skill", "ln-013", "--identifier", "targets-claude", "--manifest-file", manifestPath]);
     const secondStarted = run(["start", "--project-root", projectRoot, "--skill", "ln-013", "--identifier", "targets-codex", "--manifest-file", manifestPath]);
     const ambiguousStatus = run(["status", "--project-root", projectRoot, "--skill", "ln-013"], { allowFailure: true });
     if (!String(ambiguousStatus.error || "").includes("Multiple active ln-013 runs found")) {

@@ -27,9 +27,9 @@ Stage 1 (parallel):
 Stage 2 (after merge):
 4. `final_sweep`
 
-`generic_quality` is not included — it is covered by the Phase 2 Codex review.
+`generic_quality` is not included — it is covered by the Phase 2 advisor review.
 
-All 4 perspectives are mandatory when Codex is available. Each must appear in the trace; failed sessions must include the error reason.
+All 4 perspectives are mandatory when an advisor is available. Each must appear in the trace; failed sessions must include the error reason.
 
 ## Valid Skip Reasons
 

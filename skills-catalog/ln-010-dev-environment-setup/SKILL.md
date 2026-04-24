@@ -31,14 +31,14 @@ MCP servers are targets of this workflow, not a prerequisite for starting it. If
 
 - First-time environment setup
 - Agent/MCP drift after installs or updates
-- Config sync drift across Claude, Gemini, Codex
+- Config sync drift across Claude and Codex
 - Instruction file audit or repair
 
 ## Inputs
 
 | Parameter | Required | Default | Description |
 |-----------|----------|---------|-------------|
-| `targets` | No | `both` | `gemini`, `codex`, or `both` |
+| `targets` | No | `both` | `claude`, `codex`, or `both` |
 | `dry_run` | No | `false` | Plan without mutating |
 | `apply_ide_override` | No | `false` | Pass-through to ln-012 Phase 6b. When `true`, ln-012 may write `claudeCode.initialPermissionMode` and `claudeCode.allowDangerouslySkipPermissions` to Cursor / VSCode user settings after explicit user consent. When `false` (default), Phase 6b is detection-only and reports drift without mutating IDE settings. |
 
@@ -184,7 +184,7 @@ Do not mix these layers.
 |-------|--------|---------|
 | 3 | `ln-011-agent-installer` | Install or update CLI agents |
 | 3 | `ln-012-mcp-configurator` | Configure MCP servers, hooks, permissions, and IDE extension permission mode (Phase 6b) |
-| 3 | `ln-013-config-syncer` | Sync config to Gemini and repair Codex skill-root mapping + MCP state |
+| 3 | `ln-013-config-syncer` | Align Claude and Codex config, Codex skill-root mapping, and MCP state |
 | 3 | `ln-014-agent-instructions-manager` | Create and audit instruction files |
 
 ```text

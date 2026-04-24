@@ -59,7 +59,7 @@ Evaluate implementation risks that could cause production incidents:
 - **Data loss:** Destructive operations without safeguards (soft-delete, backups)
 - **Failure modes:** What happens when dependencies fail (timeout, unavailable, corrupt response)
 - **Rollback difficulty:** Can deployment be reverted safely? Irreversible migrations?
-- **Dependency risks:** Single points of failure, version pinning, deprecated libraries
+- **Dependency risks:** Single points of failure, version pinning, unsupported libraries
 - **Production edge cases:** Concurrency, race conditions, resource exhaustion, unexpected input
 
 ## alt_title

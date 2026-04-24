@@ -193,8 +193,8 @@ echo ""
 # ── CHECK 13: Platform API compatibility ────────────────────────────
 echo "=== CHECK 13: Platform API compatibility ==="
 for f in $SCOPE; do
-  grep -n 'Agent(resume:' "$f" && fail "deprecated Agent(resume:) in $f — use SendMessage({to: agentId})"
-  grep -nE 'effort.*"max"|effort: max' "$f" && fail "deprecated effort \"max\" in $f — use low/medium/high"
+  grep -n 'Agent(resume:' "$f" && fail "unsupported Agent(resume:) in $f — use SendMessage({to: agentId})"
+  grep -nE 'effort.*"max"|effort: max' "$f" && fail "unsupported effort \"max\" in $f — use low/medium/high"
 done
 echo "DONE"
 echo ""

@@ -12,7 +12,7 @@ Skills collection for Codex with config-driven Agile task management (Linear or 
 |------|---------------|---------|
 | **Read Skill Contract first** | Before editing or reviewing skills | `cat skills-catalog/shared/references/skill_contract.md` - enforceable `SKILL.md` contract for structure, delegation, and coupling |
 | **Read Architecture Guide second** | Before designing or refactoring skills | `cat docs/architecture/SKILL_ARCHITECTURE_GUIDE.md` - maintainer reference for hierarchy, heuristics, token efficiency, and red flags |
-| **MANDATORY READ pattern** | File references in `SKILL.md` | Use `**MANDATORY READ:** Load {file}` for execution-critical refs in `SKILL.md`. Passive refs (`See`, `Per`, `Follows`) are not followed by agents. `@path` imports are for harness memory/context files (`CLAUDE.md`, `GEMINI.md`, `ANTIGRAVITY.md`), not the canonical `SKILL.md` loading contract. Group multiple targets into one block at the section start |
+| **MANDATORY READ pattern** | File references in `SKILL.md` | Use `**MANDATORY READ:** Load {file}` for execution-critical refs in `SKILL.md`. Passive refs (`See`, `Per`, `Follows`) are not followed by agents. `@path` imports are for harness memory/context files (`CLAUDE.md`), not the canonical `SKILL.md` loading contract. Group multiple targets into one block at the section start |
 | **Path Resolution** | File paths in `SKILL.md` | Relative to skills repo root, not target project. Every `SKILL.md` with file refs includes `> **Paths:**` after frontmatter |
 | **Sequential Numbering** | Phases, sections, steps | `1, 2, 3, 4` not `1, 1.5, 2`. Exception: `4a`, `4b` for create/replan splits |
 | **Docs in English** | All documentation | Stories and Tasks can be EN or RU regardless of provider |

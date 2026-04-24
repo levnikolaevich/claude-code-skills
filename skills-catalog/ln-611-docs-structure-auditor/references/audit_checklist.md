@@ -172,7 +172,7 @@ Detect staleness signals in documentation. Deep fact-checking (paths, versions, 
 
 ### Must Pass
 - [ ] No inline dates older than 6 months (except CHANGELOG, version history)
-- [ ] No references to known deprecated tools/APIs (e.g., "Python 2", "jQuery 1.x", EOL frameworks)
+- [ ] No references to known unsupported tools/APIs (e.g., "Python 2", "jQuery 1.x", EOL frameworks)
 - [ ] No TODO/FIXME markers in published documentation
 - [ ] No placeholder text left in place ("Lorem ipsum", "TBD", "Coming soon", "XXX")
 
@@ -183,13 +183,13 @@ Detect staleness signals in documentation. Deep fact-checking (paths, versions, 
 
 ### Detection Patterns
 - Dates in format YYYY-MM-DD or Month YYYY older than 6 months
-- Known deprecated tech: Python 2, Node 14/16, Angular.js, jQuery 1.x, Webpack 4
+- Known unsupported tech: Python 2, Node 14/16, Angular.js, jQuery 1.x, Webpack 4
 - TODO/FIXME/XXX markers in non-task documentation
 - "TBD", "Coming soon", "placeholder", "Lorem ipsum"
 
 ### Scoring
 - 10/10: No staleness signals detected
-- -1 per stale date or deprecated reference
+- -1 per stale date or unsupported reference
 - -2 per TODO/FIXME in published docs
 - -1 per missing Maintenance section in operational docs
 
@@ -201,7 +201,7 @@ Detect staleness signals in documentation. Deep fact-checking (paths, versions, 
 - [ ] No "History" or "Changelog" sections in docs (use CHANGELOG.md)
 - [ ] No "was previously", "used to be" language
 - [ ] No commented-out documentation
-- [ ] No deprecated feature documentation without removal date
+- [ ] No unsupported feature documentation without removal date
 
 ### Should Pass
 - [ ] No TODO comments in docs older than 30 days
@@ -219,7 +219,7 @@ Detect staleness signals in documentation. Deep fact-checking (paths, versions, 
 ### Scoring
 - 10/10: Current state only
 - -1 per legacy note
-- -2 per deprecated section kept
+- -2 per unsupported section kept
 - -3 per major outdated documentation
 
 ---

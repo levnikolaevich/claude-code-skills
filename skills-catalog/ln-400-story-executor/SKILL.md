@@ -161,7 +161,7 @@ Used only for `Todo` groups with more than one task.
 Runs once when all tasks are Done. Delegates to an external agent to trace the user scenario end-to-end against implemented code. The executor has completion bias after shepherding tasks through implementation — an external agent has no investment in the story being done.
 
 1. Load the Story ACs and the traceability table (from `.hex-skills/task-planning/{identifier}_traceability.md`). If the traceability artifact is missing, reconstruct an equivalent trace from the Story ACs and task Implementation Plans — do not fail scenario validation solely because the planner artifact is absent.
-2. Run agent health check. If an agent is available (prefer `gemini-review`, fallback `codex-review`):
+2. Run agent health check. If an advisor agent is available:
    a. Build validation prompt from `shared/agents/prompt_templates/scenario_validator.md`
    b. Fill with: Story ACs, traceability table, architecture context, project root path (agent reads code directly)
    c. Save prompt to `.hex-skills/story-execution/{identifier}_scenario_prompt.md`

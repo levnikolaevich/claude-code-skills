@@ -50,7 +50,7 @@ Unified research methodology for all skills performing MCP Ref / Context7 resear
 
 **Version notation:** Use `"v3.12.1 (LTS)"` or `"v2.5.0 (stable)"`. Never `"latest"` or `"v3.x"`.
 
-**Deprecation check:** If library has deprecated methods, list in "Key constraints". If library is end-of-life, suggest alternatives.
+**Unsupported API check:** If library has unsupported methods, list in "Key constraints". If library is end-of-life, suggest alternatives.
 
 ---
 

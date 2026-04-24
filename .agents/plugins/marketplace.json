@@ -1,0 +1,92 @@
+{
+  "name": "levnikolaevich-skills-marketplace",
+  "interface": {
+    "displayName": "Lev Nikolaevich Skills Marketplace"
+  },
+  "plugins": [
+    {
+      "name": "agile-workflow",
+      "source": {
+        "source": "local",
+        "path": "./plugins/agile-workflow"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    },
+    {
+      "name": "documentation-pipeline",
+      "source": {
+        "source": "local",
+        "path": "./plugins/documentation-pipeline"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    },
+    {
+      "name": "codebase-audit-suite",
+      "source": {
+        "source": "local",
+        "path": "./plugins/codebase-audit-suite"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    },
+    {
+      "name": "project-bootstrap",
+      "source": {
+        "source": "local",
+        "path": "./plugins/project-bootstrap"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    },
+    {
+      "name": "optimization-suite",
+      "source": {
+        "source": "local",
+        "path": "./plugins/optimization-suite"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    },
+    {
+      "name": "community-engagement",
+      "source": {
+        "source": "local",
+        "path": "./plugins/community-engagement"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    },
+    {
+      "name": "setup-environment",
+      "source": {
+        "source": "local",
+        "path": "./plugins/setup-environment"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

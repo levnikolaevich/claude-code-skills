@@ -194,7 +194,7 @@ When comment says one thing and code does another:
 | TODO without context | `// TODO: fix this` | No actionable info |
 | Old TODO with dates | `// TODO (2023-01): cleanup` | Clearly abandoned |
 | Commented-out code | `// oldFunction()` | Git has history |
-| Deprecated notes | `// DEPRECATED: use newFunc` | Should be deleted, not noted |
+| Unsupported notes | `// DEPRECATED: use newFunc` | Should be deleted, not noted |
 | "Temporary" markers | `// TEMP: workaround` | Often permanent |
 
 ### Keep Only If

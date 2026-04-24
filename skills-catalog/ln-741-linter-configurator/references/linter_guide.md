@@ -28,7 +28,7 @@ This skill always installs the **latest available versions** of all tools at the
 |---------|-------|-----------|
 | Config format | `eslint.config.ts` | Type-safe config, modern standard (ESLint 9.9+) |
 | TypeScript preset | `recommendedTypeChecked` + `stylisticTypeChecked` | Official recommended start for typed projects |
-| Parser config | `projectService` with `allowDefaultProject` | Modern approach (typescript-eslint v8+), replaces deprecated `project: true` |
+| Parser config | `projectService` with `allowDefaultProject` | Modern approach (typescript-eslint v8+), replaces unsupported `project: true` |
 | Code quality | `eslint-plugin-unicorn` | Active maintenance (Sindre Sorhus), 134+ rules for modern patterns |
 | Prettier integration | `eslint-config-prettier/flat` | Correct import path for flat config format |
 
@@ -96,7 +96,7 @@ Both are functionally identical. The template uses `tseslint.config()` for wider
 
 ### Unicorn Config Name
 
-Use `unicorn.configs.recommended` (not `unicorn.configs["flat/recommended"]` — the `flat/` prefix is deprecated).
+Use `unicorn.configs.recommended` (not `unicorn.configs["flat/recommended"]` — the `flat/` prefix is unsupported).
 
 ### Optional Advanced Tools
 
@@ -176,7 +176,7 @@ Integrates with `.editorconfig` and supports format-on-save in VS Code/Rider.
 | Rule | Category | What It Catches |
 |------|----------|-----------------|
 | E, F | Core | Syntax errors, undefined names, unused imports |
-| UP | Modernization | Deprecated syntax that has newer alternatives |
+| UP | Modernization | Unsupported syntax that has newer alternatives |
 | B | Bugs | Common bug patterns (mutable default args, etc.) |
 | SIM | Simplification | Code that can be simplified |
 | I | Imports | Import order and grouping |

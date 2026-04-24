@@ -64,7 +64,7 @@ TodoWrite format (mandatory):
 - `Generate documentation updates`
 - `Apply accepted low-risk repairs`
 - `Sync agents and merge all evidence`
-- `Run refinement (MANDATORY in ALL modes when Codex available — do NOT skip)`
+- `Run refinement (MANDATORY in ALL modes when advisor available — do NOT skip)`
 - `Compute verdict and write review output`
 - `Verify runtime cleanup and self-check`
 
@@ -108,7 +108,7 @@ Phase policy:
 - `cleanup_phase = PHASE_9_SELF_CHECK`
 - `self_check_phase = PHASE_9_SELF_CHECK`
 - `agent_resolve_before = [PHASE_6_MERGE]`
-- `required_phases_when_codex_available = [PHASE_7_REFINEMENT]`
+- `required_phases_when_advisor_available = [PHASE_7_REFINEMENT]`
 
 ## Parallelism Rules
 
@@ -250,29 +250,29 @@ node shared/scripts/evaluation-runtime/cli.mjs sync-agent --skill ln-310 --ident
 ### Phase 7: Refinement
 
 > **NEVER SKIP THIS PHASE.** Phase 7 applies to ALL modes: `story`, `plan_review`, `context`.
-> The ONLY valid skip reason is Codex unavailable in health check.
+> The ONLY valid skip reason is no advisor available in health check.
 > Mode is NOT a skip reason. Complexity is NOT a skip reason. Time is NOT a skip reason.
-> If you are about to checkpoint Phase 7 without running ln-316 — STOP. You are making an error.
+> If you are about to checkpoint Phase 7 without running ln-316 while an advisor is available — STOP. You are making an error.
 
 | Mode | Phase 7 required? | Skip allowed? |
 |------|-------------------|---------------|
-| `story` | YES | NO (only if Codex unavailable) |
-| `plan_review` | YES | NO (only if Codex unavailable) |
-| `context` | YES | NO (only if Codex unavailable) |
+| `story` | YES | NO (only if no advisor available) |
+| `plan_review` | YES | NO (only if no advisor available) |
+| `context` | YES | NO (only if no advisor available) |
 
-Phase 7 is MANDATORY when Codex is available. The coordinator MUST NOT checkpoint Phase 7 without a recorded `review-refinement` worker summary from ln-316. The runtime `advance` command will reject the transition if Codex was available in health check but no refinement summary exists.
+Phase 7 is MANDATORY when an advisor is available. The coordinator MUST NOT checkpoint Phase 7 without a recorded `review-refinement` worker summary from ln-316. The runtime `advance` command will reject the transition if an advisor was available in health check but no refinement summary exists.
 
 Run `ln-316-review-refinement-worker`. Refinement uses a 2-stage state machine:
-- Stage 1: 3 parallel Codex sessions (dry_run_executor, new_dev_tester, adversarial_reviewer)
-- Stage 2: 1 sequential Codex session (final_sweep) after merging Stage 1 results
+- Stage 1: 3 parallel advisor sessions (dry_run_executor, new_dev_tester, adversarial_reviewer)
+- Stage 2: 1 sequential advisor session (final_sweep) after merging Stage 1 results
 
 Rules:
 - all 4 perspectives are mandatory
 - Stage 1 runs in parallel, Stage 2 runs after Stage 1 merge
-- each perspective = independent Codex process via `agent_runner.mjs` (NOT Claude sub-agents)
+- each perspective = independent advisor process via `agent_runner.mjs` (NOT host-native sub-agents)
 - every launched process requires cleanup evidence
 - refinement trace is mandatory
-- wait for Codex results via Claude `Monitor` tool with 2-minute cycles
+- wait for advisor results via runtime `sync-agent`; Claude hosts may use `Monitor` for observability
 
 ### Phase 8: Approval
 
@@ -319,7 +319,7 @@ Required checks:
 - [ ] all required worker summaries recorded
 - [ ] all required agents resolved before merge
 - [ ] merge summary exists
-- [ ] refinement trace exists when Codex was available
+- [ ] refinement trace exists when an advisor was available
 - [ ] background cleanup evidence recorded
 - [ ] cleanup verified
 - [ ] coordinator summary recorded
@@ -362,7 +362,7 @@ Recommended payload fields:
 - [ ] Docs, repair, merge, refinement, and approval executed sequentially
 - [ ] All required worker summaries recorded
 - [ ] All required agents resolved before merge
-- [ ] Refinement executed when Codex available; SKIPPED only when Codex unavailable in health check
+- [ ] Refinement executed when advisor available; SKIPPED only when no advisor available in health check
 - [ ] Cleanup evidence recorded and verified
 - [ ] `evaluation-coordinator` summary written
 - [ ] Runtime completed successfully

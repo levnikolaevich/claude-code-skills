@@ -50,7 +50,7 @@ export default tseslint.config(
   },
 
   // Unicorn: modern JavaScript/TypeScript patterns (134+ rules)
-  // NOTE: use unicorn.configs.recommended (flat/recommended is deprecated)
+  // NOTE: use unicorn.configs.recommended (flat/recommended is unsupported)
   unicorn.configs.recommended,
 
   // Custom rules

@@ -202,7 +202,7 @@ Use `skills-catalog/shared/concise_terms.md` for wording cleanup.
 - [ ] Paths and `MANDATORY READ` usage are correct
 - [ ] Delegation is explicit where required
 - [ ] Worker independence is preserved
-- [ ] No stale or deprecated runtime assumptions remain
+- [ ] No stale or unsupported runtime assumptions remain
 
 ### Design Check
 

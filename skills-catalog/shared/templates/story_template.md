@@ -119,7 +119,7 @@ Tasks created separately (child tasks of this Story):
 
 **Key constraints:**
 - [Constraint 1: e.g., no async support, memory limitations, multi-process caveats]
-- [Constraint 2: e.g., compatibility requirements, deprecated features]
+- [Constraint 2: e.g., compatibility requirements, unsupported features]
 
 **Standards compliance:**
 - [Standard/RFC]: [how Story complies - brief description, e.g., "RFC 6749 OAuth 2.0 - uses authorization code flow"]

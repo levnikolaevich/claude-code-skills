@@ -33,7 +33,7 @@ For skill self-audit: `shared/references/meta_analysis_protocol.md` §7. For mul
 
 `$ARGUMENTS`:
 - (empty) — analyze current session (conversation context)
-- `recent` — scan latest JSONL session per agent (Claude, Codex, Gemini)
+- `recent` — scan latest JSONL session per agent (Claude, Codex)
 - `{skill-name}` — focus analysis on that skill's execution within the session
 
 `hex-line` is an optional accelerator for large local session logs and repo files. If MCP is unavailable, continue with built-in `Read/Grep/Glob/Bash`; this skill must never block on MCP connectivity.
@@ -87,15 +87,6 @@ echo "## Codex"
 CODEX_LATEST=$(stat -c '%Y %n' ~/.codex/sessions/????/??/??/rollout-*.jsonl 2>/dev/null | sort -rn | head -1 | cut -d' ' -f2-)
 [ -n "$CODEX_LATEST" ] && echo "  $CODEX_LATEST ($(wc -l < "$CODEX_LATEST") lines)" || echo "  No sessions found"
 
-echo "## Gemini CLI"
-# JSON sessions only (Linux/macOS/Windows)
-GEMINI_LATEST=$(stat -c '%Y %n' ~/.gemini/tmp/*/chats/session-*.json 2>/dev/null | sort -rn | head -1 | cut -d' ' -f2-)
-[ -n "$GEMINI_LATEST" ] && echo "  $GEMINI_LATEST" || echo "  No sessions found"
-
-echo "## Antigravity"
-# Antigravity stores implicit sessions as protobuf under ~/.gemini/antigravity/implicit/*.pb
-ANTIGRAVITY_LATEST=$(stat -c '%Y %n' ~/.gemini/antigravity/implicit/*.pb 2>/dev/null | sort -rn | head -1 | cut -d' ' -f2-)
-[ -n "$ANTIGRAVITY_LATEST" ] && echo "  $ANTIGRAVITY_LATEST (note: .pb files are protobuf, not grep-parseable)" || echo "  No sessions found"
 ```
 
 ### Extract raw data from JSONL session

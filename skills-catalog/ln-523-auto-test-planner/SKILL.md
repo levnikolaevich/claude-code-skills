@@ -134,7 +134,7 @@ Generates complete test task per `test_task_template.md` (11 sections):
 
 **Section 10:** Documentation Updates (README, CHANGELOG, tests/README, config docs)
 
-**Section 11:** Legacy Code Cleanup (deprecated patterns, backward compat, dead code)
+**Section 11:** Legacy Code Cleanup (unsupported patterns, backward compat, dead code)
 
 Shows preview for review.
 

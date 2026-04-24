@@ -71,7 +71,7 @@ Include as competitor if:
 - Serves **same customer segment**
 
 Exclude:
-- Deprecated or abandoned products
+- Unsupported or abandoned products
 - Enterprise-only without public pricing
 - Open source without commercial support
 - Different market segment

@@ -26,7 +26,7 @@ from app.main import app
 async def client() -> AsyncGenerator[AsyncClient, None]:
     """Async HTTP client bound to FastAPI app.
 
-    Uses ASGITransport (httpx 0.28+) instead of deprecated app= kwarg.
+    Uses ASGITransport (httpx 0.28+) instead of unsupported app= kwarg.
     No real network calls -- all requests go through the ASGI interface.
     """
     transport = ASGITransport(app=app)

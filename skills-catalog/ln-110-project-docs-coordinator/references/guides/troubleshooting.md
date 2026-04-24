@@ -29,7 +29,7 @@ This document provides solutions to common issues when using the x-docs-creator 
 
 ## Issue 3: Auto-Research Returns Outdated Technologies
 
-**Problem**: Phase 3 Stage 2 auto-research recommends outdated or deprecated technologies.
+**Problem**: Phase 3 Stage 2 auto-research recommends outdated or unsupported technologies.
 
 **Solution**:
 - **Verify Research Date**: Skill uses current date (2025) for research

@@ -51,7 +51,7 @@
 
 ### 1.3 API Versioning
 {{API_VERSIONING}}
-<!-- Example: URI versioning (/api/v1/, /api/v2/), Deprecation policy (6 months notice), Backward compatibility for minor updates -->
+<!-- Example: URI versioning (/api/v1/, /api/v2/), Unsupported API policy (6 months notice), Backward compatibility for minor updates -->
 
 ---
 

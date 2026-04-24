@@ -462,7 +462,7 @@ FNV-1a accumulator over all line hashes in the range (little-endian byte feed). 
 <details>
 <summary><b>Does it work without Claude Code?</b></summary>
 
-Yes. hex-line-mcp is a standard MCP server (stdio transport). It works with any MCP-compatible client -- Claude Code, Gemini CLI, Codex CLI, or custom integrations. Hook installation is Claude-specific; Gemini/Codex use MCP Tool Preferences guidance instead.
+Yes. hex-line-mcp is a standard MCP server (stdio transport). It works with any MCP-compatible client -- Claude Code, Codex CLI, or custom integrations. Hook installation is Claude-specific; Codex uses MCP Tool Preferences guidance instead.
 
 </details>
 

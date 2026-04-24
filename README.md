@@ -5,12 +5,12 @@
 ![License](https://img.shields.io/badge/license-MIT-green)
 [![GitHub stars](https://img.shields.io/github/stars/levnikolaevich/claude-code-skills?style=social)](https://github.com/levnikolaevich/claude-code-skills)
 
-> **7 plugins. One marketplace.** Install only what you need and automate your full delivery workflow —
+> **7 plugins. Two native marketplaces.** Install only what you need and automate your full delivery workflow —
 > from project bootstrap to code audit to production quality gates.
 > Works standalone or as a complete Agile pipeline.
 
 > [!TIP]
-> **External AI Review** — Delegate code & story reviews to registry-configured external agents. The bundled registry currently enables Codex for review flows, with Claude Opus fallback when no external agent is available.
+> **Two-Agent AI Review** — Claude and Codex can review each other’s work through host-aware external advisor routing.
 
 [Plugins](#plugins) · [Installation](#installation) · [Quick Start](#quick-start) · [Workflow](#workflow) · [MCP](#mcp-servers-optional) · [AI Review](#ai-review-models-optional) · [FAQ](#faq) · [Full Skill Tree](#whats-inside) · [Links](#links)
 
@@ -21,10 +21,10 @@
 Add the marketplace once, then install only the plugins you need. Each works independently.
 
 ```bash
-# Add the marketplace once
+# Claude Code: add the marketplace once
 /plugin marketplace add levnikolaevich/claude-code-skills
 
-# Install any plugin you need
+# Claude Code: install any plugin you need
 /plugin install agile-workflow@levnikolaevich-skills-marketplace
 /plugin install documentation-pipeline@levnikolaevich-skills-marketplace
 /plugin install codebase-audit-suite@levnikolaevich-skills-marketplace
@@ -32,6 +32,13 @@ Add the marketplace once, then install only the plugins you need. Each works ind
 /plugin install optimization-suite@levnikolaevich-skills-marketplace
 /plugin install community-engagement@levnikolaevich-skills-marketplace
 /plugin install setup-environment@levnikolaevich-skills-marketplace
+```
+
+```bash
+# Codex CLI: add the marketplace, then install from /plugins
+codex plugin marketplace add levnikolaevich/claude-code-skills
+codex
+/plugins
 ```
 
 | Plugin | Description |
@@ -53,11 +60,17 @@ Browse and discover individual skills at [skills.sh](https://skills.sh/LevNikola
 
 ## Installation
 
-**Prerequisites:** [Claude Code](https://docs.anthropic.com/en/docs/claude-code)
+**Prerequisites:** [Claude Code](https://docs.anthropic.com/en/docs/claude-code) or [OpenAI Codex CLI](https://developers.openai.com/codex)
 
 ```bash
+# Claude Code
 /plugin marketplace add levnikolaevich/claude-code-skills
 /plugin install setup-environment@levnikolaevich-skills-marketplace
+
+# Codex CLI
+codex plugin marketplace add levnikolaevich/claude-code-skills
+codex
+/plugins
 ```
 
 Verify: run `ln-010-dev-environment-setup`
@@ -171,24 +184,28 @@ Hooks and output style auto-sync on `hex-line-mcp` startup. First run after inst
 
 ## AI Review Models (Optional)
 
-External-agent review uses registry-configured AI agents for code/story analysis. In the bundled registry, Codex is enabled for the main review flows and skills fall back to Claude Opus self-review when no external agent is available.
+Review uses two CLI agents: Claude Code and OpenAI Codex. The active host does not call itself as the advisor; Claude-hosted runs delegate to Codex, while Codex-hosted runs delegate to Claude.
 
 | Model | CLI | Version | Used by | Settings |
 |-------|-----|---------|---------|----------|
-| **[Codex](https://github.com/openai/codex)** | `codex` | Latest installed Codex CLI runtime default | ln-310, ln-510 | `exec --full-auto` (registry-driven review agent) |
+| **[Codex](https://developers.openai.com/codex)** | `codex` | user config | ln-310, ln-510, ln-813 | `codex exec --full-auto` |
+| **[Claude Code](https://docs.anthropic.com/en/docs/claude-code)** | `claude` | user config | ln-310, ln-510, ln-813 | `claude -p --dangerously-skip-permissions` |
 
 **Review Workflow:**
-1. **Background Execution** — Launch registry-configured external agents in the background
-2. **Critical Verification** — Claude validates each suggestion (AGREE/DISAGREE/UNCERTAIN)
-3. **Debate Protocol** — Challenge rounds (max 2) for controversial findings
-4. **Filtering** — Only high-confidence (≥90%), high-impact (>2%) suggestions surface
-5. **Fallback** — Self-Review (Claude Opus) if no external agent is available
+1. **Host-aware routing** — choose the other CLI as external advisor
+2. **Critical verification** — the host agent validates each suggestion before accepting it
+3. **Filtering** — only supported, high-impact suggestions surface
+4. **Fallback** — self-review if the external advisor is unavailable
 
 **Installation:**
 ```bash
 # Codex (OpenAI)
 npm install -g @openai/codex
 codex login
+
+# Claude Code
+npm install -g @anthropic-ai/claude-code
+claude auth login
 ```
 
 **Configuration:**
@@ -198,10 +215,12 @@ Review agents auto-configure via `shared/agents/agent_registry.json`. No manual 
 All prompts/results saved to `.agent-review/{agent}/` for transparency:
 ```
 .agent-review/
-└── codex/
-    ├── PROJ-123_storyreview_prompt.md
-    ├── PROJ-123_storyreview_result.md
-    └── PROJ-123_session.json
+├── codex/
+│   ├── PROJ-123_storyreview_prompt.md
+│   ├── PROJ-123_storyreview_result.md
+│   └── PROJ-123_session.json
+└── claude/
+    └── (same structure)
 ```
 
 Additional configured agents use the same per-agent directory structure.
@@ -209,9 +228,9 @@ Additional configured agents use the same per-agent directory structure.
 <details>
 <summary><b>Skills using external AI review</b></summary>
 
-- **ln-310-multi-agent-validator** — Story/Tasks validation with inline external-agent review (Codex in the bundled registry)
-- **ln-510-quality-coordinator** — Code implementation review with inline external-agent review (Codex in the bundled registry)
-- **ln-813-optimization-plan-validator** — Optimization plan review with external-agent input when separately configured
+- **ln-310-multi-agent-validator** — Story/Tasks validation with host-aware Claude/Codex review
+- **ln-510-quality-coordinator** — Code implementation review with host-aware Claude/Codex review
+- **ln-813-optimization-plan-validator** — Optimization plan review before strike execution
 
 All skills support:
 - Session Resume for multi-round debates
@@ -224,25 +243,18 @@ All skills support:
 <details>
 <summary><b>Sharing skills & MCP between agents</b></summary>
 
-**Share skills with Gemini** — symlink/junction the active plugin directory:
+**Install skills independently per agent.** Do not symlink one agent's plugin root into another agent's discovery root.
 
-| OS | Command |
-|----|---------|
-| Windows (PowerShell) | `New-Item -ItemType Junction -Path "C:\Users\<USER>\.gemini\skills" -Target "<PLUGIN_DIR>"` |
-| Windows (CMD) | `mklink /J "C:\Users\<USER>\.gemini\skills" "<PLUGIN_DIR>"` |
-| macOS / Linux | `ln -s ~/.claude/plugins/<PLUGIN_DIR> ~/.gemini/skills` |
-
-**Codex is different.** Do not symlink `.codex/skills` to `.claude/plugins` or expose cache snapshots under the Codex discovery root. Keep active installs under `~/.codex/skills/marketplaces/...` and keep cache outside the discovery root (for example `~/.codex/skill-cache/...`). Or use **ln-013-config-syncer** to repair Codex skill mapping and MCP sync together.
+Claude Code uses `.claude-plugin/marketplace.json`. Codex uses `.agents/plugins/marketplace.json` plus per-plugin `.codex-plugin/plugin.json` adapters. Both surfaces are generated from the same canonical `skills-catalog`, but only one surface should be active inside a single runtime to avoid duplicate skill names.
 
 **MCP settings locations** (for manual sharing):
 
 | Agent | Config File | Format | Docs |
 |-------|------------|--------|------|
 | **Claude Code** | `~/.claude/settings.json` | JSON (`mcpServers: {}`) | [docs](https://docs.anthropic.com/en/docs/claude-code) |
-| **Gemini CLI** | `~/.gemini/settings.json` | JSON (`mcpServers: {}`) | [docs](https://github.com/google/gemini-cli) |
 | **Codex CLI** | `~/.codex/config.toml` | TOML (`[mcp_servers.name]`) | [docs](https://developers.openai.com/codex/mcp) |
 
-**Note:** Claude and Gemini use identical JSON format for `mcpServers` — copy the block directly. Codex uses TOML — convert manually.
+**Note:** Claude and Codex use different config formats. `ln-013-config-syncer` aligns MCP/policy settings non-destructively; it does not make Claude the source of truth for Codex skill installs.
 
 </details>
 
@@ -356,7 +368,7 @@ Through automated review loops. `ln-402-task-reviewer` checks every task output,
 <details>
 <summary><b>Does it replace human code review?</b></summary>
 
-No — it augments human review. Cross-checking between Claude and the configured external review agent (Codex in the bundled registry) catches issues before human reviewers see the code. Human approval points are built into the workflow at Story validation (`ln-310`) and quality gates (`ln-500`). The goal is to reduce reviewer burden, not eliminate oversight.
+No — it augments human review. Claude/Codex cross-checking catches issues before human reviewers see the code. Human approval points are built into the workflow at Story validation (`ln-310`) and quality gates (`ln-500`). The goal is to reduce reviewer burden, not eliminate oversight.
 
 </details>
 
@@ -384,7 +396,7 @@ Bootstrap skills (`ln-7XX`) support React, .NET, and Python project structures. 
 <details>
 <summary><b>What AI models does it use?</b></summary>
 
-Claude Opus is the primary model. For code and story reviews, skills can delegate to registry-configured external agents; the bundled registry currently enables OpenAI Codex for `ln-310` and `ln-510`, with Claude Opus fallback when no external agent is available.
+The active host model performs orchestration and verification. For code and story reviews, skills can delegate to the other CLI agent: Claude-hosted runs use Codex as advisor, while Codex-hosted runs use Claude as advisor.
 
 </details>
 
@@ -424,9 +436,9 @@ Yes. Skills are `SKILL.md` files in skill directories. Legacy-compatible `.claud
 </details>
 
 <details>
-<summary><b>Can I share these skills with Gemini CLI or OpenAI Codex?</b></summary>
+<summary><b>Can I use these skills with OpenAI Codex?</b></summary>
 
-Yes, but the mapping differs by agent. Gemini can use a shared symlink/junction to the active plugin directory. Codex should use its own active marketplace under `~/.codex/skills/marketplaces/...` and must keep cache outside `~/.codex/skills`. `ln-013-config-syncer` handles that split model. See [AI Review Models > Sharing skills & MCP between agents](#ai-review-models-optional) for commands and MCP config paths.
+Yes. Claude and Codex have separate native marketplace surfaces in this repo. Install each agent independently through its own plugin flow; do not expose both surfaces to the same runtime at once. See [AI Review Models > Sharing skills & MCP between agents](#ai-review-models-optional) for config paths.
 
 </details>
 
@@ -578,7 +590,7 @@ claude-code-skills/                      # MARKETPLACE
 |   |-- ln-810-performance-optimizer/       # Performance optimization:
 |   |   |-- ln-811-performance-profiler/     # Full-stack request tracing, bottleneck classification
 |   |   |-- ln-812-optimization-researcher/  # Competitive benchmarks, solution research, hypotheses
-|   |   |-- ln-813-optimization-plan-validator/ # Research-backed plan review with optional external-agent input
+|   |   |-- ln-813-optimization-plan-validator/ # Agent-validated plan review (Claude/Codex)
 |   |   |-- ln-814-optimization-executor/    # Strike-first hypothesis execution (keep/discard)
 |   |-- ln-820-dependency-optimization-coordinator/  # Dependency upgrades:
 |   |   |-- ln-821-npm-upgrader/             # npm/yarn/pnpm with breaking change handling
@@ -606,10 +618,10 @@ claude-code-skills/                      # MARKETPLACE
 |-- ln-002-session-analyzer/           # Analyze sessions for optimization opportunities
 |-- ln-0XX-*/                          # SETUP ENVIRONMENT
 |   |-- ln-010-dev-environment-setup/  # L2: Full environment setup coordinator
-|   |-- ln-011-agent-installer/        # Install/update Codex, Gemini & Claude CLI
+|   |-- ln-011-agent-installer/        # Install/update Codex and Claude CLI
 |   |-- ln-012-mcp-configurator/       # Claude-side MCP setup: registration, hooks, permissions, migrations
-|   |-- ln-013-config-syncer/          # Sync Gemini/Codex config, MCP state, and Codex defaults
-|   |-- ln-014-agent-instructions-manager/ # Single owner of CLAUDE.md/AGENTS.md/GEMINI.md creation and audit
+|   |-- ln-013-config-syncer/          # Align Claude/Codex config, MCP state, and Codex defaults
+|   |-- ln-014-agent-instructions-manager/ # Single owner of CLAUDE.md/AGENTS.md creation and audit
 |   |-- ln-015-hex-line-uninstaller/   # Remove Claude-side hex-line registration, permissions, hooks, and output style
 |-- ln-020-codegraph/                  # Code knowledge graph for dependency analysis & impact checking
 |

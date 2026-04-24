@@ -95,7 +95,7 @@ Skip table if 0 errors.
 
 #### 7c. Subagent Session Analysis
 
-If subagents were launched during execution (Agent tool, Codex, Gemini), analyze each separately.
+If subagents were launched during execution (Agent tool, Codex, Claude), analyze each separately.
 
 Session locations:
 
@@ -105,7 +105,6 @@ Session locations:
 | Claude (JSONL) | `~/.claude/projects/*/*.jsonl` | JSONL with `message.usage` token data |
 | Claude (active) | `~/.claude/sessions/{PID}.json` | JSON `{pid, sessionId, cwd}` |
 | Codex | `~/.codex/sessions/YYYY/MM/DD/rollout-*.jsonl` | JSONL with `token_count` events |
-| Gemini | Platform-dependent; protobuf on Windows | Not grep-parseable |
 
 For each agent that participated, produce a **separate** error table flagged with agent name:
 

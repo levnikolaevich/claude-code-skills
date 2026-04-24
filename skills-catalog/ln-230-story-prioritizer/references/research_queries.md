@@ -100,7 +100,7 @@ When detailed research unavailable, use these multipliers:
 1. **Search for competitors**
 2. **Filter results:**
    - Must offer similar feature
-   - Must be active (not deprecated)
+   - Must be active (not unsupported)
    - Must have public pricing/docs
 3. **Count unique competitors**
 4. **Classify:**

@@ -41,6 +41,12 @@ try {
     writeJson(manifestPath, { targets: ["both"], dry_run: false });
 
     const started = run(["start", P, projectRoot, I, ID, "--manifest-file", manifestPath]);
+    if (started.manifest.plugins.join(",") !== "agile-workflow") {
+        throw new Error("Default plugin selection must be agile-workflow");
+    }
+    if (started.manifest.worker_registry.includes("ln-015")) {
+        throw new Error("ln-015 must remain standalone and outside default environment setup dispatch");
+    }
     run(["checkpoint", P, projectRoot, I, ID, "--phase", PHASES.CONFIG]);
     run(["advance", P, projectRoot, I, ID, "--to", PHASES.ASSESS]);
 

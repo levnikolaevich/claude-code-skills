@@ -1,6 +1,6 @@
 ---
 name: ln-010-dev-environment-setup
-description: "Installs agents, configures MCP servers, syncs configs, creates and audits instructions. Use after setup or when agents/MCP need alignment."
+description: "Installs agents, configures MCP servers, aligns marketplace plugins, creates and audits instructions. Use after setup or when agents/MCP/plugins need alignment."
 license: MIT
 ---
 

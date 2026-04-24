@@ -52,7 +52,7 @@ Status names follow `shared/references/runtime_status_catalog.md`.
 Allowed `summary_kind` values:
 - `env-agent-install`
 - `env-mcp-config`
-- `env-config-sync`
+- `env-marketplace-align`
 - `env-instructions`
 - `env-cleanup`
 

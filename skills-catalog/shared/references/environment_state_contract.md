@@ -44,7 +44,7 @@ Related contract:
 
 | Section | Purpose |
 |---------|---------|
-| `agents` | Agent availability, versions, sync status (claude, codex), plus Codex skill-root discovery and execution-default health |
+| `agents` | Agent availability, versions, alignment status (claude, codex), plus marketplace plugin, Codex skill-root discovery, and execution-default health |
 | `task_management` | Provider routing (linear/file/github), provider-specific config nested under `linear` or `github` |
 | `research` | Provider, fallback_chain |
 | `claude_md` | Instruction file metadata |
@@ -76,7 +76,7 @@ When present, `agents.codex` should capture:
 - `duplicate_skill_names` -> duplicate skill directory names still visible under the Codex discovery root
 - `discovery_violation` -> `true` when cache or foreign install surfaces remain visible under `~/.codex/skills`
 
-Writers should treat `discovery_violation=true` as environment drift that requires ln-013 remediation before Codex is considered cleanly synced.
+Writers should treat `discovery_violation=true` as environment drift that requires ln-013 remediation before Codex is considered cleanly aligned.
 
 ## Codex Execution Defaults
 

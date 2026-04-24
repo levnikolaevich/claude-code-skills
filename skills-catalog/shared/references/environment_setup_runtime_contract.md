@@ -8,6 +8,15 @@ Canonical phase/status names: `shared/references/runtime_status_catalog.md`
 
 - `targets-{normalizedTargets}`
 
+## Manifest Fields
+
+- `targets`: setup targets, default `both`
+- `dry_run`: when `true`, plan without mutating and allow `final_result=DRY_RUN_PLAN`
+- `plugins`: marketplace plugin selection for `ln-013`, default `agile-workflow`
+- `auto_install_providers`: MCP provider install permission for `ln-013`, default `false`
+- `apply_ide_override`: IDE permission override permission for `ln-012`, default `false`
+- `worker_registry`: default `ln-011`, `ln-012`, `ln-013`, `ln-014`
+
 ## Phases
 
 - `PHASE_0_CONFIG`
@@ -46,7 +55,7 @@ Canonical phase/status names: `shared/references/runtime_status_catalog.md`
 Workers stay standalone-first and may optionally write:
 - `env-agent-install`
 - `env-mcp-config`
-- `env-config-sync`
+- `env-marketplace-align`
 - `env-instructions`
 
 Coordinator consumes only the shared summary envelope.
@@ -64,4 +73,4 @@ For every dispatched worker:
 - invoke the worker with both `runId` and `summaryArtifactPath`
 - read the artifact and record it through `record-worker`
 
-`ln-015` is part of the environment family, but it is not part of the `ln-010` dispatch set.
+`ln-015` is part of the environment family, but it is standalone cleanup and not part of the `ln-010` dispatch set.

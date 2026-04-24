@@ -755,6 +755,71 @@ describe("edit business logic", () => {
         }
     });
 
+    it("rejects malformed nested edit payloads before apply", async () => {
+        const { editFile } = await import("../lib/edit.mjs");
+        const { fnv1a, lineTag } = await import("@levnikolaevich/hex-common/text-protocol/hash");
+        const tmp = TMP("hex-test-bad-nested-edits.js");
+        const content = "alpha\nbeta\ngamma\n";
+        fs.writeFileSync(tmp, content);
+        try {
+            const lines = content.split("\n");
+            const alpha = `${lineTag(fnv1a(lines[0]))}.1`;
+            const beta = `${lineTag(fnv1a(lines[1]))}.2`;
+            const cases = [
+                [{ set_line: { anchor: alpha } }, /edits must be a non-empty array/],
+                [[], /edits must be a non-empty array/],
+                [[{ set_line: { anchor: alpha } }], /set_line\.new_text must be a string/],
+                [[{ set_line: null }], /set_line must be an object/],
+                [[{ insert_after: { anchor: alpha } }], /insert_after\.text must be a string/],
+                [[{ replace_between: { start_anchor: alpha, end_anchor: beta } }], /replace_between\.new_text must be a string/],
+                [[{ replace_between: { start_anchor: alpha, end_anchor: beta, new_text: "x", boundary_mode: "middle" } }], /replace_between\.boundary_mode must be "inclusive" or "exclusive"/],
+                [[{ replace_lines: { start_anchor: alpha, end_anchor: beta, new_text: "x" } }], /replace_lines\.range_checksum must be a string/],
+            ];
+
+            for (const [edit, expected] of cases) {
+                assert.throws(
+                    () => editFile(tmp, edit),
+                    (err) => err.code === "BAD_INPUT" && expected.test(err.message),
+                    `rejects ${JSON.stringify(edit)}`,
+                );
+            }
+        } finally {
+            fs.unlinkSync(tmp);
+        }
+    });
+
+    it("replace_between boundary edits do not throw raw trim errors", async () => {
+        const { editFile } = await import("../lib/edit.mjs");
+        const { fnv1a, lineTag } = await import("@levnikolaevich/hex-common/text-protocol/hash");
+        const cases = [
+            { name: "whole", content: "a\nb\nc\n", startLine: 1, endLine: 3, newText: "x" },
+            { name: "head", content: "a\nb\nc\n", startLine: 1, endLine: 2, newText: "x" },
+            { name: "tail", content: "a\nb\nc\n", startLine: 2, endLine: 3, newText: "x\n" },
+            { name: "exclusive-adjacent", content: "a\nb\nc\n", startLine: 1, endLine: 2, newText: "x", boundaryMode: "exclusive" },
+        ];
+
+        for (const item of cases) {
+            const tmp = TMP(`hex-test-rb-trim-${item.name}.txt`);
+            fs.writeFileSync(tmp, item.content);
+            try {
+                const lines = item.content.split("\n");
+                const start = `${lineTag(fnv1a(lines[item.startLine - 1]))}.${item.startLine}`;
+                const end = `${lineTag(fnv1a(lines[item.endLine - 1]))}.${item.endLine}`;
+                const result = editFile(tmp, [{
+                    replace_between: {
+                        start_anchor: start,
+                        end_anchor: end,
+                        new_text: item.newText,
+                        boundary_mode: item.boundaryMode || "inclusive",
+                    }
+                }], { dryRun: true, restoreIndent: true });
+                assert.ok(result.includes("status: OK"), `${item.name} edit succeeds`);
+            } finally {
+                fs.unlinkSync(tmp);
+            }
+        }
+    });
+
     it("applies replace_lines directly from a canonical read block", async () => {
         const { readFile } = await import("../lib/read.mjs");
         const { editFile } = await import("../lib/edit.mjs");

@@ -548,7 +548,7 @@ IDE Extension Permission Mode:
 | Silently flip `claudeCode.initialPermissionMode` to `bypassPermissions` because the project asked for it | Detect, WARN about the override, require `apply_ide_override=true` AND explicit user confirmation before writing IDE settings |
 | Set `initialPermissionMode = "bypassPermissions"` without also setting `allowDangerouslySkipPermissions = true` | Both keys are required together — without the gate the mode silently degrades to default |
 | Treat IDE `bypassPermissions` as a substitute for Codex CLI defaults | Keep Codex execution-default ownership in `ln-013-config-syncer` |
-| Mutate `~/.codex/config.toml` from this worker because it is also permission-related | Route the actual Codex CLI write to `ln-013-config-syncer` |
+| Mutate `~/.codex/config.toml` from this worker because it is also permission-related | Route the actual Codex CLI alignment to `ln-013-config-syncer` |
 | Tell user to use Reload Window after changing IDE settings | Always tell user to fully Quit + reopen — extension reads settings only at activation, not on Reload Window |
 
 ---

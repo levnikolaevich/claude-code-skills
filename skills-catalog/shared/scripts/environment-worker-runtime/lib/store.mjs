@@ -7,14 +7,19 @@ const environmentWorkerManifestSchema = buildWorkerManifestSchema("work_item_id"
         type: "array",
         items: { type: "string" },
     },
+    plugins: {
+        type: "array",
+        items: { type: "string" },
+    },
     dry_run: { type: "boolean" },
     apply_ide_override: { type: "boolean" },
+    auto_install_providers: { type: "boolean" },
 });
 
 function expectedSummaryKindForSkill(skill) {
     if (skill === "ln-011") return "env-agent-install";
     if (skill === "ln-012") return "env-mcp-config";
-    if (skill === "ln-013") return "env-config-sync";
+    if (skill === "ln-013") return "env-marketplace-align";
     if (skill === "ln-014") return "env-instructions";
     if (skill === "ln-015") return "env-cleanup";
     throw new Error(`Unsupported environment worker skill: ${skill}`);
@@ -29,13 +34,18 @@ const environmentWorkerStore = createWorkerRuntimeStore({
             : [];
         const identifier = manifestInput.identifier
             || (targets.length > 0 ? `targets-${targets.join("-")}` : `${manifestInput.skill}-global`);
+        const plugins = Array.isArray(manifestInput.plugins) && manifestInput.plugins.length > 0
+            ? manifestInput.plugins
+            : [];
         return {
             ...resolveWorkerManifestBase(manifestInput, projectRoot, "work_item_id", identifier),
             skill: manifestInput.skill,
             mode: manifestInput.mode || "environment_worker",
             targets,
+            plugins,
             dry_run: manifestInput.dry_run === true,
             apply_ide_override: manifestInput.apply_ide_override === true,
+            auto_install_providers: manifestInput.auto_install_providers === true,
         };
     },
     defaultState(manifest, runId) {

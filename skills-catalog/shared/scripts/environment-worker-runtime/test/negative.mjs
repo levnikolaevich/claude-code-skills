@@ -33,7 +33,7 @@ try {
         "record-summary", "--project-root", projectRoot, "--skill", "ln-012", "--run-id", started.run_id,
         "--payload", JSON.stringify({
             schema_version: "1.0.0",
-            summary_kind: "env-config-sync",
+            summary_kind: "env-marketplace-align",
             run_id: started.run_id,
             identifier: "mcp-global",
             producer_skill: "ln-012",

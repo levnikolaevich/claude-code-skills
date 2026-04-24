@@ -25,8 +25,9 @@
             "available": { "type": "boolean" },
             "disabled": { "type": "boolean" },
             "version": { "type": "string" },
-            "config_synced": { "type": "boolean" },
-            "servers_synced": { "type": "integer" },
+            "config_aligned": { "type": "boolean" },
+            "servers_aligned": { "type": "integer" },
+            "marketplace_plugins": { "type": "array", "items": { "type": "string" } },
             "active_skill_roots": { "type": "array", "items": { "type": "string" } },
             "cache_roots": { "type": "array", "items": { "type": "string" } },
             "duplicate_skill_names": { "type": "array", "items": { "type": "string" } },
@@ -34,7 +35,7 @@
             "approval_policy": { "type": "string" },
             "sandbox_mode": { "type": "string" },
             "permissions_default_ready": { "type": "boolean" },
-            "sync_actions": { "type": "array", "items": { "type": "string" } },
+            "alignment_actions": { "type": "array", "items": { "type": "string" } },
             "detail": { "type": "string" }
           }
         }

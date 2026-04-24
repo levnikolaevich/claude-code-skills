@@ -36,16 +36,21 @@ import {
 } from "./snapshot.mjs";
 import { ACTION, REASON, STATUS } from "./output-contract.mjs";
 
+function asLine(value) {
+    return typeof value === "string" ? value : String(value ?? "");
+}
+
 /**
  * Restore indentation from original lines onto replacement lines.
  * Preserves relative indentation structure while matching the anchor's indent level.
  */
 function restoreIndent(origLines, newLines) {
     if (!origLines.length || !newLines.length) return newLines;
-    const origIndent = origLines[0].match(/^\s*/)[0];
-    const newIndent = newLines[0].match(/^\s*/)[0];
-    if (origIndent === newIndent) return newLines;
-    return newLines.map(line => {
+    const safeNewLines = newLines.map(asLine);
+    const origIndent = asLine(origLines[0]).match(/^\s*/)[0];
+    const newIndent = safeNewLines[0].match(/^\s*/)[0];
+    if (origIndent === newIndent) return safeNewLines;
+    return safeNewLines.map(line => {
         if (!line.trim()) return line;
         if (line.startsWith(newIndent)) return origIndent + line.slice(newIndent.length);
         return line;
@@ -1071,8 +1076,8 @@ function applyReplaceBetweenEdit(edit, ctx) {
     let boundaryEchoSkipped = false;
     const insertEnd = sliceStart + newLines.length;
     if (newLines.length > 0 && insertEnd < lines.length) {
-        const lastNew = newLines[newLines.length - 1].trim();
-        const firstAfter = lines[insertEnd].trim();
+        const lastNew = asLine(newLines[newLines.length - 1]).trim();
+        const firstAfter = asLine(lines[insertEnd]).trim();
         if (lastNew && lastNew === firstAfter) {
             if (isAmbiguousDelimiter(firstAfter)) {
                 boundaryEchoSkipped = true;
@@ -1090,8 +1095,8 @@ function applyReplaceBetweenEdit(edit, ctx) {
         }
     }
     if (newLines.length > 0 && sliceStart > 0) {
-        const firstNew = newLines[0].trim();
-        const lineBefore = lines[sliceStart - 1].trim();
+        const firstNew = asLine(newLines[0]).trim();
+        const lineBefore = asLine(lines[sliceStart - 1]).trim();
         if (firstNew && firstNew === lineBefore) {
             if (isAmbiguousDelimiter(lineBefore)) {
                 boundaryEchoSkipped = true;

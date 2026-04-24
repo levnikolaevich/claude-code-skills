@@ -19,6 +19,12 @@ const environmentSetupManifestSchema = {
             items: { type: "string" },
         },
         dry_run: { type: "boolean" },
+        plugins: {
+            type: "array",
+            items: { type: "string" },
+        },
+        auto_install_providers: { type: "boolean" },
+        apply_ide_override: { type: "boolean" },
         project_root: { type: "string" },
         worker_registry: { type: "array" },
         created_at: { type: "string", format: "date-time" },
@@ -32,12 +38,18 @@ const environmentStore = createRuntimeStore({
         const targets = Array.isArray(manifestInput.targets) && manifestInput.targets.length > 0
             ? manifestInput.targets
             : [manifestInput.targets || "both"];
+        const plugins = Array.isArray(manifestInput.plugins) && manifestInput.plugins.length > 0
+            ? manifestInput.plugins
+            : ["agile-workflow"];
         return {
             skill: "ln-010",
             mode: manifestInput.mode || "environment_setup",
             identifier: manifestInput.identifier || `targets-${targets.join("-")}`,
             targets,
             dry_run: manifestInput.dry_run === true,
+            plugins,
+            auto_install_providers: manifestInput.auto_install_providers === true,
+            apply_ide_override: manifestInput.apply_ide_override === true,
             project_root: resolve(projectRoot || process.cwd()),
             worker_registry: manifestInput.worker_registry || ["ln-011", "ln-012", "ln-013", "ln-014"],
             created_at: new Date().toISOString(),

@@ -8,17 +8,87 @@
 
 import { parseChecksum, parseRef } from "@levnikolaevich/hex-common/text-protocol/hash";
 
-export function normalizeAnchoredEdits(edits) {
-    const anchored = [];
-    for (const edit of edits) {
-        if (edit.set_line || edit.replace_lines || edit.insert_after || edit.replace_between) {
-            anchored.push(edit);
-            continue;
-        }
+function badInput(message) {
+    const err = new Error(`BAD_INPUT: ${message}`);
+    err.code = "BAD_INPUT";
+    err.recovery = "Use canonical edit shapes with required string fields: set_line.anchor/new_text, insert_after.anchor/text, replace_lines.start_anchor/end_anchor/range_checksum/new_text, or replace_between.start_anchor/end_anchor/new_text.";
+    return err;
+}
+
+function requirePlainObject(value, path) {
+    if (!value || typeof value !== "object" || Array.isArray(value)) {
+        throw badInput(`${path} must be an object`);
+    }
+}
+
+function requireString(value, path) {
+    if (typeof value !== "string") {
+        throw badInput(`${path} must be a string`);
+    }
+}
+
+function requireOptionalString(value, path) {
+    if (value !== undefined && typeof value !== "string") {
+        throw badInput(`${path} must be a string when provided`);
+    }
+}
+
+function validateEditShape(edit) {
+    requirePlainObject(edit, "edit");
+    const kinds = ["set_line", "replace_lines", "insert_after", "replace_between"].filter((kind) => edit[kind] !== undefined);
+    if (kinds.length !== 1) {
         if (edit.replace) {
             throw new Error("REPLACE_REMOVED: replace is no longer supported in edit_file. Use set_line/replace_lines for single edits, bulk_replace tool for rename/refactor.");
         }
-        throw new Error(`BAD_INPUT: unknown edit type: ${JSON.stringify(edit)}`);
+        if (kinds.length === 0) throw badInput(`unknown edit type: ${JSON.stringify(edit)}`);
+        throw badInput(`exactly one edit type is allowed, got ${kinds.join(", ")}`);
+    }
+
+    const kind = kinds[0];
+    if (kind === "set_line") {
+        requirePlainObject(edit.set_line, "set_line");
+        requireString(edit.set_line.anchor, "set_line.anchor");
+        requireString(edit.set_line.new_text, "set_line.new_text");
+        return;
+    }
+
+    if (kind === "insert_after") {
+        requirePlainObject(edit.insert_after, "insert_after");
+        requireString(edit.insert_after.anchor, "insert_after.anchor");
+        requireString(edit.insert_after.text, "insert_after.text");
+        return;
+    }
+
+    if (kind === "replace_lines") {
+        requirePlainObject(edit.replace_lines, "replace_lines");
+        requireString(edit.replace_lines.start_anchor, "replace_lines.start_anchor");
+        requireString(edit.replace_lines.end_anchor, "replace_lines.end_anchor");
+        requireString(edit.replace_lines.range_checksum, "replace_lines.range_checksum");
+        requireString(edit.replace_lines.new_text, "replace_lines.new_text");
+        return;
+    }
+
+    requirePlainObject(edit.replace_between, "replace_between");
+    requireString(edit.replace_between.start_anchor, "replace_between.start_anchor");
+    requireString(edit.replace_between.end_anchor, "replace_between.end_anchor");
+    requireString(edit.replace_between.new_text, "replace_between.new_text");
+    requireOptionalString(edit.replace_between.range_checksum, "replace_between.range_checksum");
+    if (edit.replace_between.boundary_mode !== undefined && !["inclusive", "exclusive"].includes(edit.replace_between.boundary_mode)) {
+        throw badInput("replace_between.boundary_mode must be \"inclusive\" or \"exclusive\"");
+    }
+}
+
+export function normalizeAnchoredEdits(edits) {
+    if (!Array.isArray(edits)) {
+        throw badInput("edits must be a non-empty array");
+    }
+    if (edits.length === 0) {
+        throw badInput("edits must be a non-empty array");
+    }
+    const anchored = [];
+    for (const edit of edits) {
+        validateEditShape(edit);
+        anchored.push(edit);
     }
     return anchored;
 }

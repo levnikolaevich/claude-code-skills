@@ -1,6 +1,6 @@
 ---
 name: ln-013-config-syncer
-description: "Use when aligning Claude and Codex MCP settings, skill install health, execution defaults, and marketplace drift."
+description: "Use when installing or verifying this marketplace in Claude and Codex, aligning selected plugins, MCP settings, and Codex execution defaults."
 license: MIT
 ---
 

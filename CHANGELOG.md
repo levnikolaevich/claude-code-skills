@@ -117,7 +117,7 @@
 
 - **hex MCP family** — 3 npm MCP servers: hex-line (hash-verified file editing, 10 tools), hex-ssh (remote file ops over SSH, 6 tools), hex-graph (code knowledge graph, 7 tools); rebranded from sharpline
 - **hex MCP v2** — output style system, hash-hint fallback, anchor-based editing, benchmark v3 (91-98% savings on multi-step workflows); hex-line v1.1.0, hex-ssh v1.1.0, hex-graph v0.2.0 published to npm
-- **Setup Environment plugin** — 7th plugin extracted from agile-workflow: ln-010 coordinator + 4 workers (agent installer, MCP configurator, config syncer, instructions auditor)
+- **Setup Environment plugin** — 7th plugin extracted from agile-workflow: ln-010 coordinator + 4 workers (agent installer, MCP configurator, marketplace/config aligner, instructions auditor)
 - **Research skills consolidated** — ln-001 and ln-002 merged into ln-310 and ln-220 via shared layer; research methodology and docs creation extracted to shared references
 - **Best practice guides** — MCP Tool Design, Hook Design, Prompt Caching; hooks redesigned with dangerous command blocker
 ## 2026-03-19

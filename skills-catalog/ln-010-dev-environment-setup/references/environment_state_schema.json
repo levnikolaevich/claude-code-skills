@@ -25,9 +25,10 @@
             "available": { "type": "boolean" },
             "disabled": { "type": "boolean" },
             "version": { "type": "string" },
-            "config_synced": { "type": "boolean" },
-            "servers_synced": { "type": "integer" },
-            "sync_actions": { "type": "array", "items": { "type": "string" } },
+            "config_aligned": { "type": "boolean" },
+            "servers_aligned": { "type": "integer" },
+            "marketplace_plugins": { "type": "array", "items": { "type": "string" } },
+            "alignment_actions": { "type": "array", "items": { "type": "string" } },
             "detail": { "type": "string" }
           }
         }

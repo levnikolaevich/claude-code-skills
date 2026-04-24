@@ -1,6 +1,6 @@
 ---
 name: ln-010-dev-environment-setup
-description: "Installs agents, configures MCP servers, syncs configs, creates and audits instructions. Use after setup or when agents/MCP need alignment."
+description: "Installs agents, configures MCP servers, aligns marketplace plugins, creates and audits instructions. Use after setup or when agents/MCP/plugins need alignment."
 disable-model-invocation: true
 license: MIT
 ---
@@ -31,7 +31,7 @@ MCP servers are targets of this workflow, not a prerequisite for starting it. If
 
 - First-time environment setup
 - Agent/MCP drift after installs or updates
-- Config sync drift across Claude and Codex
+- Marketplace, plugin, MCP, or Codex execution-default drift across Claude and Codex
 - Instruction file audit or repair
 
 ## Inputs
@@ -40,6 +40,8 @@ MCP servers are targets of this workflow, not a prerequisite for starting it. If
 |-----------|----------|---------|-------------|
 | `targets` | No | `both` | `claude`, `codex`, or `both` |
 | `dry_run` | No | `false` | Plan without mutating |
+| `plugins` | No | `agile-workflow` | Pass-through to ln-013. Use an explicit plugin list, or `all` to request every marketplace plugin. Optional plugins are never installed silently. |
+| `auto_install_providers` | No | `false` | Pass-through to ln-013 MCP provider check. When `false`, provider checks are detection-only. |
 | `apply_ide_override` | No | `false` | Pass-through to ln-012 Phase 6b. When `true`, ln-012 may write `claudeCode.initialPermissionMode` and `claudeCode.allowDangerouslySkipPermissions` to Cursor / VSCode user settings after explicit user consent. When `false` (default), Phase 6b is detection-only and reports drift without mutating IDE settings. |
 
 ## Runtime
@@ -70,7 +72,7 @@ Collect one environment snapshot:
 - agent availability and versions
 - MCP registration/connection state
 - hook state
-- config sync state
+- marketplace/plugin alignment state
 - Codex skill-root discovery health: active roots, cache roots, duplicate skill names, `known_marketplaces.json` install-location drift, whether cache is visible under `~/.codex/skills`, whether `~/.codex/skills` is a whole-root junction to `~/.claude/plugins`, and whether `approval_policy=never` plus `sandbox_mode=danger-full-access` are already aligned
 - graph provider dependency status: for each detected project language, check whether the corresponding graph provider binaries are installed (e.g. `basedpyright` for Python, `csharp-ls` for C#). Use `mcp__hex-graph__install_graph_providers` with `mode: "check"` if hex-graph MCP is connected
 - graph index freshness: whether hex-graph is connected and the project has been indexed in this session (detection-only, no indexing here)
@@ -89,7 +91,7 @@ Build selective dispatch plan. Only invoke workers that have work.
 
 Dispatch precedence:
 
-- If Codex discovery violation (including whole-root junction) or Codex execution-default drift is present, `ln-013-config-syncer` becomes mandatory before Codex can be reported as healthy.
+- If marketplace/plugin drift, Codex discovery violation (including whole-root junction), or Codex execution-default drift is present, `ln-013-config-syncer` becomes mandatory before Codex can be reported as healthy.
 - If hex-graph MCP is registered and either (a) graph provider deps are missing for detected project languages, or (b) the project has not been indexed, `ln-012-mcp-configurator` becomes mandatory even when MCP registration is already complete. ln-012 owns both graph provider dependency installation (PHASE_3) and graph indexing (PHASE_5).
 
 Workers:
@@ -97,6 +99,9 @@ Workers:
 - `ln-012-mcp-configurator`
 - `ln-013-config-syncer`
 - `ln-014-agent-instructions-manager`
+
+Standalone skills packaged in setup-environment but not dispatched by ln-010:
+- `ln-015-hex-line-uninstaller` remains direct-invocation only because it removes existing Claude-side integration surfaces.
 
 Checkpoint payload:
 - `dispatch_plan`
@@ -121,7 +126,7 @@ Each worker remains standalone-capable, but Phase 3 always uses managed transpor
 Expected summary kinds:
 - `env-agent-install`
 - `env-mcp-config`
-- `env-config-sync`
+- `env-marketplace-align`
 - `env-instructions`
 
 Record summaries with runtime `record-worker`.
@@ -131,7 +136,7 @@ Record summaries with runtime `record-worker`.
 Run targeted verification against the post-worker state:
 - health checks
 - hook status
-- sync status
+- marketplace/plugin and config alignment status
 - Codex skill discovery and execution-default status (including whole-root junction detection)
 - instruction file quality
 - runtime dependency status (ripgrep, optional language servers)
@@ -146,7 +151,7 @@ Checkpoint payload:
 Write final durable state to:
 - `.hex-skills/environment_state.json`
 
-Includes all detected sections: agents (with sync status, Codex skill-root health, and Codex execution-default state), task_management, research, claude_md, assessment, hooks, ide_extension (Cursor / VSCode Claude Code extension state from Phase 1 plus any Phase 6b mutations from ln-012).
+Includes all detected sections: agents (with alignment status, marketplace plugins, Codex skill-root health, and Codex execution-default state), task_management, research, claude_md, assessment, hooks, ide_extension (Cursor / VSCode Claude Code extension state from Phase 1 plus any Phase 6b mutations from ln-012).
 
 Rules:
 - runtime state is not environment state
@@ -184,7 +189,7 @@ Do not mix these layers.
 |-------|--------|---------|
 | 3 | `ln-011-agent-installer` | Install or update CLI agents |
 | 3 | `ln-012-mcp-configurator` | Configure MCP servers, hooks, permissions, and IDE extension permission mode (Phase 6b) |
-| 3 | `ln-013-config-syncer` | Align Claude and Codex config, Codex skill-root mapping, and MCP state |
+| 3 | `ln-013-config-syncer` | Install/verify Claude and Codex marketplace plugins, align MCP state, and align Codex defaults |
 | 3 | `ln-014-agent-instructions-manager` | Create and audit instruction files |
 
 ```text
@@ -196,6 +201,8 @@ node shared/scripts/environment-setup-runtime/cli.mjs record-worker --identifier
 ```
 
 `apply_ide_override` propagates from ln-010 input to ln-012 only. Default `false` keeps Phase 6b in detection mode and reports IDE drift as a WARN in the assessment summary; passing `true` lets ln-012 prompt the user and write Cursor / VSCode settings.
+
+`plugins` and `auto_install_providers` propagate from ln-010 input to ln-013 only. Default plugin selection is `agile-workflow`; optional plugins require an explicit list or `all`. `auto_install_providers=false` keeps MCP provider handling detection-only.
 
 ## TodoWrite format (mandatory)
 
@@ -213,6 +220,7 @@ node shared/scripts/environment-setup-runtime/cli.mjs record-worker --identifier
 - Runtime state is the execution SSOT.
 - Do not rely on chat memory for resume or recovery.
 - Do not run non-selected workers.
+- Do not dispatch `ln-015-hex-line-uninstaller` from normal setup; it is standalone cleanup.
 - Do not repeat full-environment discovery after every worker.
 - `.hex-skills/environment_state.json` is written only in Phase 5.
 - `dry_run` may end with `final_result=DRY_RUN_PLAN` and skip final state write.

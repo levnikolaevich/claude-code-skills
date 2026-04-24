@@ -781,9 +781,10 @@ export const environmentStateSchema = {
                         available: { type: "boolean" },
                         disabled: { type: "boolean" },
                         version: { type: "string" },
-                        config_synced: { type: "boolean" },
-                        servers_synced: { type: "integer" },
-                        sync_actions: stringArraySchema(),
+                        config_aligned: { type: "boolean" },
+                        servers_aligned: { type: "integer" },
+                        marketplace_plugins: stringArraySchema(),
+                        alignment_actions: stringArraySchema(),
                         detail: { type: "string" },
                     },
                 }

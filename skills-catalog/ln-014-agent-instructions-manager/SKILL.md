@@ -230,7 +230,7 @@ AGENTS.md is the canonical source per `DOC_ROLE` metadata. CLAUDE.md must be a t
 
 **Do not** "suggest which file is source of truth" based on content volume — AGENTS.md is always the source.
 
-If `.hex-skills/environment_state.json` reports `agents.codex.discovery_violation=true`, emit a WARN that Codex skill discovery is drifted and duplicate skill counts from stale cache must not be used as evidence during instruction audits until `ln-013-config-syncer` repairs the mapping.
+If `.hex-skills/environment_state.json` reports `agents.codex.discovery_violation=true`, emit a WARN that Codex skill discovery is drifted and duplicate skill counts from stale cache must not be used as evidence during instruction audits until `ln-013-config-syncer` repairs the marketplace/plugin alignment.
 
 If `.hex-skills/environment_state.json` reports `agents.codex.permissions_default_ready=false`, emit a WARN that Codex CLI startup permissions are drifted from the managed default and instruction audits must not assume full-access startup semantics until `ln-013-config-syncer` repairs `~/.codex/config.toml`.
 

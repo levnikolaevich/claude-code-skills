@@ -37,8 +37,11 @@ function workerSummary(runId, skill, identifier, summaryKind, targets = []) {
 
 try {
     const standaloneManifestPath = join(projectRoot, "manifest-standalone.json");
-    writeJson(standaloneManifestPath, { targets: ["both"], dry_run: false });
+    writeJson(standaloneManifestPath, { targets: ["both"], dry_run: false, plugins: ["agile-workflow"], auto_install_providers: true });
     const started = run(["start", "--project-root", projectRoot, "--skill", "ln-011", "--identifier", "targets-both", "--manifest-file", standaloneManifestPath]);
+    if (started.manifest.plugins.join(",") !== "agile-workflow" || started.manifest.auto_install_providers !== true) {
+        throw new Error("Environment worker manifest did not preserve plugin/provider pass-through fields");
+    }
     const runId = started.run_id;
     const phases = WORKER_PHASES["ln-011"];
     for (const phase of phases) {

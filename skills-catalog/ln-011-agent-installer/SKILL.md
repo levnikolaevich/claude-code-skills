@@ -122,7 +122,7 @@ After successful Codex install/update:
 2. Check configured Codex marketplaces for duplicate active paths to this repo.
 3. If drift is found, report a WARN and defer remediation to `ln-013-config-syncer`.
 
-This installer does not rewrite Codex marketplace layout or manage Codex execution defaults. It only reports drift so install success is not mistaken for a healthy two-agent environment.
+This installer does not install marketplace plugins, rewrite Codex marketplace layout, or manage Codex execution defaults. It only reports drift so install success is not mistaken for a healthy two-agent environment.
 
 ---
 
@@ -134,7 +134,7 @@ This installer does not rewrite Codex marketplace layout or manage Codex executi
 4. **Report all changes.** Include config observations in the final summary table.
 5. **Idempotent.** Safe to run multiple times.
 6. **Claude and Codex only.** Do not add unrelated agent branches.
-7. **Codex mapping and execution-default remediation belongs to ln-013.** This skill may detect drift, but must not rewrite marketplace/cache layout or Codex top-level permission defaults itself.
+7. **Codex marketplace/plugin and execution-default remediation belongs to ln-013.** This skill may detect drift, but must not rewrite marketplace/cache layout or Codex top-level permission defaults itself.
 
 ## Anti-Patterns
 
@@ -144,7 +144,7 @@ This installer does not rewrite Codex marketplace layout or manage Codex executi
 | Retry failed installs automatically | One attempt, report failure |
 | Use `sudo npm install` | Suggest `--prefix` for permission issues |
 | Install agents marked `disabled` | Skip with clear report |
-| Configure MCP settings here | Route config alignment to `ln-013-config-syncer` |
+| Configure MCP settings or marketplace plugins here | Route environment alignment to `ln-013-config-syncer` |
 
 ---
 
@@ -153,7 +153,7 @@ This installer does not rewrite Codex marketplace layout or manage Codex executi
 - [ ] Codex and Claude processed in single pass (install + verify)
 - [ ] Disabled agents skipped with report
 - [ ] Version verified immediately after each install
-- [ ] Codex mapping and execution-default sanity checked or explicitly reported for ln-013 follow-up
+- [ ] Codex marketplace/plugin and execution-default sanity checked or explicitly reported for ln-013 follow-up
 - [ ] Status table displayed
 - [ ] Structured summary returned
 - [ ] Summary artifact written to the managed or standalone runtime path

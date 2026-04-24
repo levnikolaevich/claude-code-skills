@@ -24,9 +24,9 @@ Sets up and maintains the multi-agent development environment. The coordinator i
 | ln-010-dev-environment-setup | Full environment setup coordinator |
 | ln-011-agent-installer | Install or update Codex CLI and Claude Code |
 | ln-012-mcp-configurator | Configure Claude-side MCP registration, hooks, permissions, and migrations |
-| ln-013-config-syncer | Align Claude and Codex config and Codex execution defaults |
+| ln-013-config-syncer | Install/verify Claude and Codex marketplace plugins, align MCP state, and align Codex execution defaults |
 | ln-014-agent-instructions-manager | Single owner of instruction file creation, audit, and MCP Tool Preferences sync |
-| ln-015-hex-line-uninstaller | Remove Claude-side hex-line registration, permissions, hooks, and output style |
+| ln-015-hex-line-uninstaller | Standalone cleanup: remove Claude-side hex-line registration, permissions, hooks, and output style |
 | ln-020-codegraph | Code knowledge graph for dependency analysis and impact checking |
 
 ## How it works
@@ -35,11 +35,13 @@ Sets up and maintains the multi-agent development environment. The coordinator i
 ln-010 (coordinator)
     → ln-011 (install agents)
     → ln-012 (configure MCP)
-    → ln-013 (sync configs)
+    → ln-013 (align marketplace plugins and config)
     → ln-014 (audit instructions)
 ```
 
 `ln-010` scans the environment once, builds a selective dispatch plan, starts managed child runtimes for the selected workers, records structured worker artifacts, verifies the result, and writes `.hex-skills/environment_state.json` only after verification passes. Worker summaries are coordination artifacts; the final environment file remains the durable project output.
+
+`ln-015` is packaged for direct cleanup use but is intentionally not part of the normal `ln-010` setup chain.
 
 ## Quick start
 

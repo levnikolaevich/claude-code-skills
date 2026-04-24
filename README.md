@@ -49,7 +49,7 @@ codex
 | **project-bootstrap** | CREATE or TRANSFORM projects to production-ready Clean Architecture |
 | **optimization-suite** | Performance optimization, Dependency upgrades, Code modernization |
 | **community-engagement** | GitHub community management: triage, announcements, RFCs, responses |
-| **setup-environment** | Install CLI agents, configure MCP servers, sync settings, audit instruction files |
+| **setup-environment** | Install CLI agents, configure MCP servers, align marketplace plugins, audit instruction files |
 
 Browse and discover individual skills at [skills.sh](https://skills.sh/LevNikolaevich/claude-code-skills).
 
@@ -81,7 +81,7 @@ Verify: run `ln-010-dev-environment-setup`
 
 **Standalone** (works immediately, no setup):
 ```bash
-ln-010-dev-environment-setup  # Set up agents, MCP, sync configs
+ln-010-dev-environment-setup  # Set up agents, MCP, and marketplace plugins
 ln-620-codebase-auditor       # Audit your code for issues
 ln-100-documents-pipeline     # Generate documentation
 ```
@@ -254,7 +254,7 @@ Claude Code uses `.claude-plugin/marketplace.json`. Codex uses `.agents/plugins/
 | **Claude Code** | `~/.claude/settings.json` | JSON (`mcpServers: {}`) | [docs](https://docs.anthropic.com/en/docs/claude-code) |
 | **Codex CLI** | `~/.codex/config.toml` | TOML (`[mcp_servers.name]`) | [docs](https://developers.openai.com/codex/mcp) |
 
-**Note:** Claude and Codex use different config formats. `ln-013-config-syncer` aligns MCP/policy settings non-destructively; it does not make Claude the source of truth for Codex skill installs.
+**Note:** Claude and Codex use different config formats and native plugin flows. `ln-013-config-syncer` installs or verifies selected marketplace plugins independently for both agents, defaults to `agile-workflow`, and aligns MCP/policy settings non-destructively.
 
 </details>
 
@@ -620,9 +620,9 @@ claude-code-skills/                      # MARKETPLACE
 |   |-- ln-010-dev-environment-setup/  # L2: Full environment setup coordinator
 |   |-- ln-011-agent-installer/        # Install/update Codex and Claude CLI
 |   |-- ln-012-mcp-configurator/       # Claude-side MCP setup: registration, hooks, permissions, migrations
-|   |-- ln-013-config-syncer/          # Align Claude/Codex config, MCP state, and Codex defaults
+|   |-- ln-013-config-syncer/          # Align marketplace plugins, MCP state, and Codex defaults
 |   |-- ln-014-agent-instructions-manager/ # Single owner of CLAUDE.md/AGENTS.md creation and audit
-|   |-- ln-015-hex-line-uninstaller/   # Remove Claude-side hex-line registration, permissions, hooks, and output style
+|   |-- ln-015-hex-line-uninstaller/   # Standalone cleanup for Claude-side hex-line integration
 |-- ln-020-codegraph/                  # Code knowledge graph for dependency analysis & impact checking
 |
 |  └──────────────────────────────────────────────┘

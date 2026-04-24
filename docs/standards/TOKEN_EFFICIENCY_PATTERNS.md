@@ -73,7 +73,7 @@ Integrated into `ln-010` assessment and verification flow. Validates: JSON synta
 | **ln-513** (regression-checker) | Group failing tests by error category in verdict | `shared/references/output_normalization.md` |
 | **ln-622** (build-auditor) | Append build_health score to results_log with trend | `shared/references/results_log_pattern.md` |
 | **ln-811** (performance-profiler) | Deduplicate suspicion stack entries across call chain steps | `shared/references/output_normalization.md` |
-| **ln-013** (config-syncer) | Align Claude and Codex settings without shared active plugin roots | `shared/references/hook_health_check.md` |
+| **ln-013** (marketplace/config aligner) | Align Claude and Codex marketplace plugins without shared active plugin roots | `shared/references/hook_health_check.md` |
 | **ln-514** (test-log-analyzer) | §6 Message Normalization → MANDATORY READ to shared | `shared/references/output_normalization.md` |
 
 ## 6. What NOT to Adopt

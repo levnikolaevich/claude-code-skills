@@ -37,7 +37,7 @@ docs/
 | [project-bootstrap](plugins/project-bootstrap.md) | Create or transform projects to Clean Architecture with Docker and CI/CD |
 | [optimization-suite](plugins/optimization-suite.md) | Performance profiling, dependency upgrades, code modernization |
 | [community-engagement](plugins/community-engagement.md) | GitHub triage, announcements, RFC debates, response automation |
-| [setup-environment](plugins/setup-environment.md) | Install CLI agents, configure MCP servers, sync settings, audit instruction files |
+| [setup-environment](plugins/setup-environment.md) | Install CLI agents, configure MCP servers, align marketplace plugins, audit instruction files |
 
 ## Responsibility Boundaries
 

@@ -70,6 +70,8 @@ Use `hex-line` first for repo file reads/search/edits on code, config, scripts, 
 | Architecture patterns (L0-L3) | `cat docs/architecture/SKILL_ARCHITECTURE_GUIDE.md` |
 | Agent delegation runtime | `cat docs/architecture/AGENT_DELEGATION_PLATFORM_GUIDE.md` |
 | Tool configuration | `cat skills-catalog/shared/references/environment_state_contract.md` |
+| Loop health model | `cat skills-catalog/shared/references/loop_health_contract.md` |
+| Procedural SOP/TWI guide | `cat skills-catalog/shared/references/procedural_skill_sop_guide.md` |
 | Key workflow | `ln-700 -> ln-100 -> ln-200 -> ln-1000` |
 | Skill metadata | `head -20 {ln-NNN}/SKILL.md` |
 | Reference files for a skill | `ls {ln-NNN}/references/` |
@@ -86,6 +88,8 @@ Use `hex-line` first for repo file reads/search/edits on code, config, scripts, 
 | Agent instructions writing guide | `skills-catalog/shared/references/agent_instructions_writing_guide.md` |
 | Writing guidelines | `docs/architecture/SKILL_ARCHITECTURE_GUIDE.md` |
 | Environment State | `skills-catalog/shared/references/environment_state_contract.md` |
+| Loop Health | `skills-catalog/shared/references/loop_health_contract.md` |
+| Procedural SOP/TWI | `skills-catalog/shared/references/procedural_skill_sop_guide.md` |
 | Risk-Based Testing | `skills-catalog/shared/references/risk_based_testing_guide.md` |
 | Frontmatter fields | `skills-catalog/shared/references/frontmatter_reference.md` |
 | Questions format | `skills-catalog/shared/references/questions_format.md` |

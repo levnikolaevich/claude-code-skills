@@ -81,6 +81,8 @@ Skill(skill: "ln-316-review-refinement-worker", args: "{identifier} refinement")
 
 ## Runtime Contract
 
+**MANDATORY READ:** Load `shared/references/loop_health_contract.md`
+
 Runtime family:
 - `evaluation-runtime`
 
@@ -182,6 +184,10 @@ node shared/scripts/evaluation-runtime/cli.mjs register-agent \
 ```
 
 5. Checkpoint Phase 2 with `health_check_done`, `agents_available`, `agents_required`, and optional `agents_skipped_reason`.
+6. Classify each external agent result before domain verdict:
+   - `rate_limited`, `tool_missing`, `auth_missing`, `permission_denial`, and `asked_question` are transport/operator states.
+   - Do not convert them into `NO-GO` without domain evidence from artifacts or findings.
+   - Record loop health for repeated advisor/session failures and pause when retry usefulness is exhausted.
 
 ### Phase 3: Evidence Lanes
 
@@ -271,6 +277,7 @@ Rules:
 - Stage 1 runs in parallel, Stage 2 runs after Stage 1 merge
 - each perspective = independent advisor process via `agent_runner.mjs` (NOT host-native sub-agents)
 - every launched process requires cleanup evidence
+- advisor session failures use `failure_class`, `progress_signals`, and `session_usable` from `agent_runner.mjs`; classified transport failures pause/defer instead of becoming domain findings
 - refinement trace is mandatory
 - wait for advisor results via runtime `sync-agent`; Claude hosts may use `Monitor` for observability
 

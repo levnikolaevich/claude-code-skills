@@ -112,6 +112,19 @@ Heuristics, not hard law:
 
 ---
 
+## Procedural Skill Rules
+
+For procedural, orchestrating, or mutating skills:
+- critical checklists must be colocated at the point of risk, not only in final DoD
+- risky steps should state action, key point, why, evidence, exception, and automation/guard when the risk is not self-evident
+- executable preflight checks must appear before external agent/tool invocations when permissions, auth, or tool availability can block execution
+- retry loops must include objective progress evidence and a pause condition
+- final Definition of Done does not replace point-of-use risk checks
+
+Use `shared/references/procedural_skill_sop_guide.md` for the detailed SOP/TWI writing model.
+
+---
+
 ## Compliance Notes
 
 Additional enforced rules:

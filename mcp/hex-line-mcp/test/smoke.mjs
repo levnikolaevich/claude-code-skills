@@ -1696,6 +1696,34 @@ describe("edit_file replace removed", () => {
                 });
                 assert.equal(result.isError, true, "Tool rejects non-canonical edit payload");
                 assert.match(errMsgOf(result), /BAD_INPUT: unknown edit type/, "Failure is reported at the public contract boundary");
+                assert.equal(result.structuredContent.code, "INVALID_EDIT_PAYLOAD");
+                assert.equal(result.structuredContent.next_action, "fix_inputs");
+                assert.equal(result.structuredContent.failure_class, "unknown");
+            });
+        } finally {
+            if (fs.existsSync(tmp)) fs.unlinkSync(tmp);
+        }
+    });
+
+    it("edit_file rejects malformed nested payloads before raw TypeError", async () => {
+        const tmp = join(tmpdir(), `hex-test-malformed-nested-edit-${Date.now()}-${Math.random().toString(16).slice(2)}.js`);
+        fs.writeFileSync(tmp, "alpha\nbeta\ngamma\n");
+        try {
+            await withMcpClient(async (client) => {
+                const result = await client.callTool({
+                    name: "edit_file",
+                    arguments: {
+                        file_path: tmp,
+                        allow_external: true,
+                        edits: JSON.stringify([{ set_line: { anchor: "aa.1" } }]),
+                    },
+                });
+                assert.equal(result.isError, true, "Tool rejects malformed nested edit payload");
+                assert.equal(result.structuredContent.code, "INVALID_EDIT_PAYLOAD");
+                assert.equal(result.structuredContent.next_action, "fix_inputs");
+                assert.equal(result.structuredContent.failure_class, "unknown");
+                assert.doesNotMatch(errMsgOf(result), /Cannot read properties of undefined|trim/i);
+                assert.match(errMsgOf(result), /set_line\.new_text must be a string/);
             });
         } finally {
             if (fs.existsSync(tmp)) fs.unlinkSync(tmp);
@@ -2711,11 +2739,15 @@ describe("protocol: edit_file output", () => {
         const claudePath = join(tmpdir(), "hex-external-claude", ".claude", "plans", "foo.md");
         const hexSkillsPath = join(tmpdir(), "hex-external-skills", ".hex-skills", "foo.md");
         const externalPath = join(tmpdir(), "hex-external-other", "random.txt");
+        const spoofedClaudePath = join(tmpdir(), "hex-external-spoof", "not.claude", "plans", "foo.md");
+        const spoofedHexSkillsPath = join(tmpdir(), "hex-external-spoof", "not.hex-skills", "foo.md");
         // Should NOT throw — auto-exempted by EXTERNAL_SAFE_FOLDERS
         assert.doesNotThrow(() => assertProjectScopedPath(claudePath), ".claude/ outside project must pass");
         assert.doesNotThrow(() => assertProjectScopedPath(hexSkillsPath), ".hex-skills/ outside project must pass");
         // Plain external path still throws
         assert.throws(() => assertProjectScopedPath(externalPath), /PATH_OUTSIDE_PROJECT/, "plain external path still blocked");
+        assert.throws(() => assertProjectScopedPath(spoofedClaudePath), /PATH_OUTSIDE_PROJECT/, "folder names that merely contain .claude stay blocked");
+        assert.throws(() => assertProjectScopedPath(spoofedHexSkillsPath), /PATH_OUTSIDE_PROJECT/, "folder names that merely contain .hex-skills stay blocked");
     });
 
 

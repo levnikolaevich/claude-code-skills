@@ -1,6 +1,7 @@
 import { resolve } from "node:path";
 import { computeResumeAction } from "./guards.mjs";
 import { createRuntimeStore } from "../../../shared/scripts/coordinator-runtime/lib/core.mjs";
+import { updateLoopHealthMap } from "../../../shared/scripts/coordinator-runtime/lib/loop-health.mjs";
 import { pipelineStageCoordinatorSummarySchema } from "../../../shared/scripts/coordinator-runtime/lib/schemas.mjs";
 import { assertSchema } from "../../../shared/scripts/coordinator-runtime/lib/validate.mjs";
 import { PHASES } from "./phases.mjs";
@@ -72,6 +73,9 @@ const pipelineStore = createRuntimeStore({
             branch_name: manifest.branch_name,
             stage_timestamps: {},
             stage_summaries: {},
+            loop_health: {
+                stages: {},
+            },
             git_stats: {},
             readiness_scores: {},
             infra_issues: [],
@@ -159,6 +163,45 @@ export function recordStageSummary(projectRoot, storyId, summary) {
             [`stage_${summary.payload.stage}`]: summary,
         },
     }));
+}
+
+export function recordLoopHealth(projectRoot, storyId, stage, signal) {
+    const runId = resolveRunId(projectRoot, "ln-1000", null, storyId);
+    if (!runId) {
+        return { ok: false, error: "No active pipeline run found" };
+    }
+    const stageKey = `stage_${stage}`;
+    let recordedEntry = null;
+    let pauseRecommendation = null;
+    const result = updateState(projectRoot, runId, state => {
+        const currentLoopHealth = state.loop_health || {};
+        const updated = updateLoopHealthMap(currentLoopHealth.stages || {}, stageKey, signal);
+        recordedEntry = updated.entry;
+        pauseRecommendation = updated.pause;
+        const pauseState = updated.pause.pause
+            ? {
+                phase: PHASES.PAUSED,
+                paused_reason: `${stageKey} loop health pause - ${updated.pause.reason}`,
+                pending_decision: null,
+            }
+            : {};
+        return {
+            ...state,
+            ...pauseState,
+            loop_health: {
+                stages: updated.map,
+            },
+        };
+    }, { eventType: "LOOP_HEALTH_RECORDED" });
+    if (!result.ok) {
+        return result;
+    }
+    return {
+        ok: true,
+        state: result.state,
+        loop_health: recordedEntry,
+        pause: pauseRecommendation,
+    };
 }
 
 export function getStatus(projectRoot, storyId) {

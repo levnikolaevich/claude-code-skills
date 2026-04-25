@@ -34,7 +34,7 @@ Runtime-backed gate coordinator. Owns fast-track routing, quality/test summaries
 ## Runtime Contract
 
 **MANDATORY READ:** Load `shared/references/environment_state_contract.md`, `shared/references/storage_mode_detection.md`, `shared/references/input_resolution_pattern.md`
-**MANDATORY READ:** Load `shared/references/coordinator_runtime_contract.md`, `shared/references/story_gate_runtime_contract.md`, `shared/references/coordinator_summary_contract.md`
+**MANDATORY READ:** Load `shared/references/coordinator_runtime_contract.md`, `shared/references/story_gate_runtime_contract.md`, `shared/references/coordinator_summary_contract.md`, `shared/references/loop_health_contract.md`
 **MANDATORY READ:** Load `shared/references/git_worktree_fallback.md`
 **MANDATORY READ:** Load `references/minimum_quality_checks.md`
 
@@ -111,8 +111,11 @@ node shared/scripts/story-gate-runtime/cli.mjs advance --to PHASE_7_FINALIZATION
    - fast-track: `Skill(skill: "ln-510-quality-coordinator", args: "{storyId} --fast-track --run-id {childRunId} --summary-artifact-path {childSummaryArtifactPath}")`
    - full mode with prior cycle: append `--previous-cycle-focus "{blocking_categories}"` when `previous_cycle` is not null
 5. Read child `story-quality` artifact only, then `record-quality`.
-6. Checkpoint `PHASE_3_QUALITY_CHECKS` with the recorded quality summary.
-7. If the quality summary already implies hard FAIL, you may jump directly to `PHASE_6_VERDICT`.
+6. Before another quality/rework cycle, compare FAIL evidence against prior cycle:
+   - progress = new quality artifact, new fix tasks, code delta, status delta, or changed blocking category
+   - same FAIL with no new evidence = record loop health and pause before another rework cycle
+7. Checkpoint `PHASE_3_QUALITY_CHECKS` with the recorded quality summary.
+8. If the quality summary already implies hard FAIL, you may jump directly to `PHASE_6_VERDICT`.
 
 ### Phase 4: Test Planning
 

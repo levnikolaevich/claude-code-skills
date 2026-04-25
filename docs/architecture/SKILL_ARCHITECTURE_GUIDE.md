@@ -44,6 +44,8 @@ Rule of thumb:
 | **Single source of truth** | Put enforceable rules in shared refs, not scattered prose |
 | **Top-down ownership** | Coordinators know workers; workers do not encode ownership hierarchy back upward |
 | **Token efficiency** | Remove duplicated prose and keep only action-relevant detail |
+| **Loop-aware retries** | Keep lifecycle status separate from `loop_health`; repeated attempts need new evidence |
+| **SOP/TWI execution** | Procedural steps carry action, key point, why, evidence, exception, and guard at point of use |
 
 ### Skill Layers
 
@@ -157,6 +159,8 @@ These are repo heuristics, not universal laws.
 |---------|--------------|
 | table-oriented metadata | cheaper to scan than long prose |
 | imperative workflow steps | easier for agents to execute |
+| point-of-use risk checklists | prevents skipped critical steps when progressive disclosure hides later sections |
+| step -> key point -> why | makes risky instructions harder to bypass or reinterpret |
 | short direct sentences | lowers context cost and ambiguity |
 | `MANDATORY READ` only for execution-critical files | keeps context minimal and intentional |
 | detail in `references/` | prevents giant monolithic skills |
@@ -188,6 +192,8 @@ Use `skills-catalog/shared/concise_terms.md` for wording cleanup.
 | worker defines parent or coordinator | reverse coupling | remove ownership wording |
 | caller describes workers but never invokes them explicitly | agents tend to inline logic | add `Skill()` blocks and Worker Invocation section |
 | same threshold or rule repeated in many skills | drift risk | move to shared ref |
+| retries are driven only by lifecycle status | retry storms and same-error loops | use `shared/references/loop_health_contract.md` |
+| final DoD carries all safety checks | agents may miss point-of-use risks | colocate SOP/TWI checklist at the risky step |
 | giant inline instructions that are rarely needed | context waste | move to conditional shared ref |
 | stale platform/runtime references | agent confusion | update or delete immediately |
 | giant root map or giant skill manual | crowds out task context | keep map-first and route outward |
@@ -210,6 +216,7 @@ Use `skills-catalog/shared/concise_terms.md` for wording cleanup.
 - [ ] The chosen layer is appropriate
 - [ ] `Skill` vs `Agent` choice is justified
 - [ ] Shared refs reduce duplication instead of adding indirection
+- [ ] Retry loops use `loop_health` evidence instead of lifecycle status alone
 - [ ] File size and workflow shape still fit the responsibility
 
 ### Writing Check
@@ -218,6 +225,7 @@ Use `skills-catalog/shared/concise_terms.md` for wording cleanup.
 - [ ] Tables replace verbose prose where useful
 - [ ] Sentences are short and direct
 - [ ] Repeated instructions have been merged or removed
+- [ ] Procedural risky steps include point-of-use action/key point/why/evidence/exception/guard
 
 ---
 

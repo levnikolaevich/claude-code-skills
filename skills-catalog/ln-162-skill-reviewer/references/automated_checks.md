@@ -215,3 +215,15 @@ for f in {scoped SKILL.md files}; do
   grep -nP '\.hex-skills/runtime-artifacts/(?!runs/)' "$f" && echo "FAIL: non-run-scoped runtime artifact path: $f"
 done
 ```
+
+## Check 23: SOP/TWI procedural executability (D2b, WARN)
+```bash
+for f in {scoped SKILL.md files}; do
+  grep '\*\*Type:\*\*' "$f" | grep -qiE 'orchestrator|coordinator|worker' || continue
+  grep -nEi '\b(typically|periodically|regularly|as needed|when appropriate)\b' "$f" && echo "WARN: vague procedural modal wording: $f"
+  grep -nE '^[0-9]+\. .*\b(and then|; then|, then)\b' "$f" && echo "WARN: compound procedural step: $f"
+  if grep -qiE '(Agent\(|Skill\(skill:|record-worker|checkpoint|advance --to|update .*status)' "$f"; then
+    grep -qiE 'Risk Checklist|Preflight|guard|Evidence|checkpoint|artifact' "$f" || echo "WARN: procedural skill may lack point-of-use checklist/evidence: $f"
+  fi
+done
+```

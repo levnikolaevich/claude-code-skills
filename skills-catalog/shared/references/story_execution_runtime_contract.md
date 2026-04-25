@@ -22,6 +22,7 @@ node shared/scripts/story-execution-runtime/cli.mjs checkpoint --phase PHASE_3_S
 node shared/scripts/story-execution-runtime/cli.mjs record-worker --task-id T-123 --payload '{...}'
 node shared/scripts/story-execution-runtime/cli.mjs record-group --group-id G-1 --payload '{...}'
 node shared/scripts/story-execution-runtime/cli.mjs record-stage-summary --story PROJ-123 --payload '{...}'
+node shared/scripts/story-execution-runtime/cli.mjs record-loop-health --scope task --key T-123 --payload '{...}'
 node shared/scripts/story-execution-runtime/cli.mjs advance --to PHASE_4_TASK_EXECUTION
 node shared/scripts/story-execution-runtime/cli.mjs pause --reason "..."
 node shared/scripts/story-execution-runtime/cli.mjs complete
@@ -54,6 +55,7 @@ node shared/scripts/story-execution-runtime/cli.mjs complete
 - `story_transition_done`
 - `tasks`
 - `groups`
+- optional `loop_health` by task, group, and scenario validation scope
 
 ## Guard Rules
 
@@ -66,6 +68,8 @@ node shared/scripts/story-execution-runtime/cli.mjs complete
 - Story cannot move to `To Review` while parallel workers are still inflight
 - `DONE` requires a recorded Stage 2 coordinator artifact
 - `DONE` requires `PHASE_8_SELF_CHECK` with `pass=true`
+- repeated same task, worker, error, or scenario segment without new artifact/status/code evidence must record Loop Health and pause when policy says another retry is not useful
+- productive agent timeouts move to verification/review when artifacts changed; idle timeouts stay in retry/pause handling
 
 ## Worker Result Contract
 
@@ -78,6 +82,7 @@ Coordinator semantics:
 - every managed worker run starts through `task-worker-runtime`
 - coordinators checkpoint `child_run` metadata before invocation
 - artifact paths are worker-disambiguated: `{task_id}--{worker}.json`
+- agent transport failures are classified as Loop Health signals; they are not task-domain verdicts until `ln-402` or equivalent evidence says so
 
 ## Coordinator Stage Summary
 

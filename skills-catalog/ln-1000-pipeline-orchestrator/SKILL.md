@@ -48,6 +48,7 @@ Extract: `task_provider` = Task Management -> Provider (`linear` | `file`).
 ## Pipeline: 4-Stage State Machine
 
 **MANDATORY READ:** Load `references/pipeline_states.md` for transition rules and guards.
+**MANDATORY READ:** Load `shared/references/loop_health_contract.md`
 
 ```
 Backlog       --> Stage 0 (ln-300) --> Backlog      --> Stage 1 (ln-310) --> Todo
@@ -257,6 +258,7 @@ IF target_stage <= 0:
   Skill(skill: "ln-300-task-coordinator", args: "{id}")
   Read Stage 0 coordinator artifact -> Bash: node $PIPELINE record-stage-summary --story {id} --payload '{...}'
   ASSERT Stage 0 artifact: status=completed, stage=0
+  IF ASSERT fails: Bash: node $PIPELINE record-loop-health --story {id} --stage 0 --payload '{"error":"Stage 0 ASSERT failed","progress_detected":false}'
   Re-read kanban only as secondary assertion
   IF ASSERT fails: Bash: node $PIPELINE pause --story {id} --reason "Stage 0 artifact missing or invalid"; ESCALATE
   Write stage notes: .hex-skills/pipeline/stage_0_notes_{id}.md (Key Decisions, Artifacts)
@@ -274,6 +276,9 @@ IF target_stage <= 1:
     IF advance fails: Bash: node $PIPELINE pause --story {id} --reason "Validation retry exhausted"; ESCALATE
     Skill(skill: "ln-310-multi-agent-validator", args: "{id}")    # retry
     Read retry Stage 1 artifact -> Bash: node $PIPELINE record-stage-summary --story {id} --payload '{...}'
+  IF same ASSERT failure repeats without new Stage 1 artifact/checkpoint/status evidence:
+    Bash: node $PIPELINE record-loop-health --story {id} --stage 1 --payload '{"error":"Stage 1 ASSERT failed","progress_detected":false}'
+    IF result.pause.pause == true: ESCALATE using result.state.paused_reason
   Re-read kanban only as secondary assertion
   IF still NOT Todo: Bash: node $PIPELINE pause --story {id} --reason "Validation artifact or status invalid"; ESCALATE
   Extract agents_info from Stage 1 artifact metadata or review runtime state
@@ -294,6 +299,7 @@ WHILE true:
     Skill(skill: "ln-400-story-executor", args: "{id}")
     Read Stage 2 coordinator artifact -> Bash: node $PIPELINE record-stage-summary --story {id} --payload '{...}'
     ASSERT artifact story_status = To Review
+    IF ASSERT fails: Bash: node $PIPELINE record-loop-health --story {id} --stage 2 --payload '{"error":"Stage 2 ASSERT failed","progress_detected":false}'
     Re-read kanban only as secondary assertion
     IF ASSERT fails: Bash: node $PIPELINE pause --story {id} --reason "Stage 2 artifact missing or invalid"; ESCALATE; BREAK
     git_stats = parse `git diff --stat origin/{base_branch}..HEAD`
@@ -304,6 +310,9 @@ WHILE true:
   Bash: node $PIPELINE advance --story {id} --to STAGE_3
   Skill(skill: "ln-500-story-quality-gate", args: "{id}")
   Read Stage 3 coordinator artifact -> Bash: node $PIPELINE record-stage-summary --story {id} --payload '{...}'
+  IF repeated identical quality FAIL has no new artifact/task/code delta:
+    Bash: node $PIPELINE record-loop-health --story {id} --stage 3 --payload '{"error":"Stage 3 repeated quality FAIL","progress_detected":false}'
+    IF result.pause.pause == true: ESCALATE using result.state.paused_reason
   Extract quality verdict, score, agents_info from Stage 3 artifact
   Re-read kanban only as secondary assertion
   Write stage notes: .hex-skills/pipeline/stage_3_notes_{id}.md (Verdict, Score, Agent Review, Branch)
@@ -336,6 +345,7 @@ WHILE true:
 | `quality_cycles >= 2` | STOP — ESCALATE: "Quality gate failed after max cycles. Manual review needed." |
 | Validation retry fails (NO-GO after retry) | STOP — ESCALATE: ask user for direction |
 | Stage 2 precondition fails | STOP — ESCALATE: "Stage 2 incomplete, manual intervention needed" |
+| Same stage ASSERT failure repeats without new evidence | STOP — runtime `record-loop-health` pauses with actionable reason |
 
 ### Phase 5: Cleanup & Report
 

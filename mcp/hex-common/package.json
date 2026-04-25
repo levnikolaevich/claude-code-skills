@@ -5,6 +5,7 @@
   "type": "module",
   "exports": {
     "./runtime/mcp-bootstrap": "./src/runtime/mcp-bootstrap.mjs",
+    "./runtime/error-classifier": "./src/runtime/error-classifier.mjs",
     "./runtime/schema": "./src/runtime/schema.mjs",
     "./runtime/results": "./src/runtime/results.mjs",
     "./runtime/update-check": "./src/runtime/update-check.mjs",

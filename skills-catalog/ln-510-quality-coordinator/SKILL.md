@@ -15,7 +15,7 @@ Evaluation-platform coordinator for story quality review.
 
 ## Mandatory Read
 
-**MANDATORY READ:** Load `shared/references/evaluation_coordinator_runtime_contract.md`, `shared/references/evaluation_summary_contract.md`, `shared/references/evaluation_research_contract.md`
+**MANDATORY READ:** Load `shared/references/evaluation_coordinator_runtime_contract.md`, `shared/references/evaluation_summary_contract.md`, `shared/references/evaluation_research_contract.md`, `shared/references/loop_health_contract.md`
 **MANDATORY READ:** Load `shared/references/agent_review_workflow.md`, `shared/references/agent_delegation_pattern.md`
 **MANDATORY READ:** Load `references/criteria_validation.md`, `references/gate_levels.md`
 
@@ -135,6 +135,10 @@ When `previous_cycle_focus` is provided:
 
 1. Sync agents through `evaluation-runtime`.
 2. Do not cross this barrier until all required agents are resolved or explicitly skipped.
+3. Treat `failure_class` from agent results as transport evidence:
+   - `rate_limited`, `tool_missing`, `auth_missing`, `permission_denial`, and `asked_question` are not quality FAIL findings by themselves.
+   - `timeout_productive` can continue to merge/review only when output/log/session evidence exists.
+   - repeated identical worker/agent failure without new artifacts pauses through loop health before another cycle.
 
 ### Phase 5: Merge
 

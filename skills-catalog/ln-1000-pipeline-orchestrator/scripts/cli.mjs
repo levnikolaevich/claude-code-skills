@@ -9,6 +9,7 @@ import {
     listActiveRuns,
     loadRun,
     pauseRun,
+    recordLoopHealth,
     recordStageSummary,
     resolveRunId,
     saveState,
@@ -258,6 +259,25 @@ async function main() {
             return;
         }
 
+        case "record-loop-health": {
+            if (!values.story) {
+                fail("record-loop-health requires --story");
+            }
+            if (values.stage == null) {
+                fail("record-loop-health requires --stage");
+            }
+            const payload = tryParse(values.payload);
+            if (!payload || typeof payload !== "object") {
+                fail("record-loop-health requires --payload with loop signal");
+            }
+            const result = recordLoopHealth(null, values.story, values.stage, payload);
+            if (!result.ok) {
+                fail(result.error);
+            }
+            output(result);
+            return;
+        }
+
         case "pause": {
             if (!values.reason) {
                 fail("pause requires --reason");
@@ -296,7 +316,7 @@ async function main() {
         }
 
         default:
-            fail("Unknown command: start, status, advance, checkpoint, record-stage-summary, pause, cancel, complete");
+            fail("Unknown command: start, status, advance, checkpoint, record-stage-summary, record-loop-health, pause, cancel, complete");
     }
 }
 

@@ -10,6 +10,7 @@ import {
     pauseRun,
     readJsonFile,
     recordCycle,
+    recordLoopHealth,
     recordSummary,
     recordWorkerResult,
     resolveRunId,
@@ -53,6 +54,7 @@ const { values, positionals } = parseArgs({
         reason: { type: "string" },
         resolve: { type: "boolean", default: false },
         worker: { type: "string" },
+        scope: { type: "string" },
     },
 });
 
@@ -264,6 +266,17 @@ async function main() {
         return;
     }
 
+    if (command === "record-loop-health") {
+        const payload = readPayload(values, readJsonFile);
+        const { runId, run } = resolveRun(projectRoot);
+        const result = recordLoopHealth(projectRoot, runId, values.scope || `cycle_${run.state.current_cycle || 1}`, payload);
+        if (!result.ok) {
+            failResult(result);
+        }
+        output(result);
+        return;
+    }
+
     if (command === "pause") {
         const { runId } = resolveRun(projectRoot);
         const result = pauseRun(projectRoot, runId, values.reason || "Paused");
@@ -288,7 +301,7 @@ async function main() {
         return;
     }
 
-    fail("Unknown command. Use: start, status, advance, checkpoint, record-worker-result, record-summary, record-cycle, pause, complete");
+    fail("Unknown command. Use: start, status, advance, checkpoint, record-worker-result, record-summary, record-cycle, record-loop-health, pause, complete");
 }
 
 main().catch(error => fail(error.message));

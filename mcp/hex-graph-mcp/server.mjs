@@ -8,6 +8,7 @@ import { z } from "zod";
 const version = typeof __HEX_VERSION__ !== "undefined" ? __HEX_VERSION__ // eslint-disable-line no-undef
   : (await import("node:module")).createRequire(import.meta.url)("./package.json").version;
 import { createServerRuntime } from "@levnikolaevich/hex-common/runtime/mcp-bootstrap";
+import { classifyMcpFailure } from "@levnikolaevich/hex-common/runtime/error-classifier";
 import { flexBool, flexNum } from "@levnikolaevich/hex-common/runtime/schema";
 import { checkForUpdates } from "@levnikolaevich/hex-common/runtime/update-check";
 import { closeAllStores } from "./lib/store.mjs";
@@ -443,6 +444,7 @@ function renderGrammar(payload, toolName) {
             const code = err.code || payload?.code || "UNKNOWN";
             const message = err.message || payload?.summary || "";
             lines.push(`!code=${escapeValue(code)}`);
+            if (payload?.failure_class) lines.push(`!failure_class=${escapeValue(payload.failure_class)}`);
             if (message) lines.push(`!message=${escapeValue(message)}`);
             const recovery = err.recovery || payload?.recovery;
             if (typeof recovery === "string" && recovery.startsWith(">mcp__hex-graph__")) {
@@ -542,12 +544,14 @@ function graphError(codeOrError, message, recovery) {
             message,
             recovery: recovery || fallbackRecovery,
         };
+    const classification = classifyMcpFailure(error);
     const payload = pruneEmpty({
         status: STATUS.ERROR,
         code: error.code,
         summary: error.message,
         next_action: graphNextAction(error.code),
         recovery: error.recovery,
+        failure_class: classification.failure_class,
         error: { code: error.code, message: error.message, recovery: error.recovery },
     }) || { status: STATUS.ERROR };
     const text = renderGrammar(payload, null);
@@ -817,7 +821,7 @@ server.registerTool("index_project", {
         if (e?.code === "GRAPH_DB_BUSY" || e?.code === "EBUSY" || e?.code === "EPERM" || /busy or locked/i.test(message)) {
             return graphError("GRAPH_DB_BUSY", message, "Close the same-project graph DB in other hex-graph/editor sessions, wait for idle-close, then rerun index_project");
         }
-        return graphError("PATH_NOT_FOUND", e.message, "Check path exists and is accessible");
+        return graphError("PATH_NOT_FOUND", message, "Check path exists and is accessible");
     }
 });
 

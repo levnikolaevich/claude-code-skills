@@ -10,6 +10,7 @@ Every coordinator runtime has:
 - `checkpoints.json` for latest checkpoint per phase plus history
 - `history.jsonl` for append-only execution events
 - `resume_action` for the next deterministic step
+- optional `loop_health` for retry-usefulness evidence
 - active pointer indexed by `skill + identifier`
 
 All runtime state is project-scoped and run-scoped.
@@ -37,6 +38,14 @@ Rules:
 - `DONE` means orchestration completed correctly.
 - `PAUSED` means deterministic intervention is required.
 - Business failure may still end in `DONE` if follow-up actions were checkpointed correctly.
+- Lifecycle `status` or `phase` is not retry health. Use `loop_health` to decide whether another attempt is useful.
+- Artifact/checkpoint evidence proves completion. `loop_health` proves whether a repeated attempt made progress.
+- Transport, permission, auth, tool-missing, and rate-limit failures must not be converted into domain verdicts without domain evidence.
+
+Optional `loop_health` state follows `shared/references/loop_health_contract.md`.
+
+History event:
+- `LOOP_HEALTH_RECORDED` records a classified loop signal and resulting counters.
 
 ## Pending Decision Contract
 
@@ -89,6 +98,7 @@ Domain runtimes may add specialized commands such as:
 - `record-plan`
 - `record-group`
 - `record-cycle`
+- `record-loop-health`
 
 Status response shape:
 
@@ -128,6 +138,7 @@ Inactive response shape:
 - worker outputs are consumed through machine-readable summaries, never free-text parsing
 - `resume_action` must be derivable from state and checkpoints alone
 - concurrent runs must not share active pointers or artifact directories
+- repeated attempts after `loop_health.should_pause=true` must pause with an actionable reason instead of re-running blindly
 
 ## Relationship to Skill Design
 

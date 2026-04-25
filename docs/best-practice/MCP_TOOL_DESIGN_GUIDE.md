@@ -39,7 +39,9 @@ Rule: if a tool can return >100 lines, it MUST support truncation or a compact m
 | `NOOP_EDIT` | Edit produced identical content | Inform file already has desired content |
 | `OUT_OF_RANGE` | Line number exceeds file length | Show boundary snippet with hashes |
 
-Anti-pattern: raw stack traces. Agents cannot act on `Error: ENOENT` -- they need recovery actions.
+Every public error also carries `failure_class`: `permission_denial`, `tool_missing`, `auth_missing`, `rate_limited`, `timeout_idle`, `timeout_productive`, or `unknown`. This lets skills feed MCP failures into Loop Health without making the MCP server own retry policy.
+
+Anti-pattern: raw stack traces. Agents cannot act on `Error: ENOENT` or `Cannot read properties of undefined` -- they need `code`, `summary`, `next_action`, `recovery`, `failure_class`, and `error`.
 
 ## 4. Tool Descriptions — WHEN to use, not WHAT it does
 
@@ -91,14 +93,15 @@ When truncating, prefer structured metadata that tells the agent how to narrow n
 
 Build a tool when: it saves tokens, adds verification, or prevents errors shell cannot catch.
 
-## 9. Evolution -- periodically review constraints
+## 9. Evolution -- clean-cut migrations for repo-owned MCP
 
 | Practice | Example |
 |----------|--------|
 | Review constraints | `TodoWrite` removed from Claude Code -- tools wrapping it become dead weight |
 | Track usage patterns | If agents never use `plain`, remove it or make it default |
-| Version schemas | Breaking input changes break cached agent behavior |
-| Deprecate before removing | "DEPRECATED: use X instead" in description, remove after one cycle |
+| Make clean cuts | Remove repo-owned obsolete names and update docs/tests in the same change |
+| Keep lifecycle stable | Preserve public `status` meanings; add evidence fields instead of a second status path |
+| Migrate by tests | Contract tests prove docs, schemas, and examples no longer mention the old path |
 
 ## 10. Tool Annotations
 
@@ -124,6 +127,7 @@ Canonical fields (match [MCP_OUTPUT_CONTRACT_GUIDE.md](./MCP_OUTPUT_CONTRACT_GUI
 - `status` -- required, from canonical vocabulary (OK, ERROR, CONFLICT, STALE, etc.)
 - `reason` -- machine-readable classifier
 - `next_action` -- canonical label from output contract
+- `failure_class` -- classified transport/tool/auth/rate-limit/timeout signal for Loop Health
 - `error: {code, message, recovery}` -- only when status is ERROR
 - domain-specific payload -- tool-owned fields (matches, outline, etc.)
 

@@ -10,6 +10,7 @@ import {
     pauseRun,
     readJsonFile,
     recordGroup,
+    recordLoopHealth,
     recordStageSummary,
     recordWorker,
     resolveRunId,
@@ -53,6 +54,8 @@ const { values, positionals } = parseArgs({
         "from-status": { type: "string" },
         "to-status": { type: "string" },
         "group-id": { type: "string" },
+        scope: { type: "string" },
+        "scope-id": { type: "string" },
     },
 });
 
@@ -251,6 +254,20 @@ async function main() {
         return;
     }
 
+    if (command === "record-loop-health") {
+        if (!values.scope) {
+            fail("record-loop-health requires --scope");
+        }
+        const payload = readPayload(values, readJsonFile);
+        const { runId } = resolveRun(projectRoot);
+        const result = recordLoopHealth(projectRoot, runId, values.scope, values["scope-id"], payload);
+        if (!result.ok) {
+            failResult(result);
+        }
+        output(result);
+        return;
+    }
+
     if (command === "pause") {
         const { runId } = resolveRun(projectRoot);
         const result = pauseRun(projectRoot, runId, values.reason || "Paused");
@@ -275,7 +292,7 @@ async function main() {
         return;
     }
 
-    fail("Unknown command. Use: start, status, advance, checkpoint, record-worker, record-group, record-stage-summary, pause, complete");
+    fail("Unknown command. Use: start, status, advance, checkpoint, record-worker, record-group, record-stage-summary, record-loop-health, pause, complete");
 }
 
 main().catch(error => fail(error.message));

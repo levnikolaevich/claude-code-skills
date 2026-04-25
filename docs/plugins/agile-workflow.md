@@ -14,7 +14,7 @@
 
 ## What it does
 
-Automates the full Agile delivery cycle. Coordinators advance only from machine-readable artifacts, while task-plan, execution, quality, and test-planning workers keep their own runtime state and stay standalone-capable. Integrates with Linear or works standalone with markdown files.
+Automates the full Agile delivery cycle. Coordinators advance only from machine-readable artifacts, while task-plan, execution, quality, and test-planning workers keep their own runtime state and stay standalone-capable. Loop Health prevents same-error and no-progress retry storms without changing lifecycle statuses. Integrates with Linear or works standalone with markdown files.
 
 ## Skills
 
@@ -56,7 +56,7 @@ ln-200 (scope) -> ln-300 (tasks) -> ln-310 (validate)
     -> ln-500 (quality gate)
 ```
 
-`ln-220`, `ln-300`, `ln-400`, `ln-510`, and `ln-520` keep coordinator runtime state and checkpoint child worker runs for resume. `ln-221/222`, `ln-301/302`, `ln-401..404`, `ln-511..514`, and `ln-521..523` remain standalone-capable workers with their own run-scoped state and summaries. `ln-1000` advances only from coordinator stage artifacts, while `ln-310` runs registry-configured external-agent review before execution begins.
+`ln-220`, `ln-300`, `ln-400`, `ln-510`, and `ln-520` keep coordinator runtime state and checkpoint child worker runs for resume. `ln-400` and `ln-1000` also record `loop_health` when an attempt repeats a task, worker, stage, error, or validation segment. `ln-221/222`, `ln-301/302`, `ln-401..404`, `ln-511..514`, and `ln-521..523` remain standalone-capable workers with their own run-scoped state and summaries. `ln-1000` advances only from coordinator stage artifacts, while `ln-310` runs registry-configured external-agent review before execution begins.
 
 ## Quick start
 

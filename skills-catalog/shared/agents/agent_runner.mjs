@@ -27,6 +27,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { REVIEW_AGENT_STATUSES } from "../scripts/coordinator-runtime/lib/runtime-constants.mjs";
+import { classifyAgentResult } from "./agent_result_classifier.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -527,6 +528,24 @@ function executeAgent(agentCfg, cmd, stdinPrompt, hardTimeout,
             }
         }
 
+        function buildResult(fields) {
+            const classification = classifyAgentResult(fields);
+            const {
+                rawStdout,
+                rawStderr,
+                logContent,
+                outputWritten,
+                timedOut,
+                ...publicFields
+            } = fields;
+            return {
+                ...publicFields,
+                failure_class: classification.failure_class,
+                progress_signals: classification.progress_signals,
+                session_usable: classification.session_usable,
+            };
+        }
+
         // Open log file
         if (logPath) {
             try {
@@ -566,7 +585,7 @@ function executeAgent(agentCfg, cmd, stdinPrompt, hardTimeout,
                 error: "Command '" + agentCfg.command + "' not found",
                 success: false,
             });
-            resolve({
+            resolve(buildResult({
                 success: false,
                 agent: agentName,
                 response: null,
@@ -579,7 +598,7 @@ function executeAgent(agentCfg, cmd, stdinPrompt, hardTimeout,
                 started_at: startedAt,
                 finished_at: utcTimestamp(),
                 exit_code: -1,
-            });
+            }));
             return;
         }
 
@@ -605,7 +624,7 @@ function executeAgent(agentCfg, cmd, stdinPrompt, hardTimeout,
                 error: "Command '" + agentCfg.command + "' not found: " + err.message,
                 success: false,
             });
-            resolve({
+            resolve(buildResult({
                 success: false,
                 agent: agentName,
                 response: null,
@@ -618,7 +637,8 @@ function executeAgent(agentCfg, cmd, stdinPrompt, hardTimeout,
                 started_at: startedAt,
                 finished_at: utcTimestamp(),
                 exit_code: -1,
-            });
+                rawStderr: err.message,
+            }));
         });
 
         // Send prompt via stdin
@@ -705,7 +725,15 @@ function executeAgent(agentCfg, cmd, stdinPrompt, hardTimeout,
                     error: "Hard timeout after " + hardTimeout + " seconds",
                     success: false,
                 });
-                resolve({
+                let outputWritten = false;
+                if (outputFile) {
+                    try {
+                        outputWritten = fs.statSync(outputFile).size > 0;
+                    } catch {
+                        outputWritten = false;
+                    }
+                }
+                resolve(buildResult({
                     success: false,
                     agent: agentName,
                     response: null,
@@ -718,7 +746,12 @@ function executeAgent(agentCfg, cmd, stdinPrompt, hardTimeout,
                     started_at: startedAt,
                     finished_at: finishedAt,
                     exit_code: code,
-                });
+                    timedOut: true,
+                    rawStdout,
+                    rawStderr,
+                    logContent,
+                    outputWritten,
+                }));
                 return;
             }
 
@@ -769,7 +802,7 @@ function executeAgent(agentCfg, cmd, stdinPrompt, hardTimeout,
                     success: code === 0,
                 });
             }
-            resolve({
+            resolve(buildResult({
                 success: code === 0,
                 agent: agentName,
                 response: response || null,
@@ -784,7 +817,11 @@ function executeAgent(agentCfg, cmd, stdinPrompt, hardTimeout,
                 started_at: startedAt,
                 finished_at: finishedAt,
                 exit_code: code,
-            });
+                rawStdout,
+                rawStderr,
+                logContent,
+                outputWritten: agentWroteFile || Boolean(outputFile && response),
+            }));
         });
     });
 }
@@ -806,6 +843,9 @@ async function runAgent(agentName, prompt, cwd, timeout, registry,
             pid: null, log_file: logFile || getLogPath(outputFile),
             output_file: outputFile || null,
             started_at: null, finished_at: null, exit_code: -1,
+            failure_class: "tool_missing",
+            progress_signals: { output_written: false, log_written: false, session_captured: false },
+            session_usable: false,
         };
     }
 
@@ -819,6 +859,9 @@ async function runAgent(agentName, prompt, cwd, timeout, registry,
             pid: null, log_file: logFile || getLogPath(outputFile),
             output_file: outputFile || null,
             started_at: null, finished_at: null, exit_code: -1,
+            failure_class: "tool_missing",
+            progress_signals: { output_written: false, log_written: false, session_captured: false },
+            session_usable: false,
         };
     }
 

@@ -9,6 +9,7 @@ import {
     optimizationWorkerSummarySchema,
 } from "../../coordinator-runtime/lib/schemas.mjs";
 import { writeRuntimeArtifactJson } from "../../coordinator-runtime/lib/artifacts.mjs";
+import { updateLoopHealthMap } from "../../coordinator-runtime/lib/loop-health.mjs";
 import { assertSchema } from "../../coordinator-runtime/lib/validate.mjs";
 import { PHASES } from "./phases.mjs";
 
@@ -72,6 +73,9 @@ const optimizationStore = createRuntimeStore({
             phases: {},
             worker_results: {},
             child_runs: {},
+            loop_health: {
+                cycles: {},
+            },
             stop_reason: null,
             target_metric: manifest.target_metric,
             context_file: manifest.context_file,
@@ -189,6 +193,42 @@ export function recordCycle(projectRoot, runId, cycleRecord) {
             final_result: normalizedCycle.final_result || state.final_result,
         };
     });
+}
+
+export function recordLoopHealth(projectRoot, runId, scopeId, signal) {
+    let recordedEntry = null;
+    let pauseRecommendation = null;
+    const key = scopeId || "cycle";
+    const result = updateState(projectRoot, runId, state => {
+        const currentLoopHealth = state.loop_health || {};
+        const updated = updateLoopHealthMap(currentLoopHealth.cycles || {}, key, signal);
+        recordedEntry = updated.entry;
+        pauseRecommendation = updated.pause;
+        const pauseState = updated.pause.pause
+            ? {
+                phase: PHASES.PAUSED,
+                paused_reason: `${key} loop health pause - ${updated.pause.reason}`,
+                pending_decision: null,
+                stop_reason: updated.pause.category || state.stop_reason,
+            }
+            : {};
+        return {
+            ...state,
+            ...pauseState,
+            loop_health: {
+                cycles: updated.map,
+            },
+        };
+    }, { eventType: "LOOP_HEALTH_RECORDED" });
+    if (!result.ok) {
+        return result;
+    }
+    return {
+        ok: true,
+        state: result.state,
+        loop_health: recordedEntry,
+        pause: pauseRecommendation,
+    };
 }
 
 export {

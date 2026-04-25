@@ -13,6 +13,7 @@ import {
     STORY_EXECUTION_GROUP_STATUSES,
     TASK_BOARD_STATUSES,
 } from "../../coordinator-runtime/lib/runtime-constants.mjs";
+import { updateLoopHealthMap } from "../../coordinator-runtime/lib/loop-health.mjs";
 import { assertSchema } from "../../coordinator-runtime/lib/validate.mjs";
 import { PHASES } from "./phases.mjs";
 
@@ -93,6 +94,11 @@ const executionStore = createRuntimeStore({
             branch: manifest.branch,
             story_transition_done: false,
             stage_summary: null,
+            loop_health: {
+                tasks: {},
+                groups: {},
+                scenario: {},
+            },
             self_check_passed: false,
             final_result: null,
             created_at: new Date().toISOString(),
@@ -114,6 +120,13 @@ export const {
     startRun,
     updateState,
 } = executionStore;
+
+function loopHealthBucket(scope) {
+    if (scope === "task") return "tasks";
+    if (scope === "group") return "groups";
+    if (scope === "scenario") return "scenario";
+    return null;
+}
 
 function selectTaskLedgerSummary(workerResultsBySkill = {}) {
     for (const worker of TASK_LEDGER_PRIORITY) {
@@ -278,6 +291,52 @@ export function recordStageSummary(projectRoot, runId, summary) {
             },
         };
     });
+}
+
+export function recordLoopHealth(projectRoot, runId, scope, scopeId, signal) {
+    const bucket = loopHealthBucket(scope);
+    if (!bucket) {
+        return { ok: false, error: "Loop health scope must be task, group, or scenario" };
+    }
+    const key = scope === "scenario" ? (scopeId || "default") : scopeId;
+    if (!key) {
+        return { ok: false, error: "Loop health scope id is required" };
+    }
+
+    let recordedEntry = null;
+    let pauseRecommendation = null;
+    const result = updateState(projectRoot, runId, state => {
+        const currentLoopHealth = state.loop_health || {};
+        const updated = updateLoopHealthMap(currentLoopHealth[bucket] || {}, key, signal);
+        recordedEntry = updated.entry;
+        pauseRecommendation = updated.pause;
+        const pauseState = updated.pause.pause
+            ? {
+                phase: PHASES.PAUSED,
+                paused_reason: `${scope}:${key} loop health pause - ${updated.pause.reason}`,
+                pending_decision: null,
+            }
+            : {};
+        return {
+            ...state,
+            ...pauseState,
+            loop_health: {
+                tasks: currentLoopHealth.tasks || {},
+                groups: currentLoopHealth.groups || {},
+                scenario: currentLoopHealth.scenario || {},
+                [bucket]: updated.map,
+            },
+        };
+    }, { eventType: "LOOP_HEALTH_RECORDED" });
+    if (!result.ok) {
+        return result;
+    }
+    return {
+        ok: true,
+        state: result.state,
+        loop_health: recordedEntry,
+        pause: pauseRecommendation,
+    };
 }
 
 export {

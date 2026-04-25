@@ -275,6 +275,25 @@ done
 echo "DONE"
 echo ""
 
+# CHECK 23: SOP/TWI procedural executability (D2b, WARN)
+echo "=== CHECK 23: SOP/TWI procedural executability (D2b, WARN) ==="
+WARNS=0
+for f in $SCOPE; do
+  grep '\*\*Type:\*\*' "$f" | grep -qiE 'orchestrator|coordinator|worker' || continue
+  vague=$(grep -nEi '\b(typically|periodically|regularly|as needed|when appropriate)\b' "$f" || true)
+  compound=$(grep -nE '^[0-9]+\. .*\b(and then|; then|, then)\b' "$f" || true)
+  if [ -n "$vague" ]; then warn "vague procedural modal wording: $f"; echo "$vague"; WARNS=$((WARNS + 1)); fi
+  if [ -n "$compound" ]; then warn "compound procedural step: $f"; echo "$compound"; WARNS=$((WARNS + 1)); fi
+  if grep -qiE '(Agent\(|Skill\(skill:|record-worker|checkpoint|advance --to|update .*status)' "$f"; then
+    if ! grep -qiE 'Risk Checklist|Preflight|guard|Evidence|checkpoint|artifact' "$f"; then
+      warn "procedural skill may lack point-of-use checklist/evidence: $f"
+      WARNS=$((WARNS + 1))
+    fi
+  fi
+done
+echo "DONE ($WARNS warnings)"
+echo ""
+
 # ── SUMMARY ─────────────────────────────────────────────────────────
 echo "================================"
 if [ "$FAILS" -eq 0 ]; then

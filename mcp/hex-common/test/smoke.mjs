@@ -84,10 +84,14 @@ test("errorResult() builds canonical error envelope", () => {
     const r = errorResult("NOT_FOUND", "file missing", "check path");
     assert.equal(r.isError, true);
     assert.equal(r.structuredContent.status, "ERROR");
+    assert.equal(r.structuredContent.code, "NOT_FOUND");
+    assert.equal(r.structuredContent.summary, "file missing");
+    assert.equal(r.structuredContent.next_action, "fix_inputs");
+    assert.equal(r.structuredContent.recovery, "check path");
+    assert.equal(r.structuredContent.failure_class, "unknown");
     assert.equal(r.structuredContent.error.code, "NOT_FOUND");
     assert.equal(r.structuredContent.error.message, "file missing");
     assert.equal(r.structuredContent.error.recovery, "check path");
-    assert.equal(r.structuredContent.summary, undefined, "summary field removed from error envelope");
     assert.deepEqual(JSON.parse(r.content[0].text), r.structuredContent);
 });
 
@@ -101,3 +105,18 @@ test("errorResult() with extra preserves domain fields", () => {
     assert.equal(r.structuredContent.error.code, "SSH_ERROR");
 });
 
+test("errorResult() classifies recoverable MCP failure classes", () => {
+    assert.equal(errorResult("EACCES", "permission denied", "fix perms").structuredContent.failure_class, "permission_denial");
+    assert.equal(errorResult("ENOENT", "command not found: rg", "install rg").structuredContent.failure_class, "tool_missing");
+    assert.equal(errorResult("AUTH_FAILED", "permission denied (publickey)", "configure key").structuredContent.failure_class, "auth_missing");
+    assert.equal(errorResult("RATE_LIMITED", "429 too many requests", "wait").structuredContent.failure_class, "rate_limited");
+    assert.equal(errorResult("TRANSFER_TIMEOUT", "operation timed out", "retry later").structuredContent.failure_class, "timeout_idle");
+    assert.equal(errorResult("GRAPH_DB_BUSY", "database is locked", "close DB clients").structuredContent.failure_class, "timeout_idle");
+    assert.equal(errorResult("GRAPH_PROVIDER_SETUP_FAILED", "provider setup failed", "install provider").structuredContent.failure_class, "tool_missing");
+    assert.equal(errorResult("SSH_AUTH_FAILED", "No user for host", "configure ssh user").structuredContent.failure_class, "auth_missing");
+    assert.equal(errorResult("REMOTE_SSH_DISABLED", "remote-ssh disabled", "enable mode").structuredContent.failure_class, "permission_denial");
+    assert.equal(errorResult("SSH_HOST_NOT_ALLOWED", "host not in ALLOWED_HOSTS", "allow host").structuredContent.failure_class, "permission_denial");
+    assert.equal(errorResult("SSH_EXEC_TIMEOUT", "command exceeded limit", "retry later").structuredContent.failure_class, "timeout_idle");
+    assert.equal(errorResult("BAD_REMOTE_PLATFORM", "bad platform", "fix input").structuredContent.next_action, "fix_inputs");
+    assert.equal(errorResult("INVALID_INPUT", "missing edits field", "fix input").structuredContent.next_action, "fix_inputs");
+});

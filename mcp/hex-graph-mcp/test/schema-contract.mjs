@@ -111,6 +111,33 @@ describe("output envelope validation", () => {
         });
     });
 
+    it("graph errors expose failure_class in text grammar", async () => {
+        await withMcpClient(async (client) => {
+            const result = await client.callTool({
+                name: "analyze_edit_region",
+                arguments: { path: CWD, file: resolve(CWD, "..", "outside.ts") },
+            });
+            assert.equal(result.structuredContent, undefined);
+            const text = result.content[0].text;
+            assert.match(text.split("\n", 1)[0], /^error\s+[a-z_]+/);
+            assert.match(text, /!code=/);
+            assert.match(text, /!failure_class=unknown/);
+        });
+    });
+
+    it("provider setup errors classify missing tools", async () => {
+        await withMcpClient(async (client) => {
+            const result = await client.callTool({
+                name: "install_graph_providers",
+                arguments: { path: "Z:/definitely/missing", mode: "check" },
+            });
+            const text = result.content[0].text;
+            assert.match(text.split("\n", 1)[0], /^error\s+check_provider_setup/);
+            assert.match(text, /!code=GRAPH_PROVIDER_SETUP_FAILED/);
+            assert.match(text, /!failure_class=tool_missing/);
+        });
+    });
+
     it("inspect_symbol with include_evidence:true emits text-only envelope", async () => {
         const fixture = mkdtempSync(join(tmpdir(), "hex-graph-envelope-"));
         try {
@@ -147,7 +174,7 @@ describe("output envelope validation", () => {
 
 // Grammar body assertions. Uses a tmpdir indexed project so the server can
 // resolve real symbols and emit #section/.row/>pointer lines.
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { indexProject } from "../lib/indexer.mjs";
@@ -322,5 +349,22 @@ describe("grammar body contract", () => {
                 assert.ok(!/\"boundary_echo_stripped\"/.test(text), `${call.name}: boundary_echo_stripped leaked`);
             }
         });
+    });
+});
+
+describe("index_project hygiene", () => {
+    it("missing project path fails before materializing graph artifacts", async () => {
+        const parent = mkdtempSync(join(tmpdir(), "hex-graph-missing-parent-"));
+        const missing = join(parent, "definitely-missing");
+        try {
+            await assert.rejects(
+                () => indexProject(missing),
+                /PATH_NOT_FOUND/
+            );
+            assert.equal(existsSync(missing), false, "indexProject must not create missing project directories");
+            assert.equal(existsSync(join(missing, ".hex-skills")), false, "missing project error must not create graph artifacts");
+        } finally {
+            try { rmSync(parent, { recursive: true, force: true }); } catch { /* best-effort */ }
+        }
     });
 });

@@ -38,6 +38,7 @@ The runtime state must include:
 - `self_check_passed`
 - `summary_recorded`
 - `final_result`
+- optional `loop_health` for advisor and worker attempt usefulness
 
 ## Required Commands
 
@@ -49,6 +50,7 @@ The runtime state must include:
 - `record-summary`
 - `register-agent`
 - `sync-agent`
+- `record-loop-health`
 - `advance`
 - `pause`
 - `set-decision`
@@ -123,6 +125,13 @@ The runtime must block transitions when:
 - coordinator summary is missing
 - a phase listed in `required_phases_when_advisor_available` is checkpointed as SKIPPED while a corresponding advisor was marked available in the health check
 
+Agent and transport failures:
+- classify advisor/agent failures as `permission_denial`, `tool_missing`, `auth_missing`, `rate_limited`, `timeout_idle`, `timeout_productive`, `asked_question`, `agent_error`, or `unknown`
+- permission, auth, missing-tool, rate-limit, timeout, or agent-question outcomes are transport evidence, not validation findings
+- do not emit `NO-GO`, quality `FAIL`, or audit findings from transport failure alone
+- productive timeouts may feed partial-progress review only when output, log, session, artifact, git, or status evidence changed
+- repeated identical failures without new evidence record Loop Health and pause per `shared/references/loop_health_contract.md`
+
 ## Cleanup Evidence
 
 Cleanup is evidence-based, never boolean-only.
@@ -161,6 +170,7 @@ Short version:
 - `shared/references/refinement_trace_contract.md`
 - `shared/references/cleanup_evidence_contract.md`
 - `shared/references/evaluation_parallelism_policy.md`
+- `shared/references/loop_health_contract.md`
 
 **Version:** 1.0.0
 **Last Updated:** 2026-04-10

@@ -112,11 +112,13 @@ ln-200-scope-decomposer         # 2. Scope -> Epics -> Stories
 ln-1000-pipeline-orchestrator   # 3. Full artifact-driven pipeline: 300 → 310 → 400 → 500 → Done
 ```
 
+Coordinators keep lifecycle status separate from Loop Health: `status` says where the run is, artifacts/checkpoints prove completion, and `loop_health` decides whether another retry is useful. Procedural skills use SOP/TWI-style point-of-use checklists so risky steps carry action, key point, why, evidence, exception, and guard close to the moment of use.
+
 ---
 
 ## MCP Servers (Optional)
 
-Bundled MCP servers extend agent capabilities — hash-verified editing, code intelligence, and remote access. All skills work without MCP (fallback to built-in tools), but MCP servers improve accuracy and save tokens.
+Bundled MCP servers extend agent capabilities — hash-verified editing, code intelligence, and remote access. All skills work without MCP (fallback to built-in tools), but MCP servers improve accuracy and save tokens. MCP errors stay as `status: "ERROR"` and include `failure_class`, `next_action`, and recovery fields so skills can feed transport/tool/auth/rate-limit signals into Loop Health without inventing a second retry loop.
 
 ### Bundled servers
 
@@ -129,7 +131,7 @@ Bundled MCP servers extend agent capabilities — hash-verified editing, code in
 Deterministic scope rule: `hex-line` and `hex-graph` keep `path` as the project anchor. In normal use the agent fills it automatically from the active file or project root, so users usually do not need to type it manually. `hex-ssh` runs on Windows/macOS/Linux hosts; remote shell tools stay POSIX-oriented, while SFTP transfers support platform-aware remote paths.
 
 <!-- GENERATED:HEX_GRAPH_MCP_STATUS:START -->
-`hex-graph-mcp` quality snapshot: `103/103` tests passing, `1` curated corpus, `1` pinned external corpora, parser-first `green`.
+`hex-graph-mcp` quality snapshot: `106/106` tests passing, `1` curated corpus, `1` pinned external corpora, parser-first `green`.
 <!-- GENERATED:HEX_GRAPH_MCP_STATUS:END -->
 
 ### External servers

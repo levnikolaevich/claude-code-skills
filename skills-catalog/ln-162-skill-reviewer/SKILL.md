@@ -78,7 +78,7 @@ Automated failures are pre-verified. Record every one.
 
 ### Phase 3: Structural Review
 
-**MANDATORY READ:** Load `references/structural_review.md`, `shared/references/skill_contract.md`, `shared/references/mcp_applicability_matrix.md`, and `shared/references/mcp_tool_preferences.md`
+**MANDATORY READ:** Load `references/structural_review.md`, `shared/references/skill_contract.md`, `shared/references/procedural_skill_sop_guide.md`, `shared/references/mcp_applicability_matrix.md`, and `shared/references/mcp_tool_preferences.md`
 
 Review every skill in scope across D1-D11.
 
@@ -94,6 +94,7 @@ Treat these as structural issues, not style nits:
 - skills that should make `hex-graph` primary but still describe grep/manual analysis as the default path
 - skills that add `hex-graph` or `hex-line` with no real applicability per the shared matrix
 - wrong MCP namespaces such as `mcp__hex_graph__...`
+- procedural skills with vague modal words, compound high-risk steps, missing point-of-use checklists, missing why for risky steps, missing executable preflight, or missing evidence
 
 ### Phase 4: Intent Review
 
@@ -152,7 +153,7 @@ Run the canonical repo suite:
 node skills-catalog/ln-162-skill-reviewer/references/repo_review_suite.mjs
 ```
 
-The suite owns R1-R26. Do not copy those checks into host-specific command files.
+The suite owns R1-R27. Do not copy those checks into host-specific command files.
 
 ### Phase 3: Combined Report
 
@@ -162,7 +163,7 @@ Merge the universal review verdict and repo suite verdict:
 | Source | Verdict | Details |
 |--------|---------|---------|
 | Universal review | {PASS|PASS with CONCERNS|FAIL} | {summary} |
-| Repo suite | {PASS|PASS with WARNINGS|FAIL} | {R1-R26 summary} |
+| Repo suite | {PASS|PASS with WARNINGS|FAIL} | {R1-R27 summary} |
 | Combined | {worst verdict} | |
 ```
 

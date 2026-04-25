@@ -11,6 +11,7 @@ docs/
 |   `-- AGENT_DELEGATION_PLATFORM_GUIDE.md # Skill vs subagent runtime, recovery, Windows
 |-- best-practice/                   # Claude Code usage guidance
 |   |-- COMPONENT_SELECTION.md
+|   |-- MCP_TOOL_DESIGN_GUIDE.md     # MCP naming, bounded output, clean-cut migration, error classes
 |   |-- MCP_OUTPUT_CONTRACT_GUIDE.md # Canonical MCP status/reason/next_action vocabulary
 |   `-- WORKFLOW_TIPS.md
 |-- plugins/                         # Per-plugin landing pages
@@ -55,3 +56,5 @@ docs/
 |-------|------|
 | MCP tool design | [best-practice/MCP_TOOL_DESIGN_GUIDE.md](best-practice/MCP_TOOL_DESIGN_GUIDE.md) |
 | MCP output contract | [best-practice/MCP_OUTPUT_CONTRACT_GUIDE.md](best-practice/MCP_OUTPUT_CONTRACT_GUIDE.md) |
+| Loop Health contract | [../skills-catalog/shared/references/loop_health_contract.md](../skills-catalog/shared/references/loop_health_contract.md) |
+| Procedural SOP/TWI guide | [../skills-catalog/shared/references/procedural_skill_sop_guide.md](../skills-catalog/shared/references/procedural_skill_sop_guide.md) |

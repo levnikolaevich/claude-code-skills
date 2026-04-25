@@ -17,12 +17,15 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 // Edits inside these folders are allowed even when the path is outside the
 // current project root (e.g. ~/.claude/plans/, project-foreign .hex-skills/).
 const EXTERNAL_SAFE_FOLDERS = [
-    ".hex-skills/",
-    ".claude/",
+    ".hex-skills",
+    ".claude",
 ];
 
 function isInExternalSafeFolder(absPath) {
-    return EXTERNAL_SAFE_FOLDERS.some((folder) => absPath.includes(folder));
+    const parts = normalizeScopeValue(absPath)
+        .split("/")
+        .filter(Boolean);
+    return EXTERNAL_SAFE_FOLDERS.some((folder) => parts.includes(folder));
 }
 
 /**

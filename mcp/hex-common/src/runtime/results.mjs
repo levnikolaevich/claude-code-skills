@@ -1,5 +1,7 @@
 const LARGE_RESULT_META = { "anthropic/maxResultSizeChars": 500_000 };
 
+import { classifyMcpFailure } from "./error-classifier.mjs";
+
 /**
  * Build a canonical MCP tool result with structuredContent + text fallback.
  *
@@ -33,9 +35,26 @@ export function result(structured, { large = false } = {}) {
  * @returns {{ content: Array, structuredContent: object, isError: true, _meta?: object }}
  */
 export function errorResult(code, message, recovery, { large = false, extra = null } = {}) {
+    const normalizedCode = String(code || "ERROR");
+    const normalizedMessage = String(message || "Unknown MCP tool error");
+    const normalizedRecovery = String(recovery || "Review the error and retry with corrected inputs");
+    const classification = classifyMcpFailure({
+        code: normalizedCode,
+        message: normalizedMessage,
+        recovery: normalizedRecovery,
+    });
     const payload = {
         status: "ERROR",
-        error: { code, message, recovery },
+        code: normalizedCode,
+        summary: normalizedMessage,
+        next_action: classification.next_action,
+        recovery: normalizedRecovery,
+        failure_class: classification.failure_class,
+        error: {
+            code: normalizedCode,
+            message: normalizedMessage,
+            recovery: normalizedRecovery,
+        },
     };
     if (extra && typeof extra === "object") {
         Object.assign(payload, extra);

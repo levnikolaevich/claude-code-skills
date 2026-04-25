@@ -37,6 +37,7 @@ const batches = [
     {
         name: "env+quality+optimization",
         dirs: [
+            "skills-catalog/shared/agents/test",
             "skills-catalog/shared/scripts/benchmark-worker-runtime/test",
             "skills-catalog/shared/scripts/coordinator-runtime/test",
             "skills-catalog/shared/scripts/dependency-runtime/test",

@@ -59,6 +59,18 @@ export async function indexProject(projectPath, { languages } = {}) {
     let store;
     const shouldCloseStore = !hasOpenStore(absPath, { mode: "write" });
 
+    if (!existsSync(absPath)) {
+        const error = new Error(`PATH_NOT_FOUND: project path does not exist: ${absPath}`);
+        error.code = "PATH_NOT_FOUND";
+        throw error;
+    }
+    const rootStat = statSync(absPath);
+    if (!rootStat.isDirectory()) {
+        const error = new Error(`PATH_NOT_FOUND: project path is not a directory: ${absPath}`);
+        error.code = "PATH_NOT_FOUND";
+        throw error;
+    }
+
     // Ensure .hex-skills/codegraph dir exists
     const dbDir = join(absPath, CODEGRAPH_DIR);
     if (!existsSync(dbDir)) mkdirSync(dbDir, { recursive: true });

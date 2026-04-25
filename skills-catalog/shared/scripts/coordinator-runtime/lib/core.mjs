@@ -18,6 +18,7 @@ import {
     runtimeHistoryEventSchema,
 } from "./schemas.mjs";
 import { assertSchema } from "./validate.mjs";
+import { updateLoopHealthMap } from "./loop-health.mjs";
 
 const LOCK_FILE = ".lock";
 const HISTORY_FILE = "history.jsonl";
@@ -204,6 +205,7 @@ function rebuildFromHistory(events, fallback) {
             case "STATE_SAVED":
             case "RUN_PAUSED":
             case "RUN_COMPLETED":
+            case "LOOP_HEALTH_RECORDED":
                 state = event.state || state;
                 break;
             case "CHECKPOINT_RECORDED":
@@ -459,6 +461,37 @@ export function createRuntimeStore(config) {
         }), { eventType: "RUN_PAUSED" });
     }
 
+    function recordLoopHealth(projectRoot, runId, scopeKey, signal, options = {}) {
+        let recordedEntry = null;
+        let pauseRecommendation = null;
+        const result = updateState(projectRoot, runId, state => {
+            const updated = updateLoopHealthMap(state.loop_health || {}, scopeKey, signal, options.policy || {});
+            recordedEntry = updated.entry;
+            pauseRecommendation = updated.pause;
+            const pauseState = options.pauseOnRecommendation !== false && updated.pause.pause
+                ? {
+                    phase: "PAUSED",
+                    paused_reason: updated.pause.reason || "Loop health pause",
+                    pending_decision: null,
+                }
+                : {};
+            return {
+                ...state,
+                ...pauseState,
+                loop_health: updated.map,
+            };
+        }, { eventType: "LOOP_HEALTH_RECORDED" });
+        if (!result.ok) {
+            return result;
+        }
+        return {
+            ok: true,
+            state: result.state,
+            loop_health: recordedEntry,
+            pause: pauseRecommendation,
+        };
+    }
+
     function completeRun(projectRoot, runId) {
         const run = loadRun(projectRoot, runId);
         if (!run) {
@@ -519,6 +552,7 @@ export function createRuntimeStore(config) {
         saveState,
         checkpointPhase,
         updateState,
+        recordLoopHealth,
         pauseRun,
         completeRun,
         clearActiveRun(projectRoot, skill, identifier, runId) {

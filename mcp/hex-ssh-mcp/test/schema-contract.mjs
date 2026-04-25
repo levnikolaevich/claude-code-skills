@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const CWD = resolve(__dirname, "..");
 
-async function withMcpClient(run) {
+async function withMcpClient(run, env = {}) {
     const { Client } = await import("@modelcontextprotocol/sdk/client");
     const { StdioClientTransport } = await import("@modelcontextprotocol/sdk/client/stdio.js");
     const client = new Client({ name: "hex-ssh-schema-contract", version: "1.0.0" }, { capabilities: {} });
@@ -15,6 +15,7 @@ async function withMcpClient(run) {
         args: ["server.mjs"],
         cwd: CWD,
         stderr: "pipe",
+        env: { ...process.env, ...env },
     });
     try {
         await client.connect(transport);
@@ -72,6 +73,53 @@ describe("schema descriptions", () => {
                 assert.ok(props.includes("transferTimeoutMs"), `${name} should accept transferTimeoutMs`);
                 assert.ok(!props.includes("execTimeoutMs"), `${name} should not expose execTimeoutMs`);
             }
+        });
+    });
+});
+
+describe("error output contract", () => {
+    it("public SSH errors include recovery classification fields", async () => {
+        await withMcpClient(async (client) => {
+            const result = await client.callTool({
+                name: "ssh-read-lines",
+                arguments: { host: "", filePath: "/tmp/nope" },
+            });
+            const payload = result.structuredContent || JSON.parse(result.content[0].text);
+            assert.equal(payload.status, "ERROR");
+            assert.equal(payload.code, "INVALID_INPUT");
+            assert.equal(payload.summary, "Required: host, filePath");
+            assert.equal(payload.next_action, "fix_inputs");
+            assert.equal(payload.failure_class, "unknown");
+            assert.equal(payload.error.recovery, "Provide required input fields and retry");
+        });
+    });
+
+    it("remote-ssh disabled mode returns typed permission denial", async () => {
+        await withMcpClient(async (client) => {
+            const result = await client.callTool({
+                name: "remote-ssh",
+                arguments: { host: "example.com", user: "deploy", command: "ls" },
+            });
+            const payload = result.structuredContent || JSON.parse(result.content[0].text);
+            assert.equal(payload.status, "ERROR");
+            assert.equal(payload.code, "REMOTE_SSH_DISABLED");
+            assert.equal(payload.next_action, "fix_permissions");
+            assert.equal(payload.failure_class, "permission_denial");
+            assert.match(payload.error.recovery, /REMOTE_SSH_MODE=safe/);
+        }, { REMOTE_SSH_MODE: "" });
+    });
+
+    it("missing SSH user returns typed auth_missing", async () => {
+        await withMcpClient(async (client) => {
+            const result = await client.callTool({
+                name: "ssh-read-lines",
+                arguments: { host: "__hex_ssh_no_user_contract__", filePath: "/tmp/nope" },
+            });
+            const payload = result.structuredContent || JSON.parse(result.content[0].text);
+            assert.equal(payload.status, "ERROR");
+            assert.equal(payload.code, "SSH_AUTH_MISSING");
+            assert.equal(payload.next_action, "authenticate");
+            assert.equal(payload.failure_class, "auth_missing");
         });
     });
 });

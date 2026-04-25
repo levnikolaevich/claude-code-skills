@@ -26,6 +26,11 @@ import { deduplicateLines, normalizeOutput } from "@levnikolaevich/hex-common/ou
 // SSH output schema — shared by all 8 tools (all interact with external servers)
 const SSH_OUTPUT_SCHEMA = z.object({
     status: z.string(),
+    code: z.string().optional(),
+    summary: z.string().optional(),
+    next_action: z.string().optional(),
+    recovery: z.string().optional(),
+    failure_class: z.string().optional(),
     host: z.string().optional(),
     path: z.string().optional(),
     content: z.string().optional(),
@@ -128,8 +133,59 @@ async function sshExec(args, command) {
 /**
  * Standard error response.
  */
-function errResult(msg, code = "GENERIC") {
-    return errorResult(code, msg, "Check SSH connection");
+const SSH_RECOVERY_BY_CODE = {
+    INVALID_INPUT: "Provide required input fields and retry",
+    REMOTE_SSH_DISABLED: "Set REMOTE_SSH_MODE=safe or REMOTE_SSH_MODE=open when remote command execution is intentional",
+    BLOCKED_COMMAND: "Use a safer command or set REMOTE_SSH_MODE=open only when unrestricted execution is intentional",
+    SSH_AUTH_MISSING: "Provide user/privateKeyPath, configure ~/.ssh/config, or set SSH_PRIVATE_KEY",
+    SSH_AUTH_FAILED: "Check SSH credentials, authorized_keys, user, host, and private key",
+    SSH_KEY_UNREADABLE: "Check privateKeyPath exists and is readable",
+    SSH_HOST_NOT_ALLOWED: "Add the resolved host to ALLOWED_HOSTS or choose an allowed host",
+    SSH_CONNECTION_FAILED: "Check host, port, network reachability, SSH service, and host key trust",
+    SSH_EXEC_TIMEOUT: "Increase execTimeoutMs or run a narrower command",
+    PATH_OUTSIDE_ROOT: "Use a path inside ALLOWED_DIRS or ALLOWED_LOCAL_DIRS",
+    BAD_PATH: "Use an absolute remote path for the selected remote platform",
+    BAD_REMOTE_PLATFORM: "Use remotePlatform=auto, posix, or windows",
+    UNSUPPORTED_REMOTE_PLATFORM: "Use a POSIX remote path for shell-backed tools or use ssh-upload/ssh-download for Windows SFTP transfers",
+    FILE_NOT_FOUND: "Check path exists",
+    DIR_NOT_FOUND: "Check directory path",
+    WRITE_FAILED: "Check permissions and disk space",
+    STALE_CHECKSUM: "Re-read with ssh-read-lines",
+    INVALID_CHECKSUM: "Pass checksums as a non-empty JSON array of checksum strings from ssh-read-lines",
+};
+
+function splitErrorMessage(message) {
+    const text = String(message || "Unknown SSH MCP error");
+    const match = /^([A-Z][A-Z0-9_]+):\s*(.*)$/s.exec(text);
+    if (!match) return { code: null, message: text };
+    return { code: match[1], message: match[2] || text };
+}
+
+function classifySshError(message, fallbackCode = "SSH_ERROR") {
+    const parsed = splitErrorMessage(message);
+    let code = parsed.code || fallbackCode;
+    const text = String(parsed.message || message || "");
+    const lower = text.toLowerCase();
+
+    if (/^required:/i.test(text) || /must be a non-empty/i.test(text)) code = "INVALID_INPUT";
+    else if (/no user for host|no ssh private key found/i.test(text)) code = "SSH_AUTH_MISSING";
+    else if (/cannot read key/i.test(text)) code = "SSH_KEY_UNREADABLE";
+    else if (/permission denied \(publickey\)|all configured authentication methods failed|auth/i.test(text)) code = "SSH_AUTH_FAILED";
+    else if (/not in allowed_hosts/i.test(text)) code = "SSH_HOST_NOT_ALLOWED";
+    else if (code === "EXEC_TIMEOUT") code = "SSH_EXEC_TIMEOUT";
+    else if (/ssh connection .* failed/i.test(text)) code = "SSH_CONNECTION_FAILED";
+    else if (lower.includes("timed out") || lower.includes("etimedout")) code = code.includes("TRANSFER") ? "TRANSFER_TIMEOUT" : "SSH_EXEC_TIMEOUT";
+
+    return {
+        code,
+        message: text,
+        recovery: SSH_RECOVERY_BY_CODE[code] || "Check SSH connection",
+    };
+}
+
+function errResult(msg, code = undefined) {
+    const failure = classifySshError(msg, code);
+    return errorResult(failure.code, failure.message, failure.recovery);
 }
 
 function sshError(code, message, recovery) {

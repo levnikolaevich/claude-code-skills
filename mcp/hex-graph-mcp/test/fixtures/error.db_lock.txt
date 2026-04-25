@@ -1,3 +1,4 @@
 error fix_db_lock
 !code=GRAPH_DB_BUSY
+!failure_class=timeout_idle
 !message=database is locked

@@ -34,11 +34,12 @@ When a tool returns structured content, prefer this order:
 
 1. `status`
 2. `reason`
-3. `revision` / `file` / `path` / `query` identity
-4. `next_action` or `next_actions`
-5. `summary`
-6. recovery helpers such as `retry_edit`, `retry_edits`, `suggested_read_call`, `retry_plan`
-7. detailed sections such as `result`, `warnings`, `snippet`, `risk_summary`
+3. `failure_class` for classified errors
+4. `revision` / `file` / `path` / `query` identity
+5. `next_action` or `next_actions`
+6. `summary`
+7. recovery helpers such as `retry_edit`, `retry_edits`, `suggested_read_call`, `retry_plan`
+8. detailed sections such as `result`, `warnings`, `snippet`, `risk_summary`
 
 Reason: agents should see decision fields before supporting detail.
 
@@ -130,6 +131,11 @@ Rules:
 | `inspect_raw_diff` | Fall back to raw diff because semantic mode is unavailable |
 | `review_risks` | Inspect risk details before acting |
 | `no_action` | Nothing to do |
+| `fix_permissions` | Correct file, SSH, graph DB, or OS permissions |
+| `install_tool` | Install or expose a missing executable/provider |
+| `authenticate` | Configure credentials, token, OAuth, or SSH key |
+| `defer_retry` | Wait for rate-limit or quota recovery before retrying |
+| `retry_after_wait` | Retry after an idle timeout or transient busy resource clears |
 
 ### Canonical graph labels
 
@@ -202,15 +208,16 @@ Structured-output MCP errors should use this public shape in `structuredContent`
 - `summary`
 - `next_action`
 - `recovery`
+- `failure_class`
 - `error: { code, message, recovery }` (canonical sub-object)
 
-`summary` explains what failed. `next_action` names the immediate category of recovery. `recovery` gives the human-readable instruction.
+`summary` explains what failed. `next_action` names the immediate category of recovery. `recovery` gives the human-readable instruction. `failure_class` is the machine-readable transport/tool/auth/rate-limit/timeout signal consumed by Loop Health.
 
 On the MCP envelope level, ALSO set `isError: true` (see section 8).
 
 Do not return raw stack traces in public tool outputs.
 
-Text-grammar servers express errors inside their grammar. For `hex-graph`, the first line is `error <next_action> ...` and body lines carry details such as `!code=<CODE>` and `!message=<text>`.
+Text-grammar servers express errors inside their grammar. For `hex-graph`, the first line is `error <next_action> ...` and body lines carry details such as `!code=<CODE>`, `!failure_class=<CLASS>`, and `!message=<text>`.
 
 ## 8. MCP Envelope
 
@@ -281,6 +288,7 @@ Before merging MCP output changes, check:
 - `next_action` / `next_actions` use labels, not prose
 - `summary` is compact and non-redundant
 - structured error outputs set BOTH `isError: true` and `structuredContent.status: "ERROR"`
+- structured and text-grammar errors include `failure_class` when a failure can affect retry usefulness
 - structured tools declare `outputSchema` that matches actual `structuredContent` shape (schema-contract tests)
 - text-grammar tools do not declare `outputSchema` and have grammar contract tests
 - large results set `_meta["anthropic/maxResultSizeChars"]`

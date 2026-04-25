@@ -351,6 +351,33 @@ function main() {
         add(results, "R26", "MCP output contract checker", "SKIP");
     }
 
+    let r27Fails = 0;
+    const navigationText = [
+        "AGENTS.md",
+        "docs/README.md",
+        "README.md",
+        "docs/architecture/SKILL_ARCHITECTURE_GUIDE.md",
+    ].map((path) => exists(path) ? readText(path) : "").join("\n");
+    if (!navigationText.includes("loop_health_contract.md")) r27Fails += 1;
+    if (!navigationText.includes("procedural_skill_sop_guide.md")) r27Fails += 1;
+    if (!/Loop Health/i.test(exists("docs/plugins/agile-workflow.md") ? readText("docs/plugins/agile-workflow.md") : "")) r27Fails += 1;
+    for (const path of [
+        "skills-catalog/ln-1000-pipeline-orchestrator/SKILL.md",
+        "skills-catalog/ln-400-story-executor/SKILL.md",
+    ]) {
+        const text = exists(path) ? readText(path) : "";
+        if (!text.includes("loop_health_contract.md")) r27Fails += 1;
+        if (!text.includes("record-loop-health")) r27Fails += 1;
+    }
+    for (const path of [
+        "skills-catalog/shared/scripts/coordinator-runtime/test/loop-health.mjs",
+        "skills-catalog/shared/scripts/story-execution-runtime/test/loop-health.mjs",
+        "skills-catalog/ln-1000-pipeline-orchestrator/scripts/test/loop-health.mjs",
+    ]) {
+        if (!exists(path)) r27Fails += 1;
+    }
+    add(results, "R27", "Loop Health/SOP discoverability", r27Fails === 0 ? "PASS" : `FAIL (${r27Fails} missing refs)`);
+
     process.stdout.write("\n## Repo-Specific Review -- claude-code-skills\n\n");
     process.stdout.write("| # | Check | Result |\n");
     process.stdout.write("|---|-------|--------|\n");

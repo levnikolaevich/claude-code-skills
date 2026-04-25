@@ -7,12 +7,12 @@
     "url": "https://github.com/levnikolaevich/claude-code-skills",
     "source": "github"
   },
-  "version": "1.29.0",
+  "version": "1.30.0",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "@levnikolaevich/hex-line-mcp",
-      "version": "1.29.0",
+      "version": "1.30.0",
       "transport": {
         "type": "stdio"
       }

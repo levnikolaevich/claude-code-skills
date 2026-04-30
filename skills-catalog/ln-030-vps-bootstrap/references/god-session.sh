@@ -4,7 +4,7 @@
 # running headless. systemd Restart=always covers crashes.
 #
 # Idempotent: if tmux session exists, attaches as watcher; otherwise creates fresh.
-# Scheduling is external: ${SERVICE_PREFIX}-dispatch.timer (systemd) injects /dispatch
+# Scheduling is external: ${SERVICE_PREFIX}-dispatch.timer (systemd) injects /${DISPATCH_COMMAND_NAME}
 # hourly via tmux send-keys; this wrapper does NOT register an in-session /loop.
 #
 # Resume-by-default: on fresh tmux create, if a prior session exists for ${PROJECT_DIR},
@@ -22,6 +22,7 @@ SECRETS=/etc/${PROJECT_NAME}/secrets.env
 STATE_DIR=/var/lib/${PROJECT_NAME}
 LOG=/var/log/${PROJECT_NAME}-god.log
 CMD_FILE=$STATE_DIR/god-command.json
+LAST_CMD_FILE=$STATE_DIR/last-god-command.json
 ERROR_FILE=$STATE_DIR/last-god-error.json
 SESSIONS_DIR_FILE=$STATE_DIR/sessions-dir.path
 LOCK_FILE=$STATE_DIR/.cmd-lock
@@ -70,6 +71,9 @@ if [[ -f "$CMD_FILE" ]]; then
     (
       flock -x 200
       CMD_JSON=$(cat "$CMD_FILE" 2>/dev/null || echo '{}')
+      # Preserve a copy so relay-bot's SessionStart hook can attribute the
+      # new session to the operator who issued the command (operator_chat_id).
+      cp -f "$CMD_FILE" "$LAST_CMD_FILE" 2>/dev/null || true
       rm -f "$CMD_FILE"
       ACTION=$(echo "$CMD_JSON" | jq -r '.action // empty')
       SID=$(echo "$CMD_JSON" | jq -r '.session_id // empty')
@@ -128,15 +132,24 @@ if tmux has-session -t "$SESSION" 2>/dev/null; then
   fi
 else
   log "creating fresh tmux session $SESSION (cmd: $CLAUDE_CMD)"
+  # If claude exits (e.g. `--continue` says "no conversation found"), retry
+  # without resume flags before falling back to bash. This keeps the TUI alive
+  # even when Claude Code's session index can't pick up our jsonls (e.g. version
+  # mismatch between new ~/.claude/sessions/ index and legacy ~/.claude/projects/).
+  CLAUDE_FALLBACK="claude --dangerously-skip-permissions"
+  RETRY_GUARD=""
+  if [[ "$CLAUDE_CMD" != "$CLAUDE_FALLBACK" ]]; then
+    RETRY_GUARD=" || ($CLAUDE_FALLBACK)"
+  fi
   tmux new-session -d -s "$SESSION" -x 200 -y 50 \
-    "cd ${PROJECT_DIR} && $CLAUDE_CMD ; bash -l"
+    "cd ${PROJECT_DIR} && ($CLAUDE_CMD)${RETRY_GUARD} ; bash -l"
   log "tmux + claude launched"
 
-  # Scheduling is external (${SERVICE_PREFIX}-dispatch.timer fires /dispatch via
+  # Scheduling is external (${SERVICE_PREFIX}-dispatch.timer fires /${DISPATCH_COMMAND_NAME} via
   # tmux send-keys hourly at :07). The wrapper does NOT register an in-session
   # /loop — that pattern is fragile across tmux/claude respawn (see ln-030 v5.1).
   sleep 5
-  log "fresh session up; ${SERVICE_PREFIX}-dispatch.timer will inject /dispatch hourly"
+  log "fresh session up; ${SERVICE_PREFIX}-dispatch.timer will inject /${DISPATCH_COMMAND_NAME} hourly"
 fi
 
 # Watcher loop: keep this systemd process alive while tmux session lives.

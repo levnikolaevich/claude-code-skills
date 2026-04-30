@@ -3,7 +3,7 @@ description: "Process one open ${GITHUB_REPO} Issue end-to-end through the agile
 allowed-tools: Bash, Read, Write, Edit, Skill, Glob, Grep
 ---
 
-# /dispatch — process one Issue end-to-end
+# /${DISPATCH_COMMAND_NAME} — process one Issue end-to-end
 
 You are running inside the long-lived **${PROJECT_NAME} god-session**. Your job for this invocation: pick **one** open issue, claim it, drive it through the full agile pipeline (4 stages), open a PR, and exit. Do not loop. Do not start a second issue. `${SERVICE_PREFIX}-dispatch.timer` will fire you again at the next `:07`.
 
@@ -14,7 +14,7 @@ You are running inside the long-lived **${PROJECT_NAME} god-session**. Your job 
 - `${SERVICE_PREFIX}-mint-gh-token` is on PATH; mints fresh GitHub App installation tokens on demand.
 - `git credential.helper` already configured to use `${SERVICE_PREFIX}-mint-gh-token` for `git push`.
 - For `gh`: always `export GH_TOKEN=$(${SERVICE_PREFIX}-mint-gh-token)` before the first `gh` call.
-- **claude-relay-bot HTTP API at `http://127.0.0.1:9999`** — used below for dispatch tracking (durable audit in SQLite). Conversational replies to operator are auto-mirrored via Stop hook; `/dispatch` status pings still go via direct curl as before for realtime feedback.
+- **claude-relay-bot HTTP API at `http://127.0.0.1:${RELAY_HOOK_PORT}`** — used below for dispatch tracking (durable audit in SQLite). Conversational replies to operator are auto-mirrored via Stop hook; `/${DISPATCH_COMMAND_NAME}` status pings still go via direct curl as before for realtime visibility.
 
 ## Telegram outbound (curl pattern, for realtime status pings)
 
@@ -28,7 +28,7 @@ curl -fsS -X POST \
 ## Step 1 — Open dispatch run + budget gate
 
 ```bash
-RUN_ID=$(curl -fsS -X POST http://127.0.0.1:9999/dispatch/start \
+RUN_ID=$(curl -fsS -X POST http://127.0.0.1:${RELAY_HOOK_PORT}/dispatch/start \
   -H 'Content-Type: application/json' \
   -d '{"trigger":"cron"}' | jq -r .run_id)
 ```
@@ -36,7 +36,7 @@ RUN_ID=$(curl -fsS -X POST http://127.0.0.1:9999/dispatch/start \
 Run `/usage`. If weekly remaining < 30% OR 5h-window remaining < 20%:
 
 ```bash
-curl -fsS -X POST http://127.0.0.1:9999/dispatch/end \
+curl -fsS -X POST http://127.0.0.1:${RELAY_HOOK_PORT}/dispatch/end \
   -H 'Content-Type: application/json' \
   -d "{\"run_id\":$RUN_ID,\"status\":\"budget_skip\",\"error\":\"weekly=<X>%,5h=<Y>%\"}"
 # send Telegram throttled message, then exit
@@ -56,7 +56,7 @@ Sort: `priority:p1` > `priority:p2` > `priority:p3`; oldest `createdAt` wins tie
 If queue is empty:
 
 ```bash
-curl -fsS -X POST http://127.0.0.1:9999/dispatch/end \
+curl -fsS -X POST http://127.0.0.1:${RELAY_HOOK_PORT}/dispatch/end \
   -d "{\"run_id\":$RUN_ID,\"status\":\"queue_empty\"}"
 # Telegram: [claude] queue empty, idle
 exit
@@ -65,7 +65,7 @@ exit
 If picked an issue:
 
 ```bash
-curl -fsS -X POST http://127.0.0.1:9999/dispatch/phase \
+curl -fsS -X POST http://127.0.0.1:${RELAY_HOOK_PORT}/dispatch/phase \
   -d "{\"run_id\":$RUN_ID,\"phase\":\"issue_pick\",\"status\":\"go\",\"details\":\"#$N $TITLE\"}"
 ```
 
@@ -93,7 +93,7 @@ For each Skill call, pass the input as a YAML/Markdown block containing:
 ### Stage 0: ln-300 task decomposition
 
 ```bash
-curl -fsS -X POST http://127.0.0.1:9999/dispatch/phase \
+curl -fsS -X POST http://127.0.0.1:${RELAY_HOOK_PORT}/dispatch/phase \
   -d "{\"run_id\":$RUN_ID,\"phase\":\"ln-300\",\"status\":\"running\"}"
 ```
 
@@ -131,7 +131,7 @@ PASS / CONCERNS → proceed to Step 5. FAIL → rework via ln-400 once; second F
 ## Step 5 — Commit, push, PR
 
 ```bash
-curl -fsS -X POST http://127.0.0.1:9999/dispatch/phase \
+curl -fsS -X POST http://127.0.0.1:${RELAY_HOOK_PORT}/dispatch/phase \
   -d "{\"run_id\":$RUN_ID,\"phase\":\"pr_create\",\"status\":\"running\"}"
 
 git checkout -b agent/issue-<N>-<slug>
@@ -142,7 +142,7 @@ git push -u origin agent/issue-<N>-<slug>
 gh pr create --repo ${GITHUB_REPO} --base master --head agent/issue-<N>-<slug> \
   --title "<concise PR title>" --body "Closes #<N> ..."
 
-curl -fsS -X POST http://127.0.0.1:9999/dispatch/end \
+curl -fsS -X POST http://127.0.0.1:${RELAY_HOOK_PORT}/dispatch/end \
   -d "{\"run_id\":$RUN_ID,\"status\":\"pr_opened\",\"pr_number\":$N,\"pr_url\":\"$URL\",\"branch\":\"agent/issue-<N>-<slug>\"}"
 ```
 
@@ -152,11 +152,11 @@ Send Telegram: `[claude#<N>] PR opened: <url>`. Exit.
 
 ## Hard rules
 
-- One Issue per /dispatch invocation. Never loop.
+- One Issue per /${DISPATCH_COMMAND_NAME} invocation. Never loop.
 - Never push to `master` directly. Only `agent/*` branches.
 - Never amend commits. New commits only.
 - Never echo `secrets.env` values to logs/comments/Telegram.
 - If `${SERVICE_PREFIX}-mint-gh-token` errors twice within 30s → `dispatch_end failed` + Telegram alert + exit.
 - If Skill() crashes (tool error, not a documented verdict) → close current phase `status=error`, `dispatch_end failed`, revert label appropriately + Telegram alert + exit.
 - Telegram or relay-bot localhost API failures are non-fatal — log and continue.
-- Conversational replies outside /dispatch are auto-mirrored via Stop hook — DO NOT manually curl Telegram for those. Status pings inside this dispatch ARE direct curl (realtime visibility).
+- Conversational replies outside /${DISPATCH_COMMAND_NAME} are auto-mirrored via Stop hook — DO NOT manually curl Telegram for those. Status pings inside this dispatch ARE direct curl (realtime visibility).

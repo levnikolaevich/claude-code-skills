@@ -1,5 +1,5 @@
 [Unit]
-Description=Hourly /dispatch trigger for ${SERVICE_PREFIX} god-session (durable, replaces in-session /loop)
+Description=Hourly /${DISPATCH_COMMAND_NAME} trigger for ${SERVICE_PREFIX} god-session (durable, replaces in-session /loop)
 
 [Timer]
 OnCalendar=*-*-* *:07:00

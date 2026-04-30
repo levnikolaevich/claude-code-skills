@@ -134,8 +134,8 @@ else
   log "creating fresh tmux session $SESSION (cmd: $CLAUDE_CMD)"
   # If claude exits (e.g. `--continue` says "no conversation found"), retry
   # without resume flags before falling back to bash. This keeps the TUI alive
-  # even when Claude Code's session index can't pick up our jsonls (e.g. version
-  # mismatch between new ~/.claude/sessions/ index and legacy ~/.claude/projects/).
+  # even when Claude Code's session index cannot pick up the project JSONLs
+  # after a CLI storage-layout change.
   CLAUDE_FALLBACK="claude --dangerously-skip-permissions"
   RETRY_GUARD=""
   if [[ "$CLAUDE_CMD" != "$CLAUDE_FALLBACK" ]]; then
@@ -147,7 +147,7 @@ else
 
   # Scheduling is external (${SERVICE_PREFIX}-dispatch.timer fires /${DISPATCH_COMMAND_NAME} via
   # tmux send-keys hourly at :07). The wrapper does NOT register an in-session
-  # /loop — that pattern is fragile across tmux/claude respawn (see ln-030 v5.1).
+  # /loop because tmux/claude respawn must be controlled by systemd.
   sleep 5
   log "fresh session up; ${SERVICE_PREFIX}-dispatch.timer will inject /${DISPATCH_COMMAND_NAME} hourly"
 fi

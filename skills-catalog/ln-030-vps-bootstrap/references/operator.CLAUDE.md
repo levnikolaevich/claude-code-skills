@@ -62,7 +62,7 @@ If the operator sends anything else starting with `/` (e.g. `/usage`, `/some_typ
 
 `${SERVICE_PREFIX}-dispatch.timer` fires hourly at `:07`, executes `tmux send-keys -t ${SERVICE_PREFIX}-god "/${DISPATCH_COMMAND_NAME}" Enter`. Your pane sees the slash-command, you process per `~/.claude/commands/${DISPATCH_COMMAND_NAME}.md`. One issue per invocation. Don't loop.
 
-## Security model (allowlist middleware + /users management, v5.2)
+## Security model (allowlist middleware + /users management)
 
 The relay-bot's username is publicly discoverable on Telegram, so anyone can DM it. Inbound messages are filtered at the framework level by `AllowlistMiddleware`, which consults the SQLite `allowed_users` table on every event:
 

@@ -2,9 +2,9 @@
 Description=Claude relay bot — Telegram bridge + sessions UI for ${SERVICE_PREFIX} god-session
 After=network-online.target ${SERVICE_PREFIX}-god.service
 Wants=network-online.target
-# NOTE: PartOf=${SERVICE_PREFIX}-god.service was removed in v5.1.
-# Relay must survive a god-restart triggered by /new_session or [Resume] button
-# so it can complete the «Resuming…» reply to the operator.
+# Relay is intentionally independent from ${SERVICE_PREFIX}-god.service. It must
+# survive god-session restarts triggered by /new_session or [Resume] and keep
+# queued inbound Telegram text durable until tmux is ready again.
 
 [Service]
 Type=simple
@@ -21,7 +21,7 @@ StandardError=journal
 MemoryMax=128M
 CPUQuota=50%
 
-# Hardening (codex review v5.1, finding CR-003).
+# Hardening: keep the Telegram ingress process tightly sandboxed.
 # Mitigates blast radius if the bot token leaks: the relay process is the
 # only path from Telegram into the god-session, so it must be tightly sandboxed.
 NoNewPrivileges=true

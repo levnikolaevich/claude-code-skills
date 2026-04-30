@@ -35,13 +35,13 @@ Recommended deployment shape: **one project = one `${BOT_USER}` Linux user = one
 | **Global per-VPS** (one install per machine) | shared by every project | apt packages: `curl`, `wget`, `git`, `jq`, `gpg`, `pipx`, `python3`, `python3-venv`, `bubblewrap`, `unzip`, `tmux`; `gh` CLI from official apt repo. Step 1+2 are idempotent — running them twice is a no-op. |
 | **Per-`${BOT_USER}`** (one bot user can host multiple projects but skill recommends 1:1 with project) | scoped to the user's home | `~/.nvm/`, Node 24, `claude` + `codex` CLIs (npm global within that user's nvm), `~/.claude/` (`settings.json`, `CLAUDE.md`, `statusline.sh`, `commands/`, `projects/<encoded-cwd>/<sid>.jsonl`), `~/.codex/` (`config.toml`, `notify.sh`), `~/.venv-relay/` (aiogram + aiohttp). |
 | **Per-`${PROJECT_NAME}`** (state, config, logs) | scoped to project dir name | `/etc/${PROJECT_NAME}/secrets.env`, `/etc/${PROJECT_NAME}/github-app.pem`, `/var/lib/${PROJECT_NAME}/relay.db`, `/var/lib/${PROJECT_NAME}/god-command.json`, `/var/lib/${PROJECT_NAME}/sessions-dir.path`, `/var/lib/${PROJECT_NAME}/last-god-error.json`, `/var/log/${PROJECT_NAME}-god.log`. |
-| **Per-`${SERVICE_PREFIX}`** (binaries, units, tmux) | scoped to systemd/binary prefix | `/usr/local/bin/${SERVICE_PREFIX}-god`, `/usr/local/bin/${SERVICE_PREFIX}-mint-gh-token`, systemd units `${SERVICE_PREFIX}-god.service`, `${SERVICE_PREFIX}-dispatch.timer`, `${SERVICE_PREFIX}-dispatch.service`, `${SERVICE_PREFIX}-relay-bot.service`, tmux session `${SERVICE_PREFIX}-god`. For new projects set `SERVICE_PREFIX=${PROJECT_NAME}`; the split exists only for legacy installs (e.g. live `civic-skills-lab` project with `civic-*` unit names). |
+| **Per-`${SERVICE_PREFIX}`** (binaries, units, tmux) | scoped to systemd/binary prefix | `/usr/local/bin/${SERVICE_PREFIX}-god`, `/usr/local/bin/${SERVICE_PREFIX}-mint-gh-token`, systemd units `${SERVICE_PREFIX}-god.service`, `${SERVICE_PREFIX}-dispatch.timer`, `${SERVICE_PREFIX}-dispatch.service`, `${SERVICE_PREFIX}-relay-bot.service`, tmux session `${SERVICE_PREFIX}-god`. Keep it explicit; set it equal to `${PROJECT_NAME}` unless you intentionally want a separate service/binary prefix. |
 | **Per-Telegram-bot** | one bot token per project | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`. Telegram allows only one polling session per token, so you cannot share a bot across projects. The HTTP listener at `127.0.0.1:${RELAY_HOOK_PORT}` is also per-relay-bot — if you run a second project on the same VPS, override `RELAY_HOOK_PORT` for the second instance. |
 | **Per-cwd (Claude-managed, automatic)** | `~/.claude/projects/<encoded-cwd>/` | Claude Code itself isolates session JSONLs by the cwd it was started in. `~${BOT_USER}/.claude/projects/-opt-civic-skills-lab/<uuid>.jsonl` for `cd /opt/civic-skills-lab`. Resume safety: `--resume <id>` only works against an id that was created in the same cwd. Cross-project resume is impossible by design. |
 
 **Multi-project on one VPS**: re-run Steps 3–8 with new vars. Steps 1+2 are skipped (apt no-ops). Each project ends up with its own bot user, state dir, units, and Telegram bot. The `claude-relay-bot.py` template uses install-time substitution of `${PROJECT_NAME}`/`${SERVICE_PREFIX}`/`${BOT_USER}` so each project's relay-bot is independent.
 
-**Single-VPS-multi-project gotchas (v5.1):**
+**Single-VPS-multi-project gotchas:**
 - HTTP port `9999` is the default for `${SERVICE_PREFIX}-relay-bot.service`. Second project must set `RELAY_HOOK_PORT=9998` (or similar) in its `secrets.env`; rendered hooks and dispatcher config must use the same value.
 - `/etc/sudoers.d/` rules (if any added later) must be `${SERVICE_PREFIX}`-scoped, not user-scoped.
 - StateDirectory in `${SERVICE_PREFIX}-god.service` references `${PROJECT_NAME}` directly; systemd creates it under `/var/lib/${PROJECT_NAME}` regardless of unit name, so two projects with same `PROJECT_NAME` would collide — keep `PROJECT_NAME` unique per project.
@@ -57,7 +57,7 @@ The operator hands these values to Claude (in chat) before running the workflow.
 | Variable | Example | Used in |
 |---|---|---|
 | `PROJECT_NAME` | `myproj` | State/config dir name: `/etc/${PROJECT_NAME}/`, `/var/lib/${PROJECT_NAME}/`, `/var/log/${PROJECT_NAME}-god.log` |
-| `SERVICE_PREFIX` | `myproj` | systemd unit + binary + tmux prefix: `${SERVICE_PREFIX}-god.service`, `${SERVICE_PREFIX}-dispatch.timer`, `/usr/local/bin/${SERVICE_PREFIX}-god`, tmux session `${SERVICE_PREFIX}-god`. For new projects, set equal to `PROJECT_NAME`. The split exists for legacy installs that picked different names for state-dir vs unit-prefix. |
+| `SERVICE_PREFIX` | `myproj` | systemd unit + binary + tmux prefix: `${SERVICE_PREFIX}-god.service`, `${SERVICE_PREFIX}-dispatch.timer`, `/usr/local/bin/${SERVICE_PREFIX}-god`, tmux session `${SERVICE_PREFIX}-god`. Set equal to `PROJECT_NAME` unless the deployment intentionally separates state/config name from service/binary prefix. |
 | `PROJECT_DIR` | `/opt/myproj` | Working directory on the VPS where the agent runs |
 | `BOT_USER` | `agent-bot` | Linux user that owns the workload |
 | `RELAY_HOOK_PORT` | `9999` | Project-local relay-bot HTTP port on `127.0.0.1`; override for a second project on the same VPS |
@@ -316,28 +316,28 @@ sudo -u ${BOT_USER} ls -la /home/${BOT_USER}/.claude/cache/usage.json   # expect
 
 **Verify:** `sudo -u ${BOT_USER} claude-usage-report` prints the two-line report. From Telegram: send `/usage` to the bot — same text appears within ~3-5 seconds.
 
-### 7c. Telegram bridge + central state-store (claude-relay-bot v3)
+### 7c. Text-only Telegram bridge + central state-store (claude-relay-bot v6)
 
 **Gated on `TELEGRAM_BOT_TOKEN`.** If you skip Telegram, the god-session and scheduler from Step 7 still work — only the inbound-from-operator and outbound-mirror paths are absent.
 
-The operator's incoming Telegram messages need to reach claude in the god-session, and claude's replies must mirror back to Telegram. The intuitive answer would be `claude --channels plugin:telegram@claude-plugins-official` — but that bun-based MCP child silently dies after long idle / network blips and is not respawned ([anthropics/claude-plugins-official#788](https://github.com/anthropics/claude-plugins-official/issues/788), [#917](https://github.com/anthropics/claude-plugins-official/issues/917), [#1478](https://github.com/anthropics/claude-plugins-official/issues/1478)).
+The operator's incoming Telegram text needs to reach claude in the god-session, and claude's replies must mirror back to Telegram. The intuitive answer would be `claude --channels plugin:telegram@claude-plugins-official` — but that bun-based MCP child silently dies after long idle / network blips and is not respawned ([anthropics/claude-plugins-official#788](https://github.com/anthropics/claude-plugins-official/issues/788), [#917](https://github.com/anthropics/claude-plugins-official/issues/917), [#1478](https://github.com/anthropics/claude-plugins-official/issues/1478)).
 
-We replace it with **`${SERVICE_PREFIX}-relay-bot.service`** — a separate systemd-managed Python daemon that owns the entire god-session state machine. Architecture:
+We replace it with **`${SERVICE_PREFIX}-relay-bot.service`** — a separate systemd-managed Python daemon that owns the entire god-session state machine. The bridge is intentionally text-only: plain text and media captions are accepted; voice, audio, files, images, videos, and stickers without captions are rejected and audited.
 
-- **Inbound**: aiogram polls Telegram → durable SQLite `messages` queue → `tmux send-keys "[tg id=<chat>:<msg>] <text>" Enter` only when `${SERVICE_PREFIX}-god` tmux exists. Stable inbound IDs in the prefix give idempotent correlation across `/resume` / `/compact`.
+- **Inbound**: aiogram polls Telegram → text/caption is saved to durable SQLite `messages(kind='text', status='queued')` → an inbound worker delivers it to `${SERVICE_PREFIX}-god` only through the serialized control lane. Stable inbound IDs in the prefix give idempotent correlation across `/resume` / `/compact`.
+- **Rejected media**: unsupported media without text/caption is written as `messages(status='rejected')`, replied to with “Сейчас поддерживаются только текстовые сообщения”, and never reaches Claude.
+- **Control lane**: `/new_session`, Resume, Delete, and inbound delivery are serialized by one asyncio control queue; Telegram handlers never send text directly to tmux.
 - **Outbound**: documented Claude Code `Stop` hook (POST to `http://127.0.0.1:${RELAY_HOOK_PORT}/hook/stop`) enqueues `last_assistant_message` into a SQLite outbox; an asyncio worker drains the queue with retry/backoff. Stop hook never blocks on Telegram API. claude doesn't carry the bot token in its context — hooks deliver structured JSON to relay-bot.
 - **Audit & memory**: SQLite at `/var/lib/${PROJECT_NAME}/relay.db` — messages, outbox, sessions, session_events, dispatch_runs, dispatch_phases, memories, health_snapshots, auth_rejects, allowed_users. SessionStart hook injects recent memories + dispatch history into the new session as `additionalContext` (claude sees its own past).
 - **Local API**: `http://127.0.0.1:${RELAY_HOOK_PORT}` — 6 hook receivers + 7 application endpoints (`/dispatch/*` for pipeline tracking, `/memory/*` for persistent facts, `/health`). claude calls these from bash blocks; operator calls them via the local `dispatcher.md` slash-command.
-- **Sessions feature (v5.1)**: relay-bot intercepts `/new_session`, `/sessions`, `/sessions all`, `/sessions delete <id>` Telegram commands and handles them WITHOUT forwarding to claude. Wraps Claude Code's session model (one `.jsonl` per session in `~${BOT_USER}/.claude/projects/<encoded-cwd>/`) with a Telegram UI:
+- **Sessions feature**: relay-bot intercepts `/new_session`, `/sessions`, `/sessions all`, `/sessions delete <id>` Telegram commands and handles them WITHOUT forwarding to claude. Wraps Claude Code's session model (one `.jsonl` per session in `~${BOT_USER}/.claude/projects/<encoded-cwd>/`) with a Telegram UI:
   - **Default god-session boot** = `claude --continue` (resume latest); fresh start only on first-ever boot or after operator's `/new_session`.
   - **Atomic command queue** at `/var/lib/${PROJECT_NAME}/god-command.json` (written by relay-bot via `tempfile + os.rename` under flock; consumed by `god-session.sh` on tmux fresh-create).
   - **`/sessions` UI**: cards with `[▶ Resume]` `[🗑 Delete]` inline buttons; UUID-validated callback_data; per-sid `asyncio.Lock` prevents Resume/Delete races.
   - **Fail-loud**: invalid resume target → `god-session.sh` writes `last-god-error.json` → relay-bot pushes alert «⚠️ Resume failed for `<id>` — started fresh».
-  - **Sessions dir auto-discovery**: relay-bot scans `~/.claude/projects/*` and matches by `cwd` field in the first JSONL line — no hard-coded encoding assumption (CR-004 hardening). Cached at `/var/lib/${PROJECT_NAME}/sessions-dir.path`.
+  - **Sessions dir auto-discovery**: relay-bot scans `~/.claude/projects/*` and matches by `cwd` field in the first JSONL line — no hard-coded encoding assumption. Cached at `/var/lib/${PROJECT_NAME}/sessions-dir.path`.
 
 Note: scheduling (the `${SERVICE_PREFIX}-dispatch.timer` that replaces the fragile in-session `/loop`) is part of Step 7 — installed regardless of Telegram. It only depends on tmux + systemd, not on the relay-bot.
-
-Three H-severity risks fixed in v3 (per codex review): Telegram outage no longer drops messages (durable outbox), `/loop` no longer dies on session restart (external timer — Step 7), session_id rotation handled (stable inbound IDs + SessionStart lineage).
 
 **Hermes-borrowed code patterns** (from `nousresearch/hermes-agent` `gateway/platforms/telegram.py`): UTF-16-aware 4096-char split, `TelegramRetryAfter` retry, `TelegramNetworkError` → `unknown` (not retried, since Telegram may have received).
 
@@ -372,7 +372,7 @@ systemctl restart ${SERVICE_PREFIX}-god.service   # so claude reloads settings.j
 ```bash
 # Relay listening + DB ready
 curl -fsS http://127.0.0.1:${RELAY_HOOK_PORT}/health | jq .
-sqlite3 /var/lib/${PROJECT_NAME}/relay.db '.tables'   # 11 tables expected
+sqlite3 /var/lib/${PROJECT_NAME}/relay.db '.tables'   # 12 tables expected
 
 # Hook fires verified (after operator sends Telegram message)
 sqlite3 /var/lib/${PROJECT_NAME}/relay.db 'SELECT direction,status,substr(text,1,40) FROM messages ORDER BY id DESC LIMIT 5'
@@ -511,7 +511,7 @@ The bot's `AllowlistMiddleware` is the primary control regardless of these setti
 
 **Currently NOT automated by this skill** — the operator runs the curl command from the table above once after the bot token is in secrets.env. Adding this to the skill is a small TODO; the manual curl works for now.
 
-### Multi-user onboarding (v5.2)
+### Multi-user onboarding
 
 After the primary operator is set up, additional users join via the bot's pending → `/users` approval flow. There is no env-var allowlist — DB is the only source of truth.
 
@@ -546,7 +546,7 @@ End-to-end after install + manual follow-up:
 | /home/${BOT_USER}/.claude/cache/usage.json | populated within 30s of restart |
 | Telegram bidirectional smoke      | bot replies to /usage with %    |
 | ${TARGET_REPO_PATH}/.claude/commands/dispatcher.md | copied verbatim; only `${VPS_*}` placeholders remain |
-| ${TARGET_REPO_PATH}/.env.local    | 7 `VPS_*` keys present         |
+| ${TARGET_REPO_PATH}/.env.local    | 9 `VPS_*` keys present         |
 | `/dispatcher status` (from operator's repo) | reports healthy |
 ```
 
@@ -606,25 +606,27 @@ This DoD covers every step of the workflow. Run through it after the operator's 
 - [ ] `sudo -u ${BOT_USER} claude-usage-report` prints two-line report; `/usage` from Telegram returns same text
 
 ### Telegram bridge + sessions feature (Step 7c, gated on `TELEGRAM_BOT_TOKEN`)
-- [ ] `${SERVICE_PREFIX}-relay-bot.service` is active; `curl -fsS http://127.0.0.1:${RELAY_HOOK_PORT}/health` returns `{"ok":true,"version":"v5.3",...}` with `god_session_ready`, `inbound_queued`, `inbound_failed`, `outbox_unknown`
-- [ ] `sqlite3 /var/lib/${PROJECT_NAME}/relay.db '.tables'` shows 11 tables (messages, pending_reply, outbox, sessions, session_events, dispatch_runs, dispatch_phases, memories, health_snapshots, auth_rejects, allowed_users)
+- [ ] `${SERVICE_PREFIX}-relay-bot.service` is active; `curl -fsS http://127.0.0.1:${RELAY_HOOK_PORT}/health` returns `{"ok":true,"version":"v6",...}` with `god_session_ready`, `inbound_queued`, `inbound_failed`, `inbound_rejected`, `outbox_unknown`, `control_busy`, `control_pending`
+- [ ] `sqlite3 /var/lib/${PROJECT_NAME}/relay.db '.tables'` shows 12 tables (messages, pending_reply, outbox, sessions, session_events, dispatch_runs, dispatch_phases, memories, health_snapshots, auth_rejects, allowed_users, todo_state)
 - [ ] After first claude run, `/var/lib/${PROJECT_NAME}/sessions-dir.path` exists and points to a real dir under `~${BOT_USER}/.claude/projects/`
 - [ ] `/sessions` from Telegram returns at least one card with `[▶ Resume] [🗑 Delete]` inline buttons; `/sessions all` returns text list
 - [ ] Restart of `${SERVICE_PREFIX}-god.service` resumes the latest session (pane shows prior conversation content, NOT a fresh «Welcome to Claude»)
 - [ ] `/new_session` from Telegram produces a fresh pane within ~5–10s; `god-command.json` was created and consumed (gone)
 - [ ] **BotFather menu**: `/usage`, `/new_session`, `/sessions` are registered (verify: `curl -fsS "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getMyCommands" \| jq '.result[].command'`). If missing, run `setMyCommands` (see Manual follow-up table A).
-- [ ] **Bot hardening (security)**: `curl -fsS "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getMe" \| jq '.result \| {can_join_groups, can_read_all_group_messages}'` returns `{"can_join_groups": false, "can_read_all_group_messages": false}` — bot is DM-only and cannot read group history. If `can_join_groups: true` → operator must run «Allow Groups → Turn off» in BotFather (Manual follow-up #4).
+- [ ] **Bot hardening (security)**: `curl -fsS "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getMe" \| jq '.result \| {can_join_groups, can_read_all_group_messages}'` returns `{"can_join_groups": false, "can_read_all_group_messages": false}` — bot is DM-only and cannot read group history. BotFather instructions should tell operators to send text, not voice/audio.
 - [ ] **Allowlist middleware**: `sqlite3 /var/lib/${PROJECT_NAME}/relay.db ".schema auth_rejects"` returns the audit table. After deployment, an unauthorized DM attempt (e.g. test from a second account) appears in `SELECT * FROM auth_rejects ORDER BY ts DESC LIMIT 5` with status «silent drop, no reply».
-- [ ] **`/users` allowlist management (v5.2)**: `sqlite3 /var/lib/${PROJECT_NAME}/relay.db "SELECT user_id, status FROM allowed_users"` shows primary operator with `status='allowed'` (and any approved colleagues). `/users` from primary's Telegram → list with `[✓ Allow] [⛔ Block] [🗑 Delete]` cards (primary card has no buttons — protected). Second account DMs the bot → status='pending' row appears + primary gets «🆕 New user request» alert. After Allow, second account can interact normally.
-- [ ] **Per-user session ownership (v5.2)**: `sqlite3 /var/lib/${PROJECT_NAME}/relay.db "PRAGMA table_info(sessions)"` shows `created_by_user_id` column; `SELECT count(*) FROM sessions WHERE created_by_user_id IS NULL` returns 0 (backfill done). Second user's `/sessions` returns empty until they create their own; their Resume/Delete on primary's session ID is rejected with «not your session».
+- [ ] **`/users` allowlist management**: `sqlite3 /var/lib/${PROJECT_NAME}/relay.db "SELECT user_id, status FROM allowed_users"` shows primary operator with `status='allowed'` (and any approved colleagues). `/users` from primary's Telegram → list with `[✓ Allow] [⛔ Block] [🗑 Delete]` cards (primary card has no buttons — protected). Second account DMs the bot → status='pending' row appears + primary gets «🆕 New user request» alert. After Allow, second account can interact normally.
+- [ ] **Per-user session ownership**: `sqlite3 /var/lib/${PROJECT_NAME}/relay.db "PRAGMA table_info(sessions)"` shows `created_by_user_id` column. Second user's `/sessions` returns empty until they create their own; their Resume/Delete on primary's session ID is rejected with «not your session».
+- [ ] Text-only inbound smoke: send plain text and a media message with caption → both create `messages(kind='text', status='queued')` rows and then become `delivered`; send voice/audio/photo without caption → row is `rejected`, Telegram replies «Сейчас поддерживаются только текстовые сообщения», and claude receives nothing
 - [ ] Durable inbound smoke: send a Telegram message while `${SERVICE_PREFIX}-god` is restarting; `messages.status='queued'` until tmux returns, then `delivered`
+- [ ] Control-lane smoke: trigger `/new_session` and immediately send text; the text stays queued until the tmux session is ready, then is delivered after the control action completes
 - [ ] End-to-end smoke: send «hi» from Telegram → inbound row delivered → claude responds → reply mirrored back via Stop hook → outbox row sent
 
 ### Communication policy (Step 7c-2, 5 layers L1–L5)
-- [ ] `RELAY_VERBOSITY` is in `/etc/${PROJECT_NAME}/secrets.env` (default `normal`); `RELAY_INBOUND_REACTION` set (default `👀`)
+- [ ] `RELAY_VERBOSITY` is in `/etc/${PROJECT_NAME}/secrets.env` (default `normal`); `RELAY_INBOUND_REACTIONS` is set or omitted for the default reaction pool
 - [ ] `sqlite3 /var/lib/${PROJECT_NAME}/relay.db "PRAGMA table_info(outbox)" \| grep event_type` returns the column; `sqlite3 ... ".schema todo_state"` returns the diff-tracking table
 - [ ] `sudo -u ${BOT_USER} jq '.hooks \| keys' ~/.claude/settings.json` includes `PreToolUse` and `PostToolUse` (in addition to UserPromptSubmit, Stop, StopFailure, SessionStart, PostCompact, SubagentStop)
-- [ ] **L1 inbound ack**: send any plain text → reaction (👀 or ❤ fallback) appears on operator bubble within 1–2s
+- [ ] **L1 inbound ack**: send any accepted text/caption → reaction from `RELAY_INBOUND_REACTIONS` (or ❤ fallback) appears on operator bubble within 1–2s after queueing
 - [ ] **L2 Skill announce**: trigger a Skill → `🔧 Skill: <name>` arrives in Telegram before claude runs the skill
 - [ ] **L3 Todo transitions**: trigger `TodoWrite` with status flips → each `🟡 Started:` and `✅ Done:` arrives as separate Telegram message
 - [ ] **L4 Subagent boundary**: spawn an Explore/Plan subagent → on completion `✅ Subagent: <type> done` arrives
@@ -657,7 +659,7 @@ This DoD covers every step of the workflow. Run through it after the operator's 
 - [Claude Code statusLine](https://code.claude.com/docs/en/statusline) — `rate_limits` JSON schema (Step 7b)
 - [Claude Code hooks](https://code.claude.com/docs/en/hooks) — UserPromptSubmit, Stop, SessionStart, PostCompact, StopFailure (Step 7c)
 - [Codex CLI config](https://github.com/openai/codex/blob/main/docs/config.md) — `notify`, `mcp_servers`
-- [Claude Code Scheduled Tasks](https://code.claude.com/docs/en/scheduled-tasks.md) — `/loop` semantics (replaced in v3 by external systemd timer)
+- [Claude Code Scheduled Tasks](https://code.claude.com/docs/en/scheduled-tasks.md) — `/loop` semantics (replaced by external systemd timer)
 - [systemd.timer](https://www.freedesktop.org/software/systemd/man/systemd.timer.html) — `OnCalendar`, `Persistent`, `Requires`
 
 ---

@@ -40,7 +40,7 @@ import sys
 import tempfile
 import time
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Awaitable, Callable, Optional
 
 from aiogram import BaseMiddleware, Bot, Dispatcher, F
 from aiogram.exceptions import (
@@ -113,15 +113,10 @@ ERROR_ALERTER_POLL_SEC = 5.0
 
 # Communication policy
 RELAY_VERBOSITY = os.environ.get("RELAY_VERBOSITY", "normal").lower()
-# CSV of emojis to randomly pick from for inbound-ack reaction. Old single-emoji
-# env var (RELAY_INBOUND_REACTION) is honoured for back-compat. Bots may set
-# only 1 reaction per message; we just rotate which one to keep things lively.
+# CSV of emojis to randomly pick from for inbound-ack reaction. Bots may set
+# only 1 reaction per message; we rotate which one to keep things lively.
 _RELAY_REACTIONS_DEFAULT = "👀,👍,✅,🫡,🤝,✍,🆒,👌,🙏"
-_REACTIONS_RAW = (
-    os.environ.get("RELAY_INBOUND_REACTIONS")
-    or os.environ.get("RELAY_INBOUND_REACTION")
-    or _RELAY_REACTIONS_DEFAULT
-)
+_REACTIONS_RAW = os.environ.get("RELAY_INBOUND_REACTIONS") or _RELAY_REACTIONS_DEFAULT
 RELAY_INBOUND_REACTIONS: list[str] = [
     e.strip() for e in _REACTIONS_RAW.split(",") if e.strip()
 ] or ["👀"]
@@ -140,6 +135,7 @@ CREATE TABLE IF NOT EXISTS messages (
   id              INTEGER PRIMARY KEY AUTOINCREMENT,
   ts              INTEGER NOT NULL,
   direction       TEXT NOT NULL,
+  kind            TEXT NOT NULL DEFAULT 'text',
   status          TEXT NOT NULL,
   text            TEXT NOT NULL,
   tg_chat_id      INTEGER,
@@ -281,7 +277,7 @@ CREATE TABLE IF NOT EXISTS allowed_users (
 CREATE INDEX IF NOT EXISTS idx_allowed_users_status ON allowed_users(status);
 
 -- ownership tag for sessions (so `/sessions` shows only own).
--- Backfilled to ALLOWED_CHAT (primary operator) for legacy rows on first run.
+-- Existing rows are assigned to ALLOWED_CHAT (primary operator) during startup.
 -- Note: ALTER TABLE is in Python startup code (try/except) since CREATE TABLE
 -- IF NOT EXISTS doesn't add columns to pre-existing tables.
 
@@ -328,9 +324,10 @@ def now_ts() -> int:
 
 
 def ensure_schema_migrations(conn: sqlite3.Connection) -> None:
-    """Keep existing relay.db files compatible with the current schema."""
+    """Forward-migrate existing relay.db files into the v6 text-only schema."""
     msg_cols = {row["name"] for row in conn.execute("PRAGMA table_info(messages)").fetchall()}
     for col, ddl in {
+        "kind": "ALTER TABLE messages ADD COLUMN kind TEXT NOT NULL DEFAULT 'text'",
         "attempts": "ALTER TABLE messages ADD COLUMN attempts INTEGER NOT NULL DEFAULT 0",
         "next_attempt_at": "ALTER TABLE messages ADD COLUMN next_attempt_at INTEGER NOT NULL DEFAULT 0",
         "delivered_at": "ALTER TABLE messages ADD COLUMN delivered_at INTEGER",
@@ -345,8 +342,17 @@ def ensure_schema_migrations(conn: sqlite3.Connection) -> None:
         "ON messages(direction, status, next_attempt_at)"
     )
     conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_msg_kind_status "
+        "ON messages(direction, kind, status)"
+    )
+    conn.execute(
         "CREATE INDEX IF NOT EXISTS idx_sessions_owner "
         "ON sessions(created_by_user_id)"
+    )
+    conn.execute(
+        "UPDATE messages SET status='queued', next_attempt_at=? "
+        "WHERE direction='inbound' AND status='delivering'",
+        (now_ts(),),
     )
 
 
@@ -356,9 +362,18 @@ def ensure_schema_migrations(conn: sqlite3.Connection) -> None:
 
 def insert_inbound(text: str, tg_chat_id: int, tg_msg_id: int) -> int:
     cur = db().execute(
-        "INSERT INTO messages (ts, direction, status, text, tg_chat_id, tg_msg_id, "
-        "next_attempt_at) VALUES (?, 'inbound', 'queued', ?, ?, ?, ?)",
+        "INSERT INTO messages (ts, direction, kind, status, text, tg_chat_id, tg_msg_id, "
+        "next_attempt_at) VALUES (?, 'inbound', 'text', 'queued', ?, ?, ?, ?)",
         (now_ts(), text, tg_chat_id, tg_msg_id, now_ts()),
+    )
+    return cur.lastrowid
+
+
+def insert_rejected_inbound(text: str, tg_chat_id: int, tg_msg_id: int, error: str) -> int:
+    cur = db().execute(
+        "INSERT INTO messages (ts, direction, kind, status, text, tg_chat_id, tg_msg_id, error) "
+        "VALUES (?, 'inbound', 'text', 'rejected', ?, ?, ?, ?)",
+        (now_ts(), text, tg_chat_id, tg_msg_id, error),
     )
     return cur.lastrowid
 
@@ -862,7 +877,7 @@ def list_sessions(
     Return list of {sid, slug, ts, owner} sorted by recency desc.
 
     If `owner_user_id` is provided, only sessions owned by that user are
-    returned. Sessions with NULL owner are skipped — the startup backfill
+    returned. Sessions with NULL owner are skipped — startup reconciliation
     tags every existing row to the primary operator, so a NULL after
     deployment indicates a bug or a hand-tampered DB and shouldn't be
     silently treated as someone's session.
@@ -934,6 +949,37 @@ def kill_tmux_gracefully(target: str) -> None:
 
 def session_lock(sid: str) -> asyncio.Lock:
     return _session_locks.setdefault(sid, asyncio.Lock())
+
+
+_control_lock = asyncio.Lock()
+_control_pending = 0
+_control_current: Optional[str] = None
+_control_last_action: Optional[str] = None
+
+
+async def run_control(action: str, op: Callable[[], Awaitable[Any]]) -> Any:
+    """Serialize all God-session mutations and tmux delivery through one lane."""
+    global _control_pending, _control_current, _control_last_action
+    _control_pending += 1
+    queued = True
+    try:
+        async with _control_lock:
+            _control_pending -= 1
+            queued = False
+            _control_current = action
+            _control_last_action = action
+            try:
+                return await op()
+            finally:
+                _control_current = None
+    except Exception:
+        if queued and _control_pending > 0:
+            _control_pending -= 1
+        raise
+
+
+async def kill_tmux_gracefully_async(target: str) -> None:
+    await asyncio.to_thread(kill_tmux_gracefully, target)
 
 
 # --------------------------------------------------------------------------
@@ -1252,17 +1298,17 @@ def migrate_outbox_event_type() -> None:
                 conn.execute("ALTER TABLE outbox ADD COLUMN event_type TEXT")
                 conn.execute("UPDATE outbox SET event_type = 'reply' WHERE event_type IS NULL")
                 conn.execute("CREATE INDEX IF NOT EXISTS idx_outbox_event_type ON outbox(event_type)")
-                log.info("migrate: added outbox.event_type column + backfill")
+                log.info("migrate: added outbox.event_type column")
     except sqlite3.Error as exc:
         log.error("migrate_outbox_event_type failed: %s", exc)
 
 
-def backfill_sessions_owner() -> None:
+def reconcile_sessions_owner() -> None:
     """
     Ensure `sessions.created_by_user_id` column exists, insert
     rows for any on-disk JSONL that pre-dates relay-bot's SessionStart
-    hook (so they show up in /sessions), and tag every untracked row
-    to the primary operator. After this runs once, ownership is strict.
+    hook, and tag every untracked row to the primary operator. After
+    this runs once, ownership is strict.
     """
     try:
         with db() as conn:
@@ -1270,9 +1316,9 @@ def backfill_sessions_owner() -> None:
             if "created_by_user_id" not in cols:
                 conn.execute("ALTER TABLE sessions ADD COLUMN created_by_user_id INTEGER")
                 conn.execute("CREATE INDEX IF NOT EXISTS idx_sessions_owner ON sessions(created_by_user_id)")
-                log.info("backfill: added sessions.created_by_user_id column")
+                log.info("migrate: added sessions.created_by_user_id column")
     except sqlite3.Error as exc:
-        log.error("backfill ALTER failed: %s", exc)
+        log.error("sessions owner migration ALTER failed: %s", exc)
         return
 
     # Resolve sessions dir lazily — may not be cached yet on first run.
@@ -1288,15 +1334,15 @@ def backfill_sessions_owner() -> None:
                     cur = conn.execute(
                         "INSERT OR IGNORE INTO sessions "
                         "(session_id, started_at, source, transcript_path, created_by_user_id) "
-                        "VALUES (?, ?, 'legacy_backfill', ?, ?)",
+                        "VALUES (?, ?, 'session_reconcile', ?, ?)",
                         (sid, int(jsonl.stat().st_mtime), str(jsonl), ALLOWED_CHAT),
                     )
                     if cur.rowcount > 0:
                         inserted += 1
         except sqlite3.Error as exc:
-            log.error("backfill INSERT scan failed: %s", exc)
+            log.error("sessions owner reconciliation INSERT scan failed: %s", exc)
     if inserted > 0:
-        log.info("backfill: inserted %d untracked jsonl sessions tagged to primary operator", inserted)
+        log.info("sessions owner reconciliation: inserted %d untracked jsonl sessions tagged to primary operator", inserted)
 
     # Tag any pre-existing rows with NULL owner.
     try:
@@ -1306,9 +1352,9 @@ def backfill_sessions_owner() -> None:
                 (ALLOWED_CHAT,),
             )
             if cur.rowcount > 0:
-                log.info("backfill: tagged %d existing-row null-owner sessions to primary", cur.rowcount)
+                log.info("sessions owner reconciliation: tagged %d null-owner sessions to primary", cur.rowcount)
     except sqlite3.Error as exc:
-        log.error("backfill UPDATE failed: %s", exc)
+        log.error("sessions owner reconciliation UPDATE failed: %s", exc)
 
 
 def consume_last_god_command_owner() -> Optional[int]:
@@ -1531,18 +1577,6 @@ async def send_keys_to_pane_async(text: str) -> None:
     raise RuntimeError(f"send-keys failed after {SEND_KEYS_RETRIES} retries: {last_err}")
 
 
-def send_keys_to_pane(text: str) -> None:
-    """Synchronous fallback (kept for non-async callers if any)."""
-    subprocess.run(
-        ["tmux", "send-keys", "-l", "-t", TMUX_TARGET, text],
-        check=True, timeout=5,
-    )
-    subprocess.run(
-        ["tmux", "send-keys", "-t", TMUX_TARGET, "Enter"],
-        check=True, timeout=5,
-    )
-
-
 # --------------------------------------------------------------------------
 # Sessions feature handlers
 # Registered BEFORE the catch-all relay_inbound so they intercept matching
@@ -1561,13 +1595,17 @@ async def cmd_new_session(msg: Message, command: CommandObject) -> None:
         )
         return
     try:
-        cmd_id = write_command_atomic("new", operator_chat_id=msg.chat.id)
+        async def op() -> str:
+            cmd = write_command_atomic("new", operator_chat_id=msg.chat.id)
+            await kill_tmux_gracefully_async(TMUX_TARGET)
+            return cmd
+
+        cmd_id = await run_control("new_session", op)
     except (OSError, ValueError) as exc:
         log.error("write_command_atomic failed: %s", exc)
         await msg.reply(f"❌ Failed to queue command: {exc}")
         return
     log.info("/new_session queued cmd_id=%s; killing tmux", cmd_id)
-    kill_tmux_gracefully(TMUX_TARGET)
     await msg.reply("🔄 Killing god-session — fresh context will start in ~5–10s.")
 
 
@@ -1593,10 +1631,13 @@ async def cmd_sessions(msg: Message, command: CommandObject) -> None:
         if msg.from_user and msg.from_user.id != owner:
             await msg.reply("❌ Not your session.")
             return
-        async with session_lock(sid):
-            if path.exists():
-                with contextlib.suppress(OSError):
-                    path.unlink()
+        async def delete_op() -> None:
+            async with session_lock(sid):
+                if path.exists():
+                    with contextlib.suppress(OSError):
+                        path.unlink()
+
+        await run_control("delete_session", delete_op)
         await msg.reply(f"✓ Deleted `{sid[:8]}…`.")
         return
 
@@ -1692,14 +1733,17 @@ async def cb_session(query: CallbackQuery) -> None:
                 )
                 return
             try:
-                write_command_atomic(
-                    "resume", session_id=sid, operator_chat_id=query.from_user.id,
-                )
+                async def resume_op() -> None:
+                    write_command_atomic(
+                        "resume", session_id=sid, operator_chat_id=query.from_user.id,
+                    )
+                    await kill_tmux_gracefully_async(TMUX_TARGET)
+
+                await run_control("resume_session", resume_op)
             except (OSError, ValueError) as exc:
                 log.error("write_command_atomic resume failed: %s", exc)
                 await query.answer(f"failed: {exc}", show_alert=True)
                 return
-            kill_tmux_gracefully(TMUX_TARGET)
             log.info("[Resume] queued sid=%s", sid)
             with contextlib.suppress(TelegramAPIError):
                 await query.message.edit_text(
@@ -1708,8 +1752,11 @@ async def cb_session(query: CallbackQuery) -> None:
                     reply_markup=None,
                 )
         elif action == "s_del":
-            with contextlib.suppress(OSError):
-                path.unlink()
+            async def delete_op() -> None:
+                with contextlib.suppress(OSError):
+                    path.unlink()
+
+            await run_control("delete_session", delete_op)
             log.info("[Delete] removed sid=%s", sid)
             with contextlib.suppress(TelegramAPIError):
                 await query.message.edit_text(
@@ -1896,16 +1943,46 @@ async def cb_users(query: CallbackQuery) -> None:
 # Middleware already filtered to allowed users.
 # --------------------------------------------------------------------------
 
+UNSUPPORTED_MEDIA_REPLY = "Сейчас поддерживаются только текстовые сообщения."
+
+
+def has_unsupported_media(msg: Message) -> bool:
+    return any(
+        getattr(msg, attr, None)
+        for attr in (
+            "voice", "audio", "document", "photo", "video",
+            "video_note", "animation", "sticker",
+        )
+    )
+
+
+def inbound_user_tag(msg: Message) -> str:
+    if msg.from_user and msg.from_user.username:
+        return f" user={msg.from_user.username}"
+    if msg.from_user:
+        return f" user={msg.from_user.id}"
+    return ""
+
+
 @dp.message()
 async def relay_inbound(msg: Message) -> None:
     text = (msg.text or msg.caption or "").strip()
     if not text:
+        if has_unsupported_media(msg):
+            rejected_id = insert_rejected_inbound(
+                UNSUPPORTED_MEDIA_REPLY,
+                msg.chat.id,
+                msg.message_id,
+                "unsupported media without text/caption",
+            )
+            log.info(
+                "INBOUND #%d rejected unsupported media chat=%s tg_msg=%s",
+                rejected_id, msg.chat.id, msg.message_id,
+            )
+            with contextlib.suppress(TelegramAPIError):
+                await msg.reply(UNSUPPORTED_MEDIA_REPLY)
         return
-    user_tag = ""
-    if msg.from_user and msg.from_user.username:
-        user_tag = f" user={msg.from_user.username}"
-    elif msg.from_user:
-        user_tag = f" user={msg.from_user.id}"
+    user_tag = inbound_user_tag(msg)
     pane_text = f"[tg id={msg.chat.id}:{msg.message_id}{user_tag}] {text}"
     inbound_id = insert_inbound(pane_text, msg.chat.id, msg.message_id)
     log.info(
@@ -1945,9 +2022,12 @@ async def inbound_worker() -> None:
 
 
 async def deliver_inbound_row(row: sqlite3.Row) -> None:
-    update_message(row["id"], status="delivering")
     try:
-        await send_keys_to_pane_async(row["text"])
+        async def op() -> None:
+            update_message(row["id"], status="delivering")
+            await send_keys_to_pane_async(row["text"])
+
+        await run_control("deliver_inbound", op)
         update_message(
             row["id"], status="delivered", delivered_at=now_ts(), error=None,
         )
@@ -1959,9 +2039,10 @@ async def deliver_inbound_row(row: sqlite3.Row) -> None:
     except (RuntimeError, asyncio.TimeoutError, OSError) as exc:
         attempts = row["attempts"] + 1
         age = now_ts() - row["ts"]
-        if attempts >= INBOUND_MAX_ATTEMPTS or age > INBOUND_ABANDON_TTL_SEC:
+        terminal_status = "failed" if attempts >= INBOUND_MAX_ATTEMPTS else "abandoned"
+        if terminal_status == "failed" or age > INBOUND_ABANDON_TTL_SEC:
             update_message(
-                row["id"], status="failed", attempts=attempts,
+                row["id"], status=terminal_status, attempts=attempts,
                 error=str(exc)[:300],
             )
             enqueue_outbox(
@@ -1972,7 +2053,7 @@ async def deliver_inbound_row(row: sqlite3.Row) -> None:
                 replied_to_id=row["tg_msg_id"],
                 session_id=row["session_id"],
             )
-            log.error("INBOUND #%d failed permanently: %s", row["id"], exc)
+            log.error("INBOUND #%d %s permanently: %s", row["id"], terminal_status, exc)
         else:
             backoff = min(2 ** min(attempts, 6), 60)
             update_message(
@@ -2501,9 +2582,14 @@ async def api_health(request: web.Request) -> web.Response:
     )
     inbound_queued = cur.fetchone()["c"]
     cur = db().execute(
-        "SELECT COUNT(*) AS c FROM messages WHERE direction='inbound' AND status='failed'"
+        "SELECT COUNT(*) AS c FROM messages WHERE direction='inbound' "
+        "AND status IN ('failed','abandoned')"
     )
     inbound_failed = cur.fetchone()["c"]
+    cur = db().execute(
+        "SELECT COUNT(*) AS c FROM messages WHERE direction='inbound' AND status='rejected'"
+    )
+    inbound_rejected = cur.fetchone()["c"]
     cur = db().execute(
         "SELECT session_id FROM sessions WHERE ended_at IS NULL "
         "ORDER BY started_at DESC LIMIT 1"
@@ -2513,10 +2599,15 @@ async def api_health(request: web.Request) -> web.Response:
     db_size = os.path.getsize(DB_PATH) if os.path.exists(DB_PATH) else 0
     return web.json_response({
         "ok": True,
-        "version": "v3",
+        "version": "v6",
         "god_session_ready": god_session_ready(),
+        "control_busy": _control_lock.locked(),
+        "control_pending": _control_pending,
+        "control_current": _control_current,
+        "control_last_action": _control_last_action,
         "inbound_queued": inbound_queued,
         "inbound_failed": inbound_failed,
+        "inbound_rejected": inbound_rejected,
         "outbox_queued": queued,
         "outbox_abandoned": abandoned,
         "outbox_unknown": unknown,
@@ -2556,7 +2647,7 @@ async def main() -> None:
     db()
     bootstrap_allowlist()
     migrate_outbox_event_type()
-    backfill_sessions_owner()
+    reconcile_sessions_owner()
     app = make_app()
     runner = web.AppRunner(app)
     await runner.setup()

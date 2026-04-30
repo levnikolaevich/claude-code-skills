@@ -1,6 +1,6 @@
 <!-- markdownlint-disable MD060 -->
 
-# References — ln-030-vps-bootstrap artifact templates (v5.3)
+# References — ln-030-vps-bootstrap artifact templates
 
 Template files referenced by `SKILL.md`. Most use `${VAR}` placeholders compatible with `envsubst` for **install-time substitution**. The operator-side dispatcher template uses **runtime** `.env.local` reading instead — see notes below.
 
@@ -35,7 +35,7 @@ Template files referenced by `SKILL.md`. Most use `${VAR}` placeholders compatib
 | `codex-notify.sh` | `/home/${BOT_USER}/.codex/notify.sh` | `${BOT_USER}` | 755 | `PROJECT_NAME`, `BOT_USER` | `TELEGRAM_BOT_TOKEN` (Step 8b) |
 | `settings.statusline.fragment.json` | jq-merged into `/home/${BOT_USER}/.claude/settings.json` | `${BOT_USER}` | 644 | `BOT_USER` | `TELEGRAM_BOT_TOKEN` (Step 7b) |
 | `settings.hooks.fragment.json` | jq-merged into `/home/${BOT_USER}/.claude/settings.json` | `${BOT_USER}` | 644 | `RELAY_HOOK_PORT` (default `9999`) | `TELEGRAM_BOT_TOKEN` (Step 7c) |
-| `secrets.env.template` | `/etc/${PROJECT_NAME}/secrets.env` | root:`${BOT_USER}` | 640 | `PROJECT_NAME`, `SERVICE_PREFIX` | (operator fills values; ships with `RELAY_VERBOSITY=normal`, `RELAY_INBOUND_REACTION=👀`) |
+| `secrets.env.template` | `/etc/${PROJECT_NAME}/secrets.env` | root:`${BOT_USER}` | 640 | `PROJECT_NAME`, `SERVICE_PREFIX` | (operator fills values; ships with `RELAY_VERBOSITY=normal` and `RELAY_INBOUND_REACTIONS`) |
 
 ## Operator-side artifact (rendered → written LOCALLY to operator's project repo)
 
@@ -59,13 +59,16 @@ VPS_DISPATCH_COMMAND_NAME=<slash-command-name>
 
 `.env.local` should be git-ignored (most projects already have `.env.*` in `.gitignore`).
 
-## Telegram bridge architecture (v5.3, Step 7c)
+## Telegram bridge architecture (v6 text-only, Step 7c)
 
-`claude-relay-bot.py` is a systemd-managed Python daemon that owns the entire god-session state machine — not just inbound Telegram. Replaces the bun-based Channels plugin (deprecated due to silent-death bugs in `anthropics/claude-plugins-official` issues #788, #917, #1478).
+`claude-relay-bot.py` is a systemd-managed Python daemon that owns the entire god-session state machine: Telegram ingress, durable delivery into tmux, session controls, hook ingestion, and outbound Telegram mirroring. Replaces the bun-based Channels plugin (deprecated due to silent-death bugs in `anthropics/claude-plugins-official` issues #788, #917, #1478).
+
+The Telegram bridge is intentionally text-only. Plain text and media captions are accepted as text; voice, audio, files, images, videos, stickers, and other non-text messages without captions are not downloaded, are recorded as `messages(status='rejected')`, and receive the reply «Сейчас поддерживаются только текстовые сообщения».
 
 Components:
 
-- **aiogram polling** (Telegram inbound) → durable SQLite `messages` queue → `tmux send-keys "[tg id=<chat>:<msg>] <text>"` only when god-session is ready
+- **aiogram polling** (Telegram inbound) → durable SQLite `messages(kind='text', status='queued')` queue → inbound worker delivers with `tmux send-keys "[tg id=<chat>:<msg>] <text>"` only when god-session is ready
+- **Serialized control lane** — `/new_session`, Resume, Delete, and inbound delivery share one async queue/lock so operator text cannot be lost during tmux restarts
 - **aiohttp listener on `127.0.0.1:${RELAY_HOOK_PORT}`** — 6 Claude Code HTTP hook receivers (`UserPromptSubmit`, `Stop`, `StopFailure`, `SessionStart`, `PostCompact`, `SubagentStop`) + 7 application API endpoints (`/dispatch/*`, `/memory/*`, `/health`)
 - **Outbox worker** (asyncio task) — drains a SQLite queue of outbound messages with retry/backoff. Stop hook never blocks on Telegram API; even Telegram outage doesn't lose messages
 - **SQLite at `/var/lib/${PROJECT_NAME}/relay.db`** with 12 tables: `messages`, `pending_reply`, `outbox` (+ `event_type` column for status routing), `sessions`, `session_events`, `dispatch_runs`, `dispatch_phases`, `memories`, `health_snapshots`, `auth_rejects`, `allowed_users`, `todo_state`
@@ -79,7 +82,7 @@ The relay-bot surfaces claude's progress to Telegram in 5 layers, each non-block
 
 | Layer | Source hook | Telegram output |
 |---|---|---|
-| **L1** Inbound ack | `relay_inbound` after successful tmux send-keys | reaction emoji on operator's bubble (👀 → ❤ fallback → skip) |
+| **L1** Inbound ack | `relay_inbound` after accepted text/caption is queued | reaction emoji on operator's bubble (configured pool → ❤ fallback → skip) |
 | **L2** Skill invocation | `PreToolUse` matcher `Skill` / `Agent` | `🔧 Skill: <name>` or `🤖 Subagent: <type>` |
 | **L3** Todo transitions | `PreToolUse` matcher `TodoWrite` (diff vs `todo_state`) | `🟡 Started: <task>` / `✅ Done: <task>` |
 | **L4** Subagent boundary | `SubagentStop` hook | `✅ Subagent: <type> done` |

@@ -38,7 +38,7 @@ Required keys in `.env.local` (this file is git-ignored, never commits real valu
 | `VPS_RELAY_HOOK_PORT` | `9999` | Localhost HTTP port for the project relay-bot |
 | `VPS_DISPATCH_COMMAND_NAME` | `myproj-dispatch` | Slash command name injected by `${VPS_SERVICE_PREFIX}-dispatch.timer` |
 
-> For new projects, set `VPS_SERVICE_PREFIX=$VPS_PROJECT_NAME`. The split exists to support legacy installs where `/etc/<long-name>/` and `<short-name>-*.service` were chosen separately.
+> Keep `VPS_SERVICE_PREFIX` explicit. Set it equal to `VPS_PROJECT_NAME` unless the deployment intentionally separates state/config name from service/binary prefix.
 
 ## Source map (resolved from .env at runtime)
 

@@ -1,0 +1,12 @@
+[Unit]
+Description=Inject /dispatch into ${SERVICE_PREFIX}-god tmux session (replaces internal /loop)
+Requires=${SERVICE_PREFIX}-god.service
+After=${SERVICE_PREFIX}-god.service
+
+[Service]
+Type=oneshot
+User=${BOT_USER}
+Group=${BOT_USER}
+ExecStart=/usr/bin/tmux send-keys -t ${SERVICE_PREFIX}-god "/dispatch" Enter
+StandardOutput=journal
+StandardError=journal

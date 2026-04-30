@@ -1,0 +1,53 @@
+# Headless agent defaults — full autonomy, deepest reasoning.
+# Verified against https://developers.openai.com/codex/config-reference (2026-04).
+# `approval_policy = "never"` + `sandbox_mode = "danger-full-access"` = the
+# unattended-agent contract: no interactive prompts, full filesystem + network.
+# Only safe inside an isolated VPS dedicated to this workload.
+model = "gpt-5.5"
+model_reasoning_effort = "xhigh"
+approval_policy = "never"
+sandbox_mode = "danger-full-access"
+notify = ["bash", "/home/${BOT_USER}/.codex/notify.sh"]
+
+[projects."/home/${BOT_USER}"]
+trust_level = "trusted"
+
+[projects."${PROJECT_DIR}"]
+trust_level = "trusted"
+
+[tui.model_availability_nux]
+"gpt-5.5" = 2
+
+[plugins."hugging-face@openai-curated"]
+enabled = true
+
+[plugins."github@openai-curated"]
+enabled = true
+
+# OPTIONAL — uncomment any marketplace plugins you actually use.
+# [plugins."agile-workflow@levnikolaevich-skills-marketplace"]
+# enabled = true
+# [plugins."documentation-pipeline@levnikolaevich-skills-marketplace"]
+# enabled = true
+# [plugins."codebase-audit-suite@levnikolaevich-skills-marketplace"]
+# enabled = true
+# [plugins."project-bootstrap@levnikolaevich-skills-marketplace"]
+# enabled = true
+# [plugins."optimization-suite@levnikolaevich-skills-marketplace"]
+# enabled = true
+
+# [marketplaces.levnikolaevich-skills-marketplace]
+# source_type = "git"
+# source = "https://github.com/levnikolaevich/claude-code-skills.git"
+# ref = "master"
+
+# OPTIONAL MCP servers — leave commented out if the corresponding ${VAR} is empty.
+# [mcp_servers.context7]
+# url = "https://mcp.context7.com/mcp"
+# [mcp_servers.context7.http_headers]
+# CONTEXT7_API_KEY = "${CONTEXT7_API_KEY}"
+#
+# [mcp_servers.Ref]
+# url = "https://api.ref.tools/mcp"
+# [mcp_servers.Ref.http_headers]
+# x-ref-api-key = "${REF_API_KEY}"

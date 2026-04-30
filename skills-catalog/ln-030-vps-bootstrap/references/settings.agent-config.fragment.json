@@ -1,0 +1,7 @@
+{
+  "model": "opus",
+  "effortLevel": "xhigh",
+  "permissions": {
+    "defaultMode": "bypassPermissions"
+  }
+}

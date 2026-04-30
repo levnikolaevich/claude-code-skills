@@ -1,0 +1,6 @@
+{
+  "statusLine": {
+    "type": "command",
+    "command": "/home/${BOT_USER}/.claude/statusline.sh"
+  }
+}

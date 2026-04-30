@@ -1,0 +1,44 @@
+[Unit]
+Description=Claude relay bot — Telegram bridge + sessions UI for ${SERVICE_PREFIX} god-session
+After=network-online.target ${SERVICE_PREFIX}-god.service
+Wants=network-online.target
+# NOTE: PartOf=${SERVICE_PREFIX}-god.service was removed in v5.1.
+# Relay must survive a god-restart triggered by /new_session or [Resume] button
+# so it can complete the «Resuming…» reply to the operator.
+
+[Service]
+Type=simple
+User=${BOT_USER}
+Group=${BOT_USER}
+EnvironmentFile=/etc/${PROJECT_NAME}/secrets.env
+ExecStart=/home/${BOT_USER}/.venv-relay/bin/python /usr/local/bin/claude-relay-bot.py
+Restart=always
+RestartSec=15
+StandardOutput=journal
+StandardError=journal
+
+# Resource caps; relay is a thin polling loop with light fs scans.
+MemoryMax=128M
+CPUQuota=50%
+
+# Hardening (codex review v5.1, finding CR-003).
+# Mitigates blast radius if the bot token leaks: the relay process is the
+# only path from Telegram into the god-session, so it must be tightly sandboxed.
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=read-only
+# State dir is the single writable location (atomic command file, sessions-dir.path,
+# last-god-error.json, relay.db). /tmp/tmux-<UID> needed for tmux socket.
+ReadWritePaths=/var/lib/${PROJECT_NAME} /tmp
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+SystemCallArchitectures=native
+LockPersonality=true
+RestrictRealtime=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+# IMPORTANT: do NOT enable PrivateTmp — relay needs to share /tmp/tmux-<UID>
+# socket with the ${SERVICE_PREFIX}-god service to send-keys into the same pane.
+
+[Install]
+WantedBy=multi-user.target

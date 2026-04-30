@@ -1,0 +1,22 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {"hooks": [{"type": "http", "url": "http://127.0.0.1:9999/hook/user-prompt-submit", "timeout": 5}]}
+    ],
+    "Stop": [
+      {"hooks": [{"type": "http", "url": "http://127.0.0.1:9999/hook/stop", "timeout": 10}]}
+    ],
+    "StopFailure": [
+      {"hooks": [{"type": "http", "url": "http://127.0.0.1:9999/hook/stop-failure", "timeout": 5}]}
+    ],
+    "SessionStart": [
+      {"hooks": [{"type": "http", "url": "http://127.0.0.1:9999/hook/session-start", "timeout": 5}]}
+    ],
+    "PostCompact": [
+      {"hooks": [{"type": "http", "url": "http://127.0.0.1:9999/hook/session-start", "timeout": 5}]}
+    ],
+    "SubagentStop": [
+      {"hooks": [{"type": "http", "url": "http://127.0.0.1:9999/hook/subagent-stop", "timeout": 5}]}
+    ]
+  }
+}

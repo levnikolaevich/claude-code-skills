@@ -1,0 +1,30 @@
+[Unit]
+Description=${PROJECT_NAME} god-session — autonomous Claude Code agent (always-on, external dispatch timer, optional Telegram bridge)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=${BOT_USER}
+Group=${BOT_USER}
+Environment=HOME=/home/${BOT_USER}
+WorkingDirectory=${PROJECT_DIR}
+ExecStart=/usr/local/bin/${SERVICE_PREFIX}-god
+ExecStop=/usr/bin/tmux kill-session -t ${SERVICE_PREFIX}-god
+Restart=always
+RestartSec=15
+TimeoutStopSec=30
+StandardOutput=append:/var/log/${PROJECT_NAME}-god.log
+StandardError=append:/var/log/${PROJECT_NAME}-god.log
+
+# State dir auto-created by systemd with correct mode + owner.
+# Resolves to /var/lib/${PROJECT_NAME}/, exposed via $STATE_DIRECTORY env var.
+StateDirectory=${PROJECT_NAME}
+StateDirectoryMode=0700
+
+# Resource caps so we don't starve other workloads on a shared host.
+MemoryMax=2G
+CPUQuota=200%
+
+[Install]
+WantedBy=multi-user.target

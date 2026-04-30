@@ -1,0 +1,10 @@
+[Unit]
+Description=Hourly /dispatch trigger for ${SERVICE_PREFIX} god-session (durable, replaces in-session /loop)
+
+[Timer]
+OnCalendar=*-*-* *:07:00
+Persistent=true
+Unit=${SERVICE_PREFIX}-dispatch.service
+
+[Install]
+WantedBy=timers.target

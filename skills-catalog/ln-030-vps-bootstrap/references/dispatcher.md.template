@@ -1,0 +1,225 @@
+---
+description: "Manage the autonomous god-session on the project's VPS (status, run-now, refresh, attach, tail, queue, pause, resume, install, logs, audit, memory)"
+allowed-tools: Bash, Read, mcp__hex-ssh__remote-ssh, mcp__hex-line__read_file, mcp__hex-line__write_file
+argument-hint: "<status | run-now | refresh-god | attach | tail | queue | pause | resume | install | logs | audit | memory>"
+---
+
+# Dispatcher control — operator-side remote control for the god-session
+
+Operate the always-on god-session running on the VPS configured in this project's `.env.local`. The session lives entirely on the VPS; this slash-command is your local control plane.
+
+## Configuration (read from `.env.local`, not hardcoded)
+
+Before running any subcommand, source `.env.local` from the current repo:
+
+```bash
+[ -f .env.local ] && set -a && . .env.local && set +a
+: "${VPS_HOST:?missing VPS_HOST in .env.local}"
+: "${VPS_SSH_KEY:?missing VPS_SSH_KEY in .env.local}"
+: "${VPS_BOT_USER:?missing VPS_BOT_USER in .env.local}"
+: "${VPS_PROJECT_NAME:?missing VPS_PROJECT_NAME in .env.local}"
+: "${VPS_SERVICE_PREFIX:?missing VPS_SERVICE_PREFIX in .env.local}"
+: "${VPS_PROJECT_DIR:?missing VPS_PROJECT_DIR in .env.local}"
+```
+
+Required keys in `.env.local` (this file is git-ignored, never commits real values):
+
+| Key | Example | Used for |
+|---|---|---|
+| `VPS_HOST` | `203.0.113.42` | SSH target (IP or hostname) |
+| `VPS_SSH_KEY` | `~/.ssh/myproj_vps` | Path to private key |
+| `VPS_BOT_USER` | `agent-bot` | Linux user owning the workload (typically UID 1000) |
+| `VPS_PROJECT_NAME` | `myproj-skills-lab` | State/config dir name: `/etc/<NAME>/`, `/var/lib/<NAME>/`, `/var/log/<NAME>-god.log` |
+| `VPS_SERVICE_PREFIX` | `myproj` | systemd unit + binary + tmux prefix: `<PFX>-god.service`, `<PFX>-dispatch.timer`, `/usr/local/bin/<PFX>-god` |
+| `VPS_PROJECT_DIR` | `/opt/myproj` | Cloned repo root on VPS |
+| `VPS_GITHUB_REPO` | `me/myproj` | `<owner>/<repo>` (used in `queue`) |
+
+> For new projects, set `VPS_SERVICE_PREFIX=$VPS_PROJECT_NAME`. The split exists to support legacy installs where `/etc/<long-name>/` and `<short-name>-*.service` were chosen separately.
+
+## Source map (resolved from .env at runtime)
+
+| Field | Resolved value |
+|---|---|
+| Server | `${VPS_HOST}` (UID 1000 = `${VPS_BOT_USER}`) |
+| Repo | `${VPS_GITHUB_REPO}` cloned at `${VPS_PROJECT_DIR}` |
+| systemd unit (god) | `${VPS_SERVICE_PREFIX}-god.service` (Restart=always, MemoryMax=2G) |
+| systemd unit (scheduler) | `${VPS_SERVICE_PREFIX}-dispatch.timer` + `.service` (hourly :07) |
+| tmux session | `${VPS_SERVICE_PREFIX}-god` |
+| God wrapper | `/usr/local/bin/${VPS_SERVICE_PREFIX}-god` |
+| Relay-bot | `${VPS_SERVICE_PREFIX}-relay-bot.service` (HTTP API on 127.0.0.1:9999, SQLite at `/var/lib/${VPS_PROJECT_NAME}/relay.db`) |
+| Slash command | `/home/${VPS_BOT_USER}/.claude/commands/dispatch.md` |
+| Log (wrapper) | `/var/log/${VPS_PROJECT_NAME}-god.log` |
+| State dir | `/var/lib/${VPS_PROJECT_NAME}/` |
+| Bootstrap skill | `claude-code-skills/skills-catalog/ln-030-vps-bootstrap/SKILL.md` |
+
+All SSH calls use `mcp__hex-ssh__remote-ssh` with `host=${VPS_HOST}`, `user=root`, `privateKeyPath=${VPS_SSH_KEY}`.
+
+## Subcommands
+
+`$ARGUMENTS` selects which one. Default: `status`.
+
+| Command | What it does |
+|---|---|
+| `status` | Health: systemd units, tmux session, claude proc, relay-bot, queue, GH App, RAM, recent dispatches |
+| `run-now` | Inject `/dispatch` into the live tmux pane (immediate dispatch run, in addition to hourly timer) |
+| `refresh-god` | Kill tmux session + restart god service. Fresh claude session (memories persist via SessionStart hook) |
+| `attach` | Print SSH command for interactive tmux attach |
+| `tail [N]` | Last N lines of wrapper log (default 50) |
+| `queue` | List open issues from `${VPS_GITHUB_REPO}` |
+| `pause` | `systemctl stop` god — kill session |
+| `resume` | `systemctl start` god — re-enable |
+| `install` | Idempotent verify after server rebuild |
+| `logs` | Tail tmux pane (~80 lines of live claude conversation) |
+| `audit [N]` | Last N dispatch runs from relay-bot SQLite — issue, phases, verdicts, PR (default 10) |
+| `memory` | List persistent memories injected into each new session |
+
+---
+
+## status
+
+```bash
+mcp__hex-ssh__remote-ssh:
+  "echo '=== systemctl ===' && systemctl status ${VPS_SERVICE_PREFIX}-god.service ${VPS_SERVICE_PREFIX}-dispatch.timer ${VPS_SERVICE_PREFIX}-relay-bot.service --no-pager | head -30 ; \
+   echo '=== tmux ===' && sudo -u ${VPS_BOT_USER} tmux ls 2>&1 ; \
+   echo '=== claude proc ===' && pgrep -af 'claude --dangerously' | head -2 ; \
+   echo '=== relay health ===' && curl -fsS http://127.0.0.1:9999/health | jq -c . ; \
+   echo '=== queue ===' && sudo -u ${VPS_BOT_USER} bash -lc 'export GH_TOKEN=\$(${VPS_SERVICE_PREFIX}-mint-gh-token); gh issue list --repo ${VPS_GITHUB_REPO} --state open --json labels --jq \"[.[] | .labels[].name] | group_by(.) | map({label: .[0], count: length}) | .[]\"' ; \
+   echo '=== recent dispatches ===' && curl -fsS http://127.0.0.1:9999/dispatch/recent?n=3 | jq '.runs[] | {id, ts_started, status, issue_number, pr_number}' ; \
+   echo '=== last log ===' && tail -3 /var/log/${VPS_PROJECT_NAME}-god.log ; \
+   echo '=== ram ===' && free -h | awk '/^Mem:/ {print \$7\" available out of \"\$2}'"
+```
+
+Render as a 6-row dashboard.
+
+---
+
+## run-now
+
+```bash
+mcp__hex-ssh__remote-ssh:
+  "sudo -u ${VPS_BOT_USER} tmux send-keys -t ${VPS_SERVICE_PREFIX}-god '/dispatch' Enter ; \
+   sleep 3 ; \
+   sudo -u ${VPS_BOT_USER} tmux capture-pane -t ${VPS_SERVICE_PREFIX}-god -p -S -200 | tail -30"
+```
+
+Watch progress with `/dispatcher logs`. Inspect structured run record: `/dispatcher audit 1`.
+
+## refresh-god
+
+```bash
+mcp__hex-ssh__remote-ssh:
+  "sudo -u ${VPS_BOT_USER} tmux kill-session -t ${VPS_SERVICE_PREFIX}-god 2>/dev/null ; \
+   systemctl restart ${VPS_SERVICE_PREFIX}-god.service ; \
+   sleep 12 ; \
+   systemctl is-active ${VPS_SERVICE_PREFIX}-god.service ; \
+   sudo -u ${VPS_BOT_USER} tmux ls 2>&1"
+```
+
+Claude takes ~30s to fully boot; SessionStart hook will inject memories+lineage from relay-bot SQLite.
+
+## attach
+
+```
+ssh -i "${VPS_SSH_KEY}" -t ${VPS_BOT_USER}@${VPS_HOST} "tmux attach -t ${VPS_SERVICE_PREFIX}-god"
+```
+
+Detach: `Ctrl-b d`. Session keeps running.
+
+## tail
+
+```bash
+mcp__hex-ssh__remote-ssh:
+  "tail -n <N> /var/log/${VPS_PROJECT_NAME}-god.log"
+```
+
+## queue
+
+```bash
+mcp__hex-ssh__remote-ssh:
+  "sudo -u ${VPS_BOT_USER} bash -lc 'export GH_TOKEN=\$(${VPS_SERVICE_PREFIX}-mint-gh-token); gh issue list --repo ${VPS_GITHUB_REPO} --state open --json number,title,labels,createdAt --jq \".[] | \\\"#\\(.number) [\\(.labels | map(.name) | join(\\\",\\\"))] \\(.title)\\\"\"'"
+```
+
+## pause / resume
+
+```bash
+mcp__hex-ssh__remote-ssh: "systemctl stop ${VPS_SERVICE_PREFIX}-god.service && echo paused"
+mcp__hex-ssh__remote-ssh: "systemctl start ${VPS_SERVICE_PREFIX}-god.service && sleep 5 && systemctl is-active ${VPS_SERVICE_PREFIX}-god.service"
+```
+
+## install
+
+Idempotent verify. Does NOT touch secrets, App PEM, user data; only paths/perms/services.
+
+```bash
+mcp__hex-ssh__remote-ssh:
+  "test -x /usr/local/bin/${VPS_SERVICE_PREFIX}-god || echo 'wrapper MISSING — re-run ln-030-vps-bootstrap Step 7' ; \
+   test -r /home/${VPS_BOT_USER}/.claude/commands/dispatch.md || echo 'dispatch.md MISSING' ; \
+   test -r /etc/systemd/system/${VPS_SERVICE_PREFIX}-god.service || echo 'god service MISSING' ; \
+   test -r /etc/systemd/system/${VPS_SERVICE_PREFIX}-dispatch.timer || echo 'dispatch timer MISSING' ; \
+   test -x /usr/local/bin/claude-relay-bot.py || echo 'relay-bot MISSING' ; \
+   install -d -o ${VPS_BOT_USER} -g ${VPS_BOT_USER} -m 755 /var/lib/${VPS_PROJECT_NAME} && \
+   touch /var/log/${VPS_PROJECT_NAME}-god.log && chown ${VPS_BOT_USER}:${VPS_BOT_USER} /var/log/${VPS_PROJECT_NAME}-god.log && \
+   loginctl enable-linger ${VPS_BOT_USER} && \
+   systemctl daemon-reload && \
+   systemctl enable --now ${VPS_SERVICE_PREFIX}-god.service ${VPS_SERVICE_PREFIX}-dispatch.timer ${VPS_SERVICE_PREFIX}-relay-bot.service && \
+   echo installed"
+```
+
+## logs
+
+```bash
+mcp__hex-ssh__remote-ssh:
+  "sudo -u ${VPS_BOT_USER} tmux capture-pane -t ${VPS_SERVICE_PREFIX}-god -p -S -300 | tail -80"
+```
+
+## audit
+
+Last N dispatch runs from relay-bot SQLite (default 10). Each run includes phases (ln-300/310/400/500), verdicts, PR url if opened.
+
+```bash
+mcp__hex-ssh__remote-ssh:
+  "curl -fsS http://127.0.0.1:9999/dispatch/recent?n=<N> | jq ."
+```
+
+Render as table: id, started_at, issue, status, last verdict, pr_url.
+
+## memory
+
+```bash
+mcp__hex-ssh__remote-ssh:
+  "curl -fsS http://127.0.0.1:9999/memory/recent?n=20 | jq '.memories[] | {id, ts_created, category, text, tags}'"
+```
+
+Add operator-side memory (sometimes faster than asking claude):
+
+```bash
+mcp__hex-ssh__remote-ssh:
+  "curl -fsS -X POST http://127.0.0.1:9999/memory/add -H 'Content-Type: application/json' -d '{\"category\":\"operator_pref\",\"text\":\"<text>\"}'"
+```
+
+Forget: `POST /memory/forget {"memory_id":N}` or `{"tag_match":"..."}`.
+
+---
+
+## Troubleshooting
+
+| Symptom | Diagnosis | Recovery |
+|---|---|---|
+| `/dispatcher status` says god service inactive | `pause` was run, never resumed; or fresh server. | `/dispatcher resume` (or `/dispatcher install` for fresh). |
+| tmux session missing while service active | Restart race window 0-15s. | Wait 15s and retry. If persistent, `journalctl -u ${VPS_SERVICE_PREFIX}-god.service -n 50`. |
+| Telegram inbound not getting replies | Relay-bot down OR hooks misconfigured. | `curl http://127.0.0.1:9999/health` (relay), check journal of ${VPS_SERVICE_PREFIX}-relay-bot.service. Verify settings.json hooks block exists. |
+| Dispatch runs not firing hourly | `${VPS_SERVICE_PREFIX}-dispatch.timer` not enabled. | `systemctl list-timers --no-pager` to verify; `systemctl enable --now ${VPS_SERVICE_PREFIX}-dispatch.timer` if missing. |
+| Relay outbox accumulating queued | Telegram outage. | `/dispatcher status` shows queue depth. Outbox auto-retries with backoff. |
+
+---
+
+## Related
+
+- Bootstrap skill: `claude-code-skills/skills-catalog/ln-030-vps-bootstrap/SKILL.md`
+- Pipeline skills: `agile-workflow:ln-300/310/400/500`
+- VPS-side slash command: `/home/${VPS_BOT_USER}/.claude/commands/dispatch.md`
+- Hooks docs: <https://code.claude.com/docs/en/hooks>
+
+---
+
+**Generated by:** ln-030-vps-bootstrap (template; configuration via `.env.local` — not install-time substitution)

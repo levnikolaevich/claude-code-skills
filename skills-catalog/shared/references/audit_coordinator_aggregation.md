@@ -101,4 +101,4 @@ Do NOT delete `docs/project/.audit/results_log.md` — it lives outside the date
 
 ## Research Evidence Interop
 
-When audit findings feed into evaluation coordinators (via ln-310 `extra_evidence_workers`), research evidence follows `shared/references/evaluation_research_contract.md` including `confidence_tier`. Audit coordinators that perform their own research should use the same evidence card format for interoperability.
+When audit findings feed into downstream coordinators, research evidence follows `shared/references/evaluation_research_contract.md` including `confidence_tier`. Audit coordinators that perform their own research should use the same evidence card format for interoperability.

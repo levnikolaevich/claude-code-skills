@@ -22,13 +22,13 @@ license: MIT
 - analyze the target artifact or diff
 - convert evidence into normalized findings
 - for `mode=story`: calculate penalty points across 30 criteria per `phase2_research_audit.md`
-- for `mode=plan_review|context`: evaluate criteria #5, #6, #21, #28 only (no penalty accumulation)
+- for `mode=plan_review`: evaluate criteria #5, #6, #21, #28 only (no penalty accumulation)
 - avoid narrative-only review output
 
 ## Mode Gate
 
 - `mode=story`: full pipeline — pre-mortem, cross-reference, penalty points across 30 criteria, build fix plan
-- `mode=plan_review|context`: applicability check, stack detection, evaluate criteria #5 (standards), #6 (library versions), #21 (alternatives), #28 (library features) only, normalize findings without penalty accumulation
+- `mode=plan_review`: applicability check, stack detection, evaluate criteria #5 (standards), #6 (library versions), #21 (alternatives), #28 (library features) only, normalize findings without penalty accumulation
 
 ## Runtime
 
@@ -84,7 +84,7 @@ Execute cross-reference analysis per `cross_reference_validation.md`:
 ### Phase 4: Criteria Audit
 
 1. `mode=story`: evaluate all 30 criteria against Story/Tasks per `phase2_research_audit.md` Auto-Fix Actions Reference.
-2. `mode=plan_review|context`: evaluate criteria #5, #6, #21, #28 only (standards + solution groups).
+2. `mode=plan_review`: evaluate criteria #5, #6, #21, #28 only (standards + solution groups).
 3. Cross-check claims against provided research evidence when present.
 
 ### Phase 5: Penalty Calculation (mode=story)

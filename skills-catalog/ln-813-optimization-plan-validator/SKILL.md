@@ -55,11 +55,9 @@ Phase order:
 7. `PHASE_6_VERDICT`
 8. `PHASE_7_SELF_CHECK`
 
-## Worker Invocation (MANDATORY)
+## TodoWrite Format
 
-Use the Skill tool for delegated workers. Do not inline worker logic inside the coordinator.
-
-TodoWrite format (mandatory):
+Mandatory todo items:
 - `Config`
 - `Load context`
 - `Agent launch`
@@ -69,12 +67,7 @@ TodoWrite format (mandatory):
 - `Verdict`
 - `Self-check`
 
-Representative invocations:
-
-```text
-Skill(skill: "ln-311-review-research-worker", args: "{slug} optimization research")
-Skill(skill: "ln-316-review-refinement-worker", args: "{slug} optimization refinement")
-```
+The coordinator runs research inline (per `shared/references/evaluation_research_contract.md`) and refinement inline (per `shared/agents/prompt_templates/iterative_refinement.md` and `shared/agents/prompt_templates/refinement_perspectives.md`). Refinement advisor sessions are launched directly via `shared/agents/agent_runner.mjs`.
 
 ## Workflow
 
@@ -100,7 +93,7 @@ Skill(skill: "ln-316-review-refinement-worker", args: "{slug} optimization refin
 ### Phase 3: Research And Feasibility
 
 Required work:
-- run `ln-311-review-research-worker`
+- coordinator performs research inline (official docs, MCP Ref, Context7, current web best-practice)
 - perform local feasibility validation in parallel while agents work
 
 Minimum research lanes:
@@ -128,7 +121,7 @@ Feasibility checks:
 
 ### Phase 5: Refinement
 
-Refinement uses a 2-stage state machine (see `ln-316-review-refinement-worker`):
+Refinement uses a 2-stage state machine per `shared/agents/prompt_templates/iterative_refinement.md` and `shared/agents/prompt_templates/refinement_perspectives.md`:
 - Stage 1 (parallel): `dry_run_executor`, `new_dev_tester`, `adversarial_reviewer`
 - Stage 2 (after merge): `final_sweep`
 

@@ -4,14 +4,14 @@ Quick-reference for understanding how the validator works at runtime. For implem
 
 ## Modes
 
-| | mode=story | mode=plan_review | mode=context |
-|---|-----------|-----------|-------------|
-| **Input** | Story ID (Backlog) | Plan file (auto-detect) | Conversation + git diff |
-| **Phases** | 0 → 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 | 0 → 1 → 2 → 3 → 5 → 6 → 8 | 0 → 1 → 2 → 3 → 5 → 6 → 8 |
-| **Phase 3 work** | 30-criteria audit + display | MCP Ref research | MCP Ref research |
-| **Agents** | Registry-configured external agents (Codex by default) | Registry-configured external agents (Codex by default) | Registry-configured external agents (Codex by default) |
-| **Output** | GO/NO-GO, Story → Todo | Advisory corrections | Advisory corrections |
-| **Prompt template** | `modes/story.md` | `modes/plan_review.md` | `modes/context.md` |
+| | mode=story | mode=plan_review |
+|---|-----------|-----------|
+| **Input** | Story ID (Backlog) | Plan file (auto-detect) |
+| **Phases** | 0 → 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 | 0 → 1 → 2 → 3 → 5 → 6 → 8 |
+| **Phase 3 work** | 30-criteria audit + display | MCP Ref research |
+| **Agents** | Registry-configured external agents (Codex by default) | Registry-configured external agents (Codex by default) |
+| **Output** | GO/NO-GO, Story → Todo | Advisory corrections |
+| **Prompt template** | `modes/story.md` | `modes/plan_review.md` |
 
 ## Phase Flow
 
@@ -34,7 +34,7 @@ Phase 4          Phase 5                    Phase 6            Phase 7          
 └──────────────┘ └────────────────────────┘ └──────────────┘ └──────────────┘ └─────────────┘
 ```
 
-### mode=plan_review / mode=context
+### mode=plan_review
 
 ```
 Phase 0         Phase 1          Phase 2                Phase 3            Phase 5
@@ -72,7 +72,7 @@ Phase 2                           Phases 3-4 (foreground)           Phase 5
 │ Build prompt from  │  │    Display penalty points         │  │ 1st agent → │
 │ review_base.md +   │  │    Auto-fix 11 groups             │  │  verify     │
 │ modes/{mode}.md    │  │                                   │  │             │
-│                    │  │  mode=plan_review/context:                │  │ 2nd agent → │
+│                    │  │  mode=plan_review:                │  │ 2nd agent → │
 │ Launch:            │  │    MCP Ref research (3-5 topics)  │  │  merge      │
 │  ├─ Codex CLI ─────┼──┼──── runs in background ──────────┼──┼→ parse      │
 │  └─ Extra agent* ──┼──┼──── runs in background ──────────┼──┼→ parse      │
@@ -189,7 +189,7 @@ AC Coverage: 100% = pass    80-99% = -3 penalty    <80% = -5, NO-GO
 | `references/premortem_validation.md` | #27: Tiger/Paper Tiger/Elephant | Phase 4 group 9 |
 | `references/traceability_validation.md` | #16-17, #17b-17c, #22: alignment, coverage, invocability, scenario completeness, verify | Phase 4 groups 10-11 |
 | **Research** | | |
-| `references/context_review_pipeline.md` | MCP Ref research pipeline | Phase 3 |
+| `references/plan_review_pipeline.md` | MCP Ref research pipeline | Phase 3 |
 | `references/domain_patterns.md` | Pattern registry for domain extraction | Phase 3 |
 | `references/mcp_ref_findings_template.md` | Output template for MCP findings | Phase 3 |
 | **Shared** | | |

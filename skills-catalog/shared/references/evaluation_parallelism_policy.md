@@ -20,7 +20,6 @@ Typical allowed overlap:
 - research worker
 - local findings worker
 - domain discovery or inventory reads
-- read-only audit workers (`ln-511`, `ln-513`, `ln-514`, `ln-62x` series) when launched as additional evidence lanes with compatible summary format
 
 ## Disallowed Parallel Lanes
 

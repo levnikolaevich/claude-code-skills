@@ -14,7 +14,7 @@ license: MIT
 ## Mandatory Read
 
 **MANDATORY READ:** Load `shared/references/evaluation_worker_runtime_contract.md`, `shared/references/evaluation_summary_contract.md`, `shared/references/cleanup_evidence_contract.md`
-**MANDATORY READ:** Load `../ln-310-multi-agent-validator/references/context_review_pipeline.md`, `../ln-310-multi-agent-validator/references/penalty_points.md`
+**MANDATORY READ:** Load `../ln-310-multi-agent-validator/references/plan_review_pipeline.md`, `../ln-310-multi-agent-validator/references/penalty_points.md`
 **MANDATORY READ:** Load `../ln-310-multi-agent-validator/references/structural_validation.md`, `../ln-310-multi-agent-validator/references/standards_validation.md`, `../ln-310-multi-agent-validator/references/solution_validation.md`, `../ln-310-multi-agent-validator/references/workflow_validation.md`, `../ln-310-multi-agent-validator/references/quality_validation.md`, `../ln-310-multi-agent-validator/references/dependency_validation.md`, `../ln-310-multi-agent-validator/references/cross_reference_validation.md`, `../ln-310-multi-agent-validator/references/risk_validation.md`, `../ln-310-multi-agent-validator/references/premortem_validation.md`, `../ln-310-multi-agent-validator/references/traceability_validation.md`
 
 ## Purpose
@@ -26,7 +26,7 @@ license: MIT
 ## Mode Gate
 
 - `mode=story`: full 11-group repair using findings from ln-312
-- `mode=plan_review|context`: apply accepted corrections only (max 5 corrections per `../ln-310-multi-agent-validator/references/context_review_pipeline.md` Compare & Correct Safety Rules)
+- `mode=plan_review`: apply accepted corrections only (max 5 corrections per `../ln-310-multi-agent-validator/references/plan_review_pipeline.md` Compare & Correct Safety Rules)
 
 ## 11-Group Validation Structure (mode=story)
 
@@ -98,7 +98,7 @@ Prefer these fields when available:
 ## Definition of Done
 
 - [ ] Findings loaded from ln-312
-- [ ] All 11 groups processed (mode=story) or accepted corrections applied (mode=plan_review|context)
+- [ ] All 11 groups processed (mode=story) or accepted corrections applied (mode=plan_review)
 - [ ] Penalty before/after tracked
 - [ ] FLAGGED items recorded
 - [ ] Local verification completed

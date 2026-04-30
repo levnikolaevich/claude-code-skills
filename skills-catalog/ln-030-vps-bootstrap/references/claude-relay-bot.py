@@ -88,6 +88,7 @@ LAST_CMD_FILE = STATE_DIR / "last-god-command.json"
 CMD_LOCK_FILE = STATE_DIR / ".cmd-lock"
 SESSIONS_DIR_FILE = STATE_DIR / "sessions-dir.path"
 ERROR_FILE = STATE_DIR / "last-god-error.json"
+LAST_SESSION_FILE = STATE_DIR / "last-session.id"
 LAST_CMD_TTL_SEC = 300  # operator command attributed to next SessionStart within 5 min
 GOD_SERVICE_NAME = f"{SERVICE_PREFIX}-god.service"
 CLAUDE_PROJECTS_HOME = Path(f"/home/{BOT_USER}/.claude/projects")
@@ -688,7 +689,7 @@ def session_display_name(jsonl_path: Path, sid: str) -> str:
     """
     Return human-readable session name with three-tier fallback:
     1. `slug` field (Claude auto-generates this in 2.1+ for new sessions)
-    2. First user message text (Telegram prefix stripped, truncated)
+    2. First user message text (slash-commands prefixed with 🤖)
     3. session_id[:8]
     """
     meta = find_first_metadata_obj(jsonl_path, ("slug",))
@@ -697,6 +698,9 @@ def session_display_name(jsonl_path: Path, sid: str) -> str:
     first_msg = find_first_user_message(jsonl_path)
     if first_msg:
         clean = " ".join(first_msg.split())  # collapse newlines/whitespace
+        if clean.startswith("/"):
+            label = clean.split()[0]
+            return f"\U0001F916 {label}"
         if len(clean) > 40:
             return clean[:40].rstrip() + "…"
         return clean
@@ -989,6 +993,21 @@ async def kill_tmux_gracefully_async(target: str) -> None:
 
 from collections import deque
 _status_buckets: dict[int, deque[float]] = {}
+_stop_failure_dedup: dict[str, float] = {}  # session_id -> last warn ts
+
+
+def write_last_session_atomic(session_id: str) -> None:
+    """Atomic temp+rename of last-session.id (Fix #4a + N3).
+    POSIX `os.replace` is atomic."""
+    if not session_id or not UUID_RE.match(session_id):
+        return
+    try:
+        STATE_DIR.mkdir(parents=True, exist_ok=True)
+        tmp_path = STATE_DIR / f".last-session.id.tmp.{os.getpid()}"
+        tmp_path.write_text(session_id, encoding="utf-8")
+        os.replace(str(tmp_path), str(LAST_SESSION_FILE))
+    except OSError as exc:
+        log.warning("could not write last-session.id: %s", exc)
 
 
 def can_emit_status(chat_id: int) -> bool:
@@ -1947,13 +1966,48 @@ UNSUPPORTED_MEDIA_REPLY = "Сейчас поддерживаются тольк�
 
 
 def has_unsupported_media(msg: Message) -> bool:
+    """Returns True for media types we cannot yet bridge to claude
+    (voice/audio/video/sticker/animation). Photos and documents are
+    handled separately by download_inbound_media()."""
     return any(
         getattr(msg, attr, None)
-        for attr in (
-            "voice", "audio", "document", "photo", "video",
-            "video_note", "animation", "sticker",
-        )
+        for attr in ("voice", "audio", "video", "video_note", "animation", "sticker")
     )
+
+
+async def download_inbound_media(msg: Message) -> Optional[tuple[Path, str]]:
+    """Returns (path, kind) or None.
+    kind ∈ {'image', 'document'}. Photos always 'image'. Documents are
+    'image' if mime is image/*, else 'document' (any extension)."""
+    file_id, ext, kind = None, None, None
+    if msg.photo:
+        file_id, ext, kind = msg.photo[-1].file_id, "jpg", "image"
+    elif msg.document:
+        mime = (msg.document.mime_type or "").lower()
+        orig = msg.document.file_name or ""
+        ext_guess = orig.rsplit(".", 1)[-1].lower() if "." in orig else None
+        if mime in IMAGE_MIMES:
+            ext = ext_guess or IMAGE_MIMES[mime]
+            kind = "image"
+        else:
+            ext = ext_guess or "bin"
+            kind = "document"
+        ext = "".join(c for c in ext if c.isalnum())[:8] or "bin"
+        file_id = msg.document.file_id
+    if not file_id:
+        return None
+    MEDIA_DIR.mkdir(parents=True, exist_ok=True, mode=0o750)
+    dest = MEDIA_DIR / f"{msg.message_id}.{ext}"
+    try:
+        f = await bot.get_file(file_id)
+        if f.file_size and f.file_size > MEDIA_MAX_BYTES:
+            log.warning("media too big: %d bytes > %d cap", f.file_size, MEDIA_MAX_BYTES)
+            return None
+        await bot.download_file(f.file_path, destination=dest)
+    except (TelegramAPIError, OSError) as exc:
+        log.warning("media download failed for tg_msg=%s: %s", msg.message_id, exc)
+        return None
+    return (dest, kind)
 
 
 def inbound_user_tag(msg: Message) -> str:
@@ -1967,13 +2021,14 @@ def inbound_user_tag(msg: Message) -> str:
 @dp.message()
 async def relay_inbound(msg: Message) -> None:
     text = (msg.text or msg.caption or "").strip()
-    if not text:
+    media = await download_inbound_media(msg)
+    if not text and not media:
         if has_unsupported_media(msg):
             rejected_id = insert_rejected_inbound(
                 UNSUPPORTED_MEDIA_REPLY,
                 msg.chat.id,
                 msg.message_id,
-                "unsupported media without text/caption",
+                "unsupported media (voice/audio/video/sticker)",
             )
             log.info(
                 "INBOUND #%d rejected unsupported media chat=%s tg_msg=%s",
@@ -1983,13 +2038,18 @@ async def relay_inbound(msg: Message) -> None:
                 await msg.reply(UNSUPPORTED_MEDIA_REPLY)
         return
     user_tag = inbound_user_tag(msg)
-    pane_text = f"[tg id={msg.chat.id}:{msg.message_id}{user_tag}] {text}"
-    inbound_id = insert_inbound(pane_text, msg.chat.id, msg.message_id)
-    log.info(
-        "INBOUND #%d queued (%d chars) chat=%s tg_msg=%s",
-        inbound_id, len(text), msg.chat.id, msg.message_id,
-    )
-    log.info("INBOUND #%d queued for tmux delivery", inbound_id)
+    if media:
+        media_path, media_kind = media
+        marker = f"[{media_kind}: {media_path}]"
+        body = f"{marker} {text}" if text else f"{marker} (no caption)"
+        pane_text = f"[tg id={msg.chat.id}:{msg.message_id}{user_tag}] {body}"
+        inbound_id = insert_inbound(pane_text, msg.chat.id, msg.message_id)
+        update_message(inbound_id, kind=media_kind)
+        log.info("INBOUND #%d queued kind=%s path=%s", inbound_id, media_kind, media_path)
+    else:
+        pane_text = f"[tg id={msg.chat.id}:{msg.message_id}{user_tag}] {text}"
+        inbound_id = insert_inbound(pane_text, msg.chat.id, msg.message_id)
+        log.info("INBOUND #%d queued (%d chars text)", inbound_id, len(text))
 
 
 def god_session_ready() -> bool:
@@ -2090,6 +2150,32 @@ def split_for_telegram(text: str, limit: int = TG_MAX_LEN) -> list[str]:
             chunks.append(chunk)
         rest = rest[end:].lstrip()
     return chunks
+
+
+async def media_cleanup_worker() -> None:
+    """Daily 04:00 prune of tg-media files older than MEDIA_RETENTION_DAYS."""
+    log.info("media cleanup worker started (retention=%d days)", MEDIA_RETENTION_DAYS)
+    while True:
+        now = dt.datetime.now()
+        nxt = now.replace(hour=4, minute=0, second=0, microsecond=0)
+        if nxt <= now:
+            nxt += dt.timedelta(days=1)
+        await asyncio.sleep((nxt - now).total_seconds())
+        try:
+            cutoff = time.time() - MEDIA_RETENTION_DAYS * 86400
+            deleted = 0
+            if MEDIA_DIR.exists():
+                for f in MEDIA_DIR.iterdir():
+                    try:
+                        if f.is_file() and f.stat().st_mtime < cutoff:
+                            f.unlink()
+                            deleted += 1
+                    except OSError as exc:
+                        log.warning("media cleanup: %s — %s", f, exc)
+            log.info("media cleanup: removed %d files older than %dd", deleted, MEDIA_RETENTION_DAYS)
+        except Exception as exc:
+            log.error("media cleanup iteration failed: %s", exc)
+
 
 
 async def outbox_worker() -> None:
@@ -2262,20 +2348,18 @@ async def hook_stop_failure(request: web.Request) -> web.Response:
     session_id = data.get("session_id", "")
     error_type = data.get("error_type", "unknown")
     insert_session_event(session_id, "stop_failure", {"error_type": error_type})
-    log.error("HOOK stop-failure: session=%s error_type=%s", session_id[:8], error_type)
-    pending = get_pending(session_id) if session_id else None
-    if pending:
-        inbound_row = db().execute(
-            "SELECT tg_chat_id FROM messages WHERE id = ?", (pending["inbound_msg_id"],),
-        ).fetchone()
-        reply_chat_id = inbound_row["tg_chat_id"] if inbound_row else ALLOWED_CHAT
-        enqueue_outbox(
-            f"⚠️ Claude turn failed: {error_type}",
-            reply_chat_id,
-            replied_to_id=pending["inbound_msg_id"],
-            session_id=session_id,
+    # Fix #1: silent observer. StopFailure fires for transient mid-turn errors
+    # and the turn often continues to a real `Stop` afterwards. Do NOT enqueue
+    # user-facing warnings, do NOT clear pending_reply — only `Stop` is
+    # authoritative on turn termination.
+    now_t = time.time()
+    last = _stop_failure_dedup.get(session_id, 0.0)
+    if now_t - last > 10:
+        log.warning(
+            "HOOK stop-failure: session=%s error_type=%s (non-terminal; pending preserved)",
+            session_id[:8], error_type,
         )
-        clear_pending(session_id)
+        _stop_failure_dedup[session_id] = now_t
     return web.json_response({}, status=200)
 
 
@@ -2319,6 +2403,8 @@ async def hook_session_start(request: web.Request) -> web.Response:
         transcript_path=transcript_path, previous_session=previous_session,
         created_by_user_id=owner,
     )
+    # Fix #4a: track last-active session-id so god-session.sh can `--resume <sid>`.
+    write_last_session_atomic(session_id)
     insert_session_event(session_id, "session_start", {
         "source": source, "model": model, "previous": previous_session,
         "owner": owner,
@@ -2590,6 +2676,12 @@ async def api_health(request: web.Request) -> web.Response:
         "SELECT COUNT(*) AS c FROM messages WHERE direction='inbound' AND status='rejected'"
     )
     inbound_rejected = cur.fetchone()["c"]
+    # Fix #3a + N5: pending_reply with 1h TTL so stale rows don't block dispatch.
+    cur = db().execute(
+        "SELECT COUNT(*) AS c FROM pending_reply WHERE created_at > ?",
+        (now_ts() - 3600,),
+    )
+    pending_count = cur.fetchone()["c"]
     cur = db().execute(
         "SELECT session_id FROM sessions WHERE ended_at IS NULL "
         "ORDER BY started_at DESC LIMIT 1"
@@ -2599,7 +2691,7 @@ async def api_health(request: web.Request) -> web.Response:
     db_size = os.path.getsize(DB_PATH) if os.path.exists(DB_PATH) else 0
     return web.json_response({
         "ok": True,
-        "version": "v6",
+        "version": "v6.3",
         "god_session_ready": god_session_ready(),
         "control_busy": _control_lock.locked(),
         "control_pending": _control_pending,
@@ -2608,6 +2700,7 @@ async def api_health(request: web.Request) -> web.Response:
         "inbound_queued": inbound_queued,
         "inbound_failed": inbound_failed,
         "inbound_rejected": inbound_rejected,
+        "pending_count": pending_count,
         "outbox_queued": queued,
         "outbox_abandoned": abandoned,
         "outbox_unknown": unknown,
@@ -2662,6 +2755,7 @@ async def main() -> None:
     inbound_task = asyncio.create_task(inbound_worker())
     worker_task = asyncio.create_task(outbox_worker())
     alerter_task = asyncio.create_task(error_alerter())
+    media_task = asyncio.create_task(media_cleanup_worker())
 
     # Resolve sessions dir once at startup (best-effort; will retry on demand).
     sd = get_sessions_dir()

@@ -1,7 +1,7 @@
 # Claude Code Skills
 
 ![Version](https://img.shields.io/badge/version-2026.04.21-blue)
-![Skills](https://img.shields.io/badge/skills-135-green)
+![Skills](https://img.shields.io/badge/skills-136-green)
 ![License](https://img.shields.io/badge/license-MIT-green)
 [![GitHub stars](https://img.shields.io/github/stars/levnikolaevich/claude-code-skills?style=social)](https://github.com/levnikolaevich/claude-code-skills)
 
@@ -626,6 +626,7 @@ claude-code-skills/                      # MARKETPLACE
 |   |-- ln-014-agent-instructions-manager/ # Single owner of CLAUDE.md/AGENTS.md creation and audit
 |   |-- ln-015-hex-line-uninstaller/   # Standalone cleanup for Claude-side hex-line integration
 |-- ln-020-codegraph/                  # Code knowledge graph for dependency analysis & impact checking
+|-- ln-030-vps-bootstrap/              # One-shot VPS bootstrap: agents, god-session, dispatcher, optional Telegram bridge
 |
 |  └──────────────────────────────────────────────┘
 |

@@ -1,6 +1,6 @@
 ---
 name: ln-310-multi-agent-validator
-description: "Use when validating Stories, plans, or context through the evaluation platform with mandatory research, parallel evidence lanes, sequential merge, and bounded refinement."
+description: "Use when validating Stories, plans, or tasks through the evaluation platform with mandatory research, parallel evidence lanes, sequential merge, and bounded refinement. Modes: story | plan_review."
 license: MIT
 ---
 
@@ -14,7 +14,6 @@ license: MIT
 Evaluation-platform coordinator for:
 - `mode=story`
 - `mode=plan_review`
-- `mode=context`
 
 This skill uses the evaluation platform for:
 - mandatory official-doc, MCP Ref, Context7, and current-web research
@@ -28,11 +27,9 @@ This skill uses the evaluation platform for:
 |-------|----------|--------|-------------|
 | `storyId` | `mode=story` | args, git branch, kanban, user | Story to validate |
 | `plan {file}` | `mode=plan_review` | args or auto | Plan file to validate |
-| `context` | `mode=context` | conversation, git diff, user | Arbitrary review context |
 
 Mode detection:
 - `plan` or `plan {file}` -> `mode=plan_review`
-- `context` -> `mode=context`
 - otherwise -> `mode=story`
 
 ## Mandatory Read
@@ -89,7 +86,6 @@ Runtime family:
 Identifier:
 - `story-{storyId}` for story mode
 - `plan-{slug}` for plan review
-- `context-{slug}` for context mode
 
 Phase order:
 1. `PHASE_0_CONFIG`
@@ -132,14 +128,13 @@ Sequential only:
 ### Phase 0: Config
 
 1. Resolve `mode`, identifier, and storage mode.
-2. Resolve story, plan, or context target.
+2. Resolve story or plan target.
 3. Build evaluation runtime manifest with:
    - `expected_agents`
    - `required_research=true`
    - exact `phase_order`
    - `phase_policy`
    - report path
-   - `extra_evidence_workers` — optional list of additional read-only workers. Each entry: `{"worker": "ln-511", "lane": "code_quality", "join_group": "evidence", "depends_on": []}`. Default: empty list. Auto-selection in `mode=story`: label `security` → add `ln-621`, label `performance` → add `ln-653`.
 4. Start runtime:
 
 ```bash
@@ -157,8 +152,7 @@ node shared/scripts/evaluation-runtime/cli.mjs start \
 2. Load only the metadata needed for the current mode.
 3. In `mode=story`, resolve Story and child tasks.
 4. In `mode=plan_review`, resolve the plan file.
-5. In `mode=context`, materialize discussion context when needed.
-6. Checkpoint Phase 1 with resolved refs.
+5. Checkpoint Phase 1 with resolved refs.
 
 ### Phase 2: Agent Launch
 
@@ -196,12 +190,10 @@ This phase is the mandatory parallel evidence barrier.
 1. Build `worker_plan` with:
    - `ln-311` lane `research` (mandatory)
    - `ln-312` lane `findings` (mandatory)
-   - optional audit lanes from manifest `extra_evidence_workers`
-2. **Runtime gate:** For each extra worker, verify it emits an `evaluation-worker` summary with `worker`, `status`, `operation`, and `warnings`. Skip unknown or non-evaluation summary formats with a warning.
-3. Launch all planned workers in parallel.
-4. While those workers run, continue local repo inspection and collect additional evidence.
-5. Sync agents opportunistically, but do not block on them until merge.
-6. Record each worker summary with:
+2. Launch all planned workers in parallel.
+3. While those workers run, continue local repo inspection and collect additional evidence.
+4. Sync agents opportunistically, but do not block on them until merge.
+5. Record each worker summary with:
 
 ```bash
 node shared/scripts/evaluation-runtime/cli.mjs record-worker-result \
@@ -221,7 +213,7 @@ For `mode=story`, findings must still produce penalty-point evidence and coverag
 ### Phase 4: Docs
 
 1. In `mode=story`, run `ln-313-review-docs-worker` when documentation changes are required.
-2. In `mode=plan_review` and `mode=context`, skip only when there is no documentation delta to create.
+2. In `mode=plan_review`, skip only when there is no documentation delta to create.
 3. Record the worker summary or explicit skip rationale.
 
 ### Phase 5: Repair
@@ -255,7 +247,7 @@ node shared/scripts/evaluation-runtime/cli.mjs sync-agent --skill ln-310 --ident
 
 ### Phase 7: Refinement
 
-> **NEVER SKIP THIS PHASE.** Phase 7 applies to ALL modes: `story`, `plan_review`, `context`.
+> **NEVER SKIP THIS PHASE.** Phase 7 applies to ALL modes: `story`, `plan_review`.
 > The ONLY valid skip reason is no advisor available in health check.
 > Mode is NOT a skip reason. Complexity is NOT a skip reason. Time is NOT a skip reason.
 > If you are about to checkpoint Phase 7 without running ln-316 while an advisor is available — STOP. You are making an error.
@@ -264,7 +256,6 @@ node shared/scripts/evaluation-runtime/cli.mjs sync-agent --skill ln-310 --ident
 |------|-------------------|---------------|
 | `story` | YES | NO (only if no advisor available) |
 | `plan_review` | YES | NO (only if no advisor available) |
-| `context` | YES | NO (only if no advisor available) |
 
 Phase 7 is MANDATORY when an advisor is available. The coordinator MUST NOT checkpoint Phase 7 without a recorded `review-refinement` worker summary from ln-316. The runtime `advance` command will reject the transition if an advisor was available in health check but no refinement summary exists.
 
@@ -304,7 +295,7 @@ Story mode:
 5. Retry status transition once; if failure → `NO_GO`.
 6. Write user-facing review output with per-criterion penalty before/after breakdown.
 
-Plan/context mode:
+Plan mode:
 - write final review output without workflow mutation
 
 Write coordinator summary:
@@ -383,11 +374,11 @@ After the coordinator run, analyze the session per protocol section 7 and includ
 ## References
 
 - Runtime: `shared/references/evaluation_coordinator_runtime_contract.md`, `shared/references/evaluation_summary_contract.md`
-- Research: `shared/references/evaluation_research_contract.md`, `shared/references/research_tool_fallback.md`
+- Research: `shared/references/evaluation_research_contract.md`, `shared/references/research_tool_fallback.md`, `references/plan_review_pipeline.md`
 - Parallelism: `shared/references/evaluation_parallelism_policy.md`
 - Workers: `../ln-311-review-research-worker/SKILL.md`, `../ln-312-review-findings-worker/SKILL.md`, `../ln-313-review-docs-worker/SKILL.md`, `../ln-314-review-repair-worker/SKILL.md`, `../ln-315-review-merge-worker/SKILL.md`, `../ln-316-review-refinement-worker/SKILL.md`
 - Validation criteria: `references/phase2_research_audit.md`, `references/penalty_points.md`
-- Supporting validator refs: `references/context_review_pipeline.md`, `references/cross_reference_validation.md`, `references/dependency_validation.md`, `references/domain_patterns.md`, `references/mcp_ref_findings_template.md`, `references/premortem_validation.md`, `references/quality_validation.md`, `references/risk_validation.md`, `references/solution_validation.md`, `references/standards_validation.md`, `references/structural_validation.md`, `references/traceability_validation.md`, `references/workflow_validation.md`
+- Supporting validator refs: `references/cross_reference_validation.md`, `references/dependency_validation.md`, `references/domain_patterns.md`, `references/mcp_ref_findings_template.md`, `references/premortem_validation.md`, `references/quality_validation.md`, `references/risk_validation.md`, `references/solution_validation.md`, `references/standards_validation.md`, `references/structural_validation.md`, `references/traceability_validation.md`, `references/workflow_validation.md`
 
 ---
 **Version:** 8.0.0

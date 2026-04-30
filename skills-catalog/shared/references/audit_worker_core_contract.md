@@ -84,7 +84,7 @@ Diagnostic sub-scores never replace the primary penalty-based score.
 
 ## Evidence Basis
 
-When audit findings are consumed by evaluation coordinators (ln-310 `extra_evidence_workers`), each finding should include `evidence_basis` where determinable:
+When audit findings are consumed by downstream coordinators, each finding should include `evidence_basis` where determinable:
 - `code_evidence` — finding verified directly in code (grep, AST, pattern match, test result)
 - `research_claim` — finding from external documentation or standards
 - `agent_inference` — finding from agent review opinion

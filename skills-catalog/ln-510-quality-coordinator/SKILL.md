@@ -85,7 +85,6 @@ TodoWrite format (mandatory):
 Representative invocations:
 
 ```text
-Skill(skill: "ln-311-review-research-worker", args: "{storyId} quality research")
 Skill(skill: "ln-511-code-quality-checker", args: "{storyId}")
 Skill(skill: "ln-512-tech-debt-cleaner", args: "{storyId}")
 Skill(skill: "ln-513-regression-checker", args: "{storyId}")
@@ -109,7 +108,7 @@ Skill(skill: "ln-514-test-log-analyzer", args: "{storyId}")
 ### Phase 2: Read-Only Evidence
 
 Parallel work allowed in this phase:
-- `ln-311-review-research-worker`
+- inline research by the coordinator (per `shared/references/evaluation_research_contract.md`)
 - `ln-511-code-quality-checker`
 - `ln-513-regression-checker`
 - `ln-514-test-log-analyzer`
@@ -143,7 +142,7 @@ When `previous_cycle_focus` is provided:
 ### Phase 5: Merge
 
 Merge inputs:
-- research summary
+- inline research evidence
 - `ln-511` summary
 - `ln-512` summary
 - `ln-513` summary
@@ -157,7 +156,7 @@ Rules:
 
 ### Phase 6: Refinement
 
-Refinement uses a 2-stage state machine (see `ln-316-review-refinement-worker`):
+Refinement uses a 2-stage state machine per `shared/agents/prompt_templates/iterative_refinement.md` and `shared/agents/prompt_templates/refinement_perspectives.md`:
 - Stage 1 (parallel): `dry_run_executor`, `new_dev_tester`, `adversarial_reviewer`
 - Stage 2 (after merge): `final_sweep`
 

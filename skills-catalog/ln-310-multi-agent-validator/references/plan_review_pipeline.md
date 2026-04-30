@@ -1,11 +1,11 @@
-# Context Review Pipeline (mode=plan_review / mode=context)
+# Plan Review Pipeline (mode=plan_review)
 
 Pipeline orchestration for MCP Ref research. Runs in parallel with agent background tasks.
 Criteria definitions: `references/phase2_research_audit.md` (criteria #5, #6, #21, #28 + Anti-Hallucination — sections marked "ALL MODES").
 
 ## Applicability Check
 
-Scan context (conversation history + git diff) for technology decision signals. No signals → skip MCP Ref research, proceed to Phase 5.
+Scan plan content for technology decision signals. No signals → skip MCP Ref research, proceed to Phase 5.
 
 | Signal Type | Examples |
 |-------------|---------|
@@ -20,7 +20,7 @@ Scan context (conversation history + git diff) for technology decision signals. 
 
 Priority order for `query_prefix`:
 
-1. Conversation context (technology mentions) → use directly
+1. Plan content (technology mentions) → use directly
 2. `.hex-skills/environment_state.json` research section → extract stack hints
 3. Glob for indicator files:
 
@@ -33,11 +33,11 @@ Priority order for `query_prefix`:
 | `Cargo.toml` | Rust | `"Rust"` |
 | `build.gradle`, `pom.xml` | Java | `"Java"` |
 
-4. Parse git diff for technology mentions (fallback heuristic)
+4. Parse plan references for technology mentions (fallback heuristic)
 
 ## Research Execution
 
-Apply criteria #5, #6, #21, #28 from `references/phase2_research_audit.md` (see "Auto-fix: plan/context" column):
+Apply criteria #5, #6, #21, #28 from `references/phase2_research_audit.md` (see "Auto-fix: plan" column):
 
 1. For each extracted topic, run queries per criterion
 2. Anti-Hallucination (Step 4 from phase2_research_audit.md) — verify factual claims in artifact

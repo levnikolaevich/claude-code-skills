@@ -1,6 +1,6 @@
 # Criteria Validation (Phase 3)
 
-<!-- SCOPE: Story-level validation criteria for quality gate (#17, #18, Database schema). References ln-310. -->
+<!-- SCOPE: Story-level validation criteria for quality gate (#17, #18, Database schema). -->
 <!-- DO NOT add here: Task-level AC validation → ln-402, NFR dimensions → gate_levels.md -->
 
 Story-level validation checks executed in Phase 3 (after code quality, before linters).
@@ -9,7 +9,7 @@ Story-level validation checks executed in Phase 3 (after code quality, before li
 
 ## Purpose
 
-Validate Story against criteria from ln-310-multi-agent-validator that require **aggregate view** across all tasks:
+Validate Story against aggregate-view criteria across all tasks:
 - Story Dependencies (criterion #18) - no forward Story deps in Epic
 - AC-Task Coverage Quality (criterion #17) - STRONG/WEAK/MISSING scoring across all AC
 - Database Creation Principle (criterion #9) - schema scope matches Story
@@ -24,8 +24,6 @@ Validate Story against criteria from ln-310-multi-agent-validator that require *
 ## Check #1: Story Dependencies (Within-Epic)
 
 **Criterion:** Story N does NOT depend on Stories N+1, N+2 (sequential order)
-
-**Reference:** [ln-310-multi-agent-validator/references/dependency_validation.md](../../ln-310-multi-agent-validator/references/dependency_validation.md) criterion #18
 
 **Method:**
 1. Load Epic from Story.project
@@ -50,8 +48,6 @@ action: "Refactor Story 1.2 to use only Stories 1.1, or reorder Stories"
 ## Check #2: AC-Task Coverage Quality
 
 **Criterion:** Each AC has STRONG coverage (Task mentions HTTP codes + messages + timing)
-
-**Reference:** [ln-310-multi-agent-validator/references/traceability_validation.md](../../ln-310-multi-agent-validator/references/traceability_validation.md) criterion #17 (lines 143-169)
 
 **Method:**
 1. Load Story AC section
@@ -94,8 +90,6 @@ action: "Create new Task to implement AC3 performance requirement"
 ## Check #3: Database Creation Principle
 
 **Criterion:** Story creates ONLY tables it needs (incremental schema evolution)
-
-**Reference:** [ln-310-multi-agent-validator/references/workflow_validation.md](../../ln-310-multi-agent-validator/references/workflow_validation.md) criterion #9 (lines 85-103)
 
 **Method:**
 1. Load Story Statement + Technical Notes

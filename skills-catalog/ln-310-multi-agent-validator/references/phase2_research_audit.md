@@ -1,6 +1,6 @@
 # Phase 3: Research & Audit
 
-**Always execute — no exceptions.** Steps 1-5 are mode=story only. Steps 3-4 and criteria #5, #6, #21, #28 apply to ALL modes (story, plan_review, context).
+**Always execute — no exceptions.** Steps 1-5 are mode=story only. Steps 3-4 and criteria #5, #6, #21, #28 apply to ALL modes (story, plan_review).
 
 > **Note:** Domain Extraction and Inline Documentation Creation have moved to Phase 4 (Documentation). This file covers Research & Audit only.
 
@@ -11,7 +11,7 @@
 - Query MCP Ref for industry standards: `ref_search_documentation(query="[topic] RFC OWASP best practices {current_year}")`
 - Query Context7 for library versions: `resolve-library-id` + `query-docs`
 - Extract: standards (RFC numbers, OWASP rules), library versions, patterns
-- **mode=plan_review/context:** pipeline entry via `references/context_review_pipeline.md` (Applicability Check → Stack Detection → this step)
+- **mode=plan_review:** pipeline entry via `references/plan_review_pipeline.md` (Applicability Check → Stack Detection → this step)
 
 ## Step 2: Anti-Hallucination Verification (ALL MODES)
 
@@ -25,7 +25,7 @@
   - Has MCP Ref/Context7/WebSearch evidence → mark `VERIFIED`
   - No tool evidence but claim is plausible → mark `FROM TRAINING` + add to fix list
   - Contradicts tool evidence → mark `FLAGGED` (CRITICAL)
-- Note: Step 2 VERIFIES claims against existing research. It does NOT run new searches — new tool queries happen in auto-fix (#6 for story, Compare & Correct for plan/context).
+- Note: Step 2 VERIFIES claims against existing research. It does NOT run new searches — new tool queries happen in auto-fix (#6 for story, Compare & Correct for plan_review).
 - Status: VERIFIED (all sourced) | FLAGGED (list unverified with trigger category)
 
 ## Step 3: Pre-mortem Analysis
@@ -72,19 +72,19 @@ Detailed criteria table for Phase 4 auto-fix execution and Phase 3 penalty calcu
 
 ## Standards (#5) — ALL MODES
 
-| # | Criterion | What it checks | Penalty (story) | Auto-fix: story | Auto-fix: plan/context |
+| # | Criterion | What it checks | Penalty (story) | Auto-fix: story | Auto-fix: plan_review |
 |---|-----------|----------------|-----------------|-----------------|------------------------|
 | 5 | Standards Compliance | Each technical decision references specific RFC/OWASP/REST standard by number | CRITICAL (10) | Query MCP Ref; update Technical Notes with compliant approach | Query MCP Ref; add inline `"(per {RFC}: ...)"` to artifact |
 
 ## Solution (#6, #21, #28) — ALL MODES
 
-| # | Criterion | What it checks | Penalty (story) | Auto-fix: story | Auto-fix: plan/context |
+| # | Criterion | What it checks | Penalty (story) | Auto-fix: story | Auto-fix: plan_review |
 |---|-----------|----------------|-----------------|-----------------|------------------------|
 | 6 | Library & Version | Libraries are latest stable | HIGH (5) | Query Context7; update to recommended versions | Query Context7; correct version in artifact + deprecation note |
 | 21 | Alternative Solutions | Chosen approach optimal vs modern alternatives; cross-ref ln-645 audit if `docs/project/.audit/ln-640/*/645-open-source-replacer*.md` available (glob across dates, take latest) | MEDIUM (3) | Search MCP Ref + web; add "Alternative Considered" note to Technical Notes. If ln-645 + HIGH-confidence → advisory note | Search MCP Ref; add "Alternative Considered" note to artifact if better option found |
 | 28 | Library Feature Utilization | Custom code duplicates features of declared dependencies | MEDIUM (3) | Read manifest + Context7 (max 3); add advisory to Task Technical Approach | Read manifest + Context7; add advisory "built-in {feature} available" to artifact |
 
-> **Mode differences:** In mode=story, violations accumulate penalty points (Phase 3 Step 7) and are fixed in Phase 4. In mode=plan_review/context, no penalty points — corrections are applied directly per `references/context_review_pipeline.md` Compare & Correct Safety Rules (max 5 corrections).
+> **Mode differences:** In mode=story, violations accumulate penalty points (Phase 3 Step 7) and are fixed in Phase 4. In mode=plan_review, no penalty points — corrections are applied directly per `references/plan_review_pipeline.md` Compare & Correct Safety Rules (max 5 corrections).
 
 ## Workflow (#7-#13)
 

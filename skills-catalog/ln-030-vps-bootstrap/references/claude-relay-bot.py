@@ -89,6 +89,13 @@ CMD_LOCK_FILE = STATE_DIR / ".cmd-lock"
 SESSIONS_DIR_FILE = STATE_DIR / "sessions-dir.path"
 ERROR_FILE = STATE_DIR / "last-god-error.json"
 LAST_SESSION_FILE = STATE_DIR / "last-session.id"
+MEDIA_DIR = STATE_DIR / "tg-media"
+MEDIA_MAX_BYTES = 25 * 1024 * 1024   # Telegram bot API caps download ~20MB; we leave headroom
+MEDIA_RETENTION_DAYS = 14
+IMAGE_MIMES = {
+    "image/jpeg": "jpg", "image/png": "png",
+    "image/webp": "webp", "image/gif": "gif",
+}
 LAST_CMD_TTL_SEC = 300  # operator command attributed to next SessionStart within 5 min
 GOD_SERVICE_NAME = f"{SERVICE_PREFIX}-god.service"
 CLAUDE_PROJECTS_HOME = Path(f"/home/{BOT_USER}/.claude/projects")
@@ -1962,7 +1969,11 @@ async def cb_users(query: CallbackQuery) -> None:
 # Middleware already filtered to allowed users.
 # --------------------------------------------------------------------------
 
-UNSUPPORTED_MEDIA_REPLY = "Сейчас поддерживаются только текстовые сообщения."
+UNSUPPORTED_MEDIA_REPLY = (
+    "Из media сейчас принимаются картинки (PNG/JPG/GIF/WebP) и любые документы "
+    "(PDF/DOCX/TXT/CSV/JSON/код-файлы — claude сам решит, как читать). "
+    "Голосовые/аудио/видео/стикеры — пока нет (нужна транскрипция, в работе)."
+)
 
 
 def has_unsupported_media(msg: Message) -> bool:

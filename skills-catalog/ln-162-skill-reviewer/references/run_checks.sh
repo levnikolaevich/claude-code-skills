@@ -100,9 +100,20 @@ for f in $SCOPE; do
   dir=$(dirname "$f")
   if [ -d "$dir/references" ]; then
     while read -r ref; do
+      rel=${ref#"$dir/"}
       base=$(basename "$ref")
       [[ "$base" == .* ]] && continue
-      grep -q "$base" "$f" || fail "orphan reference: $ref (not in $f)"
+      case "$rel" in
+        */dist/*|*/node_modules/*) continue ;;
+      esac
+      covered=0
+      probe="$rel"
+      while [[ "$probe" == */* ]]; do
+        if grep -Fq "$probe/" "$f"; then covered=1; break; fi
+        probe=$(dirname "$probe")
+      done
+      [ "$covered" -eq 1 ] && continue
+      grep -Fq "$base" "$f" || fail "orphan reference: $ref (not in $f)"
     done < <(find "$dir/references" -type f)
   fi
 done

@@ -24,8 +24,8 @@ Template files referenced by `SKILL.md`. Most use `${VAR}` placeholders compatib
 | `dispatch.timer` | `/etc/systemd/system/${SERVICE_PREFIX}-dispatch.timer` | root:root | 644 | `SERVICE_PREFIX`, `DISPATCH_COMMAND_NAME` | — (always installs) |
 | `dispatch.service` | `/etc/systemd/system/${SERVICE_PREFIX}-dispatch.service` | root:root | 644 | `SERVICE_PREFIX`, `BOT_USER`, `DISPATCH_COMMAND_NAME` | — (always installs) |
 | `settings.agent-config.fragment.json` | jq-merged into `/home/${BOT_USER}/.claude/settings.json` | `${BOT_USER}` | 644 | — (no placeholders) | — (always installs) |
-| `claude-relay-bot.py` | `/usr/local/bin/claude-relay-bot.py` | root:root | 755 | `PROJECT_NAME`, `SERVICE_PREFIX`, `BOT_USER` | `TELEGRAM_BOT_TOKEN` (Step 7c) |
-| `claude-relay-bot.service` | `/etc/systemd/system/${SERVICE_PREFIX}-relay-bot.service` | root:root | 644 | `PROJECT_NAME`, `SERVICE_PREFIX`, `BOT_USER` | `TELEGRAM_BOT_TOKEN` (Step 7c) |
+| `relay-bot/` | `/opt/${SERVICE_PREFIX}-relay-bot` | `${BOT_USER}` | 755 dirs / 644 files | `PROJECT_NAME`, `PROJECT_DIR`, `SERVICE_PREFIX`, `BOT_USER` via service env | `TELEGRAM_BOT_TOKEN` (Step 7c) |
+| `claude-relay-bot.service` | `/etc/systemd/system/${SERVICE_PREFIX}-relay-bot.service` | root:root | 644 | `PROJECT_NAME`, `PROJECT_DIR`, `SERVICE_PREFIX`, `BOT_USER` | `TELEGRAM_BOT_TOKEN` (Step 7c) |
 | `statusline.sh` | `/home/${BOT_USER}/.claude/statusline.sh` | `${BOT_USER}` | 755 | — (no placeholders) | `TELEGRAM_BOT_TOKEN` (Step 7b) |
 | `claude-usage-report.sh` | `/usr/local/bin/claude-usage-report` | root:root | 755 | — | `TELEGRAM_BOT_TOKEN` (Step 7b) |
 | `mint-gh-token.sh` | `/usr/local/bin/${SERVICE_PREFIX}-mint-gh-token` | root:`${BOT_USER}` | 750 | `PROJECT_NAME`, `SERVICE_PREFIX` | `GITHUB_APP_ID` (Step 8a) |
@@ -59,18 +59,18 @@ VPS_DISPATCH_COMMAND_NAME=<slash-command-name>
 
 `.env.local` should be git-ignored (most projects already have `.env.*` in `.gitignore`).
 
-## Telegram bridge architecture (v6 text-only, Step 7c)
+## Telegram bridge architecture (v6 Node.js, Step 7c)
 
-`claude-relay-bot.py` is a systemd-managed Python daemon that owns the entire god-session state machine: Telegram ingress, durable delivery into tmux, session controls, hook ingestion, and outbound Telegram mirroring. Replaces the bun-based Channels plugin (deprecated due to silent-death bugs in `anthropics/claude-plugins-official` issues #788, #917, #1478).
+`relay-bot/` is a systemd-managed Node.js/TypeScript service that owns the entire god-session state machine: Telegram ingress, durable delivery into tmux, session controls, hook ingestion, and outbound Telegram mirroring. Replaces the bun-based Channels plugin (deprecated due to silent-death bugs in `anthropics/claude-plugins-official` issues #788, #917, #1478).
 
-The Telegram bridge is intentionally text-only. Plain text and media captions are accepted as text; voice, audio, files, images, videos, stickers, and other non-text messages without captions are not downloaded, are recorded as `messages(status='rejected')`, and receive the reply «Сейчас поддерживаются только текстовые сообщения».
+The Telegram bridge accepts plain text, media captions, photos, image documents, and general documents. Voice, audio, video, animations, stickers, and other unsupported media without usable text are recorded as `messages(status='rejected')` and receive an explanatory reply.
 
 Components:
 
-- **aiogram polling** (Telegram inbound) → durable SQLite `messages(kind='text', status='queued')` queue → inbound worker delivers with `tmux send-keys "[tg id=<chat>:<msg>] <text>"` only when god-session is ready
+- **grammY polling** (Telegram inbound) → durable SQLite `messages(kind='text'|'image'|'document', status='queued')` queue → inbound worker delivers with `tmux send-keys "[tg id=<chat>:<msg>] <text>"` only when god-session is ready
 - **Serialized control lane** — `/new_session`, Resume, Delete, and inbound delivery share one async queue/lock so operator text cannot be lost during tmux restarts
-- **aiohttp listener on `127.0.0.1:${RELAY_HOOK_PORT}`** — 6 Claude Code HTTP hook receivers (`UserPromptSubmit`, `Stop`, `StopFailure`, `SessionStart`, `PostCompact`, `SubagentStop`) + 7 application API endpoints (`/dispatch/*`, `/memory/*`, `/health`)
-- **Outbox worker** (asyncio task) — drains a SQLite queue of outbound messages with retry/backoff. Stop hook never blocks on Telegram API; even Telegram outage doesn't lose messages
+- **Fastify listener on `127.0.0.1:${RELAY_HOOK_PORT}`** — Claude Code HTTP hook receivers (`UserPromptSubmit`, `Stop`, `StopFailure`, `SessionStart`, `PostCompact` via SessionStart route, `SubagentStop`, `PreToolUse`, `PostToolUse`) + application API endpoints (`/dispatch/*`, `/memory/*`, `/health`)
+- **Outbox worker** — drains a SQLite queue of outbound messages with retry/backoff. Stop hook never blocks on Telegram API; even Telegram outage doesn't lose messages
 - **SQLite at `/var/lib/${PROJECT_NAME}/relay.db`** with 12 tables: `messages`, `pending_reply`, `outbox` (+ `event_type` column for status routing), `sessions`, `session_events`, `dispatch_runs`, `dispatch_phases`, `memories`, `health_snapshots`, `auth_rejects`, `allowed_users`, `todo_state`
 - **SessionStart additionalContext injection** — claude sees recent memories + dispatch history at start of every new session
 
@@ -107,6 +107,6 @@ The relay-bot surfaces claude's progress to Telegram in 5 layers, each non-block
 - All scripts default to LF line endings. If editing on Windows, strip `\r` before upload: `sed -i 's/\r$//' <file>`.
 - `secrets.env.template` ships only variable names + `<placeholder>` markers — never real values.
 - `codex-config.toml.template` ships with marketplace plugins and MCP server blocks **commented out**. Uncomment per project needs.
-- `claude-relay-bot.py` requires `aiogram` + `aiohttp` (Python ≥ 3.10). Install in venv at `/home/${BOT_USER}/.venv-relay/`. systemd unit `ExecStart` points to that venv's python.
+- `relay-bot/` builds on the VPS with Node 24: run `npm ci && npm run build` in `/opt/${SERVICE_PREFIX}-relay-bot`. Do not commit or upload `dist/` or `node_modules/`.
 - `dispatcher.md.template` is the only operator-side template. It's written verbatim to operator's local repo; configuration comes from `.env.local` at runtime.
 - The skill's substitution step is **install-time** for VPS-side templates (Claude reads template, replaceAll, ssh-uploads). Operator-side `dispatcher.md.template` is copied without substitution.

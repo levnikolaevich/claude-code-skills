@@ -160,7 +160,7 @@ mcp__hex-ssh__remote-ssh:
    test -r /home/${VPS_BOT_USER}/.claude/commands/${VPS_DISPATCH_COMMAND_NAME}.md || echo '${VPS_DISPATCH_COMMAND_NAME}.md MISSING' ; \
    test -r /etc/systemd/system/${VPS_SERVICE_PREFIX}-god.service || echo 'god service MISSING' ; \
    test -r /etc/systemd/system/${VPS_SERVICE_PREFIX}-dispatch.timer || echo 'dispatch timer MISSING' ; \
-   test -x /usr/local/bin/claude-relay-bot.py || echo 'relay-bot MISSING' ; \
+   test -f /opt/${VPS_SERVICE_PREFIX}-relay-bot/dist/index.js || echo 'relay-bot build MISSING' ; \
    install -d -o ${VPS_BOT_USER} -g ${VPS_BOT_USER} -m 755 /var/lib/${VPS_PROJECT_NAME} && \
    touch /var/log/${VPS_PROJECT_NAME}-god.log && chown ${VPS_BOT_USER}:${VPS_BOT_USER} /var/log/${VPS_PROJECT_NAME}-god.log && \
    loginctl enable-linger ${VPS_BOT_USER} && \

@@ -97,18 +97,18 @@ Run steps in order. Each step is idempotent — verify-then-install pattern. Opt
 
 ### 1. Base packages
 
-Install system tools needed for the next steps. `bubblewrap` is for Codex CLI Linux sandbox; `python3-venv` is for the claude-relay-bot venv (Step 7c).
+Install system tools needed for the next steps. `bubblewrap` is for Codex CLI Linux sandbox; `python3` remains available for native npm build tooling used by some dependencies.
 
 ```bash
 DEBIAN_FRONTEND=noninteractive apt-get install -y \
-  curl wget git jq build-essential ca-certificates gnupg pipx \
-  python3 python3-venv bubblewrap unzip tmux
+  curl wget git jq sqlite3 build-essential ca-certificates gnupg pipx \
+  python3 bubblewrap unzip tmux
 ```
 
 **Verify:**
 
 ```bash
-which curl wget git jq gpg pipx python3 bwrap unzip tmux && pipx --version && bwrap --version && tmux -V
+which curl wget git jq sqlite3 gpg pipx python3 bwrap unzip tmux && pipx --version && bwrap --version && tmux -V
 ```
 
 Expected: all paths printed, pipx version ≥ 1.4.
@@ -296,13 +296,13 @@ sudo -u ${BOT_USER} ls -la /home/${BOT_USER}/.claude/cache/usage.json   # expect
 
 **Verify:** `sudo -u ${BOT_USER} claude-usage-report` prints the two-line report. From Telegram: send `/usage` to the bot — same text appears within ~3-5 seconds.
 
-### 7c. Text-only Telegram bridge + central state-store (claude-relay-bot v6)
+### 7c. Node.js Telegram bridge + central state-store (claude-relay-bot v6)
 
 **Gated on `TELEGRAM_BOT_TOKEN`.** If you skip Telegram, the god-session and scheduler from Step 7 still work — only the inbound-from-operator and outbound-mirror paths are absent.
 
 **MANDATORY READ:** Load `references/README.md` (Telegram bridge architecture v6, Communication policy 5 layers L1–L5, runtime files).
 
-The bridge is a separate systemd-managed Python daemon (`${SERVICE_PREFIX}-relay-bot.service`) owning the entire god-session state machine; it is intentionally text-only. The deprecated Channels-plugin path (`claude --channels plugin:telegram@claude-plugins-official`) silently dies and is not respawned ([anthropics/claude-plugins-official#788](https://github.com/anthropics/claude-plugins-official/issues/788), [#917](https://github.com/anthropics/claude-plugins-official/issues/917), [#1478](https://github.com/anthropics/claude-plugins-official/issues/1478)) — we replace it.
+The bridge is a separate systemd-managed Node.js service (`${SERVICE_PREFIX}-relay-bot.service`) owning the entire god-session state machine. It preserves the Python relay's public contracts while using TypeScript, grammY, Fastify, and better-sqlite3. The deprecated Channels-plugin path (`claude --channels plugin:telegram@claude-plugins-official`) silently dies and is not respawned ([anthropics/claude-plugins-official#788](https://github.com/anthropics/claude-plugins-official/issues/788), [#917](https://github.com/anthropics/claude-plugins-official/issues/917), [#1478](https://github.com/anthropics/claude-plugins-official/issues/1478)) — we replace it.
 
 Note: scheduling (the `${SERVICE_PREFIX}-dispatch.timer` that replaces the fragile in-session `/loop`) is part of Step 7 — installed regardless of Telegram. It only depends on tmux + systemd, not on the relay-bot.
 
@@ -310,19 +310,22 @@ Note: scheduling (the `${SERVICE_PREFIX}-dispatch.timer` that replaces the fragi
 
 | Reference | Target | Owner | Mode |
 |---|---|---|---|
-| [`references/claude-relay-bot.py`](references/claude-relay-bot.py) | `/usr/local/bin/claude-relay-bot.py` | root:root | 755 |
+| [`references/relay-bot/`](references/relay-bot/) | `/opt/${SERVICE_PREFIX}-relay-bot` | `${BOT_USER}`:`${BOT_USER}` | 755 dirs / 644 files |
 | [`references/claude-relay-bot.service`](references/claude-relay-bot.service) | `/etc/systemd/system/${SERVICE_PREFIX}-relay-bot.service` | root:root | 644 |
 | [`references/settings.hooks.fragment.json`](references/settings.hooks.fragment.json) | rendered, then jq-merged into `/home/${BOT_USER}/.claude/settings.json` | (BOT) | 644 |
 
 **Install:**
 
 ```bash
-# 1. Install aiogram + aiohttp in dedicated venv
-sudo -u ${BOT_USER} python3 -m venv /home/${BOT_USER}/.venv-relay
-sudo -u ${BOT_USER} /home/${BOT_USER}/.venv-relay/bin/pip install --quiet aiogram aiohttp
+# 1. Upload references/relay-bot/{package.json,package-lock.json,tsconfig.json,src/}
+#    to /opt/${SERVICE_PREFIX}-relay-bot. Do not upload dist/ or node_modules/.
+install -d -o ${BOT_USER} -g ${BOT_USER} -m 755 /opt/${SERVICE_PREFIX}-relay-bot
+chown -R ${BOT_USER}:${BOT_USER} /opt/${SERVICE_PREFIX}-relay-bot
 
-# 2. Render claude-relay-bot.py (substitute ${PROJECT_NAME}, ${SERVICE_PREFIX}, ${BOT_USER}) → /usr/local/bin/, mode 755
-# 3. Render claude-relay-bot.service → /etc/systemd/system/${SERVICE_PREFIX}-relay-bot.service, mode 644
+# 2. Build on target using the Node 24 installed in Step 4.
+sudo -i -u ${BOT_USER} bash -lc 'cd /opt/${SERVICE_PREFIX}-relay-bot && . /home/${BOT_USER}/.nvm/nvm.sh && npm ci && npm run build && npm prune --omit=dev'
+
+# 3. Render claude-relay-bot.service with PROJECT_NAME, PROJECT_DIR, SERVICE_PREFIX, BOT_USER → /etc/systemd/system/${SERVICE_PREFIX}-relay-bot.service, mode 644
 # 4. Render settings.hooks.fragment.json with RELAY_HOOK_PORT → /tmp/hooks.json, then jq-merge:
 sudo -u ${BOT_USER} bash -lc 'jq -s ".[0] * .[1]" ~/.claude/settings.json /tmp/hooks.json > ~/.claude/settings.json.new && mv ~/.claude/settings.json.new ~/.claude/settings.json'
 
@@ -336,6 +339,7 @@ systemctl restart ${SERVICE_PREFIX}-god.service   # so claude reloads settings.j
 
 ```bash
 # Relay listening + DB ready
+systemctl status ${SERVICE_PREFIX}-relay-bot.service --no-pager
 curl -fsS http://127.0.0.1:${RELAY_HOOK_PORT}/health | jq .
 sqlite3 /var/lib/${PROJECT_NAME}/relay.db '.tables'   # 12 tables expected
 
@@ -491,7 +495,7 @@ DoD covers every step of the workflow. Each unchecked item points back to the st
 
 ### System packages & user (Steps 1–3)
 - [ ] All required Configuration vars set; optional vars explicitly empty when their step is skipped
-- [ ] `which curl wget git jq gpg pipx python3 bwrap unzip tmux gh` — all paths resolved (Step 1+2)
+- [ ] `which curl wget git jq sqlite3 gpg pipx python3 bwrap unzip tmux gh` — all paths resolved (Step 1+2)
 - [ ] `id ${BOT_USER}` returns UID; `.ssh/authorized_keys` mode 600; `loginctl show-user ${BOT_USER}` shows `Linger=yes` (Steps 3, 7)
 
 ### Agents (Steps 4–6, 5b)

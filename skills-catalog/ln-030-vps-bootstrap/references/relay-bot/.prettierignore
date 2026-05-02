@@ -1,0 +1,11 @@
+dist/
+node_modules/
+*.tsbuildinfo
+package-lock.json
+tg-media/
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+.env
+.env.*
+.eslintcache

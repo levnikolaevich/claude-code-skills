@@ -1,0 +1,16 @@
+# local overrides for relay-bot
+!package-lock.json
+
+# install/build outputs are produced on the target VPS
+node_modules/
+dist/
+
+# node-gyp / native build artifacts
+build/Release/
+*.node
+
+# TS incremental
+*.tsbuildinfo
+
+# lint cache
+.eslintcache

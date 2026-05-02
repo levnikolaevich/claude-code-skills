@@ -9,7 +9,7 @@
 #
 # Resume-by-default: on fresh tmux create, if a prior session exists for ${PROJECT_DIR},
 # claude is started with --continue (latest) or --resume <id> based on the atomic
-# command file ${STATE_DIR}/god-command.json (written by claude-relay-bot.py on
+# command file ${STATE_DIR}/god-command.json (written by relay-bot on
 # /new_session or [▶ Resume] button click).
 #
 # Telegram integration is handled by a SEPARATE ${SERVICE_PREFIX}-relay-bot.service that
@@ -39,12 +39,10 @@ case "$SESSION" in
   *'$'*) log "FATAL: SERVICE_PREFIX placeholder not substituted (got SESSION=$SESSION)"; exit 4 ;;
 esac
 
-# Bring nvm + bun into PATH (cron-style minimal env)
+# Bring nvm into PATH (cron-style minimal env)
 export NVM_DIR="$HOME/.nvm"
 # shellcheck disable=SC1091
 [[ -s "$NVM_DIR/nvm.sh" ]] && . "$NVM_DIR/nvm.sh"
-export BUN_INSTALL="$HOME/.bun"
-export PATH="$BUN_INSTALL/bin:$PATH"
 
 command -v claude >/dev/null || { log "FATAL: claude not on PATH"; exit 2; }
 command -v tmux   >/dev/null || { log "FATAL: tmux not on PATH"; exit 2; }
@@ -110,7 +108,8 @@ case "$RESOLVED" in
   resume:*)
     SID=${RESOLVED#resume:}
     log "command consumed: action=resume sid=$SID"
-    CLAUDE_CMD="$CLAUDE_BASE --resume $SID"
+    # Claude Code 2.1.126+: --resume requires a prompt arg (deferred-tool-marker check)
+    CLAUDE_CMD="$CLAUDE_BASE --resume $SID ."
     ;;
   "")
     # No command file. Default behavior: explicit --resume of last-active
@@ -124,7 +123,7 @@ case "$RESOLVED" in
       if [[ "$LAST_SID" =~ ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$ ]] \
          && [[ -f "$SESSIONS_DIR/$LAST_SID.jsonl" ]]; then
         log "default: --resume $LAST_SID (from last-session.id)"
-        CLAUDE_CMD="$CLAUDE_BASE --resume $LAST_SID"
+        CLAUDE_CMD="$CLAUDE_BASE --resume $LAST_SID ."
         CHOSE="resume_explicit"
       fi
     fi
@@ -135,7 +134,7 @@ case "$RESOLVED" in
       if [[ -n "$NEWEST_SID" ]] \
          && [[ "$NEWEST_SID" =~ ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$ ]]; then
         log "fallback: --resume $NEWEST_SID (newest jsonl by mtime; last-session.id missing)"
-        CLAUDE_CMD="$CLAUDE_BASE --resume $NEWEST_SID"
+        CLAUDE_CMD="$CLAUDE_BASE --resume $NEWEST_SID ."
         CHOSE="resume_mtime"
       fi
     fi

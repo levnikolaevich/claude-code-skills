@@ -11,14 +11,19 @@ Type=simple
 User=${BOT_USER}
 Group=${BOT_USER}
 EnvironmentFile=/etc/${PROJECT_NAME}/secrets.env
-ExecStart=/home/${BOT_USER}/.venv-relay/bin/python /usr/local/bin/claude-relay-bot.py
+Environment=PROJECT_NAME=${PROJECT_NAME}
+Environment=PROJECT_DIR=${PROJECT_DIR}
+Environment=SERVICE_PREFIX=${SERVICE_PREFIX}
+Environment=BOT_USER=${BOT_USER}
+WorkingDirectory=/opt/${SERVICE_PREFIX}-relay-bot
+ExecStart=/bin/bash -lc '. /home/${BOT_USER}/.nvm/nvm.sh && exec node dist/index.js'
 Restart=always
 RestartSec=15
 StandardOutput=journal
 StandardError=journal
 
-# Resource caps; relay is a thin polling loop with light fs scans.
-MemoryMax=128M
+# Resource caps; Node runtime + native SQLite need more headroom than the old Python loop.
+MemoryMax=256M
 CPUQuota=50%
 
 # Hardening: keep the Telegram ingress process tightly sandboxed.

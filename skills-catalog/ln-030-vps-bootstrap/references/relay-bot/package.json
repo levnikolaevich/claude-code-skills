@@ -1,0 +1,45 @@
+{
+  "name": "claude-relay-bot",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Central state-store + Telegram bridge for the ${PROJECT_NAME} god-session.",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "dev": "tsx watch src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint:all": "npm run typecheck && npm run lint && npm run format:check"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.9.0",
+    "fastify": "^5.8.5",
+    "fastify-type-provider-zod": "^6.1.0",
+    "fs-ext": "^2.1.1",
+    "grammy": "^1.42.0",
+    "pino": "^10.3.1",
+    "zod": "^4.4.2"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/fs-ext": "^2.0.3",
+    "@types/node": "^25.6.0",
+    "eslint": "^10.3.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-unicorn": "^64.0.0",
+    "jiti": "^2.6.1",
+    "prettier": "^3.8.3",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.59.1"
+  }
+}

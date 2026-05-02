@@ -55,8 +55,9 @@ sqlite3 /var/lib/${PROJECT_NAME}/relay.db "PRAGMA table_info(sessions)"
 
 ### Inbound smoke
 
-- Send plain text and a media message with caption → both create `messages(kind='text', status='queued')` rows and then become `delivered`.
-- Send voice/audio/photo without caption → row is `rejected`, Telegram replies «Сейчас поддерживаются только текстовые сообщения», claude receives nothing.
+- Send plain text → creates `messages(kind='text', status='queued')` and then becomes `delivered`.
+- Send photo, image document, and a general document → each saves under `/var/lib/${PROJECT_NAME}/tg-media/`, creates `messages(kind='image'|'document', status='queued')`, and then becomes `delivered`.
+- Send voice/audio/video/sticker without usable text → row is `rejected`, Telegram replies with the unsupported-media explanation, claude receives nothing.
 - Send a Telegram message while `${SERVICE_PREFIX}-god` is restarting → `messages.status='queued'` until tmux returns, then `delivered`.
 - Trigger `/new_session` and immediately send text → text stays queued until the tmux session is ready, then is delivered after the control action completes.
 - End-to-end: send «hi» from Telegram → inbound row delivered → claude responds → reply mirrored back via Stop hook → outbox row sent.
@@ -96,7 +97,7 @@ systemctl restart ${SERVICE_PREFIX}-relay-bot.service
 # TodoWrite matcher empirical check
 journalctl -u ${SERVICE_PREFIX}-relay-bot.service | grep "tool_name=TodoWrite"
 # Expected: hits after a TodoWrite call. If missing → matcher mismatch;
-# remove matcher and let endpoint filter inside Python.
+# remove the matcher and let the Fastify endpoint filter by tool_name.
 ```
 
 ## GitHub App + git (Step 8a)

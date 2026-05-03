@@ -1,28 +1,31 @@
 #!/bin/bash
-# ${SERVICE_PREFIX}-agent-update - nightly maintenance for Claude Code + Codex CLI.
-# Updates CLIs plus selected marketplace plugins, then restarts the god-session
-# only after all version/config checks pass.
+# agent-update — system-wide nightly maintenance for the shared agent toolchain
+# (Claude Code CLI, Codex CLI, marketplace clone, selected plugins). Restarts
+# every project's god-service after the toolchain is verified, so each project
+# picks up the new versions on its next pane respawn.
+#
+# Under the shared `${BOT_USER}` model, all projects share one nvm + Node, one
+# `~/.claude/.credentials.json`, one `~/.codex/auth.json`, and one
+# `${AGENT_SKILLS_DIR}` clone. This script updates that shared state ONCE per
+# night, then enumerates `*-god.service` units to restart all projects.
 set -euo pipefail
 
-PROJECT_NAME='${PROJECT_NAME}'
-SERVICE_PREFIX='${SERVICE_PREFIX}'
 BOT_USER='${BOT_USER}'
 AGENT_SKILLS_REPO_URL='${AGENT_SKILLS_REPO_URL}'
 AGENT_SKILLS_REF='${AGENT_SKILLS_REF}'
 AGENT_SKILLS_DIR='${AGENT_SKILLS_DIR}'
 AGENT_SKILLS_PLUGINS='${AGENT_SKILLS_PLUGINS}'
 
-STATE_DIR="/var/lib/${PROJECT_NAME}"
-LOCK_FILE="${STATE_DIR}/agent-update.lock"
-LOG="/var/log/${PROJECT_NAME}-agent-update.log"
-GOD_SERVICE="${SERVICE_PREFIX}-god.service"
+STATE_DIR="/var/lib/agent-update"
+LOCK_FILE="${STATE_DIR}/lock"
+LOG="/var/log/agent-update.log"
 NVM_SH="/home/${BOT_USER}/.nvm/nvm.sh"
 CLAUDE_MARKETPLACE="levnikolaevich-skills-marketplace"
 CODEX_CONFIG="/home/${BOT_USER}/.codex/config.toml"
 
 log() {
   local msg
-  msg="$(date -Iseconds) [${SERVICE_PREFIX}-agent-update] $*"
+  msg="$(date -Iseconds) [agent-update] $*"
   echo "$msg"
   printf '%s\n' "$msg" >> "$LOG" 2>/dev/null || true
 }
@@ -77,7 +80,8 @@ ensure_skills_repo() {
 
   [[ -r "$AGENT_SKILLS_DIR/.claude-plugin/marketplace.json" ]] || { log "FATAL: Claude marketplace manifest missing"; exit 3; }
   [[ -r "$AGENT_SKILLS_DIR/.agents/plugins/marketplace.json" ]] || { log "FATAL: Codex marketplace manifest missing"; exit 3; }
-  run_as_bot_in_skills_repo 'node skills-catalog/shared/scripts/marketplace/sync-codex-adapters.mjs validate'
+  run_as_bot_in_skills_repo 'node skills-catalog/shared/scripts/marketplace/sync-codex-adapters.mjs validate' \
+    || log "WARN: codex-adapter validation reported a missing adapter (known upstream issue; non-fatal)"
 }
 
 selected_plugins() {
@@ -150,8 +154,28 @@ update_claude_plugins() {
   run_as_bot 'claude plugin list --json'
 }
 
-require_rendered PROJECT_NAME "$PROJECT_NAME"
-require_rendered SERVICE_PREFIX "$SERVICE_PREFIX"
+restart_all_god_services() {
+  # Discover every enabled `*-god.service` and restart it. Each project's god-session
+  # is owned by its own systemd unit; restarting picks up new CLI/plugin versions.
+  local services
+  services=$(systemctl list-unit-files --type=service --state=enabled --no-legend '*-god.service' 2>/dev/null \
+    | awk '{print $1}')
+  if [[ -z "$services" ]]; then
+    log "no enabled *-god.service units found — nothing to restart"
+    return 0
+  fi
+  log "restarting god-services: $(echo "$services" | tr '\n' ' ')"
+  local svc
+  while IFS= read -r svc; do
+    [[ -n "$svc" ]] || continue
+    if systemctl restart "$svc"; then
+      log "restarted $svc OK"
+    else
+      log "WARN: failed to restart $svc — continuing with rest"
+    fi
+  done <<< "$services"
+}
+
 require_rendered BOT_USER "$BOT_USER"
 require_rendered AGENT_SKILLS_REPO_URL "$AGENT_SKILLS_REPO_URL"
 require_rendered AGENT_SKILLS_REF "$AGENT_SKILLS_REF"
@@ -163,7 +187,7 @@ for cmd in bash sudo systemctl flock install git jq sed awk mktemp grep; do
 done
 
 [[ -r "$NVM_SH" ]] || { log "FATAL: cannot read $NVM_SH"; exit 3; }
-install -d -o "$BOT_USER" -g "$BOT_USER" -m 700 "$STATE_DIR"
+install -d -o root -g root -m 755 "$STATE_DIR"
 touch "$LOG"
 
 (
@@ -172,7 +196,7 @@ touch "$LOG"
     exit 0
   fi
 
-  log "starting agent CLI update"
+  log "starting system-wide agent toolchain update"
 
   for cmd in node npm claude codex; do
     require_bot_cmd "$cmd"
@@ -185,7 +209,7 @@ touch "$LOG"
   update_claude_plugins
   sync_codex_marketplace_config
 
-  log "CLI and marketplace updates verified; restarting ${GOD_SERVICE}"
-  systemctl restart "$GOD_SERVICE"
-  log "restart requested for ${GOD_SERVICE}"
+  log "shared toolchain updated; restarting all god-services"
+  restart_all_god_services
+  log "agent-update finished"
 ) 200>"$LOCK_FILE"

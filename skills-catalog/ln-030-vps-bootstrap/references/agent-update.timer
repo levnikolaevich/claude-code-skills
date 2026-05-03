@@ -1,5 +1,5 @@
 [Unit]
-Description=Nightly Claude Code and Codex CLI update timer for ${SERVICE_PREFIX}
+Description=Nightly system-wide agent toolchain update timer (one-per-VPS, fires for all projects)
 
 [Timer]
 OnCalendar=*-*-* 03:37:00

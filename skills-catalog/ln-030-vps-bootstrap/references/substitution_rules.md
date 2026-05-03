@@ -17,7 +17,7 @@ envsubst '$PROJECT_NAME $PROJECT_DIR $SERVICE_PREFIX $BOT_USER $RELAY_HOOK_PORT 
 
 ### Why `$DISPATCH_COMMAND_NAME` matters
 
-Forgetting `$DISPATCH_COMMAND_NAME` in the allow-list is the most common rendering bug. `god-session.sh` references it, the wrapper has `set -euo pipefail`, and any unsubstituted `${DISPATCH_COMMAND_NAME}` will trigger «unbound variable» on boot, sending civic-god into a systemd `Restart=always` loop.
+Forgetting `$DISPATCH_COMMAND_NAME` in the allow-list is the most common rendering bug. `god-session.sh` references it, the wrapper has `set -euo pipefail`, and any unsubstituted `${DISPATCH_COMMAND_NAME}` will trigger «unbound variable» on boot, sending the god service into a systemd `Restart=always` loop.
 
 Always include it in the envsubst allow-list (default value `${SERVICE_PREFIX}-dispatch` if your project uses the prefixed convention, plain `dispatch` if not).
 

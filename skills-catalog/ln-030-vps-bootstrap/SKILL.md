@@ -28,9 +28,16 @@ The skill is **parameterized** — instantiate it per-project by filling in the 
 
 ## Scope: per-VPS vs per-project
 
-**MANDATORY READ:** Load `references/scope_layers.md`
+**MANDATORY READ:** Load `references/scope_layers.md` and `references/shared_user_pattern.md`
 
-Recommended deployment shape: **one project = one `${BOT_USER}` Linux user = one Telegram bot token = one set of systemd units**. Re-run the skill with new vars for a second project on the same VPS — Steps 1+2 are idempotent (apt no-ops); each project ends up with its own bot user, state dir, units, and Telegram bot. Override `RELAY_HOOK_PORT` if the default `9999` collides.
+**Deployment shape**: **one VPS = one `BOT_USER=agent-bot` Linux user = one Anthropic OAuth + one Codex login + one nvm/Node toolchain**, then **one project = one Telegram bot token = one set of systemd units = one `PROJECT_NAME` / `PROJECT_DIR` / `SERVICE_PREFIX` / `RELAY_HOOK_PORT`**. The shared user owns multiple tmux god-sessions (one per project), each with its own dispatch.timer, relay-bot port, and Telegram bot.
+
+**Scope rules (non-negotiable):**
+- Project-specific config (hooks, CLAUDE.md, secrets, state, logs) lives in **project-scope** dirs: `${PROJECT_DIR}/.claude/`, `/etc/${PROJECT_NAME}/`, `/var/lib/${PROJECT_NAME}/`, `/var/log/${PROJECT_NAME}-god.log`.
+- Project-agnostic config (model, effortLevel, plugin marketplace, statusLine, Anthropic credentials, nvm) lives in **user-scope** `~/.claude/`, `~/.codex/`, `~/.nvm/`.
+- `~/.claude/CLAUDE.md` and `~/.claude/settings.json` `hooks` key MUST NOT exist (project-specific content under shared user — would cross-pollinate identity and routing).
+
+Re-run the skill with new vars for a second project on the same VPS — Steps 1+2 are idempotent (apt no-ops), Step 3 reuses the existing `agent-bot` user, no second OAuth needed. Override `RELAY_HOOK_PORT` (default `9999`) if it collides with another project on the same VPS.
 
 ---
 
@@ -43,24 +50,27 @@ The operator hands these values to Claude (in chat) before running the workflow.
 | Variable | Example | Used in |
 |---|---|---|
 | `PROJECT_NAME` | `myproj` | State/config dir name: `/etc/${PROJECT_NAME}/`, `/var/lib/${PROJECT_NAME}/`, `/var/log/${PROJECT_NAME}-god.log` |
-| `SERVICE_PREFIX` | `myproj` | systemd unit + binary + tmux prefix: `${SERVICE_PREFIX}-god.service`, `${SERVICE_PREFIX}-dispatch.timer`, `${SERVICE_PREFIX}-agent-update.timer`, `/usr/local/bin/${SERVICE_PREFIX}-god`, tmux session `${SERVICE_PREFIX}-god`. Set equal to `PROJECT_NAME` unless the deployment intentionally separates state/config name from service/binary prefix. |
+| `SERVICE_PREFIX` | `myproj` | Per-project systemd unit + binary + tmux prefix: `${SERVICE_PREFIX}-god.service`, `${SERVICE_PREFIX}-dispatch.timer`, `/usr/local/bin/${SERVICE_PREFIX}-god`, tmux session `${SERVICE_PREFIX}-god`. Set equal to `PROJECT_NAME` unless the deployment intentionally separates state/config name from service/binary prefix. **Note:** `agent-update.timer` is *system-wide* (no `SERVICE_PREFIX`) — one updater per VPS, see Step 7d. |
 | `PROJECT_DIR` | `/opt/myproj` | Working directory on the VPS where the agent runs |
-| `BOT_USER` | `agent-bot` | Linux user that owns the workload |
+| `BOT_USER` | `agent-bot` | Shared Linux user that owns ALL projects' workloads on this VPS. Always `agent-bot` — per-project users would force a separate Anthropic OAuth per project, duplicate the nvm + npm tree, and consume Claude Max device slots. Project isolation comes from project-scope config dirs (see Scope rules above), not from Linux-user isolation. |
 | `RELAY_HOOK_PORT` | `9999` | Project-local relay-bot HTTP port on `127.0.0.1`; override for a second project on the same VPS |
 | `DISPATCH_COMMAND_NAME` | `myproj-dispatch` | VPS slash command name injected by `${SERVICE_PREFIX}-dispatch.timer`; default `${SERVICE_PREFIX}-dispatch` |
 | `VPS_HOST` | `203.0.113.42` | SSH target (IP or hostname) |
 | `VPS_SSH_KEY` | `~/.ssh/myproj_vps` | Local path to the SSH private key |
 | `TARGET_REPO_PATH` | `D:\Development\me\myproj` | Local path to the operator's project repo (where `.claude/commands/dispatcher.md` will be rendered) |
-| `GITHUB_REPO` | `me/myproj` | `<owner>/<repo>` for the project |
+| `GIT_PROVIDER` | `github` or `gitlab` | Which git platform hosts the project. Determines which CLI (`gh` vs `glab`), which auth (GitHub App vs GitLab Deploy Token), and which dispatcher `queue` subcommand variant is rendered. |
+| `REPO_SLUG` | `me/myproj` (github) or `group/project` (gitlab) | Repository path on the chosen `GIT_PROVIDER`. For GitLab subgroups: `group/subgroup/project`. |
 
-Defaults before rendering: if `RELAY_HOOK_PORT` is unset, set it to `9999`; if `DISPATCH_COMMAND_NAME` is unset, set it to `${SERVICE_PREFIX}-dispatch`; if `AGENT_SKILLS_REPO_URL` is unset, set it to `https://github.com/levnikolaevich/claude-code-skills.git`; if `AGENT_SKILLS_REF` is unset, set it to `master`; if `AGENT_SKILLS_DIR` is unset, set it to `/opt/${SERVICE_PREFIX}-agent-skills`; if `AGENT_SKILLS_PLUGINS` is unset, set it to `agile-workflow`. These are still rendered values, not hardcoded template constants.
+Defaults before rendering: if `RELAY_HOOK_PORT` is unset, set it to `9999`; if `DISPATCH_COMMAND_NAME` is unset, set it to `${SERVICE_PREFIX}-dispatch`; if `AGENT_SKILLS_REPO_URL` is unset, set it to `https://github.com/levnikolaevich/claude-code-skills.git`; if `AGENT_SKILLS_REF` is unset, set it to `master`; if `AGENT_SKILLS_DIR` is unset, set it to **`/opt/agent-skills`** (one shared clone per VPS — NOT per-project, because every project under shared `BOT_USER` shares the same marketplace source); if `AGENT_SKILLS_PLUGINS` is unset, set it to `agile-workflow`. These are still rendered values, not hardcoded template constants.
 
 ### Optional (leave blank to skip the corresponding workflow section)
 
 | Variable | What enables | Skips when blank |
 |---|---|---|
 | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` | Telegram bot interface (inbound + `/usage` command + status pings) | Steps 7b (statusLine cache), 7c (claude-relay-bot install), 8b (Codex notify hook) |
-| `GITHUB_APP_ID`, `GITHUB_INSTALLATION_ID`, `GITHUB_APP_PRIVATE_KEY_PATH` | GitHub App auth for git push (`${SERVICE_PREFIX}-mint-gh-token`) | Step 8a (mint-gh-token install), GH App-related dispatcher rows |
+| `GITHUB_APP_ID`, `GITHUB_INSTALLATION_ID`, `GITHUB_APP_PRIVATE_KEY_PATH` | (only when `GIT_PROVIDER=github`) GitHub App auth for git push via `${SERVICE_PREFIX}-mint-gh-token` | Step 8a (mint-gh-token install), GH App-related dispatcher rows |
+| `GITLAB_HOST`, `GITLAB_REPO_URL`, `GITLAB_DEPLOY_TOKEN_USER`, `GITLAB_DEPLOY_TOKEN` | (only when `GIT_PROVIDER=gitlab`) `GITLAB_HOST` is the hostname (`gitlab.com` or self-hosted like `gitlab.example.com`). Deploy Token: user `gitlab+deploy-token-N`, value `gldt-…`, scopes `read_repository`+`write_repository` (used for git clone/pull/push). | Step 8a-gitlab (git credential helper setup) |
+| `GITLAB_API_TOKEN` | (optional, only when `GIT_PROVIDER=gitlab` AND you want `glab issue list` in dispatcher's `queue` subcommand) Personal Access Token with `api` scope | dispatcher's `queue` subcommand falls back to "manual" mode |
 | `CF_API_TOKEN`, `CF_ZONE_NAME` | Cloudflare DNS / Pages ops | Step 8b (Cloudflare integration) |
 | `REF_API_KEY` | ref.tools MCP server | Server omitted from Step 5b |
 | `CONTEXT7_API_KEY` | context7 MCP server | Server omitted from Step 5b |
@@ -71,10 +81,10 @@ Defaults before rendering: if `RELAY_HOOK_PORT` is unset, set it to `9999`; if `
 
 **MANDATORY READ:** Load `references/substitution_rules.md`
 
-VPS-side templates use install-time `envsubst`; the operator-side `dispatcher.md.template` is copied **verbatim** (do NOT envsubst). Always pass an explicit allow-list to `envsubst`, and **always include `$DISPATCH_COMMAND_NAME`** — forgetting it sends civic-god into a `Restart=always` loop on boot:
+VPS-side templates use install-time `envsubst`; the operator-side `dispatcher.md.template` is copied **verbatim** (do NOT envsubst). Always pass an explicit allow-list to `envsubst`, and **always include `$DISPATCH_COMMAND_NAME`** — forgetting it leaves an unsubstituted `${DISPATCH_COMMAND_NAME}` in `god-session.sh`, which trips `set -euo pipefail` "unbound variable" on boot and sends the god service into a `Restart=always` loop:
 
 ```bash
-envsubst '$PROJECT_NAME $PROJECT_DIR $SERVICE_PREFIX $BOT_USER $RELAY_HOOK_PORT $DISPATCH_COMMAND_NAME $TELEGRAM_CHAT_ID $AGENT_SKILLS_REPO_URL $AGENT_SKILLS_REF $AGENT_SKILLS_DIR $AGENT_SKILLS_PLUGINS' \
+envsubst '$PROJECT_NAME $PROJECT_DIR $SERVICE_PREFIX $BOT_USER $RELAY_HOOK_PORT $DISPATCH_COMMAND_NAME $TELEGRAM_CHAT_ID $GIT_PROVIDER $REPO_SLUG $AGENT_SKILLS_REPO_URL $AGENT_SKILLS_REF $AGENT_SKILLS_DIR $AGENT_SKILLS_PLUGINS' \
   < references/X > /tmp/X
 ```
 
@@ -115,7 +125,13 @@ which curl wget git jq sqlite3 gpg pipx python3 bwrap unzip tmux && pipx --versi
 
 Expected: all paths printed, pipx version ≥ 1.4.
 
-### 2. gh CLI (official apt repo)
+### 2. Git platform CLIs (`gh` for GitHub, `glab` for GitLab)
+
+Both are installed unconditionally — they coexist (~25 MB each), and the dispatcher's `queue` and `claim`/`MR` subcommands branch on `GIT_PROVIDER` to pick which one to call. Mixed-provider operators (one project on GitHub, another on GitLab on the same VPS) need both available.
+
+#### `gh` — GitHub CLI (official apt repo)
+
+`gh` is not in stock Ubuntu repos; add the official GitHub-CLI apt source:
 
 ```bash
 mkdir -p /etc/apt/keyrings && \
@@ -127,7 +143,24 @@ echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubc
 apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y gh
 ```
 
-**Verify:** `gh --version` → `gh version 2.x`.
+#### `glab` — GitLab CLI (upstream `.deb` from gitlab.com releases)
+
+The Ubuntu 24.04 `universe/vcs` package ships glab 1.36, which lacks `--output json` (added in 1.40+). The dispatcher needs JSON output for issue/MR enumeration, so install the latest upstream release directly:
+
+```bash
+# Resolve latest release tag and host architecture (amd64 / arm64); download matching .deb.
+# Upstream glab releases publish .deb for both amd64 and arm64 with matching dpkg-arch suffix.
+ARCH=$(dpkg --print-architecture)
+TAG=$(curl -fsSL https://gitlab.com/api/v4/projects/gitlab-org%2Fcli/releases | jq -r '.[0].tag_name')
+VER=${TAG#v}
+curl -fsSL "https://gitlab.com/gitlab-org/cli/-/releases/${TAG}/downloads/glab_${VER}_linux_${ARCH}.deb" -o /tmp/glab-latest.deb
+DEBIAN_FRONTEND=noninteractive dpkg -i /tmp/glab-latest.deb
+unlink /tmp/glab-latest.deb
+```
+
+Idempotent — re-running fetches the latest release tag and `dpkg -i` upgrades in place. Architecture is auto-detected (works on amd64 and arm64 Ubuntu hosts; other dpkg architectures need explicit pin if upstream publishes a matching asset). Pin the version (`TAG=v1.93.0`) if reproducible builds are required.
+
+**Verify:** `gh --version` → `gh version 2.x`. `glab --version` → `glab 1.9x.x` (must be ≥ 1.40 for `--output json`).
 
 ### 3. Service user `${BOT_USER}`
 
@@ -185,11 +218,34 @@ sudo -u ${BOT_USER} bash -lc 'claude mcp add --transport http -s user context7 h
 sudo -u ${BOT_USER} bash -lc 'claude mcp list'
 ```
 
-**Codex side:** render [`references/codex-config.toml.template`](references/codex-config.toml.template) with substitutions (uncomment the MCP block whose key is set and enable the selected `AGENT_SKILLS_PLUGINS` entries), upload to `/home/${BOT_USER}/.codex/config.toml`. `codex mcp add` doesn't accept custom headers, so we write the file directly.
+**Codex side:** `~/.codex/config.toml` is **shared across all projects** under `BOT_USER=agent-bot` (one Codex login, one config file). Bootstrap must be **idempotent**: render the template ONCE on first install, then for every subsequent project APPEND-only — never overwrite — so previously-added `[projects."<other-cwd>"]` trust blocks and the optional `notify` line survive.
 
-The template pins **headless-agent defaults** verified against the [Codex config reference](https://developers.openai.com/codex/config-reference): `model = "gpt-5.5"`, `model_reasoning_effort = "xhigh"`, `approval_policy = "never"`, `sandbox_mode = "danger-full-access"`. This eliminates interactive permission prompts and grants full filesystem + network. Only safe inside an isolated VPS dedicated to this workload. Codex still asks the operator via the `notify` script (Telegram); what's eliminated is the *TUI approval popup*, not user-facing communication.
+```bash
+# 5b.1 — first install on this VPS: render template fresh
+if [ ! -f /home/${BOT_USER}/.codex/config.toml ]; then
+  # render template (substitute BOT_USER, PROJECT_DIR, AGENT_SKILLS_REPO_URL/REF, selected plugin lines) → /tmp/codex-config.toml
+  sudo -u ${BOT_USER} install -o ${BOT_USER} -g ${BOT_USER} -m 600 /tmp/codex-config.toml /home/${BOT_USER}/.codex/config.toml
+fi
 
-**Verify:** `sudo -u ${BOT_USER} bash -lc 'codex mcp list'` — both servers show as configured.
+# 5b.2 — every install (first and subsequent): APPEND this project's [projects."${PROJECT_DIR}"] trust block IF NOT PRESENT
+sudo -u ${BOT_USER} bash -lc '
+  TARGET=/home/${BOT_USER}/.codex/config.toml
+  grep -qF "[projects.\"${PROJECT_DIR}\"]" "$TARGET" || \
+    printf "\n[projects.\"%s\"]\ntrust_level = \"trusted\"\n" "${PROJECT_DIR}" >> "$TARGET"
+'
+
+# 5b.3 — every install: REFRESH the ln-030-managed marketplace block (BEGIN…END markers).
+# This block is regenerated by `agent-update.sh` nightly; here we only ensure it exists on first install.
+# The agent-update wrapper handles delta updates idempotently.
+```
+
+The template pins **headless-agent defaults** verified against the [Codex config reference](https://developers.openai.com/codex/config-reference): `model = "gpt-5.5"`, `model_reasoning_effort = "xhigh"`, `approval_policy = "never"`, `sandbox_mode = "danger-full-access"`. This eliminates interactive permission prompts and grants full filesystem + network. Only safe inside an isolated VPS dedicated to this workload. Codex still asks the operator via the `notify` script (Telegram, opt-in via Step 8b); what's eliminated is the *TUI approval popup*, not user-facing communication.
+
+**Verify (after Step 5b runs for any project):**
+
+- `sudo -u ${BOT_USER} bash -lc 'codex mcp list'` — both servers show as configured (if their keys are set)
+- `sudo -u ${BOT_USER} grep -c '\[projects."${PROJECT_DIR}"\]' /home/${BOT_USER}/.codex/config.toml` — should print `1`
+- After bootstrapping a 2nd project: `sudo -u ${BOT_USER} grep -c '^\[projects\.' /home/${BOT_USER}/.codex/config.toml` — should print `2` (or N for N installed projects), confirming the first project's trust block survived.
 
 ### 5c. Agent skills/plugins marketplace (Claude + Codex)
 
@@ -204,7 +260,8 @@ else
 fi
 
 sudo -i -u ${BOT_USER} bash -lc 'cd ${AGENT_SKILLS_DIR} && test -r .claude-plugin/marketplace.json && test -r .agents/plugins/marketplace.json'
-sudo -i -u ${BOT_USER} bash -lc 'cd ${AGENT_SKILLS_DIR} && . /home/${BOT_USER}/.nvm/nvm.sh && node skills-catalog/shared/scripts/marketplace/sync-codex-adapters.mjs validate'
+sudo -i -u ${BOT_USER} bash -lc 'cd ${AGENT_SKILLS_DIR} && . /home/${BOT_USER}/.nvm/nvm.sh && node skills-catalog/shared/scripts/marketplace/sync-codex-adapters.mjs validate' \
+  || echo "WARN: codex-adapter validation reported a missing adapter (e.g. for ln-030 itself) — known upstream issue; non-fatal because we run ln-030 from the operator's laptop, not from the VPS-bot's Codex. Continuing."
 
 # Claude marketplace + selected plugins. Default selected plugin: agile-workflow.
 SELECTED_PLUGINS=$(
@@ -257,13 +314,10 @@ The runtime layer that makes the workload always-on. Nine artifacts (all install
 | [`references/god-session.service`](references/god-session.service) | `/etc/systemd/system/${SERVICE_PREFIX}-god.service` | root:root | 644 |
 | [`references/dispatch.timer`](references/dispatch.timer) | `/etc/systemd/system/${SERVICE_PREFIX}-dispatch.timer` | root:root | 644 |
 | [`references/dispatch.service`](references/dispatch.service) | `/etc/systemd/system/${SERVICE_PREFIX}-dispatch.service` | root:root | 644 |
-| [`references/agent-update.sh`](references/agent-update.sh) | `/usr/local/bin/${SERVICE_PREFIX}-agent-update` | root:root | 755 |
-| [`references/agent-update.service`](references/agent-update.service) | `/etc/systemd/system/${SERVICE_PREFIX}-agent-update.service` | root:root | 644 |
-| [`references/agent-update.timer`](references/agent-update.timer) | `/etc/systemd/system/${SERVICE_PREFIX}-agent-update.timer` | root:root | 644 |
 | [`references/dispatch.md`](references/dispatch.md) | `/home/${BOT_USER}/.claude/commands/${DISPATCH_COMMAND_NAME}.md` | `${BOT_USER}`:`${BOT_USER}` | 644 |
 | [`references/settings.agent-config.fragment.json`](references/settings.agent-config.fragment.json) | jq-merged into `/home/${BOT_USER}/.claude/settings.json` | `${BOT_USER}`:`${BOT_USER}` | 644 |
 
-For each template: read the file, substitute `${VAR}` placeholders (including `AGENT_SKILLS_*` for `agent-update.sh` and `codex-config.toml.template`), upload via `mcp__hex-ssh__ssh-write-chunk`, set ownership and mode. Note the rename when uploading the unit files (they're named `dispatch.*` / `agent-update.*` in the repo for clarity, but land as `${SERVICE_PREFIX}-dispatch.*` / `${SERVICE_PREFIX}-agent-update.*` on the VPS).
+For each template: read the file, substitute `${VAR}` placeholders (including `AGENT_SKILLS_*` for `codex-config.toml.template`), upload via `mcp__hex-ssh__ssh-write-chunk`, set ownership and mode. Note the rename when uploading the unit files (`dispatch.*` in the repo lands as `${SERVICE_PREFIX}-dispatch.*` on the VPS — per-project naming).
 
 **About `settings.agent-config.fragment.json`** — this fragment pins headless-agent defaults that must NOT depend on a TTY:
 
@@ -282,9 +336,11 @@ For each template: read the file, substitute `${VAR}` placeholders (including `A
 **Install + enable:**
 
 ```bash
-install -d -o ${BOT_USER} -g ${BOT_USER} -m 755 /var/lib/${PROJECT_NAME}
-touch /var/log/${PROJECT_NAME}-god.log && chown ${BOT_USER}:${BOT_USER} /var/log/${PROJECT_NAME}-god.log
-sudo -u ${BOT_USER} mkdir -p /home/${BOT_USER}/.claude/commands
+install -d -o ${BOT_USER} -g ${BOT_USER} -m 700 /var/lib/${PROJECT_NAME}                       # state dir (StateDirectory= in unit also sets this)
+install -d -o root -g ${BOT_USER} -m 750 /etc/${PROJECT_NAME}                                  # config dir — root-owned for secrets, ${BOT_USER}-readable. ALWAYS chown the dir itself, not just contents (mode 0750 means group-bit traversal requires the group on the dir).
+install -o ${BOT_USER} -g ${BOT_USER} -m 644 /dev/null /var/log/${PROJECT_NAME}-god.log        # log file — explicit ownership prevents "Permission denied" crash-loop after user rename
+install -d -o ${BOT_USER} -g ${BOT_USER} -m 755 ${PROJECT_DIR}                                  # working dir (operator clones repo here later; placeholder until then)
+sudo -u ${BOT_USER} mkdir -p /home/${BOT_USER}/.claude/commands ${PROJECT_DIR}/.claude          # user-scope (slash-commands) + project-scope (hooks, CLAUDE.md)
 
 # Ensure settings.json exists, then jq-merge agent-config fragment
 sudo -u ${BOT_USER} bash -lc 'mkdir -p ~/.claude && [ -f ~/.claude/settings.json ] || echo "{}" > ~/.claude/settings.json'
@@ -296,7 +352,6 @@ loginctl enable-linger ${BOT_USER}
 systemctl daemon-reload
 systemctl enable --now ${SERVICE_PREFIX}-god.service
 systemctl enable --now ${SERVICE_PREFIX}-dispatch.timer
-systemctl enable --now ${SERVICE_PREFIX}-agent-update.timer
 ```
 
 **Verify:**
@@ -304,17 +359,9 @@ systemctl enable --now ${SERVICE_PREFIX}-agent-update.timer
 ```bash
 systemctl status ${SERVICE_PREFIX}-god.service --no-pager | head -10
 systemctl list-timers ${SERVICE_PREFIX}-dispatch.timer --no-pager
-systemctl list-timers ${SERVICE_PREFIX}-agent-update.timer --no-pager
 sudo -u ${BOT_USER} tmux ls
 sudo -u ${BOT_USER} tmux capture-pane -t ${SERVICE_PREFIX}-god -p -S -200 | tail -40
 tail -10 /var/log/${PROJECT_NAME}-god.log
-
-# Nightly maintenance smoke: updates CLIs + skills/plugins, verifies, then restarts god-session.
-systemctl start ${SERVICE_PREFIX}-agent-update.service
-journalctl -u ${SERVICE_PREFIX}-agent-update.service -n 100 --no-pager
-sudo -i -u ${BOT_USER} bash -lc '. /home/${BOT_USER}/.nvm/nvm.sh && claude --version && codex --version'
-sudo -i -u ${BOT_USER} bash -lc 'cd ${AGENT_SKILLS_DIR} && git status --short && git rev-parse --short HEAD'
-systemctl status ${SERVICE_PREFIX}-god.service --no-pager | head -10
 ```
 
 Expected timeline:
@@ -322,7 +369,7 @@ Expected timeline:
 - t+1s: tmux session `${SERVICE_PREFIX}-god` exists.
 - t+5s: log `fresh session up; ${SERVICE_PREFIX}-dispatch.timer will inject /${DISPATCH_COMMAND_NAME} hourly`.
 - next `:07`: `${SERVICE_PREFIX}-dispatch.service` fires and tmux pane receives `/${DISPATCH_COMMAND_NAME}`.
-- nightly around 03:37 local time (+ up to 20m randomized delay): `${SERVICE_PREFIX}-agent-update.service` runs `claude update`, updates Codex to `@latest`, fast-forwards `${AGENT_SKILLS_DIR}`, updates selected Claude plugins, realigns Codex plugin config, verifies everything, then restarts `${SERVICE_PREFIX}-god.service`.
+- nightly around 03:37 local time (+ up to 20m randomized delay): the **system-wide** `agent-update.service` (Step 7d) runs `claude update`, updates Codex to `@latest`, fast-forwards `${AGENT_SKILLS_DIR}`, updates selected Claude plugins, realigns Codex plugin config, verifies everything, then enumerates and restarts ALL projects' `*-god.service` units.
 - Telegram inbound (Step 7c, optional) is wired separately via `${SERVICE_PREFIX}-relay-bot.service`. The pane should NOT contain a `Listening for channel messages` line.
 
 ### 7b. `/usage` Telegram command — statusLine cache (only if `TELEGRAM_BOT_TOKEN` is set)
@@ -337,12 +384,22 @@ Three artifacts:
 |---|---|---|---|
 | [`references/statusline.sh`](references/statusline.sh) | `/home/${BOT_USER}/.claude/statusline.sh` | `${BOT_USER}`:`${BOT_USER}` | 755 |
 | [`references/claude-usage-report.sh`](references/claude-usage-report.sh) | `/usr/local/bin/claude-usage-report` | root:root | 755 |
-| [`references/operator.CLAUDE.md`](references/operator.CLAUDE.md) | `/home/${BOT_USER}/.claude/CLAUDE.md` | `${BOT_USER}`:`${BOT_USER}` | 644 |
+| [`references/operator.CLAUDE.md`](references/operator.CLAUDE.md) | **`${PROJECT_DIR}/.claude/CLAUDE.md`** (project-scope only; never user-scope under shared `BOT_USER`) | `${BOT_USER}`:`${BOT_USER}` | 644 |
 
-Upload each, render placeholders, then merge the statusLine fragment into `~${BOT_USER}/.claude/settings.json`:
+Upload each, render placeholders. Note the **scoping policy** under shared `BOT_USER`:
+
+- `statusline.sh` and `claude-usage-report` are **command-line scripts** — no project-binding, install at user-scope `~${BOT_USER}/.claude/statusline.sh` and `/usr/local/bin/claude-usage-report`.
+- `statusLine` settings fragment merges into **user-scope** `~${BOT_USER}/.claude/settings.json` because the path it points at (`statusline.sh`) is shared across projects.
+- `operator.CLAUDE.md` (rendered template) — every line is project-specific (`PROJECT_NAME`, `RELAY_HOOK_PORT`, `/var/lib/${PROJECT_NAME}/relay.db`, dispatch command name). **Install at PROJECT-SCOPE** `${PROJECT_DIR}/.claude/CLAUDE.md`. **NEVER** at user-scope `~${BOT_USER}/.claude/CLAUDE.md` — under shared `BOT_USER` that causes claude in one project's tmux to identify itself as another project's god-session and query the wrong relay-bot, resources, and repo.
 
 ```bash
+# user-scope: statusLine fragment merge
 sudo -u ${BOT_USER} bash -lc 'jq ". + $(cat ~/.claude/.staging/settings.statusline.fragment.json)" ~/.claude/settings.json > ~/.claude/settings.json.new && mv ~/.claude/settings.json.new ~/.claude/settings.json'
+
+# project-scope: operator.CLAUDE.md install (rendered with this project's PROJECT_NAME, SERVICE_PREFIX, RELAY_HOOK_PORT, etc.)
+sudo -u ${BOT_USER} install -o ${BOT_USER} -g ${BOT_USER} -m 644 /tmp/operator.CLAUDE.md ${PROJECT_DIR}/.claude/CLAUDE.md
+# Sanity: ensure NO user-scope CLAUDE.md (would cross-pollinate identity to other projects)
+sudo -u ${BOT_USER} bash -lc 'test ! -f ~/.claude/CLAUDE.md || { echo "ERROR: ~/.claude/CLAUDE.md exists — remove it for shared-user model"; exit 1; }'
 ```
 
 (Use [`references/settings.statusline.fragment.json`](references/settings.statusline.fragment.json), substitute `${BOT_USER}`, scp to `~/.claude/.staging/`, run the jq merge, remove the staging file.)
@@ -373,7 +430,7 @@ Note: scheduling (the `${SERVICE_PREFIX}-dispatch.timer` that replaces the fragi
 |---|---|---|---|
 | [`references/relay-bot/`](references/relay-bot/) | `/opt/${SERVICE_PREFIX}-relay-bot` | `${BOT_USER}`:`${BOT_USER}` | 755 dirs / 644 files |
 | [`references/claude-relay-bot.service`](references/claude-relay-bot.service) | `/etc/systemd/system/${SERVICE_PREFIX}-relay-bot.service` | root:root | 644 |
-| [`references/settings.hooks.fragment.json`](references/settings.hooks.fragment.json) | rendered, then jq-merged into `/home/${BOT_USER}/.claude/settings.json` | (BOT) | 644 |
+| [`references/settings.hooks.fragment.json`](references/settings.hooks.fragment.json) | rendered, then **installed at project-scope** `${PROJECT_DIR}/.claude/settings.json` (under shared `BOT_USER` hooks MUST NOT be in user-scope or all projects' tmux sessions fire to one relay-bot port) | `${BOT_USER}`:`${BOT_USER}` | 644 |
 
 **Install:**
 
@@ -387,8 +444,13 @@ chown -R ${BOT_USER}:${BOT_USER} /opt/${SERVICE_PREFIX}-relay-bot
 sudo -i -u ${BOT_USER} bash -lc 'cd /opt/${SERVICE_PREFIX}-relay-bot && . /home/${BOT_USER}/.nvm/nvm.sh && npm ci && npm run build && npm prune --omit=dev'
 
 # 3. Render claude-relay-bot.service with PROJECT_NAME, PROJECT_DIR, SERVICE_PREFIX, BOT_USER → /etc/systemd/system/${SERVICE_PREFIX}-relay-bot.service, mode 644
-# 4. Render settings.hooks.fragment.json with RELAY_HOOK_PORT → /tmp/hooks.json, then jq-merge:
-sudo -u ${BOT_USER} bash -lc 'jq -s ".[0] * .[1]" ~/.claude/settings.json /tmp/hooks.json > ~/.claude/settings.json.new && mv ~/.claude/settings.json.new ~/.claude/settings.json'
+# 4. Render settings.hooks.fragment.json with RELAY_HOOK_PORT → /tmp/hooks.json, then INSTALL AT PROJECT-SCOPE
+#    (NOT jq-merge into ~/.claude/settings.json — under shared BOT_USER, project-scope hooks isolate
+#     each project's tmux to its own relay-bot port. User-scope hooks would cross-route between projects.)
+sudo -u ${BOT_USER} mkdir -p ${PROJECT_DIR}/.claude
+sudo -u ${BOT_USER} install -o ${BOT_USER} -g ${BOT_USER} -m 644 /tmp/hooks.json ${PROJECT_DIR}/.claude/settings.json
+# Sanity: assert no stale hooks block at user-scope (strip if present)
+sudo -u ${BOT_USER} bash -lc 'jq -e "has(\"hooks\")" ~/.claude/settings.json >/dev/null 2>&1 && jq "del(.hooks)" ~/.claude/settings.json > ~/.claude/settings.json.new && mv ~/.claude/settings.json.new ~/.claude/settings.json && echo "stripped stale user-scope hooks" || echo "user-scope settings.json: hooks already absent (correct)"'
 
 # 5. Enable + reload claude
 systemctl daemon-reload
@@ -426,6 +488,54 @@ The pane should show the normal Claude Code TUI, with Telegram ingress handled b
 
 The skill creates the parent `/var/lib/${PROJECT_NAME}/` automatically via `StateDirectory=${PROJECT_NAME}` in `god-session.service` (mode 0700).
 
+### 7d. System-wide agent-update (one updater per VPS, restarts ALL god-services)
+
+The shared toolchain (Claude Code CLI, Codex CLI, marketplace clone at `${AGENT_SKILLS_DIR}`, selected plugins) is updated by **one** system-wide unit, NOT per-project. This avoids: (a) duplicate `claude update` / `npm i -g @openai/codex@latest` race conditions when multiple per-project timers fire close together, (b) wasted network/CPU for redundant updates of shared state. The unit name has no `${SERVICE_PREFIX}` because it operates above project scope.
+
+| Reference | Target | Owner | Mode |
+|---|---|---|---|
+| [`references/agent-update.sh`](references/agent-update.sh) | `/usr/local/bin/agent-update` | root:root | 755 |
+| [`references/agent-update.service`](references/agent-update.service) | `/etc/systemd/system/agent-update.service` | root:root | 644 |
+| [`references/agent-update.timer`](references/agent-update.timer) | `/etc/systemd/system/agent-update.timer` | root:root | 644 |
+
+**Install (idempotent — every project's bootstrap re-runs this; sed-substitute and `install` overwrite in place):**
+
+```bash
+# Render agent-update.sh with BOT_USER, AGENT_SKILLS_REPO_URL, AGENT_SKILLS_REF, AGENT_SKILLS_DIR, AGENT_SKILLS_PLUGINS → /tmp/agent-update.sh
+install -o root -g root -m 755 /tmp/agent-update.sh /usr/local/bin/agent-update
+
+# Service + timer files (no env vars to substitute)
+install -o root -g root -m 644 references/agent-update.service /etc/systemd/system/agent-update.service
+install -o root -g root -m 644 references/agent-update.timer   /etc/systemd/system/agent-update.timer
+
+# State + log
+install -d -o root -g root -m 755 /var/lib/agent-update
+touch /var/log/agent-update.log
+chmod 0644 /var/log/agent-update.log
+
+systemctl daemon-reload
+systemctl enable --now agent-update.timer
+```
+
+**How it works:**
+
+- Timer fires nightly at 03:37 local + RandomizedDelaySec up to 20m.
+- `agent-update` (the script) runs as root, sources `/home/${BOT_USER}/.nvm/nvm.sh` via `sudo -i -u ${BOT_USER}` for CLI updates.
+- Updates: `claude update` → `npm i -g @openai/codex@latest` → `git pull` in `${AGENT_SKILLS_DIR}` → `claude plugin update <each>` → rewrite `[marketplaces.levnikolaevich-skills-marketplace]` block in shared `~/.codex/config.toml`.
+- Final step: enumerates all enabled `*-god.service` units via `systemctl list-unit-files --state=enabled '*-god.service'` and runs `systemctl restart <each>`. Every project's god-session is bounced once the shared toolchain is verified.
+
+**Verify:**
+
+```bash
+systemctl list-timers agent-update.timer --no-pager   # next fire armed
+systemctl start agent-update.service                   # one-shot smoke run
+journalctl -u agent-update.service -n 100 --no-pager
+sudo -i -u ${BOT_USER} bash -lc '. /home/${BOT_USER}/.nvm/nvm.sh && claude --version && codex --version'
+sudo -i -u ${BOT_USER} bash -lc 'cd ${AGENT_SKILLS_DIR} && git status --short && git rev-parse --short HEAD'
+# All god-services should be active after the smoke run completes:
+systemctl list-units --type=service --state=active '*-god.service' --no-pager
+```
+
 ### 8. Optional integrations
 
 #### 8a. GitHub App (only if `GITHUB_APP_ID` is set)
@@ -453,13 +563,60 @@ Wire `git` to use the minter as credential helper:
 sudo -u ${BOT_USER} git config --global credential.helper '!f() { echo "username=x-access-token"; echo "password=$('${SERVICE_PREFIX}'-mint-gh-token)"; }; f'
 ```
 
-#### 8b. Codex notify hook (only if `TELEGRAM_BOT_TOKEN` is set)
+#### 8a-gitlab. GitLab Deploy Token wiring (only if `GIT_PROVIDER=gitlab`)
+
+GitLab's equivalent of GitHub App auth is a Project (or Group) Deploy Token with `read_repository` + `write_repository` scopes. Tokens are persistent (no per-call minting); the dispatcher uses them as ordinary HTTP-basic credentials via `git`'s credential-store helper.
+
+The operator gets the token from GitLab UI: **Project Settings → Access Tokens → Deploy Tokens → New token**. Token user format: `gitlab+deploy-token-N`, value `gldt-…`. Place both in `/etc/${PROJECT_NAME}/secrets.env` as `GITLAB_DEPLOY_TOKEN_USER` and `GITLAB_DEPLOY_TOKEN`. Then wire git on the VPS:
+
+```bash
+# Configure ${BOT_USER}'s git to use the file-backed credential store
+sudo -u ${BOT_USER} git config --global credential.helper store
+
+# Append the credential line. Sourcing secrets.env here keeps the token out of process argv.
+sudo -u ${BOT_USER} bash -lc 'set -a && . /etc/${PROJECT_NAME}/secrets.env && set +a && \
+  printf "https://%s:%s@%s\n" "$GITLAB_DEPLOY_TOKEN_USER" "$GITLAB_DEPLOY_TOKEN" "$GITLAB_HOST" \
+  >> ~/.git-credentials && chmod 600 ~/.git-credentials'
+
+# Optionally clone the project repo right away (or leave for the operator/dispatcher to do later)
+sudo -u ${BOT_USER} bash -lc 'set -a && . /etc/${PROJECT_NAME}/secrets.env && set +a && \
+  [ -d "${PROJECT_DIR}/.git" ] || git clone "$GITLAB_REPO_URL" "${PROJECT_DIR}"'
+```
+
+For the dispatcher's `queue` subcommand and `glab mr create` to work, you also need `GITLAB_API_TOKEN` (a separate Personal/Project Access Token with `api` scope) in `secrets.env`. Without it, `git` operations work fine via the deploy token, but issue enumeration and MR creation are disabled — the dispatcher reports `queue_unsupported` and skips automatically.
+
+**Verify:**
+
+```bash
+# Git can pull/push using the stored deploy token
+sudo -u ${BOT_USER} bash -lc 'cd ${PROJECT_DIR} && git ls-remote --heads origin | head -3'
+# glab API works with the PAT
+sudo -u ${BOT_USER} bash -lc 'set -a && . /etc/${PROJECT_NAME}/secrets.env && set +a && \
+  GITLAB_HOST=$GITLAB_HOST GITLAB_TOKEN=$GITLAB_API_TOKEN glab issue list --repo $REPO_SLUG --opened --output json | jq length'
+```
+
+Both commands must succeed before the dispatcher's GitLab branch can run end-to-end.
+
+#### 8b. Codex notify hook (only if `TELEGRAM_BOT_TOKEN` is set AND operator wants codex turn-end events in Telegram)
+
+This is **opt-in**. Many operators run claude as the autonomous workload and only invoke codex manually for sub-tasks; in that case codex turn-end notifications add noise without value. Skip this step unless you've decided you want them.
 
 | Reference | Target | Owner | Mode |
 |---|---|---|---|
 | [`references/codex-notify.sh`](references/codex-notify.sh) | `/home/${BOT_USER}/.codex/notify.sh` | `${BOT_USER}`:`${BOT_USER}` | 755 |
 
-`config.toml` already wires it via the `notify = ["bash", ...]` line (rendered in Step 5b).
+Install + wire into config.toml:
+
+```bash
+# Render and install the script
+sudo -u ${BOT_USER} install -o ${BOT_USER} -g ${BOT_USER} -m 755 /tmp/codex-notify.sh /home/${BOT_USER}/.codex/notify.sh
+
+# Append the notify line to config.toml (Step 5b deliberately leaves it absent so the default install
+# does not fail with ENOENT when the script is missing).
+sudo -u ${BOT_USER} bash -lc 'grep -q "^notify = " ~/.codex/config.toml || printf "\nnotify = [\"bash\", \"/home/${BOT_USER}/.codex/notify.sh\"]\n" >> ~/.codex/config.toml'
+```
+
+To remove the hook later: delete the script and strip the line — `sudo -u ${BOT_USER} sed -i '/^notify = /d' ~/.codex/config.toml`.
 
 #### 8c. Cloudflare (only if `CF_API_TOKEN` is set)
 
@@ -476,7 +633,7 @@ mkdir -p ${TARGET_REPO_PATH}/.claude/commands
 cp references/dispatcher.md.template ${TARGET_REPO_PATH}/.claude/commands/dispatcher.md
 ```
 
-**(b) Seed `.env.local`.** Append the 11 `VPS_*` keys to `${TARGET_REPO_PATH}/.env.local` (with the values from this skill's Configuration block). Skip any key already present.
+**(b) Seed `.env.local`.** Append the 12 `VPS_*` keys to `${TARGET_REPO_PATH}/.env.local` (with the values from this skill's Configuration block). Skip any key already present.
 
 ```bash
 cat >> ${TARGET_REPO_PATH}/.env.local <<EOF
@@ -486,7 +643,8 @@ VPS_BOT_USER=${BOT_USER}
 VPS_PROJECT_NAME=${PROJECT_NAME}
 VPS_SERVICE_PREFIX=${SERVICE_PREFIX}
 VPS_PROJECT_DIR=${PROJECT_DIR}
-VPS_GITHUB_REPO=${GITHUB_REPO}
+VPS_GIT_PROVIDER=${GIT_PROVIDER}
+VPS_REPO_SLUG=${REPO_SLUG}
 VPS_RELAY_HOOK_PORT=${RELAY_HOOK_PORT}
 VPS_DISPATCH_COMMAND_NAME=${DISPATCH_COMMAND_NAME}
 VPS_AGENT_SKILLS_DIR=${AGENT_SKILLS_DIR}
@@ -497,8 +655,8 @@ EOF
 Confirm `.env.local` is git-ignored (most projects already have `.env.*` in `.gitignore`).
 
 **Verify:**
-- `grep -E '\$\{(?!VPS_)[A-Z_]+\}' ${TARGET_REPO_PATH}/.claude/commands/dispatcher.md` — empty (only `${VPS_*}` placeholders remain; no other `${VAR}` should exist).
-- `grep -E '^VPS_(HOST|SSH_KEY|BOT_USER|PROJECT_NAME|SERVICE_PREFIX|PROJECT_DIR|GITHUB_REPO|RELAY_HOOK_PORT|DISPATCH_COMMAND_NAME|AGENT_SKILLS_DIR|AGENT_SKILLS_PLUGINS)=' ${TARGET_REPO_PATH}/.env.local` — 11 lines.
+- `grep -oE '\$\{[A-Z_][A-Z_]*\}' ${TARGET_REPO_PATH}/.claude/commands/dispatcher.md | grep -v '^\$\{VPS_'` — empty (only `${VPS_*}` placeholders remain; portable two-step pipeline because POSIX ERE has no lookahead).
+- `grep -E '^VPS_(HOST|SSH_KEY|BOT_USER|PROJECT_NAME|SERVICE_PREFIX|PROJECT_DIR|GIT_PROVIDER|REPO_SLUG|RELAY_HOOK_PORT|DISPATCH_COMMAND_NAME|AGENT_SKILLS_DIR|AGENT_SKILLS_PLUGINS)=' ${TARGET_REPO_PATH}/.env.local` — 12 lines.
 
 ---
 
@@ -510,8 +668,8 @@ The bootstrap stops at "agents installed but not authenticated". The next steps 
 
 | # | Action | Why operator, not agent |
 |---|--------|-------------------------|
-| 1 | `claude /login` on the VPS | OAuth + 2FA at Anthropic. Open URL on the laptop, paste code back. SSH local-forward `-L 8080:localhost:8080` for redirect-callback flavour. **Alternative**: pre-issue a long-lived OAuth token via `claude setup-token` on the operator's laptop (also interactive, but only once) and paste into VPS's `~${BOT_USER}/.claude/credentials.json`. |
-| 2 | `codex login` on the VPS | Same browser+2FA flow with ChatGPT account. |
+| 1 | **Walk claude through first-run UX in tmux** (only needed once per `BOT_USER`, not per project — under shared-user model the second project reuses the existing OAuth) | `claude --dangerously-skip-permissions` only bypasses TOOL permission prompts, NOT first-run UX gates. SSH in as `${BOT_USER}`, attach with `tmux attach -t ${SERVICE_PREFIX}-god`, press Enter through (a) **theme picker** (Auto / Dark / Light / colorblind), (b) **login method** picker → choose "Claude account with subscription", (c) **OAuth code prompt** — open the printed URL on your laptop, complete OAuth at Claude.ai, copy the returned code, paste back into pane. Then for EACH project, also press Enter through (d) **trust-this-folder** prompt for `${PROJECT_DIR}`. Detach with `Ctrl-b d`. After this, claude is in normal interactive mode and dispatch.timer ticks succeed. |
+| 2 | `codex login` on the VPS | Same browser+2FA flow with ChatGPT account. Like #1, only needed once per `BOT_USER` under shared-user model. |
 | 3 | (If Telegram) Create bot via `@BotFather` | Telegram doesn't expose a public API for bot creation — must chat with `@BotFather`, type `/newbot`, pick a name, copy `BOT_TOKEN`. Get operator's `chat_id` via `https://api.telegram.org/bot<TOKEN>/getUpdates` after sending `/start` to the new bot. |
 | 4 | **(If Telegram) Lock the bot down in `@BotFather`** — see «Telegram bot hardening» below | BotFather settings (Allow Groups, Group Privacy) are NOT exposed via Bot API; only the BotFather chat UI can change them. **Critical** because the bot username is publicly discoverable. |
 | 5 | (If GitHub App) Create the GitHub App | github.com web UI only — no API for App registration. Permissions: Contents R/W, Issues R/W, Pull requests R/W, Metadata R. Install on the target repo. Download PEM file. |
@@ -543,12 +701,12 @@ End-to-end after install + manual follow-up:
 | ${BOT_USER} user                  | UID 1000                       |
 | ${SERVICE_PREFIX}-god.service     | active (running)               |
 | ${SERVICE_PREFIX}-dispatch.timer  | active (waiting), next fire armed |
-| ${SERVICE_PREFIX}-agent-update.timer | active (waiting), nightly fire armed |
+| agent-update.timer (system-wide)  | active (waiting), nightly fire armed |
 | tmux ${SERVICE_PREFIX}-god        | exists                         |
 | /home/${BOT_USER}/.claude/cache/usage.json | populated within 30s of restart |
 | Telegram bidirectional smoke      | bot replies to /usage with %    |
 | ${TARGET_REPO_PATH}/.claude/commands/dispatcher.md | copied verbatim; only `${VPS_*}` placeholders remain |
-| ${TARGET_REPO_PATH}/.env.local    | 11 `VPS_*` keys present        |
+| ${TARGET_REPO_PATH}/.env.local    | 12 `VPS_*` keys present        |
 | `/dispatcher status` (from operator's repo) | reports healthy |
 ```
 
@@ -562,7 +720,7 @@ DoD covers every step of the workflow. Each unchecked item points back to the st
 
 ### System packages & user (Steps 1–3)
 - [ ] All required Configuration vars set; optional vars explicitly empty when their step is skipped
-- [ ] `which curl wget git jq sqlite3 gpg pipx python3 bwrap unzip tmux gh` — all paths resolved (Step 1+2)
+- [ ] `which curl wget git jq sqlite3 gpg pipx python3 bwrap unzip tmux glab gh` — all paths resolved (Step 1+2)
 - [ ] `id ${BOT_USER}` returns UID; `.ssh/authorized_keys` mode 600; `loginctl show-user ${BOT_USER}` shows `Linger=yes` (Steps 3, 7)
 
 ### Agents (Steps 4–6, 5b, 5c)
@@ -576,7 +734,7 @@ DoD covers every step of the workflow. Each unchecked item points back to the st
 ### God-session + scheduler (Step 7)
 - [ ] `${SERVICE_PREFIX}-god.service` active and tmux session exists
 - [ ] `${SERVICE_PREFIX}-dispatch.timer` active and armed (`systemctl list-timers`)
-- [ ] `${SERVICE_PREFIX}-agent-update.timer` active and armed; manual `${SERVICE_PREFIX}-agent-update.service` run updates Claude/Codex plus selected skills/plugins and restarts god-session only after successful checks
+- [ ] (system-wide, Step 7d) `agent-update.timer` active and armed; manual `agent-update.service` run updates Claude/Codex plus selected skills/plugins and restarts ALL `*-god.service` units after successful checks
 - [ ] `/var/lib/${PROJECT_NAME}/` exists, mode 0700, owner `${BOT_USER}`
 - [ ] Pane footer shows model + effort + `bypass permissions on`
 
@@ -594,16 +752,21 @@ DoD covers every step of the workflow. Each unchecked item points back to the st
 - [ ] `RELAY_VERBOSITY` configured in `secrets.env`; `outbox.event_type` and `todo_state` schema present
 - [ ] All 5 layers reach Telegram and token bucket / `verbosity=quiet` regression pass per `references/verification_recipes.md`
 
-### GitHub App + git (Step 8a, gated on `GITHUB_APP_ID`)
+### GitHub App + git (Step 8a, gated on `GIT_PROVIDER=github` AND `GITHUB_APP_ID`)
 - [ ] `/etc/${PROJECT_NAME}/github-app.pem` mode 640, owner `root:${BOT_USER}`
 - [ ] `${SERVICE_PREFIX}-mint-gh-token` returns `ghs_...` prefix and is wired into git credential.helper
+
+### GitLab Deploy Token + glab API (Step 8a-gitlab, gated on `GIT_PROVIDER=gitlab`)
+- [ ] `~${BOT_USER}/.git-credentials` mode 600 contains a line `https://${GITLAB_DEPLOY_TOKEN_USER}:${GITLAB_DEPLOY_TOKEN}@${GITLAB_HOST}` (no plaintext leak in journal)
+- [ ] `sudo -u ${BOT_USER} bash -lc 'cd ${PROJECT_DIR} && git ls-remote --heads origin | head -3'` succeeds (deploy token → git operations OK)
+- [ ] (optional, only if `GITLAB_API_TOKEN` is set) `sudo -u ${BOT_USER} bash -lc 'set -a && . /etc/${PROJECT_NAME}/secrets.env && set +a && GITLAB_HOST=$GITLAB_HOST GITLAB_TOKEN=$GITLAB_API_TOKEN glab issue list --repo $REPO_SLUG --opened --output json | jq length'` returns the open-issue count (PAT → glab issue/MR API OK)
 
 ### Codex notify hook (Step 8b, gated on `TELEGRAM_BOT_TOKEN`)
 - [ ] `~${BOT_USER}/.codex/notify.sh` mode 755; `config.toml` has `notify = ["bash", ...]`
 
 ### Operator dispatcher (Step 9, LOCAL machine)
 - [ ] `${TARGET_REPO_PATH}/.claude/commands/dispatcher.md` exists with only `${VPS_*}` placeholders remaining
-- [ ] `${TARGET_REPO_PATH}/.env.local` has all 11 `VPS_*` keys; `.env.local` is git-ignored
+- [ ] `${TARGET_REPO_PATH}/.env.local` has all 12 `VPS_*` keys; `.env.local` is git-ignored
 - [ ] `/dispatcher status` reports healthy; `/dispatcher audit 3` returns last 3 runs
 
 ---

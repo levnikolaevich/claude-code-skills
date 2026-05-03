@@ -1,4 +1,4 @@
-// Schema for relay-bot. Keep compatible with existing relay.db files.
+// Schema for relay-bot. Keep relay.db stable across idempotent starts.
 // Forward migrations live in migrations.ts; this module is idempotent.
 
 export const SCHEMA_SQL = `

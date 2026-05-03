@@ -113,8 +113,8 @@ case "$RESOLVED" in
     ;;
   "")
     # No command file. Default behavior: explicit --resume of last-active
-    # session-id (Fix #4b). Claude Code 2.1.123's --continue cannot find
-    # legacy jsonl on session-index changes; using --resume <uuid> from
+    # session-id (Fix #4b). Claude Code 2.1.123's --continue can miss
+    # session jsonl files after index changes; using --resume <uuid> from
     # last-session.id (written by relay-bot SessionStart hook) is reliable.
     LAST_SID_FILE=$STATE_DIR/last-session.id
     CHOSE=""

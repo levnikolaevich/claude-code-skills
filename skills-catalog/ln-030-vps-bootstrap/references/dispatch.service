@@ -14,7 +14,7 @@ Group=${BOT_USER}
 # against broken pipe / empty / non-numeric pipeline output.
 ExecCondition=/bin/bash -c '\
   PEND=$(curl -fsS http://127.0.0.1:${RELAY_HOOK_PORT}/health 2>/dev/null \
-    | python3 -c "import json,sys; print(json.load(sys.stdin).get(\"pending_count\",0))" 2>/dev/null); \
+    | jq -r ".pending_count // 0" 2>/dev/null); \
   PEND=$${PEND:-0}; \
   [[ "$$PEND" =~ ^[0-9]+$$ ]] || PEND=0; \
   if [ "$$PEND" -gt 0 ]; then \

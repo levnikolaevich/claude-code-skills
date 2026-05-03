@@ -22,7 +22,7 @@ RestartSec=15
 StandardOutput=journal
 StandardError=journal
 
-# Resource caps; Node runtime + native SQLite need more headroom than the old Python loop.
+# Resource caps for Node runtime + native SQLite.
 MemoryMax=256M
 CPUQuota=50%
 

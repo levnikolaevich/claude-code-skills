@@ -32,10 +32,10 @@ node dist/index.js
 
 Environment is loaded from `process.env` (parsed by Zod in `src/config/env.ts`). Use `.env.example` as a template.
 
-## Critical interop note
+## Critical locking note
 
-`infrastructure/filesystem/atomicCommand.ts` uses POSIX `flock(2)` via the `fs-ext` package. This matches the bash `flock` calls in `god-session.sh`. Do **not** substitute `proper-lockfile` (sentinel-directory based) — it is incompatible with kernel `flock(2)` and would silently break atomicity of `god-command.json`.
+`infrastructure/filesystem/atomicCommand.ts` uses POSIX `flock(2)` via the `fs-ext` package. This matches the bash `flock` calls in `god-session.sh`. Do **not** substitute `proper-lockfile` (sentinel-directory based) — it does not share kernel `flock(2)` locks and would silently break atomicity of `god-command.json`.
 
-## Schema compatibility
+## Schema lifecycle
 
-`infrastructure/db/schema.ts` defines the relay schema. `migrations.ts` runs idempotent forward migrations, so an existing `relay.db` boots cleanly with data intact.
+`infrastructure/db/schema.ts` defines the relay schema. `migrations.ts` runs idempotent forward migrations, so `relay.db` boots cleanly with data intact.

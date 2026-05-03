@@ -4,7 +4,7 @@ Two distinct substitution paths exist in the skill. Confusing them silently brea
 
 ## VPS-side templates (install-time substitution)
 
-All files in `references/` **except** `dispatcher.md.template` use `${VAR}` placeholders compatible with `envsubst`. The skill reads each, substitutes placeholders in-memory, then ssh-uploads to the VPS. A sufficiently-skilled operator can also run the workflow themselves with `envsubst < references/X > /tmp/X` and `scp`.
+All files in `references/` **except** `dispatcher.md.template` use `${VAR}` placeholders for `envsubst`. The skill reads each, substitutes placeholders in-memory, then ssh-uploads to the VPS. A sufficiently-skilled operator can also run the workflow themselves with `envsubst < references/X > /tmp/X` and `scp`.
 
 ### Pass an explicit allow-list to envsubst
 

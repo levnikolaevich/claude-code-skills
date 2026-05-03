@@ -2,7 +2,7 @@
 
 # References — ln-030-vps-bootstrap artifact templates
 
-Template files referenced by `SKILL.md`. Most use `${VAR}` placeholders compatible with `envsubst` for **install-time substitution**. The operator-side dispatcher template uses **runtime** `.env.local` reading instead — see notes below.
+Template files referenced by `SKILL.md`. Most use `${VAR}` placeholders for **install-time `envsubst` substitution**. The operator-side dispatcher template uses **runtime** `.env.local` reading instead — see notes below.
 
 ## Variable model
 
@@ -70,7 +70,7 @@ VPS_AGENT_SKILLS_PLUGINS=<agile-workflow-or-list>
 
 ## Telegram bridge architecture (v6 Node.js, Step 7c)
 
-`relay-bot/` is a systemd-managed Node.js/TypeScript service that owns the entire god-session state machine: Telegram ingress, durable delivery into tmux, session controls, hook ingestion, and outbound Telegram mirroring. Replaces the bun-based Channels plugin (deprecated due to silent-death bugs in `anthropics/claude-plugins-official` issues #788, #917, #1478).
+`relay-bot/` is a systemd-managed Node.js/TypeScript service that owns the entire god-session state machine: Telegram ingress, durable delivery into tmux, session controls, hook ingestion, and outbound Telegram mirroring.
 
 The Telegram bridge accepts plain text, media captions, photos, image documents, and general documents. Voice, audio, video, animations, stickers, and other unsupported media without usable text are recorded as `messages(status='rejected')` and receive an explanatory reply.
 

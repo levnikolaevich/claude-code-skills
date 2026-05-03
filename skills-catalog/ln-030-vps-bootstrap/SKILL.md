@@ -99,7 +99,7 @@ Run steps in order. Each step is idempotent — verify-then-install pattern. Opt
 
 ### 1. Base packages
 
-Install system tools needed for the next steps. `bubblewrap` is for Codex CLI Linux sandbox; `python3` remains available for native npm build tooling used by some dependencies.
+Install system tools needed for the next steps. `bubblewrap` is for Codex CLI Linux sandbox; `python3` is kept only as generic native npm build tooling, not as relay runtime.
 
 ```bash
 DEBIAN_FRONTEND=noninteractive apt-get install -y \
@@ -363,7 +363,7 @@ sudo -u ${BOT_USER} ls -la /home/${BOT_USER}/.claude/cache/usage.json   # expect
 
 **MANDATORY READ:** Load `references/README.md` (Telegram bridge architecture v6, Communication policy 5 layers L1–L5, runtime files).
 
-The bridge is a separate systemd-managed Node.js service (`${SERVICE_PREFIX}-relay-bot.service`) owning the entire god-session state machine. It preserves the Python relay's public contracts while using TypeScript, grammY, Fastify, and better-sqlite3. The deprecated Channels-plugin path (`claude --channels plugin:telegram@claude-plugins-official`) silently dies and is not respawned ([anthropics/claude-plugins-official#788](https://github.com/anthropics/claude-plugins-official/issues/788), [#917](https://github.com/anthropics/claude-plugins-official/issues/917), [#1478](https://github.com/anthropics/claude-plugins-official/issues/1478)) — we replace it.
+The bridge is a separate systemd-managed Node.js service (`${SERVICE_PREFIX}-relay-bot.service`) owning the entire god-session state machine. It keeps the public relay contracts stable while using TypeScript, grammY, Fastify, and better-sqlite3.
 
 Note: scheduling (the `${SERVICE_PREFIX}-dispatch.timer` that replaces the fragile in-session `/loop`) is part of Step 7 — installed regardless of Telegram. It only depends on tmux + systemd, not on the relay-bot.
 
@@ -413,7 +413,7 @@ cat /var/lib/${PROJECT_NAME}/sessions-dir.path   # /home/${BOT_USER}/.claude/pro
 # End-to-end: operator sends "hi" → claude responds in pane → outbox row sent → operator sees reply in Telegram
 ```
 
-The pane should NOT contain `Listening for channel messages from: plugin:telegram@...` — that's the deprecated Channels-plugin path.
+The pane should show the normal Claude Code TUI, with Telegram ingress handled by `${SERVICE_PREFIX}-relay-bot.service`.
 
 **Sessions-feature runtime files (created at runtime, not by skill):**
 
@@ -548,7 +548,7 @@ End-to-end after install + manual follow-up:
 | /home/${BOT_USER}/.claude/cache/usage.json | populated within 30s of restart |
 | Telegram bidirectional smoke      | bot replies to /usage with %    |
 | ${TARGET_REPO_PATH}/.claude/commands/dispatcher.md | copied verbatim; only `${VPS_*}` placeholders remain |
-| ${TARGET_REPO_PATH}/.env.local    | 9 `VPS_*` keys present         |
+| ${TARGET_REPO_PATH}/.env.local    | 11 `VPS_*` keys present        |
 | `/dispatcher status` (from operator's repo) | reports healthy |
 ```
 
@@ -603,7 +603,7 @@ DoD covers every step of the workflow. Each unchecked item points back to the st
 
 ### Operator dispatcher (Step 9, LOCAL machine)
 - [ ] `${TARGET_REPO_PATH}/.claude/commands/dispatcher.md` exists with only `${VPS_*}` placeholders remaining
-- [ ] `${TARGET_REPO_PATH}/.env.local` has all 9 `VPS_*` keys; `.env.local` is git-ignored
+- [ ] `${TARGET_REPO_PATH}/.env.local` has all 11 `VPS_*` keys; `.env.local` is git-ignored
 - [ ] `/dispatcher status` reports healthy; `/dispatcher audit 3` returns last 3 runs
 
 ---
@@ -621,7 +621,6 @@ DoD covers every step of the workflow. Each unchecked item points back to the st
 
 ## Related Documentation
 
-- [Claude Code Channels](https://code.claude.com/docs/en/channels.md) — the Channels-plugin path Step 7c deliberately avoids; useful for understanding the trade-off
 - [Claude Code statusLine](https://code.claude.com/docs/en/statusline) — `rate_limits` JSON schema (Step 7b)
 - [Claude Code hooks](https://code.claude.com/docs/en/hooks) — UserPromptSubmit, Stop, SessionStart, PostCompact, StopFailure (Step 7c)
 - [Codex CLI config](https://github.com/openai/codex/blob/main/docs/config.md) — `notify`, `mcp_servers`

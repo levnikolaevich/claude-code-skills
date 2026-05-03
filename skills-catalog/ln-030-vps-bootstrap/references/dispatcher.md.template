@@ -22,6 +22,8 @@ Before running any subcommand, source `.env.local` from the current repo:
 : "${VPS_PROJECT_DIR:?missing VPS_PROJECT_DIR in .env.local}"
 : "${VPS_RELAY_HOOK_PORT:?missing VPS_RELAY_HOOK_PORT in .env.local}"
 : "${VPS_DISPATCH_COMMAND_NAME:?missing VPS_DISPATCH_COMMAND_NAME in .env.local}"
+: "${VPS_AGENT_SKILLS_DIR:?missing VPS_AGENT_SKILLS_DIR in .env.local}"
+: "${VPS_AGENT_SKILLS_PLUGINS:?missing VPS_AGENT_SKILLS_PLUGINS in .env.local}"
 ```
 
 Required keys in `.env.local` (this file is git-ignored, never commits real values):
@@ -32,11 +34,13 @@ Required keys in `.env.local` (this file is git-ignored, never commits real valu
 | `VPS_SSH_KEY` | `~/.ssh/myproj_vps` | Path to private key |
 | `VPS_BOT_USER` | `agent-bot` | Linux user owning the workload (typically UID 1000) |
 | `VPS_PROJECT_NAME` | `myproj-skills-lab` | State/config dir name: `/etc/<NAME>/`, `/var/lib/<NAME>/`, `/var/log/<NAME>-god.log` |
-| `VPS_SERVICE_PREFIX` | `myproj` | systemd unit + binary + tmux prefix: `<PFX>-god.service`, `<PFX>-dispatch.timer`, `/usr/local/bin/<PFX>-god` |
+| `VPS_SERVICE_PREFIX` | `myproj` | systemd unit + binary + tmux prefix: `<PFX>-god.service`, `<PFX>-dispatch.timer`, `<PFX>-agent-update.timer`, `/usr/local/bin/<PFX>-god` |
 | `VPS_PROJECT_DIR` | `/opt/myproj` | Cloned repo root on VPS |
 | `VPS_GITHUB_REPO` | `me/myproj` | `<owner>/<repo>` (used in `queue`) |
 | `VPS_RELAY_HOOK_PORT` | `9999` | Localhost HTTP port for the project relay-bot |
 | `VPS_DISPATCH_COMMAND_NAME` | `myproj-dispatch` | Slash command name injected by `${VPS_SERVICE_PREFIX}-dispatch.timer` |
+| `VPS_AGENT_SKILLS_DIR` | `/opt/myproj-agent-skills` | Local clone of `levnikolaevich/claude-code-skills` on the VPS |
+| `VPS_AGENT_SKILLS_PLUGINS` | `agile-workflow` | Selected marketplace plugins (`agile-workflow`, `all`, or comma-list) |
 
 > Keep `VPS_SERVICE_PREFIX` explicit. Set it equal to `VPS_PROJECT_NAME` unless the deployment intentionally separates state/config name from service/binary prefix.
 
@@ -48,6 +52,8 @@ Required keys in `.env.local` (this file is git-ignored, never commits real valu
 | Repo | `${VPS_GITHUB_REPO}` cloned at `${VPS_PROJECT_DIR}` |
 | systemd unit (god) | `${VPS_SERVICE_PREFIX}-god.service` (Restart=always, MemoryMax=2G) |
 | systemd unit (scheduler) | `${VPS_SERVICE_PREFIX}-dispatch.timer` + `.service` (hourly :07) |
+| systemd unit (maintenance) | `${VPS_SERVICE_PREFIX}-agent-update.timer` + `.service` (nightly CLI update) |
+| Skills marketplace repo | `${VPS_AGENT_SKILLS_DIR}` (`${VPS_AGENT_SKILLS_PLUGINS}` selected) |
 | tmux session | `${VPS_SERVICE_PREFIX}-god` |
 | God wrapper | `/usr/local/bin/${VPS_SERVICE_PREFIX}-god` |
 | Relay-bot | `${VPS_SERVICE_PREFIX}-relay-bot.service` (HTTP API on 127.0.0.1:${VPS_RELAY_HOOK_PORT}, SQLite at `/var/lib/${VPS_PROJECT_NAME}/relay.db`) |
@@ -64,7 +70,7 @@ All SSH calls use `mcp__hex-ssh__remote-ssh` with `host=${VPS_HOST}`, `user=root
 
 | Command | What it does |
 |---|---|
-| `status` | Health: systemd units, tmux session, claude proc, relay-bot, queue, GH App, RAM, recent dispatches |
+| `status` | Health: systemd units, timers, tmux session, claude proc, relay-bot, queue, GH App, RAM, recent dispatches |
 | `run-now` | Inject `/${VPS_DISPATCH_COMMAND_NAME}` into the live tmux pane (immediate dispatch run, in addition to hourly timer) |
 | `refresh-god` | Kill tmux session + restart god service. Fresh claude session (memories persist via SessionStart hook) |
 | `attach` | Print SSH command for interactive tmux attach |
@@ -83,9 +89,14 @@ All SSH calls use `mcp__hex-ssh__remote-ssh` with `host=${VPS_HOST}`, `user=root
 
 ```bash
 mcp__hex-ssh__remote-ssh:
-  "echo '=== systemctl ===' && systemctl status ${VPS_SERVICE_PREFIX}-god.service ${VPS_SERVICE_PREFIX}-dispatch.timer ${VPS_SERVICE_PREFIX}-relay-bot.service --no-pager | head -30 ; \
+  "echo '=== systemctl ===' && systemctl status ${VPS_SERVICE_PREFIX}-god.service ${VPS_SERVICE_PREFIX}-dispatch.timer ${VPS_SERVICE_PREFIX}-agent-update.timer ${VPS_SERVICE_PREFIX}-relay-bot.service --no-pager | head -40 ; \
+   echo '=== timers ===' && systemctl list-timers ${VPS_SERVICE_PREFIX}-dispatch.timer ${VPS_SERVICE_PREFIX}-agent-update.timer --no-pager ; \
    echo '=== tmux ===' && sudo -u ${VPS_BOT_USER} tmux ls 2>&1 ; \
    echo '=== claude proc ===' && pgrep -af 'claude --dangerously' | head -2 ; \
+   echo '=== skills repo ===' && sudo -u ${VPS_BOT_USER} bash -lc 'cd ${VPS_AGENT_SKILLS_DIR} && git status --short && git rev-parse --abbrev-ref HEAD && git rev-parse --short HEAD' ; \
+   echo '=== claude plugins ===' && sudo -u ${VPS_BOT_USER} bash -lc '. /home/${VPS_BOT_USER}/.nvm/nvm.sh && claude plugin list --json' | jq -c . ; \
+   echo '=== codex plugins ===' && sudo -u ${VPS_BOT_USER} grep -E 'levnikolaevich-skills-marketplace|@openai-curated' /home/${VPS_BOT_USER}/.codex/config.toml ; \
+   echo '=== last agent update ===' && systemctl show ${VPS_SERVICE_PREFIX}-agent-update.service -p Result -p ExecMainStatus -p ActiveEnterTimestamp --no-pager ; \
    echo '=== relay health ===' && curl -fsS http://127.0.0.1:${VPS_RELAY_HOOK_PORT}/health | jq -c . ; \
    echo '=== queue ===' && sudo -u ${VPS_BOT_USER} bash -lc 'export GH_TOKEN=\$(${VPS_SERVICE_PREFIX}-mint-gh-token); gh issue list --repo ${VPS_GITHUB_REPO} --state open --json labels --jq \"[.[] | .labels[].name] | group_by(.) | map({label: .[0], count: length}) | .[]\"' ; \
    echo '=== recent dispatches ===' && curl -fsS http://127.0.0.1:${VPS_RELAY_HOOK_PORT}/dispatch/recent?n=3 | jq '.runs[] | {id, ts_started, status, issue_number, pr_number}' ; \
@@ -160,12 +171,16 @@ mcp__hex-ssh__remote-ssh:
    test -r /home/${VPS_BOT_USER}/.claude/commands/${VPS_DISPATCH_COMMAND_NAME}.md || echo '${VPS_DISPATCH_COMMAND_NAME}.md MISSING' ; \
    test -r /etc/systemd/system/${VPS_SERVICE_PREFIX}-god.service || echo 'god service MISSING' ; \
    test -r /etc/systemd/system/${VPS_SERVICE_PREFIX}-dispatch.timer || echo 'dispatch timer MISSING' ; \
+   test -r /etc/systemd/system/${VPS_SERVICE_PREFIX}-agent-update.timer || echo 'agent update timer MISSING' ; \
+   test -x /usr/local/bin/${VPS_SERVICE_PREFIX}-agent-update || echo 'agent update script MISSING' ; \
+   test -r ${VPS_AGENT_SKILLS_DIR}/.claude-plugin/marketplace.json || echo 'Claude marketplace repo MISSING' ; \
+   test -r ${VPS_AGENT_SKILLS_DIR}/.agents/plugins/marketplace.json || echo 'Codex marketplace repo MISSING' ; \
    test -f /opt/${VPS_SERVICE_PREFIX}-relay-bot/dist/index.js || echo 'relay-bot build MISSING' ; \
    install -d -o ${VPS_BOT_USER} -g ${VPS_BOT_USER} -m 755 /var/lib/${VPS_PROJECT_NAME} && \
    touch /var/log/${VPS_PROJECT_NAME}-god.log && chown ${VPS_BOT_USER}:${VPS_BOT_USER} /var/log/${VPS_PROJECT_NAME}-god.log && \
    loginctl enable-linger ${VPS_BOT_USER} && \
    systemctl daemon-reload && \
-   systemctl enable --now ${VPS_SERVICE_PREFIX}-god.service ${VPS_SERVICE_PREFIX}-dispatch.timer ${VPS_SERVICE_PREFIX}-relay-bot.service && \
+   systemctl enable --now ${VPS_SERVICE_PREFIX}-god.service ${VPS_SERVICE_PREFIX}-dispatch.timer ${VPS_SERVICE_PREFIX}-agent-update.timer ${VPS_SERVICE_PREFIX}-relay-bot.service && \
    echo installed"
 ```
 
@@ -213,6 +228,8 @@ Forget: `POST /memory/forget {"memory_id":N}` or `{"tag_match":"..."}`.
 | tmux session missing while service active | Restart race window 0-15s. | Wait 15s and retry. If persistent, `journalctl -u ${VPS_SERVICE_PREFIX}-god.service -n 50`. |
 | Telegram inbound not getting replies | Relay-bot down OR hooks misconfigured. | `curl http://127.0.0.1:${VPS_RELAY_HOOK_PORT}/health` (relay), check journal of ${VPS_SERVICE_PREFIX}-relay-bot.service. Verify settings.json hooks block exists. |
 | Dispatch runs not firing hourly | `${VPS_SERVICE_PREFIX}-dispatch.timer` not enabled. | `systemctl list-timers --no-pager` to verify; `systemctl enable --now ${VPS_SERVICE_PREFIX}-dispatch.timer` if missing. |
+| Nightly CLI/plugin updates not running | `${VPS_SERVICE_PREFIX}-agent-update.timer` not enabled or unit missing. | `systemctl list-timers ${VPS_SERVICE_PREFIX}-agent-update.timer --no-pager`; re-run ln-030 Step 7 if missing. |
+| Claude/Codex skills missing | Step 5c was skipped or `VPS_AGENT_SKILLS_DIR` points to the wrong clone. | Re-run ln-030 Step 5c; verify manifests under `${VPS_AGENT_SKILLS_DIR}` and selected plugin entries in `~/.codex/config.toml`. |
 | Relay outbox accumulating queued | Telegram outage. | `/dispatcher status` shows queue depth. Outbox auto-retries with backoff. |
 
 ---

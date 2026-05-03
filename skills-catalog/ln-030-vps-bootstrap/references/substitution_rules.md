@@ -11,7 +11,7 @@ All files in `references/` **except** `dispatcher.md.template` use `${VAR}` plac
 `envsubst` without an explicit allow-list will substitute **every** `${...}` it sees, including bash variables that should remain literal (e.g. `${SESSIONS_DIR}`, `${SID}` in `god-session.sh`, `${VPS_*}` in operator-side files). Always use the allow-list form:
 
 ```bash
-envsubst '$PROJECT_NAME $PROJECT_DIR $SERVICE_PREFIX $BOT_USER $RELAY_HOOK_PORT $DISPATCH_COMMAND_NAME $TELEGRAM_CHAT_ID' \
+envsubst '$PROJECT_NAME $PROJECT_DIR $SERVICE_PREFIX $BOT_USER $RELAY_HOOK_PORT $DISPATCH_COMMAND_NAME $TELEGRAM_CHAT_ID $AGENT_SKILLS_REPO_URL $AGENT_SKILLS_REF $AGENT_SKILLS_DIR $AGENT_SKILLS_PLUGINS' \
   < references/X > /tmp/X
 ```
 
@@ -20,6 +20,10 @@ envsubst '$PROJECT_NAME $PROJECT_DIR $SERVICE_PREFIX $BOT_USER $RELAY_HOOK_PORT 
 Forgetting `$DISPATCH_COMMAND_NAME` in the allow-list is the most common rendering bug. `god-session.sh` references it, the wrapper has `set -euo pipefail`, and any unsubstituted `${DISPATCH_COMMAND_NAME}` will trigger «unbound variable» on boot, sending civic-god into a systemd `Restart=always` loop.
 
 Always include it in the envsubst allow-list (default value `${SERVICE_PREFIX}-dispatch` if your project uses the prefixed convention, plain `dispatch` if not).
+
+### Why `$AGENT_SKILLS_*` matters
+
+`agent-update.sh` and `codex-config.toml.template` render the LevNikolaevich marketplace source, ref, install directory, and selected plugin list. Forgetting these variables leaves literal placeholders in the nightly update script or Codex config, so the VPS either fails fast or loads no usable marketplace plugins.
 
 ## Operator-side template (runtime resolution)
 

@@ -1,0 +1,12 @@
+[Unit]
+Description=Nightly Claude Code and Codex CLI update for ${SERVICE_PREFIX}
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+ExecStart=/usr/local/bin/${SERVICE_PREFIX}-agent-update
+TimeoutStartSec=30min
+StandardOutput=journal
+StandardError=journal

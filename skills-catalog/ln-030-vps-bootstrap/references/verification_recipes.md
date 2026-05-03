@@ -15,6 +15,47 @@ sudo -u ${BOT_USER} grep -E '^(model|model_reasoning_effort|approval_policy|sand
 #           approval_policy = "never", sandbox_mode = "danger-full-access"
 ```
 
+## Agent skills/plugins marketplace (Step 5c)
+
+```bash
+# Skills repo source
+sudo -i -u ${BOT_USER} bash -lc 'cd ${AGENT_SKILLS_DIR} && git status --short && git rev-parse --abbrev-ref HEAD && git rev-parse --short HEAD'
+# Expected: clean status, branch/ref matches AGENT_SKILLS_REF
+
+# Marketplace manifests + Codex adapters
+sudo -i -u ${BOT_USER} bash -lc 'cd ${AGENT_SKILLS_DIR} && test -r .claude-plugin/marketplace.json && test -r .agents/plugins/marketplace.json'
+sudo -i -u ${BOT_USER} bash -lc 'cd ${AGENT_SKILLS_DIR} && . /home/${BOT_USER}/.nvm/nvm.sh && node skills-catalog/shared/scripts/marketplace/sync-codex-adapters.mjs validate'
+
+# Claude marketplace/plugins
+sudo -i -u ${BOT_USER} bash -lc '. /home/${BOT_USER}/.nvm/nvm.sh && claude plugin list --json' | jq .
+# Expected: levnikolaevich-skills-marketplace and selected plugins, including agile-workflow by default
+
+# Codex marketplace/plugins: exactly one active marketplace block and selected plugin entries
+sudo -u ${BOT_USER} grep -Ec '^\[marketplaces\.levnikolaevich-skills-marketplace\]$' ~/.codex/config.toml
+# Expected: 1
+sudo -u ${BOT_USER} grep -E '^\[plugins\."(agile-workflow|[^"]+)@levnikolaevich-skills-marketplace"\]$' ~/.codex/config.toml
+```
+
+## Nightly agent updates (Step 7)
+
+```bash
+# Timer armed
+systemctl list-timers ${SERVICE_PREFIX}-agent-update.timer --no-pager
+# Expected: one active timer with next fire around 03:37 local time (+ randomized delay)
+
+# Manual smoke: updates CLIs + skills/plugins, verifies, then restarts god-session.
+systemctl start ${SERVICE_PREFIX}-agent-update.service
+journalctl -u ${SERVICE_PREFIX}-agent-update.service -n 120 --no-pager
+# Expected: claude update succeeds, Codex npm install succeeds, skills repo fast-forwards,
+#           marketplace validation passes, selected plugins update, version checks print both CLIs,
+#           then "restart requested for ${SERVICE_PREFIX}-god.service"
+
+sudo -i -u ${BOT_USER} bash -lc '. /home/${BOT_USER}/.nvm/nvm.sh && claude --version && codex --version'
+sudo -i -u ${BOT_USER} bash -lc 'cd ${AGENT_SKILLS_DIR} && git status --short && git rev-parse --short HEAD'
+systemctl status ${SERVICE_PREFIX}-god.service --no-pager
+# Expected: CLI versions print, skills repo is clean, and god-session is active after the maintenance restart.
+```
+
 ## Telegram bridge + sessions (Step 7c)
 
 ```bash
@@ -117,8 +158,9 @@ sudo -u ${BOT_USER} git config --global credential.helper
 grep -E '\${(?!VPS_)[A-Z_]+}' ${TARGET_REPO_PATH}/.claude/commands/dispatcher.md
 # Expected: empty output
 
-# .env.local has 9 VPS_* keys
+# .env.local has 11 VPS_* keys
 grep -c '^VPS_' ${TARGET_REPO_PATH}/.env.local
-# Expected: 9 (HOST, SSH_KEY, BOT_USER, PROJECT_NAME, SERVICE_PREFIX,
-#               PROJECT_DIR, GITHUB_REPO, RELAY_HOOK_PORT, DISPATCH_COMMAND_NAME)
+# Expected: 11 (HOST, SSH_KEY, BOT_USER, PROJECT_NAME, SERVICE_PREFIX,
+#                PROJECT_DIR, GITHUB_REPO, RELAY_HOOK_PORT, DISPATCH_COMMAND_NAME,
+#                AGENT_SKILLS_DIR, AGENT_SKILLS_PLUGINS)
 ```

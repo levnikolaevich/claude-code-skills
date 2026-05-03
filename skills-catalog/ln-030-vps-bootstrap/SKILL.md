@@ -43,7 +43,7 @@ The operator hands these values to Claude (in chat) before running the workflow.
 | Variable | Example | Used in |
 |---|---|---|
 | `PROJECT_NAME` | `myproj` | State/config dir name: `/etc/${PROJECT_NAME}/`, `/var/lib/${PROJECT_NAME}/`, `/var/log/${PROJECT_NAME}-god.log` |
-| `SERVICE_PREFIX` | `myproj` | systemd unit + binary + tmux prefix: `${SERVICE_PREFIX}-god.service`, `${SERVICE_PREFIX}-dispatch.timer`, `/usr/local/bin/${SERVICE_PREFIX}-god`, tmux session `${SERVICE_PREFIX}-god`. Set equal to `PROJECT_NAME` unless the deployment intentionally separates state/config name from service/binary prefix. |
+| `SERVICE_PREFIX` | `myproj` | systemd unit + binary + tmux prefix: `${SERVICE_PREFIX}-god.service`, `${SERVICE_PREFIX}-dispatch.timer`, `${SERVICE_PREFIX}-agent-update.timer`, `/usr/local/bin/${SERVICE_PREFIX}-god`, tmux session `${SERVICE_PREFIX}-god`. Set equal to `PROJECT_NAME` unless the deployment intentionally separates state/config name from service/binary prefix. |
 | `PROJECT_DIR` | `/opt/myproj` | Working directory on the VPS where the agent runs |
 | `BOT_USER` | `agent-bot` | Linux user that owns the workload |
 | `RELAY_HOOK_PORT` | `9999` | Project-local relay-bot HTTP port on `127.0.0.1`; override for a second project on the same VPS |
@@ -53,7 +53,7 @@ The operator hands these values to Claude (in chat) before running the workflow.
 | `TARGET_REPO_PATH` | `D:\Development\me\myproj` | Local path to the operator's project repo (where `.claude/commands/dispatcher.md` will be rendered) |
 | `GITHUB_REPO` | `me/myproj` | `<owner>/<repo>` for the project |
 
-Defaults before rendering: if `RELAY_HOOK_PORT` is unset, set it to `9999`; if `DISPATCH_COMMAND_NAME` is unset, set it to `${SERVICE_PREFIX}-dispatch`. These are still rendered values, not hardcoded template constants.
+Defaults before rendering: if `RELAY_HOOK_PORT` is unset, set it to `9999`; if `DISPATCH_COMMAND_NAME` is unset, set it to `${SERVICE_PREFIX}-dispatch`; if `AGENT_SKILLS_REPO_URL` is unset, set it to `https://github.com/levnikolaevich/claude-code-skills.git`; if `AGENT_SKILLS_REF` is unset, set it to `master`; if `AGENT_SKILLS_DIR` is unset, set it to `/opt/${SERVICE_PREFIX}-agent-skills`; if `AGENT_SKILLS_PLUGINS` is unset, set it to `agile-workflow`. These are still rendered values, not hardcoded template constants.
 
 ### Optional (leave blank to skip the corresponding workflow section)
 
@@ -64,6 +64,8 @@ Defaults before rendering: if `RELAY_HOOK_PORT` is unset, set it to `9999`; if `
 | `CF_API_TOKEN`, `CF_ZONE_NAME` | Cloudflare DNS / Pages ops | Step 8b (Cloudflare integration) |
 | `REF_API_KEY` | ref.tools MCP server | Server omitted from Step 5b |
 | `CONTEXT7_API_KEY` | context7 MCP server | Server omitted from Step 5b |
+| `AGENT_SKILLS_PLUGINS` | Claude + Codex plugins from `levnikolaevich/claude-code-skills`; `agile-workflow` by default, `all` or comma-list when explicit | Default `agile-workflow` |
+| `AGENT_SKILLS_REPO_URL`, `AGENT_SKILLS_REF`, `AGENT_SKILLS_DIR` | Override the skills marketplace source/ref/install dir | Defaults above |
 
 ### Substitution mechanism
 
@@ -72,7 +74,7 @@ Defaults before rendering: if `RELAY_HOOK_PORT` is unset, set it to `9999`; if `
 VPS-side templates use install-time `envsubst`; the operator-side `dispatcher.md.template` is copied **verbatim** (do NOT envsubst). Always pass an explicit allow-list to `envsubst`, and **always include `$DISPATCH_COMMAND_NAME`** — forgetting it sends civic-god into a `Restart=always` loop on boot:
 
 ```bash
-envsubst '$PROJECT_NAME $PROJECT_DIR $SERVICE_PREFIX $BOT_USER $RELAY_HOOK_PORT $DISPATCH_COMMAND_NAME $TELEGRAM_CHAT_ID' \
+envsubst '$PROJECT_NAME $PROJECT_DIR $SERVICE_PREFIX $BOT_USER $RELAY_HOOK_PORT $DISPATCH_COMMAND_NAME $TELEGRAM_CHAT_ID $AGENT_SKILLS_REPO_URL $AGENT_SKILLS_REF $AGENT_SKILLS_DIR $AGENT_SKILLS_PLUGINS' \
   < references/X > /tmp/X
 ```
 
@@ -183,25 +185,71 @@ sudo -u ${BOT_USER} bash -lc 'claude mcp add --transport http -s user context7 h
 sudo -u ${BOT_USER} bash -lc 'claude mcp list'
 ```
 
-**Codex side:** render [`references/codex-config.toml.template`](references/codex-config.toml.template) with substitutions (uncomment the MCP block whose key is set), upload to `/home/${BOT_USER}/.codex/config.toml`. `codex mcp add` doesn't accept custom headers, so we write the file directly.
+**Codex side:** render [`references/codex-config.toml.template`](references/codex-config.toml.template) with substitutions (uncomment the MCP block whose key is set and enable the selected `AGENT_SKILLS_PLUGINS` entries), upload to `/home/${BOT_USER}/.codex/config.toml`. `codex mcp add` doesn't accept custom headers, so we write the file directly.
 
 The template pins **headless-agent defaults** verified against the [Codex config reference](https://developers.openai.com/codex/config-reference): `model = "gpt-5.5"`, `model_reasoning_effort = "xhigh"`, `approval_policy = "never"`, `sandbox_mode = "danger-full-access"`. This eliminates interactive permission prompts and grants full filesystem + network. Only safe inside an isolated VPS dedicated to this workload. Codex still asks the operator via the `notify` script (Telegram); what's eliminated is the *TUI approval popup*, not user-facing communication.
 
 **Verify:** `sudo -u ${BOT_USER} bash -lc 'codex mcp list'` — both servers show as configured.
+
+### 5c. Agent skills/plugins marketplace (Claude + Codex)
+
+Install this repository's marketplace under the dedicated VPS bot user. This repeats the `ln-013-config-syncer` marketplace boundary for the VPS: install `agile-workflow` by default; install optional plugins only when `AGENT_SKILLS_PLUGINS` explicitly names them or is `all`.
+
+```bash
+install -d -o ${BOT_USER} -g ${BOT_USER} -m 755 ${AGENT_SKILLS_DIR}
+if [ ! -d "${AGENT_SKILLS_DIR}/.git" ]; then
+  sudo -i -u ${BOT_USER} git clone --branch ${AGENT_SKILLS_REF} ${AGENT_SKILLS_REPO_URL} ${AGENT_SKILLS_DIR}
+else
+  sudo -i -u ${BOT_USER} bash -lc 'cd ${AGENT_SKILLS_DIR} && git fetch --prune && git checkout ${AGENT_SKILLS_REF} && git pull --ff-only'
+fi
+
+sudo -i -u ${BOT_USER} bash -lc 'cd ${AGENT_SKILLS_DIR} && test -r .claude-plugin/marketplace.json && test -r .agents/plugins/marketplace.json'
+sudo -i -u ${BOT_USER} bash -lc 'cd ${AGENT_SKILLS_DIR} && . /home/${BOT_USER}/.nvm/nvm.sh && node skills-catalog/shared/scripts/marketplace/sync-codex-adapters.mjs validate'
+
+# Claude marketplace + selected plugins. Default selected plugin: agile-workflow.
+SELECTED_PLUGINS=$(
+  {
+    echo agile-workflow
+    if [ "${AGENT_SKILLS_PLUGINS}" = "all" ]; then
+      jq -r '.plugins[].name' "${AGENT_SKILLS_DIR}/.agents/plugins/marketplace.json"
+    else
+      printf '%s\n' "${AGENT_SKILLS_PLUGINS}" | tr ',' '\n'
+    fi
+  } | sed 's/^[[:space:]]*//; s/[[:space:]]*$//' | awk 'NF && !seen[$0]++'
+)
+
+sudo -i -u ${BOT_USER} bash -lc '. /home/${BOT_USER}/.nvm/nvm.sh && claude plugin marketplace add levnikolaevich/claude-code-skills || claude plugin marketplace update levnikolaevich-skills-marketplace'
+for plugin in ${SELECTED_PLUGINS}; do
+  jq -e --arg plugin "$plugin" '.plugins[] | select(.name == $plugin)' "${AGENT_SKILLS_DIR}/.agents/plugins/marketplace.json" >/dev/null
+  sudo -i -u ${BOT_USER} bash -lc ". /home/${BOT_USER}/.nvm/nvm.sh && claude plugin install ${plugin}@levnikolaevich-skills-marketplace --scope user || claude plugin update ${plugin}@levnikolaevich-skills-marketplace --scope user"
+done
+sudo -i -u ${BOT_USER} bash -lc '. /home/${BOT_USER}/.nvm/nvm.sh && claude plugin list --json'
+```
+
+Do not symlink Claude plugin roots into Codex. Codex uses the native `[marketplaces.levnikolaevich-skills-marketplace]` and plugin entries named `<name>@levnikolaevich-skills-marketplace` rendered in Step 5b.
+
+**Verify:**
+
+```bash
+sudo -i -u ${BOT_USER} bash -lc 'cd ${AGENT_SKILLS_DIR} && git status --short && git rev-parse --abbrev-ref HEAD && git rev-parse --short HEAD'
+sudo -i -u ${BOT_USER} bash -lc '. /home/${BOT_USER}/.nvm/nvm.sh && claude plugin list --json | jq .'
+sudo -i -u ${BOT_USER} grep -E 'levnikolaevich-skills-marketplace|agile-workflow' /home/${BOT_USER}/.codex/config.toml
+```
 
 ### 6. Final sanity (mimics cron environment via `sudo -i`)
 
 ```bash
 sudo -i -u ${BOT_USER} which claude codex node npm gh && \
 sudo -i -u ${BOT_USER} claude --version && \
-sudo -i -u ${BOT_USER} codex --version
+sudo -i -u ${BOT_USER} codex --version && \
+sudo -i -u ${BOT_USER} bash -lc 'cd ${AGENT_SKILLS_DIR} && git status --short'
 ```
 
 All four must resolve. If `node` is missing under `sudo -i`, step 4's `.profile` patch did not apply — re-run that block.
 
-### 7. God-session install (tmux + systemd + always-on Claude + scheduler)
+### 7. God-session install (tmux + systemd + always-on Claude + scheduler + maintenance)
 
-The runtime layer that makes the workload always-on. Six artifacts (all installed regardless of Telegram — scheduler and agent config are independent of the Telegram bridge):
+The runtime layer that makes the workload always-on. Nine artifacts (all installed regardless of Telegram — scheduler, nightly agent updates, and agent config are independent of the Telegram bridge):
 
 | Reference | Target | Owner | Mode |
 |---|---|---|---|
@@ -209,10 +257,13 @@ The runtime layer that makes the workload always-on. Six artifacts (all installe
 | [`references/god-session.service`](references/god-session.service) | `/etc/systemd/system/${SERVICE_PREFIX}-god.service` | root:root | 644 |
 | [`references/dispatch.timer`](references/dispatch.timer) | `/etc/systemd/system/${SERVICE_PREFIX}-dispatch.timer` | root:root | 644 |
 | [`references/dispatch.service`](references/dispatch.service) | `/etc/systemd/system/${SERVICE_PREFIX}-dispatch.service` | root:root | 644 |
+| [`references/agent-update.sh`](references/agent-update.sh) | `/usr/local/bin/${SERVICE_PREFIX}-agent-update` | root:root | 755 |
+| [`references/agent-update.service`](references/agent-update.service) | `/etc/systemd/system/${SERVICE_PREFIX}-agent-update.service` | root:root | 644 |
+| [`references/agent-update.timer`](references/agent-update.timer) | `/etc/systemd/system/${SERVICE_PREFIX}-agent-update.timer` | root:root | 644 |
 | [`references/dispatch.md`](references/dispatch.md) | `/home/${BOT_USER}/.claude/commands/${DISPATCH_COMMAND_NAME}.md` | `${BOT_USER}`:`${BOT_USER}` | 644 |
 | [`references/settings.agent-config.fragment.json`](references/settings.agent-config.fragment.json) | jq-merged into `/home/${BOT_USER}/.claude/settings.json` | `${BOT_USER}`:`${BOT_USER}` | 644 |
 
-For each template: read the file, substitute `${VAR}` placeholders, upload via `mcp__hex-ssh__ssh-write-chunk`, set ownership and mode. Note the rename when uploading the dispatch unit files (they're named `dispatch.timer`/`dispatch.service` in the repo for clarity, but land as `${SERVICE_PREFIX}-dispatch.*` on the VPS).
+For each template: read the file, substitute `${VAR}` placeholders (including `AGENT_SKILLS_*` for `agent-update.sh` and `codex-config.toml.template`), upload via `mcp__hex-ssh__ssh-write-chunk`, set ownership and mode. Note the rename when uploading the unit files (they're named `dispatch.*` / `agent-update.*` in the repo for clarity, but land as `${SERVICE_PREFIX}-dispatch.*` / `${SERVICE_PREFIX}-agent-update.*` on the VPS).
 
 **About `settings.agent-config.fragment.json`** — this fragment pins headless-agent defaults that must NOT depend on a TTY:
 
@@ -245,6 +296,7 @@ loginctl enable-linger ${BOT_USER}
 systemctl daemon-reload
 systemctl enable --now ${SERVICE_PREFIX}-god.service
 systemctl enable --now ${SERVICE_PREFIX}-dispatch.timer
+systemctl enable --now ${SERVICE_PREFIX}-agent-update.timer
 ```
 
 **Verify:**
@@ -252,9 +304,17 @@ systemctl enable --now ${SERVICE_PREFIX}-dispatch.timer
 ```bash
 systemctl status ${SERVICE_PREFIX}-god.service --no-pager | head -10
 systemctl list-timers ${SERVICE_PREFIX}-dispatch.timer --no-pager
+systemctl list-timers ${SERVICE_PREFIX}-agent-update.timer --no-pager
 sudo -u ${BOT_USER} tmux ls
 sudo -u ${BOT_USER} tmux capture-pane -t ${SERVICE_PREFIX}-god -p -S -200 | tail -40
 tail -10 /var/log/${PROJECT_NAME}-god.log
+
+# Nightly maintenance smoke: updates CLIs + skills/plugins, verifies, then restarts god-session.
+systemctl start ${SERVICE_PREFIX}-agent-update.service
+journalctl -u ${SERVICE_PREFIX}-agent-update.service -n 100 --no-pager
+sudo -i -u ${BOT_USER} bash -lc '. /home/${BOT_USER}/.nvm/nvm.sh && claude --version && codex --version'
+sudo -i -u ${BOT_USER} bash -lc 'cd ${AGENT_SKILLS_DIR} && git status --short && git rev-parse --short HEAD'
+systemctl status ${SERVICE_PREFIX}-god.service --no-pager | head -10
 ```
 
 Expected timeline:
@@ -262,6 +322,7 @@ Expected timeline:
 - t+1s: tmux session `${SERVICE_PREFIX}-god` exists.
 - t+5s: log `fresh session up; ${SERVICE_PREFIX}-dispatch.timer will inject /${DISPATCH_COMMAND_NAME} hourly`.
 - next `:07`: `${SERVICE_PREFIX}-dispatch.service` fires and tmux pane receives `/${DISPATCH_COMMAND_NAME}`.
+- nightly around 03:37 local time (+ up to 20m randomized delay): `${SERVICE_PREFIX}-agent-update.service` runs `claude update`, updates Codex to `@latest`, fast-forwards `${AGENT_SKILLS_DIR}`, updates selected Claude plugins, realigns Codex plugin config, verifies everything, then restarts `${SERVICE_PREFIX}-god.service`.
 - Telegram inbound (Step 7c, optional) is wired separately via `${SERVICE_PREFIX}-relay-bot.service`. The pane should NOT contain a `Listening for channel messages` line.
 
 ### 7b. `/usage` Telegram command — statusLine cache (only if `TELEGRAM_BOT_TOKEN` is set)
@@ -415,7 +476,7 @@ mkdir -p ${TARGET_REPO_PATH}/.claude/commands
 cp references/dispatcher.md.template ${TARGET_REPO_PATH}/.claude/commands/dispatcher.md
 ```
 
-**(b) Seed `.env.local`.** Append the 9 `VPS_*` keys to `${TARGET_REPO_PATH}/.env.local` (with the values from this skill's Configuration block). Skip any key already present.
+**(b) Seed `.env.local`.** Append the 11 `VPS_*` keys to `${TARGET_REPO_PATH}/.env.local` (with the values from this skill's Configuration block). Skip any key already present.
 
 ```bash
 cat >> ${TARGET_REPO_PATH}/.env.local <<EOF
@@ -428,6 +489,8 @@ VPS_PROJECT_DIR=${PROJECT_DIR}
 VPS_GITHUB_REPO=${GITHUB_REPO}
 VPS_RELAY_HOOK_PORT=${RELAY_HOOK_PORT}
 VPS_DISPATCH_COMMAND_NAME=${DISPATCH_COMMAND_NAME}
+VPS_AGENT_SKILLS_DIR=${AGENT_SKILLS_DIR}
+VPS_AGENT_SKILLS_PLUGINS=${AGENT_SKILLS_PLUGINS}
 EOF
 ```
 
@@ -435,7 +498,7 @@ Confirm `.env.local` is git-ignored (most projects already have `.env.*` in `.gi
 
 **Verify:**
 - `grep -E '\$\{(?!VPS_)[A-Z_]+\}' ${TARGET_REPO_PATH}/.claude/commands/dispatcher.md` — empty (only `${VPS_*}` placeholders remain; no other `${VAR}` should exist).
-- `grep -E '^VPS_(HOST|SSH_KEY|BOT_USER|PROJECT_NAME|SERVICE_PREFIX|PROJECT_DIR|GITHUB_REPO|RELAY_HOOK_PORT|DISPATCH_COMMAND_NAME)=' ${TARGET_REPO_PATH}/.env.local` — 9 lines.
+- `grep -E '^VPS_(HOST|SSH_KEY|BOT_USER|PROJECT_NAME|SERVICE_PREFIX|PROJECT_DIR|GITHUB_REPO|RELAY_HOOK_PORT|DISPATCH_COMMAND_NAME|AGENT_SKILLS_DIR|AGENT_SKILLS_PLUGINS)=' ${TARGET_REPO_PATH}/.env.local` — 11 lines.
 
 ---
 
@@ -474,9 +537,13 @@ End-to-end after install + manual follow-up:
 | Codex CLI                         | 0.x   (auth: ✓)               |
 | Node                              | v24.x.x                        |
 | gh CLI                            | 2.x   (auth via App: ✓)       |
+| `${AGENT_SKILLS_DIR}`             | clean clone, ref `${AGENT_SKILLS_REF}` |
+| Claude plugins                    | `agile-workflow` enabled by default |
+| Codex plugins                     | LevNikolaevich marketplace + selected plugins enabled |
 | ${BOT_USER} user                  | UID 1000                       |
 | ${SERVICE_PREFIX}-god.service     | active (running)               |
 | ${SERVICE_PREFIX}-dispatch.timer  | active (waiting), next fire armed |
+| ${SERVICE_PREFIX}-agent-update.timer | active (waiting), nightly fire armed |
 | tmux ${SERVICE_PREFIX}-god        | exists                         |
 | /home/${BOT_USER}/.claude/cache/usage.json | populated within 30s of restart |
 | Telegram bidirectional smoke      | bot replies to /usage with %    |
@@ -498,14 +565,18 @@ DoD covers every step of the workflow. Each unchecked item points back to the st
 - [ ] `which curl wget git jq sqlite3 gpg pipx python3 bwrap unzip tmux gh` — all paths resolved (Step 1+2)
 - [ ] `id ${BOT_USER}` returns UID; `.ssh/authorized_keys` mode 600; `loginctl show-user ${BOT_USER}` shows `Linger=yes` (Steps 3, 7)
 
-### Agents (Steps 4–6, 5b)
+### Agents (Steps 4–6, 5b, 5c)
 - [ ] `node --version`, `claude --version`, `codex --version` all OK; auth completed (Manual #1, #2)
 - [ ] Headless configs (Claude `settings.json` + Codex `config.toml`) match expected values per `references/verification_recipes.md`
 - [ ] If `REF_API_KEY` / `CONTEXT7_API_KEY`: `claude mcp list` and `codex mcp list` show the server
+- [ ] `${AGENT_SKILLS_DIR}` is a clean clone of `AGENT_SKILLS_REPO_URL` at `AGENT_SKILLS_REF`; marketplace manifests and Codex adapters validate
+- [ ] Claude marketplace `levnikolaevich-skills-marketplace` and selected plugins are installed under `${BOT_USER}` user scope
+- [ ] Codex config has exactly one active LevNikolaevich marketplace block and selected plugin entries
 
 ### God-session + scheduler (Step 7)
 - [ ] `${SERVICE_PREFIX}-god.service` active and tmux session exists
 - [ ] `${SERVICE_PREFIX}-dispatch.timer` active and armed (`systemctl list-timers`)
+- [ ] `${SERVICE_PREFIX}-agent-update.timer` active and armed; manual `${SERVICE_PREFIX}-agent-update.service` run updates Claude/Codex plus selected skills/plugins and restarts god-session only after successful checks
 - [ ] `/var/lib/${PROJECT_NAME}/` exists, mode 0700, owner `${BOT_USER}`
 - [ ] Pane footer shows model + effort + `bypass permissions on`
 

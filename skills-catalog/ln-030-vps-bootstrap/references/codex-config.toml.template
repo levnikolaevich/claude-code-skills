@@ -24,9 +24,11 @@ enabled = true
 [plugins."github@openai-curated"]
 enabled = true
 
-# OPTIONAL — uncomment any marketplace plugins you actually use.
-# [plugins."agile-workflow@levnikolaevich-skills-marketplace"]
-# enabled = true
+# BEGIN ln-030 managed LevNikolaevich marketplace
+[plugins."agile-workflow@levnikolaevich-skills-marketplace"]
+enabled = true
+# Enable additional entries during Step 5b rendering when AGENT_SKILLS_PLUGINS
+# is `all` or an explicit comma-list. Do not enable optional plugins silently.
 # [plugins."documentation-pipeline@levnikolaevich-skills-marketplace"]
 # enabled = true
 # [plugins."codebase-audit-suite@levnikolaevich-skills-marketplace"]
@@ -36,10 +38,11 @@ enabled = true
 # [plugins."optimization-suite@levnikolaevich-skills-marketplace"]
 # enabled = true
 
-# [marketplaces.levnikolaevich-skills-marketplace]
-# source_type = "git"
-# source = "https://github.com/levnikolaevich/claude-code-skills.git"
-# ref = "master"
+[marketplaces.levnikolaevich-skills-marketplace]
+source_type = "git"
+source = "${AGENT_SKILLS_REPO_URL}"
+ref = "${AGENT_SKILLS_REF}"
+# END ln-030 managed LevNikolaevich marketplace
 
 # OPTIONAL MCP servers — leave commented out if the corresponding ${VAR} is empty.
 # [mcp_servers.context7]

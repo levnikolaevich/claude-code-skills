@@ -1,7 +1,7 @@
 [Unit]
-Description=Inject /${DISPATCH_COMMAND_NAME} into ${SERVICE_PREFIX}-god tmux session
-Requires=${SERVICE_PREFIX}-god.service
-After=${SERVICE_PREFIX}-god.service
+Description=Inject /${DISPATCH_COMMAND_NAME} into the primary ${SERVICE_PREFIX} god tmux session
+Requires=${SERVICE_PREFIX}-god@${TELEGRAM_CHAT_ID}.service
+After=${SERVICE_PREFIX}-god@${TELEGRAM_CHAT_ID}.service
 
 [Service]
 Type=oneshot
@@ -22,6 +22,6 @@ ExecCondition=/bin/bash -c '\
     exit 1; \
   fi; \
   exit 0'
-ExecStart=/usr/bin/tmux -L ${SERVICE_PREFIX} send-keys -t ${SERVICE_PREFIX}-god "/${DISPATCH_COMMAND_NAME}" Enter
+ExecStart=/usr/bin/tmux -L ${SERVICE_PREFIX} send-keys -t ${SERVICE_PREFIX}-god-${TELEGRAM_CHAT_ID} "/${DISPATCH_COMMAND_NAME}" Enter
 StandardOutput=journal
 StandardError=journal

@@ -9,7 +9,7 @@ Template files referenced by `SKILL.md`. Most use `${VAR}` placeholders for **in
 | Variable | Used in template paths/content for | Notes |
 |---|---|---|
 | `${PROJECT_NAME}` | `/etc/${PROJECT_NAME}/`, `/var/lib/${PROJECT_NAME}/`, `/var/log/${PROJECT_NAME}-god.log` | State / config / log dir name |
-| `${SERVICE_PREFIX}` | `${SERVICE_PREFIX}-god.service`, `${SERVICE_PREFIX}-dispatch.timer/service`, `/usr/local/bin/${SERVICE_PREFIX}-god`, `/usr/local/bin/${SERVICE_PREFIX}-mint-gh-token`, tmux session `${SERVICE_PREFIX}-god`, tmux socket `${SERVICE_PREFIX}` | Per-project systemd unit + binary + tmux prefix. Set equal to `PROJECT_NAME` for new projects. `agent-update.service/timer` is system-wide and intentionally has no `SERVICE_PREFIX`. |
+| `${SERVICE_PREFIX}` | `${SERVICE_PREFIX}-god@.service`, `${SERVICE_PREFIX}-dispatch.timer/service`, `/usr/local/bin/${SERVICE_PREFIX}-god`, `/usr/local/bin/${SERVICE_PREFIX}-mint-gh-token`, tmux socket `${SERVICE_PREFIX}` | Per-project systemd unit + binary + tmux prefix. User panes are `${SERVICE_PREFIX}-god-<telegram_user_id>`. |
 | `${BOT_USER}` | `/home/${BOT_USER}/...`, owner of agent files | Linux user (typically UID 1000) |
 | `${PROJECT_DIR}` | working dir for the agent | Cloned repo path on VPS |
 | `${RELAY_HOOK_PORT}` | relay-bot localhost listener and Claude hook URLs | Default `9999`; override for a second project on the same VPS |
@@ -24,7 +24,8 @@ Template files referenced by `SKILL.md`. Most use `${VAR}` placeholders for **in
 | Template | VPS target | Owner | Mode | Required vars | Optional gating |
 |---|---|---|---|---|---|
 | `god-session.sh` | `/usr/local/bin/${SERVICE_PREFIX}-god` | root:root | 755 | `PROJECT_NAME`, `SERVICE_PREFIX`, `PROJECT_DIR`, `DISPATCH_COMMAND_NAME` | — |
-| `god-session.service` | `/etc/systemd/system/${SERVICE_PREFIX}-god.service` | root:root | 644 | `PROJECT_NAME`, `SERVICE_PREFIX`, `PROJECT_DIR`, `BOT_USER` | — |
+| `god-session.service` | `/etc/systemd/system/${SERVICE_PREFIX}-god@.service` | root:root | 644 | `PROJECT_NAME`, `SERVICE_PREFIX`, `PROJECT_DIR`, `BOT_USER` | — |
+| `agent-sandbox.sh` | `/usr/local/bin/${SERVICE_PREFIX}-agent-sandbox` | root:root | 755 | `PROJECT_NAME`, `SERVICE_PREFIX`, `PROJECT_DIR`, `BOT_USER`, `AGENT_SKILLS_DIR` | — |
 | `dispatch.timer` | `/etc/systemd/system/${SERVICE_PREFIX}-dispatch.timer` | root:root | 644 | `SERVICE_PREFIX`, `DISPATCH_COMMAND_NAME` | — (always installs) |
 | `dispatch.service` | `/etc/systemd/system/${SERVICE_PREFIX}-dispatch.service` | root:root | 644 | `SERVICE_PREFIX`, `BOT_USER`, `DISPATCH_COMMAND_NAME` | — (always installs) |
 | `agent-update.sh` | `/usr/local/bin/agent-update` | root:root | 755 | `BOT_USER`, `AGENT_SKILLS_REPO_URL`, `AGENT_SKILLS_REF`, `AGENT_SKILLS_DIR`, `AGENT_SKILLS_PLUGINS` | — (system-wide; always installs) |
@@ -87,7 +88,9 @@ Components:
 
 External `${SERVICE_PREFIX}-dispatch.timer` (systemd, installed in Step 7) replaces the in-session `/loop` (which was fragile across tmux/claude respawn). Hourly at `:07`, it fires `tmux -L ${SERVICE_PREFIX} send-keys -t ${SERVICE_PREFIX}-god "/${DISPATCH_COMMAND_NAME}" Enter`. The scheduler is independent of Telegram — it ships in Step 7 regardless.
 
-External `agent-update.timer` (systemd, installed in Step 7d) performs system-wide nightly host maintenance. It runs `claude update` and `npm i -g @openai/codex@latest` inside `${BOT_USER}`'s nvm environment, fast-forwards `${AGENT_SKILLS_DIR}`, updates selected Claude plugins from `levnikolaevich-skills-marketplace`, keeps the Codex managed marketplace block aligned, verifies versions/config, then restarts every enabled `*-god.service`. Failed updates do not restart running god-sessions.
+External `agent-update.timer` (systemd, installed in Step 7d) performs system-wide nightly host maintenance. It updates CLIs and plugins, verifies versions/config, then restarts active `*-god@*.service` user instances. Failed updates do not restart running god-sessions.
+
+`agent-sandbox.sh` is the work-plane boundary. Each god instance runs with `HOME=${PROJECT_DIR}/.agent-home/users/<telegram_user_id>`, so Claude JSONLs are project+user scoped. The shared VPS auth remains single: the sandbox bind-mounts only `~/.claude/.credentials.json` and `~/.codex/auth.json` read-only from `/home/${BOT_USER}`.
 
 ## Agent skills/plugins marketplace (Step 5c)
 
@@ -124,7 +127,7 @@ The relay-bot surfaces claude's progress to Telegram in 5 layers, each non-block
 - All scripts default to LF line endings. If editing on Windows, strip `\r` before upload: `sed -i 's/\r$//' <file>`.
 - `secrets.env.template` ships only variable names + `<placeholder>` markers — never real values.
 - `codex-config.toml.template` ships with the default LevNikolaevich marketplace/plugin block enabled and optional MCP server blocks commented out. Enable additional plugin entries only when `AGENT_SKILLS_PLUGINS` explicitly requests them.
-- `relay-bot/` builds on the VPS with Node 24: run `npm ci && npm run build && npm prune --omit=dev` in `/opt/${SERVICE_PREFIX}-relay-bot`. Do not commit or upload `dist/` or `node_modules/`.
-- After relay-bot source changes, use `relay_bot_redeploy.md`: upload source only, rebuild on VPS, prune devDependencies, restart `${SERVICE_PREFIX}-relay-bot.service`.
+- `relay-bot/` builds on the VPS with Node 24: run `npm ci && npm run build && ./node_modules/.bin/tsc --version` in `/opt/${SERVICE_PREFIX}-relay-bot`. Do not commit or upload `dist/` or `node_modules/`.
+- After relay-bot source changes, use `relay_bot_redeploy.md`: upload source only, rebuild on VPS with local devDependencies, restart `${SERVICE_PREFIX}-relay-bot.service`.
 - `dispatcher.md.template` is the only operator-side template. It's written verbatim to operator's local repo; configuration comes from `.env.local` at runtime.
 - The skill's substitution step is **install-time** for VPS-side templates (Claude reads template, replaceAll, ssh-uploads). Operator-side `dispatcher.md.template` is copied without substitution.

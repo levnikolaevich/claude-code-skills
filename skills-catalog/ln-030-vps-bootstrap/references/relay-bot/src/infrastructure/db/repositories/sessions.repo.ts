@@ -19,9 +19,9 @@ function nowTs(): number {
 export type SessionsRepo = ReturnType<typeof createSessionsRepo>;
 
 export function createSessionsRepo(db: Db) {
-  const closeOthers = db.prepare(
+  const closeOthersForOwner = db.prepare(
     "UPDATE sessions SET ended_at=?, end_reason='replaced' " +
-      "WHERE ended_at IS NULL AND session_id != ?"
+      "WHERE ended_at IS NULL AND session_id != ? AND created_by_user_id = ?"
   );
   const insertIgnore = db.prepare(
     "INSERT OR IGNORE INTO sessions " +
@@ -38,13 +38,19 @@ export function createSessionsRepo(db: Db) {
   const lastActive = db.prepare(
     "SELECT session_id FROM sessions WHERE ended_at IS NULL " + "ORDER BY started_at DESC LIMIT 1"
   );
+  const lastActiveForOwner = db.prepare(
+    "SELECT session_id FROM sessions WHERE ended_at IS NULL AND created_by_user_id = ? " +
+      "ORDER BY started_at DESC LIMIT 1"
+  );
   const markEnded = db.prepare("UPDATE sessions SET ended_at=?, end_reason=? WHERE session_id=?");
   const cwdFor = db.prepare("SELECT cwd FROM sessions WHERE session_id=? LIMIT 1");
 
   return {
     upsert(args: SessionUpsertArgs): void {
       const ts = nowTs();
-      closeOthers.run(ts, args.sessionId);
+      if (args.createdByUserId !== undefined && args.createdByUserId !== null) {
+        closeOthersForOwner.run(ts, args.sessionId, args.createdByUserId);
+      }
       insertIgnore.run(
         args.sessionId,
         ts,
@@ -79,8 +85,11 @@ export function createSessionsRepo(db: Db) {
       }
       return out;
     },
-    lastActiveSid(): string | null {
-      const row = lastActive.get() as Record<string, unknown> | undefined;
+    lastActiveSid(ownerUserId?: number | null): string | null {
+      const row =
+        ownerUserId === undefined || ownerUserId === null
+          ? (lastActive.get() as Record<string, unknown> | undefined)
+          : (lastActiveForOwner.get(ownerUserId) as Record<string, unknown> | undefined);
       return row ? String(row.session_id) : null;
     },
     markEnded(sessionId: string, reason: string): void {

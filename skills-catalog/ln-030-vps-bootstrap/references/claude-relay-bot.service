@@ -1,10 +1,9 @@
 [Unit]
-Description=Claude relay bot — Telegram bridge + sessions UI for ${SERVICE_PREFIX} god-session
-After=network-online.target ${SERVICE_PREFIX}-god.service
+Description=Claude relay bot - Telegram bridge + per-user sessions UI for ${SERVICE_PREFIX}
+After=network-online.target
 Wants=network-online.target
-# Relay is intentionally independent from ${SERVICE_PREFIX}-god.service. It must
-# survive god-session restarts triggered by /new_session or [Resume] and keep
-# queued inbound Telegram text durable until tmux is ready again.
+# Relay starts ${SERVICE_PREFIX}-god@<telegram_user_id>.service on demand and
+# keeps queued inbound Telegram text durable until that user's tmux pane is ready.
 
 [Service]
 Type=simple
@@ -23,19 +22,15 @@ RestartSec=15
 StandardOutput=journal
 StandardError=journal
 
-# Resource caps for Node runtime + native SQLite.
 MemoryMax=256M
 CPUQuota=50%
 
-# Hardening: keep the Telegram ingress process tightly sandboxed.
-# Mitigates blast radius if the bot token leaks: the relay process is the
-# only path from Telegram into the god-session, so it must be tightly sandboxed.
-NoNewPrivileges=true
+# Required for sudo -n systemctl start/is-active ${SERVICE_PREFIX}-god@*.service.
+# Bootstrap must install a sudoers fragment restricted to this service prefix.
+NoNewPrivileges=false
 ProtectSystem=strict
 ProtectHome=read-only
-# State dir is the single writable location (atomic command file, sessions-dir.path,
-# last-god-error.json, relay.db). /tmp/tmux-<UID> needed for tmux socket.
-ReadWritePaths=/var/lib/${PROJECT_NAME} /tmp
+ReadWritePaths=/var/lib/${PROJECT_NAME} /tmp ${PROJECT_DIR}/.agent-home/users
 RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
 SystemCallArchitectures=native
 LockPersonality=true
@@ -43,8 +38,7 @@ RestrictRealtime=true
 ProtectKernelTunables=true
 ProtectKernelModules=true
 ProtectControlGroups=true
-# IMPORTANT: do NOT enable PrivateTmp — relay needs to share /tmp/tmux-<UID>
-# socket with the ${SERVICE_PREFIX}-god service to send-keys into the same pane.
+# Do not enable PrivateTmp: relay shares /tmp/tmux-<UID> with god@* panes.
 
 [Install]
 WantedBy=multi-user.target

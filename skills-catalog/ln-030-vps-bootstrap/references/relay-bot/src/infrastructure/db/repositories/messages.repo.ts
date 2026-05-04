@@ -38,8 +38,9 @@ export type MessagesRepo = ReturnType<typeof createMessagesRepo>;
 
 export function createMessagesRepo(db: Db) {
   const insertInbound = db.prepare(
-    "INSERT INTO messages (ts, direction, kind, status, text, tg_chat_id, tg_msg_id, next_attempt_at) " +
-      "VALUES (?, 'inbound', 'text', 'queued', ?, ?, ?, ?)"
+    "INSERT INTO messages " +
+      "(ts, direction, kind, status, text, tg_chat_id, tg_msg_id, from_user_id, next_attempt_at) " +
+      "VALUES (?, 'inbound', 'text', 'queued', ?, ?, ?, ?, ?)"
   );
   const insertRejected = db.prepare(
     "INSERT INTO messages (ts, direction, kind, status, text, tg_chat_id, tg_msg_id, error) " +
@@ -70,9 +71,9 @@ export function createMessagesRepo(db: Db) {
   );
 
   return {
-    insertInbound(text: string, tgChatId: number, tgMsgId: number): number {
+    insertInbound(text: string, tgChatId: number, tgMsgId: number, fromUserId: number): number {
       const ts = nowTs();
-      const result = insertInbound.run(ts, text, tgChatId, tgMsgId, ts);
+      const result = insertInbound.run(ts, text, tgChatId, tgMsgId, fromUserId, ts);
       return Number(result.lastInsertRowid);
     },
     insertRejected(text: string, tgChatId: number, tgMsgId: number, error: string): number {

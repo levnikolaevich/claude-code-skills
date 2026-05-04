@@ -42,6 +42,7 @@ function ensureMessagesColumns(db: Db): void {
       "ALTER TABLE messages ADD COLUMN next_attempt_at INTEGER NOT NULL DEFAULT 0",
     ],
     ["delivered_at", "ALTER TABLE messages ADD COLUMN delivered_at INTEGER"],
+    ["from_user_id", "ALTER TABLE messages ADD COLUMN from_user_id INTEGER"],
   ];
   for (const [col, ddl] of ddls) {
     if (!cols.has(col)) db.exec(ddl);
@@ -60,6 +61,7 @@ function ensureExtraIndexes(db: Db): void {
     "CREATE INDEX IF NOT EXISTS idx_msg_inbound_due " +
       "ON messages(direction, status, next_attempt_at)"
   );
+  db.exec("CREATE INDEX IF NOT EXISTS idx_msg_from_user " + "ON messages(from_user_id)");
   db.exec(
     "CREATE INDEX IF NOT EXISTS idx_msg_kind_status " + "ON messages(direction, kind, status)"
   );

@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS messages (
   text            TEXT NOT NULL,
   tg_chat_id      INTEGER,
   tg_msg_id       INTEGER,
+  from_user_id    INTEGER,
   session_id      TEXT,
   replied_to_id   INTEGER,
   error           TEXT,

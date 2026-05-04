@@ -17,6 +17,7 @@ export interface InboundMessage {
   text: string;
   tgChatId: number | null;
   tgMsgId: number | null;
+  fromUserId: number | null;
   sessionId: string | null;
   attempts: number;
   nextAttemptAt: number;

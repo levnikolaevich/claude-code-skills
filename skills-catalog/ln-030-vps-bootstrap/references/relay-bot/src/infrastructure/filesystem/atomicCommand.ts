@@ -31,11 +31,11 @@ const flockSync: (fd: number, op: string) => void = (
 export function createAtomicCommandWriter(deps: AtomicCommandDeps) {
   return {
     write(
-      action: "new" | "resume",
+      action: "default" | "new" | "resume",
       sessionId: string | null,
       operatorChatId: number | null
     ): string {
-      if (action !== "new" && action !== "resume") {
+      if (action !== "default" && action !== "new" && action !== "resume") {
         throw new Error(`invalid action: ${String(action)}`);
       }
       const cmdId = randomBytes(12).toString("hex");

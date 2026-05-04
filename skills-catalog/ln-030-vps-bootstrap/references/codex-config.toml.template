@@ -1,12 +1,18 @@
-# Headless agent defaults — full autonomy, deepest reasoning.
-# Verified against https://developers.openai.com/codex/config-reference (2026-04).
-# `approval_policy = "never"` + `sandbox_mode = "danger-full-access"` = the
-# unattended-agent contract: no interactive prompts, full filesystem + network.
-# Only safe inside an isolated VPS dedicated to this workload.
+# Headless agent defaults — unattended inside the outer project sandbox.
+# Verified against https://developers.openai.com/codex/config-reference (2026-05).
+# `workspace-write` keeps Codex writes project-scoped; the outer bubblewrap
+# wrapper is still the hard boundary for filesystem reads and host resources.
 model = "gpt-5.5"
 model_reasoning_effort = "xhigh"
 approval_policy = "never"
-sandbox_mode = "danger-full-access"
+sandbox_mode = "workspace-write"
+
+[sandbox_workspace_write]
+network_access = true
+exclude_slash_tmp = true
+exclude_tmpdir_env_var = true
+writable_roots = ["${PROJECT_DIR}"]
+
 # notify hook is installed conditionally by Step 8b (only if TELEGRAM_BOT_TOKEN
 # is set AND operator opted in). Step 8b appends:
 #   notify = ["bash", "/home/${BOT_USER}/.codex/notify.sh"]

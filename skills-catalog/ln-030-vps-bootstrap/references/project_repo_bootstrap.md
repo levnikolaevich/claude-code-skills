@@ -2,7 +2,7 @@
 
 <!-- SCOPE: Executable repo setup recipe for ln-030-vps-bootstrap Step 7. -->
 
-Use this before starting `${SERVICE_PREFIX}-god.service`. `${PROJECT_DIR}` must be a persistent git clone, not a temporary worktree.
+Use this before starting `${SERVICE_PREFIX}-god@${TELEGRAM_CHAT_ID}.service`. `${PROJECT_DIR}` must be a persistent git clone, not a temporary worktree.
 
 ## Rules
 

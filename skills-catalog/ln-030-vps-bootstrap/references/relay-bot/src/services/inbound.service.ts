@@ -3,9 +3,9 @@ import { TIMING } from "../config/paths.js";
 import type { MessagesRepo } from "../infrastructure/db/repositories/messages.repo.js";
 import type { OutboxService } from "./outbox.service.js";
 import type { ControlLane } from "./controlLane.service.js";
-import type { TmuxPane } from "../infrastructure/tmux/pane.js";
 import type { InboundMessage } from "../domain/message.js";
 import type { VerbosityService } from "./verbosity.service.js";
+import type { GodRuntimeService } from "./godRuntime.service.js";
 
 export type InboundService = ReturnType<typeof createInboundService>;
 
@@ -29,15 +29,20 @@ export function createInboundService(deps: {
   messagesRepo: MessagesRepo;
   outboxService: OutboxService;
   controlLane: ControlLane;
-  pane: TmuxPane;
+  godRuntime: GodRuntimeService;
   verbosity: VerbosityService;
   reactToInbound: ReactToInbound;
 }) {
   async function deliver(row: InboundMessage): Promise<void> {
+    const userId = row.fromUserId ?? row.tgChatId;
+    if (userId === null) {
+      throw new Error(`inbound ${row.id} has no Telegram user id`);
+    }
     try {
       await deps.controlLane.run("deliver_inbound", async () => {
         deps.messagesRepo.update(row.id, { status: "delivering" });
-        await deps.pane.send(row.text);
+        await deps.godRuntime.ensureStarted(userId);
+        await deps.godRuntime.runtimeFor(userId).pane.send(row.text);
       });
       deps.messagesRepo.update(row.id, {
         status: "delivered",
@@ -97,8 +102,6 @@ export function createInboundService(deps: {
   }
 
   async function tick(): Promise<void> {
-    const ready = await deps.pane.hasSession();
-    if (!ready) return;
     const due = deps.messagesRepo.selectDue(5);
     for (const row of due) {
       try {

@@ -3,18 +3,14 @@ import type { Logger } from "../../lib/logger.js";
 import type { SessionService } from "../../services/session.service.js";
 import type { ControlLane } from "../../services/controlLane.service.js";
 import type { MutexMap } from "../../lib/mutex.js";
-import type { TmuxPane } from "../../infrastructure/tmux/pane.js";
-import type { AtomicCommandWriter } from "../../infrastructure/filesystem/atomicCommand.js";
-import type { GodStatusProbe } from "../../infrastructure/systemd/godStatus.js";
+import type { GodRuntimeService } from "../../services/godRuntime.service.js";
 
 export interface SessionsCallbackDeps {
   log: Logger;
   sessionService: SessionService;
   controlLane: ControlLane;
   sessionLocks: MutexMap;
-  pane: TmuxPane;
-  atomicCmd: AtomicCommandWriter;
-  godStatus: GodStatusProbe;
+  godRuntime: GodRuntimeService;
 }
 
 export function buildSessionsCallbackHandler(deps: SessionsCallbackDeps): Composer<Context> {
@@ -29,17 +25,6 @@ export function buildSessionsCallbackHandler(deps: SessionsCallbackDeps): Compos
     const action = data.slice(0, colon);
     const sid = data.slice(colon + 1);
 
-    const path = deps.sessionService.validateSessionPath(sid);
-    if (path === null) {
-      await ctx.answerCallbackQuery({ text: "session not found", show_alert: true });
-      try {
-        await ctx.editMessageReplyMarkup({});
-      } catch {
-        /* ignore */
-      }
-      return;
-    }
-
     const owner = deps.sessionService.getOwner(sid);
     if (owner === null) {
       deps.log.warn({ sid }, "session has no owner; refusing");
@@ -47,6 +32,16 @@ export function buildSessionsCallbackHandler(deps: SessionsCallbackDeps): Compos
         text: "session ownership unknown",
         show_alert: true,
       });
+      return;
+    }
+    const path = deps.sessionService.validateSessionPath(sid, owner);
+    if (path === null) {
+      await ctx.answerCallbackQuery({ text: "session not found", show_alert: true });
+      try {
+        await ctx.editMessageReplyMarkup({});
+      } catch {
+        /* ignore */
+      }
       return;
     }
     const fromId = ctx.from?.id ?? null;
@@ -65,7 +60,7 @@ export function buildSessionsCallbackHandler(deps: SessionsCallbackDeps): Compos
     }
 
     await deps.sessionLocks.for(sid).run(action, async () => {
-      const stillThere = deps.sessionService.validateSessionPath(sid);
+      const stillThere = deps.sessionService.validateSessionPath(sid, owner);
       if (stillThere === null) {
         await ctx.answerCallbackQuery({ text: "session gone", show_alert: true });
         try {
@@ -77,24 +72,21 @@ export function buildSessionsCallbackHandler(deps: SessionsCallbackDeps): Compos
       }
 
       if (action === "s_run") {
-        if (!(await deps.godStatus.isActive())) {
-          await ctx.answerCallbackQuery({
-            text: "god-session paused; /dispatcher resume first",
-            show_alert: true,
-          });
-          return;
-        }
         try {
           await deps.controlLane.run("resume_session", async () => {
-            deps.atomicCmd.write("resume", sid, fromId);
-            await deps.pane.killGracefully();
+            if (fromId === null) throw new Error("missing Telegram user id");
+            const runtime = deps.godRuntime.runtimeFor(fromId);
+            runtime.atomicCmd.write("resume", sid, fromId);
+            await ((await runtime.pane.hasSession())
+              ? runtime.pane.killGracefully()
+              : deps.godRuntime.ensureStarted(fromId));
           });
         } catch (error) {
           deps.log.error({ err: String(error) }, "write_command_atomic resume failed");
           await ctx.answerCallbackQuery({ text: `failed: ${String(error)}`, show_alert: true });
           return;
         }
-        deps.log.info({ sid }, "[Resume] queued");
+        deps.log.info({ sid, userId: fromId }, "[Resume] queued");
         try {
           await ctx.editMessageText(
             `🔄 Resuming \`${sid.slice(0, 8)}…\` — pane will reload in ~5–10s.`,

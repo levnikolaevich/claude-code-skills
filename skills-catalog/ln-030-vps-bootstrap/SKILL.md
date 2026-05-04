@@ -30,7 +30,7 @@ The skill is **parameterized** — instantiate it per-project by filling in the 
 
 **MANDATORY READ:** Load `references/scope_layers.md` and `references/shared_user_pattern.md`
 
-**Deployment shape**: **one VPS = one `BOT_USER=agent-bot` Linux user = one Anthropic OAuth + one Codex login + one nvm/Node toolchain**, then **one project = one Telegram bot token = one set of systemd units = one `PROJECT_NAME` / `PROJECT_DIR` / `SERVICE_PREFIX` / `RELAY_HOOK_PORT`**. The shared user owns multiple tmux god-sessions (one per project), each on tmux socket `${SERVICE_PREFIX}`, with its own dispatch.timer, relay-bot port, and Telegram bot.
+**Deployment shape**: **one VPS = one `BOT_USER=agent-bot` Linux user = one Anthropic OAuth + one Codex login + one nvm/Node toolchain**, then **one project = one Telegram bot token = one set of systemd units = one `PROJECT_NAME` / `PROJECT_DIR` / `SERVICE_PREFIX` / `RELAY_HOOK_PORT`**. The shared user owns one tmux socket per project (`${SERVICE_PREFIX}`) and one god-session per allowed Telegram user (`${SERVICE_PREFIX}-god-<user_id>`).
 
 **Scope rules (non-negotiable):**
 - Project-specific config (hooks, CLAUDE.md, secrets, state, logs) lives in **project-scope** dirs: `${PROJECT_DIR}/.claude/`, `/etc/${PROJECT_NAME}/`, `/var/lib/${PROJECT_NAME}/`, `/var/log/${PROJECT_NAME}-god.log`.
@@ -50,7 +50,7 @@ The operator hands these values to Claude (in chat) before running the workflow.
 | Variable | Example | Used in |
 |---|---|---|
 | `PROJECT_NAME` | `myproj` | State/config dir name: `/etc/${PROJECT_NAME}/`, `/var/lib/${PROJECT_NAME}/`, `/var/log/${PROJECT_NAME}-god.log` |
-| `SERVICE_PREFIX` | `myproj` | Per-project systemd unit + binary prefix: `${SERVICE_PREFIX}-god.service`, `${SERVICE_PREFIX}-dispatch.timer`, `/usr/local/bin/${SERVICE_PREFIX}-god`, tmux session `${SERVICE_PREFIX}-god`. Set equal to `PROJECT_NAME` unless the deployment intentionally separates state/config name from service/binary prefix. |
+| `SERVICE_PREFIX` | `myproj` | Per-project systemd unit + binary prefix: `${SERVICE_PREFIX}-god@.service`, `${SERVICE_PREFIX}-dispatch.timer`, `/usr/local/bin/${SERVICE_PREFIX}-god`, tmux socket `${SERVICE_PREFIX}`. User panes are `${SERVICE_PREFIX}-god-<telegram_user_id>`. |
 | `PROJECT_DIR` | `/opt/myproj` | Persistent git clone on the VPS where the agent runs |
 | `REPO_URL` | `https://github.com/me/myproj.git` | Canonical clone URL for `${PROJECT_DIR}`. For GitLab self-hosted, use that host's HTTPS URL. |
 | `REPO_REF` | `main` | Branch or ref checked out in `${PROJECT_DIR}` after clone/fetch |
@@ -121,18 +121,26 @@ Rules:
 
 ### 1. Base packages
 
-Install system tools needed for the next steps. `bubblewrap` is for Codex CLI Linux sandbox; `python3` is kept only as generic native npm build tooling, not as relay runtime.
+Install system tools needed for the next steps. `bubblewrap` is the hard boundary for Claude/Codex work-plane filesystem isolation; `python3` is kept only as generic native npm build tooling, not as relay runtime.
 
 ```bash
 DEBIAN_FRONTEND=noninteractive apt-get install -y \
   curl wget git jq sqlite3 build-essential ca-certificates gnupg pipx \
-  python3 bubblewrap unzip tmux
+  python3 bubblewrap apparmor-profiles apparmor-utils unzip tmux
+
+# Ubuntu/AppArmor path for unprivileged bwrap. Do not use setuid bwrap as the
+# final install shape.
+if [ -f /usr/share/apparmor/extra-profiles/bwrap-userns-restrict ]; then
+  install -m 0644 /usr/share/apparmor/extra-profiles/bwrap-userns-restrict /etc/apparmor.d/bwrap-userns-restrict
+  apparmor_parser -r /etc/apparmor.d/bwrap-userns-restrict
+fi
 ```
 
 **Verify:**
 
 ```bash
 which curl wget git jq sqlite3 gpg pipx python3 bwrap unzip tmux && pipx --version && bwrap --version && tmux -V
+stat -c '%A %U:%G' /usr/bin/bwrap | grep -v '^...s'
 ```
 
 Expected: all paths printed, pipx version ≥ 1.4.
@@ -250,7 +258,7 @@ sudo -u ${BOT_USER} bash -lc '
 # Later marketplace/plugin refresh is owned by the system-wide agent-update.sh.
 ```
 
-The template pins **headless-agent defaults** verified against the [Codex config reference](https://developers.openai.com/codex/config-reference): `model = "gpt-5.5"`, `model_reasoning_effort = "xhigh"`, `approval_policy = "never"`, `sandbox_mode = "danger-full-access"`. This eliminates interactive permission prompts and grants full filesystem + network. Only safe inside an isolated VPS dedicated to this workload. Codex still asks the operator via the `notify` script (Telegram, opt-in via Step 8b); what's eliminated is the *TUI approval popup*, not user-facing communication.
+The template pins **headless-agent defaults** verified against the [Codex config reference](https://developers.openai.com/codex/config-reference): `model = "gpt-5.5"`, `model_reasoning_effort = "xhigh"`, `approval_policy = "never"`, `sandbox_mode = "workspace-write"`, with network enabled for project commands. The outer `bubblewrap` wrapper is the hard read/write boundary; Codex sandboxing is an inner guard for Codex-run commands.
 
 **Verify (after Step 5b runs for any project):**
 
@@ -322,13 +330,14 @@ The runtime layer that makes the workload always-on. Core artifacts installed re
 | Reference | Target | Owner | Mode |
 |---|---|---|---|
 | [`references/god-session.sh`](references/god-session.sh) | `/usr/local/bin/${SERVICE_PREFIX}-god` | root:root | 755 |
-| [`references/god-session.service`](references/god-session.service) | `/etc/systemd/system/${SERVICE_PREFIX}-god.service` | root:root | 644 |
+| [`references/agent-sandbox.sh`](references/agent-sandbox.sh) | `/usr/local/bin/${SERVICE_PREFIX}-agent-sandbox` | root:root | 755 |
+| [`references/god-session.service`](references/god-session.service) | `/etc/systemd/system/${SERVICE_PREFIX}-god@.service` | root:root | 644 |
 | [`references/dispatch.timer`](references/dispatch.timer) | `/etc/systemd/system/${SERVICE_PREFIX}-dispatch.timer` | root:root | 644 |
 | [`references/dispatch.service`](references/dispatch.service) | `/etc/systemd/system/${SERVICE_PREFIX}-dispatch.service` | root:root | 644 |
 | [`references/dispatch.md`](references/dispatch.md) | `/home/${BOT_USER}/.claude/commands/${DISPATCH_COMMAND_NAME}.md` | `${BOT_USER}`:`${BOT_USER}` | 644 |
 | [`references/settings.agent-config.fragment.json`](references/settings.agent-config.fragment.json) | jq-merged into `/home/${BOT_USER}/.claude/settings.json` | `${BOT_USER}`:`${BOT_USER}` | 644 |
 
-For each template: read the file, substitute `${VAR}` placeholders (including `AGENT_SKILLS_*` for `codex-config.toml.template`), upload via `mcp__hex-ssh__ssh-write-chunk`, set ownership and mode. Note the rename when uploading the unit files (`dispatch.*` in the repo lands as `${SERVICE_PREFIX}-dispatch.*` on the VPS — per-project naming).
+For each template: read the file, substitute `${VAR}` placeholders (including `AGENT_SKILLS_*` for `codex-config.toml.template` and `god-session.service`), upload via `mcp__hex-ssh__ssh-write-chunk`, set ownership and mode. Note the rename when uploading the unit files (`dispatch.*` lands as `${SERVICE_PREFIX}-dispatch.*`; `agent-sandbox.sh` lands as `${SERVICE_PREFIX}-agent-sandbox`).
 
 **About `settings.agent-config.fragment.json`** — this fragment pins headless-agent defaults that must NOT depend on a TTY:
 
@@ -342,11 +351,11 @@ For each template: read the file, substitute `${VAR}` placeholders (including `A
 
 - `model: "opus"` resolves to the latest Opus on the Anthropic API (currently Opus 4.7 per [model-config docs](https://code.claude.com/docs/en/model-config#available-models)). Pinning it keeps the god-session on Opus instead of auto-falling back to Sonnet at usage thresholds.
 - `effortLevel: "xhigh"` forces deep reasoning. On Opus 4.7 this is the default since v2.1.117 — pinning protects against future default changes and against runs on Sonnet 4.6 where default is `high`.
-- `permissions.defaultMode: "bypassPermissions"` removes interactive permission prompts even when something starts `claude` without `--dangerously-skip-permissions`. The flag in `god-session.sh` plus this default give belt-and-braces. Per [permission-modes docs](https://code.claude.com/docs/en/permission-modes#skip-all-checks-with-bypasspermissions-mode): protected paths still prompt; only safe inside isolated VPS dedicated to this workload. The agent still asks the operator via Telegram (relay-bot Stop hook → outbox) — what's eliminated is the *TUI permission popup*, not user-facing communication.
+- `permissions.defaultMode: "bypassPermissions"` removes TUI permission prompts only after the agent is already inside the project/user sandbox. Operator approval for mutating Telegram work remains a runtime policy; filesystem isolation is enforced by `agent-sandbox.sh`.
 
 **Install + enable:**
 
-**MANDATORY READ:** Load `references/project_repo_bootstrap.md` before starting `${SERVICE_PREFIX}-god.service`.
+**MANDATORY READ:** Load `references/project_repo_bootstrap.md` before starting `${SERVICE_PREFIX}-god@${TELEGRAM_CHAT_ID}.service`.
 
 ```bash
 install -d -o ${BOT_USER} -g ${BOT_USER} -m 700 /var/lib/${PROJECT_NAME}                       # state dir (StateDirectory= in unit also sets this)
@@ -354,34 +363,48 @@ install -d -o root -g ${BOT_USER} -m 750 /etc/${PROJECT_NAME}                   
 install -o ${BOT_USER} -g ${BOT_USER} -m 644 /dev/null /var/log/${PROJECT_NAME}-god.log        # log file — explicit ownership prevents "Permission denied" crash-loop after user rename
 # Run references/project_repo_bootstrap.md here. It creates/verifies ${PROJECT_DIR}.
 
+# Keep sandbox runtime state inside the project, split by Telegram user, outside git.
+sudo -u ${BOT_USER} bash -lc 'mkdir -p ${PROJECT_DIR}/.agent-home/users ${PROJECT_DIR}/.agent-cache && grep -qxF ".agent-home/" ${PROJECT_DIR}/.git/info/exclude || printf "\n.agent-home/\n.agent-cache/\n" >> ${PROJECT_DIR}/.git/info/exclude'
+
+# Sandbox smoke for the primary operator. Auth remains one shared VPS login:
+# agent-sandbox bind-mounts only auth files read-only into the project/user HOME.
+sudo -u ${BOT_USER} env PROJECT_DIR=${PROJECT_DIR} PROJECT_NAME=${PROJECT_NAME} SERVICE_PREFIX=${SERVICE_PREFIX} BOT_USER=${BOT_USER} OPERATOR_USER_ID=${TELEGRAM_CHAT_ID} AGENT_SKILLS_DIR=${AGENT_SKILLS_DIR} /usr/local/bin/${SERVICE_PREFIX}-agent-sandbox sh -lc 'touch .sandbox-test && rm .sandbox-test && test -r "$AGENT_SKILLS_DIR" && test -r ~/.claude/.credentials.json && test -r ~/.codex/auth.json && test ! -r /etc/${PROJECT_NAME}/secrets.env && test ! -r /var/lib/${PROJECT_NAME}/relay.db && test ! -r /home/${BOT_USER}/.claude'
+
 # Ensure settings.json exists, then jq-merge agent-config fragment
 sudo -u ${BOT_USER} bash -lc 'mkdir -p ~/.claude && [ -f ~/.claude/settings.json ] || echo "{}" > ~/.claude/settings.json'
 # (after uploading references/settings.agent-config.fragment.json to /tmp/agent-config.json)
 sudo -u ${BOT_USER} bash -lc 'jq -s ".[0] * .[1]" ~/.claude/settings.json /tmp/agent-config.json > ~/.claude/settings.json.new && mv ~/.claude/settings.json.new ~/.claude/settings.json'
 rm /tmp/agent-config.json
 
+# Relay-bot runs as ${BOT_USER}; allow only this project's god template control.
+SYSTEMCTL=$(command -v systemctl)
+cat > /etc/sudoers.d/${SERVICE_PREFIX}-god-control <<EOF
+${BOT_USER} ALL=(root) NOPASSWD: ${SYSTEMCTL} start ${SERVICE_PREFIX}-god@*.service, ${SYSTEMCTL} restart ${SERVICE_PREFIX}-god@*.service, ${SYSTEMCTL} is-active ${SERVICE_PREFIX}-god@*.service, ${SYSTEMCTL} list-units ${SERVICE_PREFIX}-god@*.service *
+EOF
+chmod 440 /etc/sudoers.d/${SERVICE_PREFIX}-god-control
+visudo -cf /etc/sudoers.d/${SERVICE_PREFIX}-god-control
+
 loginctl enable-linger ${BOT_USER}
 systemctl daemon-reload
-systemctl enable --now ${SERVICE_PREFIX}-god.service
+systemctl enable --now ${SERVICE_PREFIX}-god@${TELEGRAM_CHAT_ID}.service
 systemctl enable --now ${SERVICE_PREFIX}-dispatch.timer
 ```
 
 **Verify:**
 
 ```bash
-systemctl status ${SERVICE_PREFIX}-god.service --no-pager | head -10
+systemctl status ${SERVICE_PREFIX}-god@${TELEGRAM_CHAT_ID}.service --no-pager | head -10
 systemctl list-timers ${SERVICE_PREFIX}-dispatch.timer --no-pager
 sudo -u ${BOT_USER} tmux -L ${SERVICE_PREFIX} ls
-sudo -u ${BOT_USER} tmux -L ${SERVICE_PREFIX} capture-pane -t ${SERVICE_PREFIX}-god -p -S -200 | tail -40
+sudo -u ${BOT_USER} tmux -L ${SERVICE_PREFIX} capture-pane -t ${SERVICE_PREFIX}-god-${TELEGRAM_CHAT_ID} -p -S -200 | tail -40
 tail -10 /var/log/${PROJECT_NAME}-god.log
 ```
 
 Expected timeline:
-- t+0s: wrapper boots, log `[${SERVICE_PREFIX}-god] boot`.
-- t+1s: tmux session `${SERVICE_PREFIX}-god` exists on socket `${SERVICE_PREFIX}`.
-- t+5s: log `fresh session up; ${SERVICE_PREFIX}-dispatch.timer will inject /${DISPATCH_COMMAND_NAME} hourly`.
+- t+0s: wrapper boots, log `[${SERVICE_PREFIX}-god user=${TELEGRAM_CHAT_ID}]`.
+- t+1s: tmux target `${SERVICE_PREFIX}-god-${TELEGRAM_CHAT_ID}` exists on socket `${SERVICE_PREFIX}`.
 - next `:07`: `${SERVICE_PREFIX}-dispatch.service` fires and tmux pane receives `/${DISPATCH_COMMAND_NAME}`.
-- nightly around 03:37 local time (+ up to 20m randomized delay): the **system-wide** `agent-update.service` (Step 7d) runs `claude update`, updates Codex to `@latest`, fast-forwards `${AGENT_SKILLS_DIR}`, updates selected Claude plugins, realigns Codex plugin config, verifies everything, then enumerates and restarts ALL projects' `*-god.service` units.
+- nightly around 03:37 local time (+ up to 20m randomized delay): the **system-wide** `agent-update.service` updates shared CLIs/plugins, verifies everything, then restarts active `*-god@*.service` instances.
 - Telegram inbound (Step 7c, optional) is wired separately via `${SERVICE_PREFIX}-relay-bot.service`. The pane should NOT contain a `Listening for channel messages` line.
 
 ### 7b. `/usage` Telegram command — statusLine cache (only if `TELEGRAM_BOT_TOKEN` is set)
@@ -419,7 +442,7 @@ sudo -u ${BOT_USER} bash -lc 'test ! -f ~/.claude/CLAUDE.md || { echo "ERROR: ~/
 **Restart god-session** so the new statusLine config takes effect:
 
 ```bash
-systemctl restart ${SERVICE_PREFIX}-god.service
+systemctl restart ${SERVICE_PREFIX}-god@${TELEGRAM_CHAT_ID}.service
 sleep 10
 sudo -u ${BOT_USER} ls -la /home/${BOT_USER}/.claude/cache/usage.json   # expect file modified <30s ago
 ```
@@ -454,7 +477,7 @@ install -d -o ${BOT_USER} -g ${BOT_USER} -m 755 /opt/${SERVICE_PREFIX}-relay-bot
 chown -R ${BOT_USER}:${BOT_USER} /opt/${SERVICE_PREFIX}-relay-bot
 
 # 2. Build on target using the Node 24 installed in Step 4.
-sudo -i -u ${BOT_USER} bash -lc 'cd /opt/${SERVICE_PREFIX}-relay-bot && . /home/${BOT_USER}/.nvm/nvm.sh && npm ci && npm run build && npm prune --omit=dev'
+sudo -i -u ${BOT_USER} bash -lc 'cd /opt/${SERVICE_PREFIX}-relay-bot && . /home/${BOT_USER}/.nvm/nvm.sh && npm ci && npm run build && ./node_modules/.bin/tsc --version'
 
 # 3. Render claude-relay-bot.service with PROJECT_NAME, PROJECT_DIR, SERVICE_PREFIX, BOT_USER, RELAY_HOOK_PORT → /etc/systemd/system/${SERVICE_PREFIX}-relay-bot.service, mode 644
 # 4. Render settings.hooks.fragment.json with RELAY_HOOK_PORT → /tmp/hooks.json, then INSTALL AT PROJECT-SCOPE
@@ -470,12 +493,12 @@ install -o root -g root -m 755 /tmp/register-telegram-commands.sh /usr/local/bin
 systemctl daemon-reload
 systemctl enable --now ${SERVICE_PREFIX}-relay-bot.service
 /usr/local/bin/${SERVICE_PREFIX}-register-telegram-commands /etc/${PROJECT_NAME}/secrets.env
-systemctl restart ${SERVICE_PREFIX}-god.service   # so claude reloads settings.json with hooks
+systemctl restart ${SERVICE_PREFIX}-god@${TELEGRAM_CHAT_ID}.service   # primary operator pane reloads hooks
 ```
 
-`npm ci` is mandatory before `npm run build`: `tsc` is a devDependency and must be present during build. Run `npm prune --omit=dev` only after a successful build.
+`npm ci` is mandatory before `npm run build`: `tsc` is a devDependency and stays installed so future VPS-side relay-bot redeploys can rebuild from source.
 
-**After relay-bot source changes:** use `references/relay_bot_redeploy.md`. The update path is source upload only, build on VPS, prune devDependencies, then restart `${SERVICE_PREFIX}-relay-bot.service`. Do not hand-edit VPS `dist/`.
+**After relay-bot source changes:** use `references/relay_bot_redeploy.md`. The update path is source upload only, build on VPS with local devDependencies, then restart `${SERVICE_PREFIX}-relay-bot.service`. Do not hand-edit VPS `dist/`.
 
 **Verify:**
 
@@ -491,12 +514,13 @@ sqlite3 /var/lib/${PROJECT_NAME}/relay.db 'SELECT direction,status,substr(text,1
 # Telegram menu commands registered by Step 7c
 curl -fsS "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getMyCommands" | jq '.result'
 
-# Sessions feature: after the first claude run, relay-bot resolves and caches the sessions dir
-cat /var/lib/${PROJECT_NAME}/sessions-dir.path   # /home/${BOT_USER}/.claude/projects/...
+# Sessions feature: after the first claude run, relay-bot resolves and caches this user's sessions dir
+cat /var/lib/${PROJECT_NAME}/users/${TELEGRAM_CHAT_ID}/sessions-dir.path
+# Expected: ${PROJECT_DIR}/.agent-home/users/${TELEGRAM_CHAT_ID}/.claude/projects/...
 
 # Build-only dependencies pruned after dist/ exists
 sudo -u ${BOT_USER} test -d /opt/${SERVICE_PREFIX}-relay-bot/dist
-sudo -u ${BOT_USER} test ! -x /opt/${SERVICE_PREFIX}-relay-bot/node_modules/.bin/tsc
+sudo -u ${BOT_USER} test -x /opt/${SERVICE_PREFIX}-relay-bot/node_modules/.bin/tsc
 
 # End-to-end: operator sends "hi" → claude responds in pane → outbox row sent → operator sees reply in Telegram
 ```
@@ -507,9 +531,9 @@ The pane should show the normal Claude Code TUI, with Telegram ingress handled b
 
 | Path | Owner | Created by | Purpose |
 |---|---|---|---|
-| `/var/lib/${PROJECT_NAME}/god-command.json` | `${BOT_USER}` | relay-bot on `/new_session` or [Resume] click | Atomic queue for wrapper. Schema: `{command_id, ts, action, session_id, operator_chat_id}`. Consumed (`unlink`) by wrapper on next tmux fresh-create. |
-| `/var/lib/${PROJECT_NAME}/.cmd-lock` | `${BOT_USER}` | wrapper (`flock` target) | Lock file for atomic command-file consume. |
-| `/var/lib/${PROJECT_NAME}/sessions-dir.path` | `${BOT_USER}` | relay-bot first-run | Cached path to Claude Code's per-cwd sessions dir (auto-discovered by matching JSONL `cwd` field, not by hardcoded encoding). |
+| `/var/lib/${PROJECT_NAME}/users/<telegram_user_id>/god-command.json` | `${BOT_USER}` | relay-bot on inbound start, `/new_session`, or [Resume] click | Per-user atomic queue. Schema: `{command_id, ts, action, session_id, operator_chat_id}`. |
+| `/var/lib/${PROJECT_NAME}/users/<telegram_user_id>/.cmd-lock` | `${BOT_USER}` | wrapper (`flock` target) | Per-user lock file for atomic command consume. |
+| `/var/lib/${PROJECT_NAME}/users/<telegram_user_id>/sessions-dir.path` | `${BOT_USER}` | relay-bot first-run for that user | Cached path to that user's sandboxed Claude Code per-cwd sessions dir. |
 | `/var/lib/${PROJECT_NAME}/last-god-error.json` | `${BOT_USER}` | wrapper on resume_invalid etc. | Polled by relay-bot every 5s; pushed to operator as Telegram alert; deleted after delivery. |
 
 The skill creates the parent `/var/lib/${PROJECT_NAME}/` automatically via `StateDirectory=${PROJECT_NAME}` in `god-session.service` (mode 0700).
@@ -543,7 +567,7 @@ systemctl daemon-reload
 systemctl enable --now agent-update.timer
 ```
 
-**How it works:** one system-wide timer updates Claude, Codex, `${AGENT_SKILLS_DIR}`, selected plugins, and Codex marketplace config, then restarts all enabled `*-god.service` units only after verification succeeds.
+**How it works:** one system-wide timer updates Claude, Codex, `${AGENT_SKILLS_DIR}`, selected plugins, and Codex marketplace config, then restarts all enabled `*-god@*.service` units only after verification succeeds.
 
 **Verify:**
 
@@ -553,8 +577,8 @@ systemctl start agent-update.service                   # one-shot smoke run
 journalctl -u agent-update.service -n 100 --no-pager
 sudo -i -u ${BOT_USER} bash -lc '. /home/${BOT_USER}/.nvm/nvm.sh && claude --version && codex --version'
 sudo -i -u ${BOT_USER} bash -lc 'cd ${AGENT_SKILLS_DIR} && git status --short && git rev-parse --short HEAD'
-# All god-services should be active after the smoke run completes:
-systemctl list-units --type=service --state=active '*-god.service' --no-pager
+# Active per-user god instances should return after the smoke run:
+systemctl list-units --type=service --state=active '*-god@*.service' --no-pager
 ```
 
 ### 8. Optional integrations
@@ -670,7 +694,7 @@ After creating the bot in step #4 above, the operator runs the runbook to lock d
 
 ## Verification & smoke
 
-End-to-end after install + manual follow-up: the initial `TodoWrite` plan covered every DoD checkbox, CLIs authenticated, `${PROJECT_DIR}` is a clean clone, `${SERVICE_PREFIX}-god.service`, dispatch timer, relay-bot, and `agent-update.timer` are active, tmux exists on socket `${SERVICE_PREFIX}`, Telegram smoke passes, and `/dispatcher status` reports healthy.
+End-to-end after install + manual follow-up: the initial `TodoWrite` plan covered every DoD checkbox, CLIs authenticated, `${PROJECT_DIR}` is a clean clone, `${SERVICE_PREFIX}-god@${TELEGRAM_CHAT_ID}.service`, dispatch timer, relay-bot, and `agent-update.timer` are active, tmux exists on socket `${SERVICE_PREFIX}`, Telegram smoke passes, and `/dispatcher status` reports healthy.
 
 ---
 
@@ -699,12 +723,12 @@ DoD covers every step of the workflow. Each unchecked item points back to the st
 
 ### God-session + scheduler (Step 7)
 - [ ] `${PROJECT_DIR}` is a git clone of `${REPO_URL}` at `${REPO_REF}`; arbitrary non-git files were not overwritten
-- [ ] `${SERVICE_PREFIX}-god.service` active and tmux session exists on `tmux -L ${SERVICE_PREFIX}`
+- [ ] `${SERVICE_PREFIX}-god@${TELEGRAM_CHAT_ID}.service` active and primary tmux target `${SERVICE_PREFIX}-god-${TELEGRAM_CHAT_ID}` exists on `tmux -L ${SERVICE_PREFIX}`
 - [ ] `${SERVICE_PREFIX}-dispatch.timer` active and armed (`systemctl list-timers`)
 - [ ] `dispatch.service`, `god-session.sh`, and relay-bot all use tmux socket `${SERVICE_PREFIX}`
 - [ ] Pane env has this project's `PROJECT_NAME`, `SERVICE_PREFIX`, and `PROJECT_DIR`; relay-bot unit env has `RELAY_HOOK_PORT`
-- [ ] Resume source is project-bound: `${PROJECT_NAME}` relay DB, `sessions-dir.path`, and `last-session.id` point only to sessions whose cwd is `${PROJECT_DIR}`
-- [ ] (system-wide, Step 7d) `agent-update.timer` active and armed; manual `agent-update.service` run updates Claude/Codex plus selected skills/plugins and restarts ALL `*-god.service` units after successful checks
+- [ ] Resume source is project+user-bound: `/var/lib/${PROJECT_NAME}/users/<user_id>/last-session.id`, relay DB `created_by_user_id`, and `/sessions` expose only that user's sessions for cwd `${PROJECT_DIR}`
+- [ ] (system-wide, Step 7d) `agent-update.timer` active and armed; manual `agent-update.service` run updates Claude/Codex plus selected skills/plugins and restarts active `*-god@*.service` instances after successful checks
 - [ ] `/var/lib/${PROJECT_NAME}/` exists, mode 0700, owner `${BOT_USER}`
 - [ ] Pane footer shows model + effort + `bypass permissions on`
 
@@ -714,11 +738,11 @@ DoD covers every step of the workflow. Each unchecked item points back to the st
 
 ### Telegram bridge + sessions (Step 7c, gated on `TELEGRAM_BOT_TOKEN`)
 - [ ] `${SERVICE_PREFIX}-relay-bot.service` active; `/health` returns v6 with all fields and `relay.db` has 12 tables (per `references/verification_recipes.md`)
-- [ ] Relay-bot was built on VPS with `npm ci && npm run build`; `dist/` exists and build-only devDependencies were pruned after build
-- [ ] If relay-bot source changed during this run, VPS update followed `references/relay_bot_redeploy.md`; source was uploaded, rebuilt on VPS, devDependencies pruned, and `${SERVICE_PREFIX}-relay-bot.service` health rechecked
+- [ ] Relay-bot was built on VPS with `npm ci && npm run build`; `dist/` exists and `node_modules/.bin/tsc` remains installed for future rebuilds
+- [ ] If relay-bot source changed during this run, VPS update followed `references/relay_bot_redeploy.md`; source was uploaded, rebuilt on VPS, `tsc` remained installed, and `${SERVICE_PREFIX}-relay-bot.service` health rechecked
 - [ ] Telegram Bot API menu commands (`usage`, `new_session`, `sessions`, `users`) registered by Step 7c with English descriptions and verified with `getMyCommands`
 - [ ] BotFather hardening verified per `references/telegram_operator_runbook.md` + `references/verification_recipes.md`
-- [ ] Allowlist, per-user session ownership, and inbound smokes pass per `references/verification_recipes.md`
+- [ ] Allowlist, per-user god instances, per-user session ownership, and inbound smokes pass per `references/verification_recipes.md`
 - [ ] End-to-end: «hi» from Telegram → claude responds → reply mirrored back via Stop hook
 - [ ] Runtime prompt enforces plan first + explicit approval before mutating Telegram requests; approval creates todos before implementation
 - [ ] Dispatcher selects one ready issue, sends a plan, records `waiting_approval`, and does not claim or implement before `approve #N` / `делай #N`

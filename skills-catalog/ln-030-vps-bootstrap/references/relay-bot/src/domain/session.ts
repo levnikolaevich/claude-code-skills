@@ -27,15 +27,18 @@ export interface SessionListItem {
 
 /**
  * Attribution rule used by session_start hook:
+ * - if the session is already known -> keep its recorded owner
  * - if last-god-command.json yields operator_chat_id → that
  * - else if previous session exists → inherit owner (fallback to primary)
  * - else → primary operator
  */
 export function resolveSessionOwner(args: {
+  existingOwner: number | null;
   fromCommandFile: number | null;
   previousOwner: number | null;
   primaryOperator: number;
 }): number {
+  if (args.existingOwner !== null) return args.existingOwner;
   if (args.fromCommandFile !== null) return args.fromCommandFile;
   if (args.previousOwner !== null) return args.previousOwner;
   return args.primaryOperator;

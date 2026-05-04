@@ -41,6 +41,7 @@ export function mapInboundRow(r: Row): InboundMessage {
     text: str(r.text),
     tgChatId: numOrNull(r.tg_chat_id),
     tgMsgId: numOrNull(r.tg_msg_id),
+    fromUserId: numOrNull(r.from_user_id),
     sessionId: strOrNull(r.session_id),
     attempts: num(r.attempts ?? 0),
     nextAttemptAt: num(r.next_attempt_at ?? 0),

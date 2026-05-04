@@ -1,11 +1,11 @@
 import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import type { Logger } from "../../lib/logger.js";
 import { findFirstMetadataObj } from "../jsonl/sessionParser.js";
 
 export interface SessionsDirCacheDeps {
-  cacheFile: string;
-  claudeProjectsHome: string;
+  cacheFileForUser(userId: number): string;
+  claudeProjectsHomeForUser(userId: number): string;
   projectDir: string;
   log: Logger;
 }
@@ -21,39 +21,42 @@ function isDir(path: string): boolean {
 }
 
 export function createSessionsDirCache(deps: SessionsDirCacheDeps) {
-  let cached: string | null = null;
+  const cached = new Map<number, string>();
 
-  function readCacheFile(): string | null {
-    if (!existsSync(deps.cacheFile)) return null;
+  function readCacheFile(userId: number): string | null {
+    const cacheFile = deps.cacheFileForUser(userId);
+    if (!existsSync(cacheFile)) return null;
     try {
-      const candidate = readFileSync(deps.cacheFile, "utf8").trim();
+      const candidate = readFileSync(cacheFile, "utf8").trim();
       if (candidate && isDir(candidate)) return candidate;
-      deps.log.warn({ candidate }, "cached sessions-dir gone — rediscovering");
+      deps.log.warn({ userId, candidate }, "cached sessions-dir gone — rediscovering");
     } catch (error) {
-      deps.log.warn({ err: String(error) }, "read sessions-dir cache failed");
+      deps.log.warn({ err: String(error), userId }, "read sessions-dir cache failed");
     }
     return null;
   }
 
-  function writeCacheFile(path: string): void {
+  function writeCacheFile(userId: number, path: string): void {
+    const cacheFile = deps.cacheFileForUser(userId);
     try {
-      writeFileSync(deps.cacheFile, path, "utf8");
+      writeFileSync(cacheFile, path, "utf8");
     } catch (error) {
-      deps.log.warn({ err: String(error) }, "cache sessions-dir write failed");
+      deps.log.warn({ err: String(error), userId }, "cache sessions-dir write failed");
     }
   }
 
-  function discover(): string | null {
-    if (!existsSync(deps.claudeProjectsHome)) return null;
+  function discover(userId: number): string | null {
+    const claudeProjectsHome = deps.claudeProjectsHomeForUser(userId);
+    if (!existsSync(claudeProjectsHome)) return null;
     const target = deps.projectDir.replace(/\/+$/, "").toLowerCase();
     let entries: string[];
     try {
-      entries = readdirSync(deps.claudeProjectsHome);
+      entries = readdirSync(claudeProjectsHome);
     } catch {
       return null;
     }
     const dirs = entries
-      .map((name) => join(deps.claudeProjectsHome, name))
+      .map((name) => join(claudeProjectsHome, name))
       .filter(isDir)
       .map((path) => {
         try {
@@ -78,8 +81,8 @@ export function createSessionsDirCache(deps: SessionsDirCacheDeps) {
           .replace(/\/+$/, "")
           .toLowerCase();
         if (cwd === target) {
-          writeCacheFile(entry.path);
-          deps.log.info({ dir: entry.path }, "sessions-dir resolved");
+          writeCacheFile(userId, entry.path);
+          deps.log.info({ userId, dir: entry.path }, "sessions-dir resolved");
           return entry.path;
         }
       }
@@ -88,19 +91,28 @@ export function createSessionsDirCache(deps: SessionsDirCacheDeps) {
   }
 
   return {
-    get(): string | null {
-      if (cached !== null) return cached;
-      const fromFile = readCacheFile();
+    get(userId: number): string | null {
+      const existing = cached.get(userId);
+      if (existing !== undefined) return existing;
+      const fromFile = readCacheFile(userId);
       if (fromFile !== null) {
-        cached = fromFile;
-        return cached;
+        cached.set(userId, fromFile);
+        return fromFile;
       }
-      const discovered = discover();
-      if (discovered !== null) cached = discovered;
+      const discovered = discover(userId);
+      if (discovered !== null) cached.set(userId, discovered);
       return discovered;
     },
-    invalidate(): void {
-      cached = null;
+    remember(userId: number, transcriptPath: string | null): void {
+      if (!transcriptPath) return;
+      const dir = dirname(transcriptPath);
+      if (!isDir(dir)) return;
+      cached.set(userId, dir);
+      writeCacheFile(userId, dir);
+    },
+    invalidate(userId?: number): void {
+      if (userId === undefined) cached.clear();
+      else cached.delete(userId);
     },
   };
 }

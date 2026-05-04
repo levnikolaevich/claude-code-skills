@@ -1,16 +1,12 @@
 import { Composer, type Context } from "grammy";
 import type { Logger } from "../../lib/logger.js";
 import type { ControlLane } from "../../services/controlLane.service.js";
-import type { TmuxPane } from "../../infrastructure/tmux/pane.js";
-import type { AtomicCommandWriter } from "../../infrastructure/filesystem/atomicCommand.js";
-import type { GodStatusProbe } from "../../infrastructure/systemd/godStatus.js";
+import type { GodRuntimeService } from "../../services/godRuntime.service.js";
 
 export interface NewSessionDeps {
   log: Logger;
   controlLane: ControlLane;
-  pane: TmuxPane;
-  atomicCmd: AtomicCommandWriter;
-  godStatus: GodStatusProbe;
+  godRuntime: GodRuntimeService;
 }
 
 export function buildNewSessionHandler(deps: NewSessionDeps): Composer<Context> {
@@ -21,20 +17,22 @@ export function buildNewSessionHandler(deps: NewSessionDeps): Composer<Context> 
       await ctx.reply("`/new_session` accepts no arguments.");
       return;
     }
-    if (!(await deps.godStatus.isActive())) {
-      await ctx.reply(
-        "⚠️ god-session is paused. Run `/dispatcher resume` first, then re-issue `/new_session`."
-      );
+    const userId = ctx.from?.id;
+    if (userId === undefined) {
+      await ctx.reply("❌ Cannot start a session without Telegram user id.");
       return;
     }
     try {
       const cmdId = await deps.controlLane.run("new_session", async () => {
-        const id = deps.atomicCmd.write("new", null, ctx.chat?.id ?? null);
-        await deps.pane.killGracefully();
+        const runtime = deps.godRuntime.runtimeFor(userId);
+        const id = runtime.atomicCmd.write("new", null, userId);
+        await ((await runtime.pane.hasSession())
+          ? runtime.pane.killGracefully()
+          : deps.godRuntime.ensureStarted(userId));
         return id;
       });
-      deps.log.info({ cmdId }, "/new_session queued; killing tmux");
-      await ctx.reply("🔄 Killing god-session — fresh context will start in ~5–10s.");
+      deps.log.info({ cmdId, userId }, "/new_session queued for user god-session");
+      await ctx.reply("🔄 Starting a fresh personal god-session — ready in ~5–10s.");
     } catch (error) {
       deps.log.error({ err: String(error) }, "write_command_atomic failed");
       await ctx.reply(`❌ Failed to queue command: ${String(error)}`);

@@ -32,12 +32,14 @@ export function createSessionService(deps: {
   sessionEventsRepo: SessionEventsRepo;
   sessionsDir: SessionsDirCache;
   lastGodCommand: LastGodCommandReader;
-  lastSession: { write(sid: string): void };
+  lastSessionForUser(userId: number): { write(sid: string): void };
   primaryOperator: number;
 }) {
-  function validateSessionPath(sid: string): string | null {
+  function validateSessionPath(sid: string, ownerUserId?: number | null): string | null {
     if (!UUID_RE.test(sid)) return null;
-    const sd = deps.sessionsDir.get();
+    const owner = ownerUserId ?? deps.sessionsRepo.getOwner(sid);
+    if (owner === null) return null;
+    const sd = deps.sessionsDir.get(owner);
     if (!sd) return null;
     const target = resolve(sd, `${sid}.jsonl`);
     if (resolve(target, "..") !== resolve(sd)) {
@@ -52,8 +54,6 @@ export function createSessionService(deps: {
     ownerUserId: number | null;
     limit: number | null;
   }): SessionListItem[] {
-    const sd = deps.sessionsDir.get();
-    if (!sd || !existsSync(sd)) return [];
     let owners: Map<string, number | null>;
     try {
       owners = deps.sessionsRepo.allOwners();
@@ -61,37 +61,45 @@ export function createSessionService(deps: {
       deps.log.error({ err: String(error) }, "list sessions owners lookup failed");
       owners = new Map();
     }
-    let entries: string[];
-    try {
-      entries = readdirSync(sd);
-    } catch {
-      return [];
-    }
+    const ownerIds =
+      args.ownerUserId === null
+        ? [...new Set([...owners.values()].filter((v): v is number => v !== null))]
+        : [args.ownerUserId];
     const out: SessionListItem[] = [];
-    for (const name of entries) {
-      if (!name.endsWith(".jsonl")) continue;
-      const sid = name.slice(0, -".jsonl".length);
-      if (!UUID_RE.test(sid)) continue;
-      const owner = owners.get(sid) ?? null;
-      if (owner === null) {
-        deps.log.warn({ sid }, "session has no owner — skipping");
-        continue;
-      }
-      if (args.ownerUserId !== null && owner !== args.ownerUserId) continue;
-      const full = join(sd, name);
-      let ts: number;
+    for (const ownerId of ownerIds) {
+      const sd = deps.sessionsDir.get(ownerId);
+      if (!sd || !existsSync(sd)) continue;
+      let entries: string[];
       try {
-        ts = statSync(full).mtimeMs / 1000;
+        entries = readdirSync(sd);
       } catch {
         continue;
       }
-      const last = readLastJsonlObject(full);
-      if (last) {
-        const parsed = parseIso8601ToEpoch(last.timestamp as string | undefined);
-        if (parsed) ts = parsed;
+      for (const name of entries) {
+        if (!name.endsWith(".jsonl")) continue;
+        const sid = name.slice(0, -".jsonl".length);
+        if (!UUID_RE.test(sid)) continue;
+        const owner = owners.get(sid) ?? null;
+        if (owner === null) {
+          deps.log.warn({ sid }, "session has no owner — skipping");
+          continue;
+        }
+        if (owner !== ownerId) continue;
+        const full = join(sd, name);
+        let ts: number;
+        try {
+          ts = statSync(full).mtimeMs / 1000;
+        } catch {
+          continue;
+        }
+        const last = readLastJsonlObject(full);
+        if (last) {
+          const parsed = parseIso8601ToEpoch(last.timestamp as string | undefined);
+          if (parsed) ts = parsed;
+        }
+        const slug = sessionDisplayName(full, sid);
+        out.push({ sid, slug, ts, owner });
       }
-      const slug = sessionDisplayName(full, sid);
-      out.push({ sid, slug, ts, owner });
     }
     out.sort((a, b) => b.ts - a.ts);
     if (args.limit) return out.slice(0, args.limit);
@@ -112,9 +120,14 @@ export function createSessionService(deps: {
 
   function recordStart(args: SessionUpsertArgs): number {
     const ownerFromCmd = deps.lastGodCommand.consumeOwner();
+    const existingOwner = deps.sessionsRepo.getOwner(args.sessionId);
+    const previousSession =
+      args.previousSession ??
+      (ownerFromCmd === null ? null : deps.sessionsRepo.lastActiveSid(ownerFromCmd));
     const previousOwner =
-      args.previousSession === null ? null : deps.sessionsRepo.getOwner(args.previousSession);
+      previousSession === null ? null : deps.sessionsRepo.getOwner(previousSession);
     const owner = resolveSessionOwner({
+      existingOwner,
       fromCommandFile: ownerFromCmd,
       previousOwner,
       primaryOperator: args.primaryOperator,
@@ -125,14 +138,15 @@ export function createSessionService(deps: {
       model: args.model,
       cwd: args.cwd,
       transcriptPath: args.transcriptPath,
-      previousSession: args.previousSession,
+      previousSession,
       createdByUserId: owner,
     });
-    deps.lastSession.write(args.sessionId);
+    deps.sessionsDir.remember(owner, args.transcriptPath);
+    deps.lastSessionForUser(owner).write(args.sessionId);
     deps.sessionEventsRepo.insert(args.sessionId, "session_start", {
       source: args.source,
       model: args.model,
-      previous: args.previousSession,
+      previous: previousSession,
       owner,
     });
     return owner;
@@ -142,6 +156,19 @@ export function createSessionService(deps: {
     validateSessionPath,
     listSessions,
     deleteSessionFile,
+    ensureOwner(sessionId: string, owner: number): void {
+      if (!UUID_RE.test(sessionId)) return;
+      deps.sessionsRepo.upsert({
+        sessionId,
+        source: "user_prompt_submit",
+        model: null,
+        cwd: null,
+        transcriptPath: null,
+        previousSession: deps.sessionsRepo.lastActiveSid(owner),
+        createdByUserId: owner,
+      });
+      deps.lastSessionForUser(owner).write(sessionId);
+    },
     recordStart,
     getOwner(sid: string) {
       return deps.sessionsRepo.getOwner(sid);

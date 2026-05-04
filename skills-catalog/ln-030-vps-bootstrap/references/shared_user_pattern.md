@@ -20,9 +20,8 @@ agent-bot (one Linux user, uid 1000, primary group agent-bot)
 │   │   ├── statusline.sh                ← shared bash script (no project-binding)
 │   │   ├── commands/
 │   │   │   └── <project-prefix>-dispatch.md   ← project-named slash-commands; names differ, no conflict
-│   │   ├── projects/                    ← Claude Code's per-cwd memory (auto-isolated by cwd hash)
-│   │   │   └── -opt-<project>/
-│   │   │       └── *.jsonl              ← session history per project
+│   │   ├── projects/                    ← legacy/shared location only; sandboxed god@* instances
+│   │   │                                  write JSONLs under project .agent-home/users/<id>/
 │   │   └── cache/
 │   │       └── usage.json               ← shared (combined across all projects)
 │   ├── .codex/
@@ -31,11 +30,12 @@ agent-bot (one Linux user, uid 1000, primary group agent-bot)
 │   └── .nvm/                            ← ONE Node 24 toolchain
 │
 ├── /opt/<project>/                       ← per-project working dir
-│   └── .claude/
-│       ├── settings.json                ← project-scope: hooks → http://127.0.0.1:<RELAY_HOOK_PORT>/hook/*
-│       └── CLAUDE.md                    ← project-scope: rendered with this project's PROJECT_NAME,
-│                                          SERVICE_PREFIX, RELAY_HOOK_PORT, etc.
-│                                          Identifies claude as "<project>-god session"
+│   ├── .claude/
+│   │   ├── settings.json                ← project-scope: hooks → http://127.0.0.1:<RELAY_HOOK_PORT>/hook/*
+│   │   └── CLAUDE.md                    ← project-scope identity and scope policy
+│   └── .agent-home/users/<telegram_user_id>/
+│       ├── .claude/projects/<encoded-cwd>/*.jsonl
+│       └── .codex/                      ← runtime config/cache; auth bind-mounted read-only from shared HOME
 │
 ├── /opt/<service-prefix>-relay-bot/      ← Node.js bridge code (per-project, owned by agent-bot)
 │
@@ -45,9 +45,7 @@ agent-bot (one Linux user, uid 1000, primary group agent-bot)
 │
 ├── /var/lib/<project>/                   ← agent-bot:agent-bot 0700 — state per project
 │   ├── relay.db                         ← per-project SQLite (relay-bot DB)
-│   ├── sessions-dir.path                ← per-project (auto-discovered by relay-bot)
-│   ├── last-session.id                  ← per-project (written by SessionStart hook)
-│   └── god-command.json                 ← per-project (atomic queue for wrapper)
+│   └── users/<telegram_user_id>/        ← per-user sessions-dir.path, last-session.id, command queue
 │
 ├── /var/log/<project>-god.log            ← agent-bot:agent-bot 0644 — per-project log
 │
@@ -55,7 +53,7 @@ agent-bot (one Linux user, uid 1000, primary group agent-bot)
     ├── <service-prefix>-{god,relay-bot,dispatch.timer,dispatch.service}.service
     │   ← per-project units: User=agent-bot, WorkingDirectory=/opt/<project>, per-project port + tmux session name
     └── agent-update.{service,timer}
-        ← system-wide nightly CLI/plugin updater, restarts all *-god.service units
+        ← system-wide nightly CLI/plugin updater, restarts active *-god@*.service units
 ```
 
 ## What is shared, what is per-project
@@ -63,24 +61,24 @@ agent-bot (one Linux user, uid 1000, primary group agent-bot)
 | Resource | Shared (user-scope) | Per-project (project-scope or per-name) |
 |---|---|---|
 | Linux user | `agent-bot` (one) | — |
-| `$HOME` | `/home/agent-bot/` | — |
-| Anthropic OAuth | `.claude/.credentials.json` | — |
-| Codex login | `.codex/auth.json` | — |
+| `$HOME` | `/home/agent-bot/` is the shared auth/tooling source | sandbox HOME is `${PROJECT_DIR}/.agent-home/users/<telegram_user_id>` |
+| Anthropic OAuth | `.claude/.credentials.json` (one login on VPS) | read-only bind into sandbox HOME |
+| Codex login | `.codex/auth.json` (one login on VPS) | read-only bind into sandbox HOME |
 | nvm + Node toolchain | `.nvm/` | — |
 | Claude Code plugins / marketplaces | `~/.claude/settings.json` (`enabledPlugins`, `extraKnownMarketplaces`) | — |
 | Headless agent defaults | `~/.claude/settings.json` (`model`, `effortLevel`, `permissions`, `theme`) | — |
 | statusLine script | `~/.claude/statusline.sh` + user-scope `settings.json` `statusLine` key | — |
 | `claude-usage-report` CLI | `/usr/local/bin/claude-usage-report` (root-installed) | — |
-| Per-cwd session history | — | `~/.claude/projects/<cwd-encoded>/` (Claude Code auto-isolates) |
+| Per-cwd session history | — | `${PROJECT_DIR}/.agent-home/users/<telegram_user_id>/.claude/projects/<cwd-encoded>/` |
 | **Hooks** | NOT user-scope | `<PROJECT_DIR>/.claude/settings.json` `hooks` key |
 | **CLAUDE.md** (operator instructions) | NOT user-scope | `<PROJECT_DIR>/.claude/CLAUDE.md` |
 | Slash-commands (`<project>-dispatch.md`) | `~/.claude/commands/<project>-dispatch.md` (project-named, no conflict) | — |
 | Project repo / working dir | — | `/opt/<project>/` |
 | Secrets | — | `/etc/<project>/secrets.env` |
-| State / DB | — | `/var/lib/<project>/relay.db`, `last-session.id`, `sessions-dir.path` |
+| State / DB | — | `/var/lib/<project>/relay.db`, `users/<telegram_user_id>/last-session.id`, `users/<telegram_user_id>/sessions-dir.path` |
 | Log file | — | `/var/log/<project>-god.log` |
-| systemd units | `agent-update.service` and `agent-update.timer` | `<service-prefix>-{god,relay-bot,dispatch}.service` and dispatch timer |
-| tmux session/socket | — | session `<service-prefix>-god` on socket `<service-prefix>` (`tmux -L <service-prefix>`) |
+| systemd units | `agent-update.service` and `agent-update.timer` | `<service-prefix>-god@.service`, relay-bot, dispatch service/timer |
+| tmux session/socket | — | targets `<service-prefix>-god-<telegram_user_id>` on socket `<service-prefix>` |
 | Telegram bot (token + chat_id) | — | per-project; multiple bots talk to same operator chat |
 | Relay-bot HTTP port | — | per-project `127.0.0.1:<port>` (default `9999`, override for additional projects) |
 
@@ -94,14 +92,17 @@ These six rules MUST hold for the shared-user model to be coherent:
 4. Each project's `<PROJECT_DIR>/.claude/CLAUDE.md` MUST be rendered with that project's `PROJECT_NAME`, `SERVICE_PREFIX`, `RELAY_HOOK_PORT`, `PROJECT_DIR`, `DISPATCH_COMMAND_NAME`, `TELEGRAM_CHAT_ID`. It MUST contain the "Scope policy — STRICT" section that forbids cross-project filesystem access.
 5. `secrets.env` MUST NOT contain `BOT_USER=`, `PROJECT_NAME=`, `PROJECT_DIR=`, `SERVICE_PREFIX=`, or `RELAY_HOOK_PORT=` lines (identity and routing come from systemd `Environment=` directives).
 6. `god-session.sh`, `dispatch.service`, and relay-bot MUST use the same derived tmux socket via `tmux -L <service-prefix>`. Never use the default tmux socket for project god-sessions.
-7. Session resume is project-bound. Each relay-bot owns a separate `/var/lib/${PROJECT_NAME}/relay.db`; `sessions-dir.path` must resolve to Claude JSONL files for `${PROJECT_DIR}` only; `last-session.id` is written by that project's SessionStart hook only. The wrapper resolves session UUIDs only from this per-project state, never via `claude --continue`, and resumes with explicit `claude --resume <uuid>`.
+7. Session resume is project+user-bound. Each relay-bot owns a separate `/var/lib/${PROJECT_NAME}/relay.db`; `users/<telegram_user_id>/sessions-dir.path` must resolve to Claude JSONL files under `${PROJECT_DIR}/.agent-home/users/<telegram_user_id>/...`; `users/<telegram_user_id>/last-session.id` is written by that user's SessionStart hook only.
 
 If any invariant is violated, claude in one project's tmux can identify itself as another project's god-session, query the wrong relay-bot port, write to the wrong outbox, or resume the wrong session.
 
-## Filesystem isolation between projects is NOT enforced
+## Filesystem isolation between projects is enforced for the agent work plane
 
-Under the shared-user model, every god-session has OS-level read access to every other project's `/opt/`, `/etc/`, `/var/lib/`, `/var/log/<other-project>-*` files (because `agent-bot` owns or has group-read on all of them). The skill DOES NOT enforce filesystem isolation between projects.
+Shared auth/tooling still lives under one `agent-bot` home, but `${SERVICE_PREFIX}-god@<telegram_user_id>` runs inside `bubblewrap`. The sandbox exposes only:
 
-What keeps projects scoped to themselves at runtime is the **strict scope policy in each project's `<PROJECT_DIR>/.claude/CLAUDE.md`** — explicit instructions to claude not to `cd`, `curl`, or read outside its own project tree. Claude follows these instructions reliably; treat the policy as a soft fence.
+- writable `${PROJECT_DIR}`
+- per-user sandbox HOME under `${PROJECT_DIR}/.agent-home/users/<telegram_user_id>`
+- read-only `${AGENT_SKILLS_DIR}`
+- read-only shared auth files needed by Claude/Codex
 
-If your threat model requires hard fence (kernel-enforced isolation between projects), this skill is not the right tool — you'd need per-Linux-user isolation, which trades the shared-OAuth simplicity for Linux DAC enforcement.
+It does not expose real `/home/${BOT_USER}`, host `/etc`, host `/var/lib`, relay DB, relay-bot code, sibling `/opt/*`, logs, or host systemd to the LLM process.

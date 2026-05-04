@@ -2,17 +2,14 @@ import Fastify from "fastify";
 import type { FastifyInstance } from "fastify";
 import { Composer } from "grammy";
 import type { Env } from "./config/env.js";
-import { buildPaths } from "./config/paths.js";
+import { buildPaths, buildUserRuntimePaths } from "./config/paths.js";
 import { createLogger, type Logger } from "./lib/logger.js";
 import { MutexMap } from "./lib/mutex.js";
 import { closeDb, createDb } from "./infrastructure/db/client.js";
 import { createRepositories } from "./infrastructure/db/repositories/index.js";
 import { createTelegramClient } from "./infrastructure/telegram/client.js";
-import { createTmuxPane } from "./infrastructure/tmux/pane.js";
 import { createGodStatusProbe } from "./infrastructure/systemd/godStatus.js";
 import { createSessionsDirCache } from "./infrastructure/filesystem/sessionsDirCache.js";
-import { createAtomicCommandWriter } from "./infrastructure/filesystem/atomicCommand.js";
-import { createLastSessionWriter } from "./infrastructure/filesystem/lastSession.js";
 import { createGodErrorReader } from "./infrastructure/filesystem/godError.js";
 import { createMediaStore } from "./infrastructure/filesystem/mediaStore.js";
 import { createLastGodCommandReader } from "./infrastructure/filesystem/lastGodCommand.js";
@@ -21,6 +18,7 @@ import { createControlLane } from "./services/controlLane.service.js";
 import { createOutboxService } from "./services/outbox.service.js";
 import { createSessionService } from "./services/session.service.js";
 import { createInboundService } from "./services/inbound.service.js";
+import { createGodRuntimeService } from "./services/godRuntime.service.js";
 import { createDispatchService } from "./services/dispatch.service.js";
 import { createMemoryService } from "./services/memory.service.js";
 import { createAllowlistService } from "./services/allowlist.service.js";
@@ -53,8 +51,8 @@ export function buildApp(env: Env, log: Logger = createLogger()): App {
   const paths = buildPaths(env);
 
   const sessionsDir = createSessionsDirCache({
-    cacheFile: paths.sessionsDirCacheFile,
-    claudeProjectsHome: paths.claudeProjectsHome,
+    cacheFileForUser: (userId) => buildUserRuntimePaths(env, userId).sessionsDirCacheFile,
+    claudeProjectsHomeForUser: (userId) => buildUserRuntimePaths(env, userId).claudeProjectsHome,
     projectDir: env.projectDir,
     log,
   });
@@ -63,34 +61,25 @@ export function buildApp(env: Env, log: Logger = createLogger()): App {
     dbPath: env.dbPath,
     log,
     primaryOperator: env.allowedChat,
-    sessionsDir: () => sessionsDir.get(),
+    sessionsDir: () => sessionsDir.get(env.allowedChat),
   });
   const repos = createRepositories(db);
 
   const bot = createTelegramClient({ token: env.tgToken });
-  const pane = createTmuxPane({ target: env.tmuxTarget, socketName: env.tmuxSocketName, log });
   const godStatus = createGodStatusProbe({
-    serviceName: paths.godServiceName,
-    log,
-  });
-  const atomicCmd = createAtomicCommandWriter({
-    cmdFile: paths.cmdFile,
-    stateDir: paths.stateDir,
-    log,
-  });
-  const lastSession = createLastSessionWriter({
-    filePath: paths.lastSessionFile,
+    env,
     log,
   });
   const godError = createGodErrorReader(paths.errorFile, log);
   const lastGodCommand = createLastGodCommandReader({
-    filePath: paths.lastCmdFile,
+    usersDir: `${paths.stateDir}/users`,
     ttlSec: TIMING.lastCmdTtlSec,
     log,
   });
 
   const controlLane = createControlLane();
   const sessionLocks = new MutexMap();
+  const godRuntime = createGodRuntimeService({ env, log, godStatus });
 
   const outbox = createOutboxService({ outboxRepo: repos.outbox, log });
   const verbosity = createVerbosityService(env.verbosity);
@@ -105,7 +94,7 @@ export function buildApp(env: Env, log: Logger = createLogger()): App {
     sessionEventsRepo: repos.sessionEvents,
     sessionsDir,
     lastGodCommand,
-    lastSession,
+    lastSessionForUser: (userId) => godRuntime.runtimeFor(userId).lastSession,
     primaryOperator: env.allowedChat,
   });
   const reactToInbound = createReactToInbound({
@@ -123,7 +112,7 @@ export function buildApp(env: Env, log: Logger = createLogger()): App {
     messagesRepo: repos.messages,
     outboxService: outbox,
     controlLane,
-    pane,
+    godRuntime,
     verbosity,
     reactToInbound,
   });
@@ -137,9 +126,7 @@ export function buildApp(env: Env, log: Logger = createLogger()): App {
   const newSessionHandler = buildNewSessionHandler({
     log,
     controlLane,
-    pane,
-    atomicCmd,
-    godStatus,
+    godRuntime,
   });
   const sessionsHandler = buildSessionsHandler({
     log,
@@ -152,9 +139,7 @@ export function buildApp(env: Env, log: Logger = createLogger()): App {
     sessionService,
     controlLane,
     sessionLocks,
-    pane,
-    atomicCmd,
-    godStatus,
+    godRuntime,
   });
   const usersHandler = buildUsersHandler({ log, allowlist });
   const usersCallback = buildUsersCallbackHandler({ log, bot, allowlist });
@@ -224,8 +209,8 @@ export function buildApp(env: Env, log: Logger = createLogger()): App {
       log.info(
         {
           chat: env.allowedChat,
-          tmux: env.tmuxTarget,
           tmuxSocket: env.tmuxSocketName,
+          godServiceTemplate: paths.godServiceName,
           hook: `${env.hookHost}:${env.hookPort}`,
           db: env.dbPath,
         },

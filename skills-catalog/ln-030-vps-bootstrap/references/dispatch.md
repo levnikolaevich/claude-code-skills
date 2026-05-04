@@ -10,10 +10,10 @@ You are running inside the long-lived **${PROJECT_NAME} god-session**. Your job 
 ## Working environment
 
 - `cwd`: `${PROJECT_DIR}` (clean clone of the repo).
-- `secrets.env` is sourced — `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, and (depending on provider) `GITHUB_*` or `GITLAB_*` are in env. Do not echo their values.
+- Strict sandbox mode does **not** expose `/etc/${PROJECT_NAME}/secrets.env` or raw provider tokens to this work-plane command. Treat missing `GITHUB_*`, `GITLAB_*`, or `TELEGRAM_BOT_TOKEN` as expected unless the operator/control plane explicitly injected a scoped token for this invocation. Do not try to read secrets directly.
 - **Git provider**: this project uses `${GIT_PROVIDER}` (either `github` or `gitlab`). All git/issue commands below branch on this.
-- **`GIT_PROVIDER=github`**: `${SERVICE_PREFIX}-mint-gh-token` mints fresh GitHub App installation tokens. `git credential.helper` is wired to it for `git push`. Before first `gh` call: `export GH_TOKEN=$(${SERVICE_PREFIX}-mint-gh-token)`.
-- **`GIT_PROVIDER=gitlab`**: `~/.git-credentials` carries this project's `GITLAB_GIT_USERNAME` + `GITLAB_GIT_TOKEN` for clone/pull/push. For `glab issue list` / `glab mr create`: `export GITLAB_TOKEN=${GITLAB_API_TOKEN}`. Missing provider tokens are configuration errors; stop and alert.
+- **`GIT_PROVIDER=github`**: if a scoped `GH_TOKEN` is already present, use it. Do not call `${SERVICE_PREFIX}-mint-gh-token` from inside the sandbox.
+- **`GIT_PROVIDER=gitlab`**: if a scoped `GITLAB_TOKEN` is already present, use it. Do not read raw GitLab tokens or `~/.git-credentials` from outside `${PROJECT_DIR}`.
 - **claude-relay-bot HTTP API at `http://127.0.0.1:${RELAY_HOOK_PORT}`** — used below for dispatch tracking (durable audit in SQLite). Conversational replies to operator are auto-mirrored via Stop hook; `/${DISPATCH_COMMAND_NAME}` status pings still go via direct curl as before for realtime visibility.
 
 ## Telegram outbound (curl pattern, for realtime status pings)
@@ -54,6 +54,10 @@ gh issue list --repo ${REPO_SLUG} \
   --state open --label status:ready \
   --json number,title,body,labels,createdAt
 ```
+
+In strict sandbox mode, if `GH_TOKEN` is not already set, stop here: record
+`dispatch_end failed` through the relay API and tell the operator that provider
+token work must be performed by the external control plane.
 
 ### GitLab (`GIT_PROVIDER=gitlab`)
 
@@ -226,8 +230,8 @@ Send Telegram: `[claude#<N>] PR/MR opened: <url>`. Exit.
 - Never push to `master` directly. Only `agent/*` branches.
 - Never amend commits. New commits only.
 - Never echo `secrets.env` values to logs/comments/Telegram.
-- (`GIT_PROVIDER=github`) If `${SERVICE_PREFIX}-mint-gh-token` errors twice within 30s → `dispatch_end failed` + Telegram alert + exit.
-- (`GIT_PROVIDER=gitlab`) If `git push` or `glab` fails twice within 30s → `dispatch_end failed` + Telegram alert + exit. Likely cause: `GITLAB_GIT_TOKEN` or `GITLAB_API_TOKEN` expired/scope changed in `/etc/${PROJECT_NAME}/secrets.env`.
+- (`GIT_PROVIDER=github`) If `GH_TOKEN` is absent in strict sandbox mode → `dispatch_end failed` + Telegram alert + exit. Do not call token minters or read secrets from the work plane.
+- (`GIT_PROVIDER=gitlab`) If `GITLAB_TOKEN` is absent in strict sandbox mode, or `git push` / `glab` fails twice within 30s → `dispatch_end failed` + Telegram alert + exit. Provider credentials are control-plane resources.
 - If Skill() crashes (tool error, not a documented verdict) → close current phase `status=error`, `dispatch_end failed`, revert label appropriately + Telegram alert + exit.
 - Telegram or relay-bot localhost API failures are non-fatal — log and continue.
 - Conversational replies outside /${DISPATCH_COMMAND_NAME} are auto-mirrored via Stop hook — DO NOT manually curl Telegram for those. Status pings inside this dispatch ARE direct curl (realtime visibility).

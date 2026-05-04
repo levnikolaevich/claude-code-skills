@@ -32,7 +32,7 @@ sudo -u ${BOT_USER} jq '.model,.effortLevel,.permissions.defaultMode' ~/.claude/
 # Codex headless config
 sudo -u ${BOT_USER} grep -E '^(model|model_reasoning_effort|approval_policy|sandbox_mode)\b' ~/.codex/config.toml
 # Expected: model = "gpt-5.5", model_reasoning_effort = "xhigh",
-#           approval_policy = "never", sandbox_mode = "danger-full-access"
+#           approval_policy = "never", sandbox_mode = "workspace-write"
 ```
 
 ## Agent skills/plugins marketplace (Step 5c)
@@ -63,7 +63,7 @@ sudo -u ${BOT_USER} grep -E '^\[plugins\."(agile-workflow|[^"]+)@levnikolaevich-
 systemctl list-timers agent-update.timer --no-pager
 # Expected: one active timer with next fire around 03:37 local time (+ randomized delay)
 
-# Manual smoke: updates CLIs + skills/plugins, verifies, then restarts every enabled *-god.service.
+# Manual smoke: updates CLIs + skills/plugins, verifies, then restarts every enabled *-god@*.service.
 systemctl start agent-update.service
 journalctl -u agent-update.service -n 120 --no-pager
 # Expected: claude update succeeds, Codex npm install succeeds, skills repo fast-forwards,
@@ -72,7 +72,7 @@ journalctl -u agent-update.service -n 120 --no-pager
 
 sudo -i -u ${BOT_USER} bash -lc '. /home/${BOT_USER}/.nvm/nvm.sh && claude --version && codex --version'
 sudo -i -u ${BOT_USER} bash -lc 'cd ${AGENT_SKILLS_DIR} && git status --short && git rev-parse --short HEAD'
-systemctl status ${SERVICE_PREFIX}-god.service --no-pager
+systemctl status ${SERVICE_PREFIX}-god@${TELEGRAM_CHAT_ID}.service --no-pager
 # Expected: CLI versions print, skills repo is clean, and god-session is active after the maintenance restart.
 ```
 
@@ -82,8 +82,8 @@ systemctl status ${SERVICE_PREFIX}-god.service --no-pager
 sudo -u ${BOT_USER} git -C ${PROJECT_DIR} remote get-url origin | grep -Fx "${REPO_URL}"
 sudo -u ${BOT_USER} git -C ${PROJECT_DIR} branch --show-current
 sudo -u ${BOT_USER} git -C ${PROJECT_DIR} status --short
-sudo -u ${BOT_USER} tmux -L ${SERVICE_PREFIX} ls | grep -F "${SERVICE_PREFIX}-god"
-systemctl cat ${SERVICE_PREFIX}-god.service ${SERVICE_PREFIX}-dispatch.service ${SERVICE_PREFIX}-relay-bot.service | grep -E "tmux -L ${SERVICE_PREFIX}|RELAY_HOOK_PORT=${RELAY_HOOK_PORT}"
+sudo -u ${BOT_USER} tmux -L ${SERVICE_PREFIX} ls | grep -F "${SERVICE_PREFIX}-god-${TELEGRAM_CHAT_ID}"
+systemctl cat ${SERVICE_PREFIX}-god@.service ${SERVICE_PREFIX}-dispatch.service ${SERVICE_PREFIX}-relay-bot.service | grep -E "tmux -L ${SERVICE_PREFIX}|RELAY_HOOK_PORT=${RELAY_HOOK_PORT}|god@"
 ```
 
 Expected: repo URL/ref match configuration, status is clean except intentional project-scope `.claude` files, and all project tmux operations use the same non-default socket.
@@ -105,7 +105,7 @@ sqlite3 /var/lib/${PROJECT_NAME}/relay.db '.tables'
 
 # Relay-bot build output exists and build-only dependencies were pruned
 test -d /opt/${SERVICE_PREFIX}-relay-bot/dist
-test ! -x /opt/${SERVICE_PREFIX}-relay-bot/node_modules/.bin/tsc
+test -x /opt/${SERVICE_PREFIX}-relay-bot/node_modules/.bin/tsc
 
 # Telegram Bot API menu commands registered
 curl -fsS "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getMyCommands" | jq '.result'
@@ -129,9 +129,15 @@ sqlite3 /var/lib/${PROJECT_NAME}/relay.db "SELECT * FROM auth_rejects ORDER BY t
 sqlite3 /var/lib/${PROJECT_NAME}/relay.db "SELECT user_id, status FROM allowed_users"
 # Expected: primary operator with status='allowed'
 
-# Per-user session ownership column exists
+# Per-user session ownership and inbound routing columns exist
 sqlite3 /var/lib/${PROJECT_NAME}/relay.db "PRAGMA table_info(sessions)"
 # Expected: created_by_user_id column present
+sqlite3 /var/lib/${PROJECT_NAME}/relay.db "PRAGMA table_info(messages)"
+# Expected: from_user_id column present
+test -f /var/lib/${PROJECT_NAME}/users/${TELEGRAM_CHAT_ID}/last-session.id
+test -f /var/lib/${PROJECT_NAME}/users/${TELEGRAM_CHAT_ID}/sessions-dir.path
+grep -F "${PROJECT_DIR}/.agent-home/users/${TELEGRAM_CHAT_ID}/.claude/projects/" \
+  /var/lib/${PROJECT_NAME}/users/${TELEGRAM_CHAT_ID}/sessions-dir.path
 ```
 
 ### Inbound smoke
@@ -139,8 +145,10 @@ sqlite3 /var/lib/${PROJECT_NAME}/relay.db "PRAGMA table_info(sessions)"
 - Send plain text → creates `messages(kind='text', status='queued')` and then becomes `delivered`.
 - Send photo, image document, and a general document → each saves under `/var/lib/${PROJECT_NAME}/tg-media/`, creates `messages(kind='image'|'document', status='queued')`, and then becomes `delivered`.
 - Send voice/audio/video/sticker without usable text → row is `rejected`, Telegram replies with the unsupported-media explanation, claude receives nothing.
-- Send a Telegram message while `${SERVICE_PREFIX}-god` is restarting → `messages.status='queued'` until tmux returns, then `delivered`.
-- Trigger `/new_session` and immediately send text → text stays queued until the tmux session is ready, then is delivered after the control action completes.
+- Send a Telegram message while `${SERVICE_PREFIX}-god@<your_user_id>` is restarting → `messages.status='queued'` until that user's tmux target returns, then `delivered`.
+- Trigger `/new_session` and immediately send text → text stays queued until your personal tmux target is ready, then is delivered after the control action completes.
+- With two allowed users: each sends `/new_session` and text; `tmux -L ${SERVICE_PREFIX} ls` shows two `${SERVICE_PREFIX}-god-<user_id>` targets, `/sessions` shows only each user's own sessions, and cross-user Resume/Delete is rejected.
+- Sandbox boundary: inside each `${SERVICE_PREFIX}-god-<user_id>` pane, `echo $HOME` is `${PROJECT_DIR}/.agent-home/users/<user_id>`; `~/.claude/.credentials.json` and `~/.codex/auth.json` are readable as read-only bind mounts from the one shared VPS auth, while `/home/${BOT_USER}/.claude`, `/etc/${PROJECT_NAME}/secrets.env`, `/var/lib/${PROJECT_NAME}/relay.db`, sibling `/opt/*`, and host `systemctl` are denied.
 - End-to-end: send «hi» from Telegram → inbound row delivered → claude responds → reply mirrored back via Stop hook → outbox row sent.
 - Plan-first gate: send a mutating request → claude replies with a plan only; no file diff, branch, service restart, label change, commit, PR, or MR appears before explicit approval. Send `approve` → claude creates todos and starts implementation.
 - Issue gate: dispatch picks one `status:ready` issue → plan is sent and dispatch records `approval:waiting_approval`; issue label remains `status:ready`. Send `approve #N` / `делай #N` → claim transaction moves the issue to `status:in-progress` and the pipeline starts.

@@ -19,7 +19,6 @@ export interface Env {
   projectDir: string;
   servicePrefix: string;
   botUser: string;
-  tmuxTarget: string;
   tmuxSocketName: string;
   dbPath: string;
   hookHost: string;
@@ -56,7 +55,6 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
     projectDir: v.PROJECT_DIR,
     servicePrefix,
     botUser,
-    tmuxTarget: `${servicePrefix}-god`,
     tmuxSocketName: servicePrefix,
     dbPath: `/var/lib/${projectName}/relay.db`,
     hookHost: "127.0.0.1",

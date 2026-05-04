@@ -3,30 +3,60 @@ import type { Env } from "./env.js";
 
 export interface Paths {
   stateDir: string;
-  cmdFile: string;
-  lastCmdFile: string;
   cmdLockFile: string;
-  sessionsDirCacheFile: string;
   errorFile: string;
-  lastSessionFile: string;
   mediaDir: string;
   godServiceName: string;
+}
+
+export interface UserRuntimePaths {
+  userId: number;
+  userStateDir: string;
+  cmdFile: string;
+  lastCmdFile: string;
+  lastSessionFile: string;
+  sessionsDirCacheFile: string;
   claudeProjectsHome: string;
+  cmdLockFile: string;
+  tmuxTarget: string;
+  godServiceName: string;
 }
 
 export function buildPaths(env: Env): Paths {
   const stateDir = `/var/lib/${env.projectName}`;
   return {
     stateDir,
-    cmdFile: path.join(stateDir, "god-command.json"),
-    lastCmdFile: path.join(stateDir, "last-god-command.json"),
     cmdLockFile: path.join(stateDir, ".cmd-lock"),
-    sessionsDirCacheFile: path.join(stateDir, "sessions-dir.path"),
     errorFile: path.join(stateDir, "last-god-error.json"),
-    lastSessionFile: path.join(stateDir, "last-session.id"),
     mediaDir: path.join(stateDir, "tg-media"),
-    godServiceName: `${env.servicePrefix}-god.service`,
-    claudeProjectsHome: `/home/${env.botUser}/.claude/projects`,
+    godServiceName: `${env.servicePrefix}-god@.service`,
+  };
+}
+
+export function buildUserRuntimePaths(env: Env, userId: number): UserRuntimePaths {
+  if (!Number.isSafeInteger(userId) || userId <= 0) {
+    throw new Error(`invalid Telegram user id: ${String(userId)}`);
+  }
+  const stateDir = `/var/lib/${env.projectName}`;
+  const userStateDir = path.join(stateDir, "users", String(userId));
+  return {
+    userId,
+    userStateDir,
+    cmdFile: path.join(userStateDir, "god-command.json"),
+    lastCmdFile: path.join(userStateDir, "last-god-command.json"),
+    lastSessionFile: path.join(userStateDir, "last-session.id"),
+    sessionsDirCacheFile: path.join(userStateDir, "sessions-dir.path"),
+    claudeProjectsHome: path.join(
+      env.projectDir,
+      ".agent-home",
+      "users",
+      String(userId),
+      ".claude",
+      "projects"
+    ),
+    cmdLockFile: path.join(userStateDir, ".cmd-lock"),
+    tmuxTarget: `${env.servicePrefix}-god-${userId}`,
+    godServiceName: `${env.servicePrefix}-god@${userId}.service`,
   };
 }
 

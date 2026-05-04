@@ -1,13 +1,13 @@
 #!/bin/bash
 # agent-update — system-wide nightly maintenance for the shared agent toolchain
 # (Claude Code CLI, Codex CLI, marketplace clone, selected plugins). Restarts
-# every project's god-service after the toolchain is verified, so each project
+# every project's active god-service instances after the toolchain is verified, so each project
 # picks up the new versions on its next pane respawn.
 #
 # Under the shared `${BOT_USER}` model, all projects share one nvm + Node, one
 # `~/.claude/.credentials.json`, one `~/.codex/auth.json`, and one
 # `${AGENT_SKILLS_DIR}` clone. This script updates that shared state ONCE per
-# night, then enumerates `*-god.service` units to restart all projects.
+# night, then enumerates `*-god@*.service` units to restart active project/user sessions.
 set -euo pipefail
 
 BOT_USER='${BOT_USER}'
@@ -155,13 +155,13 @@ update_claude_plugins() {
 }
 
 restart_all_god_services() {
-  # Discover every enabled `*-god.service` and restart it. Each project's god-session
-  # is owned by its own systemd unit; restarting picks up new CLI/plugin versions.
+  # Discover every active `*-god@*.service` and restart it. Each project/user
+  # god-session is owned by its own systemd template instance.
   local services
-  services=$(systemctl list-unit-files --type=service --state=enabled --no-legend '*-god.service' 2>/dev/null \
+  services=$(systemctl list-units --type=service --state=active --no-legend '*-god@*.service' 2>/dev/null \
     | awk '{print $1}')
   if [[ -z "$services" ]]; then
-    log "no enabled *-god.service units found — nothing to restart"
+    log "no active *-god@*.service units found — nothing to restart"
     return 0
   fi
   log "restarting god-services: $(echo "$services" | tr '\n' ' ')"

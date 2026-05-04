@@ -93,6 +93,9 @@ export function registerHookRoutes(app: FastifyInstance, deps: HookDeps): void {
     const inboundId = inbound?.id ?? 0;
     if (inbound) {
       deps.messagesRepo.update(inbound.id, { sessionId: session_id });
+      if (inbound.fromUserId !== null) {
+        deps.sessionService.ensureOwner(session_id, inbound.fromUserId);
+      }
     }
     deps.pendingRepo.set(session_id, inboundId, prompt);
     deps.log.info(
@@ -158,13 +161,7 @@ export function registerHookRoutes(app: FastifyInstance, deps: HookDeps): void {
     const parsed = SessionStartSchema.safeParse(req.body);
     if (!parsed.success) return reply.code(200).send({});
     const { session_id, source, model, cwd, transcript_path } = parsed.data;
-    let previousSession: string | null;
-    try {
-      previousSession = deps.sessionsRepo.lastActiveSid();
-      if (previousSession === session_id) previousSession = null;
-    } catch {
-      previousSession = null;
-    }
+    const previousSession: string | null = null;
     const owner = deps.sessionService.recordStart({
       sessionId: session_id,
       source,

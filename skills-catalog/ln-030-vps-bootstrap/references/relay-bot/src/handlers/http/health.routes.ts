@@ -27,7 +27,7 @@ export function registerHealthRoutes(app: FastifyInstance, deps: HealthRoutesDep
     const lastSession = deps.sessionsRepo.lastActiveSid();
     const dbSize = existsSync(deps.dbPath) ? statSync(deps.dbPath).size : 0;
     const lane = deps.controlLane.state();
-    const godReady = await deps.godStatus.isActive();
+    const godReady = await deps.godStatus.isAnyActive();
     return reply.send({
       ok: true,
       version,

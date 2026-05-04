@@ -31,11 +31,6 @@ export function buildSessionsHandler(deps: SessionsDeps): Composer<Context> {
         await ctx.reply("Usage: `/sessions delete <session-id>`");
         return;
       }
-      const path = deps.sessionService.validateSessionPath(sid);
-      if (path === null) {
-        await ctx.reply(`❌ Session \`${sid}\` not found or invalid id.`);
-        return;
-      }
       const owner = deps.sessionService.getOwner(sid);
       if (owner === null) {
         await ctx.reply(`❌ Session \`${sid.slice(0, 8)}…\` has no recorded owner.`, {
@@ -45,6 +40,11 @@ export function buildSessionsHandler(deps: SessionsDeps): Composer<Context> {
       }
       if (ctx.from && ctx.from.id !== owner) {
         await ctx.reply("❌ Not your session.");
+        return;
+      }
+      const path = deps.sessionService.validateSessionPath(sid, owner);
+      if (path === null) {
+        await ctx.reply(`❌ Session \`${sid}\` not found or invalid id.`);
         return;
       }
       await deps.controlLane.run("delete_session", async () => {

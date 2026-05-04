@@ -30,6 +30,11 @@ function hasUnsupportedMedia(ctx: Context): boolean {
 export function buildInboundHandler(deps: InboundDeps): Composer<Context> {
   const c = new Composer<Context>();
   c.on("message", async (ctx) => {
+    const fromUserId = ctx.from?.id;
+    if (fromUserId === undefined) {
+      deps.log.warn({ chatId: ctx.chat.id }, "INBOUND rejected: missing Telegram user id");
+      return;
+    }
     const text = (ctx.message.text ?? ctx.message.caption ?? "").trim();
     const media = await deps.mediaStore.download(ctx);
     if (!text && !media) {
@@ -58,7 +63,12 @@ export function buildInboundHandler(deps: InboundDeps): Composer<Context> {
       body = text;
     }
     const paneText = `[tg id=${ctx.chat.id}:${ctx.message.message_id}${tag}] ${body}`;
-    const id = deps.messagesRepo.insertInbound(paneText, ctx.chat.id, ctx.message.message_id);
+    const id = deps.messagesRepo.insertInbound(
+      paneText,
+      ctx.chat.id,
+      ctx.message.message_id,
+      fromUserId
+    );
     if (media) {
       deps.messagesRepo.update(id, { kind: media.kind });
       deps.log.info({ id, kind: media.kind, path: media.path }, "INBOUND queued media");

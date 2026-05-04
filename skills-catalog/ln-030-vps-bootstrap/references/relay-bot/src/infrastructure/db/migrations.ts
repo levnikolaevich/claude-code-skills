@@ -29,6 +29,7 @@ export function runMigrations(db: Db, deps: MigrationDeps): void {
   ensureExtraIndexes(db);
   recoverStuckInbound(db);
   migrateOutboxEventType(db, deps.log);
+  seedTaskPollState(db, deps.log);
   reconcileSessionsOwner(db, deps);
 }
 
@@ -86,6 +87,27 @@ function migrateOutboxEventType(db: Db, log: Logger): void {
     }
   } catch (error) {
     log.error({ err: error }, "migrate_outbox_event_type failed");
+  }
+}
+
+function seedTaskPollState(db: Db, log: Logger): void {
+  try {
+    const existing = db.prepare("SELECT id FROM task_poll_state WHERE id = 1").get();
+    if (existing) return;
+    const row = db
+      .prepare(
+        "SELECT ts FROM outbox WHERE event_type='system' " +
+          "AND text LIKE 'Tasks:%open task%' ORDER BY ts DESC LIMIT 1"
+      )
+      .get() as { ts: number } | undefined;
+    if (!row) return;
+    db.prepare(
+      "INSERT INTO task_poll_state (id, last_notified_at, last_count, updated_at) " +
+        "VALUES (1, ?, 0, ?)"
+    ).run(row.ts, nowTs());
+    log.info({ lastNotifiedAt: row.ts }, "migrate: seeded task poll notification state");
+  } catch (error) {
+    log.error({ err: error }, "seed_task_poll_state failed");
   }
 }
 

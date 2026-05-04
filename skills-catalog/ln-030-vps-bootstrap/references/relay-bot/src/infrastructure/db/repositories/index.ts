@@ -9,6 +9,7 @@ import { createMemoryRepo, type MemoryRepo } from "./memory.repo.js";
 import { createUsersRepo, type UsersRepo } from "./users.repo.js";
 import { createTodoStateRepo, type TodoStateRepo } from "./todoState.repo.js";
 import { createHealthRepo, type HealthRepo } from "./health.repo.js";
+import { createTaskPollStateRepo, type TaskPollStateRepo } from "./taskPollState.repo.js";
 
 export interface Repositories {
   messages: MessagesRepo;
@@ -21,6 +22,7 @@ export interface Repositories {
   users: UsersRepo;
   todoState: TodoStateRepo;
   health: HealthRepo;
+  taskPollState: TaskPollStateRepo;
 }
 
 export function createRepositories(db: Db): Repositories {
@@ -35,5 +37,6 @@ export function createRepositories(db: Db): Repositories {
     users: createUsersRepo(db),
     todoState: createTodoStateRepo(db),
     health: createHealthRepo(db),
+    taskPollState: createTaskPollStateRepo(db),
   };
 }

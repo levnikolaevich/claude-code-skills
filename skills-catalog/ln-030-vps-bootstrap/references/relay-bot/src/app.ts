@@ -131,6 +131,7 @@ export function buildApp(env: Env, log: Logger = createLogger()): App {
     provider: taskProvider,
     outbox,
     messagesRepo: repos.messages,
+    taskPollState: repos.taskPollState,
     inbound: inboundService,
   });
 

@@ -86,7 +86,7 @@ Components:
 - **SQLite at `/var/lib/${PROJECT_NAME}/relay.db`** with 12 tables: `messages`, `pending_reply`, `outbox` (+ `event_type` column for status routing), `sessions`, `session_events`, `dispatch_runs`, `dispatch_phases`, `memories`, `health_snapshots`, `auth_rejects`, `allowed_users`, `todo_state`
 - **SessionStart additionalContext injection** — claude sees recent memories + dispatch history at start of every new session
 
-External `${SERVICE_PREFIX}-dispatch.timer` (systemd, installed in Step 7) replaces the in-session `/loop` (which was fragile across tmux/claude respawn). Every 15 minutes, it calls relay-bot `POST /tasks/poll`. Relay-bot lists open provider issues with control-plane secrets; empty queues only log, non-empty queues notify the primary operator to use `/tasks`.
+External `${SERVICE_PREFIX}-dispatch.timer` (systemd, installed in Step 7) replaces the in-session `/loop` (which was fragile across tmux/claude respawn). Every 15 minutes, it calls relay-bot `POST /tasks/poll`. Relay-bot lists open provider issues with control-plane secrets; empty queues only log, non-empty queues notify the primary operator to use `/tasks` at most once per 24 hours.
 
 External `agent-update.timer` (systemd, installed in Step 7d) performs system-wide nightly host maintenance. It updates CLIs and plugins, verifies versions/config, then restarts active `*-god@*.service` user instances. Failed updates do not restart running god-sessions.
 

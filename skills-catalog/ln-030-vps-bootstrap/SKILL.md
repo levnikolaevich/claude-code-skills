@@ -402,7 +402,7 @@ tail -10 /var/log/${PROJECT_NAME}-god.log
 Expected timeline:
 - t+0s: wrapper boots, log `[${SERVICE_PREFIX}-god user=${TELEGRAM_CHAT_ID}]`.
 - t+1s: tmux target `${SERVICE_PREFIX}-god-${TELEGRAM_CHAT_ID}` exists on socket `${SERVICE_PREFIX}`.
-- every 15 minutes: `${SERVICE_PREFIX}-dispatch.service` calls relay-bot `POST /tasks/poll`; empty task queues are logged only, non-empty queues notify the primary operator.
+- every 15 minutes: `${SERVICE_PREFIX}-dispatch.service` calls relay-bot `POST /tasks/poll`; empty task queues are logged only, non-empty queues notify the primary operator at most once per 24 hours.
 - nightly around 03:37 local time (+ up to 20m randomized delay): the **system-wide** `agent-update.service` updates shared CLIs/plugins, verifies everything, then restarts active `*-god@*.service` instances.
 - Telegram inbound (Step 7c, optional) is wired separately via `${SERVICE_PREFIX}-relay-bot.service`. The pane should NOT contain a `Listening for channel messages` line.
 

@@ -130,7 +130,7 @@ sqlite3 /var/lib/${PROJECT_NAME}/relay.db "SELECT * FROM auth_rejects ORDER BY t
 sqlite3 /var/lib/${PROJECT_NAME}/relay.db "SELECT user_id, status FROM allowed_users"
 # Expected: primary operator with status='allowed'
 
-# Task polling endpoint: non-empty queues notify primary only; empty queues log only.
+# Task polling endpoint: non-empty queues notify primary only once per 24 hours; empty queues log only.
 curl -fsS -X POST http://127.0.0.1:${RELAY_HOOK_PORT}/tasks/poll | jq .
 systemctl list-timers ${SERVICE_PREFIX}-dispatch.timer --no-pager
 # Expected: JSON {ok:true,count:N}; timer cadence is 15 minutes.
@@ -157,7 +157,7 @@ grep -F "${PROJECT_DIR}/.agent-home/users/${TELEGRAM_CHAT_ID}/.claude/projects/"
 - Sandbox boundary: inside each `${SERVICE_PREFIX}-god-<user_id>` pane, `echo $HOME` is `${PROJECT_DIR}/.agent-home/users/<user_id>`; `~/.claude/.credentials.json` and `~/.codex/auth.json` are readable as read-only bind mounts from the one shared VPS auth, while `/home/${BOT_USER}/.claude`, `/etc/${PROJECT_NAME}/secrets.env`, `/var/lib/${PROJECT_NAME}/relay.db`, sibling `/opt/*`, and host `systemctl` are denied.
 - End-to-end: send «hi» from Telegram → inbound row delivered → claude responds → reply mirrored back via Stop hook → outbox row sent.
 - Plan-first gate: send a mutating request → claude replies with a plan only; no file diff, branch, service restart, label change, commit, PR, or MR appears before explicit approval. Send `approve` → claude creates todos and starts implementation.
-- Task gate: `/tasks` lists all open provider issues for every allowed user. Pressing [Take] injects the selected issue into the clicking user's `${SERVICE_PREFIX}-god@<user_id>` session without creating a new session. Scheduled polling notifies only the primary operator when count > 0 and sends nothing when count = 0.
+- Task gate: `/tasks` lists all open provider issues for every allowed user. Pressing [Take] injects the selected issue into the clicking user's `${SERVICE_PREFIX}-god@<user_id>` session without creating a new session. Scheduled polling notifies only the primary operator when count > 0, at most once per 24 hours, and sends nothing when count = 0.
 
 ## Communication policy (Step 7c-2, 5 layers L1–L5)
 

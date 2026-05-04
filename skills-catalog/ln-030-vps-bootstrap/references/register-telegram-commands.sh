@@ -18,17 +18,33 @@ if [[ -z "${TELEGRAM_BOT_TOKEN:-}" ]]; then
   exit 1
 fi
 
-curl -fsS -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/setMyCommands" \
-  -H 'Content-Type: application/json' \
-  -d '{"commands":[
+commands='{"commands":[
     {"command":"usage","description":"Show Claude usage limits"},
     {"command":"new_session","description":"Start a new Claude session"},
     {"command":"sessions","description":"Resume or delete Claude sessions"},
     {"command":"tasks","description":"List open tasks"},
     {"command":"users","description":"Manage bot access"}
-  ]}' >/dev/null
+  ]}'
+
+curl -fsS -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/setMyCommands" \
+  -H 'Content-Type: application/json' \
+  -d "${commands}" >/dev/null
+
+curl -fsS -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/setMyCommands" \
+  -H 'Content-Type: application/json' \
+  -d "$(printf '%s' "${commands}" | jq -c '. + {scope:{type:"all_private_chats"}}')" >/dev/null
 
 curl -fsS "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getMyCommands" \
+  | jq -e '.result == [
+      {"command":"usage","description":"Show Claude usage limits"},
+      {"command":"new_session","description":"Start a new Claude session"},
+      {"command":"sessions","description":"Resume or delete Claude sessions"},
+      {"command":"tasks","description":"List open tasks"},
+      {"command":"users","description":"Manage bot access"}
+    ]' >/dev/null
+
+curl -fsS -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getMyCommands" \
+  -d 'scope={"type":"all_private_chats"}' \
   | jq -e '.result == [
       {"command":"usage","description":"Show Claude usage limits"},
       {"command":"new_session","description":"Start a new Claude session"},

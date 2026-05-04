@@ -36,6 +36,7 @@ export interface HookDeps {
 }
 
 const STOP_FAILURE_DEDUP_MS = 10_000;
+const STOP_FAILURE_ALERT_DEDUP_MS = 5 * 60_000;
 
 function nowTs(): number {
   return Math.floor(Date.now() / 1000);
@@ -73,8 +74,45 @@ function operatorChatForSession(deps: HookDeps, sessionId: string | null): numbe
   return chatId ?? deps.primaryOperator;
 }
 
+function classifyStopFailure(errorType: string, payload: Record<string, unknown>): string {
+  const raw = JSON.stringify(payload).toLowerCase();
+  if (
+    errorType === "auth_failed" ||
+    raw.includes("authentication_error") ||
+    raw.includes("invalid authentication credentials") ||
+    raw.includes("please run /login") ||
+    raw.includes("api error: 401")
+  ) {
+    return "auth_failed";
+  }
+  if (errorType && errorType !== "unknown") return errorType;
+  return "stop_failure";
+}
+
+function formatStopFailureAlert(args: {
+  kind: string;
+  sessionId: string;
+  errorType: string;
+  payload: Record<string, unknown>;
+}): string {
+  const details = JSON.stringify(args.payload).slice(0, 600);
+  const lines = [
+    `[admin] god-session error: ${args.kind}`,
+    args.sessionId ? `session: ${args.sessionId}` : "",
+    `error_type: ${args.errorType || "unknown"}`,
+    `details: ${details}`,
+  ].filter(Boolean);
+  if (args.kind === "auth_failed") {
+    lines.push(
+      "action: run Claude login for the VPS-wide agent account, then restart affected god sessions."
+    );
+  }
+  return lines.join("\n");
+}
+
 export function registerHookRoutes(app: FastifyInstance, deps: HookDeps): void {
   const stopFailureDedup = new Map<string, number>();
+  const stopFailureAlertDedup = new Map<string, number>();
 
   app.post("/hook/user-prompt-submit", async (req, reply) => {
     const parsed = UserPromptSubmitSchema.safeParse(req.body);
@@ -144,6 +182,7 @@ export function registerHookRoutes(app: FastifyInstance, deps: HookDeps): void {
     const parsed = StopFailureSchema.safeParse(req.body);
     if (!parsed.success) return reply.code(200).send({});
     const { session_id, error_type } = parsed.data;
+    const kind = classifyStopFailure(error_type, parsed.data);
     deps.sessionService.insertEvent(session_id, "stop_failure", { error_type });
     const now = Date.now();
     const last = stopFailureDedup.get(session_id) ?? 0;
@@ -153,6 +192,23 @@ export function registerHookRoutes(app: FastifyInstance, deps: HookDeps): void {
         "HOOK stop-failure (non-terminal; pending preserved)"
       );
       stopFailureDedup.set(session_id, now);
+    }
+    const alertKey = `${session_id}:${kind}`;
+    const lastAlert = stopFailureAlertDedup.get(alertKey) ?? 0;
+    if (now - lastAlert > STOP_FAILURE_ALERT_DEDUP_MS) {
+      deps.outbox.enqueueStatus({
+        text: formatStopFailureAlert({
+          kind,
+          sessionId: session_id,
+          errorType: error_type,
+          payload: parsed.data,
+        }),
+        chatId: deps.primaryOperator,
+        sessionId: session_id || null,
+        eventType: "system",
+      });
+      stopFailureAlertDedup.set(alertKey, now);
+      deps.log.info({ session: session_id.slice(0, 8), kind }, "admin stop-failure alert queued");
     }
     return reply.code(200).send({});
   });

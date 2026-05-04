@@ -22,6 +22,6 @@ ExecCondition=/bin/bash -c '\
     exit 1; \
   fi; \
   exit 0'
-ExecStart=/usr/bin/tmux send-keys -t ${SERVICE_PREFIX}-god "/${DISPATCH_COMMAND_NAME}" Enter
+ExecStart=/usr/bin/tmux -L ${SERVICE_PREFIX} send-keys -t ${SERVICE_PREFIX}-god "/${DISPATCH_COMMAND_NAME}" Enter
 StandardOutput=journal
 StandardError=journal

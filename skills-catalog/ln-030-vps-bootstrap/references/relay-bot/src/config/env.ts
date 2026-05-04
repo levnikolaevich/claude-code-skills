@@ -7,11 +7,7 @@ const RawEnvSchema = z.object({
   PROJECT_DIR: z.string().min(1, "PROJECT_DIR required"),
   SERVICE_PREFIX: z.string().min(1, "SERVICE_PREFIX required"),
   BOT_USER: z.string().min(1, "BOT_USER required"),
-  TMUX_TARGET: z.string().optional(),
-  TMUX_USER: z.string().optional(),
-  RELAY_DB_PATH: z.string().optional(),
-  RELAY_HOOK_HOST: z.string().default("127.0.0.1"),
-  RELAY_HOOK_PORT: z.coerce.number().int().min(1).max(65_535).default(9999),
+  RELAY_HOOK_PORT: z.coerce.number().int().min(1).max(65_535),
   RELAY_VERBOSITY: z.enum(["quiet", "normal", "verbose"]).default("normal"),
   RELAY_INBOUND_REACTIONS: z.string().optional(),
 });
@@ -24,7 +20,7 @@ export interface Env {
   servicePrefix: string;
   botUser: string;
   tmuxTarget: string;
-  tmuxUser: string;
+  tmuxSocketName: string;
   dbPath: string;
   hookHost: string;
   hookPort: number;
@@ -52,17 +48,18 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
   const v = parsed.data;
   const servicePrefix = v.SERVICE_PREFIX;
   const botUser = v.BOT_USER;
+  const projectName = v.PROJECT_NAME;
   return {
     tgToken: v.TELEGRAM_BOT_TOKEN,
     allowedChat: v.TELEGRAM_CHAT_ID,
-    projectName: v.PROJECT_NAME,
+    projectName,
     projectDir: v.PROJECT_DIR,
     servicePrefix,
     botUser,
-    tmuxTarget: v.TMUX_TARGET ?? `${servicePrefix}-god`,
-    tmuxUser: v.TMUX_USER ?? botUser,
-    dbPath: v.RELAY_DB_PATH ?? `/var/lib/${v.PROJECT_NAME}/relay.db`,
-    hookHost: v.RELAY_HOOK_HOST,
+    tmuxTarget: `${servicePrefix}-god`,
+    tmuxSocketName: servicePrefix,
+    dbPath: `/var/lib/${projectName}/relay.db`,
+    hookHost: "127.0.0.1",
     hookPort: v.RELAY_HOOK_PORT,
     verbosity: v.RELAY_VERBOSITY,
     inboundReactions: parseReactions(v.RELAY_INBOUND_REACTIONS),

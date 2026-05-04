@@ -30,7 +30,7 @@ The skill is **parameterized** — instantiate it per-project by filling in the 
 
 **MANDATORY READ:** Load `references/scope_layers.md` and `references/shared_user_pattern.md`
 
-**Deployment shape**: **one VPS = one `BOT_USER=agent-bot` Linux user = one Anthropic OAuth + one Codex login + one nvm/Node toolchain**, then **one project = one Telegram bot token = one set of systemd units = one `PROJECT_NAME` / `PROJECT_DIR` / `SERVICE_PREFIX` / `RELAY_HOOK_PORT`**. The shared user owns multiple tmux god-sessions (one per project), each with its own dispatch.timer, relay-bot port, and Telegram bot.
+**Deployment shape**: **one VPS = one `BOT_USER=agent-bot` Linux user = one Anthropic OAuth + one Codex login + one nvm/Node toolchain**, then **one project = one Telegram bot token = one set of systemd units = one `PROJECT_NAME` / `PROJECT_DIR` / `SERVICE_PREFIX` / `RELAY_HOOK_PORT`**. The shared user owns multiple tmux god-sessions (one per project), each on tmux socket `${SERVICE_PREFIX}`, with its own dispatch.timer, relay-bot port, and Telegram bot.
 
 **Scope rules (non-negotiable):**
 - Project-specific config (hooks, CLAUDE.md, secrets, state, logs) lives in **project-scope** dirs: `${PROJECT_DIR}/.claude/`, `/etc/${PROJECT_NAME}/`, `/var/lib/${PROJECT_NAME}/`, `/var/log/${PROJECT_NAME}-god.log`.
@@ -50,27 +50,29 @@ The operator hands these values to Claude (in chat) before running the workflow.
 | Variable | Example | Used in |
 |---|---|---|
 | `PROJECT_NAME` | `myproj` | State/config dir name: `/etc/${PROJECT_NAME}/`, `/var/lib/${PROJECT_NAME}/`, `/var/log/${PROJECT_NAME}-god.log` |
-| `SERVICE_PREFIX` | `myproj` | Per-project systemd unit + binary + tmux prefix: `${SERVICE_PREFIX}-god.service`, `${SERVICE_PREFIX}-dispatch.timer`, `/usr/local/bin/${SERVICE_PREFIX}-god`, tmux session `${SERVICE_PREFIX}-god`. Set equal to `PROJECT_NAME` unless the deployment intentionally separates state/config name from service/binary prefix. **Note:** `agent-update.timer` is *system-wide* (no `SERVICE_PREFIX`) — one updater per VPS, see Step 7d. |
-| `PROJECT_DIR` | `/opt/myproj` | Working directory on the VPS where the agent runs |
+| `SERVICE_PREFIX` | `myproj` | Per-project systemd unit + binary prefix: `${SERVICE_PREFIX}-god.service`, `${SERVICE_PREFIX}-dispatch.timer`, `/usr/local/bin/${SERVICE_PREFIX}-god`, tmux session `${SERVICE_PREFIX}-god`. Set equal to `PROJECT_NAME` unless the deployment intentionally separates state/config name from service/binary prefix. |
+| `PROJECT_DIR` | `/opt/myproj` | Persistent git clone on the VPS where the agent runs |
+| `REPO_URL` | `https://github.com/me/myproj.git` | Canonical clone URL for `${PROJECT_DIR}`. For GitLab self-hosted, use that host's HTTPS URL. |
+| `REPO_REF` | `main` | Branch or ref checked out in `${PROJECT_DIR}` after clone/fetch |
 | `BOT_USER` | `agent-bot` | Shared Linux user that owns ALL projects' workloads on this VPS. Always `agent-bot` — per-project users would force a separate Anthropic OAuth per project, duplicate the nvm + npm tree, and consume Claude Max device slots. Project isolation comes from project-scope config dirs (see Scope rules above), not from Linux-user isolation. |
 | `RELAY_HOOK_PORT` | `9999` | Project-local relay-bot HTTP port on `127.0.0.1`; override for a second project on the same VPS |
 | `DISPATCH_COMMAND_NAME` | `myproj-dispatch` | VPS slash command name injected by `${SERVICE_PREFIX}-dispatch.timer`; default `${SERVICE_PREFIX}-dispatch` |
 | `VPS_HOST` | `203.0.113.42` | SSH target (IP or hostname) |
 | `VPS_SSH_KEY` | `~/.ssh/myproj_vps` | Local path to the SSH private key |
 | `TARGET_REPO_PATH` | `D:\Development\me\myproj` | Local path to the operator's project repo (where `.claude/commands/dispatcher.md` will be rendered) |
-| `GIT_PROVIDER` | `github` or `gitlab` | Which git platform hosts the project. Determines which CLI (`gh` vs `glab`), which auth (GitHub App vs GitLab Deploy Token), and which dispatcher `queue` subcommand variant is rendered. |
+| `GIT_PROVIDER` | `github` or `gitlab` | Which git platform hosts the project. Determines which CLI (`gh` vs `glab`), which provider-specific secret set is required, and which dispatcher `queue` subcommand variant is rendered. |
 | `REPO_SLUG` | `me/myproj` (github) or `group/project` (gitlab) | Repository path on the chosen `GIT_PROVIDER`. For GitLab subgroups: `group/subgroup/project`. |
 
-Defaults before rendering: if `RELAY_HOOK_PORT` is unset, set it to `9999`; if `DISPATCH_COMMAND_NAME` is unset, set it to `${SERVICE_PREFIX}-dispatch`; if `AGENT_SKILLS_REPO_URL` is unset, set it to `https://github.com/levnikolaevich/claude-code-skills.git`; if `AGENT_SKILLS_REF` is unset, set it to `master`; if `AGENT_SKILLS_DIR` is unset, set it to **`/opt/agent-skills`** (one shared clone per VPS — NOT per-project, because every project under shared `BOT_USER` shares the same marketplace source); if `AGENT_SKILLS_PLUGINS` is unset, set it to `agile-workflow`. These are still rendered values, not hardcoded template constants.
+Defaults before rendering: if `RELAY_HOOK_PORT` is unset, set it to `9999`; if `DISPATCH_COMMAND_NAME` is unset, set it to `${SERVICE_PREFIX}-dispatch`; if `AGENT_SKILLS_REPO_URL` is unset, set it to `https://github.com/levnikolaevich/claude-code-skills.git`; if `AGENT_SKILLS_REF` is unset, set it to `master`; if `AGENT_SKILLS_DIR` is unset, set it to **`/opt/agent-skills`** (one shared clone per VPS); if `AGENT_SKILLS_PLUGINS` is unset, set it to `agile-workflow`. These are rendered values, not hidden template constants. The tmux socket is always `${SERVICE_PREFIX}`.
 
 ### Optional (leave blank to skip the corresponding workflow section)
 
 | Variable | What enables | Skips when blank |
 |---|---|---|
 | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` | Telegram bot interface (inbound + `/usage` command + status pings) | Steps 7b (statusLine cache), 7c (claude-relay-bot install), 8b (Codex notify hook) |
-| `GITHUB_APP_ID`, `GITHUB_INSTALLATION_ID`, `GITHUB_APP_PRIVATE_KEY_PATH` | (only when `GIT_PROVIDER=github`) GitHub App auth for git push via `${SERVICE_PREFIX}-mint-gh-token` | Step 8a (mint-gh-token install), GH App-related dispatcher rows |
-| `GITLAB_HOST`, `GITLAB_REPO_URL`, `GITLAB_DEPLOY_TOKEN_USER`, `GITLAB_DEPLOY_TOKEN` | (only when `GIT_PROVIDER=gitlab`) `GITLAB_HOST` is the hostname (`gitlab.com` or self-hosted like `gitlab.example.com`). Deploy Token: user `gitlab+deploy-token-N`, value `gldt-…`, scopes `read_repository`+`write_repository` (used for git clone/pull/push). | Step 8a-gitlab (git credential helper setup) |
-| `GITLAB_API_TOKEN` | (optional, only when `GIT_PROVIDER=gitlab` AND you want `glab issue list` in dispatcher's `queue` subcommand) Personal Access Token with `api` scope | dispatcher's `queue` subcommand falls back to "manual" mode |
+| `GITHUB_APP_ID`, `GITHUB_INSTALLATION_ID`, `GITHUB_APP_PRIVATE_KEY_PATH` | (required when `GIT_PROVIDER=github` for private repo git operations) GitHub App auth for clone/pull/push via `${SERVICE_PREFIX}-mint-gh-token` | GitHub auth + dispatcher rows |
+| `GITLAB_HOST`, `GITLAB_GIT_USERNAME`, `GITLAB_GIT_TOKEN` | (required when `GIT_PROVIDER=gitlab` for private repo git operations) HTTPS git credential for clone/pull/push. The token can be a Project/Group Deploy Token, Project Access Token, or PAT, but it must have `read_repository` + `write_repository`. | GitLab credential helper setup |
+| `GITLAB_API_TOKEN` | (required when `GIT_PROVIDER=gitlab` for issue/MR automation) Personal or Project Access Token with `api` scope. Keep separate from `GITLAB_GIT_TOKEN` unless one token intentionally has both scopes. | GitLab `glab issue` / MR commands |
 | `CF_API_TOKEN`, `CF_ZONE_NAME` | Cloudflare DNS / Pages ops | Step 8b (Cloudflare integration) |
 | `REF_API_KEY` | ref.tools MCP server | Server omitted from Step 5b |
 | `CONTEXT7_API_KEY` | context7 MCP server | Server omitted from Step 5b |
@@ -84,7 +86,7 @@ Defaults before rendering: if `RELAY_HOOK_PORT` is unset, set it to `9999`; if `
 VPS-side templates use install-time `envsubst`; the operator-side `dispatcher.md.template` is copied **verbatim** (do NOT envsubst). Always pass an explicit allow-list to `envsubst`, and **always include `$DISPATCH_COMMAND_NAME`** — forgetting it leaves an unsubstituted `${DISPATCH_COMMAND_NAME}` in `god-session.sh`, which trips `set -euo pipefail` "unbound variable" on boot and sends the god service into a `Restart=always` loop:
 
 ```bash
-envsubst '$PROJECT_NAME $PROJECT_DIR $SERVICE_PREFIX $BOT_USER $RELAY_HOOK_PORT $DISPATCH_COMMAND_NAME $TELEGRAM_CHAT_ID $GIT_PROVIDER $REPO_SLUG $AGENT_SKILLS_REPO_URL $AGENT_SKILLS_REF $AGENT_SKILLS_DIR $AGENT_SKILLS_PLUGINS' \
+envsubst '$PROJECT_NAME $PROJECT_DIR $SERVICE_PREFIX $BOT_USER $RELAY_HOOK_PORT $DISPATCH_COMMAND_NAME $TELEGRAM_CHAT_ID $GIT_PROVIDER $REPO_SLUG $REPO_URL $REPO_REF $AGENT_SKILLS_REPO_URL $AGENT_SKILLS_REF $AGENT_SKILLS_DIR $AGENT_SKILLS_PLUGINS' \
   < references/X > /tmp/X
 ```
 
@@ -97,7 +99,7 @@ envsubst '$PROJECT_NAME $PROJECT_DIR $SERVICE_PREFIX $BOT_USER $RELAY_HOOK_PORT 
 | SSH access as root to `${VPS_HOST}` | `ssh -i "${VPS_SSH_KEY}" root@${VPS_HOST} hostname` |
 | `apt upgrade` already run | `apt list --upgradable 2>/dev/null \| wc -l` returns small number |
 | Free RAM ≥ 3 GB | `free -h` available column |
-| Operator has the listed Configuration values ready | `[ -n "$PROJECT_NAME" ] && [ -n "$PROJECT_DIR" ] && [ -n "$BOT_USER" ]` etc. |
+| Operator has the listed Configuration values ready | `[ -n "$PROJECT_NAME" ] && [ -n "$PROJECT_DIR" ] && [ -n "$REPO_URL" ] && [ -n "$REPO_REF" ]` etc. |
 
 All SSH commands run via `mcp__hex-ssh__remote-ssh` with `host=${VPS_HOST}`, `user=root`, `privateKeyPath=${VPS_SSH_KEY}`.
 
@@ -106,6 +108,16 @@ All SSH commands run via `mcp__hex-ssh__remote-ssh` with `host=${VPS_HOST}`, `us
 ## Workflow
 
 Run steps in order. Each step is idempotent — verify-then-install pattern. Optional steps are gated on the relevant variable being non-empty.
+
+### Acceptance plan gate (before Step 1)
+
+Before any VPS or local filesystem mutation, create a `TodoWrite` plan from every checkbox in `## Definition of Done`.
+
+Rules:
+- one DoD checkbox becomes one todo item; do not merge or omit acceptance criteria
+- include gated optional DoD items too; if the gate is disabled, prefix the todo text with `N/A:` and include the disabled variable/reason
+- keep todo status aligned with execution evidence: `pending` before work, `in_progress` while executing that gate, `completed` only after the referenced verification passes or the `N/A` reason is confirmed
+- if the workflow changes during execution, update both the todo plan and the DoD before continuing
 
 ### 1. Base packages
 
@@ -234,9 +246,8 @@ sudo -u ${BOT_USER} bash -lc '
     printf "\n[projects.\"%s\"]\ntrust_level = \"trusted\"\n" "${PROJECT_DIR}" >> "$TARGET"
 '
 
-# 5b.3 — every install: REFRESH the ln-030-managed marketplace block (BEGIN…END markers).
-# This block is regenerated by `agent-update.sh` nightly; here we only ensure it exists on first install.
-# The agent-update wrapper handles delta updates idempotently.
+# 5b.3 — the template creates the ln-030-managed marketplace block on first install.
+# Later marketplace/plugin refresh is owned by the system-wide agent-update.sh.
 ```
 
 The template pins **headless-agent defaults** verified against the [Codex config reference](https://developers.openai.com/codex/config-reference): `model = "gpt-5.5"`, `model_reasoning_effort = "xhigh"`, `approval_policy = "never"`, `sandbox_mode = "danger-full-access"`. This eliminates interactive permission prompts and grants full filesystem + network. Only safe inside an isolated VPS dedicated to this workload. Codex still asks the operator via the `notify` script (Telegram, opt-in via Step 8b); what's eliminated is the *TUI approval popup*, not user-facing communication.
@@ -306,7 +317,7 @@ All four must resolve. If `node` is missing under `sudo -i`, step 4's `.profile`
 
 ### 7. God-session install (tmux + systemd + always-on Claude + scheduler + maintenance)
 
-The runtime layer that makes the workload always-on. Nine artifacts (all installed regardless of Telegram — scheduler, nightly agent updates, and agent config are independent of the Telegram bridge):
+The runtime layer that makes the workload always-on. Core artifacts installed regardless of Telegram because scheduler, nightly agent updates, and agent config are independent of the Telegram bridge:
 
 | Reference | Target | Owner | Mode |
 |---|---|---|---|
@@ -335,12 +346,13 @@ For each template: read the file, substitute `${VAR}` placeholders (including `A
 
 **Install + enable:**
 
+**MANDATORY READ:** Load `references/project_repo_bootstrap.md` before starting `${SERVICE_PREFIX}-god.service`.
+
 ```bash
 install -d -o ${BOT_USER} -g ${BOT_USER} -m 700 /var/lib/${PROJECT_NAME}                       # state dir (StateDirectory= in unit also sets this)
 install -d -o root -g ${BOT_USER} -m 750 /etc/${PROJECT_NAME}                                  # config dir — root-owned for secrets, ${BOT_USER}-readable. ALWAYS chown the dir itself, not just contents (mode 0750 means group-bit traversal requires the group on the dir).
 install -o ${BOT_USER} -g ${BOT_USER} -m 644 /dev/null /var/log/${PROJECT_NAME}-god.log        # log file — explicit ownership prevents "Permission denied" crash-loop after user rename
-install -d -o ${BOT_USER} -g ${BOT_USER} -m 755 ${PROJECT_DIR}                                  # working dir (operator clones repo here later; placeholder until then)
-sudo -u ${BOT_USER} mkdir -p /home/${BOT_USER}/.claude/commands ${PROJECT_DIR}/.claude          # user-scope (slash-commands) + project-scope (hooks, CLAUDE.md)
+# Run references/project_repo_bootstrap.md here. It creates/verifies ${PROJECT_DIR}.
 
 # Ensure settings.json exists, then jq-merge agent-config fragment
 sudo -u ${BOT_USER} bash -lc 'mkdir -p ~/.claude && [ -f ~/.claude/settings.json ] || echo "{}" > ~/.claude/settings.json'
@@ -359,14 +371,14 @@ systemctl enable --now ${SERVICE_PREFIX}-dispatch.timer
 ```bash
 systemctl status ${SERVICE_PREFIX}-god.service --no-pager | head -10
 systemctl list-timers ${SERVICE_PREFIX}-dispatch.timer --no-pager
-sudo -u ${BOT_USER} tmux ls
-sudo -u ${BOT_USER} tmux capture-pane -t ${SERVICE_PREFIX}-god -p -S -200 | tail -40
+sudo -u ${BOT_USER} tmux -L ${SERVICE_PREFIX} ls
+sudo -u ${BOT_USER} tmux -L ${SERVICE_PREFIX} capture-pane -t ${SERVICE_PREFIX}-god -p -S -200 | tail -40
 tail -10 /var/log/${PROJECT_NAME}-god.log
 ```
 
 Expected timeline:
 - t+0s: wrapper boots, log `[${SERVICE_PREFIX}-god] boot`.
-- t+1s: tmux session `${SERVICE_PREFIX}-god` exists.
+- t+1s: tmux session `${SERVICE_PREFIX}-god` exists on socket `${SERVICE_PREFIX}`.
 - t+5s: log `fresh session up; ${SERVICE_PREFIX}-dispatch.timer will inject /${DISPATCH_COMMAND_NAME} hourly`.
 - next `:07`: `${SERVICE_PREFIX}-dispatch.service` fires and tmux pane receives `/${DISPATCH_COMMAND_NAME}`.
 - nightly around 03:37 local time (+ up to 20m randomized delay): the **system-wide** `agent-update.service` (Step 7d) runs `claude update`, updates Codex to `@latest`, fast-forwards `${AGENT_SKILLS_DIR}`, updates selected Claude plugins, realigns Codex plugin config, verifies everything, then enumerates and restarts ALL projects' `*-god.service` units.
@@ -418,7 +430,7 @@ sudo -u ${BOT_USER} ls -la /home/${BOT_USER}/.claude/cache/usage.json   # expect
 
 **Gated on `TELEGRAM_BOT_TOKEN`.** If you skip Telegram, the god-session and scheduler from Step 7 still work — only the inbound-from-operator and outbound-mirror paths are absent.
 
-**MANDATORY READ:** Load `references/README.md` (Telegram bridge architecture v6, Communication policy 5 layers L1–L5, runtime files).
+**MANDATORY READ:** Load `references/README.md` (Telegram bridge architecture v6, Communication policy 5 layers L1–L5, runtime files) and `references/telegram_operator_runbook.md` (Telegram command list + BotFather hardening).
 
 The bridge is a separate systemd-managed Node.js service (`${SERVICE_PREFIX}-relay-bot.service`) owning the entire god-session state machine. It keeps the public relay contracts stable while using TypeScript, grammY, Fastify, and better-sqlite3.
 
@@ -431,6 +443,7 @@ Note: scheduling (the `${SERVICE_PREFIX}-dispatch.timer` that replaces the fragi
 | [`references/relay-bot/`](references/relay-bot/) | `/opt/${SERVICE_PREFIX}-relay-bot` | `${BOT_USER}`:`${BOT_USER}` | 755 dirs / 644 files |
 | [`references/claude-relay-bot.service`](references/claude-relay-bot.service) | `/etc/systemd/system/${SERVICE_PREFIX}-relay-bot.service` | root:root | 644 |
 | [`references/settings.hooks.fragment.json`](references/settings.hooks.fragment.json) | rendered, then **installed at project-scope** `${PROJECT_DIR}/.claude/settings.json` (under shared `BOT_USER` hooks MUST NOT be in user-scope or all projects' tmux sessions fire to one relay-bot port) | `${BOT_USER}`:`${BOT_USER}` | 644 |
+| [`references/register-telegram-commands.sh`](references/register-telegram-commands.sh) | `/usr/local/bin/${SERVICE_PREFIX}-register-telegram-commands` | root:root | 755 |
 
 **Install:**
 
@@ -443,7 +456,7 @@ chown -R ${BOT_USER}:${BOT_USER} /opt/${SERVICE_PREFIX}-relay-bot
 # 2. Build on target using the Node 24 installed in Step 4.
 sudo -i -u ${BOT_USER} bash -lc 'cd /opt/${SERVICE_PREFIX}-relay-bot && . /home/${BOT_USER}/.nvm/nvm.sh && npm ci && npm run build && npm prune --omit=dev'
 
-# 3. Render claude-relay-bot.service with PROJECT_NAME, PROJECT_DIR, SERVICE_PREFIX, BOT_USER → /etc/systemd/system/${SERVICE_PREFIX}-relay-bot.service, mode 644
+# 3. Render claude-relay-bot.service with PROJECT_NAME, PROJECT_DIR, SERVICE_PREFIX, BOT_USER, RELAY_HOOK_PORT → /etc/systemd/system/${SERVICE_PREFIX}-relay-bot.service, mode 644
 # 4. Render settings.hooks.fragment.json with RELAY_HOOK_PORT → /tmp/hooks.json, then INSTALL AT PROJECT-SCOPE
 #    (NOT jq-merge into ~/.claude/settings.json — under shared BOT_USER, project-scope hooks isolate
 #     each project's tmux to its own relay-bot port. User-scope hooks would cross-route between projects.)
@@ -452,11 +465,17 @@ sudo -u ${BOT_USER} install -o ${BOT_USER} -g ${BOT_USER} -m 644 /tmp/hooks.json
 # Sanity: assert no stale hooks block at user-scope (strip if present)
 sudo -u ${BOT_USER} bash -lc 'jq -e "has(\"hooks\")" ~/.claude/settings.json >/dev/null 2>&1 && jq "del(.hooks)" ~/.claude/settings.json > ~/.claude/settings.json.new && mv ~/.claude/settings.json.new ~/.claude/settings.json && echo "stripped stale user-scope hooks" || echo "user-scope settings.json: hooks already absent (correct)"'
 
-# 5. Enable + reload claude
+# 5. Enable relay-bot, register Telegram menu commands, and reload claude
+install -o root -g root -m 755 /tmp/register-telegram-commands.sh /usr/local/bin/${SERVICE_PREFIX}-register-telegram-commands
 systemctl daemon-reload
 systemctl enable --now ${SERVICE_PREFIX}-relay-bot.service
+/usr/local/bin/${SERVICE_PREFIX}-register-telegram-commands /etc/${PROJECT_NAME}/secrets.env
 systemctl restart ${SERVICE_PREFIX}-god.service   # so claude reloads settings.json with hooks
 ```
+
+`npm ci` is mandatory before `npm run build`: `tsc` is a devDependency and must be present during build. Run `npm prune --omit=dev` only after a successful build.
+
+**After relay-bot source changes:** use `references/relay_bot_redeploy.md`. The update path is source upload only, build on VPS, prune devDependencies, then restart `${SERVICE_PREFIX}-relay-bot.service`. Do not hand-edit VPS `dist/`.
 
 **Verify:**
 
@@ -469,8 +488,15 @@ sqlite3 /var/lib/${PROJECT_NAME}/relay.db '.tables'   # 12 tables expected
 # Hook fires verified (after operator sends Telegram message)
 sqlite3 /var/lib/${PROJECT_NAME}/relay.db 'SELECT direction,status,substr(text,1,40) FROM messages ORDER BY id DESC LIMIT 5'
 
+# Telegram menu commands registered by Step 7c
+curl -fsS "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getMyCommands" | jq '.result'
+
 # Sessions feature: after the first claude run, relay-bot resolves and caches the sessions dir
 cat /var/lib/${PROJECT_NAME}/sessions-dir.path   # /home/${BOT_USER}/.claude/projects/...
+
+# Build-only dependencies pruned after dist/ exists
+sudo -u ${BOT_USER} test -d /opt/${SERVICE_PREFIX}-relay-bot/dist
+sudo -u ${BOT_USER} test ! -x /opt/${SERVICE_PREFIX}-relay-bot/node_modules/.bin/tsc
 
 # End-to-end: operator sends "hi" → claude responds in pane → outbox row sent → operator sees reply in Telegram
 ```
@@ -517,12 +543,7 @@ systemctl daemon-reload
 systemctl enable --now agent-update.timer
 ```
 
-**How it works:**
-
-- Timer fires nightly at 03:37 local + RandomizedDelaySec up to 20m.
-- `agent-update` (the script) runs as root, sources `/home/${BOT_USER}/.nvm/nvm.sh` via `sudo -i -u ${BOT_USER}` for CLI updates.
-- Updates: `claude update` → `npm i -g @openai/codex@latest` → `git pull` in `${AGENT_SKILLS_DIR}` → `claude plugin update <each>` → rewrite `[marketplaces.levnikolaevich-skills-marketplace]` block in shared `~/.codex/config.toml`.
-- Final step: enumerates all enabled `*-god.service` units via `systemctl list-unit-files --state=enabled '*-god.service'` and runs `systemctl restart <each>`. Every project's god-session is bounced once the shared toolchain is verified.
+**How it works:** one system-wide timer updates Claude, Codex, `${AGENT_SKILLS_DIR}`, selected plugins, and Codex marketplace config, then restarts all enabled `*-god.service` units only after verification succeeds.
 
 **Verify:**
 
@@ -538,22 +559,17 @@ systemctl list-units --type=service --state=active '*-god.service' --no-pager
 
 ### 8. Optional integrations
 
-#### 8a. GitHub App (only if `GITHUB_APP_ID` is set)
+#### 8a. GitHub App credentials (only when `GIT_PROVIDER=github`)
 
-Mints fresh installation tokens (~1h) on demand for `git push` / `gh` calls inside agent runs.
+**MANDATORY READ:** Load `references/git_provider_credentials.md`
+
+Mints fresh installation tokens (~1h) for git clone/pull/push and `gh` calls inside agent runs.
 
 | Reference | Target | Owner | Mode |
 |---|---|---|---|
 | [`references/mint-gh-token.sh`](references/mint-gh-token.sh) | `/usr/local/bin/${SERVICE_PREFIX}-mint-gh-token` | root:`${BOT_USER}` | 750 |
 
-Install + secrets-side prep:
-
-```bash
-# After uploading mint-gh-token.sh as /usr/local/bin/${SERVICE_PREFIX}-mint-gh-token
-install -d -o root -g ${BOT_USER} -m 750 /etc/${PROJECT_NAME}
-# Operator places the App PEM at ${GITHUB_APP_PRIVATE_KEY_PATH} (chown root:${BOT_USER}, mode 640)
-# Operator fills /etc/${PROJECT_NAME}/secrets.env from references/secrets.env.template (mode 640)
-```
+Install `/usr/local/bin/${SERVICE_PREFIX}-mint-gh-token`, then follow the GitHub section in `references/git_provider_credentials.md`.
 
 **Verify:** `sudo -u ${BOT_USER} ${SERVICE_PREFIX}-mint-gh-token | head -c 8` → `ghs_...` prefix.
 
@@ -563,37 +579,11 @@ Wire `git` to use the minter as credential helper:
 sudo -u ${BOT_USER} git config --global credential.helper '!f() { echo "username=x-access-token"; echo "password=$('${SERVICE_PREFIX}'-mint-gh-token)"; }; f'
 ```
 
-#### 8a-gitlab. GitLab Deploy Token wiring (only if `GIT_PROVIDER=gitlab`)
+#### 8a-gitlab. GitLab credentials (only when `GIT_PROVIDER=gitlab`)
 
-GitLab's equivalent of GitHub App auth is a Project (or Group) Deploy Token with `read_repository` + `write_repository` scopes. Tokens are persistent (no per-call minting); the dispatcher uses them as ordinary HTTP-basic credentials via `git`'s credential-store helper.
+GitLab uses project-scoped secrets, not shared host-wide credentials. Follow the GitLab section in `references/git_provider_credentials.md`.
 
-The operator gets the token from GitLab UI: **Project Settings → Access Tokens → Deploy Tokens → New token**. Token user format: `gitlab+deploy-token-N`, value `gldt-…`. Place both in `/etc/${PROJECT_NAME}/secrets.env` as `GITLAB_DEPLOY_TOKEN_USER` and `GITLAB_DEPLOY_TOKEN`. Then wire git on the VPS:
-
-```bash
-# Configure ${BOT_USER}'s git to use the file-backed credential store
-sudo -u ${BOT_USER} git config --global credential.helper store
-
-# Append the credential line. Sourcing secrets.env here keeps the token out of process argv.
-sudo -u ${BOT_USER} bash -lc 'set -a && . /etc/${PROJECT_NAME}/secrets.env && set +a && \
-  printf "https://%s:%s@%s\n" "$GITLAB_DEPLOY_TOKEN_USER" "$GITLAB_DEPLOY_TOKEN" "$GITLAB_HOST" \
-  >> ~/.git-credentials && chmod 600 ~/.git-credentials'
-
-# Optionally clone the project repo right away (or leave for the operator/dispatcher to do later)
-sudo -u ${BOT_USER} bash -lc 'set -a && . /etc/${PROJECT_NAME}/secrets.env && set +a && \
-  [ -d "${PROJECT_DIR}/.git" ] || git clone "$GITLAB_REPO_URL" "${PROJECT_DIR}"'
-```
-
-For the dispatcher's `queue` subcommand and `glab mr create` to work, you also need `GITLAB_API_TOKEN` (a separate Personal/Project Access Token with `api` scope) in `secrets.env`. Without it, `git` operations work fine via the deploy token, but issue enumeration and MR creation are disabled — the dispatcher reports `queue_unsupported` and skips automatically.
-
-**Verify:**
-
-```bash
-# Git can pull/push using the stored deploy token
-sudo -u ${BOT_USER} bash -lc 'cd ${PROJECT_DIR} && git ls-remote --heads origin | head -3'
-# glab API works with the PAT
-sudo -u ${BOT_USER} bash -lc 'set -a && . /etc/${PROJECT_NAME}/secrets.env && set +a && \
-  GITLAB_HOST=$GITLAB_HOST GITLAB_TOKEN=$GITLAB_API_TOKEN glab issue list --repo $REPO_SLUG --opened --output json | jq length'
-```
+Do not store `GITLAB_*` secrets in `.env.local`; they belong in `/etc/${PROJECT_NAME}/secrets.env` for that project only.
 
 Both commands must succeed before the dispatcher's GitLab branch can run end-to-end.
 
@@ -636,20 +626,24 @@ cp references/dispatcher.md.template ${TARGET_REPO_PATH}/.claude/commands/dispat
 **(b) Seed `.env.local`.** Append the 12 `VPS_*` keys to `${TARGET_REPO_PATH}/.env.local` (with the values from this skill's Configuration block). Skip any key already present.
 
 ```bash
-cat >> ${TARGET_REPO_PATH}/.env.local <<EOF
-VPS_HOST=${VPS_HOST}
-VPS_SSH_KEY=${VPS_SSH_KEY}
-VPS_BOT_USER=${BOT_USER}
-VPS_PROJECT_NAME=${PROJECT_NAME}
-VPS_SERVICE_PREFIX=${SERVICE_PREFIX}
-VPS_PROJECT_DIR=${PROJECT_DIR}
-VPS_GIT_PROVIDER=${GIT_PROVIDER}
-VPS_REPO_SLUG=${REPO_SLUG}
-VPS_RELAY_HOOK_PORT=${RELAY_HOOK_PORT}
-VPS_DISPATCH_COMMAND_NAME=${DISPATCH_COMMAND_NAME}
-VPS_AGENT_SKILLS_DIR=${AGENT_SKILLS_DIR}
-VPS_AGENT_SKILLS_PLUGINS=${AGENT_SKILLS_PLUGINS}
-EOF
+touch ${TARGET_REPO_PATH}/.env.local
+append_env() {
+  key="$1"
+  value="$2"
+  grep -q "^${key}=" ${TARGET_REPO_PATH}/.env.local || printf '%s=%s\n' "$key" "$value" >> ${TARGET_REPO_PATH}/.env.local
+}
+append_env VPS_HOST "${VPS_HOST}"
+append_env VPS_SSH_KEY "${VPS_SSH_KEY}"
+append_env VPS_BOT_USER "${BOT_USER}"
+append_env VPS_PROJECT_NAME "${PROJECT_NAME}"
+append_env VPS_SERVICE_PREFIX "${SERVICE_PREFIX}"
+append_env VPS_PROJECT_DIR "${PROJECT_DIR}"
+append_env VPS_GIT_PROVIDER "${GIT_PROVIDER}"
+append_env VPS_REPO_SLUG "${REPO_SLUG}"
+append_env VPS_RELAY_HOOK_PORT "${RELAY_HOOK_PORT}"
+append_env VPS_DISPATCH_COMMAND_NAME "${DISPATCH_COMMAND_NAME}"
+append_env VPS_AGENT_SKILLS_DIR "${AGENT_SKILLS_DIR}"
+append_env VPS_AGENT_SKILLS_PLUGINS "${AGENT_SKILLS_PLUGINS}"
 ```
 
 Confirm `.env.local` is git-ignored (most projects already have `.env.*` in `.gitignore`).
@@ -664,51 +658,19 @@ Confirm `.env.local` is git-ignored (most projects already have `.env.*` in `.gi
 
 The bootstrap stops at "agents installed but not authenticated". The next steps need the operator's hands because they involve 2FA, browser-only flows, and tokens that must never touch the agent's context.
 
-**Verified non-automatable** (each requires a human at a browser or 2FA device):
-
-| # | Action | Why operator, not agent |
-|---|--------|-------------------------|
-| 1 | **Walk claude through first-run UX in tmux** (only needed once per `BOT_USER`, not per project — under shared-user model the second project reuses the existing OAuth) | `claude --dangerously-skip-permissions` only bypasses TOOL permission prompts, NOT first-run UX gates. SSH in as `${BOT_USER}`, attach with `tmux attach -t ${SERVICE_PREFIX}-god`, press Enter through (a) **theme picker** (Auto / Dark / Light / colorblind), (b) **login method** picker → choose "Claude account with subscription", (c) **OAuth code prompt** — open the printed URL on your laptop, complete OAuth at Claude.ai, copy the returned code, paste back into pane. Then for EACH project, also press Enter through (d) **trust-this-folder** prompt for `${PROJECT_DIR}`. Detach with `Ctrl-b d`. After this, claude is in normal interactive mode and dispatch.timer ticks succeed. |
-| 2 | `codex login` on the VPS | Same browser+2FA flow with ChatGPT account. Like #1, only needed once per `BOT_USER` under shared-user model. |
-| 3 | (If Telegram) Create bot via `@BotFather` | Telegram doesn't expose a public API for bot creation — must chat with `@BotFather`, type `/newbot`, pick a name, copy `BOT_TOKEN`. Get operator's `chat_id` via `https://api.telegram.org/bot<TOKEN>/getUpdates` after sending `/start` to the new bot. |
-| 4 | **(If Telegram) Lock the bot down in `@BotFather`** — see «Telegram bot hardening» below | BotFather settings (Allow Groups, Group Privacy) are NOT exposed via Bot API; only the BotFather chat UI can change them. **Critical** because the bot username is publicly discoverable. |
-| 5 | (If GitHub App) Create the GitHub App | github.com web UI only — no API for App registration. Permissions: Contents R/W, Issues R/W, Pull requests R/W, Metadata R. Install on the target repo. Download PEM file. |
-| 6 | Fill `/etc/${PROJECT_NAME}/secrets.env` | Use [`references/secrets.env.template`](references/secrets.env.template) as scaffold. Mode 640, owner `root:${BOT_USER}`. |
-| 7 | Place GitHub App PEM at `${GITHUB_APP_PRIVATE_KEY_PATH}` | Operator's local download → scp to VPS. Mode 640, owner `root:${BOT_USER}`. |
+**Verified non-automatable:** Claude first-run UX + trust-folder prompt, `codex login`, BotFather bot creation/hardening, GitHub App creation, and filling `/etc/${PROJECT_NAME}/secrets.env` with real project secrets. Telegram menu registration is automatable through Bot API and belongs to Step 7c.
 
 ### Telegram bot hardening + multi-user onboarding
 
 **MANDATORY READ:** Load `references/telegram_operator_runbook.md`
 
-After creating the bot in step #4 above, the operator runs the runbook to lock down BotFather settings (Allow Groups off, Group Privacy on), register menu commands via `setMyCommands`, and onboard additional users through the `/users` pending→allow flow. The relay-bot's `AllowlistMiddleware` is the primary control; Telegram-side settings are defense-in-depth.
+After creating the bot in step #4 above, the operator runs the runbook to lock down BotFather settings (Allow Groups off, Group Privacy on) and onboard additional users through the `/users` pending→allow flow. Step 7c registers menu commands via `setMyCommands`; the runbook keeps the same command as a repair recipe. The relay-bot's `AllowlistMiddleware` is the primary control; Telegram-side settings are defense-in-depth.
 
 ---
 
 ## Verification & smoke
 
-End-to-end after install + manual follow-up:
-
-```
-| Component                         | Version / Status               |
-|-----------------------------------|--------------------------------|
-| Claude Code                       | 2.1.x (auth: ✓)               |
-| Codex CLI                         | 0.x   (auth: ✓)               |
-| Node                              | v24.x.x                        |
-| gh CLI                            | 2.x   (auth via App: ✓)       |
-| `${AGENT_SKILLS_DIR}`             | clean clone, ref `${AGENT_SKILLS_REF}` |
-| Claude plugins                    | `agile-workflow` enabled by default |
-| Codex plugins                     | LevNikolaevich marketplace + selected plugins enabled |
-| ${BOT_USER} user                  | UID 1000                       |
-| ${SERVICE_PREFIX}-god.service     | active (running)               |
-| ${SERVICE_PREFIX}-dispatch.timer  | active (waiting), next fire armed |
-| agent-update.timer (system-wide)  | active (waiting), nightly fire armed |
-| tmux ${SERVICE_PREFIX}-god        | exists                         |
-| /home/${BOT_USER}/.claude/cache/usage.json | populated within 30s of restart |
-| Telegram bidirectional smoke      | bot replies to /usage with %    |
-| ${TARGET_REPO_PATH}/.claude/commands/dispatcher.md | copied verbatim; only `${VPS_*}` placeholders remain |
-| ${TARGET_REPO_PATH}/.env.local    | 12 `VPS_*` keys present        |
-| `/dispatcher status` (from operator's repo) | reports healthy |
-```
+End-to-end after install + manual follow-up: the initial `TodoWrite` plan covered every DoD checkbox, CLIs authenticated, `${PROJECT_DIR}` is a clean clone, `${SERVICE_PREFIX}-god.service`, dispatch timer, relay-bot, and `agent-update.timer` are active, tmux exists on socket `${SERVICE_PREFIX}`, Telegram smoke passes, and `/dispatcher status` reports healthy.
 
 ---
 
@@ -717,6 +679,10 @@ End-to-end after install + manual follow-up:
 **MANDATORY READ:** Load `references/verification_recipes.md`
 
 DoD covers every step of the workflow. Each unchecked item points back to the step that creates it; full verification commands (SQL, curl, jq pipelines) live in `references/verification_recipes.md`.
+
+### Execution governance (before Step 1)
+- [ ] Initial `TodoWrite` plan contains every DoD checkbox below as a separate todo item; gated items are included as active checks or `N/A:` items with the disabled variable/reason
+- [ ] Todo statuses were kept in sync with evidence; no item was marked completed without a passing verification command or confirmed `N/A` gate
 
 ### System packages & user (Steps 1–3)
 - [ ] All required Configuration vars set; optional vars explicitly empty when their step is skipped
@@ -732,8 +698,12 @@ DoD covers every step of the workflow. Each unchecked item points back to the st
 - [ ] Codex config has exactly one active LevNikolaevich marketplace block and selected plugin entries
 
 ### God-session + scheduler (Step 7)
-- [ ] `${SERVICE_PREFIX}-god.service` active and tmux session exists
+- [ ] `${PROJECT_DIR}` is a git clone of `${REPO_URL}` at `${REPO_REF}`; arbitrary non-git files were not overwritten
+- [ ] `${SERVICE_PREFIX}-god.service` active and tmux session exists on `tmux -L ${SERVICE_PREFIX}`
 - [ ] `${SERVICE_PREFIX}-dispatch.timer` active and armed (`systemctl list-timers`)
+- [ ] `dispatch.service`, `god-session.sh`, and relay-bot all use tmux socket `${SERVICE_PREFIX}`
+- [ ] Pane env has this project's `PROJECT_NAME`, `SERVICE_PREFIX`, and `PROJECT_DIR`; relay-bot unit env has `RELAY_HOOK_PORT`
+- [ ] Resume source is project-bound: `${PROJECT_NAME}` relay DB, `sessions-dir.path`, and `last-session.id` point only to sessions whose cwd is `${PROJECT_DIR}`
 - [ ] (system-wide, Step 7d) `agent-update.timer` active and armed; manual `agent-update.service` run updates Claude/Codex plus selected skills/plugins and restarts ALL `*-god.service` units after successful checks
 - [ ] `/var/lib/${PROJECT_NAME}/` exists, mode 0700, owner `${BOT_USER}`
 - [ ] Pane footer shows model + effort + `bypass permissions on`
@@ -744,9 +714,14 @@ DoD covers every step of the workflow. Each unchecked item points back to the st
 
 ### Telegram bridge + sessions (Step 7c, gated on `TELEGRAM_BOT_TOKEN`)
 - [ ] `${SERVICE_PREFIX}-relay-bot.service` active; `/health` returns v6 with all fields and `relay.db` has 12 tables (per `references/verification_recipes.md`)
-- [ ] BotFather menu + bot hardening verified per `references/telegram_operator_runbook.md` + `references/verification_recipes.md`
+- [ ] Relay-bot was built on VPS with `npm ci && npm run build`; `dist/` exists and build-only devDependencies were pruned after build
+- [ ] If relay-bot source changed during this run, VPS update followed `references/relay_bot_redeploy.md`; source was uploaded, rebuilt on VPS, devDependencies pruned, and `${SERVICE_PREFIX}-relay-bot.service` health rechecked
+- [ ] Telegram Bot API menu commands (`usage`, `new_session`, `sessions`, `users`) registered by Step 7c with English descriptions and verified with `getMyCommands`
+- [ ] BotFather hardening verified per `references/telegram_operator_runbook.md` + `references/verification_recipes.md`
 - [ ] Allowlist, per-user session ownership, and inbound smokes pass per `references/verification_recipes.md`
 - [ ] End-to-end: «hi» from Telegram → claude responds → reply mirrored back via Stop hook
+- [ ] Runtime prompt enforces plan first + explicit approval before mutating Telegram requests; approval creates todos before implementation
+- [ ] Dispatcher selects one ready issue, sends a plan, records `waiting_approval`, and does not claim or implement before `approve #N` / `делай #N`
 
 ### Communication policy (Step 7c-2, 5 layers L1–L5)
 - [ ] `RELAY_VERBOSITY` configured in `secrets.env`; `outbox.event_type` and `todo_state` schema present
@@ -756,10 +731,10 @@ DoD covers every step of the workflow. Each unchecked item points back to the st
 - [ ] `/etc/${PROJECT_NAME}/github-app.pem` mode 640, owner `root:${BOT_USER}`
 - [ ] `${SERVICE_PREFIX}-mint-gh-token` returns `ghs_...` prefix and is wired into git credential.helper
 
-### GitLab Deploy Token + glab API (Step 8a-gitlab, gated on `GIT_PROVIDER=gitlab`)
-- [ ] `~${BOT_USER}/.git-credentials` mode 600 contains a line `https://${GITLAB_DEPLOY_TOKEN_USER}:${GITLAB_DEPLOY_TOKEN}@${GITLAB_HOST}` (no plaintext leak in journal)
-- [ ] `sudo -u ${BOT_USER} bash -lc 'cd ${PROJECT_DIR} && git ls-remote --heads origin | head -3'` succeeds (deploy token → git operations OK)
-- [ ] (optional, only if `GITLAB_API_TOKEN` is set) `sudo -u ${BOT_USER} bash -lc 'set -a && . /etc/${PROJECT_NAME}/secrets.env && set +a && GITLAB_HOST=$GITLAB_HOST GITLAB_TOKEN=$GITLAB_API_TOKEN glab issue list --repo $REPO_SLUG --opened --output json | jq length'` returns the open-issue count (PAT → glab issue/MR API OK)
+### GitLab git + API (Step 8a-gitlab, gated on `GIT_PROVIDER=gitlab`)
+- [ ] `~${BOT_USER}/.git-credentials` mode 600 contains one credential line for `${GITLAB_HOST}` using `GITLAB_GIT_USERNAME` + `GITLAB_GIT_TOKEN` (no plaintext leak in journal)
+- [ ] `sudo -u ${BOT_USER} git -C ${PROJECT_DIR} ls-remote --heads origin | head -3` succeeds (git token → git operations OK)
+- [ ] `sudo -u ${BOT_USER} bash -lc 'set -a && . /etc/${PROJECT_NAME}/secrets.env && set +a && GITLAB_HOST=$GITLAB_HOST GITLAB_TOKEN=$GITLAB_API_TOKEN glab issue list --repo $REPO_SLUG --opened --output json | jq length'` returns the open-issue count (API token → glab issue/MR API OK)
 
 ### Codex notify hook (Step 8b, gated on `TELEGRAM_BOT_TOKEN`)
 - [ ] `~${BOT_USER}/.codex/notify.sh` mode 755; `config.toml` has `notify = ["bash", ...]`
@@ -776,6 +751,7 @@ DoD covers every step of the workflow. Each unchecked item points back to the st
 - `references/README.md` — artifact templates index, Telegram bridge architecture, Communication policy 5 layers
 - `references/scope_layers.md` — per-VPS / per-project / per-bot-user scoping
 - `references/substitution_rules.md` — envsubst allow-list rules (install-time vs runtime)
+- `references/relay_bot_redeploy.md` — update procedure after relay-bot source changes
 - `references/telegram_operator_runbook.md` — BotFather hardening, `/users` multi-user onboarding
 - `references/troubleshooting.md` — common install/auth/MCP failure modes
 - `references/verification_recipes.md` — DoD verification commands (SQL, curl, jq)

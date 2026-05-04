@@ -13,7 +13,7 @@ You are running inside the long-lived **${PROJECT_NAME} god-session**. Your job 
 - `secrets.env` is sourced — `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, and (depending on provider) `GITHUB_*` or `GITLAB_*` are in env. Do not echo their values.
 - **Git provider**: this project uses `${GIT_PROVIDER}` (either `github` or `gitlab`). All git/issue commands below branch on this.
 - **`GIT_PROVIDER=github`**: `${SERVICE_PREFIX}-mint-gh-token` mints fresh GitHub App installation tokens. `git credential.helper` is wired to it for `git push`. Before first `gh` call: `export GH_TOKEN=$(${SERVICE_PREFIX}-mint-gh-token)`.
-- **`GIT_PROVIDER=gitlab`**: `~/.git-credentials` carries the Deploy Token (Step 8a-gitlab). `git push/pull/clone` work without further setup. For `glab issue list` / `glab mr create`: `export GITLAB_TOKEN=${GITLAB_API_TOKEN}` (PAT with `api` scope, optional). If `GITLAB_API_TOKEN` is unset, the `queue` step falls back to "manual mode" — see Step 2.
+- **`GIT_PROVIDER=gitlab`**: `~/.git-credentials` carries this project's `GITLAB_GIT_USERNAME` + `GITLAB_GIT_TOKEN` for clone/pull/push. For `glab issue list` / `glab mr create`: `export GITLAB_TOKEN=${GITLAB_API_TOKEN}`. Missing provider tokens are configuration errors; stop and alert.
 - **claude-relay-bot HTTP API at `http://127.0.0.1:${RELAY_HOOK_PORT}`** — used below for dispatch tracking (durable audit in SQLite). Conversational replies to operator are auto-mirrored via Stop hook; `/${DISPATCH_COMMAND_NAME}` status pings still go via direct curl as before for realtime visibility.
 
 ## Telegram outbound (curl pattern, for realtime status pings)
@@ -42,7 +42,9 @@ curl -fsS -X POST http://127.0.0.1:${RELAY_HOOK_PORT}/dispatch/end \
 # send Telegram throttled message, then exit
 ```
 
-## Step 2 — Pick one issue
+Before selecting a new issue, inspect recent dispatch runs. If any run for a `status:ready` issue has `status=waiting_approval`, send one Telegram reminder and exit. Do not pick or claim another issue while approval is pending.
+
+## Step 2 — Pick one issue for planning only
 
 ### GitHub (`GIT_PROVIDER=github`)
 
@@ -53,29 +55,15 @@ gh issue list --repo ${REPO_SLUG} \
   --json number,title,body,labels,createdAt
 ```
 
-### GitLab (`GIT_PROVIDER=gitlab`) — when `GITLAB_API_TOKEN` is set
+### GitLab (`GIT_PROVIDER=gitlab`)
 
 ```bash
 export GITLAB_TOKEN=$GITLAB_API_TOKEN
+test -n "$GITLAB_TOKEN" || { echo "GITLAB_API_TOKEN missing"; exit 1; }
 glab issue list --repo ${REPO_SLUG} \
   --opened --label status:ready \
   --output json
 ```
-
-### GitLab (`GIT_PROVIDER=gitlab`) — when `GITLAB_API_TOKEN` is unset (manual mode)
-
-The Deploy Token alone has no `api` scope; `glab issue list` would 401. In manual mode, the dispatcher cannot enumerate issues programmatically. Two options:
-
-1. **Skip queue, run only on operator-supplied issue numbers**: if invoked via `/dispatcher run-now` with an explicit issue param, proceed to Step 3 with that number. Otherwise:
-2. **Exit with `queue_unsupported`**:
-
-```bash
-curl -fsS -X POST http://127.0.0.1:${RELAY_HOOK_PORT}/dispatch/end \
-  -d "{\"run_id\":$RUN_ID,\"status\":\"queue_unsupported\",\"error\":\"GITLAB_API_TOKEN not set; cannot enumerate queue. Set token in /etc/${PROJECT_NAME}/secrets.env to enable.\"}"
-exit
-```
-
-Operator can then either set `GITLAB_API_TOKEN` (recommended) or invoke specific issues manually.
 
 ### Sort + queue-empty handling (all providers)
 
@@ -97,7 +85,35 @@ curl -fsS -X POST http://127.0.0.1:${RELAY_HOOK_PORT}/dispatch/phase \
   -d "{\"run_id\":$RUN_ID,\"phase\":\"issue_pick\",\"status\":\"go\",\"details\":\"#$N $TITLE\"}"
 ```
 
-## Step 3 — Claim transaction
+## Step 3 — Send plan and wait for approval
+
+Do read-only inspection only: issue body, labels, existing project rules, obvious affected files, and relevant tests. Do not edit files, create branches, change tracker labels, commit, push, restart services, or open PR/MR.
+
+Send Telegram a short plan:
+
+```text
+[claude#<N>] plan ready
+Goal: ...
+Areas: ...
+Steps: ...
+Checks: ...
+Risks/rollback: ...
+Reply: approve #<N> / делай #<N>
+```
+
+Record the gate and end this invocation:
+
+```bash
+curl -fsS -X POST http://127.0.0.1:${RELAY_HOOK_PORT}/dispatch/phase \
+  -d "{\"run_id\":$RUN_ID,\"phase\":\"approval\",\"status\":\"waiting_approval\",\"verdict\":\"plan_sent\",\"details\":\"#$N $TITLE\"}"
+curl -fsS -X POST http://127.0.0.1:${RELAY_HOOK_PORT}/dispatch/end \
+  -d "{\"run_id\":$RUN_ID,\"status\":\"waiting_approval\",\"error\":\"operator approval required for #$N\"}"
+exit
+```
+
+## Step 4 — Approval continuation and claim transaction
+
+Run this section only after explicit operator approval: `approve #<N>`, `approved #<N>`, `go #<N>`, `делай #<N>`, `одобряю #<N>`, or `утверждаю #<N>`. Verify `/dispatch/recent` contains a matching `waiting_approval` run for issue `#<N>`. If not, stop and ask the operator to rerun `/${DISPATCH_COMMAND_NAME}`.
 
 ### GitHub
 
@@ -117,7 +133,7 @@ If it fails: `dispatch_end status="failed"`, exit.
 
 Send Telegram: `[claude#<N>] starting pipeline on <title>`.
 
-## Step 4 — Pipeline (4 stages, all via Skill())
+## Step 5 — Pipeline (4 stages, all via Skill())
 
 For each stage: open a phase row before the Skill() call, close it with the verdict after.
 
@@ -166,7 +182,7 @@ Skill(skill: "agile-workflow:ln-500-story-quality-gate", args: <execution artifa
 
 PASS / CONCERNS → proceed to Step 5. FAIL → rework via ln-400 once; second FAIL → `dispatch_end blocked`. WAIVED — only if issue body explicitly authorizes; otherwise treat as FAIL.
 
-## Step 5 — Commit, push, open PR/MR
+## Step 6 — Commit, push, open PR/MR
 
 ```bash
 curl -fsS -X POST http://127.0.0.1:${RELAY_HOOK_PORT}/dispatch/phase \
@@ -192,8 +208,6 @@ glab mr create --repo ${REPO_SLUG} --target-branch master --source-branch agent/
   --title "<concise title>" --description "Closes #<N> ..."
 ```
 
-(If GitLab in manual mode without `GITLAB_API_TOKEN`, the push has succeeded; report the branch URL to the operator and let them open the MR manually.)
-
 ### Close the dispatch run
 
 ```bash
@@ -201,18 +215,19 @@ curl -fsS -X POST http://127.0.0.1:${RELAY_HOOK_PORT}/dispatch/end \
   -d "{\"run_id\":$RUN_ID,\"status\":\"pr_opened\",\"pr_number\":$N,\"pr_url\":\"$URL\",\"branch\":\"agent/issue-<N>-<slug>\"}"
 ```
 
-## Step 6 — Final notification
+## Step 7 — Final notification
 
 Send Telegram: `[claude#<N>] PR/MR opened: <url>`. Exit.
 
 ## Hard rules
 
 - One Issue per /${DISPATCH_COMMAND_NAME} invocation. Never loop.
+- No implementation before approval. Before explicit `approve #N` / `делай #N`, only read issue/project context, send the plan, record `waiting_approval`, and exit.
 - Never push to `master` directly. Only `agent/*` branches.
 - Never amend commits. New commits only.
 - Never echo `secrets.env` values to logs/comments/Telegram.
 - (`GIT_PROVIDER=github`) If `${SERVICE_PREFIX}-mint-gh-token` errors twice within 30s → `dispatch_end failed` + Telegram alert + exit.
-- (`GIT_PROVIDER=gitlab`) If `git push` fails twice within 30s → `dispatch_end failed` + Telegram alert + exit. Likely cause: Deploy Token expired/scope changed; check `/etc/${PROJECT_NAME}/secrets.env` `GITLAB_DEPLOY_TOKEN`.
+- (`GIT_PROVIDER=gitlab`) If `git push` or `glab` fails twice within 30s → `dispatch_end failed` + Telegram alert + exit. Likely cause: `GITLAB_GIT_TOKEN` or `GITLAB_API_TOKEN` expired/scope changed in `/etc/${PROJECT_NAME}/secrets.env`.
 - If Skill() crashes (tool error, not a documented verdict) → close current phase `status=error`, `dispatch_end failed`, revert label appropriately + Telegram alert + exit.
 - Telegram or relay-bot localhost API failures are non-fatal — log and continue.
 - Conversational replies outside /${DISPATCH_COMMAND_NAME} are auto-mirrored via Stop hook — DO NOT manually curl Telegram for those. Status pings inside this dispatch ARE direct curl (realtime visibility).

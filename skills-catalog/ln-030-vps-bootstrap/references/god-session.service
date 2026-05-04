@@ -8,9 +8,13 @@ Type=simple
 User=${BOT_USER}
 Group=${BOT_USER}
 Environment=HOME=/home/${BOT_USER}
+Environment=PROJECT_NAME=${PROJECT_NAME}
+Environment=PROJECT_DIR=${PROJECT_DIR}
+Environment=SERVICE_PREFIX=${SERVICE_PREFIX}
+Environment=BOT_USER=${BOT_USER}
 WorkingDirectory=${PROJECT_DIR}
 ExecStart=/usr/local/bin/${SERVICE_PREFIX}-god
-ExecStop=/usr/bin/tmux kill-session -t ${SERVICE_PREFIX}-god
+ExecStop=/usr/bin/tmux -L ${SERVICE_PREFIX} kill-session -t ${SERVICE_PREFIX}-god
 Restart=always
 RestartSec=15
 TimeoutStopSec=30

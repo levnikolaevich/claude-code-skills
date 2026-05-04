@@ -22,6 +22,7 @@ Hexagonal / Clean layering. Strict downward dependencies; no global mutable sing
 ```bash
 npm ci
 npm run build   # -> dist/
+npm prune --omit=dev
 ```
 
 ## Run

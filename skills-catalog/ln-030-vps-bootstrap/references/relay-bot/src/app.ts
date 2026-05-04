@@ -68,7 +68,7 @@ export function buildApp(env: Env, log: Logger = createLogger()): App {
   const repos = createRepositories(db);
 
   const bot = createTelegramClient({ token: env.tgToken });
-  const pane = createTmuxPane({ target: env.tmuxTarget, log });
+  const pane = createTmuxPane({ target: env.tmuxTarget, socketName: env.tmuxSocketName, log });
   const godStatus = createGodStatusProbe({
     serviceName: paths.godServiceName,
     log,
@@ -224,7 +224,8 @@ export function buildApp(env: Env, log: Logger = createLogger()): App {
       log.info(
         {
           chat: env.allowedChat,
-          tmux: `${env.tmuxUser}:${env.tmuxTarget}`,
+          tmux: env.tmuxTarget,
+          tmuxSocket: env.tmuxSocketName,
           hook: `${env.hookHost}:${env.hookPort}`,
           db: env.dbPath,
         },

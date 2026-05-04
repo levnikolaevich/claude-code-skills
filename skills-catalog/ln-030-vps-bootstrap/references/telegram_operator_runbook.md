@@ -18,19 +18,12 @@ Defense-in-depth: the relay-bot's `AllowlistMiddleware` already drops every even
 
 The bot's `AllowlistMiddleware` is the primary control regardless of these settings — but combining application-level filtering with Telegram-side restrictions is best practice (Telegram official guidance: «Your backend should always verify that the user was authorized to use them»).
 
-### Step A — register BotFather menu commands
+### Step A — repair Telegram menu commands
 
-Run once after `TELEGRAM_BOT_TOKEN` is set. Idempotent.
+Step 7c registers these commands with English descriptions automatically through Bot API after `${SERVICE_PREFIX}-relay-bot.service` starts. Run this block only to repair or update an existing bot. It is idempotent.
 
 ```bash
-curl -fsS -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/setMyCommands" \
-  -H 'Content-Type: application/json' \
-  -d '{"commands":[
-    {"command":"usage","description":"Текущие лимиты Claude"},
-    {"command":"new_session","description":"Старт новой сессии Claude"},
-    {"command":"sessions","description":"Сессии (Resume / Delete)"},
-    {"command":"users","description":"Управление доступом (только primary)"}
-  ]}'
+/usr/local/bin/${SERVICE_PREFIX}-register-telegram-commands /etc/${PROJECT_NAME}/secrets.env
 ```
 
 Optional cosmetic: `setMyDescription`, `setMyShortDescription` Bot API calls.

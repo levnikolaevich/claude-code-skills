@@ -4,6 +4,7 @@ import type { Logger } from "../../lib/logger.js";
 
 export interface TmuxPaneDeps {
   target: string;
+  socketName?: string;
   log: Logger;
   retries?: number;
   retryDelayMs?: number;
@@ -43,15 +44,28 @@ function runProcess(cmd: string, args: string[], timeoutMs: number): Promise<Run
 
 export function createTmuxPane(deps: TmuxPaneDeps) {
   const target = deps.target;
+  const socketName = deps.socketName;
   const retries = deps.retries ?? DEFAULT_RETRIES;
   const retryDelay = deps.retryDelayMs ?? DEFAULT_RETRY_DELAY_MS;
 
+  function tmuxArgs(args: string[]): string[] {
+    return socketName ? ["-L", socketName, ...args] : args;
+  }
+
   async function sendKeysOnce(text: string): Promise<void> {
-    const r1 = await runProcess("tmux", ["send-keys", "-l", "-t", target, text], STEP_TIMEOUT_MS);
+    const r1 = await runProcess(
+      "tmux",
+      tmuxArgs(["send-keys", "-l", "-t", target, text]),
+      STEP_TIMEOUT_MS
+    );
     if (r1.code !== 0) {
       throw new Error(`send-keys -l rc=${r1.code}: ${r1.stderr.slice(0, 200)}`);
     }
-    const r2 = await runProcess("tmux", ["send-keys", "-t", target, "Enter"], STEP_TIMEOUT_MS);
+    const r2 = await runProcess(
+      "tmux",
+      tmuxArgs(["send-keys", "-t", target, "Enter"]),
+      STEP_TIMEOUT_MS
+    );
     if (r2.code !== 0) {
       throw new Error(`send-keys Enter rc=${r2.code}: ${r2.stderr.slice(0, 200)}`);
     }
@@ -83,19 +97,19 @@ export function createTmuxPane(deps: TmuxPaneDeps) {
 
     async killGracefully(): Promise<void> {
       try {
-        await runProcess("tmux", ["send-keys", "-t", target, "C-c", "C-c"], 3000);
+        await runProcess("tmux", tmuxArgs(["send-keys", "-t", target, "C-c", "C-c"]), 3000);
       } catch (error) {
         deps.log.warn({ err: String(error) }, "graceful tmux Ctrl-C step failed");
       }
       await delay(1500);
       try {
-        await runProcess("tmux", ["send-keys", "-t", target, "/exit", "Enter"], 3000);
+        await runProcess("tmux", tmuxArgs(["send-keys", "-t", target, "/exit", "Enter"]), 3000);
       } catch (error) {
         deps.log.warn({ err: String(error) }, "graceful tmux /exit step failed");
       }
       await delay(1500);
       try {
-        await runProcess("tmux", ["kill-session", "-t", target], 5000);
+        await runProcess("tmux", tmuxArgs(["kill-session", "-t", target]), 5000);
       } catch (error) {
         deps.log.error({ err: String(error) }, "tmux kill-session failed");
       }
@@ -103,7 +117,7 @@ export function createTmuxPane(deps: TmuxPaneDeps) {
 
     async hasSession(): Promise<boolean> {
       try {
-        const r = await runProcess("tmux", ["has-session", "-t", target], 3000);
+        const r = await runProcess("tmux", tmuxArgs(["has-session", "-t", target]), 3000);
         return r.code === 0;
       } catch {
         return false;

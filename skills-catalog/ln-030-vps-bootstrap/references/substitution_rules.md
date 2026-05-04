@@ -11,7 +11,7 @@ All files in `references/` **except** `dispatcher.md.template` use `${VAR}` plac
 `envsubst` without an explicit allow-list will substitute **every** `${...}` it sees, including bash variables that should remain literal (e.g. `${SESSIONS_DIR}`, `${SID}` in `god-session.sh`, `${VPS_*}` in operator-side files). Always use the allow-list form:
 
 ```bash
-envsubst '$PROJECT_NAME $PROJECT_DIR $SERVICE_PREFIX $BOT_USER $RELAY_HOOK_PORT $DISPATCH_COMMAND_NAME $TELEGRAM_CHAT_ID $AGENT_SKILLS_REPO_URL $AGENT_SKILLS_REF $AGENT_SKILLS_DIR $AGENT_SKILLS_PLUGINS' \
+envsubst '$PROJECT_NAME $PROJECT_DIR $SERVICE_PREFIX $BOT_USER $RELAY_HOOK_PORT $DISPATCH_COMMAND_NAME $TELEGRAM_CHAT_ID $GIT_PROVIDER $REPO_SLUG $REPO_URL $REPO_REF $AGENT_SKILLS_REPO_URL $AGENT_SKILLS_REF $AGENT_SKILLS_DIR $AGENT_SKILLS_PLUGINS' \
   < references/X > /tmp/X
 ```
 

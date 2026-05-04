@@ -1,16 +1,15 @@
 #!/bin/bash
 # ${SERVICE_PREFIX}-god — long-running god-session wrapper, started by systemd.
-# Maintains a tmux session named `${SERVICE_PREFIX}-god` with a single claude TUI
-# running headless. systemd Restart=always covers crashes.
+# Maintains a tmux session named `${SERVICE_PREFIX}-god` on tmux socket
+# `${SERVICE_PREFIX}` with a single claude TUI running headless.
+# systemd Restart=always covers crashes.
 #
 # Idempotent: if tmux session exists, attaches as watcher; otherwise creates fresh.
 # Scheduling is external: ${SERVICE_PREFIX}-dispatch.timer (systemd) injects /${DISPATCH_COMMAND_NAME}
-# hourly via tmux send-keys; this wrapper does NOT register an in-session /loop.
+# hourly via the same tmux socket; this wrapper does NOT register an in-session /loop.
 #
 # Resume-by-default: on fresh tmux create, if a prior session exists for ${PROJECT_DIR},
-# claude is started with --continue (latest) or --resume <id> based on the atomic
-# command file ${STATE_DIR}/god-command.json (written by relay-bot on
-# /new_session or [▶ Resume] button click).
+# claude is started with explicit --resume <id> based on per-project state.
 #
 # Telegram integration is handled by a SEPARATE ${SERVICE_PREFIX}-relay-bot.service that
 # uses tmux send-keys to deliver inbound messages into this session's pane and
@@ -38,6 +37,7 @@ log "boot: uid=$(id -u) user=$(whoami)"
 case "$SESSION" in
   *'$'*) log "FATAL: SERVICE_PREFIX placeholder not substituted (got SESSION=$SESSION)"; exit 4 ;;
 esac
+TMUX=(tmux -L "$SERVICE_PREFIX")
 
 # Bring nvm into PATH (cron-style minimal env)
 export NVM_DIR="$HOME/.nvm"
@@ -146,7 +146,7 @@ esac
 
 # If already running, just keep this process alive watching tmux. systemd will
 # restart us if tmux dies; we restart tmux if claude dies inside.
-if tmux has-session -t "$SESSION" 2>/dev/null; then
+if "${TMUX[@]}" has-session -t "$SESSION" 2>/dev/null; then
   log "tmux session $SESSION already exists; attaching as watcher"
   if [[ -n "$RESOLVED" ]]; then
     log "WARN: command was consumed but tmux already alive — command had no effect on this boot"
@@ -161,7 +161,7 @@ else
   # next ${SERVICE_PREFIX}-dispatch.timer fire as its first user input.
   # Rule: a new session is created ONLY when (a) no prior sessions exist
   # at all, or (b) the operator explicitly issues /new_session.
-  tmux new-session -d -s "$SESSION" -x 200 -y 50 \
+  "${TMUX[@]}" new-session -d -s "$SESSION" -x 200 -y 50 \
     "cd ${PROJECT_DIR} && $CLAUDE_CMD"
   log "tmux + claude launched"
 
@@ -175,7 +175,7 @@ fi
 # Watcher loop: keep this systemd process alive while tmux session lives.
 # If tmux dies, exit non-zero so systemd restarts us (and we re-create tmux).
 # Sleep 5s (was 30s in v3) for snappier respawn after /new_session kill-session.
-while tmux has-session -t "$SESSION" 2>/dev/null; do
+while "${TMUX[@]}" has-session -t "$SESSION" 2>/dev/null; do
   sleep 5
 done
 

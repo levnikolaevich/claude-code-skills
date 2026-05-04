@@ -1,6 +1,12 @@
-export type DispatchRunStatus = "started" | "running" | "finished" | "failed" | "abandoned";
+export type DispatchRunStatus =
+  | "started"
+  | "running"
+  | "waiting_approval"
+  | "finished"
+  | "failed"
+  | "abandoned";
 
-export type DispatchPhaseStatus = "running" | "done" | "failed" | "skipped";
+export type DispatchPhaseStatus = "running" | "waiting_approval" | "done" | "failed" | "skipped";
 
 export interface DispatchRun {
   id: number;

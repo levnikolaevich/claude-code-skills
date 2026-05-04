@@ -80,7 +80,7 @@ agent-bot (one Linux user, uid 1000, primary group agent-bot)
 | State / DB | — | `/var/lib/<project>/relay.db`, `last-session.id`, `sessions-dir.path` |
 | Log file | — | `/var/log/<project>-god.log` |
 | systemd units | `agent-update.service` and `agent-update.timer` | `<service-prefix>-{god,relay-bot,dispatch}.service` and dispatch timer |
-| tmux session name | — | `<service-prefix>-god` |
+| tmux session/socket | — | session `<service-prefix>-god` on socket `<service-prefix>` (`tmux -L <service-prefix>`) |
 | Telegram bot (token + chat_id) | — | per-project; multiple bots talk to same operator chat |
 | Relay-bot HTTP port | — | per-project `127.0.0.1:<port>` (default `9999`, override for additional projects) |
 
@@ -92,8 +92,9 @@ These six rules MUST hold for the shared-user model to be coherent:
 2. `~/.claude/settings.json` MUST NOT contain a `hooks` key. Hooks come from `<PROJECT_DIR>/.claude/settings.json` only.
 3. Each project's `<PROJECT_DIR>/.claude/settings.json` MUST contain `hooks` pointing to that project's `RELAY_HOOK_PORT`.
 4. Each project's `<PROJECT_DIR>/.claude/CLAUDE.md` MUST be rendered with that project's `PROJECT_NAME`, `SERVICE_PREFIX`, `RELAY_HOOK_PORT`, `PROJECT_DIR`, `DISPATCH_COMMAND_NAME`, `TELEGRAM_CHAT_ID`. It MUST contain the "Scope policy — STRICT" section that forbids cross-project filesystem access.
-5. `secrets.env` MUST NOT contain `BOT_USER=`, `PROJECT_NAME=`, `PROJECT_DIR=`, `SERVICE_PREFIX=` lines (those are identity, not secrets — they're set by systemd `Environment=` directives in the unit files).
-6. The `god-session.sh` wrapper uses per-project `STATE_DIR=/var/lib/${PROJECT_NAME}/`. The wrapper resolves session UUIDs ONLY from this per-project dir, never via `claude --continue` (which would otherwise pick newest session globally across projects). All session resume goes through explicit `claude --resume <uuid>` with UUIDs from `last-session.id` (written by relay-bot's SessionStart hook).
+5. `secrets.env` MUST NOT contain `BOT_USER=`, `PROJECT_NAME=`, `PROJECT_DIR=`, `SERVICE_PREFIX=`, or `RELAY_HOOK_PORT=` lines (identity and routing come from systemd `Environment=` directives).
+6. `god-session.sh`, `dispatch.service`, and relay-bot MUST use the same derived tmux socket via `tmux -L <service-prefix>`. Never use the default tmux socket for project god-sessions.
+7. Session resume is project-bound. Each relay-bot owns a separate `/var/lib/${PROJECT_NAME}/relay.db`; `sessions-dir.path` must resolve to Claude JSONL files for `${PROJECT_DIR}` only; `last-session.id` is written by that project's SessionStart hook only. The wrapper resolves session UUIDs only from this per-project state, never via `claude --continue`, and resumes with explicit `claude --resume <uuid>`.
 
 If any invariant is violated, claude in one project's tmux can identify itself as another project's god-session, query the wrong relay-bot port, write to the wrong outbox, or resume the wrong session.
 

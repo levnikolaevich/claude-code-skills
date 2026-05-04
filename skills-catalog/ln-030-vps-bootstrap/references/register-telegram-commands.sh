@@ -24,6 +24,7 @@ curl -fsS -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/setMyComman
     {"command":"usage","description":"Show Claude usage limits"},
     {"command":"new_session","description":"Start a new Claude session"},
     {"command":"sessions","description":"Resume or delete Claude sessions"},
+    {"command":"tasks","description":"List open tasks"},
     {"command":"users","description":"Manage bot access"}
   ]}' >/dev/null
 
@@ -32,6 +33,7 @@ curl -fsS "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getMyCommands" \
       {"command":"usage","description":"Show Claude usage limits"},
       {"command":"new_session","description":"Start a new Claude session"},
       {"command":"sessions","description":"Resume or delete Claude sessions"},
+      {"command":"tasks","description":"List open tasks"},
       {"command":"users","description":"Manage bot access"}
     ]' >/dev/null
 

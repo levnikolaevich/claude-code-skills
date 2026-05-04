@@ -1,27 +1,12 @@
 [Unit]
-Description=Inject /${DISPATCH_COMMAND_NAME} into the primary ${SERVICE_PREFIX} god tmux session
-Requires=${SERVICE_PREFIX}-god@${TELEGRAM_CHAT_ID}.service
-After=${SERVICE_PREFIX}-god@${TELEGRAM_CHAT_ID}.service
+Description=Poll provider tasks through ${SERVICE_PREFIX} relay-bot control plane
+Requires=${SERVICE_PREFIX}-relay-bot.service
+After=${SERVICE_PREFIX}-relay-bot.service
 
 [Service]
 Type=oneshot
 User=${BOT_USER}
 Group=${BOT_USER}
-# Skip the dispatch tick when an operator turn is in flight (Fix #3b).
-# ExecCondition: exit 0 = run ExecStart; exit 1-254 = skip cleanly without
-# marking the unit failed (systemd logs "Condition check resulted in ...
-# being skipped"). Defensive guards (PEND default, numeric regex) protect
-# against broken pipe / empty / non-numeric pipeline output.
-ExecCondition=/bin/bash -c '\
-  PEND=$(curl -fsS http://127.0.0.1:${RELAY_HOOK_PORT}/health 2>/dev/null \
-    | jq -r ".pending_count // 0" 2>/dev/null); \
-  PEND=$${PEND:-0}; \
-  [[ "$$PEND" =~ ^[0-9]+$$ ]] || PEND=0; \
-  if [ "$$PEND" -gt 0 ]; then \
-    echo "operator turn in flight (pending=$$PEND); skipping dispatch tick"; \
-    exit 1; \
-  fi; \
-  exit 0'
-ExecStart=/usr/bin/tmux -L ${SERVICE_PREFIX} send-keys -t ${SERVICE_PREFIX}-god-${TELEGRAM_CHAT_ID} "/${DISPATCH_COMMAND_NAME}" Enter
+ExecStart=/usr/bin/curl -fsS -X POST http://127.0.0.1:${RELAY_HOOK_PORT}/tasks/poll
 StandardOutput=journal
 StandardError=journal

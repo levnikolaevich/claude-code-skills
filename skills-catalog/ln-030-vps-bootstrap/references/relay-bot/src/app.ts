@@ -24,17 +24,22 @@ import { createMemoryService } from "./services/memory.service.js";
 import { createAllowlistService } from "./services/allowlist.service.js";
 import { createTodoDiffService } from "./services/todoDiff.service.js";
 import { createVerbosityService } from "./services/verbosity.service.js";
+import { createTaskProviderService } from "./services/taskProvider.service.js";
+import { createTaskService } from "./services/task.service.js";
 import { buildAllowlistMiddleware } from "./handlers/telegram/allowlist.middleware.js";
 import { buildNewSessionHandler } from "./handlers/telegram/newSession.js";
 import { buildSessionsHandler } from "./handlers/telegram/sessions.js";
 import { buildSessionsCallbackHandler } from "./handlers/telegram/sessionsCallback.js";
 import { buildUsersHandler } from "./handlers/telegram/users.js";
 import { buildUsersCallbackHandler } from "./handlers/telegram/usersCallback.js";
+import { buildTasksHandler } from "./handlers/telegram/tasks.js";
+import { buildTasksCallbackHandler } from "./handlers/telegram/tasksCallback.js";
 import { buildInboundHandler } from "./handlers/telegram/inbound.js";
 import { createReactToInbound } from "./handlers/telegram/react.js";
 import { registerErrorHandler } from "./handlers/http/plugins/errorHandler.plugin.js";
 import { registerHookRoutes } from "./handlers/http/hooks.routes.js";
 import { registerDispatchRoutes } from "./handlers/http/dispatch.routes.js";
+import { registerTaskRoutes } from "./handlers/http/tasks.routes.js";
 import { registerMemoryRoutes } from "./handlers/http/memory.routes.js";
 import { registerHealthRoutes } from "./handlers/http/health.routes.js";
 import { createInboundWorker } from "./workers/inbound.worker.js";
@@ -119,6 +124,15 @@ export function buildApp(env: Env, log: Logger = createLogger()): App {
   const dispatch = createDispatchService({ repo: repos.dispatch });
   const memory = createMemoryService({ repo: repos.memory });
   const todoDiff = createTodoDiffService({ log, repo: repos.todoState });
+  const taskProvider = createTaskProviderService({ env, log });
+  const tasks = createTaskService({
+    env,
+    log,
+    provider: taskProvider,
+    outbox,
+    messagesRepo: repos.messages,
+    inbound: inboundService,
+  });
 
   // wire telegram middleware + handlers (catch-all inbound LAST)
   const allowlistMw = buildAllowlistMiddleware({ bot, log, allowlist });
@@ -143,12 +157,16 @@ export function buildApp(env: Env, log: Logger = createLogger()): App {
   });
   const usersHandler = buildUsersHandler({ log, allowlist });
   const usersCallback = buildUsersCallbackHandler({ log, bot, allowlist });
+  const tasksHandler = buildTasksHandler({ log, tasks });
+  const tasksCallback = buildTasksCallbackHandler({ log, tasks });
   const inboundHandler = buildInboundHandler({ log, messagesRepo: repos.messages, mediaStore });
   bot.use(newSessionHandler);
   bot.use(sessionsHandler);
   bot.use(sessionsCallback);
   bot.use(usersHandler);
   bot.use(usersCallback);
+  bot.use(tasksHandler);
+  bot.use(tasksCallback);
   bot.use(inboundHandler);
 
   void Composer;
@@ -173,6 +191,7 @@ export function buildApp(env: Env, log: Logger = createLogger()): App {
     dbPath: env.dbPath,
   });
   registerDispatchRoutes(httpServer, { log, dispatch });
+  registerTaskRoutes(httpServer, { log, tasks });
   registerMemoryRoutes(httpServer, { log, memory });
   registerHealthRoutes(httpServer, {
     outboxRepo: repos.outbox,

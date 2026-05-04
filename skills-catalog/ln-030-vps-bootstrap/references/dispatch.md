@@ -1,102 +1,41 @@
 ---
-description: "Process one open ${REPO_SLUG} Issue end-to-end through the agile pipeline (ln-300 → ln-310 → ln-400 → ln-500) and open a PR (GitHub) or MR (GitLab). Triggered by ${SERVICE_PREFIX}-dispatch.timer (hourly :07) or manually."
+description: "Work on one provider issue selected by relay-bot control plane for ${REPO_SLUG}."
 allowed-tools: Bash, Read, Write, Edit, Skill, Glob, Grep
 ---
 
-# /${DISPATCH_COMMAND_NAME} — process one Issue end-to-end
+# /${DISPATCH_COMMAND_NAME} — work on a selected task
 
-You are running inside the long-lived **${PROJECT_NAME} god-session**. Your job for this invocation: pick **one** open issue, claim it, drive it through the full agile pipeline (4 stages), open a PR (GitHub) or Merge Request (GitLab), and exit. Do not loop. Do not start a second issue. `${SERVICE_PREFIX}-dispatch.timer` will fire you again at the next `:07`.
+You are running inside the long-lived **${PROJECT_NAME} god-session**. This command is a work-plane continuation for a task selected by relay-bot through `/tasks`; it does not enumerate provider issues by itself.
 
 ## Working environment
 
-- `cwd`: `${PROJECT_DIR}` (clean clone of the repo).
-- Strict sandbox mode does **not** expose `/etc/${PROJECT_NAME}/secrets.env` or raw provider tokens to this work-plane command. Treat missing `GITHUB_*`, `GITLAB_*`, or `TELEGRAM_BOT_TOKEN` as expected unless the operator/control plane explicitly injected a scoped token for this invocation. Do not try to read secrets directly.
-- **Git provider**: this project uses `${GIT_PROVIDER}` (either `github` or `gitlab`). All git/issue commands below branch on this.
-- **`GIT_PROVIDER=github`**: if a scoped `GH_TOKEN` is already present, use it. Do not call `${SERVICE_PREFIX}-mint-gh-token` from inside the sandbox.
-- **`GIT_PROVIDER=gitlab`**: if a scoped `GITLAB_TOKEN` is already present, use it. Do not read raw GitLab tokens or `~/.git-credentials` from outside `${PROJECT_DIR}`.
-- **claude-relay-bot HTTP API at `http://127.0.0.1:${RELAY_HOOK_PORT}`** — used below for dispatch tracking (durable audit in SQLite). Conversational replies to operator are auto-mirrored via Stop hook; `/${DISPATCH_COMMAND_NAME}` status pings still go via direct curl as before for realtime visibility.
+- `cwd`: `${PROJECT_DIR}`.
+- Strict sandbox mode exposes the project folder as writable and installed skills/plugins as read-only.
+- Provider secrets, Telegram tokens, relay database files, systemd files, sibling `/opt/*` projects, and shared home config are control-plane resources. Do not read them, copy them, or ask for them.
+- The selected task details are provided in the injected prompt: issue number, title, URL, labels, and body.
+- Use `http://127.0.0.1:${RELAY_HOOK_PORT}` only for relay-bot audit endpoints documented below. Do not send Telegram messages directly; final replies are mirrored by hooks.
 
-## Telegram outbound (curl pattern, for realtime status pings)
+## Step 1 — Open Dispatch Run
 
-```bash
-curl -fsS -X POST \
-  -d "chat_id=$TELEGRAM_CHAT_ID" \
-  --data-urlencode "text=<message>" \
-  "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage" >/dev/null || true
-```
-
-## Step 1 — Open dispatch run + budget gate
+Create a dispatch audit row. Use `trigger="telegram_task"` for `/tasks` handoffs.
 
 ```bash
 RUN_ID=$(curl -fsS -X POST http://127.0.0.1:${RELAY_HOOK_PORT}/dispatch/start \
   -H 'Content-Type: application/json' \
-  -d '{"trigger":"cron"}' | jq -r .run_id)
+  -d "{\"trigger\":\"telegram_task\",\"issue_number\":<N>,\"issue_title\":\"<title>\"}" \
+  | jq -r .run_id)
 ```
 
-Run `/usage`. If weekly remaining < 30% OR 5h-window remaining < 20%:
+Run `/usage`. If weekly remaining is below 30% or 5h-window remaining is below 20%, close the run with `budget_skip`, explain the budget state in the final reply, and exit.
 
-```bash
-curl -fsS -X POST http://127.0.0.1:${RELAY_HOOK_PORT}/dispatch/end \
-  -H 'Content-Type: application/json' \
-  -d "{\"run_id\":$RUN_ID,\"status\":\"budget_skip\",\"error\":\"weekly=<X>%,5h=<Y>%\"}"
-# send Telegram throttled message, then exit
-```
+## Step 2 — Plan First
 
-Before selecting a new issue, inspect recent dispatch runs. If any run for a `status:ready` issue has `status=waiting_approval`, send one Telegram reminder and exit. Do not pick or claim another issue while approval is pending.
+Do read-only inspection only: task body, project rules, obvious affected files, and relevant tests. Do not edit files, create branches, commit, restart services, or alter provider state before approval.
 
-## Step 2 — Pick one issue for planning only
-
-### GitHub (`GIT_PROVIDER=github`)
-
-```bash
-export GH_TOKEN=$(${SERVICE_PREFIX}-mint-gh-token)
-gh issue list --repo ${REPO_SLUG} \
-  --state open --label status:ready \
-  --json number,title,body,labels,createdAt
-```
-
-In strict sandbox mode, if `GH_TOKEN` is not already set, stop here: record
-`dispatch_end failed` through the relay API and tell the operator that provider
-token work must be performed by the external control plane.
-
-### GitLab (`GIT_PROVIDER=gitlab`)
-
-```bash
-export GITLAB_TOKEN=$GITLAB_API_TOKEN
-test -n "$GITLAB_TOKEN" || { echo "GITLAB_API_TOKEN missing"; exit 1; }
-glab issue list --repo ${REPO_SLUG} \
-  --opened --label status:ready \
-  --output json
-```
-
-### Sort + queue-empty handling (all providers)
-
-Sort: `priority:p1` > `priority:p2` > `priority:p3`; oldest `createdAt` (GitHub) / `created_at` (GitLab) wins ties.
-
-If queue is empty:
-
-```bash
-curl -fsS -X POST http://127.0.0.1:${RELAY_HOOK_PORT}/dispatch/end \
-  -d "{\"run_id\":$RUN_ID,\"status\":\"queue_empty\"}"
-# Telegram: [claude] queue empty, idle
-exit
-```
-
-If picked an issue:
-
-```bash
-curl -fsS -X POST http://127.0.0.1:${RELAY_HOOK_PORT}/dispatch/phase \
-  -d "{\"run_id\":$RUN_ID,\"phase\":\"issue_pick\",\"status\":\"go\",\"details\":\"#$N $TITLE\"}"
-```
-
-## Step 3 — Send plan and wait for approval
-
-Do read-only inspection only: issue body, labels, existing project rules, obvious affected files, and relevant tests. Do not edit files, create branches, change tracker labels, commit, push, restart services, or open PR/MR.
-
-Send Telegram a short plan:
+Return a short plan:
 
 ```text
-[claude#<N>] plan ready
+[task #<N>] plan ready
 Goal: ...
 Areas: ...
 Steps: ...
@@ -105,133 +44,94 @@ Risks/rollback: ...
 Reply: approve #<N> / делай #<N>
 ```
 
-Record the gate and end this invocation:
+Record the approval gate:
 
 ```bash
 curl -fsS -X POST http://127.0.0.1:${RELAY_HOOK_PORT}/dispatch/phase \
-  -d "{\"run_id\":$RUN_ID,\"phase\":\"approval\",\"status\":\"waiting_approval\",\"verdict\":\"plan_sent\",\"details\":\"#$N $TITLE\"}"
+  -H 'Content-Type: application/json' \
+  -d "{\"run_id\":$RUN_ID,\"phase\":\"approval\",\"status\":\"waiting_approval\",\"verdict\":\"plan_sent\",\"details\":\"#<N> <title>\"}"
 curl -fsS -X POST http://127.0.0.1:${RELAY_HOOK_PORT}/dispatch/end \
-  -d "{\"run_id\":$RUN_ID,\"status\":\"waiting_approval\",\"error\":\"operator approval required for #$N\"}"
-exit
+  -H 'Content-Type: application/json' \
+  -d "{\"run_id\":$RUN_ID,\"status\":\"waiting_approval\",\"error\":\"operator approval required for #<N>\"}"
 ```
 
-## Step 4 — Approval continuation and claim transaction
+Exit after sending the plan unless the current Telegram turn already contains explicit approval.
 
-Run this section only after explicit operator approval: `approve #<N>`, `approved #<N>`, `go #<N>`, `делай #<N>`, `одобряю #<N>`, or `утверждаю #<N>`. Verify `/dispatch/recent` contains a matching `waiting_approval` run for issue `#<N>`. If not, stop and ask the operator to rerun `/${DISPATCH_COMMAND_NAME}`.
+## Step 3 — Approval Continuation
 
-### GitHub
+Proceed only after explicit approval: `approve #<N>`, `approved #<N>`, `go #<N>`, `делай #<N>`, `одобряю #<N>`, or `утверждаю #<N>`.
 
-```bash
-gh issue edit <N> --repo ${REPO_SLUG} \
-  --remove-label status:ready --add-label status:in-progress
-```
+If provider state must be changed, report the needed transition in the final answer. Provider issue labels, assignment, PR/MR creation, and token-backed operations belong to the control plane/operator path, not this sandboxed command.
 
-### GitLab
+## Step 4 — Pipeline
 
-```bash
-glab issue update <N> --repo ${REPO_SLUG} \
-  --unlabel status:ready --label status:in-progress
-```
+For each stage, open a phase row before the Skill call and close it with the verdict after.
 
-If it fails: `dispatch_end status="failed"`, exit.
-
-Send Telegram: `[claude#<N>] starting pipeline on <title>`.
-
-## Step 5 — Pipeline (4 stages, all via Skill())
-
-For each stage: open a phase row before the Skill() call, close it with the verdict after.
-
-For each Skill call, pass the input as a YAML/Markdown block containing:
-
-- `input_story`: number, title, labels, priority, body (the issue verbatim).
-- `constraints`: branch convention `agent/issue-<N>-<slug>`, target master, never push to master directly, prefer naturalized prose in PR/MR bodies. (Project may add more — see project's `CLAUDE.md` and `.claude/rules/`.)
-- `mandatory_bindings`: project-specific policy/rule files. Discover via `ls .claude/rules/ SAFETY.md skills-catalog/TEMPLATE.md 2>/dev/null` and bind whatever is present.
-- `task_provider`: `file` (no Linear in this project unless configured).
-
-### Stage 0: ln-300 task decomposition
+### Stage 1: ln-300 task decomposition
 
 ```bash
 curl -fsS -X POST http://127.0.0.1:${RELAY_HOOK_PORT}/dispatch/phase \
+  -H 'Content-Type: application/json' \
   -d "{\"run_id\":$RUN_ID,\"phase\":\"ln-300\",\"status\":\"running\"}"
 ```
 
 ```text
-Skill(skill: "agile-workflow:ln-300-task-coordinator", args: <handoff>)
+Skill(skill: "agile-workflow:ln-300-task-coordinator", args: <selected task handoff>)
 ```
 
-On success: `dispatch_phase ln-300 status=go verdict="$TASK_COUNT tasks"` + Telegram.
-On error: `dispatch_phase ln-300 status=error` + `dispatch_end status=blocked` + label + exit.
+On success: close `ln-300` with `status=go`. On error: close current phase with `status=error`, close dispatch with `status=blocked`, explain the blocker, and exit.
 
-### Stage 1: ln-310 validation
+### Stage 2: ln-310 validation
 
 ```text
 Skill(skill: "agile-workflow:ln-310-multi-agent-validator", args: <ln-300 output>)
 ```
 
-On GO: `dispatch_phase ln-310 status=go verdict=GO`. On NO-GO: retry once. Second NO-GO: `status=no_go verdict="NO_GO x2"` + `dispatch_end blocked` + exit.
+On GO: close `ln-310` with `status=go`. On NO-GO: retry once. Second NO-GO closes dispatch with `status=blocked`.
 
-### Stage 2: ln-400 execution
+### Stage 3: ln-400 execution
 
 ```text
 Skill(skill: "agile-workflow:ln-400-story-executor", args: <validated plan>)
 ```
 
-On success: `dispatch_phase ln-400 status=go`. On error: `dispatch_phase ln-400 status=error` + `dispatch_end blocked` + exit.
+Keep all reads and edits inside `${PROJECT_DIR}`. If a command needs cache/temp storage, use project-local paths such as `.cache/`, `.tmp/`, or tool-specific directories under the project.
 
-### Stage 3: ln-500 quality gate
+### Stage 4: ln-500 quality gate
 
 ```text
 Skill(skill: "agile-workflow:ln-500-story-quality-gate", args: <execution artifact>)
 ```
 
-PASS / CONCERNS → proceed to Step 5. FAIL → rework via ln-400 once; second FAIL → `dispatch_end blocked`. WAIVED — only if issue body explicitly authorizes; otherwise treat as FAIL.
+PASS or CONCERNS may proceed. FAIL requires one rework pass through ln-400; second FAIL closes dispatch with `status=blocked`.
 
-## Step 6 — Commit, push, open PR/MR
+## Step 5 — Local Git Artifact
+
+Create a local branch and commit only after the approved pipeline has changed files.
 
 ```bash
-curl -fsS -X POST http://127.0.0.1:${RELAY_HOOK_PORT}/dispatch/phase \
-  -d "{\"run_id\":$RUN_ID,\"phase\":\"pr_create\",\"status\":\"running\"}"
-
 git checkout -b agent/issue-<N>-<slug>
 git add -A
 git commit -m "<conventional commit summary>"
-git push -u origin agent/issue-<N>-<slug>
 ```
 
-### GitHub — open PR
+Do not push or open provider PR/MR from the sandbox unless the control plane has explicitly supplied a safe project-scoped mechanism for that operation.
 
-```bash
-gh pr create --repo ${REPO_SLUG} --base master --head agent/issue-<N>-<slug> \
-  --title "<concise title>" --body "Closes #<N> ..."
-```
-
-### GitLab — open MR
-
-```bash
-glab mr create --repo ${REPO_SLUG} --target-branch master --source-branch agent/issue-<N>-<slug> \
-  --title "<concise title>" --description "Closes #<N> ..."
-```
-
-### Close the dispatch run
+Close the dispatch run:
 
 ```bash
 curl -fsS -X POST http://127.0.0.1:${RELAY_HOOK_PORT}/dispatch/end \
-  -d "{\"run_id\":$RUN_ID,\"status\":\"pr_opened\",\"pr_number\":$N,\"pr_url\":\"$URL\",\"branch\":\"agent/issue-<N>-<slug>\"}"
+  -H 'Content-Type: application/json' \
+  -d "{\"run_id\":$RUN_ID,\"status\":\"completed\",\"branch\":\"agent/issue-<N>-<slug>\"}"
 ```
 
-## Step 7 — Final notification
+## Hard Rules
 
-Send Telegram: `[claude#<N>] PR/MR opened: <url>`. Exit.
-
-## Hard rules
-
-- One Issue per /${DISPATCH_COMMAND_NAME} invocation. Never loop.
-- No implementation before approval. Before explicit `approve #N` / `делай #N`, only read issue/project context, send the plan, record `waiting_approval`, and exit.
-- Never push to `master` directly. Only `agent/*` branches.
+- One selected task per invocation. Never loop and never choose a different issue.
+- No implementation before approval.
+- Never push to `master` directly.
 - Never amend commits. New commits only.
-- Never echo `secrets.env` values to logs/comments/Telegram.
-- (`GIT_PROVIDER=github`) If `GH_TOKEN` is absent in strict sandbox mode → `dispatch_end failed` + Telegram alert + exit. Do not call token minters or read secrets from the work plane.
-- (`GIT_PROVIDER=gitlab`) If `GITLAB_TOKEN` is absent in strict sandbox mode, or `git push` / `glab` fails twice within 30s → `dispatch_end failed` + Telegram alert + exit. Provider credentials are control-plane resources.
-- If Skill() crashes (tool error, not a documented verdict) → close current phase `status=error`, `dispatch_end failed`, revert label appropriately + Telegram alert + exit.
-- Telegram or relay-bot localhost API failures are non-fatal — log and continue.
-- Conversational replies outside /${DISPATCH_COMMAND_NAME} are auto-mirrored via Stop hook — DO NOT manually curl Telegram for those. Status pings inside this dispatch ARE direct curl (realtime visibility).
+- Never echo secret values to logs, comments, or Telegram.
+- Do not enumerate provider issues or configure provider tokens from the work plane.
+- Do not call host service managers or inspect VPS control-plane files.
+- Relay-bot localhost API failures are non-fatal for project work, but must be mentioned in the final answer.

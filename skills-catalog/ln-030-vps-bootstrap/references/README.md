@@ -81,12 +81,12 @@ Components:
 
 - **grammY polling** (Telegram inbound) → durable SQLite `messages(kind='text'|'image'|'document', status='queued')` queue → inbound worker delivers with `tmux send-keys "[tg id=<chat>:<msg>] <text>"` only when god-session is ready
 - **Serialized control lane** — `/new_session`, Resume, Delete, and inbound delivery share one async queue/lock so operator text cannot be lost during tmux restarts
-- **Fastify listener on `127.0.0.1:${RELAY_HOOK_PORT}`** — Claude Code HTTP hook receivers (`UserPromptSubmit`, `Stop`, `StopFailure`, `SessionStart`, `PostCompact` via SessionStart route, `SubagentStop`, `PreToolUse`, `PostToolUse`) + application API endpoints (`/dispatch/*`, `/memory/*`, `/health`)
+- **Fastify listener on `127.0.0.1:${RELAY_HOOK_PORT}`** — Claude Code HTTP hook receivers (`UserPromptSubmit`, `Stop`, `StopFailure`, `SessionStart`, `PostCompact` via SessionStart route, `SubagentStop`, `PreToolUse`, `PostToolUse`) + application API endpoints (`/tasks/poll`, `/dispatch/*`, `/memory/*`, `/health`)
 - **Outbox worker** — drains a SQLite queue of outbound messages with retry/backoff. Stop hook never blocks on Telegram API; even Telegram outage doesn't lose messages
 - **SQLite at `/var/lib/${PROJECT_NAME}/relay.db`** with 12 tables: `messages`, `pending_reply`, `outbox` (+ `event_type` column for status routing), `sessions`, `session_events`, `dispatch_runs`, `dispatch_phases`, `memories`, `health_snapshots`, `auth_rejects`, `allowed_users`, `todo_state`
 - **SessionStart additionalContext injection** — claude sees recent memories + dispatch history at start of every new session
 
-External `${SERVICE_PREFIX}-dispatch.timer` (systemd, installed in Step 7) replaces the in-session `/loop` (which was fragile across tmux/claude respawn). Hourly at `:07`, it fires `tmux -L ${SERVICE_PREFIX} send-keys -t ${SERVICE_PREFIX}-god "/${DISPATCH_COMMAND_NAME}" Enter`. The scheduler is independent of Telegram — it ships in Step 7 regardless.
+External `${SERVICE_PREFIX}-dispatch.timer` (systemd, installed in Step 7) replaces the in-session `/loop` (which was fragile across tmux/claude respawn). Every 15 minutes, it calls relay-bot `POST /tasks/poll`. Relay-bot lists open provider issues with control-plane secrets; empty queues only log, non-empty queues notify the primary operator to use `/tasks`.
 
 External `agent-update.timer` (systemd, installed in Step 7d) performs system-wide nightly host maintenance. It updates CLIs and plugins, verifies versions/config, then restarts active `*-god@*.service` user instances. Failed updates do not restart running god-sessions.
 

@@ -10,6 +10,13 @@ const RawEnvSchema = z.object({
   RELAY_HOOK_PORT: z.coerce.number().int().min(1).max(65_535),
   RELAY_VERBOSITY: z.enum(["quiet", "normal", "verbose"]).default("normal"),
   RELAY_INBOUND_REACTIONS: z.string().optional(),
+  GIT_PROVIDER: z.enum(["github", "gitlab"]).default("github"),
+  REPO_SLUG: z.string().optional(),
+  GITHUB_APP_ID: z.string().optional(),
+  GITHUB_INSTALLATION_ID: z.string().optional(),
+  GITHUB_APP_PRIVATE_KEY_PATH: z.string().optional(),
+  GITLAB_HOST: z.string().optional(),
+  GITLAB_API_TOKEN: z.string().optional(),
 });
 
 export interface Env {
@@ -25,6 +32,13 @@ export interface Env {
   hookPort: number;
   verbosity: "quiet" | "normal" | "verbose";
   inboundReactions: string[];
+  gitProvider: "github" | "gitlab";
+  repoSlug: string | null;
+  githubAppId: string | null;
+  githubInstallationId: string | null;
+  githubAppPrivateKeyPath: string | null;
+  gitlabHost: string | null;
+  gitlabApiToken: string | null;
 }
 
 const DEFAULT_REACTIONS = "👀,👍,✅,🫡,🤝,✍,🆒,👌,🙏";
@@ -61,5 +75,20 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
     hookPort: v.RELAY_HOOK_PORT,
     verbosity: v.RELAY_VERBOSITY,
     inboundReactions: parseReactions(v.RELAY_INBOUND_REACTIONS),
+    gitProvider: v.GIT_PROVIDER,
+    repoSlug: v.REPO_SLUG && v.REPO_SLUG.trim().length > 0 ? v.REPO_SLUG.trim() : null,
+    githubAppId:
+      v.GITHUB_APP_ID && v.GITHUB_APP_ID.trim().length > 0 ? v.GITHUB_APP_ID.trim() : null,
+    githubInstallationId:
+      v.GITHUB_INSTALLATION_ID && v.GITHUB_INSTALLATION_ID.trim().length > 0
+        ? v.GITHUB_INSTALLATION_ID.trim()
+        : null,
+    githubAppPrivateKeyPath:
+      v.GITHUB_APP_PRIVATE_KEY_PATH && v.GITHUB_APP_PRIVATE_KEY_PATH.trim().length > 0
+        ? v.GITHUB_APP_PRIVATE_KEY_PATH.trim()
+        : null,
+    gitlabHost: v.GITLAB_HOST && v.GITLAB_HOST.trim().length > 0 ? v.GITLAB_HOST.trim() : null,
+    gitlabApiToken:
+      v.GITLAB_API_TOKEN && v.GITLAB_API_TOKEN.trim().length > 0 ? v.GITLAB_API_TOKEN.trim() : null,
   };
 }

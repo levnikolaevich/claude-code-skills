@@ -56,11 +56,11 @@ The operator hands these values to Claude (in chat) before running the workflow.
 | `REPO_REF` | `main` | Branch or ref checked out in `${PROJECT_DIR}` after clone/fetch |
 | `BOT_USER` | `agent-bot` | Shared Linux user that owns ALL projects' workloads on this VPS. Always `agent-bot` — per-project users would force a separate Anthropic OAuth per project, duplicate the nvm + npm tree, and consume Claude Max device slots. Project isolation comes from project-scope config dirs (see Scope rules above), not from Linux-user isolation. |
 | `RELAY_HOOK_PORT` | `9999` | Project-local relay-bot HTTP port on `127.0.0.1`; override for a second project on the same VPS |
-| `DISPATCH_COMMAND_NAME` | `myproj-dispatch` | VPS slash command name injected by `${SERVICE_PREFIX}-dispatch.timer`; default `${SERVICE_PREFIX}-dispatch` |
+| `DISPATCH_COMMAND_NAME` | `myproj-dispatch` | VPS slash command name used after relay-bot `/tasks` handoff; default `${SERVICE_PREFIX}-dispatch` |
 | `VPS_HOST` | `203.0.113.42` | SSH target (IP or hostname) |
 | `VPS_SSH_KEY` | `~/.ssh/myproj_vps` | Local path to the SSH private key |
 | `TARGET_REPO_PATH` | `D:\Development\me\myproj` | Local path to the operator's project repo (where `.claude/commands/dispatcher.md` will be rendered) |
-| `GIT_PROVIDER` | `github` or `gitlab` | Which git platform hosts the project. Determines which CLI (`gh` vs `glab`), which provider-specific secret set is required, and which dispatcher `queue` subcommand variant is rendered. |
+| `GIT_PROVIDER` | `github` or `gitlab` | Which git platform hosts the project. Relay-bot uses this control-plane setting to poll open issues without exposing provider tokens to Claude/Codex work-plane sessions. |
 | `REPO_SLUG` | `me/myproj` (github) or `group/project` (gitlab) | Repository path on the chosen `GIT_PROVIDER`. For GitLab subgroups: `group/subgroup/project`. |
 
 Defaults before rendering: if `RELAY_HOOK_PORT` is unset, set it to `9999`; if `DISPATCH_COMMAND_NAME` is unset, set it to `${SERVICE_PREFIX}-dispatch`; if `AGENT_SKILLS_REPO_URL` is unset, set it to `https://github.com/levnikolaevich/claude-code-skills.git`; if `AGENT_SKILLS_REF` is unset, set it to `master`; if `AGENT_SKILLS_DIR` is unset, set it to **`/opt/agent-skills`** (one shared clone per VPS); if `AGENT_SKILLS_PLUGINS` is unset, set it to `agile-workflow`. These are rendered values, not hidden template constants. The tmux socket is always `${SERVICE_PREFIX}`.
@@ -70,9 +70,9 @@ Defaults before rendering: if `RELAY_HOOK_PORT` is unset, set it to `9999`; if `
 | Variable | What enables | Skips when blank |
 |---|---|---|
 | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` | Telegram bot interface (inbound + `/usage` command + status pings) | Steps 7b (statusLine cache), 7c (claude-relay-bot install), 8b (Codex notify hook) |
-| `GITHUB_APP_ID`, `GITHUB_INSTALLATION_ID`, `GITHUB_APP_PRIVATE_KEY_PATH` | (required when `GIT_PROVIDER=github` for private repo git operations) GitHub App auth for clone/pull/push via `${SERVICE_PREFIX}-mint-gh-token` | GitHub auth + dispatcher rows |
+| `GITHUB_APP_ID`, `GITHUB_INSTALLATION_ID`, `GITHUB_APP_PRIVATE_KEY_PATH` | (required when `GIT_PROVIDER=github` for private repo git operations and issue polling) GitHub App auth for clone/pull/push via control-plane helpers and relay-bot task polling | GitHub auth + task polling |
 | `GITLAB_HOST`, `GITLAB_GIT_USERNAME`, `GITLAB_GIT_TOKEN` | (required when `GIT_PROVIDER=gitlab` for private repo git operations) HTTPS git credential for clone/pull/push. The token can be a Project/Group Deploy Token, Project Access Token, or PAT, but it must have `read_repository` + `write_repository`. | GitLab credential helper setup |
-| `GITLAB_API_TOKEN` | (required when `GIT_PROVIDER=gitlab` for issue/MR automation) Personal or Project Access Token with `api` scope. Keep separate from `GITLAB_GIT_TOKEN` unless one token intentionally has both scopes. | GitLab `glab issue` / MR commands |
+| `GITLAB_API_TOKEN` | (required when `GIT_PROVIDER=gitlab` for issue polling and MR automation) Personal or Project Access Token with `api` scope. Keep separate from `GITLAB_GIT_TOKEN` unless one token intentionally has both scopes. | Relay-bot task polling + GitLab API operations |
 | `CF_API_TOKEN`, `CF_ZONE_NAME` | Cloudflare DNS / Pages ops | Step 8b (Cloudflare integration) |
 | `REF_API_KEY` | ref.tools MCP server | Server omitted from Step 5b |
 | `CONTEXT7_API_KEY` | context7 MCP server | Server omitted from Step 5b |
@@ -387,7 +387,6 @@ visudo -cf /etc/sudoers.d/${SERVICE_PREFIX}-god-control
 loginctl enable-linger ${BOT_USER}
 systemctl daemon-reload
 systemctl enable --now ${SERVICE_PREFIX}-god@${TELEGRAM_CHAT_ID}.service
-systemctl enable --now ${SERVICE_PREFIX}-dispatch.timer
 ```
 
 **Verify:**
@@ -403,7 +402,7 @@ tail -10 /var/log/${PROJECT_NAME}-god.log
 Expected timeline:
 - t+0s: wrapper boots, log `[${SERVICE_PREFIX}-god user=${TELEGRAM_CHAT_ID}]`.
 - t+1s: tmux target `${SERVICE_PREFIX}-god-${TELEGRAM_CHAT_ID}` exists on socket `${SERVICE_PREFIX}`.
-- next `:07`: `${SERVICE_PREFIX}-dispatch.service` fires and tmux pane receives `/${DISPATCH_COMMAND_NAME}`.
+- every 15 minutes: `${SERVICE_PREFIX}-dispatch.service` calls relay-bot `POST /tasks/poll`; empty task queues are logged only, non-empty queues notify the primary operator.
 - nightly around 03:37 local time (+ up to 20m randomized delay): the **system-wide** `agent-update.service` updates shared CLIs/plugins, verifies everything, then restarts active `*-god@*.service` instances.
 - Telegram inbound (Step 7c, optional) is wired separately via `${SERVICE_PREFIX}-relay-bot.service`. The pane should NOT contain a `Listening for channel messages` line.
 
@@ -451,13 +450,13 @@ sudo -u ${BOT_USER} ls -la /home/${BOT_USER}/.claude/cache/usage.json   # expect
 
 ### 7c. Node.js Telegram bridge + central state-store (claude-relay-bot v6)
 
-**Gated on `TELEGRAM_BOT_TOKEN`.** If you skip Telegram, the god-session and scheduler from Step 7 still work — only the inbound-from-operator and outbound-mirror paths are absent.
+**Gated on `TELEGRAM_BOT_TOKEN`.** If you skip Telegram, the god-session from Step 7 still works, but relay-bot task polling, inbound-from-operator, and outbound-mirror paths are absent.
 
 **MANDATORY READ:** Load `references/README.md` (Telegram bridge architecture v6, Communication policy 5 layers L1–L5, runtime files) and `references/telegram_operator_runbook.md` (Telegram command list + BotFather hardening).
 
 The bridge is a separate systemd-managed Node.js service (`${SERVICE_PREFIX}-relay-bot.service`) owning the entire god-session state machine. It keeps the public relay contracts stable while using TypeScript, grammY, Fastify, and better-sqlite3.
 
-Note: scheduling (the `${SERVICE_PREFIX}-dispatch.timer` that replaces the fragile in-session `/loop`) is part of Step 7 — installed regardless of Telegram. It only depends on tmux + systemd, not on the relay-bot.
+Note: scheduling (the `${SERVICE_PREFIX}-dispatch.timer` that replaces the fragile in-session `/loop`) is part of Step 7. It calls relay-bot control-plane task polling every 15 minutes instead of injecting `/dispatch` into tmux; if Telegram/relay-bot is skipped, do not enable this timer.
 
 **Artifacts:**
 
@@ -492,6 +491,7 @@ sudo -u ${BOT_USER} bash -lc 'jq -e "has(\"hooks\")" ~/.claude/settings.json >/d
 install -o root -g root -m 755 /tmp/register-telegram-commands.sh /usr/local/bin/${SERVICE_PREFIX}-register-telegram-commands
 systemctl daemon-reload
 systemctl enable --now ${SERVICE_PREFIX}-relay-bot.service
+systemctl enable --now ${SERVICE_PREFIX}-dispatch.timer
 /usr/local/bin/${SERVICE_PREFIX}-register-telegram-commands /etc/${PROJECT_NAME}/secrets.env
 systemctl restart ${SERVICE_PREFIX}-god@${TELEGRAM_CHAT_ID}.service   # primary operator pane reloads hooks
 ```
@@ -511,7 +511,7 @@ sqlite3 /var/lib/${PROJECT_NAME}/relay.db '.tables'   # 12 tables expected
 # Hook fires verified (after operator sends Telegram message)
 sqlite3 /var/lib/${PROJECT_NAME}/relay.db 'SELECT direction,status,substr(text,1,40) FROM messages ORDER BY id DESC LIMIT 5'
 
-# Telegram menu commands registered by Step 7c
+# Telegram menu commands registered by Step 7c, including /tasks
 curl -fsS "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getMyCommands" | jq '.result'
 
 # Sessions feature: after the first claude run, relay-bot resolves and caches this user's sessions dir
@@ -724,8 +724,8 @@ DoD covers every step of the workflow. Each unchecked item points back to the st
 ### God-session + scheduler (Step 7)
 - [ ] `${PROJECT_DIR}` is a git clone of `${REPO_URL}` at `${REPO_REF}`; arbitrary non-git files were not overwritten
 - [ ] `${SERVICE_PREFIX}-god@${TELEGRAM_CHAT_ID}.service` active and primary tmux target `${SERVICE_PREFIX}-god-${TELEGRAM_CHAT_ID}` exists on `tmux -L ${SERVICE_PREFIX}`
-- [ ] `${SERVICE_PREFIX}-dispatch.timer` active and armed (`systemctl list-timers`)
-- [ ] `dispatch.service`, `god-session.sh`, and relay-bot all use tmux socket `${SERVICE_PREFIX}`
+- [ ] `${SERVICE_PREFIX}-dispatch.timer` active and armed at 15-minute cadence (`systemctl list-timers`)
+- [ ] `dispatch.service` calls relay-bot `POST /tasks/poll`; `god-session.sh` and relay-bot use tmux socket `${SERVICE_PREFIX}`
 - [ ] Pane env has this project's `PROJECT_NAME`, `SERVICE_PREFIX`, and `PROJECT_DIR`; relay-bot unit env has `RELAY_HOOK_PORT`
 - [ ] Resume source is project+user-bound: `/var/lib/${PROJECT_NAME}/users/<user_id>/last-session.id`, relay DB `created_by_user_id`, and `/sessions` expose only that user's sessions for cwd `${PROJECT_DIR}`
 - [ ] (system-wide, Step 7d) `agent-update.timer` active and armed; manual `agent-update.service` run updates Claude/Codex plus selected skills/plugins and restarts active `*-god@*.service` instances after successful checks
@@ -740,7 +740,7 @@ DoD covers every step of the workflow. Each unchecked item points back to the st
 - [ ] `${SERVICE_PREFIX}-relay-bot.service` active; `/health` returns v6 with all fields and `relay.db` has 12 tables (per `references/verification_recipes.md`)
 - [ ] Relay-bot was built on VPS with `npm ci && npm run build`; `dist/` exists and `node_modules/.bin/tsc` remains installed for future rebuilds
 - [ ] If relay-bot source changed during this run, VPS update followed `references/relay_bot_redeploy.md`; source was uploaded, rebuilt on VPS, `tsc` remained installed, and `${SERVICE_PREFIX}-relay-bot.service` health rechecked
-- [ ] Telegram Bot API menu commands (`usage`, `new_session`, `sessions`, `users`) registered by Step 7c with English descriptions and verified with `getMyCommands`
+- [ ] Telegram Bot API menu commands (`usage`, `new_session`, `sessions`, `tasks`, `users`) registered by Step 7c with English descriptions and verified with `getMyCommands`
 - [ ] BotFather hardening verified per `references/telegram_operator_runbook.md` + `references/verification_recipes.md`
 - [ ] Allowlist, per-user god instances, per-user session ownership, and inbound smokes pass per `references/verification_recipes.md`
 - [ ] End-to-end: «hi» from Telegram → claude responds → reply mirrored back via Stop hook

@@ -1,8 +1,8 @@
 [Unit]
-Description=Hourly /${DISPATCH_COMMAND_NAME} trigger for ${SERVICE_PREFIX} god-session (durable, replaces in-session /loop)
+Description=15-minute ${SERVICE_PREFIX} relay-bot task polling trigger
 
 [Timer]
-OnCalendar=*-*-* *:07:00
+OnCalendar=*-*-* *:0/15:00
 Persistent=true
 Unit=${SERVICE_PREFIX}-dispatch.service
 

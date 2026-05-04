@@ -28,6 +28,13 @@ Step 7c registers these commands with English descriptions automatically through
 
 Optional cosmetic: `setMyDescription`, `setMyShortDescription` Bot API calls.
 
+Registered commands:
+- `/usage` — show Claude usage limits.
+- `/new_session` — start a new Claude session for the current Telegram user.
+- `/sessions` — resume or delete the current user's sessions.
+- `/tasks` — list open provider issues; [Take] sends one selected task to the clicking user's current session.
+- `/users` — manage bot access.
+
 ## Multi-user onboarding
 
 After the primary operator is set up, additional users join via the bot's pending → `/users` approval flow. There is no env-var allowlist — the DB is the only source of truth.

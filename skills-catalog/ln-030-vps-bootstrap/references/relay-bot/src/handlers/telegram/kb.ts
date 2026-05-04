@@ -1,4 +1,5 @@
 import { InlineKeyboard } from "grammy";
+import type { ProviderTask } from "../../domain/task.js";
 import type { AllowedUserRow } from "../../domain/user.js";
 
 export function sessionCardKb(sid: string): InlineKeyboard {
@@ -24,4 +25,8 @@ export function userCardText(row: AllowedUserRow, primary: number): string {
   const emoji = row.status === "allowed" ? "✓" : row.status === "blocked" ? "⛔" : "⏳";
   const notes = row.notes ? `\n_${row.notes}_` : "";
   return `${emoji} *${row.status}*${primaryMarker}\n${uname}\nid: \`${row.userId}\`${notes}`;
+}
+
+export function taskCardKb(task: ProviderTask): InlineKeyboard {
+  return new InlineKeyboard().text("Take", `t_take:${task.id}`).url("Open", task.url);
 }

@@ -1,5 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { mkdtemp } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import Fastify from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import pino from "pino";
@@ -16,6 +19,8 @@ import { registerTaskRoutes } from "../src/handlers/http/tasks.routes.js";
 import { registerHookRoutes } from "../src/handlers/http/hooks.routes.js";
 import type { BuildInfo } from "../src/config/buildInfo.js";
 import type { Logger } from "../src/lib/logger.js";
+import { closeDb, createDb } from "../src/infrastructure/db/client.js";
+import { createRepositories } from "../src/infrastructure/db/repositories/index.js";
 
 const log = pino({ enabled: false }) as Logger;
 
@@ -213,4 +218,97 @@ test("Claude hook malformed payload compatibility stays 200 empty object", async
   assert.equal(response.statusCode, 200);
   assert.deepEqual(response.json(), {});
   await app.close();
+});
+
+test("voice transcript prompt binds pending reply without Telegram prefix", async () => {
+  const app = createApp();
+  const updates: unknown[] = [];
+  const replies: unknown[] = [];
+  const pending = new Map<string, { inboundMsgId: number }>();
+  registerHookRoutes(app, {
+    log,
+    messagesRepo: {
+      findRecentDeliveredVoiceByText: (text: string) =>
+        text === "Привет, ты живой?"
+          ? {
+              id: 103,
+              tgChatId: 1_633_575,
+              tgMsgId: 362,
+              fromUserId: 300,
+            }
+          : null,
+      findById: (id: number) =>
+        id === 103
+          ? {
+              id: 103,
+              tgChatId: 1_633_575,
+              tgMsgId: 362,
+              fromUserId: 300,
+            }
+          : null,
+      update: (id: number, fields: unknown) => updates.push({ id, fields }),
+      getChatId: (id: number) => (id === 103 ? 1_633_575 : null),
+      insertOutboundAudit: () => 501,
+    },
+    pendingRepo: {
+      set: (sessionId: string, inboundMsgId: number) => pending.set(sessionId, { inboundMsgId }),
+      get: (sessionId: string) => pending.get(sessionId) ?? null,
+      clear: (sessionId: string) => pending.delete(sessionId),
+    },
+    sessionsRepo: {},
+    outbox: {
+      enqueueReply: (reply: unknown) => {
+        replies.push(reply);
+        return 77;
+      },
+    },
+    sessionService: {
+      insertEvent: noop,
+      ensureOwner: noop,
+    },
+    todoDiff: {},
+    memory: {},
+    dispatch: {},
+    verbosity: {},
+    primaryOperator: 1,
+    dbPath: "Z:/missing/relay.db",
+  } as Parameters<typeof registerHookRoutes>[1]);
+
+  const submitted = await app.inject({
+    method: "POST",
+    url: "/hook/user-prompt-submit",
+    payload: { session_id: "sid-voice", prompt: "Привет, ты живой?" },
+  });
+  assert.equal(submitted.statusCode, 200);
+  assert.deepEqual(updates[0], { id: 103, fields: { sessionId: "sid-voice" } });
+
+  const stopped = await app.inject({
+    method: "POST",
+    url: "/hook/stop",
+    payload: { session_id: "sid-voice", last_assistant_message: "Да, тут" },
+  });
+  assert.equal(stopped.statusCode, 200);
+  assert.equal((replies[0] as { chatId: number }).chatId, 1_633_575);
+  assert.equal((replies[0] as { repliedToId: number }).repliedToId, 362);
+  assert.equal((replies[0] as { auditMsgId: number }).auditMsgId, 501);
+  await app.close();
+});
+
+test("pending reply updates to the latest prompt for steering bursts", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "hex-relay-pending-"));
+  const db = createDb({
+    dbPath: join(dir, "relay.db"),
+    log,
+    primaryOperator: 1,
+    sessionsDir: () => null,
+  });
+  try {
+    const repos = createRepositories(db);
+    repos.pendingReply.set("sid", 101, "first prompt");
+    repos.pendingReply.set("sid", 102, "second prompt");
+
+    assert.equal(repos.pendingReply.get("sid")?.inboundMsgId, 102);
+  } finally {
+    closeDb(db);
+  }
 });

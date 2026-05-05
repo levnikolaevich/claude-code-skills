@@ -74,6 +74,33 @@ function operatorChatForSession(deps: HookDeps, sessionId: string | null): numbe
   return chatId ?? deps.primaryOperator;
 }
 
+function bindPendingInbound(args: {
+  deps: HookDeps;
+  sessionId: string;
+  inbound: NonNullable<ReturnType<MessagesRepo["findByTg"]>>;
+  prompt: string;
+  chatId: number | null;
+  tgMsgId: number | null;
+  source: "telegram_prefix" | "voice_transcript";
+}): void {
+  const { deps, sessionId, inbound, prompt, chatId, tgMsgId, source } = args;
+  deps.messagesRepo.update(inbound.id, { sessionId });
+  if (inbound.fromUserId !== null) {
+    deps.sessionService.ensureOwner(sessionId, inbound.fromUserId);
+  }
+  deps.pendingRepo.set(sessionId, inbound.id, prompt);
+  deps.log.info(
+    {
+      session: sessionId.slice(0, 8),
+      inboundId: inbound.id,
+      chatId,
+      tgMsgId,
+      source,
+    },
+    "HOOK user-prompt-submit pending set"
+  );
+}
+
 function classifyStopFailure(errorType: string, payload: Record<string, unknown>): string {
   const raw = JSON.stringify(payload).toLowerCase();
   if (
@@ -124,22 +151,39 @@ export function registerHookRoutes(app: FastifyInstance, deps: HookDeps): void {
       starts_with_tg: prompt.startsWith("[tg id="),
     });
     const m = TG_PREFIX_RE.exec(prompt);
-    if (!m) return reply.code(200).send({});
-    const chatId = Number.parseInt(m[1] ?? "0", 10);
-    const tgMsgId = Number.parseInt(m[2] ?? "0", 10);
-    const inbound = deps.messagesRepo.findByTg(chatId, tgMsgId);
-    const inboundId = inbound?.id ?? 0;
-    if (inbound) {
-      deps.messagesRepo.update(inbound.id, { sessionId: session_id });
-      if (inbound.fromUserId !== null) {
-        deps.sessionService.ensureOwner(session_id, inbound.fromUserId);
+    if (m) {
+      const chatId = Number.parseInt(m[1] ?? "0", 10);
+      const tgMsgId = Number.parseInt(m[2] ?? "0", 10);
+      const inbound = deps.messagesRepo.findByTg(chatId, tgMsgId);
+      if (inbound) {
+        bindPendingInbound({
+          deps,
+          sessionId: session_id,
+          inbound,
+          prompt,
+          chatId,
+          tgMsgId,
+          source: "telegram_prefix",
+        });
       }
+      return reply.code(200).send({});
     }
-    deps.pendingRepo.set(session_id, inboundId, prompt);
-    deps.log.info(
-      { session: session_id.slice(0, 8), inboundId, chatId, tgMsgId },
-      "HOOK user-prompt-submit pending set"
+
+    const voiceInbound = deps.messagesRepo.findRecentDeliveredVoiceByText(
+      prompt.trim(),
+      TIMING.lastCmdTtlSec
     );
+    if (voiceInbound) {
+      bindPendingInbound({
+        deps,
+        sessionId: session_id,
+        inbound: voiceInbound,
+        prompt,
+        chatId: voiceInbound.tgChatId,
+        tgMsgId: voiceInbound.tgMsgId,
+        source: "voice_transcript",
+      });
+    }
     return reply.code(200).send({});
   });
 
@@ -156,7 +200,12 @@ export function registerHookRoutes(app: FastifyInstance, deps: HookDeps): void {
       deps.log.info({ session: session_id.slice(0, 8) }, "HOOK stop no pending");
       return reply.code(200).send({});
     }
-    const replyChatId = deps.messagesRepo.getChatId(pending.inboundMsgId) ?? deps.primaryOperator;
+    const inbound = deps.messagesRepo.findById(pending.inboundMsgId);
+    const replyChatId =
+      inbound?.tgChatId ??
+      deps.messagesRepo.getChatId(pending.inboundMsgId) ??
+      deps.primaryOperator;
+    const replyToTgMsgId = inbound?.tgMsgId ?? null;
     const finalText = FormatService.prefixReply(lastMsg);
     const auditMsgId = deps.messagesRepo.insertOutboundAudit(
       lastMsg,
@@ -166,7 +215,7 @@ export function registerHookRoutes(app: FastifyInstance, deps: HookDeps): void {
     const outboxId = deps.outbox.enqueueReply({
       text: finalText,
       chatId: replyChatId,
-      repliedToId: pending.inboundMsgId,
+      repliedToId: replyToTgMsgId,
       sessionId: session_id,
       auditMsgId,
     });

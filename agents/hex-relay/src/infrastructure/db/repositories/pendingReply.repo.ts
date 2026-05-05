@@ -11,8 +11,12 @@ export type PendingReplyRepo = ReturnType<typeof createPendingReplyRepo>;
 
 export function createPendingReplyRepo(db: Db) {
   const insert = db.prepare(
-    "INSERT OR IGNORE INTO pending_reply " +
-      "(session_id, inbound_msg_id, prompt_hash, created_at) VALUES (?,?,?,?)"
+    "INSERT INTO pending_reply " +
+      "(session_id, inbound_msg_id, prompt_hash, created_at) VALUES (?,?,?,?) " +
+      "ON CONFLICT(session_id) DO UPDATE SET " +
+      "inbound_msg_id=excluded.inbound_msg_id, " +
+      "prompt_hash=excluded.prompt_hash, " +
+      "created_at=excluded.created_at"
   );
   const get = db.prepare("SELECT * FROM pending_reply WHERE session_id=?");
   const del = db.prepare("DELETE FROM pending_reply WHERE session_id=?");

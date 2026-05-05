@@ -37,7 +37,7 @@ import { buildUsersCallbackHandler } from "./handlers/telegram/usersCallback.js"
 import { buildTasksHandler } from "./handlers/telegram/tasks.js";
 import { buildTasksCallbackHandler } from "./handlers/telegram/tasksCallback.js";
 import { buildInboundHandler } from "./handlers/telegram/inbound.js";
-import { createReactToInbound } from "./handlers/telegram/react.js";
+import { createReactToInbound, createReactToVoiceTranscribing } from "./handlers/telegram/react.js";
 import { registerErrorHandler } from "./handlers/http/plugins/errorHandler.plugin.js";
 import { configureZodFastify } from "./handlers/http/zodFastify.js";
 import { registerHookRoutes } from "./handlers/http/hooks.routes.js";
@@ -112,6 +112,11 @@ export function buildApp(env: Env, log: Logger = createLogger()): App {
     log,
     reactions: env.inboundReactions,
   });
+  const reactToVoiceTranscribing = createReactToVoiceTranscribing({
+    bot,
+    log,
+    reactions: env.inboundReactions,
+  });
   const mediaStore = createMediaStore({
     log,
     mediaDir: paths.mediaDir,
@@ -180,6 +185,7 @@ export function buildApp(env: Env, log: Logger = createLogger()): App {
     mediaStore,
     voiceTranscription: env.voiceTranscription,
     voiceMaxDurationSec: env.voiceMaxDurationSec,
+    reactToVoiceTranscribing: verbosity.allows("L1") ? reactToVoiceTranscribing : undefined,
   });
   bot.use(newSessionHandler);
   bot.use(sessionsHandler);

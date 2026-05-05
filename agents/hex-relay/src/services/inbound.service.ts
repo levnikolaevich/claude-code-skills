@@ -22,7 +22,11 @@ function backoffSeconds(attempt: number): number {
   return Math.min(2 ** Math.min(attempt, 6), 60);
 }
 
-export type ReactToInbound = (chatId: number, messageId: number) => Promise<void>;
+export type ReactToInbound = (
+  chatId: number,
+  messageId: number,
+  options?: { includeVoiceTranscribing?: boolean }
+) => Promise<void>;
 
 export function createInboundService(deps: {
   log: Logger;
@@ -52,7 +56,9 @@ export function createInboundService(deps: {
       deps.log.info({ id: row.id }, "INBOUND delivered to tmux");
       if (deps.verbosity.allows("L1") && row.tgChatId !== null && row.tgMsgId !== null) {
         try {
-          await deps.reactToInbound(row.tgChatId, row.tgMsgId);
+          await deps.reactToInbound(row.tgChatId, row.tgMsgId, {
+            includeVoiceTranscribing: row.kind === "voice",
+          });
         } catch (error) {
           deps.log.debug({ err: String(error) }, "L1 reaction failed (cosmetic)");
         }

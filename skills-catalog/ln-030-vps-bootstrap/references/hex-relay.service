@@ -23,8 +23,8 @@ StandardOutput=journal
 StandardError=journal
 
 # Local voice transcription runs whisper.cpp as a child process in this cgroup.
-MemoryMax=2G
-CPUQuota=50%
+MemoryMax=1G
+CPUQuota=200%
 
 # Required for sudo -n systemctl start/is-active ${SERVICE_PREFIX}-god@*.service.
 # Bootstrap must install a sudoers fragment restricted to this service prefix.

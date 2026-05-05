@@ -10,6 +10,7 @@ export interface InboundDeps {
   mediaStore: MediaStore;
   voiceTranscription: "off" | "local";
   voiceMaxDurationSec: number;
+  reactToVoiceTranscribing?: (chatId: number, messageId: number) => Promise<void>;
 }
 
 const UNSUPPORTED_MEDIA_REPLY =
@@ -120,6 +121,13 @@ export function buildInboundHandler(deps: InboundDeps): Composer<Context> {
         { id, path: media.path, durationSec: ctx.message.voice.duration },
         "INBOUND queued voice transcription"
       );
+      if (deps.reactToVoiceTranscribing) {
+        try {
+          await deps.reactToVoiceTranscribing(ctx.chat.id, ctx.message.message_id);
+        } catch (error) {
+          deps.log.debug({ err: String(error) }, "voice transcribing reaction failed (cosmetic)");
+        }
+      }
       return;
     }
     const media = await deps.mediaStore.download(ctx);

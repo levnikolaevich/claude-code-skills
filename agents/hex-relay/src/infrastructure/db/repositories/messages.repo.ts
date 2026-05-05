@@ -70,6 +70,11 @@ export function createMessagesRepo(db: Db) {
   const findByTg = db.prepare(
     "SELECT * FROM messages WHERE direction='inbound' " + "AND tg_chat_id=? AND tg_msg_id=? LIMIT 1"
   );
+  const findRecentDeliveredVoiceByText = db.prepare(
+    "SELECT * FROM messages WHERE direction='inbound' AND kind='voice' " +
+      "AND status IN ('delivering','delivered') AND session_id IS NULL " +
+      "AND text=? AND COALESCE(delivered_at, next_attempt_at, ts)>=? ORDER BY id DESC LIMIT 1"
+  );
   const findById = db.prepare("SELECT * FROM messages WHERE id=? LIMIT 1");
   const getChatIdById = db.prepare("SELECT tg_chat_id FROM messages WHERE id = ?");
   const countInboundQueued = db.prepare(
@@ -128,6 +133,12 @@ export function createMessagesRepo(db: Db) {
     },
     findByTg(chatId: number, msgId: number): InboundMessage | null {
       const row = findByTg.get(chatId, msgId) as Record<string, unknown> | undefined;
+      return row ? mapInboundRow(row) : null;
+    },
+    findRecentDeliveredVoiceByText(text: string, ttlSec = 300): InboundMessage | null {
+      const row = findRecentDeliveredVoiceByText.get(text, nowTs() - ttlSec) as
+        | Record<string, unknown>
+        | undefined;
       return row ? mapInboundRow(row) : null;
     },
     findById(id: number): InboundMessage | null {

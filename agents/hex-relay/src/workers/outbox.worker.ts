@@ -43,7 +43,17 @@ export function createOutboxWorker(deps: {
     const sentIds: number[] = [];
     try {
       for (const chunk of chunks) {
-        const sent = await deps.bot.api.sendMessage(row.chatId, chunk);
+        const sent = await deps.bot.api.sendMessage(
+          row.chatId,
+          chunk,
+          row.repliedToId === null
+            ? undefined
+            : {
+                reply_parameters: {
+                  message_id: row.repliedToId,
+                },
+              }
+        );
         sentIds.push(sent.message_id);
       }
       deps.outbox.update(row.id, {

@@ -52,7 +52,7 @@ Voice support does not use Python, cloud ASR, or `ai-services-hub`. The VPS only
 ```bash
 command -v ffmpeg
 test -x /opt/whisper.cpp/build/bin/whisper-cli
-test -f /opt/whisper.cpp/models/ggml-large-v3-turbo-q5_0.bin
+test -f /opt/whisper.cpp/models/ggml-small-q5_1.bin
 ```
 
 Enable it in `/etc/${PROJECT_NAME}/secrets.env`:
@@ -61,7 +61,7 @@ Enable it in `/etc/${PROJECT_NAME}/secrets.env`:
 RELAY_VOICE_TRANSCRIPTION=local
 FFMPEG_BIN=ffmpeg
 WHISPER_CPP_BIN=/opt/whisper.cpp/build/bin/whisper-cli
-WHISPER_CPP_MODEL=/opt/whisper.cpp/models/ggml-large-v3-turbo-q5_0.bin
+WHISPER_CPP_MODEL=/opt/whisper.cpp/models/ggml-small-q5_1.bin
 ```
 
 Voice originals plus temporary WAV/transcript files stay under `/var/lib/${PROJECT_NAME}/tg-media`.
@@ -70,6 +70,7 @@ through its `ReadWritePaths=/var/lib/${PROJECT_NAME}` sandbox entry. Do not crea
 during verification; use `sudo -u ${BOT_USER}` so relay can clean up and continue writing.
 
 `whisper.cpp` runs as a child of `${SERVICE_PREFIX}-hex-relay.service`, so the service cgroup
-memory limit must fit the selected model. The current template uses `MemoryMax=2G`; existing
-deployed units with the older `256M` limit need a unit re-render or systemd override before
-`RELAY_VOICE_TRANSCRIPTION=local` will be reliable.
+CPU and memory limits must fit the selected model. The current template uses `CPUQuota=200%`
+and `MemoryMax=1G`; existing deployed units with older `CPUQuota=50%` or `MemoryMax=256M`
+need a unit re-render or systemd override before `RELAY_VOICE_TRANSCRIPTION=local` will be
+reliable.

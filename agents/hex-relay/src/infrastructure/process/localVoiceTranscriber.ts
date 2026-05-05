@@ -77,6 +77,10 @@ export function createLocalVoiceTranscriber(
             "-of",
             outBase,
             "-nt",
+            "-bs",
+            "1",
+            "-bo",
+            "1",
           ],
           { timeoutMs: config.timeoutMs, label: "whisper.cpp voice transcribe" }
         );

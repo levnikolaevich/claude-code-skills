@@ -62,7 +62,7 @@ Optional:
 | `RELAY_VOICE_TRANSCRIPTION`                                              | `off` or `local`; local uses `ffmpeg` plus `whisper.cpp`.            |
 | `FFMPEG_BIN`                                                             | `ffmpeg` executable path/name for voice normalization.               |
 | `WHISPER_CPP_BIN`                                                        | `whisper-cli` executable path for local voice transcription.         |
-| `WHISPER_CPP_MODEL`                                                      | Local multilingual Whisper model file used by `whisper-cli`.         |
+| `WHISPER_CPP_MODEL`                                                      | Local multilingual Whisper model file; CPU default is `small-q5_1`.  |
 | `RELAY_VOICE_MAX_DURATION_SEC`                                           | Max Telegram voice duration; defaults to `90`.                       |
 | `RELAY_VOICE_TRANSCRIBE_TIMEOUT_SEC`                                     | Local ASR timeout; defaults to `120`.                                |
 | `GIT_PROVIDER`                                                           | `github` or `gitlab`; defaults to `github`.                          |

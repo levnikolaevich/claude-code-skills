@@ -122,7 +122,7 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
     whisperCppBin: withDefault(v.WHISPER_CPP_BIN, "/opt/whisper.cpp/build/bin/whisper-cli"),
     whisperCppModel: withDefault(
       v.WHISPER_CPP_MODEL,
-      "/opt/whisper.cpp/models/ggml-large-v3-turbo-q5_0.bin"
+      "/opt/whisper.cpp/models/ggml-small-q5_1.bin"
     ),
     voiceMaxDurationSec: v.RELAY_VOICE_MAX_DURATION_SEC,
     voiceTranscribeTimeoutSec: v.RELAY_VOICE_TRANSCRIBE_TIMEOUT_SEC,

@@ -38,7 +38,38 @@ systemctl is-active ${SERVICE_PREFIX}-hex-relay.service
 curl -fsS http://127.0.0.1:${RELAY_HOOK_PORT}/health | jq .
 test -d /opt/${SERVICE_PREFIX}-hex-relay/dist
 test -x /opt/${SERVICE_PREFIX}-hex-relay/node_modules/.bin/tsc
+sudo -u ${BOT_USER} install -d -m 750 /var/lib/${PROJECT_NAME}/tg-media
+sudo -u ${BOT_USER} test -w /var/lib/${PROJECT_NAME}/tg-media
 journalctl -u ${SERVICE_PREFIX}-hex-relay.service -n 50 --no-pager
 ```
 
 Restart active `${SERVICE_PREFIX}-god@*.service` instances only when hooks, project-scope `.claude/settings.json`, or god-session instructions changed. hex-relay source-only changes require only `${SERVICE_PREFIX}-hex-relay.service` restart.
+
+## Optional Local Voice Transcription
+
+Voice support does not use Python, cloud ASR, or `ai-services-hub`. The VPS only needs:
+
+```bash
+command -v ffmpeg
+test -x /opt/whisper.cpp/build/bin/whisper-cli
+test -f /opt/whisper.cpp/models/ggml-large-v3-turbo-q5_0.bin
+```
+
+Enable it in `/etc/${PROJECT_NAME}/secrets.env`:
+
+```bash
+RELAY_VOICE_TRANSCRIPTION=local
+FFMPEG_BIN=ffmpeg
+WHISPER_CPP_BIN=/opt/whisper.cpp/build/bin/whisper-cli
+WHISPER_CPP_MODEL=/opt/whisper.cpp/models/ggml-large-v3-turbo-q5_0.bin
+```
+
+Voice originals plus temporary WAV/transcript files stay under `/var/lib/${PROJECT_NAME}/tg-media`.
+That path is outside the project checkout and is writable by `${SERVICE_PREFIX}-hex-relay.service`
+through its `ReadWritePaths=/var/lib/${PROJECT_NAME}` sandbox entry. Do not create it as root
+during verification; use `sudo -u ${BOT_USER}` so relay can clean up and continue writing.
+
+`whisper.cpp` runs as a child of `${SERVICE_PREFIX}-hex-relay.service`, so the service cgroup
+memory limit must fit the selected model. The current template uses `MemoryMax=2G`; existing
+deployed units with the older `256M` limit need a unit re-render or systemd override before
+`RELAY_VOICE_TRANSCRIPTION=local` will be reliable.

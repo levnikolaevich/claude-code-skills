@@ -43,6 +43,7 @@ export function mapInboundRow(r: Row): InboundMessage {
     tgMsgId: numOrNull(r.tg_msg_id),
     fromUserId: numOrNull(r.from_user_id),
     sessionId: strOrNull(r.session_id),
+    mediaPath: strOrNull(r.media_path),
     attempts: num(r.attempts ?? 0),
     nextAttemptAt: num(r.next_attempt_at ?? 0),
     deliveredAt: numOrNull(r.delivered_at),

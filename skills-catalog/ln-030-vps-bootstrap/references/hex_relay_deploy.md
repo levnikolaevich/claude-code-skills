@@ -65,7 +65,9 @@ After source changes, use `agents/hex-relay/docs/redeploy.md`. Upload source, re
 ```bash
 systemctl status ${SERVICE_PREFIX}-hex-relay.service --no-pager
 curl -fsS http://127.0.0.1:${RELAY_HOOK_PORT}/health | jq .
-sqlite3 /var/lib/${PROJECT_NAME}/relay.db '.tables'
+sudo -u ${BOT_USER} sqlite3 /var/lib/${PROJECT_NAME}/relay.db '.tables'
+sudo -u ${BOT_USER} install -d -m 750 /var/lib/${PROJECT_NAME}/tg-media
+sudo -u ${BOT_USER} test -w /var/lib/${PROJECT_NAME}/tg-media
 curl -fsS "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getMyCommands" | jq '.result'
 sudo -u ${BOT_USER} test -d /opt/${SERVICE_PREFIX}-hex-relay/dist
 sudo -u ${BOT_USER} test -x /opt/${SERVICE_PREFIX}-hex-relay/node_modules/.bin/tsc
@@ -73,4 +75,8 @@ sudo -u ${BOT_USER} test -x /opt/${SERVICE_PREFIX}-hex-relay/node_modules/.bin/t
 
 End-to-end: operator sends `hi` in Telegram, Claude responds in the tmux pane, the Stop hook queues the final reply, and Telegram receives it.
 
-Runtime files are created under `/var/lib/${PROJECT_NAME}/users/<telegram_user_id>/`; the skill creates only the parent state directory.
+Runtime files are created under `/var/lib/${PROJECT_NAME}/users/<telegram_user_id>/` and
+Telegram media under `/var/lib/${PROJECT_NAME}/tg-media`; both are outside `${PROJECT_DIR}`
+and `/opt/${SERVICE_PREFIX}-hex-relay`. The service runs as `${BOT_USER}` and its systemd
+sandbox grants writes to `/var/lib/${PROJECT_NAME}` only, so verification must not create
+state files or media dirs as root.

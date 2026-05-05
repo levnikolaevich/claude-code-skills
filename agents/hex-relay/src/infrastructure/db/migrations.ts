@@ -44,6 +44,7 @@ function ensureMessagesColumns(db: Db): void {
     ],
     ["delivered_at", "ALTER TABLE messages ADD COLUMN delivered_at INTEGER"],
     ["from_user_id", "ALTER TABLE messages ADD COLUMN from_user_id INTEGER"],
+    ["media_path", "ALTER TABLE messages ADD COLUMN media_path TEXT"],
   ];
   for (const [col, ddl] of ddls) {
     if (!cols.has(col)) db.exec(ddl);

@@ -59,6 +59,12 @@ Optional:
 | ------------------------------------------------------------------------ | -------------------------------------------------------------------- |
 | `RELAY_VERBOSITY`                                                        | `quiet`, `normal`, or `verbose`; defaults to `normal`.               |
 | `RELAY_INBOUND_REACTIONS`                                                | Comma-separated Telegram reaction pool for inbound acknowledgements. |
+| `RELAY_VOICE_TRANSCRIPTION`                                              | `off` or `local`; local uses `ffmpeg` plus `whisper.cpp`.            |
+| `FFMPEG_BIN`                                                             | `ffmpeg` executable path/name for voice normalization.               |
+| `WHISPER_CPP_BIN`                                                        | `whisper-cli` executable path for local voice transcription.         |
+| `WHISPER_CPP_MODEL`                                                      | Local multilingual Whisper model file used by `whisper-cli`.         |
+| `RELAY_VOICE_MAX_DURATION_SEC`                                           | Max Telegram voice duration; defaults to `90`.                       |
+| `RELAY_VOICE_TRANSCRIBE_TIMEOUT_SEC`                                     | Local ASR timeout; defaults to `120`.                                |
 | `GIT_PROVIDER`                                                           | `github` or `gitlab`; defaults to `github`.                          |
 | `REPO_SLUG`                                                              | Repository slug used by task polling.                                |
 | `GITHUB_APP_ID`, `GITHUB_INSTALLATION_ID`, `GITHUB_APP_PRIVATE_KEY_PATH` | GitHub App credentials for task polling and git operations.          |
@@ -91,7 +97,8 @@ npm run dev
 
 ## Runtime Behavior
 
-- Telegram ingress accepts plain text, media captions, photos, image documents, and general documents. Unsupported media without usable text is recorded as rejected and receives an explanatory reply.
+- Telegram ingress accepts plain text, media captions, photos, image documents, general documents, and locally transcribed voice messages when enabled. Unsupported media without usable text is recorded as rejected and receives an explanatory reply.
+- Voice messages are speech-to-text only: `ffmpeg` normalizes Telegram OGG/OPUS to mono WAV and `whisper.cpp` returns plain text. The god-session receives only the transcript, without voice metadata.
 - Accepted inbound messages are persisted to SQLite before delivery into tmux.
 - A serialized control lane coordinates `/new_session`, resume/delete actions, and inbound delivery so operator messages are not lost during tmux restarts.
 - Outbound Telegram messages are written to a durable outbox and drained with retry/backoff.

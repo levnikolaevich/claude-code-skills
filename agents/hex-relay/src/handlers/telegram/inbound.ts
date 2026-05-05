@@ -2,17 +2,28 @@ import { Composer, type Context } from "grammy";
 import type { Logger } from "../../lib/logger.js";
 import type { MessagesRepo } from "../../infrastructure/db/repositories/messages.repo.js";
 import type { MediaStore } from "../../infrastructure/filesystem/mediaStore.js";
+import { TIMING } from "../../config/paths.js";
 
 export interface InboundDeps {
   log: Logger;
   messagesRepo: MessagesRepo;
   mediaStore: MediaStore;
+  voiceTranscription: "off" | "local";
+  voiceMaxDurationSec: number;
 }
 
 const UNSUPPORTED_MEDIA_REPLY =
   "Из media сейчас принимаются картинки (PNG/JPG/GIF/WebP) и любые документы " +
   "(PDF/DOCX/TXT/CSV/JSON/код-файлы — claude сам решит, как читать). " +
-  "Голосовые/аудио/видео/стикеры — пока нет (нужна транскрипция, в работе).";
+  "Аудио/видео/стикеры — пока нет.";
+const VOICE_DISABLED_REPLY =
+  "Голосовые сообщения сейчас выключены для этого relay. Включи RELAY_VOICE_TRANSCRIPTION=local.";
+const VOICE_TOO_LONG_REPLY =
+  "Голосовое сообщение слишком длинное для relay. Отправь короткую команду текстом или более короткий voice.";
+const VOICE_DOWNLOAD_FAILED_REPLY =
+  "Не смог скачать голосовое сообщение из Telegram. Попробуй отправить его ещё раз или текстом.";
+const VOICE_TOO_BIG_REPLY =
+  "Голосовое сообщение слишком большое для relay. Отправь короткую команду текстом или более короткий voice.";
 
 function userTag(ctx: Context): string {
   const u = ctx.from;
@@ -24,7 +35,24 @@ function userTag(ctx: Context): string {
 function hasUnsupportedMedia(ctx: Context): boolean {
   const m = ctx.message;
   if (!m) return false;
-  return Boolean(m.voice ?? m.audio ?? m.video ?? m.video_note ?? m.animation ?? m.sticker);
+  return Boolean(m.audio ?? m.video ?? m.video_note ?? m.animation ?? m.sticker);
+}
+
+async function rejectWithReply(
+  ctx: Context,
+  deps: InboundDeps,
+  chatId: number,
+  messageId: number,
+  text: string,
+  error: string
+): Promise<void> {
+  const id = deps.messagesRepo.insertRejected(text, chatId, messageId, error);
+  deps.log.info({ id, error }, "INBOUND rejected");
+  try {
+    await ctx.reply(text);
+  } catch {
+    /* ignore */
+  }
 }
 
 export function buildInboundHandler(deps: InboundDeps): Composer<Context> {
@@ -36,21 +64,75 @@ export function buildInboundHandler(deps: InboundDeps): Composer<Context> {
       return;
     }
     const text = (ctx.message.text ?? ctx.message.caption ?? "").trim();
+    if (ctx.message.voice) {
+      if (deps.voiceTranscription !== "local") {
+        await rejectWithReply(
+          ctx,
+          deps,
+          ctx.chat.id,
+          ctx.message.message_id,
+          VOICE_DISABLED_REPLY,
+          "voice transcription disabled"
+        );
+        return;
+      }
+      if (ctx.message.voice.duration > deps.voiceMaxDurationSec) {
+        await rejectWithReply(
+          ctx,
+          deps,
+          ctx.chat.id,
+          ctx.message.message_id,
+          VOICE_TOO_LONG_REPLY,
+          "voice too long"
+        );
+        return;
+      }
+      if (ctx.message.voice.file_size && ctx.message.voice.file_size > TIMING.mediaMaxBytes) {
+        await rejectWithReply(
+          ctx,
+          deps,
+          ctx.chat.id,
+          ctx.message.message_id,
+          VOICE_TOO_BIG_REPLY,
+          "voice too big"
+        );
+        return;
+      }
+      const media = await deps.mediaStore.download(ctx);
+      if (!media) {
+        await rejectWithReply(
+          ctx,
+          deps,
+          ctx.chat.id,
+          ctx.message.message_id,
+          VOICE_DOWNLOAD_FAILED_REPLY,
+          "voice download failed"
+        );
+        return;
+      }
+      const id = deps.messagesRepo.insertTranscribingVoice(
+        ctx.chat.id,
+        ctx.message.message_id,
+        fromUserId,
+        media.path
+      );
+      deps.log.info(
+        { id, path: media.path, durationSec: ctx.message.voice.duration },
+        "INBOUND queued voice transcription"
+      );
+      return;
+    }
     const media = await deps.mediaStore.download(ctx);
     if (!text && !media) {
       if (hasUnsupportedMedia(ctx)) {
-        const id = deps.messagesRepo.insertRejected(
-          UNSUPPORTED_MEDIA_REPLY,
+        await rejectWithReply(
+          ctx,
+          deps,
           ctx.chat.id,
           ctx.message.message_id,
-          "unsupported media (voice/audio/video/sticker)"
+          UNSUPPORTED_MEDIA_REPLY,
+          "unsupported media"
         );
-        deps.log.info({ id }, "INBOUND rejected unsupported media");
-        try {
-          await ctx.reply(UNSUPPORTED_MEDIA_REPLY);
-        } catch {
-          /* ignore */
-        }
       }
       return;
     }

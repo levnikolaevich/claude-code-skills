@@ -4,7 +4,7 @@ import type { Context } from "grammy";
 import type { Logger } from "../../lib/logger.js";
 import { IMAGE_MIMES, TIMING } from "../../config/paths.js";
 
-export type MediaKind = "image" | "document";
+export type MediaKind = "image" | "document" | "voice";
 
 export interface DownloadedMedia {
   path: string;
@@ -53,6 +53,10 @@ export function createMediaStore(deps: MediaStoreDeps) {
           kind = "document";
         }
         fileId = msg.document.file_id;
+      } else if (msg.voice) {
+        fileId = msg.voice.file_id;
+        ext = "oga";
+        kind = "voice";
       }
 
       if (!fileId || !kind) return null;

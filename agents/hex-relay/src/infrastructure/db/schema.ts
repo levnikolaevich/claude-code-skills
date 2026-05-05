@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS messages (
   from_user_id    INTEGER,
   session_id      TEXT,
   replied_to_id   INTEGER,
+  media_path      TEXT,
   error           TEXT,
   attempts        INTEGER NOT NULL DEFAULT 0,
   next_attempt_at INTEGER NOT NULL DEFAULT 0,

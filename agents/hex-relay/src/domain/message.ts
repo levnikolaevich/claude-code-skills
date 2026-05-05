@@ -1,7 +1,8 @@
 export type MessageDirection = "inbound" | "outbound";
-export type MessageKind = "text" | "image" | "document";
+export type MessageKind = "text" | "image" | "document" | "voice";
 export type MessageStatus =
   | "queued"
+  | "transcribing"
   | "delivering"
   | "delivered"
   | "failed"
@@ -19,6 +20,7 @@ export interface InboundMessage {
   tgMsgId: number | null;
   fromUserId: number | null;
   sessionId: string | null;
+  mediaPath: string | null;
   attempts: number;
   nextAttemptAt: number;
   deliveredAt: number | null;

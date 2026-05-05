@@ -14,6 +14,7 @@ import { createSessionsDirCache } from "./infrastructure/filesystem/sessionsDirC
 import { createGodErrorReader } from "./infrastructure/filesystem/godError.js";
 import { createMediaStore } from "./infrastructure/filesystem/mediaStore.js";
 import { createLastGodCommandReader } from "./infrastructure/filesystem/lastGodCommand.js";
+import { createLocalVoiceTranscriber } from "./infrastructure/process/localVoiceTranscriber.js";
 import { TIMING } from "./config/paths.js";
 import { createControlLane } from "./services/controlLane.service.js";
 import { createOutboxService } from "./services/outbox.service.js";
@@ -48,6 +49,7 @@ import { createInboundWorker } from "./workers/inbound.worker.js";
 import { createOutboxWorker } from "./workers/outbox.worker.js";
 import { createErrorAlerterWorker } from "./workers/errorAlerter.worker.js";
 import { createMediaCleanupWorker } from "./workers/mediaCleanup.worker.js";
+import { createVoiceTranscriptionWorker } from "./workers/voiceTranscription.worker.js";
 
 export interface App {
   start(): Promise<void>;
@@ -115,6 +117,15 @@ export function buildApp(env: Env, log: Logger = createLogger()): App {
     mediaDir: paths.mediaDir,
     botToken: env.tgToken,
   });
+  const voiceTranscriber =
+    env.voiceTranscription === "local"
+      ? createLocalVoiceTranscriber({
+          ffmpegBin: env.ffmpegBin,
+          whisperCppBin: env.whisperCppBin,
+          whisperCppModel: env.whisperCppModel,
+          timeoutMs: env.voiceTranscribeTimeoutSec * 1000,
+        })
+      : null;
   const inboundService = createInboundService({
     log,
     messagesRepo: repos.messages,
@@ -163,7 +174,13 @@ export function buildApp(env: Env, log: Logger = createLogger()): App {
   const usersCallback = buildUsersCallbackHandler({ log, bot, allowlist });
   const tasksHandler = buildTasksHandler({ log, tasks });
   const tasksCallback = buildTasksCallbackHandler({ log, tasks });
-  const inboundHandler = buildInboundHandler({ log, messagesRepo: repos.messages, mediaStore });
+  const inboundHandler = buildInboundHandler({
+    log,
+    messagesRepo: repos.messages,
+    mediaStore,
+    voiceTranscription: env.voiceTranscription,
+    voiceMaxDurationSec: env.voiceMaxDurationSec,
+  });
   bot.use(newSessionHandler);
   bot.use(sessionsHandler);
   bot.use(sessionsCallback);
@@ -210,6 +227,12 @@ export function buildApp(env: Env, log: Logger = createLogger()): App {
   });
 
   const inboundWorker = createInboundWorker({ log, service: inboundService });
+  const voiceTranscriptionWorker = createVoiceTranscriptionWorker({
+    log,
+    messagesRepo: repos.messages,
+    outbox,
+    transcriber: voiceTranscriber,
+  });
   const outboxWorker = createOutboxWorker({ log, bot, outbox });
   const errorAlerterWorker = createErrorAlerterWorker({
     log,
@@ -243,6 +266,7 @@ export function buildApp(env: Env, log: Logger = createLogger()): App {
       );
       // fire-and-forget background loops
       void inboundWorker.start();
+      void voiceTranscriptionWorker.start();
       void outboxWorker.start();
       void errorAlerterWorker.start();
       void mediaCleanupWorker.start();
@@ -270,6 +294,7 @@ export function buildApp(env: Env, log: Logger = createLogger()): App {
         pollPromise = null;
       }
       inboundWorker.stop();
+      voiceTranscriptionWorker.stop();
       outboxWorker.stop();
       errorAlerterWorker.stop();
       mediaCleanupWorker.stop();

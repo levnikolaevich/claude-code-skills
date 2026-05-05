@@ -22,7 +22,8 @@ RestartSec=15
 StandardOutput=journal
 StandardError=journal
 
-MemoryMax=256M
+# Local voice transcription runs whisper.cpp as a child process in this cgroup.
+MemoryMax=2G
 CPUQuota=50%
 
 # Required for sudo -n systemctl start/is-active ${SERVICE_PREFIX}-god@*.service.

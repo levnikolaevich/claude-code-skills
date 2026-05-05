@@ -20,6 +20,10 @@ const OptionalHostnameSchema = z
     (v) => !v || (!/^https?:\/\//i.test(v) && !v.includes("/")),
     "must be a hostname, without scheme or path"
   );
+const OptionalCommandSchema = z
+  .string()
+  .optional()
+  .refine((v) => !v || v.trim().length > 0);
 
 const RawEnvSchema = z.object({
   TELEGRAM_BOT_TOKEN: z.string().min(1, "TELEGRAM_BOT_TOKEN required"),
@@ -31,6 +35,12 @@ const RawEnvSchema = z.object({
   RELAY_HOOK_PORT: z.coerce.number().int().min(1).max(65_535),
   RELAY_VERBOSITY: z.enum(["quiet", "normal", "verbose"]).default("normal"),
   RELAY_INBOUND_REACTIONS: z.string().optional(),
+  RELAY_VOICE_TRANSCRIPTION: z.enum(["off", "local"]).default("off"),
+  FFMPEG_BIN: OptionalCommandSchema,
+  WHISPER_CPP_BIN: OptionalCommandSchema,
+  WHISPER_CPP_MODEL: OptionalCommandSchema,
+  RELAY_VOICE_MAX_DURATION_SEC: z.coerce.number().int().min(1).max(3600).default(90),
+  RELAY_VOICE_TRANSCRIBE_TIMEOUT_SEC: z.coerce.number().int().min(1).max(3600).default(120),
   GIT_PROVIDER: z.enum(["github", "gitlab"]).default("github"),
   REPO_SLUG: OptionalNoWhitespaceSchema,
   GITHUB_APP_ID: OptionalNoWhitespaceSchema,
@@ -53,6 +63,12 @@ export interface Env {
   hookPort: number;
   verbosity: "quiet" | "normal" | "verbose";
   inboundReactions: string[];
+  voiceTranscription: "off" | "local";
+  ffmpegBin: string;
+  whisperCppBin: string;
+  whisperCppModel: string;
+  voiceMaxDurationSec: number;
+  voiceTranscribeTimeoutSec: number;
   gitProvider: "github" | "gitlab";
   repoSlug: string | null;
   githubAppId: string | null;
@@ -71,6 +87,11 @@ function parseReactions(raw: string | undefined): string[] {
     .map((s) => s.trim())
     .filter((s) => s.length > 0);
   return parts.length > 0 ? parts : ["👀"];
+}
+
+function withDefault(raw: string | undefined, fallback: string): string {
+  const trimmed = raw?.trim();
+  return trimmed && trimmed.length > 0 ? trimmed : fallback;
 }
 
 export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
@@ -96,6 +117,15 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
     hookPort: v.RELAY_HOOK_PORT,
     verbosity: v.RELAY_VERBOSITY,
     inboundReactions: parseReactions(v.RELAY_INBOUND_REACTIONS),
+    voiceTranscription: v.RELAY_VOICE_TRANSCRIPTION,
+    ffmpegBin: withDefault(v.FFMPEG_BIN, "ffmpeg"),
+    whisperCppBin: withDefault(v.WHISPER_CPP_BIN, "/opt/whisper.cpp/build/bin/whisper-cli"),
+    whisperCppModel: withDefault(
+      v.WHISPER_CPP_MODEL,
+      "/opt/whisper.cpp/models/ggml-large-v3-turbo-q5_0.bin"
+    ),
+    voiceMaxDurationSec: v.RELAY_VOICE_MAX_DURATION_SEC,
+    voiceTranscribeTimeoutSec: v.RELAY_VOICE_TRANSCRIBE_TIMEOUT_SEC,
     gitProvider: v.GIT_PROVIDER,
     repoSlug: v.REPO_SLUG && v.REPO_SLUG.trim().length > 0 ? v.REPO_SLUG.trim() : null,
     githubAppId:

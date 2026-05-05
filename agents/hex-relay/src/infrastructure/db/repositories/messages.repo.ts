@@ -11,6 +11,8 @@ export interface MessageUpdate {
   deliveredAt?: number | null;
   error?: string | null;
   repliedToId?: number | null;
+  text?: string;
+  mediaPath?: string | null;
 }
 
 export interface MessageCounts {
@@ -28,6 +30,8 @@ const FIELD_MAP: Record<keyof MessageUpdate, string> = {
   deliveredAt: "delivered_at",
   error: "error",
   repliedToId: "replied_to_id",
+  text: "text",
+  mediaPath: "media_path",
 };
 
 function nowTs(): number {
@@ -42,6 +46,11 @@ export function createMessagesRepo(db: Db) {
       "(ts, direction, kind, status, text, tg_chat_id, tg_msg_id, from_user_id, next_attempt_at) " +
       "VALUES (?, 'inbound', 'text', 'queued', ?, ?, ?, ?, ?)"
   );
+  const insertTranscribingVoice = db.prepare(
+    "INSERT INTO messages " +
+      "(ts, direction, kind, status, text, tg_chat_id, tg_msg_id, from_user_id, media_path, next_attempt_at) " +
+      "VALUES (?, 'inbound', 'voice', 'transcribing', '', ?, ?, ?, ?, ?)"
+  );
   const insertRejected = db.prepare(
     "INSERT INTO messages (ts, direction, kind, status, text, tg_chat_id, tg_msg_id, error) " +
       "VALUES (?, 'inbound', 'text', 'rejected', ?, ?, ?, ?)"
@@ -53,6 +62,10 @@ export function createMessagesRepo(db: Db) {
   const selectDue = db.prepare(
     "SELECT * FROM messages WHERE direction='inbound' " +
       "AND status='queued' AND next_attempt_at<=? ORDER BY id LIMIT ?"
+  );
+  const selectTranscribing = db.prepare(
+    "SELECT * FROM messages WHERE direction='inbound' " +
+      "AND status='transcribing' ORDER BY id LIMIT ?"
   );
   const findByTg = db.prepare(
     "SELECT * FROM messages WHERE direction='inbound' " + "AND tg_chat_id=? AND tg_msg_id=? LIMIT 1"
@@ -76,6 +89,16 @@ export function createMessagesRepo(db: Db) {
       const result = insertInbound.run(ts, text, tgChatId, tgMsgId, fromUserId, ts);
       return Number(result.lastInsertRowid);
     },
+    insertTranscribingVoice(
+      tgChatId: number,
+      tgMsgId: number,
+      fromUserId: number,
+      mediaPath: string
+    ): number {
+      const ts = nowTs();
+      const result = insertTranscribingVoice.run(ts, tgChatId, tgMsgId, fromUserId, mediaPath, ts);
+      return Number(result.lastInsertRowid);
+    },
     insertRejected(text: string, tgChatId: number, tgMsgId: number, error: string): number {
       const result = insertRejected.run(nowTs(), text, tgChatId, tgMsgId, error);
       return Number(result.lastInsertRowid);
@@ -90,6 +113,10 @@ export function createMessagesRepo(db: Db) {
     },
     selectDue(limit = 5): InboundMessage[] {
       const rows = selectDue.all(nowTs(), limit) as Record<string, unknown>[];
+      return rows.map(mapInboundRow);
+    },
+    selectTranscribing(limit = 2): InboundMessage[] {
+      const rows = selectTranscribing.all(limit) as Record<string, unknown>[];
       return rows.map(mapInboundRow);
     },
     update(msgId: number, fields: MessageUpdate): void {

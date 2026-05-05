@@ -5,7 +5,7 @@
 # picks up the new versions on its next pane respawn.
 #
 # Under the shared `${BOT_USER}` model, all projects share one nvm + Node, one
-# `~/.claude/.credentials.json`, one `~/.codex/auth.json`, and one
+# writable `~/.claude/` runtime, one writable `~/.codex/` runtime, and one
 # `${AGENT_SKILLS_DIR}` clone. This script updates that shared state ONCE per
 # night, then enumerates `*-god@*.service` units to restart active project/user sessions.
 set -euo pipefail

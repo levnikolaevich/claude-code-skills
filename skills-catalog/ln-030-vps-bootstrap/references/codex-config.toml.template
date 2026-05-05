@@ -13,8 +13,8 @@ exclude_slash_tmp = true
 exclude_tmpdir_env_var = true
 writable_roots = ["${PROJECT_DIR}"]
 
-# notify hook is installed conditionally by Step 8b (only if TELEGRAM_BOT_TOKEN
-# is set AND operator opted in). Step 8b appends:
+# notify hook is installed conditionally by ln-032 (only if TELEGRAM_BOT_TOKEN
+# is set AND operator opted in). ln-032 appends:
 #   notify = ["bash", "/home/${BOT_USER}/.codex/notify.sh"]
 
 [projects."/home/${BOT_USER}"]

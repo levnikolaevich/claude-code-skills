@@ -19,6 +19,7 @@ Before running any subcommand, source `.env.local` from the current repo:
 : "${VPS_BOT_USER:?missing VPS_BOT_USER in .env.local}"
 : "${VPS_PROJECT_NAME:?missing VPS_PROJECT_NAME in .env.local}"
 : "${VPS_SERVICE_PREFIX:?missing VPS_SERVICE_PREFIX in .env.local}"
+: "${VPS_TELEGRAM_CHAT_ID:?missing VPS_TELEGRAM_CHAT_ID in .env.local}"
 : "${VPS_PROJECT_DIR:?missing VPS_PROJECT_DIR in .env.local}"
 : "${VPS_RELAY_HOOK_PORT:?missing VPS_RELAY_HOOK_PORT in .env.local}"
 : "${VPS_DISPATCH_COMMAND_NAME:?missing VPS_DISPATCH_COMMAND_NAME in .env.local}"
@@ -36,11 +37,12 @@ Required keys in `.env.local` (this file is git-ignored, never commits real valu
 | `VPS_SSH_KEY` | `~/.ssh/myproj_vps` | Path to private key |
 | `VPS_BOT_USER` | `agent-bot` | Linux user owning the workload (typically UID 1000) |
 | `VPS_PROJECT_NAME` | `myproj-skills-lab` | State/config dir name: `/etc/<NAME>/`, `/var/lib/<NAME>/`, `/var/log/<NAME>-god.log` |
-| `VPS_SERVICE_PREFIX` | `myproj` | Per-project systemd unit + binary prefix: `<PFX>-god.service`, `<PFX>-dispatch.timer`, `/usr/local/bin/<PFX>-god`. (`agent-update.timer` is system-wide.) |
+| `VPS_SERVICE_PREFIX` | `myproj` | Per-project systemd unit + binary prefix: `<PFX>-god@.service`, `<PFX>-dispatch.timer`, `/usr/local/bin/<PFX>-god`. (`agent-update.timer` is system-wide.) |
+| `VPS_TELEGRAM_CHAT_ID` | `123456789` | Primary operator user id; selects `${VPS_SERVICE_PREFIX}-god@${VPS_TELEGRAM_CHAT_ID}.service` and tmux target `${VPS_SERVICE_PREFIX}-god-${VPS_TELEGRAM_CHAT_ID}` |
 | `VPS_PROJECT_DIR` | `/opt/myproj` | Cloned repo root on VPS |
 | `VPS_GIT_PROVIDER` | `github` or `gitlab` | Selects which CLI / API the dispatcher and `queue` subcommand use |
 | `VPS_REPO_SLUG` | `me/myproj` (github) or `group/project` (gitlab) | Repo path on the chosen provider; used in `queue` and dispatch.md |
-| `VPS_RELAY_HOOK_PORT` | `9999` | Localhost HTTP port for the project relay-bot |
+| `VPS_RELAY_HOOK_PORT` | `9999` | Localhost HTTP port for the project hex-relay |
 | `VPS_DISPATCH_COMMAND_NAME` | `myproj-dispatch` | Slash command name injected by `${VPS_SERVICE_PREFIX}-dispatch.timer` |
 | `VPS_AGENT_SKILLS_DIR` | `/opt/agent-skills` | Shared clone of `levnikolaevich/claude-code-skills` on the VPS |
 | `VPS_AGENT_SKILLS_PLUGINS` | `agile-workflow` | Selected marketplace plugins (`agile-workflow`, `all`, or comma-list) |
@@ -53,13 +55,13 @@ The tmux socket is derived from `VPS_SERVICE_PREFIX`.
 |---|---|
 | Server | `${VPS_HOST}` (UID 1000 = `${VPS_BOT_USER}`) |
 | Repo | `${VPS_REPO_SLUG}` on `${VPS_GIT_PROVIDER}`, cloned at `${VPS_PROJECT_DIR}` |
-| systemd unit (god) | `${VPS_SERVICE_PREFIX}-god.service` (Restart=always, MemoryMax=2G) |
-| systemd unit (scheduler) | `${VPS_SERVICE_PREFIX}-dispatch.timer` + `.service` (hourly :07) |
+| systemd unit (god) | `${VPS_SERVICE_PREFIX}-god@${VPS_TELEGRAM_CHAT_ID}.service` (Restart=always, MemoryMax=2G) |
+| systemd unit (scheduler) | `${VPS_SERVICE_PREFIX}-dispatch.timer` + `.service` (15-minute cadence) |
 | systemd unit (maintenance) | `agent-update.timer` + `.service` — **system-wide** (one updater per VPS, restarts all god-services) |
 | Skills marketplace repo | `${VPS_AGENT_SKILLS_DIR}` (`${VPS_AGENT_SKILLS_PLUGINS}` selected) |
-| tmux session/socket | `${VPS_SERVICE_PREFIX}-god` on socket `${VPS_SERVICE_PREFIX}` |
+| tmux target/socket | `${VPS_SERVICE_PREFIX}-god-${VPS_TELEGRAM_CHAT_ID}` on socket `${VPS_SERVICE_PREFIX}` |
 | God wrapper | `/usr/local/bin/${VPS_SERVICE_PREFIX}-god` |
-| Relay-bot | `${VPS_SERVICE_PREFIX}-relay-bot.service` (HTTP API on 127.0.0.1:${VPS_RELAY_HOOK_PORT}, SQLite at `/var/lib/${VPS_PROJECT_NAME}/relay.db`) |
+| hex-relay | `${VPS_SERVICE_PREFIX}-hex-relay.service` (HTTP API on 127.0.0.1:${VPS_RELAY_HOOK_PORT}, SQLite at `/var/lib/${VPS_PROJECT_NAME}/relay.db`) |
 | Slash command | `/home/${VPS_BOT_USER}/.claude/commands/${VPS_DISPATCH_COMMAND_NAME}.md` |
 | Log (wrapper) | `/var/log/${VPS_PROJECT_NAME}-god.log` |
 | State dir | `/var/lib/${VPS_PROJECT_NAME}/` |
@@ -73,8 +75,8 @@ All SSH calls use `mcp__hex-ssh__remote-ssh` with `host=${VPS_HOST}`, `user=root
 
 | Command | What it does |
 |---|---|
-| `status` | Health: systemd units, timers, tmux session, claude proc, relay-bot, queue, GH App, RAM, recent dispatches |
-| `run-now` | Inject `/${VPS_DISPATCH_COMMAND_NAME}` into the live tmux pane (immediate dispatch run, in addition to hourly timer) |
+| `status` | Health: systemd units, timers, tmux session, claude proc, hex-relay, queue, GH App, RAM, recent dispatches |
+| `run-now` | Inject `/${VPS_DISPATCH_COMMAND_NAME}` into the primary operator's live tmux pane (immediate dispatch run, in addition to the 15-minute timer) |
 | `refresh-god` | Kill tmux session + restart god service. Fresh claude session (memories persist via SessionStart hook) |
 | `attach` | Print SSH command for interactive tmux attach |
 | `tail [N]` | Last N lines of wrapper log (default 50) |
@@ -83,7 +85,7 @@ All SSH calls use `mcp__hex-ssh__remote-ssh` with `host=${VPS_HOST}`, `user=root
 | `resume` | `systemctl start` god — re-enable |
 | `install` | Idempotent verify after server rebuild |
 | `logs` | Tail tmux pane (~80 lines of live claude conversation) |
-| `audit [N]` | Last N dispatch runs from relay-bot SQLite — issue, phases, verdicts, PR (default 10) |
+| `audit [N]` | Last N dispatch runs from hex-relay SQLite — issue, phases, verdicts, PR (default 10) |
 | `memory` | List persistent memories injected into each new session |
 
 ---
@@ -92,7 +94,7 @@ All SSH calls use `mcp__hex-ssh__remote-ssh` with `host=${VPS_HOST}`, `user=root
 
 ```bash
 mcp__hex-ssh__remote-ssh:
-  "echo '=== systemctl ===' && systemctl status ${VPS_SERVICE_PREFIX}-god.service ${VPS_SERVICE_PREFIX}-dispatch.timer ${VPS_SERVICE_PREFIX}-relay-bot.service agent-update.timer --no-pager | head -40 ; \
+  "echo '=== systemctl ===' && systemctl status ${VPS_SERVICE_PREFIX}-god@${VPS_TELEGRAM_CHAT_ID}.service ${VPS_SERVICE_PREFIX}-dispatch.timer ${VPS_SERVICE_PREFIX}-hex-relay.service agent-update.timer --no-pager | head -40 ; \
    echo '=== timers ===' && systemctl list-timers ${VPS_SERVICE_PREFIX}-dispatch.timer agent-update.timer --no-pager ; \
    echo '=== tmux ===' && sudo -u ${VPS_BOT_USER} tmux -L ${VPS_SERVICE_PREFIX} ls 2>&1 ; \
    echo '=== claude proc ===' && pgrep -af 'claude --dangerously' | head -2 ; \
@@ -115,9 +117,9 @@ Render as a 6-row dashboard.
 
 ```bash
 mcp__hex-ssh__remote-ssh:
-  "sudo -u ${VPS_BOT_USER} tmux -L ${VPS_SERVICE_PREFIX} send-keys -t ${VPS_SERVICE_PREFIX}-god '/${VPS_DISPATCH_COMMAND_NAME}' Enter ; \
+  "sudo -u ${VPS_BOT_USER} tmux -L ${VPS_SERVICE_PREFIX} send-keys -t ${VPS_SERVICE_PREFIX}-god-${VPS_TELEGRAM_CHAT_ID} '/${VPS_DISPATCH_COMMAND_NAME}' Enter ; \
    sleep 3 ; \
-   sudo -u ${VPS_BOT_USER} tmux -L ${VPS_SERVICE_PREFIX} capture-pane -t ${VPS_SERVICE_PREFIX}-god -p -S -200 | tail -30"
+   sudo -u ${VPS_BOT_USER} tmux -L ${VPS_SERVICE_PREFIX} capture-pane -t ${VPS_SERVICE_PREFIX}-god-${VPS_TELEGRAM_CHAT_ID} -p -S -200 | tail -30"
 ```
 
 Watch progress with `/dispatcher logs`. Inspect structured run record: `/dispatcher audit 1`.
@@ -126,19 +128,19 @@ Watch progress with `/dispatcher logs`. Inspect structured run record: `/dispatc
 
 ```bash
 mcp__hex-ssh__remote-ssh:
-  "sudo -u ${VPS_BOT_USER} tmux -L ${VPS_SERVICE_PREFIX} kill-session -t ${VPS_SERVICE_PREFIX}-god 2>/dev/null ; \
-   systemctl restart ${VPS_SERVICE_PREFIX}-god.service ; \
+  "sudo -u ${VPS_BOT_USER} tmux -L ${VPS_SERVICE_PREFIX} kill-session -t ${VPS_SERVICE_PREFIX}-god-${VPS_TELEGRAM_CHAT_ID} 2>/dev/null ; \
+   systemctl restart ${VPS_SERVICE_PREFIX}-god@${VPS_TELEGRAM_CHAT_ID}.service ; \
    sleep 12 ; \
-   systemctl is-active ${VPS_SERVICE_PREFIX}-god.service ; \
+   systemctl is-active ${VPS_SERVICE_PREFIX}-god@${VPS_TELEGRAM_CHAT_ID}.service ; \
    sudo -u ${VPS_BOT_USER} tmux -L ${VPS_SERVICE_PREFIX} ls 2>&1"
 ```
 
-Claude takes ~30s to fully boot; SessionStart hook will inject memories+lineage from relay-bot SQLite.
+Claude takes ~30s to fully boot; SessionStart hook will inject memories+lineage from hex-relay SQLite.
 
 ## attach
 
 ```
-ssh -i "${VPS_SSH_KEY}" -t ${VPS_BOT_USER}@${VPS_HOST} "tmux -L ${VPS_SERVICE_PREFIX} attach -t ${VPS_SERVICE_PREFIX}-god"
+ssh -i "${VPS_SSH_KEY}" -t ${VPS_BOT_USER}@${VPS_HOST} "tmux -L ${VPS_SERVICE_PREFIX} attach -t ${VPS_SERVICE_PREFIX}-god-${VPS_TELEGRAM_CHAT_ID}"
 ```
 
 Detach: `Ctrl-b d`. Session keeps running.
@@ -171,8 +173,8 @@ mcp__hex-ssh__remote-ssh:
 ## pause / resume
 
 ```bash
-mcp__hex-ssh__remote-ssh: "systemctl stop ${VPS_SERVICE_PREFIX}-god.service && echo paused"
-mcp__hex-ssh__remote-ssh: "systemctl start ${VPS_SERVICE_PREFIX}-god.service && sleep 5 && systemctl is-active ${VPS_SERVICE_PREFIX}-god.service"
+mcp__hex-ssh__remote-ssh: "systemctl stop ${VPS_SERVICE_PREFIX}-god@${VPS_TELEGRAM_CHAT_ID}.service && echo paused"
+mcp__hex-ssh__remote-ssh: "systemctl start ${VPS_SERVICE_PREFIX}-god@${VPS_TELEGRAM_CHAT_ID}.service && sleep 5 && systemctl is-active ${VPS_SERVICE_PREFIX}-god@${VPS_TELEGRAM_CHAT_ID}.service"
 ```
 
 ## install
@@ -181,20 +183,20 @@ Idempotent verify. Does NOT touch secrets, App PEM, user data; only paths/perms/
 
 ```bash
 mcp__hex-ssh__remote-ssh:
-  "test -x /usr/local/bin/${VPS_SERVICE_PREFIX}-god || echo 'wrapper MISSING — re-run ln-030-vps-bootstrap Step 7' ; \
+  "test -x /usr/local/bin/${VPS_SERVICE_PREFIX}-god || echo 'wrapper MISSING — re-run ln-032-vps-project-runtime' ; \
    test -r /home/${VPS_BOT_USER}/.claude/commands/${VPS_DISPATCH_COMMAND_NAME}.md || echo '${VPS_DISPATCH_COMMAND_NAME}.md MISSING' ; \
-   test -r /etc/systemd/system/${VPS_SERVICE_PREFIX}-god.service || echo 'god service MISSING' ; \
+   test -r /etc/systemd/system/${VPS_SERVICE_PREFIX}-god@.service || echo 'god service template MISSING' ; \
    test -r /etc/systemd/system/${VPS_SERVICE_PREFIX}-dispatch.timer || echo 'dispatch timer MISSING' ; \
    test -r /etc/systemd/system/agent-update.timer || echo 'agent-update.timer (system-wide) MISSING' ; \
    test -x /usr/local/bin/agent-update || echo 'agent-update script (system-wide) MISSING' ; \
    test -r ${VPS_AGENT_SKILLS_DIR}/.claude-plugin/marketplace.json || echo 'Claude marketplace repo MISSING' ; \
    test -r ${VPS_AGENT_SKILLS_DIR}/.agents/plugins/marketplace.json || echo 'Codex marketplace repo MISSING' ; \
-   test -f /opt/${VPS_SERVICE_PREFIX}-relay-bot/dist/index.js || echo 'relay-bot build MISSING' ; \
+   test -f /opt/${VPS_SERVICE_PREFIX}-hex-relay/dist/index.js || echo 'hex-relay build MISSING' ; \
    install -d -o ${VPS_BOT_USER} -g ${VPS_BOT_USER} -m 755 /var/lib/${VPS_PROJECT_NAME} && \
    touch /var/log/${VPS_PROJECT_NAME}-god.log && chown ${VPS_BOT_USER}:${VPS_BOT_USER} /var/log/${VPS_PROJECT_NAME}-god.log && \
    loginctl enable-linger ${VPS_BOT_USER} && \
    systemctl daemon-reload && \
-   systemctl enable --now ${VPS_SERVICE_PREFIX}-god.service ${VPS_SERVICE_PREFIX}-dispatch.timer ${VPS_SERVICE_PREFIX}-relay-bot.service agent-update.timer && \
+   systemctl enable --now ${VPS_SERVICE_PREFIX}-god@${VPS_TELEGRAM_CHAT_ID}.service ${VPS_SERVICE_PREFIX}-dispatch.timer ${VPS_SERVICE_PREFIX}-hex-relay.service agent-update.timer && \
    echo installed"
 ```
 
@@ -202,12 +204,12 @@ mcp__hex-ssh__remote-ssh:
 
 ```bash
 mcp__hex-ssh__remote-ssh:
-  "sudo -u ${VPS_BOT_USER} tmux -L ${VPS_SERVICE_PREFIX} capture-pane -t ${VPS_SERVICE_PREFIX}-god -p -S -300 | tail -80"
+  "sudo -u ${VPS_BOT_USER} tmux -L ${VPS_SERVICE_PREFIX} capture-pane -t ${VPS_SERVICE_PREFIX}-god-${VPS_TELEGRAM_CHAT_ID} -p -S -300 | tail -80"
 ```
 
 ## audit
 
-Last N dispatch runs from relay-bot SQLite (default 10). Each run includes phases (ln-300/310/400/500), verdicts, PR url if opened.
+Last N dispatch runs from hex-relay SQLite (default 10). Each run includes phases (ln-300/310/400/500), verdicts, PR url if opened.
 
 ```bash
 mcp__hex-ssh__remote-ssh:
@@ -239,11 +241,11 @@ Forget: `POST /memory/forget {"memory_id":N}` or `{"tag_match":"..."}`.
 | Symptom | Diagnosis | Recovery |
 |---|---|---|
 | `/dispatcher status` says god service inactive | `pause` was run, never resumed; or fresh server. | `/dispatcher resume` (or `/dispatcher install` for fresh). |
-| tmux session missing while service active | Restart race window 0-15s. | Wait 15s and retry. If persistent, `journalctl -u ${VPS_SERVICE_PREFIX}-god.service -n 50`. |
-| Telegram inbound not getting replies | Relay-bot down OR hooks misconfigured. | `curl http://127.0.0.1:${VPS_RELAY_HOOK_PORT}/health` (relay), check journal of ${VPS_SERVICE_PREFIX}-relay-bot.service. Verify settings.json hooks block exists. |
-| Dispatch runs not firing hourly | `${VPS_SERVICE_PREFIX}-dispatch.timer` not enabled. | `systemctl list-timers --no-pager` to verify; `systemctl enable --now ${VPS_SERVICE_PREFIX}-dispatch.timer` if missing. |
-| Nightly CLI/plugin updates not running | System-wide `agent-update.timer` not enabled or unit missing. | `systemctl list-timers agent-update.timer --no-pager`; re-run ln-030 Step 7d if missing. |
-| Claude/Codex skills missing | Step 5c was skipped or `VPS_AGENT_SKILLS_DIR` points to the wrong clone. | Re-run ln-030 Step 5c; verify manifests under `${VPS_AGENT_SKILLS_DIR}` and selected plugin entries in `~/.codex/config.toml`. |
+| tmux session missing while service active | Restart race window 0-15s. | Wait 15s and retry. If persistent, `journalctl -u ${VPS_SERVICE_PREFIX}-god@${VPS_TELEGRAM_CHAT_ID}.service -n 50`. |
+| Telegram inbound not getting replies | hex-relay down OR hooks misconfigured. | `curl http://127.0.0.1:${VPS_RELAY_HOOK_PORT}/health` (relay), check journal of ${VPS_SERVICE_PREFIX}-hex-relay.service. Verify settings.json hooks block exists. |
+| Dispatch runs not firing every 15 minutes | `${VPS_SERVICE_PREFIX}-dispatch.timer` not enabled. | `systemctl list-timers --no-pager` to verify; `systemctl enable --now ${VPS_SERVICE_PREFIX}-dispatch.timer` if missing. |
+| Nightly CLI/plugin updates not running | System-wide `agent-update.timer` not enabled or unit missing. | `systemctl list-timers agent-update.timer --no-pager`; re-run `ln-031-vps-host-runtime` if missing. |
+| Claude/Codex skills missing | Agent runtime setup was skipped or `VPS_AGENT_SKILLS_DIR` points to the wrong clone. | Re-run `ln-031-vps-host-runtime`; verify manifests under `${VPS_AGENT_SKILLS_DIR}` and selected plugin entries in `~/.codex/config.toml`. |
 | Relay outbox accumulating queued | Telegram outage. | `/dispatcher status` shows queue depth. Outbox auto-retries with backoff. |
 
 ---

@@ -202,7 +202,11 @@
         "./skills-catalog/ln-014-agent-instructions-manager",
         "./skills-catalog/ln-015-hex-line-uninstaller",
         "./skills-catalog/ln-020-codegraph",
-        "./skills-catalog/ln-030-vps-bootstrap"
+        "./skills-catalog/ln-030-vps-bootstrap",
+        "./skills-catalog/ln-031-vps-host-runtime",
+        "./skills-catalog/ln-032-vps-project-runtime",
+        "./skills-catalog/ln-033-hex-relay-lifecycle",
+        "./skills-catalog/ln-034-vps-environment-diagnostics"
       ]
     }
   ]

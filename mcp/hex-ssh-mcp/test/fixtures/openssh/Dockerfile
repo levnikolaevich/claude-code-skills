@@ -10,9 +10,9 @@ RUN useradd -m -d /home/tester -s /bin/bash tester \
     && passwd -d tester \
     && chown -R tester:tester /home/tester /tmp/hex-ssh-download
 
-COPY client_ed25519.pub /home/tester/.ssh/authorized_keys
-COPY ssh_host_ed25519_key /etc/ssh/ssh_host_ed25519_key
-COPY ssh_host_ed25519_key.pub /etc/ssh/ssh_host_ed25519_key.pub
+COPY generated/client_ed25519.pub /home/tester/.ssh/authorized_keys
+COPY generated/ssh_host_ed25519_key /etc/ssh/ssh_host_ed25519_key
+COPY generated/ssh_host_ed25519_key.pub /etc/ssh/ssh_host_ed25519_key.pub
 COPY sshd_config /etc/ssh/sshd_config
 
 RUN chmod 700 /home/tester/.ssh \

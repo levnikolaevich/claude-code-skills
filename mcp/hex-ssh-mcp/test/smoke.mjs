@@ -541,6 +541,70 @@ describe("connection pool", () => {
     });
 });
 
+
+// ==================== Key resolution ====================
+
+describe("key resolution", () => {
+    it("normalizes Windows privateKeyPath backslashes to slash-compatible paths", async () => {
+        const { normalizeLocalKeyPath } = await import("../lib/ssh-client.mjs");
+
+        assert.equal(
+            normalizeLocalKeyPath("C:\\Users\\levni\\.ssh\\my_contabo_vm"),
+            "C:/Users/levni/.ssh/my_contabo_vm"
+        );
+        assert.equal(
+            normalizeLocalKeyPath("C:/Users/levni/.ssh/my_contabo_vm"),
+            "C:/Users/levni/.ssh/my_contabo_vm"
+        );
+        assert.equal(normalizeLocalKeyPath("/home/levni/.ssh/id_ed25519"), "/home/levni/.ssh/id_ed25519");
+    });
+
+    it("uses explicit privateKeyPath with Windows backslashes", { skip: process.platform !== "win32" }, async () => {
+        const { mkdtempSync, rmSync, writeFileSync } = await import("node:fs");
+        const { join } = await import("node:path");
+        const os = await import("node:os");
+        const { _setClientFactory, closeAllConnections, executeCommand } = await import("../lib/ssh-client.mjs");
+        const keyContent = "fake-private-key-fixture\n";
+        const tmpDir = mkdtempSync(join(os.tmpdir(), "hex-ssh-win-key-"));
+        const keyPath = join(tmpDir, "id_fake");
+        const connectOptions = [];
+
+        writeFileSync(keyPath, keyContent);
+        _setClientFactory(() => {
+            const handlers = new Map();
+            return {
+                _sock: { writable: false },
+                on(event, cb) { handlers.set(event, cb); return this; },
+                connect(options) {
+                    connectOptions.push(options);
+                    this._sock.writable = true;
+                    defer(() => handlers.get("ready")?.());
+                },
+                end() { this._sock.writable = false; },
+                exec(_command, callback) {
+                    defer(() => callback(null, makeExecStream("ok\n", "", 0)));
+                },
+            };
+        });
+
+        try {
+            await executeCommand({
+                host: "example.com",
+                user: "deploy",
+                port: 22,
+                privateKeyPath: keyPath.replace(/\//g, "\\"),
+                command: "true",
+            });
+
+            assert.equal(connectOptions.length, 1);
+            assert.equal(connectOptions[0].privateKey.toString("utf8"), keyContent);
+        } finally {
+            closeAllConnections();
+            rmSync(tmpDir, { recursive: true, force: true });
+        }
+    });
+});
+
 // ==================== Local transfer validation ====================
 
 describe("local transfer validation", () => {
@@ -580,7 +644,7 @@ describe("local transfer validation", () => {
 describe("sftp transfers", () => {
     const _fakeKeyDir = mkdtempSync(join(tmpdir(), "hex-ssh-fakekey-"));
     const FAKE_KEY = join(_fakeKeyDir, "id_fake");
-    writeFileSync(FAKE_KEY, "-----BEGIN OPENSSH PRIVATE KEY-----\nfake\n-----END OPENSSH PRIVATE KEY-----\n");
+    writeFileSync(FAKE_KEY, "fake-private-key-fixture\n");
     it("uploads a local file with durable OpenSSH finalize and metadata", async () => {
         const { mkdtempSync, rmSync, writeFileSync } = await import("node:fs");
         const { join } = await import("node:path");
@@ -869,7 +933,7 @@ describe("sftp transfers", () => {
 describe("per-call timeouts", () => {
     const _tmKeyDir = mkdtempSync(join(tmpdir(), "hex-ssh-tm-key-"));
     const TM_KEY = join(_tmKeyDir, "id_fake");
-    writeFileSync(TM_KEY, "-----BEGIN OPENSSH PRIVATE KEY-----\nfake\n-----END OPENSSH PRIVATE KEY-----\n");
+    writeFileSync(TM_KEY, "fake-private-key-fixture\n");
 
     it("exports DEFAULT_* timeout constants", async () => {
         const ssh = await import("../lib/ssh-client.mjs");

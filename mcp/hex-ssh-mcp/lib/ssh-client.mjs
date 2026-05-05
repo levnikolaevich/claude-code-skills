@@ -208,6 +208,28 @@ export function validateRemotePath(filePath, remotePlatform = "auto") {
 
 // --------------- Key Resolution ---------------
 
+export function normalizeLocalKeyPath(keyPath) {
+    if (typeof keyPath !== "string") return keyPath;
+    if (/^[a-zA-Z]:[\\/]/.test(keyPath) || /^\\\\[^\\]+\\[^\\]+/.test(keyPath)) {
+        return keyPath.replace(/\\/g, "/");
+    }
+    return keyPath;
+}
+
+function readKeyFile(keyPath) {
+    const normalized = normalizeLocalKeyPath(keyPath);
+    const candidates = normalized === keyPath ? [keyPath] : [normalized, keyPath];
+    let lastError = null;
+
+    for (const candidate of candidates) {
+        try { return readFileSync(candidate); }
+        catch (err) { lastError = err; }
+    }
+
+    const normalizedNote = normalized === keyPath ? "" : ` (normalized: ${normalized})`;
+    throw new Error(`Cannot read key: ${keyPath}${normalizedNote} (${lastError.message})`);
+}
+
 /**
  * Get private key from: explicit path > config identityFiles > env > defaults.
  * Returns array of candidate keys for multi-key auth.
@@ -217,13 +239,13 @@ function getCandidateKeys(keyPath, identityFiles = []) {
 
     // 1. Explicit keyPath (highest priority)
     if (keyPath) {
-        try { keys.push(readFileSync(keyPath)); return keys; }
-        catch (e) { throw new Error(`Cannot read key: ${keyPath} (${e.message})`); }
+        keys.push(readKeyFile(keyPath));
+        return keys;
     }
 
     // 2. Config-derived identityFiles (ordered, like OpenSSH)
     for (const p of identityFiles) {
-        try { keys.push(readFileSync(p)); }
+        try { keys.push(readKeyFile(p)); }
         catch { continue; }
     }
     if (keys.length > 0) return keys;
@@ -232,13 +254,13 @@ function getCandidateKeys(keyPath, identityFiles = []) {
     const envKey = process.env.SSH_PRIVATE_KEY;
     if (envKey) {
         if (envKey.startsWith("-----")) { keys.push(Buffer.from(envKey)); return keys; }
-        try { keys.push(readFileSync(envKey)); return keys; }
+        try { keys.push(readKeyFile(envKey)); return keys; }
         catch { /* fall through */ }
     }
 
     // 4. Default key paths
     for (const p of DEFAULT_KEY_PATHS) {
-        try { keys.push(readFileSync(p)); }
+        try { keys.push(readKeyFile(p)); }
         catch { continue; }
     }
     if (keys.length > 0) return keys;

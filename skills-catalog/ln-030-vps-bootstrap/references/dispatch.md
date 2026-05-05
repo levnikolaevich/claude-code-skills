@@ -1,19 +1,19 @@
 ---
-description: "Work on one provider issue selected by relay-bot control plane for ${REPO_SLUG}."
+description: "Work on one provider issue selected by hex-relay control plane for ${REPO_SLUG}."
 allowed-tools: Bash, Read, Write, Edit, Skill, Glob, Grep
 ---
 
 # /${DISPATCH_COMMAND_NAME} — work on a selected task
 
-You are running inside the long-lived **${PROJECT_NAME} god-session**. This command is a work-plane continuation for a task selected by relay-bot through `/tasks`; it does not enumerate provider issues by itself.
+You are running inside the long-lived **${PROJECT_NAME} god-session**. This command is a work-plane continuation for a task selected by hex-relay through `/tasks`; it does not enumerate provider issues by itself.
 
 ## Working environment
 
 - `cwd`: `${PROJECT_DIR}`.
 - Strict sandbox mode exposes the project folder as writable and installed skills/plugins as read-only.
-- Provider secrets, Telegram tokens, relay database files, systemd files, sibling `/opt/*` projects, and shared home config are control-plane resources. Do not read them, copy them, or ask for them.
+- Provider secrets, Telegram tokens, relay database files, systemd files, sibling `/opt/*` projects, and shared CLI auth/config are control-plane resources. Shared `$HOME/.claude` and `$HOME/.codex` exist only so Claude/Codex can run and refresh auth; do not inspect, copy, or modify auth/config there unless the operator explicitly asks for auth repair.
 - The selected task details are provided in the injected prompt: issue number, title, URL, labels, and body.
-- Use `http://127.0.0.1:${RELAY_HOOK_PORT}` only for relay-bot audit endpoints documented below. Do not send Telegram messages directly; final replies are mirrored by hooks.
+- Use `http://127.0.0.1:${RELAY_HOOK_PORT}` only for hex-relay audit endpoints documented below. Do not send Telegram messages directly; final replies are mirrored by hooks.
 
 ## Step 1 — Open Dispatch Run
 
@@ -134,4 +134,4 @@ curl -fsS -X POST http://127.0.0.1:${RELAY_HOOK_PORT}/dispatch/end \
 - Never echo secret values to logs, comments, or Telegram.
 - Do not enumerate provider issues or configure provider tokens from the work plane.
 - Do not call host service managers or inspect VPS control-plane files.
-- Relay-bot localhost API failures are non-fatal for project work, but must be mentioned in the final answer.
+- hex-relay localhost API failures are non-fatal for project work, but must be mentioned in the final answer.

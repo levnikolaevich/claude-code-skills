@@ -1,7 +1,7 @@
 [Unit]
-Description=Poll provider tasks through ${SERVICE_PREFIX} relay-bot control plane
-Requires=${SERVICE_PREFIX}-relay-bot.service
-After=${SERVICE_PREFIX}-relay-bot.service
+Description=Poll provider tasks through ${SERVICE_PREFIX} hex-relay control plane
+Requires=${SERVICE_PREFIX}-hex-relay.service
+After=${SERVICE_PREFIX}-hex-relay.service
 
 [Service]
 Type=oneshot

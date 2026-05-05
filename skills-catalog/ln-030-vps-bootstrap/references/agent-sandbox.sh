@@ -1,6 +1,6 @@
 #!/bin/bash
 # Project-scoped bubblewrap sandbox for the LLM work plane.
-# The control plane (systemd, relay-bot, secrets, DB, dispatcher) stays outside.
+# The control plane (systemd, hex-relay, secrets, DB, dispatcher) stays outside.
 set -euo pipefail
 
 : "${PROJECT_DIR:?PROJECT_DIR required}"
@@ -41,9 +41,9 @@ copy_if_missing() {
   fi
 }
 
-# One VPS-wide auth remains under /home/${BOT_USER}. The sandbox gets read-only
-# binds for the auth files, while mutable Claude/Codex runtime state stays in
-# project+user-local AGENT_HOME.
+# Claude Code and Codex own mutable state under ~/.claude and ~/.codex:
+# OAuth token rotation, sessions, memories, commands state, and plugin metadata.
+# Bind both writable so the sandbox matches normal CLI auth/runtime behavior.
 copy_if_missing "/home/${BOT_USER}/.claude.json" "$AGENT_HOME/.claude.json" 600
 copy_if_missing "/home/${BOT_USER}/.claude/settings.json" "$AGENT_HOME/.claude/settings.json" 644
 copy_if_missing "/home/${BOT_USER}/.codex/config.toml" "$AGENT_HOME/.codex/config.toml" 600
@@ -65,6 +65,20 @@ ro_bind_into_agent_home_if_exists() {
       touch "$dst"
     fi
     args+=(--ro-bind "$src" "$dst")
+  fi
+}
+
+rw_bind_into_agent_home_if_exists() {
+  local src=$1
+  local dst=$2
+  if [[ -e "$src" ]]; then
+    mkdir -p "$(dirname "$dst")"
+    if [[ -d "$src" ]]; then
+      mkdir -p "$dst"
+    else
+      touch "$dst"
+    fi
+    args+=(--bind "$src" "$dst")
   fi
 }
 
@@ -125,10 +139,10 @@ args+=(
 )
 
 # These mounts must be appended after PROJECT_DIR is bound, otherwise the
-# project bind masks the auth mounts under ${PROJECT_DIR}/.agent-home.
-ro_bind_into_agent_home_if_exists "/home/${BOT_USER}/.claude/.credentials.json" "$AGENT_HOME/.claude/.credentials.json"
-ro_bind_into_agent_home_if_exists "/home/${BOT_USER}/.codex/auth.json" "$AGENT_HOME/.codex/auth.json"
-ro_bind_into_agent_home_if_exists "/home/${BOT_USER}/.claude/commands" "$AGENT_HOME/.claude/commands"
-ro_bind_into_agent_home_if_exists "/home/${BOT_USER}/.claude/plugins" "$AGENT_HOME/.claude/plugins"
+# project bind masks the runtime mounts under ${PROJECT_DIR}/.agent-home.
+mkdir -p "/home/${BOT_USER}/.claude"
+mkdir -p "/home/${BOT_USER}/.codex"
+rw_bind_into_agent_home_if_exists "/home/${BOT_USER}/.claude" "$AGENT_HOME/.claude"
+rw_bind_into_agent_home_if_exists "/home/${BOT_USER}/.codex" "$AGENT_HOME/.codex"
 
 exec bwrap "${args[@]}" "$@"

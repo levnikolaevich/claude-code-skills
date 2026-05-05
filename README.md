@@ -1,7 +1,7 @@
 # Claude Code Skills
 
 ![Version](https://img.shields.io/badge/version-2026.04.21-blue)
-![Skills](https://img.shields.io/badge/skills-136-green)
+![Skills](https://img.shields.io/badge/skills-140-green)
 ![License](https://img.shields.io/badge/license-MIT-green)
 [![GitHub stars](https://img.shields.io/github/stars/levnikolaevich/claude-code-skills?style=social)](https://github.com/levnikolaevich/claude-code-skills)
 
@@ -12,7 +12,7 @@
 > [!TIP]
 > **Two-Agent AI Review** — Claude and Codex can review each other’s work through host-aware external advisor routing.
 
-[Plugins](#plugins) · [Installation](#installation) · [Quick Start](#quick-start) · [Workflow](#workflow) · [MCP](#mcp-servers-optional) · [AI Review](#ai-review-models-optional) · [FAQ](#faq) · [Full Skill Tree](#whats-inside) · [Links](#links)
+[Plugins](#plugins) · [Installation](#installation) · [Quick Start](#quick-start) · [Workflow](#workflow) · [VPS Agent](#vps-agent) · [MCP](#mcp-servers-optional) · [AI Review](#ai-review-models-optional) · [FAQ](#faq) · [Full Skill Tree](#whats-inside) · [Links](#links)
 
 ---
 
@@ -113,6 +113,34 @@ ln-1000-pipeline-orchestrator   # 3. Full artifact-driven pipeline: 300 → 310 
 ```
 
 Coordinators keep lifecycle status separate from Loop Health: `status` says where the run is, artifacts/checkpoints prove completion, and `loop_health` decides whether another retry is useful. Procedural skills use SOP/TWI-style point-of-use checklists so risky steps carry action, key point, why, evidence, exception, and guard close to the moment of use.
+
+---
+
+## VPS Agent
+
+`ln-030-vps-bootstrap` is the VPS agent coordinator. It turns a Linux VPS into an always-on Claude Code + Codex operator environment by routing the work through four standalone runtime workers: shared host setup, project runtime setup, `hex-relay` lifecycle, and environment diagnostics.
+
+`hex-relay` is the Telegram and HTTP control plane deployed by `ln-030`. It runs as a standalone TypeScript product under [`agents/hex-relay/`](agents/hex-relay/), with SQLite-backed state, Telegram ingress, Claude hook ingestion, `/tasks` handoff, memory, dispatch audit, per-user sessions, and durable outbound replies.
+
+The important design point: one VPS can share a single agent user and shared Claude/Codex auth while keeping project and Telegram-user runtime state isolated. Each allowed Telegram user gets their own `${SERVICE_PREFIX}-god-<telegram_user_id>` tmux target, sandbox HOME under `${PROJECT_DIR}/.agent-home/users/<id>/`, session cache, resume state, and access-controlled `/sessions` view. The work-plane cannot read provider tokens, Telegram tokens, relay DB files, sibling project dirs, or host systemd; `hex-relay` owns that control-plane boundary.
+
+Operator-facing features:
+- `/tasks` lists provider issues using control-plane credentials and injects exactly one selected task into the clicking user's current session.
+- `/new_session` and `/sessions` manage per-user Claude sessions without mixing user histories.
+- `/users` supports pending/allowed/blocked access management from Telegram.
+- Claude final replies, progress status, dispatch audit, and persistent memory flow through SQLite-backed queues instead of ad hoc chat scraping.
+
+Use this path when you want one VPS to host autonomous project work that can be supervised from Telegram. The same entrypoint handles a fresh VPS, a second project on an existing VPS, `hex-relay` redeploys, diagnostics, and declarative fleet `plan/apply` from `ops/environments/*.yaml`.
+
+```bash
+ln-030-vps-bootstrap  # coordinator: host runtime + project runtime + optional hex-relay + diagnostics
+```
+
+Key docs:
+- [ln-030 SKILL.md](skills-catalog/ln-030-vps-bootstrap/SKILL.md) — coordinator workflow, worker invocation, fleet modes, and Definition of Done.
+- [Fleet environments README](ops/environments/README.md) — declarative environment registry for VPS reuse and fleet `plan/apply`.
+- [hex-relay README](agents/hex-relay/README.md) — product architecture, environment, runtime behavior, API, database, and deployment.
+- [hex-relay Telegram runbook](agents/hex-relay/docs/telegram-operator-runbook.md) — BotFather hardening, menu commands, and multi-user onboarding.
 
 ---
 
@@ -626,11 +654,20 @@ claude-code-skills/                      # MARKETPLACE
 |   |-- ln-014-agent-instructions-manager/ # Single owner of CLAUDE.md/AGENTS.md creation and audit
 |   |-- ln-015-hex-line-uninstaller/   # Standalone cleanup for Claude-side hex-line integration
 |-- ln-020-codegraph/                  # Code knowledge graph for dependency analysis & impact checking
-|-- ln-030-vps-bootstrap/              # One-shot VPS bootstrap: agents, god-session, dispatcher, optional Telegram bridge
+|-- ln-030-vps-bootstrap/              # L2: VPS agent coordinator and fleet plan/apply entrypoint
+|   |-- ln-031-vps-host-runtime/       # Shared VPS host runtime: users, packages, CLIs, MCP, plugins
+|   |-- ln-032-vps-project-runtime/    # Per-project VPS runtime, god-session, provider creds, dispatcher
+|   |-- ln-033-hex-relay-lifecycle/    # hex-relay deploy, redeploy, migration, health, Telegram users
+|   |-- ln-034-vps-environment-diagnostics/ # One environment health, drift, and bounded safe repair
 |
 |  └──────────────────────────────────────────────┘
 |
 |
+|-- agents/
+|   |-- hex-relay/                       # Telegram/HTTP control plane deployed by ln-030
+|-- ops/
+|   |-- environments/                    # Declarative VPS fleet registry for ln-030 plan/apply
+
 |-- docs/
 |   |-- architecture/                  # Skill patterns & delegation runtime
 |   |-- best-practice/                 # Claude Code usage tips & component selection

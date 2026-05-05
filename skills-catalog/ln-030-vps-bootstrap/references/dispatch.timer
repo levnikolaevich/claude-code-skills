@@ -1,5 +1,5 @@
 [Unit]
-Description=15-minute ${SERVICE_PREFIX} relay-bot task polling trigger
+Description=15-minute ${SERVICE_PREFIX} hex-relay task polling trigger
 
 [Timer]
 OnCalendar=*-*-* *:0/15:00

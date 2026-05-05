@@ -1,4 +1,4 @@
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { createHash, timingSafeEqual } from "node:crypto";
 import {
     chmodSync,
@@ -37,10 +37,11 @@ const {
 const TEST_USER = "tester";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const OPENSSH_FIXTURE_DIR = join(__dirname, "fixtures", "openssh");
-const CLIENT_PRIVATE_KEY_PATH = join(OPENSSH_FIXTURE_DIR, "client_ed25519");
-const CLIENT_PUBLIC_KEY_PATH = join(OPENSSH_FIXTURE_DIR, "client_ed25519.pub");
-const HOST_PRIVATE_KEY_PATH = join(OPENSSH_FIXTURE_DIR, "ssh_host_ed25519_key");
-const HOST_PUBLIC_KEY_PATH = join(OPENSSH_FIXTURE_DIR, "ssh_host_ed25519_key.pub");
+const GENERATED_KEY_DIR = join(OPENSSH_FIXTURE_DIR, "generated");
+const CLIENT_PRIVATE_KEY_PATH = join(GENERATED_KEY_DIR, "client_ed25519");
+const CLIENT_PUBLIC_KEY_PATH = join(GENERATED_KEY_DIR, "client_ed25519.pub");
+const HOST_PRIVATE_KEY_PATH = join(GENERATED_KEY_DIR, "ssh_host_ed25519_key");
+const HOST_PUBLIC_KEY_PATH = join(GENERATED_KEY_DIR, "ssh_host_ed25519_key.pub");
 
 function runProcess(command, args, options = {}) {
     return new Promise((resolve, reject) => {
@@ -67,6 +68,33 @@ function runProcess(command, args, options = {}) {
             reject(new Error(`${command} ${args.join(" ")} failed (${code}): ${stderr || stdout}`));
         });
     });
+}
+
+function runSshKeygen(args) {
+    const result = spawnSync("ssh-keygen", args, { encoding: "utf8" });
+    if (result.status !== 0) {
+        throw new Error(`ssh-keygen ${args.join(" ")} failed: ${result.stderr || result.stdout}`);
+    }
+}
+
+function ensureOpenSshKeys() {
+    if (
+        existsSync(CLIENT_PRIVATE_KEY_PATH)
+        && existsSync(CLIENT_PUBLIC_KEY_PATH)
+        && existsSync(HOST_PRIVATE_KEY_PATH)
+        && existsSync(HOST_PUBLIC_KEY_PATH)
+    ) {
+        return;
+    }
+
+    rmSync(GENERATED_KEY_DIR, { recursive: true, force: true });
+    mkdirSync(GENERATED_KEY_DIR, { recursive: true });
+
+    runSshKeygen(["-q", "-t", "ed25519", "-N", "", "-C", "hex-ssh-client-test", "-f", CLIENT_PRIVATE_KEY_PATH]);
+    runSshKeygen(["-q", "-t", "ed25519", "-N", "", "-C", "hex-ssh-host-test", "-f", HOST_PRIVATE_KEY_PATH]);
+
+    chmodSync(CLIENT_PRIVATE_KEY_PATH, 0o600);
+    chmodSync(HOST_PRIVATE_KEY_PATH, 0o600);
 }
 
 function normalizeRemotePath(remotePath) {
@@ -206,10 +234,12 @@ export async function isDockerConfigured() {
 }
 
 export function getInteropFingerprint() {
+    ensureOpenSshKeys();
     return computeFingerprint(HOST_PUBLIC_KEY_PATH);
 }
 
 export async function startOpenSshFixture() {
+    ensureOpenSshKeys();
     const port = await getFreePort();
     const composeEnv = { ...process.env, OPENSSH_PORT: String(port) };
 
@@ -258,6 +288,7 @@ export async function startOpenSshFixture() {
 }
 
 export async function startFallbackServer(options = {}) {
+    ensureOpenSshKeys();
     const rootDir = mkdtempSync(join(tmpdir(), "hex-ssh-fallback-"));
     const allowedPubKey = loadParsedPublicKey(CLIENT_PUBLIC_KEY_PATH);
     const openHandles = new Map();

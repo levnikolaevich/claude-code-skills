@@ -1,36 +1,36 @@
 {
-  "name": "optimization-suite",
-  "version": "1.0.0",
-  "description": "Optimization: Performance (profile → research → optimize), Dependency upgrades (npm, NuGet, pip), Code modernization (OSS replacement, bundle optimization). Keep/discard verification pattern.",
-  "author": {
-    "name": "Lev Nikolaevich",
-    "email": "levnikolaevich.com@gmail.com",
-    "url": "https://github.com/levnikolaevich"
-  },
-  "homepage": "https://github.com/levnikolaevich/claude-code-skills/blob/main/docs/plugins/optimization-suite.md",
-  "repository": "https://github.com/levnikolaevich/claude-code-skills",
-  "license": "MIT",
-  "keywords": [
-    "codex",
-    "skills",
-    "optimization-suite"
-  ],
-  "skills": "./skills/",
-  "interface": {
-    "displayName": "Optimization Suite",
-    "shortDescription": "Optimization: Performance (profile → research → optimize), Dependency upgrades (npm, NuGet, pip), Code modernization (OSS replacement, bundle optimization). Keep/discard verification pattern.",
-    "longDescription": "Optimization: Performance (profile → research → optimize), Dependency upgrades (npm, NuGet, pip), Code modernization (OSS replacement, bundle optimization). Keep/discard verification pattern.",
-    "developerName": "Lev Nikolaevich",
-    "category": "Productivity",
-    "capabilities": [
-      "Interactive",
-      "Write"
-    ],
-    "websiteURL": "https://github.com/levnikolaevich/claude-code-skills",
-    "defaultPrompt": [
-      "Use optimization-suite for this repository.",
-      "Run the optimization-suite workflow."
-    ],
-    "brandColor": "#2563EB"
-  }
+    "name":  "optimization-suite",
+    "version":  "1.1.0",
+    "description":  "Optimization: Performance (profile, research, optimize), Dependency upgrades (npm, NuGet, pip), Code modernization (OSS replacement, bundle optimization). Keep/discard verification pattern.",
+    "author":  {
+                   "name":  "Lev Nikolaevich",
+                   "email":  "levnikolaevich.com@gmail.com",
+                   "url":  "https://github.com/levnikolaevich"
+               },
+    "homepage":  "https://github.com/levnikolaevich/claude-code-skills/blob/main/docs/plugins/optimization-suite.md",
+    "repository":  "https://github.com/levnikolaevich/claude-code-skills",
+    "license":  "MIT",
+    "keywords":  [
+                     "codex",
+                     "skills",
+                     "optimization-suite"
+                 ],
+    "skills":  "./skills/",
+    "interface":  {
+                      "displayName":  "Optimization Suite",
+                      "shortDescription":  "Optimization: Performance (profile, research, optimize), Dependency upgrades (npm, NuGet, pip), Code modernization (OSS replacement, bundle optimization). Keep/discard verification pattern.",
+                      "longDescription":  "Optimization: Performance (profile, research, optimize), Dependency upgrades (npm, NuGet, pip), Code modernization (OSS replacement, bundle optimization). Keep/discard verification pattern.",
+                      "developerName":  "Lev Nikolaevich",
+                      "category":  "Productivity",
+                      "capabilities":  [
+                                           "Interactive",
+                                           "Write"
+                                       ],
+                      "websiteURL":  "https://github.com/levnikolaevich/claude-code-skills",
+                      "defaultPrompt":  [
+                                            "Use optimization-suite for this repository.",
+                                            "Run the optimization-suite workflow."
+                                        ],
+                      "brandColor":  "#2563EB"
+                  }
 }

@@ -26,92 +26,97 @@ jobs:
       - name: Rebuild native modules
         run: cd mcp && npm rebuild better-sqlite3
 
+      - name: Marketplace structure
+        run: |
+          node tools/marketplace/shared.mjs validate
+          node tools/marketplace/validate.mjs
+
       - name: Coordinator runtime
         run: |
-          node skills-catalog/shared/scripts/coordinator-runtime/test/platform-regression.mjs
-          node skills-catalog/shared/scripts/coordinator-runtime/test/consistency-scan.mjs
+          node shared/scripts/coordinator-runtime/test/platform-regression.mjs
+          node shared/scripts/coordinator-runtime/test/consistency-scan.mjs
 
 
       - name: Story planning runtime
         run: |
-          node skills-catalog/shared/scripts/story-planning-runtime/test/smoke.mjs
-          node skills-catalog/shared/scripts/story-planning-runtime/test/negative.mjs
+          node shared/scripts/story-planning-runtime/test/smoke.mjs
+          node shared/scripts/story-planning-runtime/test/negative.mjs
 
       - name: Task planning runtime
         run: |
-          node skills-catalog/shared/scripts/task-planning-runtime/test/smoke.mjs
-          node skills-catalog/shared/scripts/task-planning-runtime/test/negative.mjs
+          node shared/scripts/task-planning-runtime/test/smoke.mjs
+          node shared/scripts/task-planning-runtime/test/negative.mjs
 
       - name: Epic planning runtime
         run: |
-          node skills-catalog/shared/scripts/epic-planning-runtime/test/smoke.mjs
-          node skills-catalog/shared/scripts/epic-planning-runtime/test/negative.mjs
-          node skills-catalog/shared/scripts/epic-planning-runtime/test/guards.mjs
+          node shared/scripts/epic-planning-runtime/test/smoke.mjs
+          node shared/scripts/epic-planning-runtime/test/negative.mjs
+          node shared/scripts/epic-planning-runtime/test/guards.mjs
 
       - name: Scope decomposition runtime
         run: |
-          node skills-catalog/shared/scripts/scope-decomposition-runtime/test/smoke.mjs
-          node skills-catalog/shared/scripts/scope-decomposition-runtime/test/negative.mjs
-          node skills-catalog/shared/scripts/scope-decomposition-runtime/test/guards.mjs
+          node shared/scripts/scope-decomposition-runtime/test/smoke.mjs
+          node shared/scripts/scope-decomposition-runtime/test/negative.mjs
+          node shared/scripts/scope-decomposition-runtime/test/guards.mjs
 
       - name: Docs pipeline runtime
         run: |
-          node skills-catalog/shared/scripts/docs-pipeline-runtime/test/smoke.mjs
-          node skills-catalog/shared/scripts/docs-pipeline-runtime/test/negative.mjs
-          node skills-catalog/shared/scripts/docs-pipeline-runtime/test/guards.mjs
+          node shared/scripts/docs-pipeline-runtime/test/smoke.mjs
+          node shared/scripts/docs-pipeline-runtime/test/negative.mjs
+          node shared/scripts/docs-pipeline-runtime/test/guards.mjs
 
 
       - name: Environment setup runtime
         run: |
-          node skills-catalog/shared/scripts/environment-setup-runtime/test/smoke.mjs
-          node skills-catalog/shared/scripts/environment-setup-runtime/test/negative.mjs
-          node skills-catalog/shared/scripts/environment-setup-runtime/test/guards.mjs
+          node shared/scripts/environment-setup-runtime/test/smoke.mjs
+          node shared/scripts/environment-setup-runtime/test/negative.mjs
+          node shared/scripts/environment-setup-runtime/test/guards.mjs
 
       - name: Other runtimes
         run: |
-          node skills-catalog/shared/scripts/story-execution-runtime/test/smoke.mjs
-          node skills-catalog/shared/scripts/story-execution-runtime/test/negative.mjs
-          node skills-catalog/shared/scripts/story-execution-runtime/test/guards.mjs
-          node skills-catalog/shared/scripts/story-gate-runtime/test/smoke.mjs
-          node skills-catalog/shared/scripts/story-gate-runtime/test/negative.mjs
-          node skills-catalog/shared/scripts/story-gate-runtime/test/guards.mjs
-          node skills-catalog/shared/scripts/optimization-runtime/test/smoke.mjs
-          node skills-catalog/shared/scripts/optimization-runtime/test/negative.mjs
-          node skills-catalog/shared/scripts/optimization-runtime/test/guards.mjs
-          node skills-catalog/shared/scripts/quality-runtime/test/smoke.mjs
-          node skills-catalog/shared/scripts/quality-runtime/test/negative.mjs
-          node skills-catalog/shared/scripts/quality-runtime/test/guards.mjs
-          node skills-catalog/shared/scripts/test-planning-runtime/test/smoke.mjs
-          node skills-catalog/shared/scripts/test-planning-runtime/test/negative.mjs
-          node skills-catalog/shared/scripts/test-planning-runtime/test/guards.mjs
-          node skills-catalog/shared/scripts/docs-runtime/test/smoke.mjs
-          node skills-catalog/shared/scripts/docs-runtime/test/negative.mjs
-          node skills-catalog/shared/scripts/docs-runtime/test/guards.mjs
-          node skills-catalog/shared/scripts/docs-quality/test/smoke.mjs
-          node skills-catalog/shared/scripts/evaluation-runtime/test/smoke.mjs
-          node skills-catalog/shared/scripts/evaluation-runtime/test/guards.mjs
-          node skills-catalog/shared/scripts/evaluation-worker-runtime/test/smoke.mjs
-          node skills-catalog/shared/scripts/dependency-runtime/test/smoke.mjs
-          node skills-catalog/shared/scripts/dependency-runtime/test/guards.mjs
-          node skills-catalog/shared/scripts/modernization-runtime/test/smoke.mjs
-          node skills-catalog/shared/scripts/modernization-runtime/test/guards.mjs
-          node skills-catalog/shared/scripts/environment-worker-runtime/test/smoke.mjs
-          node skills-catalog/shared/scripts/environment-worker-runtime/test/negative.mjs
-          node skills-catalog/shared/scripts/environment-worker-runtime/test/guards.mjs
-          node skills-catalog/shared/scripts/planning-worker-runtime/test/smoke.mjs
-          node skills-catalog/shared/scripts/planning-worker-runtime/test/guards.mjs
-          node skills-catalog/shared/scripts/quality-worker-runtime/test/smoke.mjs
-          node skills-catalog/shared/scripts/task-plan-worker-runtime/test/smoke.mjs
-          node skills-catalog/shared/scripts/task-plan-worker-runtime/test/negative.mjs
-          node skills-catalog/shared/scripts/task-worker-runtime/test/smoke.mjs
-          node skills-catalog/shared/scripts/task-worker-runtime/test/negative.mjs
-          node skills-catalog/shared/scripts/test-planning-worker-runtime/test/smoke.mjs
-          node skills-catalog/shared/scripts/benchmark-worker-runtime/test/smoke.mjs
+          node shared/scripts/story-execution-runtime/test/smoke.mjs
+          node shared/scripts/story-execution-runtime/test/negative.mjs
+          node shared/scripts/story-execution-runtime/test/guards.mjs
+          node shared/scripts/story-gate-runtime/test/smoke.mjs
+          node shared/scripts/story-gate-runtime/test/negative.mjs
+          node shared/scripts/story-gate-runtime/test/guards.mjs
+          node shared/scripts/optimization-runtime/test/smoke.mjs
+          node shared/scripts/optimization-runtime/test/negative.mjs
+          node shared/scripts/optimization-runtime/test/guards.mjs
+          node shared/scripts/quality-runtime/test/smoke.mjs
+          node shared/scripts/quality-runtime/test/negative.mjs
+          node shared/scripts/quality-runtime/test/guards.mjs
+          node shared/scripts/test-planning-runtime/test/smoke.mjs
+          node shared/scripts/test-planning-runtime/test/negative.mjs
+          node shared/scripts/test-planning-runtime/test/guards.mjs
+          node shared/scripts/docs-runtime/test/smoke.mjs
+          node shared/scripts/docs-runtime/test/negative.mjs
+          node shared/scripts/docs-runtime/test/guards.mjs
+          node shared/scripts/docs-quality/test/smoke.mjs
+          node shared/scripts/evaluation-runtime/test/smoke.mjs
+          node shared/scripts/evaluation-runtime/test/guards.mjs
+          node shared/scripts/evaluation-worker-runtime/test/smoke.mjs
+          node shared/scripts/dependency-runtime/test/smoke.mjs
+          node shared/scripts/dependency-runtime/test/guards.mjs
+          node shared/scripts/modernization-runtime/test/smoke.mjs
+          node shared/scripts/modernization-runtime/test/guards.mjs
+          node shared/scripts/environment-worker-runtime/test/smoke.mjs
+          node shared/scripts/environment-worker-runtime/test/negative.mjs
+          node shared/scripts/environment-worker-runtime/test/guards.mjs
+          node shared/scripts/planning-worker-runtime/test/smoke.mjs
+          node shared/scripts/planning-worker-runtime/test/guards.mjs
+          node shared/scripts/quality-worker-runtime/test/smoke.mjs
+          node shared/scripts/task-plan-worker-runtime/test/smoke.mjs
+          node shared/scripts/task-plan-worker-runtime/test/negative.mjs
+          node shared/scripts/task-worker-runtime/test/smoke.mjs
+          node shared/scripts/task-worker-runtime/test/negative.mjs
+          node shared/scripts/test-planning-worker-runtime/test/smoke.mjs
+          node shared/scripts/benchmark-worker-runtime/test/smoke.mjs
 
       - name: Pipeline orchestrator
         run: |
-          node skills-catalog/ln-1000-pipeline-orchestrator/scripts/test/smoke.mjs
-          node skills-catalog/ln-1000-pipeline-orchestrator/scripts/test/isolation.mjs
+          node plugins/agile-workflow/skills/ln-1000-pipeline-orchestrator/scripts/test/smoke.mjs
+          node plugins/agile-workflow/skills/ln-1000-pipeline-orchestrator/scripts/test/isolation.mjs
 
       - name: MCP hex-line lint + test
         run: cd mcp/hex-line-mcp && npm run lint && npm test

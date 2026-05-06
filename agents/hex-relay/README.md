@@ -131,4 +131,4 @@ Stable internal API routes use Fastify/Zod route schemas. Claude hook routes int
 
 `ln-030-vps-bootstrap` installs `hex-relay` to `/opt/${SERVICE_PREFIX}-hex-relay` and supervises it with `${SERVICE_PREFIX}-hex-relay.service`. Only one instance can run per project because it owns the project hook port and SQLite database.
 
-Product runbooks live in `docs/`. Installer templates and VPS-specific wiring remain in `skills-catalog/ln-030-vps-bootstrap/references/`.
+Product runbooks live in `docs/`. Installer templates and VPS-specific wiring remain in `plugins/setup-environment/skills/ln-030-vps-bootstrap/references/`.

@@ -1,36 +1,36 @@
 {
-  "name": "documentation-pipeline",
-  "version": "1.0.0",
-  "description": "Documentation pipeline: Full project docs with auto-detection (backend/frontend/devops). Creates CLAUDE.md, README, architecture, requirements, API spec, runbook, references, kanban, test strategy.",
-  "author": {
-    "name": "Lev Nikolaevich",
-    "email": "levnikolaevich.com@gmail.com",
-    "url": "https://github.com/levnikolaevich"
-  },
-  "homepage": "https://github.com/levnikolaevich/claude-code-skills/blob/main/docs/plugins/documentation-pipeline.md",
-  "repository": "https://github.com/levnikolaevich/claude-code-skills",
-  "license": "MIT",
-  "keywords": [
-    "codex",
-    "skills",
-    "documentation-pipeline"
-  ],
-  "skills": "./skills/",
-  "interface": {
-    "displayName": "Documentation Pipeline",
-    "shortDescription": "Documentation pipeline: Full project docs with auto-detection (backend/frontend/devops). Creates CLAUDE.md, README, architecture, requirements, API spec, runbook, references, kanban, test strategy.",
-    "longDescription": "Documentation pipeline: Full project docs with auto-detection (backend/frontend/devops). Creates CLAUDE.md, README, architecture, requirements, API spec, runbook, references, kanban, test strategy.",
-    "developerName": "Lev Nikolaevich",
-    "category": "Productivity",
-    "capabilities": [
-      "Interactive",
-      "Write"
-    ],
-    "websiteURL": "https://github.com/levnikolaevich/claude-code-skills",
-    "defaultPrompt": [
-      "Use documentation-pipeline for this repository.",
-      "Run the documentation-pipeline workflow."
-    ],
-    "brandColor": "#2563EB"
-  }
+    "name":  "documentation-pipeline",
+    "version":  "1.1.0",
+    "description":  "Documentation pipeline: Full project docs with auto-detection (backend/frontend/devops). Creates CLAUDE.md, README, architecture, requirements, API spec, runbook, references, kanban, test strategy.",
+    "author":  {
+                   "name":  "Lev Nikolaevich",
+                   "email":  "levnikolaevich.com@gmail.com",
+                   "url":  "https://github.com/levnikolaevich"
+               },
+    "homepage":  "https://github.com/levnikolaevich/claude-code-skills/blob/main/docs/plugins/documentation-pipeline.md",
+    "repository":  "https://github.com/levnikolaevich/claude-code-skills",
+    "license":  "MIT",
+    "keywords":  [
+                     "codex",
+                     "skills",
+                     "documentation-pipeline"
+                 ],
+    "skills":  "./skills/",
+    "interface":  {
+                      "displayName":  "Documentation Pipeline",
+                      "shortDescription":  "Documentation pipeline: Full project docs with auto-detection (backend/frontend/devops). Creates CLAUDE.md, README, architecture, requirements, API spec, runbook, references, kanban, test strategy.",
+                      "longDescription":  "Documentation pipeline: Full project docs with auto-detection (backend/frontend/devops). Creates CLAUDE.md, README, architecture, requirements, API spec, runbook, references, kanban, test strategy.",
+                      "developerName":  "Lev Nikolaevich",
+                      "category":  "Productivity",
+                      "capabilities":  [
+                                           "Interactive",
+                                           "Write"
+                                       ],
+                      "websiteURL":  "https://github.com/levnikolaevich/claude-code-skills",
+                      "defaultPrompt":  [
+                                            "Use documentation-pipeline for this repository.",
+                                            "Run the documentation-pipeline workflow."
+                                        ],
+                      "brandColor":  "#2563EB"
+                  }
 }

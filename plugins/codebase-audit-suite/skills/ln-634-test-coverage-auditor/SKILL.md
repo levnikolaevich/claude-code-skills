@@ -1,28 +1,216 @@
 ---
 name: ln-634-test-coverage-auditor
 description: "Identifies missing tests for critical paths (money, security, data integrity, core flows). Use when auditing test coverage gaps."
+allowed-tools: Read, Grep, Glob, Bash, mcp__hex-graph__audit_workspace, mcp__hex-line__read_file, mcp__hex-line__grep_search, mcp__hex-line__outline
 license: MIT
+model: claude-haiku-4-5
 ---
 
-> **Paths:** This is a Codex-native adapter. Load canonical files relative to the skills repo root.
+> **Paths:** File paths (`references/`, `../ln-*`) are relative to this skill directory.
 
-# ln-634-test-coverage-auditor Codex Adapter
+# Coverage Gaps Auditor (L3 Worker)
 
-## Mandatory Read
+**Type:** L3 Worker
 
-**MANDATORY READ:** Load `skills-catalog/ln-634-test-coverage-auditor/SKILL.md`.
+Specialized worker identifying missing tests for critical business logic.
+
+## Purpose & Scope
+
+- Audit **Coverage Gaps** (Category 4: High Priority)
+- Identify untested critical paths
+- Classify by category (Money, Security, Data, Core Flows)
+- Calculate compliance score (X/10)
+
+## Inputs
+
+**MANDATORY READ:** Load `references/audit_worker_core_contract.md`.
+**MANDATORY READ:** Load `references/mcp_tool_preferences.md` and `references/mcp_integration_patterns.md`
+
+Receives `contextStore` with: `tech_stack`, `testFilesMetadata`, `codebase_root`, `output_dir`.
+
+**Domain-aware:** Supports `domain_mode` + `current_domain` (see `audit_output_schema.md#domain-aware-worker-output`).
+
+Use `hex-graph` first when hotspots materially improve coverage-gap discovery. Use `hex-line` first for local code and test reads when available. If MCP is unavailable, unsupported, or not indexed, continue with built-in `Read/Grep/Glob/Bash` and state the fallback in the report.
 
 ## Workflow
 
-1. Load the canonical skill file listed above.
-2. Follow the canonical skill exactly.
-3. Treat this adapter as discovery metadata only; do not duplicate or override canonical instructions.
+**MANDATORY READ:** Load `references/two_layer_detection.md` for detection methodology.
+
+1) **Parse context** -- extract fields, determine `scan_path` (domain-aware if specified)
+     ELSE:
+       scan_path = codebase_root
+       domain_name = null
+     ```
+
+2) **Identify critical paths in scan_path** (not entire codebase)
+   - Scan production code in `scan_path` for money/security/data keywords
+   - All Grep/Glob patterns use `scan_path` (not codebase_root)
+   - Example: `Grep(pattern="payment|refund|discount", path=scan_path)`
+
+3) **Check test coverage for each critical path (Layer 1)**
+   - Search ALL test files for coverage (tests may be in different location than production code)
+   - Match by function name, module name, or test description
+3b) **Context Analysis (Layer 2 -- MANDATORY):** For each gap candidate, ask:
+   - Is this function already covered by E2E/integration test? -> **downgrade to LOW**
+   - Is this a helper function with <10 lines called from tested code? -> **skip**
+   - Is keyword match a false positive (e.g., `paymentIcon()` is UI, not payment logic)? -> **skip**
+
+4) **Collect missing tests**
+   - Tag each finding with `domain: domain_name` (if domain-aware)
+
+5) **Calculate Score:** Count violations by severity, calculate compliance score (X/10)
+
+6) **Write Report:** Build full markdown report in memory per `references/templates/audit_worker_report_template.md`, write to `{output_dir}/ln-634--{identifier}.md` (or `{output_dir}/ln-634--{identifier}.md` if domain-aware) in single Write call
+
+7) **Return Summary:** Return minimal summary to coordinator (see Output Format)
+
+## Critical Paths Classification
+
+### 1. Money Flows (Priority 20+)
+
+**What:** Any code handling financial transactions
+
+**Examples:**
+- Payment processing (`/payment`, `processPayment()`)
+- Discounts/promotions (`calculateDiscount()`, `applyPromoCode()`)
+- Tax calculations (`calculateTax()`, `getTaxRate()`)
+- Refunds (`processRefund()`, `/refund`)
+- Invoices/billing (`generateInvoice()`, `createBill()`)
+- Currency conversion (`convertCurrency()`)
+
+**Min Priority:** 20
+
+**Why Critical:** Money loss, fraud, legal compliance
+
+### 2. Security Flows (Priority 20+)
+
+**What:** Authentication, authorization, encryption
+
+**Examples:**
+- Login/logout (`/login`, `authenticate()`)
+- Token refresh (`/refresh-token`, `refreshAccessToken()`)
+- Password reset (`/forgot-password`, `resetPassword()`)
+- Permissions/RBAC (`checkPermission()`, `hasRole()`)
+- Encryption/hashing (custom crypto logic, NOT bcrypt/argon2)
+- API key validation (`validateApiKey()`)
+
+**Min Priority:** 20
+
+**Why Critical:** Security breach, data leak, unauthorized access
+
+### 3. Data Integrity (Priority 15+)
+
+**What:** CRUD operations, transactions, validation
+
+**Examples:**
+- Critical CRUD (`createUser()`, `deleteOrder()`, `updateProduct()`)
+- Database transactions (`withTransaction()`)
+- Data validation (custom validators, NOT framework defaults)
+- Data migrations (`runMigration()`)
+- Unique constraints (`checkDuplicateEmail()`)
+
+**Min Priority:** 15
+
+**Why Critical:** Data corruption, lost data, inconsistent state
+
+### 4. Core User Journeys (Priority 15+)
+
+**What:** Multi-step flows critical to business
+
+**Examples:**
+- Registration -> Email verification -> Onboarding
+- Search -> Product details -> Add to cart -> Checkout
+- Upload file -> Process -> Download result
+- Submit form -> Approval workflow -> Notification
+
+**Min Priority:** 15
+
+**Why Critical:** Broken user flow = lost customers
+
+## Audit Rules
+
+### 1. Identify Critical Paths
+
+**Process:**
+- Scan codebase for money-related keywords: `payment`, `refund`, `discount`, `tax`, `price`, `currency`
+- Scan for security keywords: `auth`, `login`, `password`, `token`, `permission`, `encrypt`
+- Scan for data keywords: `transaction`, `validation`, `migration`, `constraint`
+- Scan for user journeys: multi-step flows in routes/controllers
+
+### 2. Check Test Coverage
+
+**For each critical path:**
+- Search test files for matching test name/description
+- If NO test found -> add to missing tests list
+- If test found but inadequate (only positive, no edge cases) -> add to gaps list
+
+### 3. Categorize Gaps
+
+**Severity by Priority:**
+- **CRITICAL:** Priority 20+ (Money, Security)
+- **HIGH:** Priority 15-19 (Data, Core Flows)
+- **MEDIUM:** Priority 10-14 (Important but not critical)
+- **Downgrade when:** Function already covered by E2E test -> LOW. Helper with <10 lines called from tested code -> skip
+
+### 4. Provide Justification
+
+**For each missing test:**
+- Explain WHY it's critical (money loss, security breach, etc.)
+- Suggest test type (E2E, Integration, Unit)
+- Estimate effort (S/M/L)
+
+## Scoring Algorithm
+
+**MANDATORY READ:** Load `references/audit_worker_core_contract.md` and `references/audit_scoring.md`.
+
+**Severity mapping by Priority:**
+- Priority 20+ (Money, Security) missing test -> CRITICAL
+- Priority 15-19 (Data Integrity, Core Flows) missing test -> HIGH
+- Priority 10-14 (Important) missing test -> MEDIUM
+- Priority <10 (Nice-to-have) -> LOW
+
+## Output Format
+
+**MANDATORY READ:** Load `references/audit_worker_core_contract.md` and `references/templates/audit_worker_report_template.md`.
+
+Write JSON summary per `references/audit_summary_contract.md`. In managed mode the caller passes both `runId` and `summaryArtifactPath`; in standalone mode the worker generates its own run-scoped artifact path per shared contract.
+
+Write report to `{output_dir}/ln-634--{identifier}.md` (global) or `{output_dir}/ln-634--{identifier}.md` (domain-aware) with `category: "Coverage Gaps"` and checks: money_flow_coverage, security_flow_coverage, data_integrity_coverage, core_journey_coverage.
+
+Return summary per `references/audit_summary_contract.md`.
+
+When `summaryArtifactPath` is absent, write the standalone runtime summary under `.hex-skills/runtime-artifacts/runs/{run_id}/evaluation-worker/{worker}--{identifier}.json` and optionally echo the same summary in structured output.
+```
+Report written: .hex-skills/runtime-artifacts/runs/{run_id}/audit-report/ln-634--{identifier}.md
+Score: X.X/10 | Issues: N (C:N H:N M:N L:N)
+```
+
+## Critical Rules
+
+**MANDATORY READ:** Load `references/audit_worker_core_contract.md`.
+
+- **Domain-aware scanning:** If `domain_mode="domain-aware"`, scan ONLY `scan_path` production code (not entire codebase)
+- **Tag findings:** Include `domain` field in each finding when domain-aware
+- **Test search scope:** Search ALL test files for coverage (tests may be in different location than production code)
+- **Match by name:** Use function name, module name, or test description to match tests to production code
 
 ## Definition of Done
 
-- [ ] Canonical skill loaded
-- [ ] Canonical workflow followed
-- [ ] Result reported per canonical skill contract
+**MANDATORY READ:** Load `references/audit_worker_core_contract.md`.
 
-**Version:** 1.0.0
-**Last Updated:** 2026-04-24
+- [ ] contextStore parsed successfully (including output_dir, domain_mode, current_domain)
+- [ ] scan_path determined (domain path or codebase root)
+- [ ] Critical paths identified in scan_path (Money, Security, Data, Core Flows)
+- [ ] Test coverage checked for each critical path
+- [ ] Missing tests collected with severity, priority, justification, domain
+- [ ] Score calculated using penalty algorithm
+- [ ] Report written to `{output_dir}/ln-634--{identifier}.md` or `ln-634--{identifier}.md` (atomic single Write call)
+- [ ] Summary written per contract
+
+## Reference Files
+
+- **Audit output schema:** `references/audit_output_schema.md`
+
+---
+**Version:** 3.0.0
+**Last Updated:** 2025-12-23

@@ -12,7 +12,7 @@ Publishes one of the bundled MCP servers to npm. Tag push triggers GitHub Action
 | Field | Value |
 |-------|-------|
 | Source | Repo-maintained MCP publish command |
-| Review Contract | `skills-catalog/ln-162-skill-reviewer/references/command_review_criteria.md` |
+| Review Contract | `plugins/documentation-pipeline/skills/ln-162-skill-reviewer/references/command_review_criteria.md` |
 | Publish Guidance | `docs/best-practice/MCP_TOOL_DESIGN_GUIDE.md` |
 
 **IMPORTANT:** Set `PROJECT_ROOT` to the absolute path of the repo root at the start. Use `$PROJECT_ROOT` in all `cd` and path references to avoid CWD-related failures.
@@ -26,6 +26,8 @@ Publishes one of the bundled MCP servers to npm. Tag push triggers GitHub Action
 | @levnikolaevich/hex-graph-mcp | `mcp/hex-graph-mcp/` | `hex-graph-v*` | publish-hex-graph.yml |
 
 **Shared dependency:** `mcp/hex-common/` (private, `file:` linked) — changes there affect ALL 3 packages.
+
+**Repository gates:** publishing commits all repo changes, so marketplace and shared registry validation must pass before tagging.
 
 ## Workflow
 
@@ -135,10 +137,10 @@ mcp__hex-graph__find_references(symbol: "{changed_export}", path: "mcp/")
 
 For each changed export in `hex-common/`, verify all consuming servers handle the new signature. Report any import that references a removed or renamed export.
 
-**README tool count check** — `grep_search` for tool registrations (hex-graph cannot index method calls like `server.tool()`):
+**README tool count check** — `grep_search` for tool registrations (hex-graph cannot index method calls like `server.registerTool()`):
 
 ```
-mcp__hex-line__grep_search(pattern: "server\\.tool\\(", path: "mcp/${PKG}/server.mjs")
+mcp__hex-line__grep_search(pattern: "server\\.registerTool\\(", path: "mcp/${PKG}/server.mjs")
 ```
 
 Count matches and compare against `N MCP Tools` in README.md. If mismatch — update README before proceeding.
@@ -202,6 +204,14 @@ Also run the contract checker:
 node mcp/check-output-contracts.mjs
 ```
 
+Also run repo-local marketplace gates because the release commit includes all pending repository changes:
+
+```bash
+node tools/marketplace/shared.mjs validate
+node tools/marketplace/validate.mjs
+claude plugin validate .
+```
+
 For `hex-line-mcp`, also inspect:
 
 ```bash
@@ -233,12 +243,12 @@ mcp__hex-line__grep_search(pattern: "${NEW_VERSION}", path: "mcp/${PKG}/dist/ser
 
 Update both `version` and `packages[0].version` in `mcp/${PKG}/server.json`:
 ```bash
-jq --arg v "${NEW_VERSION}" '.version = $v | .packages[0].version = $v' $PROJECT_ROOT/mcp/${PKG}/server.json > /tmp/server.tmp && mv /tmp/server.tmp $PROJECT_ROOT/mcp/${PKG}/server.json
+node --input-type=module -e "import{readFileSync,writeFileSync}from'fs';const file='$PROJECT_ROOT/mcp/${PKG}/server.json';const version='${NEW_VERSION}';const json=JSON.parse(readFileSync(file,'utf8'));json.version=version;json.packages[0].version=version;writeFileSync(file, JSON.stringify(json,null,2)+'\n');"
 ```
 
 Verify:
 ```bash
-jq '.version, .packages[0].version' $PROJECT_ROOT/mcp/${PKG}/server.json
+node --input-type=module -e "import{readFileSync}from'fs';const json=JSON.parse(readFileSync('$PROJECT_ROOT/mcp/${PKG}/server.json','utf8'));console.log(json.version);console.log(json.packages[0].version);"
 ```
 
 ### 9. Commit + tag + push
@@ -334,4 +344,4 @@ Must equal `${NEW_VERSION}`. If propagation lags, retry after ~30 s before decla
 - Tests run status (`success` / `in_progress` / `failure`) — if not green yet, tell the user it is still running.
 
 ---
-**Last Updated:** 2026-04-15
+**Last Updated:** 2026-05-06

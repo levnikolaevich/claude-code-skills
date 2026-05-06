@@ -4,7 +4,7 @@
 
 ## 1. Event Types (hex-line hook subset)
 
-hex-line hook handles 5 of 21 Claude Code events. Full list: [hooks_reference.md](../../skills-catalog/shared/references/hooks_reference.md).
+hex-line hook handles the event subset listed below. Treat this file as the maintained local hook guidance for the repository.
 
 | Event | When It Fires | What It Can Do | Exit 0 | Exit 2 |
 |-------|---------------|----------------|--------|--------|

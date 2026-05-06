@@ -20,7 +20,7 @@ Agent sessions consume tokens on raw CLI output: verbose test results, unfiltere
 
 **MCP overhead rule:** Count servers x 5K. WARN if >5 servers or >25K total. Each MCP server registers all tool schemas upfront, even if unused.
 
-**Instruction file budgets** (Anthropic official + IFScale research): `AGENTS.md` ≤200 lines (ideally ≤150, per Anthropic memory docs — *"target under 200 lines per CLAUDE.md file"*); `CLAUDE.md` as an `@AGENTS.md` import stub ≤50 lines (ideally ≤20); user-added imperatives across all loaded files ≤100 (IFScale arxiv 2507.11538 peak around 150–200 total; Claude Code's built-in system prompt already consumes part of the budget). Reference: `skills-catalog/shared/references/agent_instructions_writing_guide.md`. Use tables, not prose. Link to `docs/` for details.
+**Instruction file budgets** (Anthropic official + IFScale research): `AGENTS.md` ≤200 lines (ideally ≤150, per Anthropic memory docs — *"target under 200 lines per CLAUDE.md file"*); `CLAUDE.md` as an `@AGENTS.md` import stub ≤50 lines (ideally ≤20); user-added imperatives across all loaded files ≤100 (IFScale arxiv 2507.11538 peak around 150–200 total; Claude Code's built-in system prompt already consumes part of the budget). Reference: `shared/references/agent_instructions_writing_guide.md`. Use tables, not prose. Link to `docs/` for details.
 
 **Tool output is the hidden killer:** A single `cargo test` or `npm test` can produce thousands of lines. Mitigation: RTK-style PostToolUse filter hook truncates output before it enters context. See Pattern 6 below.
 
@@ -35,7 +35,7 @@ Agent sessions consume tokens on raw CLI output: verbose test results, unfiltere
 | 3 | **Failure Grouping** | Classify errors by root cause category (import, assertion, timeout, runtime) | `shared/references/output_normalization.md` |
 | 4 | **Smart Truncation** | Normalize → deduplicate → group → THEN truncate (not raw tail) | `shared/references/output_normalization.md` |
 | 5 | **Trend Tracking** | Append scores to results_log for improving/stable/declining detection | `shared/references/results_log_pattern.md` |
-| 6 | **Hook Health Check** | Validate hook configs, scripts, dependencies before relying on them | `shared/references/hook_health_check.md` |
+| 6 | **Hook Health Check** | Validate hook configs, scripts, dependencies before relying on them | `ln-010` assessment flow and `docs/best-practice/HOOK_DESIGN_GUIDE.md` |
 
 ## 4. Applicability Matrix (Source: RTK Analysis)
 
@@ -63,7 +63,7 @@ Analysis of RTK (Rust Token Killer) — CLI proxy reducing output by 60-90%.
 PreToolUse:Bash hook. `systemMessage`-only (no blocking, no modification). Pattern-matches Bash commands to recommend relevant skills. Example: `npm test` → "For test analysis, consider ln-513/ln-514". Script: `hooks/skill-suggest.sh` (~40 lines).
 
 **Pattern 13 (Hook Health Check):**
-Integrated into `ln-010` assessment and verification flow. Validates: JSON syntax of hooks.json, script file existence, dependency availability (node). See `shared/references/hook_health_check.md`.
+Integrated into `ln-010` assessment and verification flow. Validates: JSON syntax of hooks.json, script file existence, dependency availability (node). See `docs/best-practice/HOOK_DESIGN_GUIDE.md` for maintained hook guidance.
 
 ## 5. Skills Modernization
 
@@ -73,7 +73,7 @@ Integrated into `ln-010` assessment and verification flow. Validates: JSON synta
 | **ln-513** (regression-checker) | Group failing tests by error category in verdict | `shared/references/output_normalization.md` |
 | **ln-622** (build-auditor) | Append build_health score to results_log with trend | `shared/references/results_log_pattern.md` |
 | **ln-811** (performance-profiler) | Deduplicate suspicion stack entries across call chain steps | `shared/references/output_normalization.md` |
-| **ln-013** (marketplace/config aligner) | Align Claude and Codex marketplace plugins without shared active plugin roots | `shared/references/hook_health_check.md` |
+| **ln-013** (marketplace/config aligner) | Align Claude and Codex marketplace plugins without shared active plugin roots | `docs/best-practice/HOOK_DESIGN_GUIDE.md` |
 | **ln-514** (test-log-analyzer) | §6 Message Normalization → MANDATORY READ to shared | `shared/references/output_normalization.md` |
 
 ## 6. What NOT to Adopt

@@ -93,7 +93,7 @@
 
 
 ## 2026-03-24
-- **skills-catalog rename** — `skills/` → `skills-catalog/` to fix plugin skill duplication (128×6 entries in autocomplete)
+- **plugin-first skills layout** — moved installable skills under `plugins/*/skills/` to fix plugin skill duplication (128×6 entries in autocomplete)
 - **ln-840-benchmark-compare** — new skill in optimization-suite: A/B benchmark (built-in vs hex-line), renamed from ln-015
 - **bulk_replace caps** — format param (compact/full), per-file diff cap (50L), payload cap (30K chars)
 
@@ -104,7 +104,7 @@
 - **ln-010 assess-dispatch-verify** — redesigned from invoke-all to smart dispatch: probes environment once, builds decision matrix, skips workers with nothing to do
 - **ln-150 removed** — presentation-creator skill deleted; all references cleaned from pipeline, marketplace, site, docs
 - **ln-162 Check 18** — new automated check verifies every SKILL.md has `**Type:**` line; prevents silent bypass of Check 9/17
-- **run_checks.sh hardened** — Check 5 scoped to skills-catalog/ paths only; Check 9/17 exclude Workers from coordinator-only requirements
+- **run_checks.sh hardened** — Check 5 scoped to plugin skill paths only; Check 9/17 exclude Workers from coordinator-only requirements
 - **ln-014 auditor → manager** — renamed to ln-014-agent-instructions-manager; creates missing CLAUDE.md and AGENTS.md
 
 ## 2026-03-22

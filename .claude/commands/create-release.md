@@ -11,9 +11,10 @@ Create a tagged GitHub release with structured release notes. Audits commits sin
 
 | Field | Value |
 |-------|-------|
-| Source | Repo-maintained release command |
+| Source | Repo-maintained marketplace release command |
 | Version Source | `README.md` badge |
 | Release Notes Source | `CHANGELOG.md` |
+| Marketplace Manifests | `.claude-plugin/marketplace.json`, `.agents/plugins/marketplace.json`, `plugins/*/.codex-plugin/plugin.json` |
 
 ## Prerequisites
 
@@ -28,13 +29,24 @@ Create a tagged GitHub release with structured release notes. Audits commits sin
 
 Default version is today's date in CalVer format: `YYYY.MM.DD`.
 
+PowerShell:
+
+```powershell
+Get-Date -Format "yyyy.MM.dd"
+```
+
+POSIX shell:
+
 ```bash
 date +%Y.%m.%d
 ```
 
 Store as `VERSION`. If `$ARGUMENTS` is provided, use it as version override instead.
 
-Also update the version in README.md badge and marketplace.json to match the new release version.
+Also update release metadata to match the new version:
+- `README.md` badge (`version-${VERSION}-blue`)
+- `.claude-plugin/marketplace.json` metadata version
+- every `plugins/<plugin>/.codex-plugin/plugin.json` version, if present
 
 ### 2. Check for Existing Release
 
@@ -86,14 +98,27 @@ Assemble release notes matching the previous release style.
 
 ### Install
 
-/plugin add levnikolaevich/claude-code-skills
+/plugin marketplace add levnikolaevich/claude-code-skills
+/plugin install agile-workflow@levnikolaevich-skills-marketplace
 
 **All plugins & docs:** [README.md](README.md)
 
 **Full changelog:** [CHANGELOG.md](CHANGELOG.md)
 ````
 
-### 7. Confirm with User
+### 7. Repo Validation
+
+Before confirmation, run repository-local release gates:
+
+```bash
+node tools/marketplace/shared.mjs validate
+node tools/marketplace/validate.mjs
+claude plugin validate .
+```
+
+If any gate fails, fix the repository before asking to publish.
+
+### 8. Confirm with User
 Present the assembled release notes and version tag to the user via AskUserQuestion:
 
 - Show: `Release: v{VERSION}`
@@ -102,7 +127,7 @@ Present the assembled release notes and version tag to the user via AskUserQuest
 
 Do NOT proceed without explicit confirmation.
 
-### 8. Create Release
+### 9. Create Release
 
 ```bash
 gh release create "v${VERSION}" --title "v${VERSION}" --notes "${RELEASE_NOTES}"
@@ -121,6 +146,7 @@ Report the release URL to the user.
 | Issue | Solution |
 |-------|----------|
 | Version not found in README | Check badge format: `version-X.Y.Z-blue` |
+| Marketplace validation fails | Run `node tools/marketplace/shared.mjs sync` only if root `shared/` intentionally changed, then validate again |
 | Release already exists | Use a new version or delete the existing release first |
 | CHANGELOG empty or no recent entry | Add a `## YYYY-MM-DD` section with bullets before creating release |
 | `gh` not authenticated | Run `gh auth login` |
@@ -129,6 +155,8 @@ Report the release URL to the user.
 
 - [README.md](README.md) -- version badge source
 - [CHANGELOG.md](CHANGELOG.md) -- release notes source
+- [.claude-plugin/marketplace.json](.claude-plugin/marketplace.json) -- Claude marketplace source
+- [.agents/plugins/marketplace.json](.agents/plugins/marketplace.json) -- Codex marketplace source
 
 ---
-**Last Updated:** 2026-04-10
+**Last Updated:** 2026-05-06

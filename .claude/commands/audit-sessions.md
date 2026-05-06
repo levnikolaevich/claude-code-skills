@@ -11,7 +11,7 @@ Thin Claude adapter for session analysis. Canonical behavior lives in `ln-002-se
 
 | Field | Value |
 |-------|-------|
-| Canonical Skill | `skills-catalog/ln-002-session-analyzer/SKILL.md` |
+| Canonical Skill | `plugins/setup-environment/skills/ln-002-session-analyzer/SKILL.md` |
 | Scope | Claude and Codex sessions |
 
 ## Execution
@@ -22,7 +22,25 @@ Thin Claude adapter for session analysis. Canonical behavior lives in `ln-002-se
 Skill(skill: "ln-002-session-analyzer", args: "$ARGUMENTS")
 ```
 
-2. For a multi-session audit, collect only Claude and Codex session inventories:
+2. For a multi-session audit, collect only Claude and Codex session inventories. Use the host shell; this repository is maintained primarily from Windows, so prefer the PowerShell form there.
+
+PowerShell:
+
+```powershell
+Write-Output "=== CLAUDE SESSIONS ==="
+Get-ChildItem "$HOME\.claude\projects" -Recurse -Filter "*.jsonl" -ErrorAction SilentlyContinue |
+  Where-Object { $_.LastWriteTime -gt (Get-Date).AddDays(-3) } |
+  Sort-Object FullName |
+  Select-Object -ExpandProperty FullName
+
+Write-Output "=== CODEX SESSIONS ==="
+Get-ChildItem "$HOME\.codex\sessions" -Recurse -Filter "rollout-*.jsonl" -ErrorAction SilentlyContinue |
+  Where-Object { $_.LastWriteTime -gt (Get-Date).AddDays(-3) } |
+  Sort-Object FullName |
+  Select-Object -ExpandProperty FullName
+```
+
+POSIX shell:
 
 ```bash
 echo "=== CLAUDE SESSIONS ==="
@@ -42,8 +60,8 @@ find "$HOME/.codex/sessions" -name "rollout-*.jsonl" -mtime -3 2>/dev/null | sor
 | Skills | missed or misused skill opportunities |
 | Actions | concrete repo/config fixes |
 
-Do not add provider-specific branches here. Extend the canonical skill if the repository adds another supported host.
+Do not add provider-specific branches here. Extend the primary skill if the repository adds another supported host.
 
 ---
 
-**Last Updated:** 2026-04-24
+**Last Updated:** 2026-05-06

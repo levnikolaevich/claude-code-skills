@@ -1,36 +1,36 @@
 {
-  "name": "agile-workflow",
-  "version": "1.0.0",
-  "description": "Agile workflow: Scope decomposition, Story/Task management, Execution, Quality gates, Test planning, Pipeline orchestration. Integrates with Linear, Context7, Ref MCP servers.",
-  "author": {
-    "name": "Lev Nikolaevich",
-    "email": "levnikolaevich.com@gmail.com",
-    "url": "https://github.com/levnikolaevich"
-  },
-  "homepage": "https://github.com/levnikolaevich/claude-code-skills/blob/main/docs/plugins/agile-workflow.md",
-  "repository": "https://github.com/levnikolaevich/claude-code-skills",
-  "license": "MIT",
-  "keywords": [
-    "codex",
-    "skills",
-    "agile-workflow"
-  ],
-  "skills": "./skills/",
-  "interface": {
-    "displayName": "Agile Workflow",
-    "shortDescription": "Agile workflow: Scope decomposition, Story/Task management, Execution, Quality gates, Test planning, Pipeline orchestration. Integrates with Linear, Context7, Ref MCP servers.",
-    "longDescription": "Agile workflow: Scope decomposition, Story/Task management, Execution, Quality gates, Test planning, Pipeline orchestration. Integrates with Linear, Context7, Ref MCP servers.",
-    "developerName": "Lev Nikolaevich",
-    "category": "Productivity",
-    "capabilities": [
-      "Interactive",
-      "Write"
-    ],
-    "websiteURL": "https://github.com/levnikolaevich/claude-code-skills",
-    "defaultPrompt": [
-      "Use agile-workflow for this repository.",
-      "Run the agile-workflow workflow."
-    ],
-    "brandColor": "#2563EB"
-  }
+    "name":  "agile-workflow",
+    "version":  "1.1.0",
+    "description":  "Agile workflow: Scope decomposition, Story/Task management, Execution, Quality gates, Test planning, Pipeline orchestration. Integrates with Linear, Context7, Ref MCP servers.",
+    "author":  {
+                   "name":  "Lev Nikolaevich",
+                   "email":  "levnikolaevich.com@gmail.com",
+                   "url":  "https://github.com/levnikolaevich"
+               },
+    "homepage":  "https://github.com/levnikolaevich/claude-code-skills/blob/main/docs/plugins/agile-workflow.md",
+    "repository":  "https://github.com/levnikolaevich/claude-code-skills",
+    "license":  "MIT",
+    "keywords":  [
+                     "codex",
+                     "skills",
+                     "agile-workflow"
+                 ],
+    "skills":  "./skills/",
+    "interface":  {
+                      "displayName":  "Agile Workflow",
+                      "shortDescription":  "Agile workflow: Scope decomposition, Story/Task management, Execution, Quality gates, Test planning, Pipeline orchestration. Integrates with Linear, Context7, Ref MCP servers.",
+                      "longDescription":  "Agile workflow: Scope decomposition, Story/Task management, Execution, Quality gates, Test planning, Pipeline orchestration. Integrates with Linear, Context7, Ref MCP servers.",
+                      "developerName":  "Lev Nikolaevich",
+                      "category":  "Productivity",
+                      "capabilities":  [
+                                           "Interactive",
+                                           "Write"
+                                       ],
+                      "websiteURL":  "https://github.com/levnikolaevich/claude-code-skills",
+                      "defaultPrompt":  [
+                                            "Use agile-workflow for this repository.",
+                                            "Run the agile-workflow workflow."
+                                        ],
+                      "brandColor":  "#2563EB"
+                  }
 }

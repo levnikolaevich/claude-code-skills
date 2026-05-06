@@ -1,5 +1,5 @@
 ---
-description: Run canonical skill review for claude-code-skills
+description: Run primary skill review for claude-code-skills
 allowed-tools: Skill, Bash, Read
 ---
 
@@ -11,9 +11,11 @@ Thin Claude adapter for the canonical `ln-162-skill-reviewer` workflow.
 
 | Field | Value |
 |-------|-------|
-| Canonical Skill | `skills-catalog/ln-162-skill-reviewer/SKILL.md` |
-| Repo Suite | `skills-catalog/ln-162-skill-reviewer/references/repo_review_suite.mjs` |
-| Runtime Suite | `skills-catalog/ln-162-skill-reviewer/references/run_runtime_suite.mjs` |
+| Canonical Skill | `plugins/documentation-pipeline/skills/ln-162-skill-reviewer/SKILL.md` |
+| Repo Suite | `plugins/documentation-pipeline/skills/ln-162-skill-reviewer/references/scripts/repo_review_suite.mjs` |
+| Runtime Suite | `plugins/documentation-pipeline/skills/ln-162-skill-reviewer/references/scripts/run_runtime_suite.mjs` |
+| Shared Registry Check | `tools/marketplace/shared.mjs validate` |
+| Marketplace Structure Check | `tools/marketplace/validate.mjs` |
 
 ## Execution
 
@@ -23,14 +25,23 @@ Thin Claude adapter for the canonical `ln-162-skill-reviewer` workflow.
 Skill(skill: "ln-162-skill-reviewer", args: "$ARGUMENTS")
 ```
 
-2. If the skill invocation did not already run the repo suite, run the canonical repo checks:
+2. Run repository-local marketplace checks. These are specific to `claude-code-skills` and must stay here, not in the universal `ln-162` contract:
 
 ```bash
-node skills-catalog/ln-162-skill-reviewer/references/repo_review_suite.mjs
+node tools/marketplace/shared.mjs validate
+node tools/marketplace/validate.mjs
 ```
 
-3. Report the combined verdict. Do not duplicate or modify repo-specific review logic in this command; change the canonical `ln-162` references instead.
+`shared.mjs validate` checks `tools/marketplace/shared-registry.json`, verifies SHA-256 hashes for every generated skill-local target, rejects plugin-level shared directories, and rejects runtime root-shared paths in skills.
+
+3. If the skill invocation did not already run the repo suite, run the canonical repo checks:
+
+```bash
+node plugins/documentation-pipeline/skills/ln-162-skill-reviewer/references/scripts/repo_review_suite.mjs
+```
+
+4. Report the combined verdict. Keep portable review rules in the canonical `ln-162` references. Keep repository-layout checks that require root `shared/`, registry hashes, or marketplace manifests in this command or `tools/marketplace/`.
 
 ---
 
-**Last Updated:** 2026-04-24
+**Last Updated:** 2026-05-06

@@ -1,6 +1,6 @@
 ---
 description: "Audit hex MCP servers for transferable optimizations using diff-driven transfer matrix"
-allowed-tools: "Bash,Agent,mcp__hex-line__read_file,mcp__hex-line__grep_search,mcp__hex-line__outline,mcp__hex-line__edit_file,mcp__hex-line__write_file,mcp__hex-line__changes,mcp__hex-graph__index_project,mcp__hex-graph__find_symbols,mcp__hex-graph__find_references,mcp__hex-graph__find_implementations,mcp__hex-graph__inspect_symbol,mcp__hex-graph__analyze_changes,mcp__hex-graph__trace_paths"
+allowed-tools: "Bash,Agent,mcp__hex-line__read_file,mcp__hex-line__grep_search,mcp__hex-line__outline,mcp__hex-line__edit_file,mcp__hex-line__write_file,mcp__hex-line__changes,mcp__hex-graph__index_project,mcp__hex-graph__find_symbols,mcp__hex-graph__find_references,mcp__hex-graph__find_implementations,mcp__hex-graph__inspect_symbol,mcp__hex-graph__analyze_changes,mcp__hex-graph__analyze_edit_region,mcp__hex-graph__trace_paths"
 ---
 
 # Cross-Pollinate Hex MCP Servers
@@ -12,7 +12,7 @@ Diff-driven audit: find real transferable changes across hex-line-mcp, hex-ssh-m
 | Field | Value |
 |-------|-------|
 | Source | Repo-maintained MCP maintenance command |
-| Review Contract | `skills-catalog/ln-162-skill-reviewer/references/command_review_criteria.md` |
+| Review Contract | `plugins/documentation-pipeline/skills/ln-162-skill-reviewer/references/command_review_criteria.md` |
 | MCP Guidance | `docs/best-practice/MCP_TOOL_DESIGN_GUIDE.md` |
 
 ## Command Actions
@@ -23,9 +23,9 @@ Diff-driven audit: find real transferable changes across hex-line-mcp, hex-ssh-m
 
 | Server | Directory | Tools | Role |
 |--------|-----------|-------|------|
-| hex-line-mcp | `mcp/hex-line-mcp/` | 11 | Local file ops (source of current deltas) |
-| hex-ssh-mcp | `mcp/hex-ssh-mcp/` | 6 | SSH remote ops |
-| hex-graph-mcp | `mcp/hex-graph-mcp/` | 15 | Workspace-first code knowledge graph |
+| hex-line-mcp | `mcp/hex-line-mcp/` | 9 | Local file ops (source of current deltas) |
+| hex-ssh-mcp | `mcp/hex-ssh-mcp/` | 8 | SSH remote ops |
+| hex-graph-mcp | `mcp/hex-graph-mcp/` | 14 | Workspace-first code knowledge graph |
 
 ---
 
@@ -49,7 +49,7 @@ Classify each changed symbol by category:
 
 | Category | Detection method |
 |----------|------------------|
-| API/schema | `analyze_changes` shows modified `registerTool` calls or input schemas |
+| API/schema | `analyze_changes` shows modified `server.registerTool` calls or input schemas |
 | Runtime behavior | `analyze_changes` shows modified non-exported functions |
 | Output normalization | Changed functions with names matching `format`, `truncate`, `normalize`, `dedup` |
 | Shared infra | Changes in files imported by 2+ servers (`find_references` cross-check) |
@@ -91,7 +91,7 @@ Output:
 | Dynamic version | `find_symbols(query: "createRequire")` | Should exist in all 3 servers; hardcoded version string = gap |
 | Dead imports | `find_references(name: "{import}", file: "{file}")` | 0 refs = dead import to remove |
 | Safe process spawning | `find_symbols(query: "execSync")` | Should be `execFileSync` (arg array) in production code |
-| Tool registration | `grep_search(pattern: "server\\.tool\\(")` | hex-graph can't index method calls; use grep |
+| Tool registration | `grep_search(pattern: "server\\.registerTool\\(")` | hex-graph can't index method calls; use grep |
 | CRLF normalization | `grep_search(pattern: "\\r\\n")` | Consistent `.replace(/\r\n/g, "\n")` where files are read |
 | Benchmark parity | `grep_search(pattern: "benchmark", glob: "*.mjs")` | README claims token efficiency -> benchmark.mjs must exist |
 
@@ -146,4 +146,4 @@ List all files created or modified.
 Analyze this session per protocol. Output per protocol format.
 
 ---
-**Last Updated:** 2026-04-12
+**Last Updated:** 2026-05-06

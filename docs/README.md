@@ -7,12 +7,15 @@
 ```text
 docs/
 |-- architecture/                    # Maintainer references for skill design
-|   |-- SKILL_ARCHITECTURE_GUIDE.md  # Maintainer-only guide: hierarchy, heuristics, token efficiency
+|   |-- ADR-001-tracker-abstraction.md
+|   |-- SKILL_ARCHITECTURE_GUIDE.md  # Maintainer-only guide: plugin-first workflow, shared registry distribution, hierarchy
 |   `-- AGENT_DELEGATION_PLATFORM_GUIDE.md # Skill vs subagent runtime, recovery, Windows
 |-- best-practice/                   # Claude Code usage guidance
 |   |-- COMPONENT_SELECTION.md
+|   |-- HOOK_DESIGN_GUIDE.md
 |   |-- MCP_TOOL_DESIGN_GUIDE.md     # MCP naming, bounded output, clean-cut migration, error classes
 |   |-- MCP_OUTPUT_CONTRACT_GUIDE.md # Canonical MCP status/reason/next_action vocabulary
+|   |-- PROMPT_CACHING_GUIDE.md
 |   `-- WORKFLOW_TIPS.md
 |-- plugins/                         # Per-plugin landing pages
 |   |-- agile-workflow.md
@@ -24,7 +27,10 @@ docs/
 |   `-- setup-environment.md
 |-- standards/                       # Documentation standards for generated project docs
 |   |-- DOCUMENTATION_STANDARDS.md
-|   `-- GITHUB_README_BEST_PRACTICES.md
+|   |-- GITHUB_PAGES_BEST_PRACTICES.md
+|   |-- GITHUB_README_BEST_PRACTICES.md
+|   |-- NPM_PACKAGE_BEST_PRACTICES.md
+|   `-- TOKEN_EFFICIENCY_PATTERNS.md
 `-- TROUBLESHOOTING.md               # Known issues and solutions
 ```
 
@@ -54,7 +60,8 @@ docs/
 
 | Topic | File |
 |-------|------|
+| Skill development workflow | [architecture/SKILL_ARCHITECTURE_GUIDE.md](architecture/SKILL_ARCHITECTURE_GUIDE.md) |
 | MCP tool design | [best-practice/MCP_TOOL_DESIGN_GUIDE.md](best-practice/MCP_TOOL_DESIGN_GUIDE.md) |
 | MCP output contract | [best-practice/MCP_OUTPUT_CONTRACT_GUIDE.md](best-practice/MCP_OUTPUT_CONTRACT_GUIDE.md) |
-| Loop Health contract | [../skills-catalog/shared/references/loop_health_contract.md](../skills-catalog/shared/references/loop_health_contract.md) |
-| Procedural SOP/TWI guide | [../skills-catalog/shared/references/procedural_skill_sop_guide.md](../skills-catalog/shared/references/procedural_skill_sop_guide.md) |
+| Loop Health contract | [../shared/references/loop_health_contract.md](../shared/references/loop_health_contract.md) |
+| Procedural SOP/TWI guide | [../shared/references/procedural_skill_sop_guide.md](../shared/references/procedural_skill_sop_guide.md) |

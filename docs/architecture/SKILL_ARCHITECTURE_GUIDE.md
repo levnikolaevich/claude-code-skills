@@ -7,7 +7,7 @@
 `SKILL.md` files and `ln-162` must not depend on `docs/` meta files at runtime.
 
 Enforceable rules live in:
-- `skills-catalog/shared/references/skill_contract.md`
+- `shared/references/skill_contract.md`
 - root `AGENTS.md`
 - skill-local `references/` files where needed
 
@@ -23,7 +23,7 @@ Use this guide for:
 ## How to Use This Guide
 
 Read in this order when working on skills:
-1. `skills-catalog/shared/references/skill_contract.md`
+1. `shared/references/skill_contract.md`
 2. root `AGENTS.md`
 3. this guide for design decisions and tradeoffs
 
@@ -34,6 +34,69 @@ Rule of thumb:
 ---
 
 ## Current Repo Model
+
+### Plugin-First Layout
+
+The repository is built around installable plugin bundles. There is no separate flat skill source tree.
+
+| Path | Purpose | Edit Policy |
+|------|---------|-------------|
+| `plugins/<plugin>/skills/<skill>/SKILL.md` | Real skill entrypoint used by Claude and Codex | Edit here |
+| `plugins/<plugin>/skills/<skill>/references/` | Skill-local supporting files and generated shared copies | Edit only single-skill files here |
+| `plugins/<plugin>/skills/<skill>/references/scripts/` | Skill-local executable helpers and CLIs | Edit here when only one skill needs it |
+| `plugins/<plugin>/skills/<skill>/references/templates/` | Skill-local templates, service units, timers, and stubs | Edit here when only one skill needs it |
+| `plugins/<plugin>/skills/<skill>/references/agents/` | Skill-local agent prompts, runners, and schemas | Edit here when only one skill needs it |
+| `shared/` | Canonical source for files reused by 2+ skills | Edit here, map in `tools/marketplace/shared-registry.json`, then sync |
+| `tools/marketplace/` | Marketplace validation and shared registry distribution tooling | Edit only when marketplace structure changes |
+
+Claude Code reads the root `.claude-plugin/marketplace.json` marketplace catalog. Codex reads `.agents/plugins/marketplace.json` and each `.codex-plugin/plugin.json`. Both point at the same `plugins/<plugin>` bundles.
+
+Do not add `plugins/<plugin>/.claude-plugin/marketplace.json`. A plugin root may contain `.claude-plugin/plugin.json` later if Claude-specific plugin metadata becomes necessary, but nested marketplaces are not part of the repository model.
+
+Codex structure rules are enforced by `tools/marketplace/validate.mjs`:
+- `.agents/plugins/marketplace.json` and `.claude-plugin/marketplace.json` must use the same marketplace id and plugin names.
+- each Codex marketplace entry uses `source.source: "local"` and `source.path: "./plugins/<plugin>"`.
+- each Codex marketplace entry declares `policy.installation`, `policy.authentication`, and `category`.
+- each plugin root has `.codex-plugin/plugin.json` with `name` matching the plugin folder and `skills: "./skills/"`.
+- the directories under `plugins/<plugin>/skills/` must match the root Claude marketplace skill list exactly.
+
+### Development Workflow
+
+Use this order when changing skills or shared resources:
+
+1. Edit the target skill under `plugins/<plugin>/skills/<skill>/`.
+2. If the change is reusable by 2+ skills, move the reusable source to root `shared/`.
+3. Add or update its exact targets in `tools/marketplace/shared-registry.json`. Skills must reference only their own `references/...` files at runtime.
+4. Run `node tools/marketplace/shared.mjs sync` after any root `shared/` or registry change. This refreshes every registry-listed skill-local `references/` copy.
+5. Run validation before considering the change done:
+
+```bash
+node tools/marketplace/shared.mjs validate
+node tools/marketplace/validate.mjs
+claude plugin validate .
+```
+
+Do not hand-edit registry-generated copies under skill `references/`; edit root `shared/` and run sync. If a generated copy differs, fix root `shared/` and run the sync command. `node tools/marketplace/validate.mjs` fails on shared registry drift, missing plugin manifests, removed-path references, and invalid plugin-local skill paths.
+
+### Shared Resource Rules
+
+| Case | Put It Here | Reason |
+|------|-------------|--------|
+| Used by one skill only | `plugins/<plugin>/skills/<skill>/references/` | Keeps plugin bundle local and avoids broad coupling |
+| Used by several skills in one plugin | root `shared/` plus registry targets | Same consistency rule regardless of plugin boundary |
+| Used by multiple plugins | root `shared/` | One source of truth with hash-validated skill-local copies |
+| Needed at runtime by installed plugins | root `shared/`, registry target, then sync into skill-local `references/` | Marketplace installs plugin bundles, so snapshots must contain the same files |
+| Temporary run state or generated artifacts | `.hex-skills/`, `.agent-review/`, `.cache/`, `dist/`, `node_modules/` | Ignored local artifacts; do not commit |
+
+When adding a new shared file, prefer small, named references over large manuals. A shared file should remove real duplication or define an enforceable contract. If it only explains rationale for maintainers, keep it in `docs/`.
+
+Inside a skill, supporting files are organized by runtime type:
+- flat `references/*.md`, `*.json`, `*.toml` for docs, contracts, schemas, and small config examples.
+- `references/scripts/` for executable helpers and CLIs (`.mjs`, `.js`, `.sh`, `.ps1`, `.py`).
+- `references/templates/` for templates, service files, timers, and generated-file stubs.
+- `references/agents/` for agent prompts, runners, and schemas.
+- `references/fixtures/` for test/example inputs and outputs.
+- `references/assets/` for non-text assets.
 
 ### Core Principles
 
@@ -173,8 +236,6 @@ These are repo heuristics, not universal laws.
 - avoid repeating the same rule in multiple sections
 - keep local examples only when they prevent a real mistake
 
-Use `skills-catalog/shared/concise_terms.md` for wording cleanup.
-
 ### What Not to Do
 
 - do not turn the skill into a large essay
@@ -233,8 +294,10 @@ Use `skills-catalog/shared/concise_terms.md` for wording cleanup.
 
 After changing structure, paths, or repo conventions, verify:
 - `ln-162-skill-reviewer`
-- `skills-catalog/shared/references/skill_contract.md`
+- `shared/references/skill_contract.md`
 - `.claude/commands/review-skills.md`
+- `tools/marketplace/validate.mjs`
+- `tools/marketplace/shared.mjs`
 - any repo-level docs that route maintainers to the changed contract
 
 Typical migration risks:

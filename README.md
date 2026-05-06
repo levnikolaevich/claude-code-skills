@@ -5,6 +5,9 @@
 ![License](https://img.shields.io/badge/license-MIT-green)
 [![GitHub stars](https://img.shields.io/github/stars/levnikolaevich/claude-code-skills?style=social)](https://github.com/levnikolaevich/claude-code-skills)
 
+> [!WARNING]
+> **Marketplace layout changed in the 2026-05-06 refactor.** Skills now live only inside self-contained plugin bundles under `plugins/<plugin>/skills/<skill>/`. The root `shared/` directory is maintainer-only source material for files reused by 2+ skills; runtime installs use the copied skill-local `references/` files.
+
 > **7 plugins. Two native marketplaces.** Install only what you need and automate your full delivery workflow —
 > from project bootstrap to code audit to production quality gates.
 > Works standalone or as a complete Agile pipeline.
@@ -54,7 +57,7 @@ codex
 Browse and discover individual skills at [skills.sh](https://skills.sh/LevNikolaevich/claude-code-skills).
 
 > [!NOTE]
-> **skills.sh is a showcase only.** Skills depend on shared resources (`shared/` directory) that are not copied by `npx skills add`. Use `/plugin marketplace add` and `/plugin install` for a working installation.
+> **skills.sh is a showcase only.** The supported install path is the Claude or Codex marketplace plugin flow above. Plugin bundles are self-contained; root `shared/` is not a runtime dependency.
 
 ---
 
@@ -86,7 +89,7 @@ ln-620-codebase-auditor       # Audit your code for issues
 ln-100-documents-pipeline     # Generate documentation
 ```
 
-**Full Agile workflow** (Linear or File Mode — auto-detected):
+**Full Agile workflow** (Linear, GitHub Issues, or File Mode — chosen during ln-010 setup, persisted in `.hex-skills/environment_state.json`):
 ```bash
 ln-200-scope-decomposer    # Scope -> Epics -> Stories
 ln-1000-pipeline-orchestrator  # Artifact-driven pipeline: tasks → validation → execution → quality gate
@@ -130,15 +133,15 @@ Operator-facing features:
 - `/users` supports pending/allowed/blocked access management from Telegram.
 - Claude final replies, progress status, dispatch audit, and persistent memory flow through SQLite-backed queues instead of ad hoc chat scraping.
 
-Use this path when you want one VPS to host autonomous project work that can be supervised from Telegram. The same entrypoint handles a fresh VPS, a second project on an existing VPS, `hex-relay` redeploys, diagnostics, and declarative fleet `plan/apply` from `ops/environments/*.yaml`.
+Use this path when you want one VPS to host autonomous project work that can be supervised from Telegram. The same entrypoint handles a fresh VPS, a second project on an existing VPS, `hex-relay` redeploys, diagnostics, and declarative fleet `plan/apply` from the VPS-local `/etc/agent-fleet/environments/*.yaml` registry.
 
 ```bash
 ln-030-vps-bootstrap  # coordinator: host runtime + project runtime + optional hex-relay + diagnostics
 ```
 
 Key docs:
-- [ln-030 SKILL.md](skills-catalog/ln-030-vps-bootstrap/SKILL.md) — coordinator workflow, worker invocation, fleet modes, and Definition of Done.
-- [Fleet environments README](ops/environments/README.md) — declarative environment registry for VPS reuse and fleet `plan/apply`.
+- [ln-030 SKILL.md](plugins/setup-environment/skills/ln-030-vps-bootstrap/SKILL.md) — coordinator workflow, worker invocation, fleet modes, and Definition of Done.
+- [Fleet registry contract](plugins/setup-environment/skills/ln-030-vps-bootstrap/references/fleet_registry.md) — declarative environment registry for VPS reuse and fleet `plan/apply`.
 - [hex-relay README](agents/hex-relay/README.md) — product architecture, environment, runtime behavior, API, database, and deployment.
 - [hex-relay Telegram runbook](agents/hex-relay/docs/telegram-operator-runbook.md) — BotFather hardening, menu commands, and multi-user onboarding.
 
@@ -239,7 +242,7 @@ claude auth login
 ```
 
 **Configuration:**
-Review agents auto-configure via `shared/agents/agent_registry.json`. No manual setup required.
+Review agents use the prompt templates and schemas copied into each skill's local `references/agents/` directory. No manual setup required.
 
 **Audit Trail:**
 All prompts/results saved to `.agent-review/{agent}/` for transparency:
@@ -275,7 +278,7 @@ All skills support:
 
 **Install skills independently per agent.** Do not symlink one agent's plugin root into another agent's discovery root.
 
-Claude Code uses `.claude-plugin/marketplace.json`. Codex uses `.agents/plugins/marketplace.json` plus per-plugin `.codex-plugin/plugin.json` adapters. Both surfaces are generated from the same canonical `skills-catalog`, but only one surface should be active inside a single runtime to avoid duplicate skill names.
+Claude Code uses `.claude-plugin/marketplace.json`. Codex uses `.agents/plugins/marketplace.json` plus per-plugin `.codex-plugin/plugin.json` manifests. Both surfaces point at the same plugin-first bundles under `plugins/*`; root `shared/` is a development-only canonical source for files reused by 2+ skills and is distributed into skill-local `references/` through `tools/marketplace/shared-registry.json`.
 
 **MCP settings locations** (for manual sharing):
 
@@ -354,9 +357,9 @@ Add the marketplace once, then install only what you need.
 </details>
 
 <details>
-<summary><b>Does it require Linear or any external dependencies?</b></summary>
+<summary><b>Does it require Linear, GitHub, or any external dependencies?</b></summary>
 
-No. All skills work without Linear or any external tools. Linear integration is optional — when unavailable, skills fallback to a standalone flow using local markdown files (`kanban_board.md`) as the task management backend. No API keys, no paid services required.
+No. All skills work without external trackers. Linear and GitHub Issues integrations are optional — you choose the tracker provider during `ln-010` setup, and the choice persists in `.hex-skills/environment_state.json`. File mode (local markdown + `kanban_board.md`) is always available with no API keys or paid services required.
 
 </details>
 
@@ -461,7 +464,7 @@ Skills are designed for token efficiency. Each worker loads only the files it ne
 <details>
 <summary><b>Can I customize or create my own skills?</b></summary>
 
-Yes. Skills are `SKILL.md` files in skill directories. Legacy-compatible `.claude/commands/*.md` files still work as slash commands, but new reusable capabilities should use the skill structure. You can create standalone L3 workers or compose them into L2 coordinators and L1 orchestrators. See [SKILL_ARCHITECTURE_GUIDE.md](docs/architecture/SKILL_ARCHITECTURE_GUIDE.md) for the 4-level hierarchy (L0 → L1 → L2 → L3) and writing guidelines.
+Yes. Skills are `SKILL.md` files under `plugins/<plugin>/skills/<skill>/`. Single-skill support files live in that skill's `references/`; reusable shared resources live in root `shared/` and are copied into exact skill-local targets listed in `tools/marketplace/shared-registry.json` with `node tools/marketplace/shared.mjs sync`. Validate with `node tools/marketplace/validate.mjs`. Reusable capabilities should use the plugin-first skill structure. See [SKILL_ARCHITECTURE_GUIDE.md](docs/architecture/SKILL_ARCHITECTURE_GUIDE.md) for the development workflow, shared-resource rules, 4-level hierarchy (L0 -> L1 -> L2 -> L3), and writing guidelines.
 
 </details>
 
@@ -481,8 +484,9 @@ Yes. Claude and Codex have separate native marketplace surfaces in this repo. In
 
 ```
 claude-code-skills/                      # MARKETPLACE
-|-- skills-catalog/                              # ALL SKILLS + SHARED
-|   |-- shared/                          # References, templates, agents
+|-- plugins/                                     # INSTALLABLE PLUGINS + SELF-CONTAINED SKILLS
+|-- shared/                                      # CANONICAL MULTI-SKILL DEVELOPMENT SOURCES
+|-- tools/marketplace/shared-registry.json       # shared -> skill-local references map
 |   |
 |   |  ┌─ Plugin: agile-workflow ──────────────────────┐
 |   |
@@ -665,9 +669,6 @@ claude-code-skills/                      # MARKETPLACE
 |
 |-- agents/
 |   |-- hex-relay/                       # Telegram/HTTP control plane deployed by ln-030
-|-- ops/
-|   |-- environments/                    # Declarative VPS fleet registry for ln-030 plan/apply
-
 |-- docs/
 |   |-- architecture/                  # Skill patterns & delegation runtime
 |   |-- best-practice/                 # Claude Code usage tips & component selection
@@ -701,16 +702,16 @@ Papers, docs, and methodologies studied and implemented in the skill architectur
 
 | Source | Learned | Changed |
 |--------|---------|--------|
-| [STAR Framework](https://arxiv.org/abs/2602.21814) (2025) | Forced goal articulation: +85pp accuracy; structured reasoning > context injection 2.83x | [`goal_articulation_gate.md`](skills-catalog/shared/references/goal_articulation_gate.md) — qualitative goal-articulation gate for relevant skills and templates |
+| [STAR Framework](https://arxiv.org/abs/2602.21814) (2025) | Forced goal articulation: +85pp accuracy; structured reasoning > context injection 2.83x | [`goal_articulation_gate.md`](shared/references/goal_articulation_gate.md) — qualitative goal-articulation gate for relevant skills and templates |
 | [Building Effective Agents](https://www.anthropic.com/research/building-effective-agents) (Anthropic, 2024) | Orchestrator-Worker, prompt chaining, evaluator-optimizer patterns | Core 4-level hierarchy (L0→L3), single responsibility per skill |
 | [Multi-Agent Research System](https://www.anthropic.com/engineering/multi-agent-research-system) (Anthropic, 2025) | Production orchestration: 90.2% perf improvement with specialized agents | `ln-1000` pipeline orchestrator, parallel agent reviews (`ln-310`, `ln-510`) |
 | [Scheduler Agent Supervisor](https://learn.microsoft.com/azure/architecture/patterns/scheduler-agent-supervisor) (Microsoft) | Separation of scheduling, execution, and supervision | `ln-400`/`ln-402`/`ln-500` executor-reviewer-gate split |
 | [DIATAXIS](https://diataxis.fr) | 4-type docs: Tutorial / How-to / Reference / Explanation | Documentation levels in AGENTS.md/docs, progressive disclosure |
-| [Sinks, Not Pipes](https://ianbull.com/posts/software-architecture) (Ian Bull, 2026) | "The architecture is the prompt" — AI agents can't reason about side-effect chains >2 levels deep; sinks (self-contained) > pipes (cascading) | [`ai_ready_architecture.md`](skills-catalog/shared/references/ai_ready_architecture.md) — cascade depth, architectural honesty, flat orchestration checks across relevant skills |
-| [Test Desiderata](https://testdesiderata.com/) (Kent Beck, 2019) | 12 properties of valuable tests — behavioral, predictive, specific, inspiring, deterministic... No numerical targets, only usefulness | [`risk_based_testing_guide.md`](skills-catalog/shared/references/risk_based_testing_guide.md) — 6 Test Usefulness Criteria (Risk Priority ≥15, Confidence ROI, Behavioral, Predictive, Specific, Non-Duplicative) |
+| [Sinks, Not Pipes](https://ianbull.com/posts/software-architecture) (Ian Bull, 2026) | "The architecture is the prompt" — AI agents can't reason about side-effect chains >2 levels deep; sinks (self-contained) > pipes (cascading) | [`ai_ready_architecture.md`](shared/references/ai_ready_architecture.md) — cascade depth, architectural honesty, flat orchestration checks across relevant skills |
+| [Test Desiderata](https://testdesiderata.com/) (Kent Beck, 2019) | 12 properties of valuable tests — behavioral, predictive, specific, inspiring, deterministic... No numerical targets, only usefulness | [`risk_based_testing_guide.md`](shared/references/risk_based_testing_guide.md) — 6 Test Usefulness Criteria (Risk Priority ≥15, Confidence ROI, Behavioral, Predictive, Specific, Non-Duplicative) |
 | Vertical Slicing ([Humanizing Work](https://www.humanizingwork.com/the-humanizing-work-guide-to-splitting-user-stories/)) | "Never split by architectural layer" | Foundation-First task ordering |
 | [Claude Code Picks](https://amplifying.ai/research/claude-code-picks) (Amplifying AI, 2026) | Claude's tool preferences are learned maturity signals, not bias — Drizzle/Vitest/Zustand chosen for objective quality. Build-not-buy in 12/20 categories. "Correcting" valid preferences = recommending worse tools | Research-to-Action Gate in AGENTS.md — require concrete defect before turning research into skill changes |
-| [autoresearch](https://github.com/karpathy/autoresearch) (Karpathy, 2025) | Autoresearch loop: modify → benchmark → binary keep/discard; compound baselines; simplicity criterion (marginal gain + ugly code = discard) | [`ln-814-optimization-executor`](skills-catalog/ln-814-optimization-executor/SKILL.md) — keep/discard with adaptive thresholds, multi-file support, compound baselines, experiment log |
+| [autoresearch](https://github.com/karpathy/autoresearch) (Karpathy, 2025) | Autoresearch loop: modify → benchmark → binary keep/discard; compound baselines; simplicity criterion (marginal gain + ugly code = discard) | [`ln-814-optimization-executor`](plugins/optimization-suite/skills/ln-814-optimization-executor/SKILL.md) — keep/discard with adaptive thresholds, multi-file support, compound baselines, experiment log |
 | [The Complete Guide to Building Skills](https://resources.anthropic.com/hubfs/The-Complete-Guide-to-Building-Skill-for-Claude.pdf) (Anthropic, 2026) | WHAT+WHEN descriptions, trigger testing, capability vs preference classification, negative triggers, 3-level progressive disclosure | Check #14 (trigger quality), negative trigger pattern, `metadata.skill-type` classification, functional DoD, M6 advisory |
 
 </details>

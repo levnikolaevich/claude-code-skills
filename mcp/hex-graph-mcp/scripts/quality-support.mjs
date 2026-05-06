@@ -19,9 +19,9 @@ export const paths = {
     qualityTargetsArtifact: join(packageRoot, "evals", "artifacts", "quality-targets.json"),
     rootReadme: join(repoRoot, "README.md"),
     serverFile: join(packageRoot, "server.mjs"),
-    skillLn012: join(repoRoot, "skills-catalog", "ln-012-mcp-configurator", "SKILL.md"),
-    skillLn012ProviderMatrix: join(repoRoot, "skills-catalog", "ln-012-mcp-configurator", "references", "hex_graph_provider_matrix.md"),
-    skillStackDetection: join(repoRoot, "skills-catalog", "ln-700-project-bootstrap", "references", "stack_detection.md"),
+    skillLn012: join(repoRoot, "plugins", "setup-environment", "skills", "ln-012-mcp-configurator", "SKILL.md"),
+    skillLn012ProviderMatrix: join(repoRoot, "plugins", "setup-environment", "skills", "ln-012-mcp-configurator", "references", "hex_graph_provider_matrix.md"),
+    skillStackDetection: join(repoRoot, "plugins", "setup-environment", "skills", "ln-012-mcp-configurator", "references", "stack_detection.md"),
     testDir: join(packageRoot, "test"),
 };
 
@@ -277,7 +277,7 @@ export function validateLn012Consistency() {
     const matrix = existsSync(paths.skillLn012ProviderMatrix)
         ? readFileSync(paths.skillLn012ProviderMatrix, "utf8")
         : "";
-    const mandatoryReadPattern = /\*\*MANDATORY READ:\*\* Load `skills-catalog\/ln-012-mcp-configurator\/references\/hex_graph_provider_matrix\.md` and `skills-catalog\/ln-700-project-bootstrap\/references\/stack_detection\.md`\./;
+    const mandatoryReadPattern = /\*\*MANDATORY READ:\*\* Load `references\/hex_graph_provider_matrix\.md` and `references\/stack_detection\.md`\./;
     if (!mandatoryReadPattern.test(skill)) {
         issues.push("ln-012 is missing the expected MANDATORY READ block for graph provider detection.");
     }

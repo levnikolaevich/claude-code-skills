@@ -1,6 +1,6 @@
 # Claude Code Skills
 
-![Version](https://img.shields.io/badge/version-2026.04.21-blue)
+![Version](https://img.shields.io/badge/version-2026.05.06-blue)
 ![Skills](https://img.shields.io/badge/skills-140-green)
 ![License](https://img.shields.io/badge/license-MIT-green)
 [![GitHub stars](https://img.shields.io/github/stars/levnikolaevich/claude-code-skills?style=social)](https://github.com/levnikolaevich/claude-code-skills)

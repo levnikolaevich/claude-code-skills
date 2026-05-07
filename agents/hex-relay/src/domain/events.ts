@@ -3,6 +3,8 @@
  * services can compose lines without touching infra.
  */
 
+import type { AgentKind } from "./message.js";
+
 export function mdSafe(text: string): string {
   return "`" + text.replaceAll("`", "′") + "`";
 }
@@ -52,8 +54,15 @@ export function formatAgentEvent(toolInput: unknown): string | null {
 
 /**
  * Decorate a final assistant reply for L5 outbox. Idempotent: leaves an
- * already-prefixed message intact.
+ * already-prefixed message intact. Codex replies get an extra agent marker so
+ * the operator can tell which agent answered.
  */
-export function prefixReply(text: string): string {
-  return text.startsWith("💬") ? text : `💬 ${text}`;
+
+export function prefixReply(text: string, agent: AgentKind = "claude"): string {
+  const base = text.startsWith("\u{1F4AC}") ? text : `\u{1F4AC} ${text}`;
+  if (agent === "codex") {
+    const marker = "\u{1F7E2} [codex] ";
+    return base.startsWith(marker) ? base : `${marker}${base}`;
+  }
+  return base;
 }

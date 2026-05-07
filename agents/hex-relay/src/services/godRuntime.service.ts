@@ -5,6 +5,7 @@ import { createTmuxPane } from "../infrastructure/tmux/pane.js";
 import { createAtomicCommandWriter } from "../infrastructure/filesystem/atomicCommand.js";
 import { createLastSessionWriter } from "../infrastructure/filesystem/lastSession.js";
 import type { GodStatusProbe } from "../infrastructure/systemd/godStatus.js";
+import type { AgentKind } from "../domain/message.js";
 
 export type GodRuntimeService = ReturnType<typeof createGodRuntimeService>;
 
@@ -13,8 +14,8 @@ export function createGodRuntimeService(deps: {
   log: Logger;
   godStatus: GodStatusProbe;
 }) {
-  function runtimeFor(userId: number) {
-    const paths = buildUserRuntimePaths(deps.env, userId);
+  function runtimeFor(userId: number, agent: AgentKind = "claude") {
+    const paths = buildUserRuntimePaths(deps.env, userId, agent);
     return {
       paths,
       pane: createTmuxPane({
@@ -34,20 +35,20 @@ export function createGodRuntimeService(deps: {
     };
   }
 
-  async function ensureStarted(userId: number): Promise<void> {
-    if (await deps.godStatus.isActive(userId)) return;
-    runtimeFor(userId).atomicCmd.write("default", null, userId);
-    await deps.godStatus.start(userId);
+  async function ensureStarted(userId: number, agent: AgentKind = "claude"): Promise<void> {
+    if (await deps.godStatus.isActive(userId, agent)) return;
+    runtimeFor(userId, agent).atomicCmd.write("default", null, userId);
+    await deps.godStatus.start(userId, agent);
   }
 
   return {
     runtimeFor,
     ensureStarted,
-    async isActive(userId: number): Promise<boolean> {
-      return deps.godStatus.isActive(userId);
+    async isActive(userId: number, agent: AgentKind = "claude"): Promise<boolean> {
+      return deps.godStatus.isActive(userId, agent);
     },
-    async restart(userId: number): Promise<void> {
-      await deps.godStatus.restart(userId);
+    async restart(userId: number, agent: AgentKind = "claude"): Promise<void> {
+      await deps.godStatus.restart(userId, agent);
     },
   };
 }

@@ -10,6 +10,7 @@ import { createUsersRepo, type UsersRepo } from "./users.repo.js";
 import { createTodoStateRepo, type TodoStateRepo } from "./todoState.repo.js";
 import { createHealthRepo, type HealthRepo } from "./health.repo.js";
 import { createTaskPollStateRepo, type TaskPollStateRepo } from "./taskPollState.repo.js";
+import { createUserBuddyRepo, type UserBuddyRepo } from "./userBuddy.repo.js";
 
 export interface Repositories {
   messages: MessagesRepo;
@@ -23,6 +24,7 @@ export interface Repositories {
   todoState: TodoStateRepo;
   health: HealthRepo;
   taskPollState: TaskPollStateRepo;
+  userBuddy: UserBuddyRepo;
 }
 
 export function createRepositories(db: Db): Repositories {
@@ -38,5 +40,6 @@ export function createRepositories(db: Db): Repositories {
     todoState: createTodoStateRepo(db),
     health: createHealthRepo(db),
     taskPollState: createTaskPollStateRepo(db),
+    userBuddy: createUserBuddyRepo(db),
   };
 }

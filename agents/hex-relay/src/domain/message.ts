@@ -1,4 +1,10 @@
 export type MessageDirection = "inbound" | "outbound";
+export type AgentKind = "claude" | "codex";
+export const DEFAULT_AGENT: AgentKind = "claude";
+export function isAgentKind(value: unknown): value is AgentKind {
+  return value === "claude" || value === "codex";
+}
+
 export type MessageKind = "text" | "image" | "document" | "voice";
 export type MessageStatus =
   | "queued"
@@ -25,6 +31,7 @@ export interface InboundMessage {
   nextAttemptAt: number;
   deliveredAt: number | null;
   error: string | null;
+  agent: AgentKind;
 }
 
 export type OutboxStatus = "queued" | "sending" | "sent" | "abandoned" | "unknown";
@@ -51,6 +58,7 @@ export interface OutboxRow {
   auditMsgId: number | null;
   eventType: OutboxEventType;
   error: string | null;
+  agent: AgentKind;
 }
 
 export interface PendingReply {
@@ -58,6 +66,7 @@ export interface PendingReply {
   inboundMsgId: number;
   promptHash: string;
   createdAt: number;
+  agent: AgentKind;
 }
 
 export const isStatusEvent = (e: OutboxEventType): boolean =>

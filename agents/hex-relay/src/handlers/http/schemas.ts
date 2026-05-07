@@ -1,9 +1,12 @@
 import { z } from "zod/v4";
 
+const AgentEnum = z.enum(["claude", "codex"]).default("claude");
+
 export const UserPromptSubmitSchema = z
   .object({
     session_id: z.string().default(""),
     prompt: z.string().default(""),
+    agent: AgentEnum,
   })
   .passthrough();
 
@@ -11,6 +14,7 @@ export const StopSchema = z
   .object({
     session_id: z.string().default(""),
     last_assistant_message: z.string().default(""),
+    agent: AgentEnum,
   })
   .passthrough();
 
@@ -18,6 +22,7 @@ export const StopFailureSchema = z
   .object({
     session_id: z.string().default(""),
     error_type: z.string().default("unknown"),
+    agent: AgentEnum,
   })
   .passthrough();
 
@@ -28,6 +33,7 @@ export const SessionStartSchema = z
     model: z.string().nullable().optional(),
     cwd: z.string().nullable().optional(),
     transcript_path: z.string().nullable().optional(),
+    agent: AgentEnum,
   })
   .passthrough();
 
@@ -36,6 +42,7 @@ export const SubagentStopSchema = z
     session_id: z.string().default(""),
     agent_id: z.string().default(""),
     agent_type: z.string().default(""),
+    agent: AgentEnum,
   })
   .passthrough();
 
@@ -44,6 +51,7 @@ export const ToolUseSchema = z
     tool_name: z.string().default(""),
     tool_input: z.record(z.string(), z.unknown()).default({}),
     session_id: z.string().default(""),
+    agent: AgentEnum,
   })
   .passthrough();
 

@@ -16,6 +16,15 @@ allowed-tools: Bash, Read, mcp__hex-ssh__remote-ssh, mcp__hex-ssh__ssh-read-line
 
 Manages `hex-relay` as a standalone product deployed into one project environment.
 
+## Agent routing
+
+hex-relay 0.4+ routes per Telegram operator between Claude and Codex god-sessions:
+
+- DB column `user_buddy.agent` stores the active agent per `(project, user)`. Default is `claude` for legacy users and is migrated automatically on first relay start (see Phase 5 health checks).
+- Telegram `/set_buddy claude` and `/set_buddy codex` flip the column. Operators may also prefix a single message with `@claude ` or `@codex ` to override routing for that message only.
+- Inbound delivery picks the tmux target via the agent column: `${SERVICE_PREFIX}-god-<id>` for Claude, `${SERVICE_PREFIX}-god-codex-<id>` for Codex (see `agents/hex-relay/src/config/paths.ts`).
+- Hook payloads accept an `agent: "claude"|"codex"` field; missing values default to `claude`. Codex hooks are wired through `/usr/local/bin/hex-relay-codex-hook.sh` (installed by `ln-032`).
+
 ## MANDATORY READ
 
 **MANDATORY READ:** Load `references/worker_runtime_contract.md`, `references/coordinator_summary_contract.md`, and `references/vps_runtime_contract.md`
@@ -90,7 +99,8 @@ Verify:
 
 Verify:
 - `${SERVICE_PREFIX}-hex-relay.service` (`is-active` + `NRestarts == 0` + `MainPID` listening on `${RELAY_HOOK_PORT}`)
-- `GET /health` returns `ok:true`, `god_session_ready:true`, `inbound_failed:0`, `outbox_abandoned:0`
+- `GET /health` returns `ok:true`, `god_session_ready:true`, `inbound_failed:0`, `outbox_abandoned:0`, and exposes `pending_fanout_acks_total` (non-negative integer; advances when fan-out delivery to multiple agents acks pending replies)
+- DB schema migration ran on this restart: `user_buddy.agent` column exists (`PRAGMA table_info(user_buddy)`), `messages.agent` and `pending_replies.agent` columns exist. Migrations auto-run during relay startup; an empty schema check in the journal at boot is the only required evidence.
 - `relay.db` schema (sessions has `created_by_user_id`, messages has `from_user_id`, outbox has `event_type`)
 - outbox/dispatch/todo state smoke
 - `${SERVICE_PREFIX}-dispatch.timer` is `active` (not just enabled) and `LastTriggerUSec` is populated; `journalctl -u ${SERVICE_PREFIX}-dispatch.service --since '24h ago'` shows at least one Started/Finished pair after the most recent install or redeploy

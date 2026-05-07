@@ -73,11 +73,15 @@ Use `god_session_install.md`.
 
 Responsibilities:
 - sandbox script
-- `${SERVICE_PREFIX}-god@.service`
-- tmux socket and target naming
+- `${SERVICE_PREFIX}-god@.service` (Claude template, drives `god-session.sh`)
+- `${SERVICE_PREFIX}-god-codex@.service` (Codex template, drives `god-session-codex.sh`)
+- `/usr/local/bin/hex-relay-codex-hook.sh` shim (mode 755, root:root) used by Codex's `~/.codex/config.toml` hooks block
+- tmux socket and per-agent target naming (`${SERVICE_PREFIX}-god-<id>` for Claude, `${SERVICE_PREFIX}-god-codex-<id>` for Codex)
 - dispatch service/timer templates
 - statusLine support
 - project-scoped hooks except `hex-relay` product deployment
+
+Both god templates are installed per project. Only the Claude template is enabled by default for each declared `${TELEGRAM_CHAT_ID}`; the Codex template stays loaded but inactive until hex-relay starts the unit on demand (operator switches buddy via `/set_buddy codex`). Verify both templates exist via `systemctl list-unit-files '${SERVICE_PREFIX}-god*@.service'` and confirm the Codex unit is `disabled` (not `not-found`).
 
 ### Phase 4: Provider Credentials
 
@@ -117,7 +121,8 @@ Write a `vps-project-runtime` summary artifact with project runtime changes, loc
 - [ ] `${PROJECT_DIR}` clone exists at `${REPO_REF}` without overwriting unrelated files.
 - [ ] `/etc/${PROJECT_NAME}` and `/var/lib/${PROJECT_NAME}` exist with expected ownership and modes.
 - [ ] Project `.claude/` settings and instructions are rendered.
-- [ ] `${SERVICE_PREFIX}-god@.service` and scheduler templates installed or verified.
+- [ ] `${SERVICE_PREFIX}-god@.service` and `${SERVICE_PREFIX}-god-codex@.service` templates and scheduler templates installed or verified; Codex template is present and idle (`disabled` or stopped, not `not-found`).
+- [ ] `/usr/local/bin/hex-relay-codex-hook.sh` exists, is executable (mode 755), and reachable from the Codex sandbox.
 - [ ] `${PROJECT_DIR}/.agent-home/users` and `.agent-cache` exist with `${BOT_USER}:${BOT_USER}` 0700 (relay's `ReadWritePaths=` requires the path to exist before first start).
 - [ ] Primary `${SERVICE_PREFIX}-god@${TELEGRAM_CHAT_ID}.service` is `active` AND `tmux -L ${SERVICE_PREFIX} has-session -t "=${SERVICE_PREFIX}-god-${TELEGRAM_CHAT_ID}"` exits 0 (use exact-match `=name` form).
 - [ ] Provider credentials are configured or explicitly gated `N/A:`.

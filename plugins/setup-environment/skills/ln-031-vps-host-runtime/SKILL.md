@@ -77,6 +77,11 @@ Responsibilities:
 - Codex config creation and current `${PROJECT_DIR}` trust block
 - skills marketplace clone and selected plugins
 
+Verify both agents are reachable for each bot user:
+- `claude --version` exits 0 and `~${BOT_USER}/.claude/.credentials.json` (or shared symlink target) exists.
+- `codex --version` exits 0 and `~${BOT_USER}/.codex/auth.json` (or shared symlink target) exists.
+- Under the shared-auth pattern, both files must live under `/var/lib/claude-shared/` and remain readable by every bot user via the `claude-shared` group ACL — verify with `getfacl /var/lib/claude-shared/.codex/auth.json` shows the group entry. The same ACL pattern applies to `~/.codex` as already documented for `~/.claude`.
+
 Do not overwrite existing auth files. Missing `claude` or `codex` login is a blocker or warning, not an automated fake success.
 
 ### Phase 4: Shared Updater
@@ -113,7 +118,7 @@ Write a `vps-host-runtime` summary artifact with:
 - [ ] Required inputs and SSH/root access verified or reported as blockers.
 - [ ] Base packages and platform CLIs installed, updated, or verified.
 - [ ] `${BOT_USER}` exists with expected SSH ownership and login shell.
-- [ ] Node, Claude Code, and Codex versions verified under `${BOT_USER}`.
+- [ ] Node, Claude Code, and Codex versions verified under `${BOT_USER}`; `~/.codex/auth.json` (or shared symlink target) is readable by every bot user when shared-auth is in use.
 - [ ] Current `${PROJECT_DIR}` Codex trust block exists or is reported as planned drift.
 - [ ] Marketplace clone and selected plugins verified.
 - [ ] `agent-update.service` and `agent-update.timer` installed or verified.

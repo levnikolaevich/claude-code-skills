@@ -8,6 +8,7 @@ import type { SessionsDirCache } from "../infrastructure/filesystem/sessionsDirC
 import type { LastGodCommandReader } from "../infrastructure/filesystem/lastGodCommand.js";
 import type { SessionListItem } from "../domain/session.js";
 import { resolveSessionOwner } from "../domain/session.js";
+import type { AgentKind } from "../domain/message.js";
 import {
   parseIso8601ToEpoch,
   readLastJsonlObject,
@@ -24,6 +25,7 @@ export interface SessionUpsertArgs {
   transcriptPath: string | null;
   previousSession: string | null;
   primaryOperator: number;
+  agent?: AgentKind;
 }
 
 export function createSessionService(deps: {
@@ -140,6 +142,7 @@ export function createSessionService(deps: {
       transcriptPath: args.transcriptPath,
       previousSession,
       createdByUserId: owner,
+      agent: args.agent,
     });
     deps.sessionsDir.remember(owner, args.transcriptPath);
     deps.lastSessionForUser(owner).write(args.sessionId);

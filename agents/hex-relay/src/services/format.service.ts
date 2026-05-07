@@ -1,4 +1,5 @@
 import { TIMING } from "../config/paths.js";
+import type { AgentKind } from "../domain/message.js";
 import {
   mdSafe,
   truncate,
@@ -21,8 +22,8 @@ export const FormatService = {
   formatAgent(input: unknown): string | null {
     return formatAgentEvent(input);
   },
-  prefixReply(text: string): string {
-    return prefixReply(text);
+  prefixReply(text: string, agent: AgentKind = "claude"): string {
+    return prefixReply(text, agent);
   },
   subagentDone(agentType: string): string {
     return `✅ Subagent: ${mdSafe(truncate(agentType, 40))} done`;

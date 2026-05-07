@@ -1,7 +1,7 @@
 import type { Bot } from "grammy";
 import type { Logger } from "../lib/logger.js";
 
-const TYPING_REFRESH_MS = 4_000;
+const TYPING_REFRESH_MS = 4000;
 const TYPING_MAX_DURATION_MS = 30 * 60_000;
 
 interface TypingHandle {
@@ -21,8 +21,8 @@ export function createTypingService(deps: TypingDeps) {
   const handles = new Map<string, TypingHandle>();
 
   function send(chatId: number): void {
-    deps.bot.api.sendChatAction(chatId, "typing").catch((err: unknown) => {
-      deps.log.debug({ err: String(err), chatId }, "sendChatAction typing failed");
+    deps.bot.api.sendChatAction(chatId, "typing").catch((error: unknown) => {
+      deps.log.debug({ err: String(error), chatId }, "sendChatAction typing failed");
     });
   }
 

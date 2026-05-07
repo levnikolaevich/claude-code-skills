@@ -60,7 +60,7 @@ export function createTmuxPane(deps: TmuxPaneDeps) {
         "tmux",
         tmuxArgs(["delete-buffer", "-b", bufferName]),
         STEP_TIMEOUT_MS
-      ).catch(() => undefined);
+      ).catch(() => null);
       throw new Error(`paste-buffer rc=${paste.code}: ${paste.stderr.slice(0, 200)}`);
     }
     const enter = await runTmuxProcess(

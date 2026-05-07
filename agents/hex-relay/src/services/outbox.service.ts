@@ -2,8 +2,8 @@ import type { Logger } from "../lib/logger.js";
 import { TokenBucket } from "../lib/tokenBucket.js";
 import { TIMING } from "../config/paths.js";
 import type { OutboxRepo } from "../infrastructure/db/repositories/outbox.repo.js";
-import type { OutboxEventType, OutboxRow } from "../domain/message.js";
-import { isStatusEvent } from "../domain/message.js";
+import type { OutboxEventType, OutboxRow, AgentKind } from "../domain/message.js";
+import { isStatusEvent, DEFAULT_AGENT } from "../domain/message.js";
 
 export type OutboxService = ReturnType<typeof createOutboxService>;
 
@@ -14,6 +14,7 @@ export interface EnqueueArgs {
   sessionId?: string | null;
   auditMsgId?: number | null;
   eventType?: OutboxEventType;
+  agent?: AgentKind;
 }
 
 export function createOutboxService(deps: { outboxRepo: OutboxRepo; log: Logger }) {
@@ -37,6 +38,7 @@ export function createOutboxService(deps: { outboxRepo: OutboxRepo; log: Logger 
         sessionId: args.sessionId ?? null,
         auditMsgId: args.auditMsgId ?? null,
         eventType: event,
+        agent: args.agent ?? DEFAULT_AGENT,
       });
     } catch (error) {
       deps.log.error({ err: String(error) }, "enqueue outbox failed");
@@ -52,6 +54,7 @@ export function createOutboxService(deps: { outboxRepo: OutboxRepo; log: Logger 
       sessionId: args.sessionId ?? null,
       auditMsgId: args.auditMsgId ?? null,
       eventType: "reply",
+      agent: args.agent ?? DEFAULT_AGENT,
     });
   }
 
@@ -63,6 +66,7 @@ export function createOutboxService(deps: { outboxRepo: OutboxRepo; log: Logger 
       sessionId: args.sessionId ?? null,
       auditMsgId: args.auditMsgId ?? null,
       eventType: "ack",
+      agent: args.agent ?? DEFAULT_AGENT,
     });
   }
 

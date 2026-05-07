@@ -1,5 +1,6 @@
 import path from "node:path";
 import type { Env } from "./env.js";
+import type { AgentKind } from "../domain/message.js";
 
 export interface Paths {
   stateDir: string;
@@ -33,7 +34,11 @@ export function buildPaths(env: Env): Paths {
   };
 }
 
-export function buildUserRuntimePaths(env: Env, userId: number): UserRuntimePaths {
+export function buildUserRuntimePaths(
+  env: Env,
+  userId: number,
+  agent: AgentKind = "claude"
+): UserRuntimePaths {
   if (!Number.isSafeInteger(userId) || userId <= 0) {
     throw new Error(`invalid Telegram user id: ${String(userId)}`);
   }
@@ -48,8 +53,14 @@ export function buildUserRuntimePaths(env: Env, userId: number): UserRuntimePath
     sessionsDirCacheFile: path.join(userStateDir, "sessions-dir.path"),
     claudeProjectsHome: path.join("/home", env.botUser, ".claude", "projects"),
     cmdLockFile: path.join(userStateDir, ".cmd-lock"),
-    tmuxTarget: `${env.servicePrefix}-god-${userId}`,
-    godServiceName: `${env.servicePrefix}-god@${userId}.service`,
+    tmuxTarget:
+      agent === "codex"
+        ? `${env.servicePrefix}-god-codex-${userId}`
+        : `${env.servicePrefix}-god-${userId}`,
+    godServiceName:
+      agent === "codex"
+        ? `${env.servicePrefix}-god-codex@${userId}.service`
+        : `${env.servicePrefix}-god@${userId}.service`,
   };
 }
 

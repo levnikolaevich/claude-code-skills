@@ -18,7 +18,8 @@ CREATE TABLE IF NOT EXISTS messages (
   error           TEXT,
   attempts        INTEGER NOT NULL DEFAULT 0,
   next_attempt_at INTEGER NOT NULL DEFAULT 0,
-  delivered_at    INTEGER
+  delivered_at    INTEGER,
+  agent           TEXT NOT NULL DEFAULT 'claude'
 );
 CREATE INDEX IF NOT EXISTS idx_msg_session ON messages(session_id);
 CREATE INDEX IF NOT EXISTS idx_msg_inbound ON messages(tg_chat_id, tg_msg_id);
@@ -28,6 +29,7 @@ CREATE TABLE IF NOT EXISTS pending_reply (
   inbound_msg_id  INTEGER NOT NULL,
   prompt_hash     TEXT NOT NULL,
   created_at      INTEGER NOT NULL,
+  agent           TEXT NOT NULL DEFAULT 'claude',
   PRIMARY KEY (session_id, inbound_msg_id)
 );
 CREATE INDEX IF NOT EXISTS idx_pending_reply_session ON pending_reply(session_id);
@@ -45,7 +47,8 @@ CREATE TABLE IF NOT EXISTS outbox (
   session_id       TEXT,
   tg_msg_id        INTEGER,
   error            TEXT,
-  audit_msg_id     INTEGER
+  audit_msg_id     INTEGER,
+  agent            TEXT NOT NULL DEFAULT 'claude'
 );
 CREATE INDEX IF NOT EXISTS idx_outbox_due ON outbox(status, next_attempt_at);
 
@@ -59,7 +62,8 @@ CREATE TABLE IF NOT EXISTS sessions (
   cwd               TEXT,
   transcript_path   TEXT,
   end_reason        TEXT,
-  created_by_user_id INTEGER
+  created_by_user_id INTEGER,
+  agent              TEXT NOT NULL DEFAULT 'claude'
 );
 CREATE INDEX IF NOT EXISTS idx_sessions_active ON sessions(ended_at);
 
@@ -162,5 +166,10 @@ CREATE TABLE IF NOT EXISTS task_poll_state (
   last_notified_at INTEGER,
   last_count       INTEGER NOT NULL DEFAULT 0,
   updated_at       INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS user_buddy (
+  user_id    INTEGER PRIMARY KEY,
+  agent      TEXT NOT NULL CHECK(agent IN ('claude','codex')),
+  updated_at INTEGER NOT NULL
 );
 `;

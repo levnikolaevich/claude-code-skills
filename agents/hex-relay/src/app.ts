@@ -29,6 +29,7 @@ import { createVerbosityService } from "./services/verbosity.service.js";
 import { createTypingService } from "./services/typing.service.js";
 import { createTaskProviderService } from "./services/taskProvider.service.js";
 import { createTaskService } from "./services/task.service.js";
+import { createUserBuddyService } from "./services/userBuddy.service.js";
 import { buildAllowlistMiddleware } from "./handlers/telegram/allowlist.middleware.js";
 import { buildNewSessionHandler } from "./handlers/telegram/newSession.js";
 import { buildSessionsHandler } from "./handlers/telegram/sessions.js";
@@ -38,6 +39,7 @@ import { buildUsersCallbackHandler } from "./handlers/telegram/usersCallback.js"
 import { buildTasksHandler } from "./handlers/telegram/tasks.js";
 import { buildTasksCallbackHandler } from "./handlers/telegram/tasksCallback.js";
 import { buildInboundHandler } from "./handlers/telegram/inbound.js";
+import { buildSetBuddyHandler } from "./handlers/telegram/setBuddy.js";
 import { createReactToInbound, createReactToVoiceTranscribing } from "./handlers/telegram/react.js";
 import { registerErrorHandler } from "./handlers/http/plugins/errorHandler.plugin.js";
 import { configureZodFastify } from "./handlers/http/zodFastify.js";
@@ -100,6 +102,7 @@ export function buildApp(env: Env, log: Logger = createLogger()): App {
     usersRepo: repos.users,
     primaryOperator: env.allowedChat,
   });
+  const userBuddy = createUserBuddyService({ repo: repos.userBuddy });
   const sessionService = createSessionService({
     log,
     sessionsRepo: repos.sessions,
@@ -181,10 +184,12 @@ export function buildApp(env: Env, log: Logger = createLogger()): App {
   const usersCallback = buildUsersCallbackHandler({ log, bot, allowlist });
   const tasksHandler = buildTasksHandler({ log, tasks });
   const tasksCallback = buildTasksCallbackHandler({ log, tasks });
+  const setBuddyHandler = buildSetBuddyHandler({ log, userBuddy });
   const inboundHandler = buildInboundHandler({
     log,
     messagesRepo: repos.messages,
     mediaStore,
+    userBuddy,
     voiceTranscription: env.voiceTranscription,
     voiceMaxDurationSec: env.voiceMaxDurationSec,
     reactToVoiceTranscribing: verbosity.allows("L1") ? reactToVoiceTranscribing : undefined,
@@ -196,6 +201,7 @@ export function buildApp(env: Env, log: Logger = createLogger()): App {
   bot.use(usersCallback);
   bot.use(tasksHandler);
   bot.use(tasksCallback);
+  bot.use(setBuddyHandler);
   bot.use(inboundHandler);
 
   void Composer;

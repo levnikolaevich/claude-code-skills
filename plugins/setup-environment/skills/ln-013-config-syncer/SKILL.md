@@ -158,7 +158,29 @@ Codex-only fields to preserve:
 
 **Claude hooks:**
 - Claude hook/style sync remains Claude-only.
-- Do not project Claude hooks into Codex.
+- Do not project Claude hooks into Codex (the wire formats differ).
+
+**Codex hooks:**
+
+When the host has hex-relay deployed (`/usr/local/bin/hex-relay-codex-hook.sh` exists and is executable), the syncer idempotently inserts/updates a managed Codex hooks block in `~/.codex/config.toml`. The block lives between fenced markers:
+
+```text
+# BEGIN ln-013 managed codex hooks
+[features]
+codex_hooks = true
+
+[[hooks.UserPromptSubmit]]
+command = ["/usr/local/bin/hex-relay-codex-hook.sh", "UserPromptSubmit"]
+timeout_ms = 30000
+# ... Stop, SessionStart, PreToolUse, PostToolUse, PermissionRequest ...
+# END ln-013 managed codex hooks
+```
+
+Rules:
+- Only the content between `# BEGIN ln-013 managed codex hooks` and `# END ln-013 managed codex hooks` is rewritten. Unrelated `[hooks.*]` blocks the user added by hand are preserved untouched.
+- If the shim script is missing, the syncer reports `codex_hooks: skipped (shim missing)` instead of writing a stale block.
+- A `.bak` of `config.toml` is written before any edit (same policy as the MCP merge).
+- See `../ln-030-vps-bootstrap/references/codex_hooks_config.md` for the canonical block, discovery order, and verification recipe.
 
 **Codex execution defaults:**
 
@@ -260,7 +282,7 @@ Marketplace and Config Alignment:
 - [ ] Codex native plugin manifests validated
 - [ ] MCP settings aligned without deleting target-only settings
 - [ ] Codex execution defaults aligned or explicitly reported as drift
-- [ ] Hooks handled only for supported targets
+- [ ] Hooks handled only for supported targets (Claude hooks Claude-only; Codex hooks block managed only when `/usr/local/bin/hex-relay-codex-hook.sh` is present)
 - [ ] MCP provider check completed or explicitly skipped
 - [ ] Structured summary returned
 - [ ] Summary artifact written to the managed or standalone runtime path

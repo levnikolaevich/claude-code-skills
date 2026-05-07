@@ -45,8 +45,8 @@ export function createInboundService(deps: {
     try {
       await deps.controlLane.run("deliver_inbound", async () => {
         deps.messagesRepo.update(row.id, { status: "delivering" });
-        await deps.godRuntime.ensureStarted(userId);
-        await deps.godRuntime.runtimeFor(userId).pane.send(row.text);
+        await deps.godRuntime.ensureStarted(userId, row.agent);
+        await deps.godRuntime.runtimeFor(userId, row.agent).pane.send(row.text);
       });
       deps.messagesRepo.update(row.id, {
         status: "delivered",

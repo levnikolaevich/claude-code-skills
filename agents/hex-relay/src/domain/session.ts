@@ -1,3 +1,5 @@
+import type { AgentKind } from "./message.js";
+
 export interface SessionRow {
   sessionId: string;
   startedAt: number;
@@ -9,6 +11,7 @@ export interface SessionRow {
   transcriptPath: string | null;
   endReason: string | null;
   createdByUserId: number | null;
+  agent: AgentKind;
 }
 
 export type SessionEventKind =

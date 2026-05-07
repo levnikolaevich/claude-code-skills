@@ -11,6 +11,7 @@ import type { DispatchService } from "../../services/dispatch.service.js";
 import type { VerbosityService } from "../../services/verbosity.service.js";
 import type { TypingService } from "../../services/typing.service.js";
 import { FormatService } from "../../services/format.service.js";
+import type { AgentKind } from "../../domain/message.js";
 import { TIMING, TG_PREFIX_RE } from "../../config/paths.js";
 import {
   UserPromptSubmitSchema,
@@ -89,13 +90,14 @@ function bindPendingInbound(args: {
   chatId: number | null;
   tgMsgId: number | null;
   source: "telegram_prefix" | "voice_transcript";
+  agent: AgentKind;
 }): void {
-  const { deps, sessionId, inbound, prompt, chatId, tgMsgId, source } = args;
+  const { deps, sessionId, inbound, prompt, chatId, tgMsgId, source, agent } = args;
   deps.messagesRepo.update(inbound.id, { sessionId });
   if (inbound.fromUserId !== null) {
     deps.sessionService.ensureOwner(sessionId, inbound.fromUserId);
   }
-  deps.pendingRepo.set(sessionId, inbound.id, prompt);
+  deps.pendingRepo.set(sessionId, inbound.id, prompt, agent);
   if (chatId !== null) {
     deps.typing.start(sessionId, chatId);
   }
@@ -178,7 +180,7 @@ export function registerHookRoutes(app: FastifyInstance, deps: HookDeps): void {
   app.post("/hook/user-prompt-submit", async (req, reply) => {
     const parsed = UserPromptSubmitSchema.safeParse(req.body);
     if (!parsed.success) return reply.code(200).send({});
-    const { session_id, prompt } = parsed.data;
+    const { session_id, prompt, agent } = parsed.data;
     if (!session_id) return reply.code(200).send({});
     deps.sessionService.insertEvent(session_id, "user_prompt_submit", {
       prompt_len: prompt.length,
@@ -198,6 +200,7 @@ export function registerHookRoutes(app: FastifyInstance, deps: HookDeps): void {
           chatId,
           tgMsgId,
           source: "telegram_prefix",
+          agent,
         });
       }
       return reply.code(200).send({});
@@ -216,6 +219,7 @@ export function registerHookRoutes(app: FastifyInstance, deps: HookDeps): void {
         chatId: voiceInbound.tgChatId,
         tgMsgId: voiceInbound.tgMsgId,
         source: "voice_transcript",
+        agent,
       });
     }
     return reply.code(200).send({});
@@ -234,19 +238,19 @@ export function registerHookRoutes(app: FastifyInstance, deps: HookDeps): void {
       deps.log.info({ session: session_id.slice(0, 8) }, "HOOK stop no pending");
       return reply.code(200).send({});
     }
-    const latest = pendings[pendings.length - 1]!;
+    const latest = pendings.at(-1)!;
     const orphans = pendings.slice(0, -1);
     const inbound = deps.messagesRepo.findById(latest.inboundMsgId);
     const replyChatId =
-      inbound?.tgChatId ??
-      deps.messagesRepo.getChatId(latest.inboundMsgId) ??
-      deps.primaryOperator;
+      inbound?.tgChatId ?? deps.messagesRepo.getChatId(latest.inboundMsgId) ?? deps.primaryOperator;
     const replyToTgMsgId = inbound?.tgMsgId ?? null;
-    const finalText = FormatService.prefixReply(lastMsg);
+    const replyAgent = latest.agent;
+    const finalText = FormatService.prefixReply(lastMsg, replyAgent);
     const auditMsgId = deps.messagesRepo.insertOutboundAudit(
       lastMsg,
       session_id,
-      latest.inboundMsgId
+      latest.inboundMsgId,
+      replyAgent
     );
     const outboxId = deps.outbox.enqueueReply({
       text: finalText,
@@ -254,14 +258,13 @@ export function registerHookRoutes(app: FastifyInstance, deps: HookDeps): void {
       repliedToId: replyToTgMsgId,
       sessionId: session_id,
       auditMsgId,
+      agent: replyAgent,
     });
     let fanoutAcks = 0;
     for (const orphan of orphans) {
       const orphanInbound = deps.messagesRepo.findById(orphan.inboundMsgId);
       const ackChatId =
-        orphanInbound?.tgChatId ??
-        deps.messagesRepo.getChatId(orphan.inboundMsgId) ??
-        replyChatId;
+        orphanInbound?.tgChatId ?? deps.messagesRepo.getChatId(orphan.inboundMsgId) ?? replyChatId;
       const ackRepliedTo = orphanInbound?.tgMsgId ?? null;
       deps.outbox.enqueueAck({
         text: "↳ объединено с общим ответом",
@@ -269,6 +272,7 @@ export function registerHookRoutes(app: FastifyInstance, deps: HookDeps): void {
         repliedToId: ackRepliedTo,
         sessionId: session_id,
         auditMsgId: null,
+        agent: replyAgent,
       });
       fanoutAcks += 1;
     }
@@ -328,7 +332,7 @@ export function registerHookRoutes(app: FastifyInstance, deps: HookDeps): void {
   app.post("/hook/session-start", async (req, reply) => {
     const parsed = SessionStartSchema.safeParse(req.body);
     if (!parsed.success) return reply.code(200).send({});
-    const { session_id, source, model, cwd, transcript_path } = parsed.data;
+    const { session_id, source, model, cwd, transcript_path, agent } = parsed.data;
     const previousSession: string | null = null;
     const owner = deps.sessionService.recordStart({
       sessionId: session_id,
@@ -338,6 +342,7 @@ export function registerHookRoutes(app: FastifyInstance, deps: HookDeps): void {
       transcriptPath: transcript_path ?? null,
       previousSession,
       primaryOperator: deps.primaryOperator,
+      agent,
     });
     deps.log.info(
       {

@@ -3,11 +3,14 @@ import type { Logger } from "../../lib/logger.js";
 import type { MessagesRepo } from "../../infrastructure/db/repositories/messages.repo.js";
 import type { MediaStore } from "../../infrastructure/filesystem/mediaStore.js";
 import { TIMING } from "../../config/paths.js";
+import type { UserBuddyService } from "../../services/userBuddy.service.js";
+import { type AgentKind, DEFAULT_AGENT } from "../../domain/message.js";
 
 export interface InboundDeps {
   log: Logger;
   messagesRepo: MessagesRepo;
   mediaStore: MediaStore;
+  userBuddy: UserBuddyService;
   voiceTranscription: "off" | "local";
   voiceMaxDurationSec: number;
   reactToVoiceTranscribing?: (chatId: number, messageId: number) => Promise<void>;
@@ -56,6 +59,19 @@ async function rejectWithReply(
   }
 }
 
+const AGENT_PREFIX_RE = /^@(claude|codex)\b\s*/i;
+
+function extractAgent(
+  rawText: string,
+  defaultAgent: AgentKind
+): { agent: AgentKind; cleanedText: string } {
+  const match = AGENT_PREFIX_RE.exec(rawText);
+  if (!match) return { agent: defaultAgent, cleanedText: rawText };
+  const tag: AgentKind = match[1]?.toLowerCase() === "codex" ? "codex" : "claude";
+  const cleanedText = rawText.slice(match[0].length).trimStart();
+  return { agent: tag, cleanedText };
+}
+
 export function buildInboundHandler(deps: InboundDeps): Composer<Context> {
   const c = new Composer<Context>();
   c.on("message", async (ctx) => {
@@ -64,7 +80,10 @@ export function buildInboundHandler(deps: InboundDeps): Composer<Context> {
       deps.log.warn({ chatId: ctx.chat.id }, "INBOUND rejected: missing Telegram user id");
       return;
     }
-    const text = (ctx.message.text ?? ctx.message.caption ?? "").trim();
+    const rawText = (ctx.message.text ?? ctx.message.caption ?? "").trim();
+    const defaultAgent = deps.userBuddy.getDefault(fromUserId) ?? DEFAULT_AGENT;
+    const { agent, cleanedText } = extractAgent(rawText, defaultAgent);
+    const text = cleanedText;
     if (ctx.message.voice) {
       if (deps.voiceTranscription !== "local") {
         await rejectWithReply(
@@ -115,7 +134,8 @@ export function buildInboundHandler(deps: InboundDeps): Composer<Context> {
         ctx.chat.id,
         ctx.message.message_id,
         fromUserId,
-        media.path
+        media.path,
+        agent
       );
       deps.log.info(
         { id, path: media.path, durationSec: ctx.message.voice.duration },
@@ -157,7 +177,8 @@ export function buildInboundHandler(deps: InboundDeps): Composer<Context> {
       paneText,
       ctx.chat.id,
       ctx.message.message_id,
-      fromUserId
+      fromUserId,
+      agent
     );
     if (media) {
       deps.messagesRepo.update(id, { kind: media.kind });

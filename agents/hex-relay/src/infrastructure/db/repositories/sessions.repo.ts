@@ -1,9 +1,11 @@
 import type { Db } from "../client.js";
 import type { SessionRow } from "../../../domain/session.js";
+import { type AgentKind, DEFAULT_AGENT } from "../../../domain/message.js";
 import { mapSessionRow } from "../rowMappers.js";
 
 export interface SessionUpsertArgs {
   sessionId: string;
+  agent?: AgentKind;
   source: string;
   model: string | null;
   cwd: string | null;
@@ -25,8 +27,8 @@ export function createSessionsRepo(db: Db) {
   );
   const insertIgnore = db.prepare(
     "INSERT OR IGNORE INTO sessions " +
-      "(session_id, started_at, source, previous_session, model, cwd, transcript_path, created_by_user_id) " +
-      "VALUES (?,?,?,?,?,?,?,?)"
+      "(session_id, started_at, source, previous_session, model, cwd, transcript_path, created_by_user_id, agent) " +
+      "VALUES (?,?,?,?,?,?,?,?,?)"
   );
   const tagOwnerIfMissing = db.prepare(
     "UPDATE sessions SET created_by_user_id=? " +
@@ -59,7 +61,8 @@ export function createSessionsRepo(db: Db) {
         args.model,
         args.cwd,
         args.transcriptPath,
-        args.createdByUserId ?? null
+        args.createdByUserId ?? null,
+        args.agent ?? DEFAULT_AGENT
       );
       if (args.createdByUserId !== undefined && args.createdByUserId !== null) {
         tagOwnerIfMissing.run(args.createdByUserId, args.sessionId);

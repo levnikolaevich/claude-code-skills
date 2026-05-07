@@ -319,12 +319,14 @@ test("pending reply updates to the latest prompt for steering bursts", async () 
   }
 });
 
-
 test("stop hook fans out acks for orphan pending inbounds", async () => {
   const app = createApp();
-  const replies: Array<Record<string, unknown>> = [];
-  const acks: Array<Record<string, unknown>> = [];
-  const inboundsById = new Map<number, { id: number; tgChatId: number; tgMsgId: number; fromUserId: number }>([
+  const replies: Record<string, unknown>[] = [];
+  const acks: Record<string, unknown>[] = [];
+  const inboundsById = new Map<
+    number,
+    { id: number; tgChatId: number; tgMsgId: number; fromUserId: number }
+  >([
     [201, { id: 201, tgChatId: 999, tgMsgId: 1001, fromUserId: 5 }],
     [202, { id: 202, tgChatId: 999, tgMsgId: 1002, fromUserId: 5 }],
     [203, { id: 203, tgChatId: 999, tgMsgId: 1003, fromUserId: 5 }],

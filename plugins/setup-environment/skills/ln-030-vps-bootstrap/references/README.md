@@ -25,6 +25,8 @@ Template files and runbooks used by `ln-030` and its VPS runtime workers. Most t
 |---|---|---|---|---|---|
 | `god-session.sh` | `/usr/local/bin/${SERVICE_PREFIX}-god` | root:root | 755 | `PROJECT_NAME`, `SERVICE_PREFIX`, `PROJECT_DIR`, `DISPATCH_COMMAND_NAME` | — |
 | `god-session.service` | `/etc/systemd/system/${SERVICE_PREFIX}-god@.service` | root:root | 644 | `PROJECT_NAME`, `SERVICE_PREFIX`, `PROJECT_DIR`, `BOT_USER` | — |
+| `god-session-codex.sh` | `/usr/local/bin/${SERVICE_PREFIX}-god-codex` | root:root | 755 | `PROJECT_NAME`, `SERVICE_PREFIX`, `PROJECT_DIR` | — |
+| `hex-relay-codex-hook.sh` | `/usr/local/bin/hex-relay-codex-hook.sh` | root:root | 755 | — | Codex hooks in `~/.codex/config.toml` (`ln-013`) |
 | `agent-sandbox.sh` | `/usr/local/bin/${SERVICE_PREFIX}-agent-sandbox` | root:root | 755 | `PROJECT_NAME`, `SERVICE_PREFIX`, `PROJECT_DIR`, `BOT_USER`, `AGENT_SKILLS_DIR` | — |
 | `dispatch.timer` | `/etc/systemd/system/${SERVICE_PREFIX}-dispatch.timer` | root:root | 644 | `SERVICE_PREFIX`, `DISPATCH_COMMAND_NAME` | — (always installs) |
 | `dispatch.service` | `/etc/systemd/system/${SERVICE_PREFIX}-dispatch.service` | root:root | 644 | `SERVICE_PREFIX`, `BOT_USER`, `DISPATCH_COMMAND_NAME` | — (always installs) |

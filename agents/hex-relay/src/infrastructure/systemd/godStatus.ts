@@ -2,6 +2,7 @@ import type { Logger } from "../../lib/logger.js";
 import type { Env } from "../../config/env.js";
 import { buildUserRuntimePaths } from "../../config/paths.js";
 import { runProcess, type RunProcessResult } from "../process/runProcess.js";
+import type { AgentKind } from "../../domain/message.js";
 
 export interface GodStatusDeps {
   env: Env;
@@ -20,12 +21,12 @@ function runSystemctl(args: string[], timeoutMs: number): Promise<RunProcessResu
 
 export function createGodStatusProbe(deps: GodStatusDeps) {
   const timeout = deps.timeoutMs ?? 3000;
-  function serviceName(userId: number): string {
-    return buildUserRuntimePaths(deps.env, userId).godServiceName;
+  function serviceName(userId: number, agent: AgentKind = "claude"): string {
+    return buildUserRuntimePaths(deps.env, userId, agent).godServiceName;
   }
   return {
-    async isActive(userId: number): Promise<boolean> {
-      const service = serviceName(userId);
+    async isActive(userId: number, agent: AgentKind = "claude"): Promise<boolean> {
+      const service = serviceName(userId, agent);
       try {
         const r = await runSystemctl(["is-active", service], timeout);
         return r.stdout.trim() === "active";
@@ -34,15 +35,15 @@ export function createGodStatusProbe(deps: GodStatusDeps) {
         return false;
       }
     },
-    async start(userId: number): Promise<void> {
-      const service = serviceName(userId);
+    async start(userId: number, agent: AgentKind = "claude"): Promise<void> {
+      const service = serviceName(userId, agent);
       const r = await runSystemctl(["start", service], 10_000);
       if (r.code !== 0) {
         throw new Error(`systemctl start ${service} rc=${r.code}: ${r.stderr.slice(0, 240)}`);
       }
     },
-    async restart(userId: number): Promise<void> {
-      const service = serviceName(userId);
+    async restart(userId: number, agent: AgentKind = "claude"): Promise<void> {
+      const service = serviceName(userId, agent);
       const r = await runSystemctl(["restart", service], 10_000);
       if (r.code !== 0) {
         throw new Error(`systemctl restart ${service} rc=${r.code}: ${r.stderr.slice(0, 240)}`);
@@ -54,6 +55,7 @@ export function createGodStatusProbe(deps: GodStatusDeps) {
           [
             "list-units",
             `${deps.env.servicePrefix}-god@*.service`,
+            `${deps.env.servicePrefix}-god-codex@*.service`,
             "--state=active",
             "--no-legend",
           ],

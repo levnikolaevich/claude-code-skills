@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import type { Db } from "../client.js";
-import type { PendingReply } from "../../../domain/message.js";
+import { type PendingReply, type AgentKind, DEFAULT_AGENT } from "../../../domain/message.js";
 import { mapPendingRow } from "../rowMappers.js";
 
 function nowTs(): number {
@@ -12,9 +12,10 @@ export type PendingReplyRepo = ReturnType<typeof createPendingReplyRepo>;
 export function createPendingReplyRepo(db: Db) {
   const insert = db.prepare(
     "INSERT INTO pending_reply " +
-      "(session_id, inbound_msg_id, prompt_hash, created_at) VALUES (?,?,?,?) " +
+      "(session_id, inbound_msg_id, prompt_hash, created_at, agent) VALUES (?,?,?,?,?) " +
       "ON CONFLICT(session_id, inbound_msg_id) DO UPDATE SET " +
       "prompt_hash=excluded.prompt_hash, " +
+      "agent=excluded.agent, " +
       "created_at=excluded.created_at"
   );
   const getLatest = db.prepare(
@@ -30,9 +31,14 @@ export function createPendingReplyRepo(db: Db) {
   const countActive = db.prepare("SELECT COUNT(*) AS c FROM pending_reply WHERE created_at > ?");
 
   return {
-    set(sessionId: string, inboundId: number, prompt: string): void {
+    set(
+      sessionId: string,
+      inboundId: number,
+      prompt: string,
+      agent: AgentKind = DEFAULT_AGENT
+    ): void {
       const hash = createHash("sha256").update(prompt, "utf8").digest("hex");
-      insert.run(sessionId, inboundId, hash, nowTs());
+      insert.run(sessionId, inboundId, hash, nowTs(), agent);
     },
     get(sessionId: string): PendingReply | null {
       const row = getLatest.get(sessionId) as Record<string, unknown> | undefined;

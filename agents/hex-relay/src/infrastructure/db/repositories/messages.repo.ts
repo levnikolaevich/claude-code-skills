@@ -1,5 +1,11 @@
 import type { Db } from "../client.js";
-import type { InboundMessage, MessageKind, MessageStatus } from "../../../domain/message.js";
+import {
+  type InboundMessage,
+  type MessageKind,
+  type MessageStatus,
+  type AgentKind,
+  DEFAULT_AGENT,
+} from "../../../domain/message.js";
 import { mapInboundRow } from "../rowMappers.js";
 
 export interface MessageUpdate {
@@ -43,21 +49,21 @@ export type MessagesRepo = ReturnType<typeof createMessagesRepo>;
 export function createMessagesRepo(db: Db) {
   const insertInbound = db.prepare(
     "INSERT INTO messages " +
-      "(ts, direction, kind, status, text, tg_chat_id, tg_msg_id, from_user_id, next_attempt_at) " +
-      "VALUES (?, 'inbound', 'text', 'queued', ?, ?, ?, ?, ?)"
+      "(ts, direction, kind, status, text, tg_chat_id, tg_msg_id, from_user_id, next_attempt_at, agent) " +
+      "VALUES (?, 'inbound', 'text', 'queued', ?, ?, ?, ?, ?, ?)"
   );
   const insertTranscribingVoice = db.prepare(
     "INSERT INTO messages " +
-      "(ts, direction, kind, status, text, tg_chat_id, tg_msg_id, from_user_id, media_path, next_attempt_at) " +
-      "VALUES (?, 'inbound', 'voice', 'transcribing', '', ?, ?, ?, ?, ?)"
+      "(ts, direction, kind, status, text, tg_chat_id, tg_msg_id, from_user_id, media_path, next_attempt_at, agent) " +
+      "VALUES (?, 'inbound', 'voice', 'transcribing', '', ?, ?, ?, ?, ?, ?)"
   );
   const insertRejected = db.prepare(
-    "INSERT INTO messages (ts, direction, kind, status, text, tg_chat_id, tg_msg_id, error) " +
-      "VALUES (?, 'inbound', 'text', 'rejected', ?, ?, ?, ?)"
+    "INSERT INTO messages (ts, direction, kind, status, text, tg_chat_id, tg_msg_id, error, agent) " +
+      "VALUES (?, 'inbound', 'text', 'rejected', ?, ?, ?, ?, ?)"
   );
   const insertOutboundAudit = db.prepare(
-    "INSERT INTO messages (ts, direction, status, text, session_id, replied_to_id) " +
-      "VALUES (?, 'outbound', 'queued', ?, ?, ?)"
+    "INSERT INTO messages (ts, direction, status, text, session_id, replied_to_id, agent) " +
+      "VALUES (?, 'outbound', 'queued', ?, ?, ?, ?)"
   );
   const selectDue = db.prepare(
     "SELECT * FROM messages WHERE direction='inbound' " +
@@ -89,31 +95,53 @@ export function createMessagesRepo(db: Db) {
   );
 
   return {
-    insertInbound(text: string, tgChatId: number, tgMsgId: number, fromUserId: number): number {
+    insertInbound(
+      text: string,
+      tgChatId: number,
+      tgMsgId: number,
+      fromUserId: number,
+      agent: AgentKind = DEFAULT_AGENT
+    ): number {
       const ts = nowTs();
-      const result = insertInbound.run(ts, text, tgChatId, tgMsgId, fromUserId, ts);
+      const result = insertInbound.run(ts, text, tgChatId, tgMsgId, fromUserId, ts, agent);
       return Number(result.lastInsertRowid);
     },
     insertTranscribingVoice(
       tgChatId: number,
       tgMsgId: number,
       fromUserId: number,
-      mediaPath: string
+      mediaPath: string,
+      agent: AgentKind = DEFAULT_AGENT
     ): number {
       const ts = nowTs();
-      const result = insertTranscribingVoice.run(ts, tgChatId, tgMsgId, fromUserId, mediaPath, ts);
+      const result = insertTranscribingVoice.run(
+        ts,
+        tgChatId,
+        tgMsgId,
+        fromUserId,
+        mediaPath,
+        ts,
+        agent
+      );
       return Number(result.lastInsertRowid);
     },
-    insertRejected(text: string, tgChatId: number, tgMsgId: number, error: string): number {
-      const result = insertRejected.run(nowTs(), text, tgChatId, tgMsgId, error);
+    insertRejected(
+      text: string,
+      tgChatId: number,
+      tgMsgId: number,
+      error: string,
+      agent: AgentKind = DEFAULT_AGENT
+    ): number {
+      const result = insertRejected.run(nowTs(), text, tgChatId, tgMsgId, error, agent);
       return Number(result.lastInsertRowid);
     },
     insertOutboundAudit(
       text: string,
       sessionId: string | null,
-      repliedToId: number | null
+      repliedToId: number | null,
+      agent: AgentKind = DEFAULT_AGENT
     ): number {
-      const result = insertOutboundAudit.run(nowTs(), text, sessionId, repliedToId);
+      const result = insertOutboundAudit.run(nowTs(), text, sessionId, repliedToId, agent);
       return Number(result.lastInsertRowid);
     },
     selectDue(limit = 5): InboundMessage[] {

@@ -1,5 +1,11 @@
 import type { Db } from "../client.js";
-import type { OutboxEventType, OutboxRow, OutboxStatus } from "../../../domain/message.js";
+import {
+  type OutboxEventType,
+  type OutboxRow,
+  type OutboxStatus,
+  type AgentKind,
+  DEFAULT_AGENT,
+} from "../../../domain/message.js";
 import { mapOutboxRow } from "../rowMappers.js";
 
 export interface OutboxEnqueueArgs {
@@ -9,6 +15,7 @@ export interface OutboxEnqueueArgs {
   sessionId: string | null;
   auditMsgId?: number | null;
   eventType?: OutboxEventType;
+  agent?: AgentKind;
 }
 
 export interface OutboxUpdate {
@@ -44,8 +51,8 @@ export type OutboxRepo = ReturnType<typeof createOutboxRepo>;
 export function createOutboxRepo(db: Db) {
   const enqueue = db.prepare(
     "INSERT INTO outbox (ts, text, chat_id, status, next_attempt_at, " +
-      "replied_to_id, session_id, audit_msg_id, event_type) " +
-      "VALUES (?,?,?,'queued',?,?,?,?,?)"
+      "replied_to_id, session_id, audit_msg_id, event_type, agent) " +
+      "VALUES (?,?,?,'queued',?,?,?,?,?,?)"
   );
   const selectDue = db.prepare(
     "SELECT * FROM outbox WHERE status='queued' AND next_attempt_at<=? " + "ORDER BY id LIMIT ?"
@@ -65,7 +72,8 @@ export function createOutboxRepo(db: Db) {
         args.repliedToId,
         args.sessionId,
         args.auditMsgId ?? null,
-        args.eventType ?? "reply"
+        args.eventType ?? "reply",
+        args.agent ?? DEFAULT_AGENT
       );
       return Number(result.lastInsertRowid);
     },

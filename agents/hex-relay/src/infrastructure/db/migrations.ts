@@ -30,6 +30,8 @@ export function runMigrations(db: Db, deps: MigrationDeps): void {
   recoverStuckInbound(db);
   migrateOutboxEventType(db, deps.log);
   migratePendingReplyCompositeKey(db, deps.log);
+  migrateAgentColumns(db, deps.log);
+  ensureUserBuddyTable(db, deps.log);
   seedTaskPollState(db, deps.log);
   reconcileSessionsOwner(db, deps);
 }
@@ -94,9 +96,10 @@ function migrateOutboxEventType(db: Db, log: Logger): void {
 
 function migratePendingReplyCompositeKey(db: Db, log: Logger): void {
   try {
-    const rows = db
-      .prepare("PRAGMA table_info(pending_reply)")
-      .all() as Array<{ name: string; pk: number }>;
+    const rows = db.prepare("PRAGMA table_info(pending_reply)").all() as {
+      name: string;
+      pk: number;
+    }[];
     if (rows.length === 0) return;
     const pkCols = rows
       .filter((r) => r.pk > 0)
@@ -121,12 +124,8 @@ function migratePendingReplyCompositeKey(db: Db, log: Logger): void {
     );
     db.exec("DROP TABLE pending_reply");
     db.exec("ALTER TABLE pending_reply_new RENAME TO pending_reply");
-    db.exec(
-      "CREATE INDEX IF NOT EXISTS idx_pending_reply_session ON pending_reply(session_id)"
-    );
-    db.exec(
-      "CREATE INDEX IF NOT EXISTS idx_pending_reply_created ON pending_reply(created_at)"
-    );
+    db.exec("CREATE INDEX IF NOT EXISTS idx_pending_reply_session ON pending_reply(session_id)");
+    db.exec("CREATE INDEX IF NOT EXISTS idx_pending_reply_created ON pending_reply(created_at)");
     db.exec("COMMIT");
     log.info("migrate: pending_reply -> composite PK (session_id, inbound_msg_id)");
   } catch (error) {
@@ -205,5 +204,32 @@ function reconcileSessionsOwner(db: Db, deps: MigrationDeps): void {
     }
   } catch (error) {
     deps.log.error({ err: error }, "sessions owner reconciliation UPDATE failed");
+  }
+}
+
+function migrateAgentColumns(db: Db, log: Logger): void {
+  const tables = ["messages", "pending_reply", "outbox", "sessions"];
+  for (const table of tables) {
+    try {
+      const cols = tableColumns(db, table);
+      if (cols.has("agent")) continue;
+      db.exec(`ALTER TABLE ${table} ADD COLUMN agent TEXT NOT NULL DEFAULT 'claude'`);
+      log.info({ table }, "migrate: added agent column");
+    } catch (error) {
+      log.error({ err: error, table }, "migrate_agent_columns failed");
+    }
+  }
+}
+
+function ensureUserBuddyTable(db: Db, log: Logger): void {
+  try {
+    db.exec(
+      "CREATE TABLE IF NOT EXISTS user_buddy (" +
+        "user_id INTEGER PRIMARY KEY, " +
+        "agent TEXT NOT NULL CHECK(agent IN ('claude','codex')), " +
+        "updated_at INTEGER NOT NULL)"
+    );
+  } catch (error) {
+    log.error({ err: error }, "ensure_user_buddy_table failed");
   }
 }

@@ -1,13 +1,17 @@
-import type {
-  InboundMessage,
-  OutboxRow,
-  OutboxStatus,
-  MessageStatus,
-  MessageKind,
-  OutboxEventType,
-  PendingReply,
+import {
+  type InboundMessage,
+  type OutboxRow,
+  type OutboxStatus,
+  type MessageStatus,
+  type MessageKind,
+  type OutboxEventType,
+  type PendingReply,
+  type AgentKind,
+  DEFAULT_AGENT,
+  isAgentKind,
 } from "../../domain/message.js";
 import type { SessionRow } from "../../domain/session.js";
+import type { UserBuddy } from "../../domain/userBuddy.js";
 import type { DispatchPhase, DispatchRunStatus, DispatchRun } from "../../domain/dispatch.js";
 import type { MemoryRow } from "../../domain/memory.js";
 import type { AllowedUserRow, AllowedUserStatus } from "../../domain/user.js";
@@ -30,6 +34,9 @@ function str(v: unknown): string {
 function strOrNull(v: unknown): string | null {
   return v === null || v === undefined ? null : str(v);
 }
+function agent(v: unknown): AgentKind {
+  return isAgentKind(v) ? v : DEFAULT_AGENT;
+}
 
 export function mapInboundRow(r: Row): InboundMessage {
   return {
@@ -48,6 +55,7 @@ export function mapInboundRow(r: Row): InboundMessage {
     nextAttemptAt: num(r.next_attempt_at ?? 0),
     deliveredAt: numOrNull(r.delivered_at),
     error: strOrNull(r.error),
+    agent: agent(r.agent),
   };
 }
 
@@ -66,6 +74,7 @@ export function mapOutboxRow(r: Row): OutboxRow {
     auditMsgId: numOrNull(r.audit_msg_id),
     eventType: (strOrNull(r.event_type) ?? "reply") as OutboxEventType,
     error: strOrNull(r.error),
+    agent: agent(r.agent),
   };
 }
 
@@ -75,6 +84,7 @@ export function mapPendingRow(r: Row): PendingReply {
     inboundMsgId: num(r.inbound_msg_id),
     promptHash: str(r.prompt_hash),
     createdAt: num(r.created_at),
+    agent: agent(r.agent),
   };
 }
 
@@ -90,6 +100,7 @@ export function mapSessionRow(r: Row): SessionRow {
     transcriptPath: strOrNull(r.transcript_path),
     endReason: strOrNull(r.end_reason),
     createdByUserId: numOrNull(r.created_by_user_id),
+    agent: agent(r.agent),
   };
 }
 
@@ -158,6 +169,14 @@ export function mapTodoRow(r: Row): TodoStateRow {
     status: str(r.status),
     content: str(r.content),
     activeForm: strOrNull(r.active_form),
+    updatedAt: num(r.updated_at),
+  };
+}
+
+export function mapUserBuddyRow(r: Row): UserBuddy {
+  return {
+    userId: num(r.user_id),
+    agent: agent(r.agent),
     updatedAt: num(r.updated_at),
   };
 }

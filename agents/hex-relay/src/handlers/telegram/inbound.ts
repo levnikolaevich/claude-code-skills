@@ -30,6 +30,19 @@ async function sendRejectReply(ctx: Context, text: string): Promise<void> {
   }
 }
 
+async function handleCaptureResult(
+  deps: InboundDeps,
+  ctx: Context,
+  result: Awaited<ReturnType<TelegramInboundCaptureService["capture"]>>
+): Promise<void> {
+  if (!result.ok) {
+    deps.log.error({ error: result.error }, "Telegram inbound capture failed");
+    await sendRejectReply(ctx, `Failed to queue message: ${result.error.message}`);
+    return;
+  }
+  if (result.value.kind === "rejected") await sendRejectReply(ctx, result.value.replyText);
+}
+
 export function buildInboundHandler(deps: InboundDeps): Composer<Context> {
   const c = new Composer<Context>();
   c.on("message", async (ctx) => {
@@ -56,7 +69,11 @@ export function buildInboundHandler(deps: InboundDeps): Composer<Context> {
           fileSize: ctx.message.voice.file_size ?? null,
         },
       });
-      if (initial.kind === "download_media") {
+      if (!initial.ok) {
+        await handleCaptureResult(deps, ctx, initial);
+        return;
+      }
+      if (initial.value.kind === "download_media") {
         const media = await deps.mediaStore.download(ctx);
         const result = await deps.capture.capture({
           ...baseCommand,
@@ -66,16 +83,16 @@ export function buildInboundHandler(deps: InboundDeps): Composer<Context> {
           },
           media,
         });
-        if (result.kind === "rejected") await sendRejectReply(ctx, result.replyText);
+        await handleCaptureResult(deps, ctx, result);
         return;
       }
-      if (initial.kind === "rejected") await sendRejectReply(ctx, initial.replyText);
+      await handleCaptureResult(deps, ctx, initial);
       return;
     }
 
     const media = await deps.mediaStore.download(ctx);
     const result = await deps.capture.capture({ ...baseCommand, media });
-    if (result.kind === "rejected") await sendRejectReply(ctx, result.replyText);
+    await handleCaptureResult(deps, ctx, result);
   });
   return c;
 }

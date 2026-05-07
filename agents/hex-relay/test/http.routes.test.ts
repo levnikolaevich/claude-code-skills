@@ -32,6 +32,10 @@ function noop(): void {
   return;
 }
 
+function ok<T>(value: T) {
+  return { ok: true as const, value };
+}
+
 async function asyncNoop(): Promise<void> {
   return;
 }
@@ -61,9 +65,9 @@ function registerHooks(app: ReturnType<typeof createApp>, overrides: Record<stri
       listOthers: () => [],
     },
     outbox: {
-      enqueueReply: () => 1,
-      enqueueAck: () => 1,
-      enqueueStatus: () => 1,
+      enqueueReply: () => ok(1),
+      enqueueAck: () => ok(1),
+      enqueueStatus: () => ok(1),
     },
     sessionService: {
       insertEvent: noop,
@@ -160,7 +164,7 @@ test("dispatch routes use Fastify schema validation", async () => {
   });
   const bad = await app.inject({ method: "POST", url: "/dispatch/phase", payload: { phase: "x" } });
   assert.equal(bad.statusCode, 400);
-  assert.equal(bad.json().error, "validation");
+  assert.equal(bad.json().error.code, "request_validation_failed");
   const badStatus = await app.inject({
     method: "POST",
     url: "/dispatch/phase",
@@ -204,9 +208,17 @@ test("memory and task routes validate and serialize stable contracts", async () 
   registerTaskRoutes(app, {
     log,
     tasks: {
-      fetchOpenTasks: async () => [],
-      pollAndNotifyPrimary: async () => ({ count: 3 }),
-      queueTaskForUser: async () => null,
+      fetchOpenTasks: async () => ok([]),
+      pollAndNotifyPrimary: async () => ok({ count: 3, notified: false }),
+      queueTaskForUser: async () => ({
+        ok: false,
+        error: {
+          code: "task_not_found",
+          kind: "not_found",
+          message: "task not found",
+          retryable: false,
+        },
+      }),
     },
   });
   const bad = await app.inject({ method: "POST", url: "/memory/add", payload: { category: "x" } });
@@ -239,11 +251,18 @@ test("response serialization errors return internal error", async () => {
 
   const response = await app.inject({ method: "GET", url: "/bad-response" });
   assert.equal(response.statusCode, 500);
-  assert.deepEqual(response.json(), { error: "internal" });
+  assert.deepEqual(response.json(), {
+    ok: false,
+    error: {
+      code: "response_serialization_failed",
+      message: "response serialization failed",
+      retryable: false,
+    },
+  });
   await app.close();
 });
 
-test("Claude hook malformed payload compatibility stays 200 empty object", async () => {
+test("Claude hook malformed payload returns typed validation error", async () => {
   const app = createApp();
   registerHooks(app);
   const response = await app.inject({
@@ -251,8 +270,8 @@ test("Claude hook malformed payload compatibility stays 200 empty object", async
     url: "/hook/user-prompt-submit",
     payload: {},
   });
-  assert.equal(response.statusCode, 200);
-  assert.deepEqual(response.json(), {});
+  assert.equal(response.statusCode, 400);
+  assert.equal(response.json().error.code, "hook_payload_invalid");
   await app.close();
 });
 
@@ -331,13 +350,13 @@ test("stop hook fans out acks for orphan pending inbounds", async () => {
     outbox: {
       enqueueReply: (args: Record<string, unknown>) => {
         replies.push(args);
-        return 91;
+        return ok(91);
       },
       enqueueAck: (args: Record<string, unknown>) => {
         acks.push(args);
-        return 92;
+        return ok(92);
       },
-      enqueueStatus: () => 1,
+      enqueueStatus: () => ok(1),
     },
   });
 
@@ -366,7 +385,7 @@ test("post-tool-use Skill emits duration suffix in verbose_bash", async () => {
     outbox: {
       enqueueStatus: (args: Record<string, unknown>) => {
         statuses.push(args);
-        return 1;
+        return ok(1);
       },
     },
     verbosity: { allows: (layer: string) => layer === "verbose_bash" },
@@ -438,7 +457,7 @@ test("post-tool-use stays silent below verbose verbosity", async () => {
     outbox: {
       enqueueStatus: (args: Record<string, unknown>) => {
         statuses.push(args);
-        return 1;
+        return ok(1);
       },
     },
     verbosity: { allows: () => false },
@@ -468,7 +487,7 @@ test("post-tool-use ignores non-Skill tools even with verbose_bash and duration_
     outbox: {
       enqueueStatus: (args: Record<string, unknown>) => {
         statuses.push(args);
-        return 1;
+        return ok(1);
       },
     },
     verbosity: { allows: () => true },

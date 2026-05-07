@@ -55,13 +55,18 @@ async function gatherClaudeBlock(deps: UsageDeps): Promise<string> {
 }
 
 async function gatherCodexBlock(deps: UsageDeps, userId: number): Promise<string> {
+  let isActive;
   try {
-    const isActive = await deps.godRuntime.isActive(userId, "codex");
-    if (!isActive) return CODEX_INACTIVE;
+    isActive = await deps.godRuntime.isActive(userId, "codex");
   } catch (error) {
     deps.log.warn({ err: String(error) }, "codex status probe failed");
     return "\u{1F7E2} Codex god-session: status unavailable (systemd query failed).";
   }
+  if (!isActive.ok) {
+    deps.log.warn({ error: isActive.error }, "codex status probe failed");
+    return "\u{1F7E2} Codex god-session: status unavailable (systemd query failed).";
+  }
+  if (!isActive.value) return CODEX_INACTIVE;
   return runCodexJsonReport(deps);
 }
 
@@ -77,12 +82,17 @@ export function buildUsageHandler(deps: UsageDeps): Composer<Context> {
       `--- Claude usage ---\n${claudeBlock}\n\n` + `--- Codex status ---\n${codexBlock}`;
 
     const targetAgent: AgentKind = deps.userBuddy.getDefault(userId) ?? DEFAULT_AGENT;
-    const targetActive = await deps.godRuntime
-      .isActive(userId, targetAgent)
-      .catch((error: unknown) => {
-        deps.log.warn({ err: String(error) }, "target agent isActive probe failed");
-        return false;
-      });
+    let targetActiveOutcome;
+    try {
+      targetActiveOutcome = await deps.godRuntime.isActive(userId, targetAgent);
+    } catch (error) {
+      deps.log.warn({ err: String(error) }, "target agent isActive probe failed");
+      targetActiveOutcome = { ok: true, value: false } as const;
+    }
+    if (!targetActiveOutcome.ok) {
+      deps.log.warn({ error: targetActiveOutcome.error }, "target agent isActive probe failed");
+    }
+    const targetActive = targetActiveOutcome.ok ? targetActiveOutcome.value : false;
 
     if (targetActive) {
       const prefix = buildTgPrefix({

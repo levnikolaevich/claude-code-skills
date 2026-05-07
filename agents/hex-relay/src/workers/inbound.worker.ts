@@ -1,36 +1,22 @@
-import { setTimeout as delay } from "node:timers/promises";
 import type { Logger } from "../lib/logger.js";
 import type { InboundService } from "../services/inbound.service.js";
 import { TIMING } from "../config/paths.js";
+import { createWorkerLoop, type DrainableWorker } from "./workerLoop.js";
 
-export interface InboundWorker {
-  start(): Promise<void>;
-  stop(): void;
-}
+export type InboundWorker = DrainableWorker;
 
 export function createInboundWorker(deps: { log: Logger; service: InboundService }): InboundWorker {
-  let running = false;
-  let stopPromise: Promise<void> | null = null;
-
-  return {
-    async start() {
-      if (running) return;
-      running = true;
-      deps.log.info({ pollMs: TIMING.inboundPollMs }, "inbound worker started");
-      stopPromise = (async () => {
-        while (running) {
-          try {
-            await deps.service.tick();
-          } catch (error) {
-            deps.log.error({ err: String(error) }, "inbound worker iteration failed");
-          }
-          await delay(TIMING.inboundPollMs);
-        }
-      })();
-      await stopPromise;
+  return createWorkerLoop({
+    log: deps.log,
+    name: "inbound worker",
+    intervalMs: TIMING.inboundPollMs,
+    async runOnce() {
+      const outcome = await deps.service.tick();
+      if (!outcome.ok) {
+        deps.log.error({ error: outcome.error }, "inbound worker iteration failed");
+      } else if (outcome.value.failed > 0) {
+        deps.log.warn({ result: outcome.value }, "inbound worker completed with row failures");
+      }
     },
-    stop() {
-      running = false;
-    },
-  };
+  });
 }

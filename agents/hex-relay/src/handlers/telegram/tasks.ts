@@ -1,41 +1,77 @@
 import { Composer, type Context } from "grammy";
 import type { Logger } from "../../lib/logger.js";
 import type { TaskService } from "../../services/task.service.js";
-import { taskCardKb } from "./kb.js";
+import type { ProviderTask } from "../../domain/task.js";
+import { TIMING } from "../../config/paths.js";
+import { listKeyboard, type MenuScreen } from "./kb.js";
+import { truncate } from "../../domain/events.js";
 
 export interface TasksDeps {
   log: Logger;
   tasks: TaskService;
 }
 
-const MAX_TASK_CARDS = 20;
+const TITLE_DISPLAY_MAX = 48;
 
-function taskText(id: number, title: string, labels: string[]): string {
-  const labelText = labels.length > 0 ? `\nlabels: ${labels.join(", ")}` : "";
-  return `#${id} - ${title}${labelText}`;
+/**
+ * Render the v2 tasks list screen. Plain text, no parse_mode (Option A).
+ * Owner-bound Refresh via `t_list:{ownerId}` so cross-actor taps in shared
+ * chats get rejected without disturbing the menu state.
+ */
+export function renderTasksList(args: {
+  tasks: ProviderTask[];
+  ownerId: number;
+  totalCount: number;
+}): MenuScreen {
+  const { tasks, ownerId, totalCount } = args;
+  const cap = TIMING.maxMenuItems;
+  const visible = tasks.slice(0, cap);
+  if (visible.length === 0) {
+    return {
+      text: "📋 Tasks (0)\n\nNo open tasks.",
+      keyboard: listKeyboard({
+        items: [],
+        viewActionPrefix: "t_view",
+        listAction: `t_list:${ownerId}`,
+      }),
+    };
+  }
+  const lines = visible.map((task, idx) => {
+    const title = truncate(task.title, TITLE_DISPLAY_MAX);
+    return `${idx + 1}. #${task.id} ${title}`;
+  });
+  let text = `📋 Tasks (${totalCount})\n${lines.join("\n")}`;
+  if (totalCount > visible.length) text += `\n\n+${totalCount - visible.length} more`;
+  return {
+    text,
+    keyboard: listKeyboard({
+      items: visible.map((task, idx) => ({ index: idx + 1, id: String(task.id) })),
+      viewActionPrefix: "t_view",
+      listAction: `t_list:${ownerId}`,
+    }),
+  };
 }
 
 export function buildTasksHandler(deps: TasksDeps): Composer<Context> {
   const c = new Composer<Context>();
   c.command("tasks", async (ctx) => {
-    const tasks = await deps.tasks.fetchOpenTasks();
+    const outcome = await deps.tasks.fetchOpenTasks();
+    if (!outcome.ok) {
+      deps.log.warn({ error: outcome.error }, "fetch open tasks failed");
+      await ctx.reply(`Failed to fetch tasks: ${outcome.error.message}`);
+      return;
+    }
+    const tasks = outcome.value;
     if (tasks.length === 0) {
       await ctx.reply("No open tasks.");
       return;
     }
-
-    await ctx.reply(`Open tasks: ${tasks.length}`);
-    for (const task of tasks.slice(0, MAX_TASK_CARDS)) {
-      try {
-        await ctx.api.sendMessage(ctx.chat.id, taskText(task.id, task.title, task.labels), {
-          reply_markup: taskCardKb(task),
-        });
-      } catch (error) {
-        deps.log.error({ err: String(error), taskId: task.id }, "send task card failed");
-      }
-    }
-    if (tasks.length > MAX_TASK_CARDS) {
-      await ctx.reply(`+${tasks.length - MAX_TASK_CARDS} more tasks not shown.`);
+    const ownerId = ctx.from?.id ?? 0;
+    const screen = renderTasksList({ tasks, ownerId, totalCount: tasks.length });
+    try {
+      await ctx.reply(screen.text, { reply_markup: screen.keyboard });
+    } catch (error) {
+      deps.log.error({ err: String(error) }, "send tasks list failed");
     }
   });
   return c;

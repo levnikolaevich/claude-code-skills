@@ -4,12 +4,19 @@ import type { InboundService } from "./inbound.service.js";
 import type { OutboxService } from "./outbox.service.js";
 import type { MessagesRepository, TaskPollStateRepository, TaskProviderPort } from "./ports.js";
 import { buildTgPrefix } from "../domain/tgPrefix.js";
+import { fail, ok, serviceError, type ServiceError, type ServiceOutcome } from "./outcome.js";
 
 export type TaskService = ReturnType<typeof createTaskService>;
+export type TaskServiceError = ServiceError;
 
 export interface TaskServiceConfig {
   allowedChat: number;
   gitProvider: "github" | "gitlab";
+}
+
+export interface TaskPollResult {
+  count: number;
+  notified: boolean;
 }
 
 const TASK_BODY_LIMIT = 5000;
@@ -50,17 +57,31 @@ export function createTaskService(deps: {
   taskPollState: TaskPollStateRepository;
   inbound: InboundService;
 }) {
-  async function fetchOpenTasks(): Promise<ProviderTask[]> {
-    return deps.provider.fetchOpenTasks();
+  async function fetchOpenTasks(): Promise<ServiceOutcome<ProviderTask[], TaskServiceError>> {
+    try {
+      return ok(await deps.provider.fetchOpenTasks());
+    } catch (error) {
+      return fail(
+        serviceError({
+          code: "task_provider_fetch_failed",
+          kind: "transient",
+          message: "failed to fetch provider tasks",
+          details: { provider: deps.config.gitProvider },
+          cause: error,
+        })
+      );
+    }
   }
 
-  async function pollAndNotifyPrimary(): Promise<{ count: number }> {
-    const tasks = await fetchOpenTasks();
+  async function pollAndNotifyPrimary(): Promise<ServiceOutcome<TaskPollResult, TaskServiceError>> {
+    const fetched = await fetchOpenTasks();
+    if (!fetched.ok) return fetched;
+    const tasks = fetched.value;
     if (tasks.length === 0) {
       const prev = deps.taskPollState.get();
       deps.taskPollState.save({ lastNotifiedAt: prev?.lastNotifiedAt ?? null, lastCount: 0 });
       deps.log.info({ provider: deps.config.gitProvider }, "TASKS poll empty");
-      return { count: 0 };
+      return ok({ count: 0, notified: false });
     }
 
     const state = deps.taskPollState.get();
@@ -68,11 +89,12 @@ export function createTaskService(deps: {
     const lastNotifiedAt = state?.lastNotifiedAt ?? null;
     const shouldNotify = lastNotifiedAt === null || now - lastNotifiedAt >= NOTIFY_COOLDOWN_SEC;
     if (shouldNotify) {
-      deps.outbox.enqueueStatus({
+      const enqueued = deps.outbox.enqueueStatus({
         chatId: deps.config.allowedChat,
         eventType: "system",
         text: `Tasks: ${tasks.length} open task(s). Use /tasks to choose one.`,
       });
+      if (!enqueued.ok) return enqueued;
       deps.taskPollState.save({ lastNotifiedAt: now, lastCount: tasks.length });
       deps.log.info(
         { count: tasks.length, provider: deps.config.gitProvider },
@@ -85,7 +107,7 @@ export function createTaskService(deps: {
         "TASKS poll notification suppressed by daily throttle"
       );
     }
-    return { count: tasks.length };
+    return ok({ count: tasks.length, notified: shouldNotify });
   }
 
   async function queueTaskForUser(args: {
@@ -93,10 +115,21 @@ export function createTaskService(deps: {
     chatId: number;
     fromUserId: number;
     telegramMessageId: number;
-  }): Promise<ProviderTask | null> {
-    const tasks = await fetchOpenTasks();
-    const task = tasks.find((t) => t.id === args.taskId) ?? null;
-    if (!task) return null;
+  }): Promise<ServiceOutcome<ProviderTask, TaskServiceError>> {
+    const fetched = await fetchOpenTasks();
+    if (!fetched.ok) return fetched;
+    const task = fetched.value.find((t) => t.id === args.taskId) ?? null;
+    if (!task) {
+      return fail(
+        serviceError({
+          code: "task_not_found",
+          kind: "not_found",
+          message: "task was not found in open provider tasks",
+          retryable: false,
+          details: { taskId: args.taskId },
+        })
+      );
+    }
 
     const prefix = buildTgPrefix({
       chatId: args.chatId,
@@ -104,15 +137,29 @@ export function createTaskService(deps: {
       userToken: String(args.fromUserId),
     });
     const paneText = `${prefix} ${taskHandoffPrompt(task)}`;
-    const id = deps.messagesRepo.insertInbound(
-      paneText,
-      args.chatId,
-      args.telegramMessageId,
-      args.fromUserId
-    );
+    let id: number;
+    try {
+      id = deps.messagesRepo.insertInbound(
+        paneText,
+        args.chatId,
+        args.telegramMessageId,
+        args.fromUserId
+      );
+    } catch (error) {
+      return fail(
+        serviceError({
+          code: "task_handoff_enqueue_failed",
+          kind: "transient",
+          message: "failed to enqueue selected task for delivery",
+          details: { taskId: task.id, userId: args.fromUserId },
+          cause: error,
+        })
+      );
+    }
     deps.log.info({ id, taskId: task.id, userId: args.fromUserId }, "TASKS queued handoff");
-    await deps.inbound.tick();
-    return task;
+    const tick = await deps.inbound.tick();
+    if (!tick.ok) return tick;
+    return ok(task);
   }
 
   return { fetchOpenTasks, pollAndNotifyPrimary, queueTaskForUser };

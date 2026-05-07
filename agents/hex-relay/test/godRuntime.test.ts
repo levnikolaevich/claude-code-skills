@@ -57,8 +57,10 @@ test("god runtime uses injected path resolver and adapters", () => {
   });
 
   const runtime = service.runtimeFor(42, "codex");
-  runtime.atomicCmd.write("resume", "sid", 42);
-  runtime.lastSession.write("sid");
+  assert.equal(runtime.ok, true);
+  if (!runtime.ok) throw new Error(runtime.error.message);
+  runtime.value.atomicCmd.write("resume", "sid", 42);
+  runtime.value.lastSession.write("sid");
 
   assert.deepEqual(resolved, [{ userId: 42, agent: "codex" }]);
 });
@@ -101,9 +103,11 @@ test("ensureStarted writes default command only when runtime is inactive", async
     },
   });
 
-  await service.ensureStarted(42, "claude");
+  const activeOutcome = await service.ensureStarted(42, "claude");
+  assert.equal(activeOutcome.ok, true);
   active = false;
-  await service.ensureStarted(42, "claude");
+  const startedOutcome = await service.ensureStarted(42, "claude");
+  assert.equal(startedOutcome.ok, true);
 
   assert.deepEqual(writes, [["default", null, 42]]);
   assert.deepEqual(starts, [[42, "claude"]]);

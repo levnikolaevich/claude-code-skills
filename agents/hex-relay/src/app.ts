@@ -65,6 +65,7 @@ import { createIdleSessionWorker } from "./workers/idleSession.worker.js";
 import { createPendingReplyGcWorker } from "./workers/pendingReplyGc.worker.js";
 import { runProcess } from "./infrastructure/process/runProcess.js";
 import { readCodexRateLimitsJson } from "./infrastructure/process/codexAppServerClient.js";
+import { unwrapOrThrowInvariant } from "./services/outcome.js";
 
 export interface App {
   start(): Promise<void>;
@@ -146,7 +147,8 @@ export function buildApp(env: Env, log: Logger = createLogger()): App {
     sessionEventsRepo: repos.sessionEvents,
     transcriptStore,
     lastGodCommand,
-    lastSessionForUser: (userId, agent) => godRuntime.runtimeFor(userId, agent).lastSession,
+    lastSessionForUser: (userId, agent) =>
+      unwrapOrThrowInvariant(godRuntime.runtimeFor(userId, agent)).lastSession,
     primaryOperator: env.allowedChat,
   });
   const reactToInbound = createReactToInbound({

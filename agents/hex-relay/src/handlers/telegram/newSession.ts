@@ -25,10 +25,14 @@ export function buildNewSessionHandler(deps: NewSessionDeps): Composer<Context> 
     try {
       const cmdId = await deps.controlLane.run("new_session", async () => {
         const runtime = deps.godRuntime.runtimeFor(userId);
-        const id = runtime.atomicCmd.write("new", null, userId);
-        await ((await runtime.pane.hasSession())
-          ? runtime.pane.killGracefully()
-          : deps.godRuntime.ensureStarted(userId));
+        if (!runtime.ok) throw new Error(runtime.error.message);
+        const id = runtime.value.atomicCmd.write("new", null, userId);
+        if (await runtime.value.pane.hasSession()) {
+          await runtime.value.pane.killGracefully();
+        } else {
+          const started = await deps.godRuntime.ensureStarted(userId);
+          if (!started.ok) throw new Error(started.error.message);
+        }
         return id;
       });
       deps.log.info({ cmdId, userId }, "/new_session queued for user god-session");

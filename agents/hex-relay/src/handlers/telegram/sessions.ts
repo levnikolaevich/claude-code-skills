@@ -4,7 +4,9 @@ import type { SessionService } from "../../services/session.service.js";
 import type { ControlLane } from "../../services/controlLane.service.js";
 import type { MutexMap } from "../../lib/mutex.js";
 import { TIMING } from "../../config/paths.js";
-import { sessionCardKb } from "./kb.js";
+import { listKeyboard, type MenuScreen } from "./kb.js";
+import type { SessionListItem } from "../../domain/session.js";
+import { truncate } from "../../domain/events.js";
 
 export interface SessionsDeps {
   log: Logger;
@@ -13,10 +15,55 @@ export interface SessionsDeps {
   sessionLocks: MutexMap;
 }
 
+const SLUG_DISPLAY_MAX = 32;
+
 function fmtTs(epoch: number): string {
   const d = new Date(epoch * 1000);
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())} ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())} UTC`;
+}
+
+/**
+ * Render the v2 sessions-list screen. Plain text, no parse_mode (Option A) so
+ * underscores/asterisks in slugs are safe. Numbered keyboard refers back via
+ * `s_list:{ownerId}` for owner-bound Refresh.
+ */
+export function renderSessionsList(args: {
+  sessions: SessionListItem[];
+  ownerId: number;
+  totalCount: number;
+}): MenuScreen {
+  const { sessions, ownerId, totalCount } = args;
+  const cap = TIMING.maxMenuItems;
+  const visible = sessions.slice(0, cap);
+
+  if (visible.length === 0) {
+    return {
+      text: "📂 Sessions (0)\n\nNo sessions yet.",
+      keyboard: listKeyboard({
+        items: [],
+        viewActionPrefix: "s_view",
+        listAction: `s_list:${ownerId}`,
+      }),
+    };
+  }
+
+  const lines = visible.map((s, idx) => {
+    const slug = truncate(s.slug, SLUG_DISPLAY_MAX);
+    return `${idx + 1}. ${slug} · ${fmtTs(s.ts)} · ${s.sid.slice(0, 8)}…`;
+  });
+  let text = `📂 Sessions (${totalCount})\n${lines.join("\n")}`;
+  if (totalCount > visible.length) {
+    text += `\n\n+${totalCount - visible.length} more`;
+  }
+  return {
+    text,
+    keyboard: listKeyboard({
+      items: visible.map((s, idx) => ({ index: idx + 1, id: s.sid })),
+      viewActionPrefix: "s_view",
+      listAction: `s_list:${ownerId}`,
+    }),
+  };
 }
 
 export function buildSessionsHandler(deps: SessionsDeps): Composer<Context> {
@@ -28,14 +75,12 @@ export function buildSessionsHandler(deps: SessionsDeps): Composer<Context> {
       const parts = args.split(/\s+/);
       const sid = parts[1] ?? "";
       if (!sid) {
-        await ctx.reply("Usage: `/sessions delete <session-id>`");
+        await ctx.reply("Usage: /sessions delete <session-id>");
         return;
       }
       const owner = deps.sessionService.getOwner(sid);
       if (owner === null) {
-        await ctx.reply(`❌ Session \`${sid.slice(0, 8)}…\` has no recorded owner.`, {
-          parse_mode: "Markdown",
-        });
+        await ctx.reply(`❌ Session ${sid.slice(0, 8)}… has no recorded owner.`);
         return;
       }
       if (ctx.from && ctx.from.id !== owner) {
@@ -44,7 +89,7 @@ export function buildSessionsHandler(deps: SessionsDeps): Composer<Context> {
       }
       const path = deps.sessionService.validateSessionPath(sid, owner);
       if (path === null) {
-        await ctx.reply(`❌ Session \`${sid}\` not found or invalid id.`);
+        await ctx.reply(`❌ Session ${sid} not found or invalid id.`);
         return;
       }
       await deps.controlLane.run("delete_session", async () => {
@@ -53,49 +98,27 @@ export function buildSessionsHandler(deps: SessionsDeps): Composer<Context> {
           return Promise.resolve();
         });
       });
-      await ctx.reply(`✓ Deleted \`${sid.slice(0, 8)}…\`.`);
+      await ctx.reply(`✓ Deleted ${sid.slice(0, 8)}….`);
       return;
     }
 
     const showAll = args === "all";
     const ownerId = ctx.from?.id ?? deps.sessionService.primaryOperator;
+    const limit = showAll ? TIMING.maxMenuItems : TIMING.sessionsTopN;
     const sessions = deps.sessionService.listSessions({
       ownerUserId: ownerId,
-      limit: showAll ? null : TIMING.sessionsTopN,
+      limit,
     });
-    if (sessions.length === 0) {
-      await ctx.reply("📭 No sessions found for your account yet.");
-      return;
-    }
-
-    if (showAll) {
-      const lines = sessions.map((s) => `• \`${s.sid.slice(0, 8)}\` *${s.slug}* — ${fmtTs(s.ts)}`);
-      const footer = "\n\nDelete: `/sessions delete <id>`";
-      await ctx.reply(`Your sessions (${sessions.length}):\n${lines.join("\n")}${footer}`, {
-        parse_mode: "Markdown",
-      });
-      return;
-    }
-
     const total = deps.sessionService.listSessions({
       ownerUserId: ownerId,
       limit: null,
     }).length;
-    for (const s of sessions) {
-      const text = `📂 *${s.slug}*\nlast: ${fmtTs(s.ts)}\nid: \`${s.sid.slice(0, 8)}…\``;
-      try {
-        await ctx.api.sendMessage(ctx.chat.id, text, {
-          reply_markup: sessionCardKb(s.sid),
-          parse_mode: "Markdown",
-        });
-      } catch (error) {
-        deps.log.error({ err: String(error), sid: s.sid }, "send sessions card failed");
-      }
-    }
-    if (total > TIMING.sessionsTopN) {
-      await ctx.reply(`+${total - TIMING.sessionsTopN} more — type \`/sessions all\``, {
-        parse_mode: "Markdown",
-      });
+
+    const screen = renderSessionsList({ sessions, ownerId, totalCount: total });
+    try {
+      await ctx.reply(screen.text, { reply_markup: screen.keyboard });
+    } catch (error) {
+      deps.log.error({ err: String(error) }, "send sessions list failed");
     }
   });
   return c;

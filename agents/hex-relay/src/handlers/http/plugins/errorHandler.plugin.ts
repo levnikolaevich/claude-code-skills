@@ -15,8 +15,13 @@ export function registerErrorHandler(app: FastifyInstance, log: Logger): void {
         "request validation failed"
       );
       reply.code(400).send({
-        error: "validation",
-        issues: validation.map(validationIssueToWire),
+        ok: false,
+        error: {
+          code: "request_validation_failed",
+          message: "request validation failed",
+          retryable: false,
+          details: { issues: validation.map(validationIssueToWire) },
+        },
       });
       return;
     }
@@ -30,22 +35,43 @@ export function registerErrorHandler(app: FastifyInstance, log: Logger): void {
         { issues: responseErr.cause?.issues, method: responseErr.method, url: responseErr.url },
         "response validation failed"
       );
-      reply.code(500).send({ error: "internal" });
+      reply.code(500).send({
+        ok: false,
+        error: {
+          code: "response_serialization_failed",
+          message: "response serialization failed",
+          retryable: false,
+        },
+      });
       return;
     }
     if (err instanceof ZodError) {
       log.warn({ issues: err.issues }, "request validation failed");
       reply.code(400).send({
-        error: "validation",
-        issues: err.issues.map((i) => ({
-          path: i.path,
-          message: i.message,
-        })),
+        ok: false,
+        error: {
+          code: "request_validation_failed",
+          message: "request validation failed",
+          retryable: false,
+          details: {
+            issues: err.issues.map((i) => ({
+              path: i.path,
+              message: i.message,
+            })),
+          },
+        },
       });
       return;
     }
     log.error({ err: String(err) }, "unhandled http error");
-    reply.code(500).send({ error: "internal" });
+    reply.code(500).send({
+      ok: false,
+      error: {
+        code: "internal_error",
+        message: "internal error",
+        retryable: false,
+      },
+    });
   });
 }
 

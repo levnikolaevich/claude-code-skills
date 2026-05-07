@@ -81,8 +81,8 @@ function fakeGodRuntime(opts: FakeGodOpts): GodRuntimeService {
     ensureStarted: async () => null,
     isActive: async (_userId: number, agent?: "claude" | "codex") => {
       if (opts.isActiveThrows) throw new Error("systemd unavailable");
-      if (agent === "codex") return opts.codexActive ?? false;
-      return opts.claudeActive ?? false;
+      if (agent === "codex") return { ok: true, value: opts.codexActive ?? false };
+      return { ok: true, value: opts.claudeActive ?? false };
     },
     restart: async () => null,
   };

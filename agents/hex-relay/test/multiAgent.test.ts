@@ -25,6 +25,10 @@ function noop(): void {
   return;
 }
 
+function ok<T>(value: T) {
+  return { ok: true as const, value };
+}
+
 void InputFile;
 
 interface FakeBotApi {
@@ -223,10 +227,10 @@ test("pending stop hook respects agent and uses agent-aware reply prefix", async
     outbox: {
       enqueueReply: (args: Record<string, unknown>) => {
         replies.push(args);
-        return 1;
+        return ok(1);
       },
-      enqueueAck: () => 2,
-      enqueueStatus: () => 1,
+      enqueueAck: () => ok(2),
+      enqueueStatus: () => ok(1),
     },
     sessionService: {
       insertEvent: noop,

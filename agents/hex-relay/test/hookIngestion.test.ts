@@ -6,6 +6,10 @@ import type { Logger } from "../src/lib/logger.js";
 
 const log = pino({ enabled: false }) as Logger;
 
+function ok<T>(value: T) {
+  return { ok: true as const, value };
+}
+
 function noop(): void {
   return;
 }
@@ -41,15 +45,15 @@ function createService(overrides: Record<string, unknown> = {}) {
     outbox: {
       enqueueReply: (args: Record<string, unknown>) => {
         state.replies.push(args);
-        return 1;
+        return ok(1);
       },
       enqueueAck: (args: Record<string, unknown>) => {
         state.acks.push(args);
-        return 2;
+        return ok(2);
       },
       enqueueStatus: (args: Record<string, unknown>) => {
         state.statuses.push(args);
-        return 3;
+        return ok(3);
       },
     },
     sessionService: {
@@ -93,11 +97,12 @@ test("user-prompt-submit binds pending Telegram inbound", () => {
     },
   });
 
-  service.userPromptSubmit({
+  const outcome = service.userPromptSubmit({
     sessionId: "11111111-1111-4111-8111-111111111111",
     prompt: "[tg id=10:20 user=u123] hello",
     agent: "codex",
   });
+  assert.equal(outcome.ok, true);
 
   assert.deepEqual(state.updates[0], [5, { sessionId: "11111111-1111-4111-8111-111111111111" }]);
   assert.deepEqual(state.pendingSets[0], [
@@ -142,7 +147,8 @@ test("stop enqueues final reply and orphan fanout ack", () => {
     },
   });
 
-  service.stop({ sessionId: "sid", lastAssistantMessage: "done" });
+  const outcome = service.stop({ sessionId: "sid", lastAssistantMessage: "done" });
+  assert.equal(outcome.ok, true);
 
   assert.equal(state.replies.length, 1);
   assert.equal(state.replies[0]?.repliedToId, 102);
@@ -154,21 +160,74 @@ test("stop enqueues final reply and orphan fanout ack", () => {
   assert.deepEqual(state.typed.at(-1), ["stop", "sid"]);
 });
 
+test("stop returns typed failure when final reply cannot be enqueued", () => {
+  let cleared = false;
+  const { service, state } = createService({
+    messagesRepo: {
+      findByTg: () => null,
+      findById: (id: number) =>
+        ({
+          id,
+          tgChatId: 50,
+          tgMsgId: 100,
+          fromUserId: 1,
+          agent: "claude",
+        }) as any,
+      getChatId: () => 50,
+      update: noop,
+      insertOutboundAudit: () => 700,
+    },
+    pendingRepo: {
+      get: () => null,
+      getAllForSession: () => [
+        { sessionId: "sid", inboundMsgId: 1, promptHash: "a", createdAt: 1, agent: "claude" },
+      ],
+      set: noop,
+      clear: () => {
+        cleared = true;
+      },
+      listOthers: () => [],
+    },
+    outbox: {
+      enqueueReply: () => ({
+        ok: false,
+        error: {
+          code: "outbox_down",
+          kind: "transient",
+          message: "outbox down",
+          retryable: true,
+        },
+      }),
+      enqueueAck: () => ok(2),
+      enqueueStatus: () => ok(3),
+    },
+  });
+
+  const outcome = service.stop({ sessionId: "sid", lastAssistantMessage: "done" });
+
+  assert.equal(outcome.ok, false);
+  if (!outcome.ok) assert.equal(outcome.error.code, "outbox_down");
+  assert.equal(cleared, false, "pending reply must remain open when final reply enqueue fails");
+  assert.equal(state.acks.length, 0);
+});
+
 test("stop-failure deduplicates admin alerts", () => {
   const { service, state } = createService();
 
-  service.stopFailure({
+  const first = service.stopFailure({
     sessionId: "sid",
     errorType: "unknown",
     agent: "claude",
     payload: { message: "API Error: 401 invalid authentication credentials" },
   });
-  service.stopFailure({
+  const second = service.stopFailure({
     sessionId: "sid",
     errorType: "unknown",
     agent: "claude",
     payload: { message: "API Error: 401 invalid authentication credentials" },
   });
+  assert.equal(first.ok, true);
+  assert.equal(second.ok, true);
 
   assert.equal(state.statuses.length, 1);
   assert.match(String(state.statuses[0]?.text), /auth_failed/);
@@ -215,11 +274,13 @@ test("session-start additional context includes memories dispatch and orphan pen
     transcriptPath: "/tmp/t.jsonl",
     agent: "claude",
   });
+  assert.equal(result.ok, true);
+  if (!result.ok) throw new Error(result.error.message);
 
-  assert.match(result.additionalContext, /Recent memories/);
-  assert.match(result.additionalContext, /Remember deploy gate/);
-  assert.match(result.additionalContext, /run 9/);
-  assert.match(result.additionalContext, /inbound_msg_id=55/);
+  assert.match(result.value.additionalContext, /Recent memories/);
+  assert.match(result.value.additionalContext, /Remember deploy gate/);
+  assert.match(result.value.additionalContext, /run 9/);
+  assert.match(result.value.additionalContext, /inbound_msg_id=55/);
   assert.deepEqual(state.markedMemory, [7]);
 });
 
@@ -230,14 +291,22 @@ test("verbosity gates subagent and tool status events", () => {
     },
   });
 
-  service.subagentStop({ sessionId: "sid", agentId: "agent-123456", agentType: "review-worker" });
-  service.preToolUse({ sessionId: "sid", toolName: "Skill", toolInput: { skill: "ln-400" } });
-  service.postToolUse({
+  assert.equal(
+    service.subagentStop({ sessionId: "sid", agentId: "agent-123456", agentType: "review-worker" })
+      .ok,
+    true
+  );
+  assert.equal(
+    service.preToolUse({ sessionId: "sid", toolName: "Skill", toolInput: { skill: "ln-400" } }).ok,
+    true
+  );
+  const post = service.postToolUse({
     sessionId: "sid",
     toolName: "Skill",
     toolInput: { skill: "ln-401" },
     durationMs: 1500,
   });
+  assert.equal(post.ok, true);
 
   assert.equal(state.statuses.length, 3);
   assert.equal(state.statuses[0]?.eventType, "status_subagent");

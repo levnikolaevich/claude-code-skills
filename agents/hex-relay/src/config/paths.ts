@@ -82,6 +82,7 @@ export const TIMING = {
   dispatchRecentLimit: 3,
   sessionsTopN: 10,
   sessionsAllCap: 50,
+  maxMenuItems: 50,
   tokenBucketMax: 5,
   tokenBucketWindowSec: 60,
   skillNameMaxLen: 60,

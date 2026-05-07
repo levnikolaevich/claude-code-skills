@@ -3,6 +3,7 @@ import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import type { Logger } from "../../lib/logger.js";
 import type { TaskService } from "../../services/task.service.js";
 import { TaskPollResponseSchema } from "./schemas.js";
+import { sendOutcome } from "./serviceErrors.js";
 
 export interface TaskRoutesDeps {
   log: Logger;
@@ -19,8 +20,10 @@ export function registerTaskRoutes(app: FastifyInstance, deps: TaskRoutesDeps): 
     },
     handler: async (_req, reply) => {
       const result = await deps.tasks.pollAndNotifyPrimary();
-      deps.log.info({ count: result.count }, "TASKS poll endpoint complete");
-      return reply.send({ ok: true, count: result.count });
+      if (result.ok) {
+        deps.log.info({ count: result.value.count }, "TASKS poll endpoint complete");
+      }
+      return sendOutcome(reply, result, (value) => ({ ok: true, count: value.count }));
     },
   });
 }

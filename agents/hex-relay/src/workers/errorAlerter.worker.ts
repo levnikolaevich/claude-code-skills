@@ -1,13 +1,10 @@
-import { setTimeout as delay } from "node:timers/promises";
 import type { Bot } from "grammy";
 import type { Logger } from "../lib/logger.js";
 import type { GodErrorReader } from "../infrastructure/filesystem/godError.js";
 import { TIMING } from "../config/paths.js";
+import { createWorkerLoop, type DrainableWorker } from "./workerLoop.js";
 
-export interface ErrorAlerterWorker {
-  start(): Promise<void>;
-  stop(): void;
-}
+export type ErrorAlerterWorker = DrainableWorker;
 
 function stringValue(value: unknown): string {
   if (typeof value === "string") return value;
@@ -68,32 +65,25 @@ export function createErrorAlerterWorker(deps: {
   reader: GodErrorReader;
   primaryOperator: number;
 }): ErrorAlerterWorker {
-  let running = false;
-  return {
-    async start() {
-      if (running) return;
-      running = true;
-      deps.log.info({ pollMs: TIMING.errorAlerterPollMs }, "error alerter started");
-      while (running) {
+  return createWorkerLoop({
+    log: deps.log,
+    name: "error_alerter",
+    intervalMs: TIMING.errorAlerterPollMs,
+    runOnce() {
+      const err = deps.reader.consume();
+      if (err) {
+        const kind = classifyGodError(err);
         try {
-          const err = deps.reader.consume();
-          if (err) {
-            const kind = classifyGodError(err);
-            try {
-              await deps.bot.api.sendMessage(deps.primaryOperator, formatGodError(err));
-              deps.log.info({ kind }, "alerted operator about god-session error");
-            } catch (error) {
-              deps.log.warn({ err: String(error) }, "error alerter sendMessage failed");
-            }
-          }
+          return deps.bot.api
+            .sendMessage(deps.primaryOperator, formatGodError(err))
+            .then(() => deps.log.info({ kind }, "alerted operator about god-session error"))
+            .catch((error: unknown) =>
+              deps.log.warn({ err: String(error) }, "error alerter sendMessage failed")
+            );
         } catch (error) {
-          deps.log.error({ err: String(error) }, "error_alerter iteration failed");
+          deps.log.warn({ err: String(error) }, "error alerter sendMessage failed");
         }
-        await delay(TIMING.errorAlerterPollMs);
       }
     },
-    stop() {
-      running = false;
-    },
-  };
+  });
 }

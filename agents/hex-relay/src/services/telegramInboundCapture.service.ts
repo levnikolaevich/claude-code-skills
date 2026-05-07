@@ -4,6 +4,7 @@ import { buildTgPrefix } from "../domain/tgPrefix.js";
 import type { Logger } from "../lib/logger.js";
 import type { UserBuddyService } from "./userBuddy.service.js";
 import type { TelegramInboundMessagesRepository } from "./ports.js";
+import { fail, ok, serviceError, type ServiceError, type ServiceOutcome } from "./outcome.js";
 
 export const UNSUPPORTED_MEDIA_REPLY =
   "Supported media: images (PNG/JPG/GIF/WebP) and any document " +
@@ -46,6 +47,7 @@ export type TelegramInboundCaptureResult =
   | { kind: "ignored" }
   | { kind: "download_media" }
   | { kind: "rejected"; id: number; replyText: string };
+export type TelegramInboundCaptureError = ServiceError;
 
 export interface TelegramInboundCaptureDeps {
   log: Logger;
@@ -76,21 +78,33 @@ export function createTelegramInboundCaptureService(deps: TelegramInboundCapture
     messageId: number;
     error: string;
     agent?: AgentKind;
-  }): TelegramInboundCaptureResult {
-    const id = deps.messagesRepo.insertRejected(
-      args.text,
-      args.chatId,
-      args.messageId,
-      args.error,
-      args.agent
-    );
-    deps.log.info({ id, error: args.error }, "INBOUND rejected");
-    return { kind: "rejected", id, replyText: args.text };
+  }): ServiceOutcome<TelegramInboundCaptureResult, TelegramInboundCaptureError> {
+    try {
+      const id = deps.messagesRepo.insertRejected(
+        args.text,
+        args.chatId,
+        args.messageId,
+        args.error,
+        args.agent
+      );
+      deps.log.info({ id, error: args.error }, "INBOUND rejected");
+      return ok({ kind: "rejected", id, replyText: args.text });
+    } catch (error) {
+      return fail(
+        serviceError({
+          code: "telegram_inbound_reject_write_failed",
+          kind: "transient",
+          message: "failed to record rejected Telegram inbound message",
+          details: { chatId: args.chatId, messageId: args.messageId, agent: args.agent },
+          cause: error,
+        })
+      );
+    }
   }
 
   async function capture(
     command: TelegramInboundCaptureCommand
-  ): Promise<TelegramInboundCaptureResult> {
+  ): Promise<ServiceOutcome<TelegramInboundCaptureResult, TelegramInboundCaptureError>> {
     const rawText = command.rawText.trim();
     const defaultAgent = deps.userBuddy.getDefault(command.fromUserId) ?? DEFAULT_AGENT;
     const { agent, cleanedText } = extractAgent(rawText, defaultAgent);
@@ -124,7 +138,7 @@ export function createTelegramInboundCaptureService(deps: TelegramInboundCapture
           agent,
         });
       }
-      if (command.media === undefined) return { kind: "download_media" };
+      if (command.media === undefined) return ok({ kind: "download_media" });
       if (!command.media) {
         return reject({
           text: VOICE_DOWNLOAD_FAILED_REPLY,
@@ -134,17 +148,30 @@ export function createTelegramInboundCaptureService(deps: TelegramInboundCapture
           agent,
         });
       }
-      const id = deps.messagesRepo.insertTranscribingVoice(
-        command.chatId,
-        command.messageId,
-        command.fromUserId,
-        command.media.path,
-        agent
-      );
-      deps.log.info(
-        { id, path: command.media.path, durationSec: command.voice.durationSec },
-        "INBOUND queued voice transcription"
-      );
+      let id: number;
+      try {
+        id = deps.messagesRepo.insertTranscribingVoice(
+          command.chatId,
+          command.messageId,
+          command.fromUserId,
+          command.media.path,
+          agent
+        );
+        deps.log.info(
+          { id, path: command.media.path, durationSec: command.voice.durationSec },
+          "INBOUND queued voice transcription"
+        );
+      } catch (error) {
+        return fail(
+          serviceError({
+            code: "telegram_inbound_voice_enqueue_failed",
+            kind: "transient",
+            message: "failed to queue Telegram voice transcription",
+            details: { chatId: command.chatId, messageId: command.messageId, agent },
+            cause: error,
+          })
+        );
+      }
       if (deps.reactToVoiceTranscribing) {
         try {
           await deps.reactToVoiceTranscribing(command.chatId, command.messageId);
@@ -152,7 +179,7 @@ export function createTelegramInboundCaptureService(deps: TelegramInboundCapture
           deps.log.debug({ err: String(error) }, "voice transcribing reaction failed (cosmetic)");
         }
       }
-      return { kind: "queued", id };
+      return ok({ kind: "queued", id });
     }
 
     const media = command.media ?? null;
@@ -166,7 +193,7 @@ export function createTelegramInboundCaptureService(deps: TelegramInboundCapture
           agent,
         });
       }
-      return { kind: "ignored" };
+      return ok({ kind: "ignored" });
     }
 
     const body = media ? `[${media.kind}: ${media.path}] ${text || "(no caption)"}` : text;
@@ -175,20 +202,32 @@ export function createTelegramInboundCaptureService(deps: TelegramInboundCapture
       msgId: command.messageId,
       userToken: command.userToken,
     })} ${body}`;
-    const id = deps.messagesRepo.insertInbound(
-      paneText,
-      command.chatId,
-      command.messageId,
-      command.fromUserId,
-      agent
-    );
-    if (media) {
-      deps.messagesRepo.update(id, { kind: media.kind });
-      deps.log.info({ id, kind: media.kind, path: media.path }, "INBOUND queued media");
-    } else {
-      deps.log.info({ id, len: text.length }, "INBOUND queued text");
+    try {
+      const id = deps.messagesRepo.insertInbound(
+        paneText,
+        command.chatId,
+        command.messageId,
+        command.fromUserId,
+        agent
+      );
+      if (media) {
+        deps.messagesRepo.update(id, { kind: media.kind });
+        deps.log.info({ id, kind: media.kind, path: media.path }, "INBOUND queued media");
+      } else {
+        deps.log.info({ id, len: text.length }, "INBOUND queued text");
+      }
+      return ok({ kind: "queued", id });
+    } catch (error) {
+      return fail(
+        serviceError({
+          code: "telegram_inbound_enqueue_failed",
+          kind: "transient",
+          message: "failed to queue Telegram inbound message",
+          details: { chatId: command.chatId, messageId: command.messageId, agent },
+          cause: error,
+        })
+      );
     }
-    return { kind: "queued", id };
   }
 
   return { capture };

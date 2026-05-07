@@ -1,5 +1,43 @@
 [
   {
+    "source": "shared/agents/agent_registry.json",
+    "kind": "agent",
+    "targets": [
+      {
+        "skill": "plugins/agile-workflow/skills/ln-300-task-coordinator",
+        "path": "references/agents/agent_registry.json"
+      },
+      {
+        "skill": "plugins/agile-workflow/skills/ln-310-multi-agent-validator",
+        "path": "references/agents/agent_registry.json"
+      },
+      {
+        "skill": "plugins/agile-workflow/skills/ln-315-review-merge-worker",
+        "path": "references/agents/agent_registry.json"
+      },
+      {
+        "skill": "plugins/agile-workflow/skills/ln-316-review-refinement-worker",
+        "path": "references/agents/agent_registry.json"
+      },
+      {
+        "skill": "plugins/agile-workflow/skills/ln-510-quality-coordinator",
+        "path": "references/agents/agent_registry.json"
+      },
+      {
+        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
+        "path": "references/agents/agent_registry.json"
+      },
+      {
+        "skill": "plugins/documentation-pipeline/skills/ln-162-skill-reviewer",
+        "path": "references/agents/agent_registry.json"
+      },
+      {
+        "skill": "plugins/optimization-suite/skills/ln-813-optimization-plan-validator",
+        "path": "references/agents/agent_registry.json"
+      }
+    ]
+  },
+  {
     "source": "shared/agents/agent_runner.mjs",
     "kind": "agent",
     "targets": [
@@ -398,6 +436,20 @@
       {
         "skill": "plugins/optimization-suite/skills/ln-813-optimization-plan-validator",
         "path": "references/agent_review_workflow.md"
+      }
+    ]
+  },
+  {
+    "source": "shared/references/agent_runtime_install.md",
+    "kind": "reference",
+    "targets": [
+      {
+        "skill": "plugins/setup-environment/skills/ln-030-vps-bootstrap",
+        "path": "references/agent_runtime_install.md"
+      },
+      {
+        "skill": "plugins/setup-environment/skills/ln-031-vps-host-runtime",
+        "path": "references/agent_runtime_install.md"
       }
     ]
   },
@@ -1224,6 +1276,28 @@
     ]
   },
   {
+    "source": "shared/references/breaking_changes_patterns.md",
+    "kind": "reference",
+    "targets": [
+      {
+        "skill": "plugins/optimization-suite/skills/ln-820-dependency-optimization-coordinator",
+        "path": "references/breaking_changes_patterns.md"
+      },
+      {
+        "skill": "plugins/optimization-suite/skills/ln-821-npm-upgrader",
+        "path": "references/breaking_changes_patterns.md"
+      },
+      {
+        "skill": "plugins/optimization-suite/skills/ln-822-nuget-upgrader",
+        "path": "references/breaking_changes_patterns.md"
+      },
+      {
+        "skill": "plugins/optimization-suite/skills/ln-823-pip-upgrader",
+        "path": "references/breaking_changes_patterns.md"
+      }
+    ]
+  },
+  {
     "source": "shared/references/ci_tool_detection.md",
     "kind": "reference",
     "targets": [
@@ -1294,6 +1368,20 @@
       {
         "skill": "plugins/setup-environment/skills/ln-001-push-all",
         "path": "references/ci_tool_detection.md"
+      }
+    ]
+  },
+  {
+    "source": "shared/references/clean_architecture_dotnet.md",
+    "kind": "reference",
+    "targets": [
+      {
+        "skill": "plugins/codebase-audit-suite/skills/ln-646-project-structure-auditor",
+        "path": "references/clean_architecture_dotnet.md"
+      },
+      {
+        "skill": "plugins/project-bootstrap/skills/ln-720-structure-migrator",
+        "path": "references/clean_architecture_dotnet.md"
       }
     ]
   },
@@ -1616,6 +1704,20 @@
     ]
   },
   {
+    "source": "shared/references/codex_hooks_config.md",
+    "kind": "reference",
+    "targets": [
+      {
+        "skill": "plugins/setup-environment/skills/ln-013-config-syncer",
+        "path": "references/codex_hooks_config.md"
+      },
+      {
+        "skill": "plugins/setup-environment/skills/ln-030-vps-bootstrap",
+        "path": "references/codex_hooks_config.md"
+      }
+    ]
+  },
+  {
     "source": "shared/references/community_discussion_formatting.md",
     "kind": "reference",
     "targets": [
@@ -1698,6 +1800,20 @@
       {
         "skill": "plugins/community-engagement/skills/ln-914-community-responder",
         "path": "references/community_strategy_template.md"
+      }
+    ]
+  },
+  {
+    "source": "shared/references/context_validation.md",
+    "kind": "reference",
+    "targets": [
+      {
+        "skill": "plugins/agile-workflow/skills/ln-512-tech-debt-cleaner",
+        "path": "references/context_validation.md"
+      },
+      {
+        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
+        "path": "references/context_validation.md"
       }
     ]
   },
@@ -2028,6 +2144,24 @@
     ]
   },
   {
+    "source": "shared/references/cross_reference_validation.md",
+    "kind": "reference",
+    "targets": [
+      {
+        "skill": "plugins/agile-workflow/skills/ln-310-multi-agent-validator",
+        "path": "references/cross_reference_validation.md"
+      },
+      {
+        "skill": "plugins/agile-workflow/skills/ln-312-review-findings-worker",
+        "path": "references/cross_reference_validation.md"
+      },
+      {
+        "skill": "plugins/agile-workflow/skills/ln-314-review-repair-worker",
+        "path": "references/cross_reference_validation.md"
+      }
+    ]
+  },
+  {
     "source": "shared/references/cvss_severity_mapping.md",
     "kind": "reference",
     "targets": [
@@ -2066,6 +2200,20 @@
       {
         "skill": "plugins/optimization-suite/skills/ln-820-dependency-optimization-coordinator",
         "path": "references/dependency_runtime_contract.md"
+      }
+    ]
+  },
+  {
+    "source": "shared/references/dependency_validation.md",
+    "kind": "reference",
+    "targets": [
+      {
+        "skill": "plugins/agile-workflow/skills/ln-310-multi-agent-validator",
+        "path": "references/dependency_validation.md"
+      },
+      {
+        "skill": "plugins/agile-workflow/skills/ln-314-review-repair-worker",
+        "path": "references/dependency_validation.md"
       }
     ]
   },
@@ -2340,6 +2488,20 @@
       {
         "skill": "plugins/project-bootstrap/skills/ln-700-project-bootstrap",
         "path": "references/documentation_creation.md"
+      }
+    ]
+  },
+  {
+    "source": "shared/references/domain_patterns.md",
+    "kind": "reference",
+    "targets": [
+      {
+        "skill": "plugins/agile-workflow/skills/ln-310-multi-agent-validator",
+        "path": "references/domain_patterns.md"
+      },
+      {
+        "skill": "plugins/agile-workflow/skills/ln-313-review-docs-worker",
+        "path": "references/domain_patterns.md"
       }
     ]
   },
@@ -3814,6 +3976,20 @@
     ]
   },
   {
+    "source": "shared/references/frontend_structure.md",
+    "kind": "reference",
+    "targets": [
+      {
+        "skill": "plugins/codebase-audit-suite/skills/ln-646-project-structure-auditor",
+        "path": "references/frontend_structure.md"
+      },
+      {
+        "skill": "plugins/project-bootstrap/skills/ln-720-structure-migrator",
+        "path": "references/frontend_structure.md"
+      }
+    ]
+  },
+  {
     "source": "shared/references/git_scope_detection.md",
     "kind": "reference",
     "targets": [
@@ -3900,6 +4076,34 @@
       {
         "skill": "plugins/documentation-pipeline/skills/ln-162-skill-reviewer",
         "path": "references/goal_articulation_gate.md"
+      }
+    ]
+  },
+  {
+    "source": "shared/references/god_session_install.md",
+    "kind": "reference",
+    "targets": [
+      {
+        "skill": "plugins/setup-environment/skills/ln-030-vps-bootstrap",
+        "path": "references/god_session_install.md"
+      },
+      {
+        "skill": "plugins/setup-environment/skills/ln-032-vps-project-runtime",
+        "path": "references/god_session_install.md"
+      }
+    ]
+  },
+  {
+    "source": "shared/references/hex_relay_deploy.md",
+    "kind": "reference",
+    "targets": [
+      {
+        "skill": "plugins/setup-environment/skills/ln-030-vps-bootstrap",
+        "path": "references/hex_relay_deploy.md"
+      },
+      {
+        "skill": "plugins/setup-environment/skills/ln-033-hex-relay-lifecycle",
+        "path": "references/hex_relay_deploy.md"
       }
     ]
   },
@@ -4024,6 +4228,20 @@
       {
         "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
         "path": "references/kanban_update_algorithm.md"
+      }
+    ]
+  },
+  {
+    "source": "shared/references/layer_rules.md",
+    "kind": "reference",
+    "targets": [
+      {
+        "skill": "plugins/codebase-audit-suite/skills/ln-640-pattern-evolution-auditor",
+        "path": "references/layer_rules.md"
+      },
+      {
+        "skill": "plugins/codebase-audit-suite/skills/ln-642-layer-boundary-auditor",
+        "path": "references/layer_rules.md"
       }
     ]
   },
@@ -4862,6 +5080,34 @@
     ]
   },
   {
+    "source": "shared/references/operator_dispatcher_install.md",
+    "kind": "reference",
+    "targets": [
+      {
+        "skill": "plugins/setup-environment/skills/ln-030-vps-bootstrap",
+        "path": "references/operator_dispatcher_install.md"
+      },
+      {
+        "skill": "plugins/setup-environment/skills/ln-032-vps-project-runtime",
+        "path": "references/operator_dispatcher_install.md"
+      }
+    ]
+  },
+  {
+    "source": "shared/references/optimization_categories.md",
+    "kind": "reference",
+    "targets": [
+      {
+        "skill": "plugins/optimization-suite/skills/ln-814-optimization-executor",
+        "path": "references/optimization_categories.md"
+      },
+      {
+        "skill": "plugins/optimization-suite/skills/ln-832-bundle-optimizer",
+        "path": "references/optimization_categories.md"
+      }
+    ]
+  },
+  {
     "source": "shared/references/optimization_runtime_contract.md",
     "kind": "reference",
     "targets": [
@@ -4916,6 +5162,56 @@
     ]
   },
   {
+    "source": "shared/references/pattern_library.md",
+    "kind": "reference",
+    "targets": [
+      {
+        "skill": "plugins/codebase-audit-suite/skills/ln-640-pattern-evolution-auditor",
+        "path": "references/pattern_library.md"
+      },
+      {
+        "skill": "plugins/codebase-audit-suite/skills/ln-641-pattern-analyzer",
+        "path": "references/pattern_library.md"
+      },
+      {
+        "skill": "plugins/codebase-audit-suite/skills/ln-643-api-contract-auditor",
+        "path": "references/pattern_library.md"
+      }
+    ]
+  },
+  {
+    "source": "shared/references/penalty_points.md",
+    "kind": "reference",
+    "targets": [
+      {
+        "skill": "plugins/agile-workflow/skills/ln-310-multi-agent-validator",
+        "path": "references/penalty_points.md"
+      },
+      {
+        "skill": "plugins/agile-workflow/skills/ln-312-review-findings-worker",
+        "path": "references/penalty_points.md"
+      },
+      {
+        "skill": "plugins/agile-workflow/skills/ln-314-review-repair-worker",
+        "path": "references/penalty_points.md"
+      }
+    ]
+  },
+  {
+    "source": "shared/references/phase2_research_audit.md",
+    "kind": "reference",
+    "targets": [
+      {
+        "skill": "plugins/agile-workflow/skills/ln-310-multi-agent-validator",
+        "path": "references/phase2_research_audit.md"
+      },
+      {
+        "skill": "plugins/agile-workflow/skills/ln-312-review-findings-worker",
+        "path": "references/phase2_research_audit.md"
+      }
+    ]
+  },
+  {
     "source": "shared/references/plan_mode_pattern.md",
     "kind": "reference",
     "targets": [
@@ -4954,6 +5250,20 @@
       {
         "skill": "plugins/optimization-suite/skills/ln-813-optimization-plan-validator",
         "path": "references/plan_mode_pattern.md"
+      }
+    ]
+  },
+  {
+    "source": "shared/references/plan_review_pipeline.md",
+    "kind": "reference",
+    "targets": [
+      {
+        "skill": "plugins/agile-workflow/skills/ln-310-multi-agent-validator",
+        "path": "references/plan_review_pipeline.md"
+      },
+      {
+        "skill": "plugins/agile-workflow/skills/ln-314-review-repair-worker",
+        "path": "references/plan_review_pipeline.md"
       }
     ]
   },
@@ -5040,6 +5350,38 @@
     ]
   },
   {
+    "source": "shared/references/platform_artifacts.md",
+    "kind": "reference",
+    "targets": [
+      {
+        "skill": "plugins/codebase-audit-suite/skills/ln-646-project-structure-auditor",
+        "path": "references/platform_artifacts.md"
+      },
+      {
+        "skill": "plugins/project-bootstrap/skills/ln-724-artifact-cleaner",
+        "path": "references/platform_artifacts.md"
+      }
+    ]
+  },
+  {
+    "source": "shared/references/premortem_validation.md",
+    "kind": "reference",
+    "targets": [
+      {
+        "skill": "plugins/agile-workflow/skills/ln-310-multi-agent-validator",
+        "path": "references/premortem_validation.md"
+      },
+      {
+        "skill": "plugins/agile-workflow/skills/ln-312-review-findings-worker",
+        "path": "references/premortem_validation.md"
+      },
+      {
+        "skill": "plugins/agile-workflow/skills/ln-314-review-repair-worker",
+        "path": "references/premortem_validation.md"
+      }
+    ]
+  },
+  {
     "source": "shared/references/problem_solving.md",
     "kind": "reference",
     "targets": [
@@ -5106,6 +5448,34 @@
       {
         "skill": "plugins/setup-environment/skills/ln-030-vps-bootstrap",
         "path": "references/procedural_skill_sop_guide.md"
+      }
+    ]
+  },
+  {
+    "source": "shared/references/project_repo_bootstrap.md",
+    "kind": "reference",
+    "targets": [
+      {
+        "skill": "plugins/setup-environment/skills/ln-030-vps-bootstrap",
+        "path": "references/project_repo_bootstrap.md"
+      },
+      {
+        "skill": "plugins/setup-environment/skills/ln-032-vps-project-runtime",
+        "path": "references/project_repo_bootstrap.md"
+      }
+    ]
+  },
+  {
+    "source": "shared/references/provider_credentials.md",
+    "kind": "reference",
+    "targets": [
+      {
+        "skill": "plugins/setup-environment/skills/ln-030-vps-bootstrap",
+        "path": "references/provider_credentials.md"
+      },
+      {
+        "skill": "plugins/setup-environment/skills/ln-032-vps-project-runtime",
+        "path": "references/provider_credentials.md"
       }
     ]
   },
@@ -5378,6 +5748,20 @@
       {
         "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
         "path": "references/quality_summary_contract.md"
+      }
+    ]
+  },
+  {
+    "source": "shared/references/quality_validation.md",
+    "kind": "reference",
+    "targets": [
+      {
+        "skill": "plugins/agile-workflow/skills/ln-310-multi-agent-validator",
+        "path": "references/quality_validation.md"
+      },
+      {
+        "skill": "plugins/agile-workflow/skills/ln-314-review-repair-worker",
+        "path": "references/quality_validation.md"
       }
     ]
   },
@@ -5718,6 +6102,28 @@
     ]
   },
   {
+    "source": "shared/references/replan_algorithm_stories.md",
+    "kind": "reference",
+    "targets": [
+      {
+        "skill": "plugins/agile-workflow/skills/ln-210-epic-coordinator",
+        "path": "references/replan_algorithm_stories.md"
+      },
+      {
+        "skill": "plugins/agile-workflow/skills/ln-222-story-replanner",
+        "path": "references/replan_algorithm_stories.md"
+      },
+      {
+        "skill": "plugins/agile-workflow/skills/ln-302-task-replanner",
+        "path": "references/replan_algorithm_stories.md"
+      },
+      {
+        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
+        "path": "references/replan_algorithm_stories.md"
+      }
+    ]
+  },
+  {
     "source": "shared/references/replan_algorithm.md",
     "kind": "reference",
     "targets": [
@@ -5736,6 +6142,28 @@
       {
         "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
         "path": "references/replan_algorithm.md"
+      }
+    ]
+  },
+  {
+    "source": "shared/references/replan_workflow.md",
+    "kind": "reference",
+    "targets": [
+      {
+        "skill": "plugins/agile-workflow/skills/ln-210-epic-coordinator",
+        "path": "references/replan_workflow.md"
+      },
+      {
+        "skill": "plugins/agile-workflow/skills/ln-222-story-replanner",
+        "path": "references/replan_workflow.md"
+      },
+      {
+        "skill": "plugins/agile-workflow/skills/ln-302-task-replanner",
+        "path": "references/replan_workflow.md"
+      },
+      {
+        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
+        "path": "references/replan_workflow.md"
       }
     ]
   },
@@ -5892,6 +6320,20 @@
       {
         "skill": "plugins/documentation-pipeline/skills/ln-140-test-docs-creator",
         "path": "references/risk_based_testing_guide.md"
+      }
+    ]
+  },
+  {
+    "source": "shared/references/risk_validation.md",
+    "kind": "reference",
+    "targets": [
+      {
+        "skill": "plugins/agile-workflow/skills/ln-310-multi-agent-validator",
+        "path": "references/risk_validation.md"
+      },
+      {
+        "skill": "plugins/agile-workflow/skills/ln-314-review-repair-worker",
+        "path": "references/risk_validation.md"
       }
     ]
   },
@@ -6186,6 +6628,72 @@
     ]
   },
   {
+    "source": "shared/references/scope_layers.md",
+    "kind": "reference",
+    "targets": [
+      {
+        "skill": "plugins/setup-environment/skills/ln-030-vps-bootstrap",
+        "path": "references/scope_layers.md"
+      },
+      {
+        "skill": "plugins/setup-environment/skills/ln-031-vps-host-runtime",
+        "path": "references/scope_layers.md"
+      },
+      {
+        "skill": "plugins/setup-environment/skills/ln-032-vps-project-runtime",
+        "path": "references/scope_layers.md"
+      },
+      {
+        "skill": "plugins/setup-environment/skills/ln-034-vps-environment-diagnostics",
+        "path": "references/scope_layers.md"
+      }
+    ]
+  },
+  {
+    "source": "shared/references/scoring_rules.md",
+    "kind": "reference",
+    "targets": [
+      {
+        "skill": "plugins/codebase-audit-suite/skills/ln-640-pattern-evolution-auditor",
+        "path": "references/scoring_rules.md"
+      },
+      {
+        "skill": "plugins/codebase-audit-suite/skills/ln-641-pattern-analyzer",
+        "path": "references/scoring_rules.md"
+      },
+      {
+        "skill": "plugins/codebase-audit-suite/skills/ln-642-layer-boundary-auditor",
+        "path": "references/scoring_rules.md"
+      },
+      {
+        "skill": "plugins/codebase-audit-suite/skills/ln-643-api-contract-auditor",
+        "path": "references/scoring_rules.md"
+      }
+    ]
+  },
+  {
+    "source": "shared/references/shared_auth_state.md",
+    "kind": "reference",
+    "targets": [
+      {
+        "skill": "plugins/setup-environment/skills/ln-030-vps-bootstrap",
+        "path": "references/shared_auth_state.md"
+      },
+      {
+        "skill": "plugins/setup-environment/skills/ln-031-vps-host-runtime",
+        "path": "references/shared_auth_state.md"
+      },
+      {
+        "skill": "plugins/setup-environment/skills/ln-032-vps-project-runtime",
+        "path": "references/shared_auth_state.md"
+      },
+      {
+        "skill": "plugins/setup-environment/skills/ln-034-vps-environment-diagnostics",
+        "path": "references/shared_auth_state.md"
+      }
+    ]
+  },
+  {
     "source": "shared/references/skill_contract.md",
     "kind": "reference",
     "targets": [
@@ -6200,6 +6708,52 @@
       {
         "skill": "plugins/setup-environment/skills/ln-030-vps-bootstrap",
         "path": "references/skill_contract.md"
+      }
+    ]
+  },
+  {
+    "source": "shared/references/solution_validation.md",
+    "kind": "reference",
+    "targets": [
+      {
+        "skill": "plugins/agile-workflow/skills/ln-310-multi-agent-validator",
+        "path": "references/solution_validation.md"
+      },
+      {
+        "skill": "plugins/agile-workflow/skills/ln-314-review-repair-worker",
+        "path": "references/solution_validation.md"
+      }
+    ]
+  },
+  {
+    "source": "shared/references/stack_detection.md",
+    "kind": "reference",
+    "targets": [
+      {
+        "skill": "plugins/codebase-audit-suite/skills/ln-646-project-structure-auditor",
+        "path": "references/stack_detection.md"
+      },
+      {
+        "skill": "plugins/project-bootstrap/skills/ln-700-project-bootstrap",
+        "path": "references/stack_detection.md"
+      },
+      {
+        "skill": "plugins/setup-environment/skills/ln-012-mcp-configurator",
+        "path": "references/stack_detection.md"
+      }
+    ]
+  },
+  {
+    "source": "shared/references/standards_validation.md",
+    "kind": "reference",
+    "targets": [
+      {
+        "skill": "plugins/agile-workflow/skills/ln-310-multi-agent-validator",
+        "path": "references/standards_validation.md"
+      },
+      {
+        "skill": "plugins/agile-workflow/skills/ln-314-review-repair-worker",
+        "path": "references/standards_validation.md"
       }
     ]
   },
@@ -6324,6 +6878,48 @@
       {
         "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
         "path": "references/story_planning_runtime_contract.md"
+      }
+    ]
+  },
+  {
+    "source": "shared/references/structural_validation.md",
+    "kind": "reference",
+    "targets": [
+      {
+        "skill": "plugins/agile-workflow/skills/ln-310-multi-agent-validator",
+        "path": "references/structural_validation.md"
+      },
+      {
+        "skill": "plugins/agile-workflow/skills/ln-314-review-repair-worker",
+        "path": "references/structural_validation.md"
+      }
+    ]
+  },
+  {
+    "source": "shared/references/substitution_rules.md",
+    "kind": "reference",
+    "targets": [
+      {
+        "skill": "plugins/setup-environment/skills/ln-030-vps-bootstrap",
+        "path": "references/substitution_rules.md"
+      },
+      {
+        "skill": "plugins/setup-environment/skills/ln-031-vps-host-runtime",
+        "path": "references/substitution_rules.md"
+      }
+    ]
+  },
+  {
+    "source": "shared/references/task_delegation_pattern.md",
+    "kind": "reference",
+    "targets": [
+      {
+        "skill": "plugins/agile-workflow/skills/ln-210-epic-coordinator",
+        "path": "references/task_delegation_pattern.md"
+      },
+      {
+        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
+        "path": "references/task_delegation_pattern.md"
       }
     ]
   },
@@ -6642,6 +7238,20 @@
     ]
   },
   {
+    "source": "shared/references/traceability_validation.md",
+    "kind": "reference",
+    "targets": [
+      {
+        "skill": "plugins/agile-workflow/skills/ln-310-multi-agent-validator",
+        "path": "references/traceability_validation.md"
+      },
+      {
+        "skill": "plugins/agile-workflow/skills/ln-314-review-repair-worker",
+        "path": "references/traceability_validation.md"
+      }
+    ]
+  },
+  {
     "source": "shared/references/tracker_provider_contract.md",
     "kind": "reference",
     "targets": [
@@ -6680,6 +7290,20 @@
       {
         "skill": "plugins/setup-environment/skills/ln-010-dev-environment-setup",
         "path": "references/tracker_provider_contract.md"
+      }
+    ]
+  },
+  {
+    "source": "shared/references/troubleshooting.md",
+    "kind": "reference",
+    "targets": [
+      {
+        "skill": "plugins/setup-environment/skills/ln-030-vps-bootstrap",
+        "path": "references/troubleshooting.md"
+      },
+      {
+        "skill": "plugins/setup-environment/skills/ln-034-vps-environment-diagnostics",
+        "path": "references/troubleshooting.md"
       }
     ]
   },
@@ -6810,6 +7434,38 @@
     ]
   },
   {
+    "source": "shared/references/verification_recipes.md",
+    "kind": "reference",
+    "targets": [
+      {
+        "skill": "plugins/setup-environment/skills/ln-030-vps-bootstrap",
+        "path": "references/verification_recipes.md"
+      },
+      {
+        "skill": "plugins/setup-environment/skills/ln-033-hex-relay-lifecycle",
+        "path": "references/verification_recipes.md"
+      },
+      {
+        "skill": "plugins/setup-environment/skills/ln-034-vps-environment-diagnostics",
+        "path": "references/verification_recipes.md"
+      }
+    ]
+  },
+  {
+    "source": "shared/references/vps_base_install.md",
+    "kind": "reference",
+    "targets": [
+      {
+        "skill": "plugins/setup-environment/skills/ln-030-vps-bootstrap",
+        "path": "references/vps_base_install.md"
+      },
+      {
+        "skill": "plugins/setup-environment/skills/ln-031-vps-host-runtime",
+        "path": "references/vps_base_install.md"
+      }
+    ]
+  },
+  {
     "source": "shared/references/vps_runtime_contract.md",
     "kind": "reference",
     "targets": [
@@ -6902,6 +7558,20 @@
       {
         "skill": "plugins/setup-environment/skills/ln-034-vps-environment-diagnostics",
         "path": "references/worker_runtime_contract.md"
+      }
+    ]
+  },
+  {
+    "source": "shared/references/workflow_validation.md",
+    "kind": "reference",
+    "targets": [
+      {
+        "skill": "plugins/agile-workflow/skills/ln-310-multi-agent-validator",
+        "path": "references/workflow_validation.md"
+      },
+      {
+        "skill": "plugins/agile-workflow/skills/ln-314-review-repair-worker",
+        "path": "references/workflow_validation.md"
       }
     ]
   },
@@ -8452,6 +9122,88 @@
       {
         "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
         "path": "references/templates/test_task_template.md"
+      }
+    ]
+  },
+  {
+    "source": "shared/scripts/planning-runtime/lib/template-compliance.mjs",
+    "kind": "script",
+    "targets": [
+      {
+        "skill": "plugins/agile-workflow/skills/ln-220-story-coordinator",
+        "path": "references/scripts/planning-runtime/lib/template-compliance.mjs"
+      },
+      {
+        "skill": "plugins/agile-workflow/skills/ln-300-task-coordinator",
+        "path": "references/scripts/planning-runtime/lib/template-compliance.mjs"
+      },
+      {
+        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
+        "path": "references/scripts/planning-runtime/lib/template-compliance.mjs"
+      }
+    ]
+  },
+  {
+    "source": "shared/templates/agents_md_template.md",
+    "kind": "template",
+    "targets": [
+      {
+        "skill": "plugins/documentation-pipeline/skills/ln-111-root-docs-creator",
+        "path": "references/templates/agents_md_template.md"
+      },
+      {
+        "skill": "plugins/setup-environment/skills/ln-014-agent-instructions-manager",
+        "path": "references/templates/agents_md_template.md"
+      }
+    ]
+  },
+  {
+    "source": "shared/templates/agents_md_workflow_principles.md",
+    "kind": "template",
+    "targets": [
+      {
+        "skill": "plugins/documentation-pipeline/skills/ln-111-root-docs-creator",
+        "path": "references/templates/agents_md_workflow_principles.md"
+      },
+      {
+        "skill": "plugins/setup-environment/skills/ln-014-agent-instructions-manager",
+        "path": "references/templates/agents_md_workflow_principles.md"
+      }
+    ]
+  },
+  {
+    "source": "shared/templates/claude_md_template.md",
+    "kind": "template",
+    "targets": [
+      {
+        "skill": "plugins/documentation-pipeline/skills/ln-111-root-docs-creator",
+        "path": "references/templates/claude_md_template.md"
+      },
+      {
+        "skill": "plugins/setup-environment/skills/ln-014-agent-instructions-manager",
+        "path": "references/templates/claude_md_template.md"
+      }
+    ]
+  },
+  {
+    "source": "shared/agents/agent_result_classifier.mjs",
+    "kind": "agent",
+    "targets": [
+      {
+        "skill": "plugins/agile-workflow/skills/ln-310-multi-agent-validator",
+        "path": "references/agents/agent_result_classifier.mjs"
+      },
+      {
+        "skill": "plugins/agile-workflow/skills/ln-315-review-merge-worker",
+        "path": "references/agents/agent_result_classifier.mjs"
+      },
+      {
+        "skill": "plugins/agile-workflow/skills/ln-316-review-refinement-worker",
+        "path": "references/agents/agent_result_classifier.mjs"
+      },
+      {
+        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
+        "path": "references/agents/agent_result_classifier.mjs"
       }
     ]
   }

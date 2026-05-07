@@ -144,6 +144,24 @@ function sharedImportDeps(source) {
   return [...deps].sort();
 }
 
+function sharedTextRefDeps(source) {
+  if (!source.match(/\.(md|json|yaml|yml|toml|txt)$/i)) return [];
+  const fullPath = path.join(ROOT, fromPosix(source));
+  if (!fs.existsSync(fullPath)) return [];
+  const text = fs.readFileSync(fullPath, "utf8");
+  const deps = new Set();
+  for (const match of text.matchAll(/references[\\/][A-Za-z0-9_@=:+\-.[\]/]+/g)) {
+    const target = cleanToken(match[0]);
+    if (target.endsWith("/")) continue;
+    if (!/\.\w+$/.test(target)) continue;
+    const sharedSource = sourceForTarget(target);
+    if (sharedSource && fs.existsSync(path.join(ROOT, fromPosix(sharedSource)))) {
+      deps.add(sharedSource);
+    }
+  }
+  return [...deps].sort();
+}
+
 function buildExtendedRegistry(registry) {
   const extended = new Map();
   const transitiveSources = new Set();
@@ -166,7 +184,7 @@ function buildExtendedRegistry(registry) {
     const source = stack.pop();
     const skillMap = extended.get(source);
     const skills = [...skillMap.keys()];
-    for (const dep of sharedImportDeps(source)) {
+    for (const dep of [...new Set([...sharedImportDeps(source), ...sharedTextRefDeps(source)])]) {
       const depTargetPath = targetForSource(dep);
       if (!depTargetPath) continue;
       let added = false;
@@ -262,6 +280,169 @@ function buildUsageFromSkillLocalRefs() {
   return usage;
 }
 
+function buildCiReachableSet() {
+  const reachable = new Set();
+  const stack = [];
+  const runtimesWithTests = new Set();
+  for (const filePath of walkFiles(SHARED_ROOT)) {
+    const r = rel(filePath);
+    const m = r.match(/^shared\/scripts\/([^/]+)\/test\/[^/]+\.(mjs|js|cjs)$/);
+    if (m) {
+      runtimesWithTests.add(m[1]);
+      reachable.add(r);
+      stack.push(r);
+    }
+  }
+  for (const filePath of walkFiles(SHARED_ROOT)) {
+    const r = rel(filePath);
+    const m = r.match(/^shared\/scripts\/([^/]+)\//);
+    if (m && runtimesWithTests.has(m[1]) && !reachable.has(r)) {
+      reachable.add(r);
+      stack.push(r);
+    }
+  }
+  while (stack.length) {
+    const source = stack.pop();
+    for (const dep of sharedImportDeps(source)) {
+      if (!reachable.has(dep)) {
+        reachable.add(dep);
+        stack.push(dep);
+      }
+    }
+  }
+  return reachable;
+}
+
+function escapeRegex(s) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function buildSkillRefsOrphans(extendedRegistry) {
+  const orphans = [];
+  const distributedFiles = new Set();
+  for (const [, skillTargets] of extendedRegistry) {
+    for (const [skill, targetRel] of skillTargets) {
+      distributedFiles.add(toPosix(path.join(skill, fromPosix(targetRel))));
+    }
+  }
+
+  for (const skillRoot of listSkillDirs()) {
+    const refsDir = path.join(skillRoot, "references");
+    if (!fs.existsSync(refsDir)) continue;
+    const skillRel = rel(skillRoot);
+    const refsFiles = walkFiles(refsDir);
+    if (refsFiles.length === 0) continue;
+
+    const reachable = new Set();
+    function visit(filePath) {
+      if (reachable.has(filePath)) return;
+      reachable.add(filePath);
+      if (!isTextFile(filePath)) return;
+      const text = fs.readFileSync(filePath, "utf8");
+      for (const m of text.matchAll(/references[\\/][A-Za-z0-9_@=:+\-.[\]/]+/g)) {
+        const tok = cleanToken(m[0]).split("/");
+        const rest = tok.slice(1).join("/");
+        const target = path.join(refsDir, rest);
+        const cands = [target, `${target}.mjs`, `${target}.js`, `${target}.cjs`];
+        for (const c of cands) if (fs.existsSync(c) && fs.statSync(c).isFile()) { visit(c); break; }
+      }
+      const dir = path.dirname(filePath);
+      for (const m of text.matchAll(/(?:from|import|require\()[\s"']*((?:\.\/|\.\.\/)[^"')\s]+)/g)) {
+        const spec = m[1];
+        const resolved = path.resolve(dir, spec);
+        const cands = [resolved, `${resolved}.mjs`, `${resolved}.js`, `${resolved}.cjs`, path.join(resolved, "index.mjs"), path.join(resolved, "index.js")];
+        for (const c of cands) if (fs.existsSync(c) && fs.statSync(c).isFile()) { visit(c); break; }
+      }
+      for (const refFile of refsFiles) {
+        if (reachable.has(refFile)) continue;
+        const basename = path.basename(refFile);
+        if (basename.length < 4) continue;
+        const re = new RegExp(`(?:^|[^A-Za-z0-9_])${escapeRegex(basename)}(?:[^A-Za-z0-9_.]|$)`);
+        if (re.test(text)) visit(refFile);
+      }
+    }
+
+    for (const refFile of refsFiles) {
+      if (distributedFiles.has(rel(refFile))) visit(refFile);
+    }
+    for (const f of walkFiles(skillRoot)) {
+      const fr = rel(f);
+      if (fr.startsWith(`${skillRel}/references/`)) continue;
+      visit(f);
+    }
+
+    for (const refFile of refsFiles) {
+      if (!reachable.has(refFile)) orphans.push(rel(refFile));
+    }
+  }
+  return orphans;
+}
+
+function stripCodeFences(text) {
+  return text
+    .replace(/```[\s\S]*?```/g, "")
+    .replace(/^( {4,}|\t).*$/gm, "")
+    .replace(/`[^`\n]*`/g, "");
+}
+
+function buildMissingSkillReferences() {
+  const missing = [];
+  for (const skillRoot of listSkillDirs()) {
+    const skillRel = rel(skillRoot);
+    for (const file of walkFiles(skillRoot).filter(isTextFile)) {
+      if (rel(file).match(/\/references\/scripts\/.+\.(mjs|js|cjs)$/)) continue;
+      let text = fs.readFileSync(file, "utf8");
+      if (path.extname(file).toLowerCase() === ".md" || path.basename(file) === "SKILL.md") {
+        text = stripCodeFences(text);
+      }
+      const seen = new Set();
+      for (const m of text.matchAll(/references[\\/][A-Za-z0-9_@=:+\-.[\]/]+/g)) {
+        const target = cleanToken(m[0]);
+        if (target.endsWith("/")) continue;
+        if (seen.has(target)) continue;
+        seen.add(target);
+        const targetPath = path.join(skillRoot, fromPosix(target));
+        if (fs.existsSync(targetPath)) continue;
+        if (!/\.\w+$/.test(target)) {
+          if (fs.existsSync(`${targetPath}.mjs`) || fs.existsSync(`${targetPath}.js`) || fs.existsSync(`${targetPath}.cjs`)) continue;
+          continue;
+        }
+        missing.push({ skill: skillRel, source: rel(file), target });
+      }
+    }
+  }
+  return missing;
+}
+
+function buildCrossSkillDuplicates(extendedRegistry) {
+  const distributedFiles = new Set();
+  for (const [, skillTargets] of extendedRegistry) {
+    for (const [skill, targetRel] of skillTargets) {
+      distributedFiles.add(toPosix(path.join(skill, fromPosix(targetRel))));
+    }
+  }
+  const groups = new Map();
+  for (const skillRoot of listSkillDirs()) {
+    for (const f of walkFiles(skillRoot).filter(isTextFile)) {
+      const fr = rel(f);
+      if (distributedFiles.has(fr)) continue;
+      const m = fr.match(/^plugins\/[^/]+\/skills\/[^/]+\/(.+)$/);
+      if (!m) continue;
+      const suffix = m[1];
+      if (!suffix.startsWith("references/")) continue;
+      const h = hashFile(f);
+      const key = `${suffix}|${h}`;
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(fr);
+    }
+  }
+  const dups = [];
+  for (const [key, files] of groups) {
+    if (files.length >= 2) dups.push({ suffix: key.split("|")[0], files });
+  }
+  return dups;
+}
+
 export function buildReport() {
   const registry = loadRegistry();
   const registrySources = new Set(registry.map((entry) => entry.source));
@@ -269,6 +450,7 @@ export function buildReport() {
   const usage = buildUsageFromSkillLocalRefs();
   const { extended, transitiveSources } = buildExtendedRegistry(registry);
   const reachableSources = new Set(extended.keys());
+  const ciReachable = buildCiReachableSet();
 
   const pluginSharedDirs = fs
     .readdirSync(PLUGINS_ROOT, { withFileTypes: true })
@@ -300,13 +482,17 @@ export function buildReport() {
   for (const source of rootSharedFiles) {
     if (!reachableSources.has(source)) {
       const count = usage.get(source)?.size ?? 0;
-      orphanRootShared.push({ source, count });
+      orphanRootShared.push({ source, count, ciReachable: ciReachable.has(source) });
       continue;
     }
     if (registrySources.has(source)) continue;
     if (transitiveSources.has(source)) continue;
     singleUseRootShared.push({ source });
   }
+
+  const skillRefsOrphans = buildSkillRefsOrphans(extended);
+  const crossSkillDuplicates = buildCrossSkillDuplicates(extended);
+  const missingSkillReferences = buildMissingSkillReferences();
 
   return {
     rootSharedFiles: rootSharedFiles.length,
@@ -319,6 +505,9 @@ export function buildReport() {
     unresolvedDynamicRefs: [],
     orphanRootShared,
     singleUseRootShared,
+    skillRefsOrphans,
+    crossSkillDuplicates,
+    missingSkillReferences,
   };
 }
 
@@ -383,6 +572,29 @@ export function validateSharedDistribution() {
         problems.push(`registry target hash mismatch: ${skill}/${targetRel}`);
       }
     }
+  }
+
+  for (const o of report.orphanRootShared) {
+    if (o.ciReachable) continue;
+    if (o.count >= 2) {
+      problems.push(`shared file referenced by ${o.count} skills but missing from registry: ${o.source}`);
+    } else if (o.count === 1) {
+      problems.push(`shared file used by only 1 skill (move to that skill or register multi-use): ${o.source}`);
+    } else {
+      problems.push(`shared file unused (remove or wire to skills): ${o.source}`);
+    }
+  }
+
+  for (const f of report.skillRefsOrphans) {
+    problems.push(`skill references/ orphan (no skill content references it): ${f}`);
+  }
+
+  for (const dup of report.crossSkillDuplicates) {
+    problems.push(`cross-skill duplicate not in registry (${dup.files.length} skills): ${dup.suffix}`);
+  }
+
+  for (const m of report.missingSkillReferences) {
+    problems.push(`skill ${m.skill} references nonexistent ${m.target} (mentioned in ${m.source})`);
   }
 
   if (problems.length) {

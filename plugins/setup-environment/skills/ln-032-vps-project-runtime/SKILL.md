@@ -118,6 +118,8 @@ Write a `vps-project-runtime` summary artifact with project runtime changes, loc
 - [ ] `/etc/${PROJECT_NAME}` and `/var/lib/${PROJECT_NAME}` exist with expected ownership and modes.
 - [ ] Project `.claude/` settings and instructions are rendered.
 - [ ] `${SERVICE_PREFIX}-god@.service` and scheduler templates installed or verified.
+- [ ] `${PROJECT_DIR}/.agent-home/users` and `.agent-cache` exist with `${BOT_USER}:${BOT_USER}` 0700 (relay's `ReadWritePaths=` requires the path to exist before first start).
+- [ ] Primary `${SERVICE_PREFIX}-god@${TELEGRAM_CHAT_ID}.service` is `active` AND `tmux -L ${SERVICE_PREFIX} has-session -t "=${SERVICE_PREFIX}-god-${TELEGRAM_CHAT_ID}"` exits 0 (use exact-match `=name` form).
 - [ ] Provider credentials are configured or explicitly gated `N/A:`.
 - [ ] Local dispatcher command and `.env.local` `VPS_*` keys installed or planned.
 - [ ] `dry_run=true` / `verify_only` performed no mutation.
@@ -125,5 +127,5 @@ Write a `vps-project-runtime` summary artifact with project runtime changes, loc
 
 ---
 
-**Version:** 1.0.0
-**Last Updated:** 2026-05-05
+**Version:** 1.1.0
+**Last Updated:** 2026-05-07

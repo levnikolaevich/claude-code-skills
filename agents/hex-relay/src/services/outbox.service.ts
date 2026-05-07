@@ -55,9 +55,21 @@ export function createOutboxService(deps: { outboxRepo: OutboxRepo; log: Logger 
     });
   }
 
+  function enqueueAck(args: EnqueueArgs): number {
+    return deps.outboxRepo.enqueue({
+      text: args.text,
+      chatId: args.chatId,
+      repliedToId: args.repliedToId ?? null,
+      sessionId: args.sessionId ?? null,
+      auditMsgId: args.auditMsgId ?? null,
+      eventType: "ack",
+    });
+  }
+
   return {
     enqueueStatus,
     enqueueReply,
+    enqueueAck,
     selectDue(limit = 5): OutboxRow[] {
       return deps.outboxRepo.selectDue(limit);
     },

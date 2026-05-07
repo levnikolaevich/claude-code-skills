@@ -135,6 +135,28 @@ curl -fsS -X POST http://127.0.0.1:${RELAY_HOOK_PORT}/tasks/poll | jq .
 systemctl list-timers ${SERVICE_PREFIX}-dispatch.timer --no-pager
 # Expected: JSON {ok:true,count:N}; timer cadence is 15 minutes.
 
+# Drift catch (the timer can end up enabled-but-inactive after daemon-reload, e.g. ${SERVICE_PREFIX}-dispatch.timer)
+test "$(systemctl is-active ${SERVICE_PREFIX}-dispatch.timer)" = active
+# Expected: "active" (not "inactive"). NextElapseUSec must not be empty/infinity.
+systemctl show ${SERVICE_PREFIX}-dispatch.timer -p ActiveState,SubState,NextElapseUSecRealtime,LastTriggerUSec
+journalctl -u ${SERVICE_PREFIX}-dispatch.service --since '24h ago' --no-pager | tail -8
+# Expected: at least one Started/Finished pair within the last 16 minutes; "No entries" means timer never fired.
+
+# tmux/god parity (catches the silent case where ${SERVICE_PREFIX}-god@<id>.service is `active` but its tmux pane is missing)
+for U in $(systemctl list-units --type=service --state=active --no-pager --plain --no-legend \
+            | awk -v p="^${SERVICE_PREFIX}-god@" '$1 ~ p {sub(/.service$/, "", $1); sub(/^.*@/, "", $1); print $1}'); do
+  sudo -u ${BOT_USER} tmux -L ${SERVICE_PREFIX} has-session -t "=${SERVICE_PREFIX}-god-${U}" 2>/dev/null \
+    || echo "DRIFT: god@${U} active but tmux session ${SERVICE_PREFIX}-god-${U} missing on socket -L ${SERVICE_PREFIX}"
+done
+# Expected: no DRIFT lines. Use exact-match `=name` form because default is prefix-match on shared sockets.
+
+# Multi-line payload smoke (regression for tmux send-keys -l flag-line bug, e.g. "---\n-flag\n")
+# Send via Telegram or directly: a markdown-bullet message that starts a line with `-`.
+# Expected: relay logs `INBOUND delivered to tmux` with attempts=0; no `send-keys -l rc=1 invalid flag` entries.
+sudo -u ${BOT_USER} bash -lc 'tmux -L ${SERVICE_PREFIX} set-buffer -b smoke -- "line1\n- bullet starting with hyphen\n— em-dash" \
+  && tmux -L ${SERVICE_PREFIX} paste-buffer -d -p -r -b smoke -t =${SERVICE_PREFIX}-god-${TELEGRAM_CHAT_ID} \
+  && echo "smoke: paste-buffer succeeded"'
+
 # Per-user session ownership and inbound routing columns exist
 sqlite3 /var/lib/${PROJECT_NAME}/relay.db "PRAGMA table_info(sessions)"
 # Expected: created_by_user_id column present

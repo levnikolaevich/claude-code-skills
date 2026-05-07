@@ -24,11 +24,14 @@ CREATE INDEX IF NOT EXISTS idx_msg_session ON messages(session_id);
 CREATE INDEX IF NOT EXISTS idx_msg_inbound ON messages(tg_chat_id, tg_msg_id);
 
 CREATE TABLE IF NOT EXISTS pending_reply (
-  session_id      TEXT PRIMARY KEY,
+  session_id      TEXT NOT NULL,
   inbound_msg_id  INTEGER NOT NULL,
   prompt_hash     TEXT NOT NULL,
-  created_at      INTEGER NOT NULL
+  created_at      INTEGER NOT NULL,
+  PRIMARY KEY (session_id, inbound_msg_id)
 );
+CREATE INDEX IF NOT EXISTS idx_pending_reply_session ON pending_reply(session_id);
+CREATE INDEX IF NOT EXISTS idx_pending_reply_created ON pending_reply(created_at);
 
 CREATE TABLE IF NOT EXISTS outbox (
   id               INTEGER PRIMARY KEY AUTOINCREMENT,

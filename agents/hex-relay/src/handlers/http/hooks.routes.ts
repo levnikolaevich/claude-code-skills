@@ -9,6 +9,7 @@ import type { TodoDiffService } from "../../services/todoDiff.service.js";
 import type { MemoryService } from "../../services/memory.service.js";
 import type { DispatchService } from "../../services/dispatch.service.js";
 import type { VerbosityService } from "../../services/verbosity.service.js";
+import type { TypingService } from "../../services/typing.service.js";
 import { FormatService } from "../../services/format.service.js";
 import { TIMING, TG_PREFIX_RE } from "../../config/paths.js";
 import {
@@ -31,12 +32,18 @@ export interface HookDeps {
   memory: MemoryService;
   dispatch: DispatchService;
   verbosity: VerbosityService;
+  typing: TypingService;
   primaryOperator: number;
   dbPath: string;
 }
 
 const STOP_FAILURE_DEDUP_MS = 10_000;
 const STOP_FAILURE_ALERT_DEDUP_MS = 5 * 60_000;
+
+let pendingFanoutAcksTotal = 0;
+export function getPendingFanoutAcksTotal(): number {
+  return pendingFanoutAcksTotal;
+}
 
 function nowTs(): number {
   return Math.floor(Date.now() / 1000);
@@ -89,6 +96,9 @@ function bindPendingInbound(args: {
     deps.sessionService.ensureOwner(sessionId, inbound.fromUserId);
   }
   deps.pendingRepo.set(sessionId, inbound.id, prompt);
+  if (chatId !== null) {
+    deps.typing.start(sessionId, chatId);
+  }
   deps.log.info(
     {
       session: sessionId.slice(0, 8),
@@ -111,6 +121,30 @@ function classifyStopFailure(errorType: string, payload: Record<string, unknown>
     raw.includes("api error: 401")
   ) {
     return "auth_failed";
+  }
+  if (raw.includes("rate_limit") || raw.includes("rate limit") || raw.includes("api error: 429")) {
+    return "rate_limited";
+  }
+  if (
+    raw.includes("econnreset") ||
+    raw.includes("etimedout") ||
+    raw.includes("enetunreach") ||
+    raw.includes("socket hang up")
+  ) {
+    return "network_error";
+  }
+  if (raw.includes("api error: 5") || raw.includes("upstream") || raw.includes("bad gateway")) {
+    return "upstream_error";
+  }
+  if (
+    raw.includes("context window") ||
+    raw.includes("too many tokens") ||
+    raw.includes("context_length_exceeded")
+  ) {
+    return "context_overflow";
+  }
+  if (raw.includes("json") && (raw.includes("parse") || raw.includes("unexpected token"))) {
+    return "parse_error";
   }
   if (errorType && errorType !== "unknown") return errorType;
   return "stop_failure";
@@ -195,22 +229,24 @@ export function registerHookRoutes(app: FastifyInstance, deps: HookDeps): void {
     if (!session_id) return reply.code(200).send({});
     deps.sessionService.insertEvent(session_id, "stop", { msg_len: lastMsg.length });
     if (!lastMsg) return reply.code(200).send({});
-    const pending = deps.pendingRepo.get(session_id);
-    if (!pending) {
+    const pendings = deps.pendingRepo.getAllForSession(session_id);
+    if (pendings.length === 0) {
       deps.log.info({ session: session_id.slice(0, 8) }, "HOOK stop no pending");
       return reply.code(200).send({});
     }
-    const inbound = deps.messagesRepo.findById(pending.inboundMsgId);
+    const latest = pendings[pendings.length - 1]!;
+    const orphans = pendings.slice(0, -1);
+    const inbound = deps.messagesRepo.findById(latest.inboundMsgId);
     const replyChatId =
       inbound?.tgChatId ??
-      deps.messagesRepo.getChatId(pending.inboundMsgId) ??
+      deps.messagesRepo.getChatId(latest.inboundMsgId) ??
       deps.primaryOperator;
     const replyToTgMsgId = inbound?.tgMsgId ?? null;
     const finalText = FormatService.prefixReply(lastMsg);
     const auditMsgId = deps.messagesRepo.insertOutboundAudit(
       lastMsg,
       session_id,
-      pending.inboundMsgId
+      latest.inboundMsgId
     );
     const outboxId = deps.outbox.enqueueReply({
       text: finalText,
@@ -219,9 +255,34 @@ export function registerHookRoutes(app: FastifyInstance, deps: HookDeps): void {
       sessionId: session_id,
       auditMsgId,
     });
+    let fanoutAcks = 0;
+    for (const orphan of orphans) {
+      const orphanInbound = deps.messagesRepo.findById(orphan.inboundMsgId);
+      const ackChatId =
+        orphanInbound?.tgChatId ??
+        deps.messagesRepo.getChatId(orphan.inboundMsgId) ??
+        replyChatId;
+      const ackRepliedTo = orphanInbound?.tgMsgId ?? null;
+      deps.outbox.enqueueAck({
+        text: "↳ объединено с общим ответом",
+        chatId: ackChatId,
+        repliedToId: ackRepliedTo,
+        sessionId: session_id,
+        auditMsgId: null,
+      });
+      fanoutAcks += 1;
+    }
+    pendingFanoutAcksTotal += fanoutAcks;
     deps.pendingRepo.clear(session_id);
+    deps.typing.stop(session_id);
     deps.log.info(
-      { session: session_id.slice(0, 8), outboxId, len: lastMsg.length },
+      {
+        session: session_id.slice(0, 8),
+        outboxId,
+        len: lastMsg.length,
+        pendingCount: pendings.length,
+        fanoutAcks,
+      },
       "HOOK stop enqueued reply"
     );
     return reply.code(200).send({});
@@ -233,11 +294,13 @@ export function registerHookRoutes(app: FastifyInstance, deps: HookDeps): void {
     const { session_id, error_type } = parsed.data;
     const kind = classifyStopFailure(error_type, parsed.data);
     deps.sessionService.insertEvent(session_id, "stop_failure", { error_type });
+    if (session_id) deps.typing.stop(session_id);
     const now = Date.now();
     const last = stopFailureDedup.get(session_id) ?? 0;
     if (now - last > STOP_FAILURE_DEDUP_MS) {
+      const detail = JSON.stringify(parsed.data).slice(0, 280);
       deps.log.warn(
-        { session: session_id.slice(0, 8), error_type },
+        { session: session_id.slice(0, 8), error_type, kind, detail },
         "HOOK stop-failure (non-terminal; pending preserved)"
       );
       stopFailureDedup.set(session_id, now);

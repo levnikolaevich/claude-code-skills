@@ -178,6 +178,7 @@ export const HealthResponseSchema = z.object({
   inbound_failed: z.number().int(),
   inbound_rejected: z.number().int(),
   pending_count: z.number().int(),
+  pending_fanout_acks_total: z.number().int(),
   outbox_queued: z.number().int(),
   outbox_abandoned: z.number().int(),
   outbox_unknown: z.number().int(),

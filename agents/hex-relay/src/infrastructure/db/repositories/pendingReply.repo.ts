@@ -13,12 +13,18 @@ export function createPendingReplyRepo(db: Db) {
   const insert = db.prepare(
     "INSERT INTO pending_reply " +
       "(session_id, inbound_msg_id, prompt_hash, created_at) VALUES (?,?,?,?) " +
-      "ON CONFLICT(session_id) DO UPDATE SET " +
-      "inbound_msg_id=excluded.inbound_msg_id, " +
+      "ON CONFLICT(session_id, inbound_msg_id) DO UPDATE SET " +
       "prompt_hash=excluded.prompt_hash, " +
       "created_at=excluded.created_at"
   );
-  const get = db.prepare("SELECT * FROM pending_reply WHERE session_id=?");
+  const getLatest = db.prepare(
+    "SELECT * FROM pending_reply WHERE session_id=? " +
+      "ORDER BY created_at DESC, inbound_msg_id DESC LIMIT 1"
+  );
+  const getAllForSessionStmt = db.prepare(
+    "SELECT * FROM pending_reply WHERE session_id=? " +
+      "ORDER BY created_at ASC, inbound_msg_id ASC"
+  );
   const del = db.prepare("DELETE FROM pending_reply WHERE session_id=?");
   const listOthers = db.prepare("SELECT * FROM pending_reply WHERE session_id != ?");
   const countActive = db.prepare("SELECT COUNT(*) AS c FROM pending_reply WHERE created_at > ?");
@@ -29,8 +35,12 @@ export function createPendingReplyRepo(db: Db) {
       insert.run(sessionId, inboundId, hash, nowTs());
     },
     get(sessionId: string): PendingReply | null {
-      const row = get.get(sessionId) as Record<string, unknown> | undefined;
+      const row = getLatest.get(sessionId) as Record<string, unknown> | undefined;
       return row ? mapPendingRow(row) : null;
+    },
+    getAllForSession(sessionId: string): PendingReply[] {
+      const rows = getAllForSessionStmt.all(sessionId) as Record<string, unknown>[];
+      return rows.map(mapPendingRow);
     },
     clear(sessionId: string): void {
       del.run(sessionId);

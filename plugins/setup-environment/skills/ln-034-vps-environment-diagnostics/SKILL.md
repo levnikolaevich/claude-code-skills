@@ -73,6 +73,12 @@ Inspect:
 - dispatch timer/service
 - provider credential wiring without secret output
 
+Named drift checks (block-level findings; map to safe repairs in Phase 5):
+- **timer enabled-inactive**: `systemctl is-enabled ${SERVICE_PREFIX}-dispatch.timer` is `enabled` but `is-active` is `inactive`, or `LastTriggerUSec` is empty for >30 min after install
+- **god/tmux parity**: any `${SERVICE_PREFIX}-god@<id>.service` is `active` while `tmux -L ${SERVICE_PREFIX} has-session -t "=${SERVICE_PREFIX}-god-<id>"` returns non-zero
+- **stale tmux socket**: `tmux -L ${SERVICE_PREFIX} ls` lists session names that no longer correspond to any active god@<id>.service (orphans from killed instances)
+- **missing .agent-home/users**: `${PROJECT_DIR}/.agent-home/users` absent or wrong owner — relay will fail with `status=226/NAMESPACE` on next restart
+
 ### Phase 4: Relay Runtime
 
 When Telegram/relay is enabled, inspect:
@@ -82,6 +88,11 @@ When Telegram/relay is enabled, inspect:
 - relay DB presence/schema
 - old `relay-bot` service/path drift
 - `RELAY_HOOK_PORT` listener collisions
+
+Named drift checks from `/health` JSON:
+- **inbound-failure backlog**: `inbound_failed > 0` or `outbox_abandoned > 0` — emit a finding with the offending message ids from the journal (`grep -oE '"id":[0-9]+,"terminal":"failed"'`) so the operator can ack or replay
+- **send-keys regression**: `journalctl -u ${SERVICE_PREFIX}-hex-relay.service --since '24h ago'` contains any `send-keys -l rc=1: command send-keys: invalid flag` — marker that the relay binary predates the buffer-paste fix
+- **stop-failure unknowns**: more than 3 `"error_type":"unknown"` entries in 24h with `"kind":"stop_failure"` — relay binary predates the typed-classifier fix; aggregate by `kind` to surface the underlying cause
 
 ### Phase 5: Safe Repair
 
@@ -94,6 +105,9 @@ Allowed safe repairs only:
 - `chmod +x /usr/local/bin/agent-update` when the file is a non-executable bash script (validated by `file` and `bash -n`); follow with `systemctl reset-failed agent-update.service`
 - `chmod 0660` on `/var/lib/claude-shared/.claude/.credentials.json` or `/var/lib/claude-shared/.codex/auth.json` when ACL mask reads `---` (Claude/Codex write mode `0600`; the chmod restores ACL group access without touching the underlying token)
 - append a missing bot user to `RUNTIME_USERS=(...)` in `/usr/local/bin/agent-update` when that bot has its own `~/.nvm/nvm.sh` and is otherwise healthy
+- **timer enabled-inactive**: `systemctl daemon-reload && systemctl start ${SERVICE_PREFIX}-dispatch.timer` followed by `systemctl list-timers ${SERVICE_PREFIX}-dispatch.timer --all` to confirm `NEXT` is populated
+- **god/tmux parity**: `systemctl restart ${SERVICE_PREFIX}-god@<id>.service` and re-verify `tmux -L ${SERVICE_PREFIX} has-session -t "=${SERVICE_PREFIX}-god-<id>"` exits 0; do NOT rename or kill the orphaned tmux session of a different user
+- **missing .agent-home/users**: `install -d -o ${BOT_USER} -g ${BOT_USER} -m 0700 ${PROJECT_DIR}/.agent-home/users ${PROJECT_DIR}/.agent-cache` then `systemctl restart ${SERVICE_PREFIX}-hex-relay.service`
 
 Forbidden repairs:
 - secret creation or token edits
@@ -135,5 +149,5 @@ Write a `vps-environment-diagnostics` summary artifact with:
 
 ---
 
-**Version:** 1.1.0
-**Last Updated:** 2026-05-06
+**Version:** 1.2.0
+**Last Updated:** 2026-05-07

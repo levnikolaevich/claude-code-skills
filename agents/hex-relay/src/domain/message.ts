@@ -31,6 +31,7 @@ export type OutboxStatus = "queued" | "sending" | "sent" | "abandoned" | "unknow
 
 export type OutboxEventType =
   | "reply"
+  | "ack"
   | "status_skill"
   | "status_todo"
   | "status_subagent"

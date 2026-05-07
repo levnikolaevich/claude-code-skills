@@ -26,6 +26,7 @@ import { createMemoryService } from "./services/memory.service.js";
 import { createAllowlistService } from "./services/allowlist.service.js";
 import { createTodoDiffService } from "./services/todoDiff.service.js";
 import { createVerbosityService } from "./services/verbosity.service.js";
+import { createTypingService } from "./services/typing.service.js";
 import { createTaskProviderService } from "./services/taskProvider.service.js";
 import { createTaskService } from "./services/task.service.js";
 import { buildAllowlistMiddleware } from "./handlers/telegram/allowlist.middleware.js";
@@ -93,6 +94,7 @@ export function buildApp(env: Env, log: Logger = createLogger()): App {
 
   const outbox = createOutboxService({ outboxRepo: repos.outbox, log });
   const verbosity = createVerbosityService(env.verbosity);
+  const typing = createTypingService({ bot, log });
   const allowlist = createAllowlistService({
     log,
     usersRepo: repos.users,
@@ -215,6 +217,7 @@ export function buildApp(env: Env, log: Logger = createLogger()): App {
     memory,
     dispatch,
     verbosity,
+    typing,
     primaryOperator: env.allowedChat,
     dbPath: env.dbPath,
   });
@@ -304,6 +307,7 @@ export function buildApp(env: Env, log: Logger = createLogger()): App {
       outboxWorker.stop();
       errorAlerterWorker.stop();
       mediaCleanupWorker.stop();
+      typing.stopAll();
       try {
         await httpServer.close();
       } catch (error) {

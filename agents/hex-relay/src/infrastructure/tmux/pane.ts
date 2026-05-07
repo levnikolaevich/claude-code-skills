@@ -1,4 +1,5 @@
 import { setTimeout as delay } from "node:timers/promises";
+import { randomBytes } from "node:crypto";
 import type { Logger } from "../../lib/logger.js";
 import { runProcess as runChildProcess, type RunProcessResult } from "../process/runProcess.js";
 
@@ -20,6 +21,10 @@ function runTmuxProcess(cmd: string, args: string[], timeoutMs: number): Promise
   return runChildProcess(cmd, args, { timeoutMs });
 }
 
+function makeBufferName(): string {
+  return `hex-${Date.now().toString(36)}-${randomBytes(4).toString("hex")}`;
+}
+
 export function createTmuxPane(deps: TmuxPaneDeps) {
   const target = deps.target;
   const socketName = deps.socketName;
@@ -30,22 +35,41 @@ export function createTmuxPane(deps: TmuxPaneDeps) {
     return socketName ? ["-L", socketName, ...args] : args;
   }
 
+  // Use the tmux paste-buffer path instead of `send-keys -l`. With a multi-line
+  // payload, `send-keys -l` re-parses each line through tmux's argv parser, so a
+  // line that begins with `-` (e.g. a markdown bullet or `--- divider`) gets
+  // rejected as an invalid flag. set-buffer + paste-buffer treats the whole
+  // payload as opaque data; `--` terminates option parsing for set-buffer.
   async function sendKeysOnce(text: string): Promise<void> {
-    const r1 = await runTmuxProcess(
+    const bufferName = makeBufferName();
+    const setBuf = await runTmuxProcess(
       "tmux",
-      tmuxArgs(["send-keys", "-l", "-t", target, text]),
+      tmuxArgs(["set-buffer", "-b", bufferName, "--", text]),
       STEP_TIMEOUT_MS
     );
-    if (r1.code !== 0) {
-      throw new Error(`send-keys -l rc=${r1.code}: ${r1.stderr.slice(0, 200)}`);
+    if (setBuf.code !== 0) {
+      throw new Error(`set-buffer rc=${setBuf.code}: ${setBuf.stderr.slice(0, 200)}`);
     }
-    const r2 = await runTmuxProcess(
+    const paste = await runTmuxProcess(
+      "tmux",
+      tmuxArgs(["paste-buffer", "-d", "-p", "-r", "-b", bufferName, "-t", target]),
+      STEP_TIMEOUT_MS
+    );
+    if (paste.code !== 0) {
+      await runTmuxProcess(
+        "tmux",
+        tmuxArgs(["delete-buffer", "-b", bufferName]),
+        STEP_TIMEOUT_MS
+      ).catch(() => undefined);
+      throw new Error(`paste-buffer rc=${paste.code}: ${paste.stderr.slice(0, 200)}`);
+    }
+    const enter = await runTmuxProcess(
       "tmux",
       tmuxArgs(["send-keys", "-t", target, "Enter"]),
       STEP_TIMEOUT_MS
     );
-    if (r2.code !== 0) {
-      throw new Error(`send-keys Enter rc=${r2.code}: ${r2.stderr.slice(0, 200)}`);
+    if (enter.code !== 0) {
+      throw new Error(`send-keys Enter rc=${enter.code}: ${enter.stderr.slice(0, 200)}`);
     }
   }
 

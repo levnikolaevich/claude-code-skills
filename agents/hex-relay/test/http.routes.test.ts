@@ -207,6 +207,7 @@ test("Claude hook malformed payload compatibility stays 200 empty object", async
     memory: {},
     dispatch: {},
     verbosity: {},
+    typing: { start: noop, stop: noop, stopAll: noop, activeCount: () => 0 },
     primaryOperator: 1,
     dbPath: "Z:/missing/relay.db",
   } as Parameters<typeof registerHookRoutes>[1]);
@@ -253,6 +254,10 @@ test("voice transcript prompt binds pending reply without Telegram prefix", asyn
     pendingRepo: {
       set: (sessionId: string, inboundMsgId: number) => pending.set(sessionId, { inboundMsgId }),
       get: (sessionId: string) => pending.get(sessionId) ?? null,
+      getAllForSession: (sessionId: string) => {
+        const p = pending.get(sessionId);
+        return p ? [p] : [];
+      },
       clear: (sessionId: string) => pending.delete(sessionId),
     },
     sessionsRepo: {},
@@ -270,6 +275,7 @@ test("voice transcript prompt binds pending reply without Telegram prefix", asyn
     memory: {},
     dispatch: {},
     verbosity: {},
+    typing: { start: noop, stop: noop, stopAll: noop, activeCount: () => 0 },
     primaryOperator: 1,
     dbPath: "Z:/missing/relay.db",
   } as Parameters<typeof registerHookRoutes>[1]);
@@ -311,4 +317,74 @@ test("pending reply updates to the latest prompt for steering bursts", async () 
   } finally {
     closeDb(db);
   }
+});
+
+
+test("stop hook fans out acks for orphan pending inbounds", async () => {
+  const app = createApp();
+  const replies: Array<Record<string, unknown>> = [];
+  const acks: Array<Record<string, unknown>> = [];
+  const inboundsById = new Map<number, { id: number; tgChatId: number; tgMsgId: number; fromUserId: number }>([
+    [201, { id: 201, tgChatId: 999, tgMsgId: 1001, fromUserId: 5 }],
+    [202, { id: 202, tgChatId: 999, tgMsgId: 1002, fromUserId: 5 }],
+    [203, { id: 203, tgChatId: 999, tgMsgId: 1003, fromUserId: 5 }],
+  ]);
+  const pending = [
+    { sessionId: "sid-burst", inboundMsgId: 201, promptHash: "h1", createdAt: 1000 },
+    { sessionId: "sid-burst", inboundMsgId: 202, promptHash: "h2", createdAt: 1001 },
+    { sessionId: "sid-burst", inboundMsgId: 203, promptHash: "h3", createdAt: 1002 },
+  ];
+  let cleared = 0;
+  registerHookRoutes(app, {
+    log,
+    messagesRepo: {
+      findById: (id: number) => inboundsById.get(id) ?? null,
+      getChatId: (id: number) => inboundsById.get(id)?.tgChatId ?? null,
+      insertOutboundAudit: () => 777,
+    },
+    pendingRepo: {
+      getAllForSession: (sid: string) => (sid === "sid-burst" ? pending : []),
+      clear: () => {
+        cleared += 1;
+      },
+    },
+    sessionsRepo: {},
+    outbox: {
+      enqueueReply: (args: Record<string, unknown>) => {
+        replies.push(args);
+        return 91;
+      },
+      enqueueAck: (args: Record<string, unknown>) => {
+        acks.push(args);
+        return 92;
+      },
+    },
+    sessionService: {
+      insertEvent: noop,
+      ensureOwner: noop,
+    },
+    todoDiff: {},
+    memory: {},
+    dispatch: {},
+    verbosity: {},
+    typing: { start: noop, stop: noop, stopAll: noop, activeCount: () => 0 },
+    primaryOperator: 1,
+    dbPath: "Z:/missing/relay.db",
+  } as Parameters<typeof registerHookRoutes>[1]);
+
+  const stopped = await app.inject({
+    method: "POST",
+    url: "/hook/stop",
+    payload: { session_id: "sid-burst", last_assistant_message: "Готово, ответ один" },
+  });
+  assert.equal(stopped.statusCode, 200);
+  assert.equal(replies.length, 1);
+  assert.equal((replies[0] as { repliedToId: number }).repliedToId, 1003);
+  assert.equal((replies[0] as { auditMsgId: number }).auditMsgId, 777);
+  assert.equal(acks.length, 2);
+  assert.equal((acks[0] as { repliedToId: number }).repliedToId, 1001);
+  assert.equal((acks[1] as { repliedToId: number }).repliedToId, 1002);
+  assert.ok((acks[0] as { text: string }).text.includes("объединено"));
+  assert.equal(cleared, 1);
+  await app.close();
 });

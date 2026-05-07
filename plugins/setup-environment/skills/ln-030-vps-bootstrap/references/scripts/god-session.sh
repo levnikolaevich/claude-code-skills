@@ -181,20 +181,52 @@ case "$RESOLVED" in
     ;;
 esac
 
-if "${TMUX[@]}" has-session -t "$SESSION" 2>/dev/null; then
+# Use `=name` exact-match form to avoid tmux's default prefix matching, which
+# could let `has-session -t prompsit-god-1077` match `prompsit-god-1077148639`
+# while we are asking about a different per-user session on the shared socket.
+TMUX_TARGET="=$SESSION"
+
+verify_session_alive() {
+  "${TMUX[@]}" has-session -t "$TMUX_TARGET" 2>/dev/null \
+    && "${TMUX[@]}" list-sessions -F '#{session_name}' 2>/dev/null \
+         | grep -qx -- "$SESSION"
+}
+
+ensure_tmux_session() {
+  local attempt=0 max_attempts=5
+  while (( attempt < max_attempts )); do
+    if verify_session_alive; then
+      [[ $attempt -gt 0 ]] && log "tmux session $SESSION present after attempt $attempt"
+      return 0
+    fi
+    attempt=$((attempt + 1))
+    log "creating tmux session $SESSION (attempt $attempt/$max_attempts; cmd: $CLAUDE_CMD)"
+    STARTED_AT=$(date +%s)
+    if "${TMUX[@]}" new-session -d -s "$SESSION" -x 200 -y 50 \
+         "cd ${PROJECT_DIR} && $CLAUDE_CMD" 2>>"$LOG"; then
+      sleep 1
+      verify_session_alive && { log "tmux + claude launched (verified)"; return 0; }
+      log "WARN: new-session rc=0 but $SESSION not in list-sessions; retrying after backoff"
+    else
+      log "WARN: tmux new-session attempt $attempt failed (likely socket-${SERVICE_PREFIX} race)"
+    fi
+    sleep $((attempt * 2))
+  done
+  return 1
+}
+
+if verify_session_alive; then
   log "tmux session $SESSION already exists; attaching as watcher"
   if [[ -n "$RESOLVED" ]]; then
     log "WARN: command was consumed but tmux already alive; command had no effect on this boot"
   fi
 else
-  log "creating tmux session $SESSION (cmd: $CLAUDE_CMD)"
-  STARTED_AT=$(date +%s)
-  "${TMUX[@]}" new-session -d -s "$SESSION" -x 200 -y 50 \
-    "cd ${PROJECT_DIR} && $CLAUDE_CMD"
-  log "tmux + claude launched"
+  if ! ensure_tmux_session; then
+    fatal 5 "tmux_create_failed" "could not create tmux session $SESSION after retries on socket -L $SERVICE_PREFIX (possible parallel-start race with sibling user)"
+  fi
 fi
 
-while "${TMUX[@]}" has-session -t "$SESSION" 2>/dev/null; do
+while verify_session_alive; do
   sleep 5
 done
 

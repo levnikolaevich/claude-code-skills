@@ -89,10 +89,14 @@ Verify:
 ### Phase 5: Health
 
 Verify:
-- `${SERVICE_PREFIX}-hex-relay.service`
-- `GET /health`
-- `relay.db` schema
+- `${SERVICE_PREFIX}-hex-relay.service` (`is-active` + `NRestarts == 0` + `MainPID` listening on `${RELAY_HOOK_PORT}`)
+- `GET /health` returns `ok:true`, `god_session_ready:true`, `inbound_failed:0`, `outbox_abandoned:0`
+- `relay.db` schema (sessions has `created_by_user_id`, messages has `from_user_id`, outbox has `event_type`)
 - outbox/dispatch/todo state smoke
+- `${SERVICE_PREFIX}-dispatch.timer` is `active` (not just enabled) and `LastTriggerUSec` is populated; `journalctl -u ${SERVICE_PREFIX}-dispatch.service --since '24h ago'` shows at least one Started/Finished pair after the most recent install or redeploy
+- god/tmux parity: every active `${SERVICE_PREFIX}-god@<id>.service` has a matching `tmux -L ${SERVICE_PREFIX} has-session -t "=${SERVICE_PREFIX}-god-<id>"` exit 0
+- 24h log scan for `level":(40|50|60)` aggregates: `send-keys -l rc=1 invalid flag` count must be 0; `"kind":"stop_failure"` with `"error_type":"unknown"` must be ≤3/24h
+- redeploy smoke (run before switching traffic): inject a multi-line payload that begins a line with `-` (markdown bullet, `--- divider`); confirm `INBOUND delivered to tmux` with `attempts=0`
 - final Claude reply mirrored through Stop hook when full smoke is requested
 
 ### Phase 6: Summary
@@ -115,12 +119,15 @@ Write a `vps-hex-relay-lifecycle` summary artifact with deploy/redeploy/user-syn
 - [ ] `/opt/${SERVICE_PREFIX}-hex-relay` source installed or verified.
 - [ ] `${SERVICE_PREFIX}-hex-relay.service` active or planned.
 - [ ] Product was built with `npm ci && npm run build` for deploy/redeploy.
-- [ ] `/health` returns expected service and god-session fields.
+- [ ] `/health` returns expected service and god-session fields, including `inbound_failed:0` / `outbox_abandoned:0`.
+- [ ] `${SERVICE_PREFIX}-dispatch.timer` is `active` (not only `enabled`); next-fire timestamp present.
+- [ ] god/tmux parity verified for every active `${SERVICE_PREFIX}-god@<id>.service`.
+- [ ] Multi-line `-`-prefixed smoke payload delivered with `attempts=0` after deploy/redeploy.
 - [ ] Telegram commands and declared users are verified or explicitly gated.
 - [ ] `dry_run=true` / `verify_only` performed no mutation.
 - [ ] Structured `vps-hex-relay-lifecycle` summary artifact written.
 
 ---
 
-**Version:** 1.0.0
-**Last Updated:** 2026-05-05
+**Version:** 1.1.0
+**Last Updated:** 2026-05-07

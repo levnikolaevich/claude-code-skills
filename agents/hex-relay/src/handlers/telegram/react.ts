@@ -43,7 +43,7 @@ export function createReactToInbound(deps: ReactDeps) {
   ): Promise<void> {
     const primary = primaryInboundReaction(deps.reactions);
     const candidates = options.includeVoiceTranscribing
-      ? [[VOICE_TRANSCRIBING_REACTION, primary], [primary], [REACTION_FALLBACK]]
+      ? [[VOICE_TRANSCRIBING_REACTION, primary], [VOICE_TRANSCRIBING_REACTION], [primary], [REACTION_FALLBACK]]
       : [[primary], [REACTION_FALLBACK]];
     for (const emojis of candidates) {
       try {

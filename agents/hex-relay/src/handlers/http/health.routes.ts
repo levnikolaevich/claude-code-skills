@@ -9,6 +9,7 @@ import type { ControlLane } from "../../services/controlLane.service.js";
 import type { GodStatusProbe } from "../../infrastructure/systemd/godStatus.js";
 import type { BuildInfo } from "../../config/buildInfo.js";
 import { HealthResponseSchema } from "./schemas.js";
+import { getPendingFanoutAcksTotal } from "./hooks.routes.js";
 
 export interface RuntimeStatusDeps {
   outboxRepo: OutboxRepo;
@@ -30,6 +31,7 @@ export interface RuntimeStatus {
   inboundFailed: number;
   inboundRejected: number;
   pendingCount: number;
+  pendingFanoutAcksTotal: number;
   outboxQueued: number;
   outboxAbandoned: number;
   outboxUnknown: number;
@@ -57,6 +59,7 @@ export async function collectRuntimeStatus(deps: RuntimeStatusDeps): Promise<Run
     inboundFailed: messages.inboundFailed,
     inboundRejected: messages.inboundRejected,
     pendingCount,
+    pendingFanoutAcksTotal: getPendingFanoutAcksTotal(),
     outboxQueued: outbox.queued,
     outboxAbandoned: outbox.abandoned,
     outboxUnknown: outbox.unknown,
@@ -89,6 +92,7 @@ export function registerHealthRoutes(app: FastifyInstance, deps: HealthRoutesDep
         inbound_failed: s.inboundFailed,
         inbound_rejected: s.inboundRejected,
         pending_count: s.pendingCount,
+        pending_fanout_acks_total: s.pendingFanoutAcksTotal,
         outbox_queued: s.outboxQueued,
         outbox_abandoned: s.outboxAbandoned,
         outbox_unknown: s.outboxUnknown,

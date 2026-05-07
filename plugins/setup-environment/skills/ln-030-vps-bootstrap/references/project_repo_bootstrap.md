@@ -37,4 +37,13 @@ for p in .claude/CLAUDE.md .claude/settings.json; do
 done
 chown ${BOT_USER}:${BOT_USER} "${PROJECT_DIR}/.git/info/exclude"
 sudo -u ${BOT_USER} git -C "${PROJECT_DIR}" status --short
+
+# Pre-create sandbox runtime dirs that hex-relay.service references in ReadWritePaths=.
+# Without these, the relay fails to start with status=226/NAMESPACE on a fresh project
+# because systemd refuses to set up the mount namespace when ReadWritePaths targets a
+# non-existent path. agent-sandbox.sh also creates these lazily, but the relay starts
+# BEFORE any sandbox, so they must already exist.
+install -d -o ${BOT_USER} -g ${BOT_USER} -m 0700 ${PROJECT_DIR}/.agent-home
+install -d -o ${BOT_USER} -g ${BOT_USER} -m 0700 ${PROJECT_DIR}/.agent-home/users
+install -d -o ${BOT_USER} -g ${BOT_USER} -m 0700 ${PROJECT_DIR}/.agent-cache
 ```

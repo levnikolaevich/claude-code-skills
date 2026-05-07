@@ -72,6 +72,17 @@ VPS_AGENT_SKILLS_PLUGINS=<agile-workflow-or-list>
 
 `.env.local` should be git-ignored (most projects already have `.env.*` in `.gitignore`).
 
+## Auth model references
+
+Two viable Linux-user/auth shapes for a multi-project VPS. Pick one before bootstrap; both are supported by the workers.
+
+| Reference | When to use | What it covers |
+|---|---|---|
+| `shared_user_pattern.md` | Fresh install. One operator owns all projects. | Canonical model: one shared `agent-bot` Linux user owns every project's god-session. One `~/.claude.json`, one OAuth, one nvm. Strongest cache locality. |
+| `shared_auth_state.md` | Existing fleet already uses per-project bot users (`<project>-bot`). Adding a new project to it without burning another Claude Max device slot. | Symlink-based shared-state pattern: per-bot Linux/systemd isolation preserved, but `~/.claude`, `~/.claude.json`, `~/.codex` symlink to `/var/lib/claude-shared/` (group `claude-shared` + ACL setgid+default rwx). One device slot serves N bots. Includes migration script and one-time login flow. |
+
+`troubleshooting.md` covers failure modes for both shapes (HTTP 401 between bots, ACL mask `---` after token rotation, `agent-update` `+x` bit loss, etc.). `ln-034-vps-environment-diagnostics` reads both references and inspects the active shape automatically.
+
 ## Fleet references
 
 - `fleet_registry.md` documents the VPS-local `/etc/agent-fleet/environments/*.yaml` registry, required fields, collision rules, and the no-secrets contract.

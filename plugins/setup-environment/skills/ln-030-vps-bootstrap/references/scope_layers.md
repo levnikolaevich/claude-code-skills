@@ -14,6 +14,8 @@ Deployment shape: **one VPS = one `BOT_USER=agent-bot` (shared) = one Anthropic 
 
 **Multi-project on one VPS**: invoke `ln-030-vps-bootstrap` again with new project vars. The coordinator discovers the host first, calls `ln-031-vps-host-runtime` in `verify_or_update` mode for the shared `agent-bot` layer, then calls `ln-032-vps-project-runtime` for project-scope units, dirs, logs, `.claude/` files, and local `.env.local` dispatcher keys. If Telegram is enabled, `ln-033-hex-relay-lifecycle` deploys a new service on the selected port and renders project-scope hooks. `ln-034-vps-environment-diagnostics` verifies health/drift when requested or as final evidence.
 
+**Auth-sharing alternative**: when an existing fleet uses **per-project bot users** (`<project>-bot`) instead of the canonical shared `agent-bot`, you can still preserve a single Claude Max device slot and a single Codex login by symlinking each bot's `~/.claude`, `~/.claude.json`, and `~/.codex` into `/var/lib/claude-shared/` (group `claude-shared`, mode `2770`+ACL). One `claude /login` from any bot then authenticates the entire fleet. See `shared_auth_state.md` for migration script and verification recipes. This pattern is empirically necessary because Anthropic binds the OAuth refresh token to a per-user `userID` server-side; copying credentials between Linux users without sharing `~/.claude.json` returns `HTTP 401 Invalid authentication credentials`.
+
 **Single-VPS-multi-project gotchas:**
 
 - HTTP port `9999` is the default for `${SERVICE_PREFIX}-hex-relay.service`. Second project must render `RELAY_HOOK_PORT=9998` (or similar) into its hex-relay unit, project-scope hooks, and dispatcher config.

@@ -33,7 +33,9 @@ sudo -i -u ${BOT_USER} claude --version
 sudo -i -u ${BOT_USER} codex --version
 ```
 
-Manual follow-up: complete `claude auth login` and `codex login` for `${BOT_USER}` before starting unattended sessions.
+Manual follow-up: complete `claude /login` and **`codex login --device-auth`** for `${BOT_USER}` before starting unattended sessions. The `--device-auth` flag is required on headless VPS — plain `codex login` opens an HTTP callback on `localhost:1455` that the operator's local browser cannot reach without an SSH tunnel.
+
+For the **shared-auth pattern** (one Claude Max device + one Codex login serving all project bots on this VPS), do these logins **once** as any single bot whose `~/.claude`, `~/.claude.json`, and `~/.codex` symlink to `/var/lib/claude-shared/`. See `shared_auth_state.md` for the full migration script and ACL/permissions required.
 
 ## 3. MCP servers and Codex config
 

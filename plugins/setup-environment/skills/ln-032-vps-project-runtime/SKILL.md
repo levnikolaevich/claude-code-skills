@@ -21,6 +21,8 @@ Creates or verifies one project environment on a prepared VPS and installs the l
 **MANDATORY READ:** Load `references/worker_runtime_contract.md`, `references/coordinator_summary_contract.md`, and `references/vps_runtime_contract.md`
 **MANDATORY READ:** Load `../ln-030-vps-bootstrap/references/scope_layers.md`, `../ln-030-vps-bootstrap/references/project_repo_bootstrap.md`, `../ln-030-vps-bootstrap/references/god_session_install.md`, `../ln-030-vps-bootstrap/references/provider_credentials.md`, and `../ln-030-vps-bootstrap/references/operator_dispatcher_install.md`
 
+**Conditional read (load when this project's `${BOT_USER}` is part of a multi-bot fleet using shared auth)**: `../ln-030-vps-bootstrap/references/shared_auth_state.md` — when `~${BOT_USER}/.claude` symlinks to `/var/lib/claude-shared/.claude`, `${PROJECT_DIR}/.claude/CLAUDE.md` and `${PROJECT_DIR}/.claude/settings.json` (project-scope) are still rendered per-project, but `~${BOT_USER}/.claude/commands/<prefix>-dispatch.md` writes through the symlink into the shared dir (same group/ACL applies). Do not seed per-bot `~/.claude.json`; the shared one already carries the canonical `userID`.
+
 ---
 
 ## Input / Output

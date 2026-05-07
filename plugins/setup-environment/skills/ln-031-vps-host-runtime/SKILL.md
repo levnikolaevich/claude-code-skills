@@ -21,6 +21,8 @@ Installs, verifies, or updates the shared VPS layer used by all project environm
 **MANDATORY READ:** Load `references/worker_runtime_contract.md`, `references/coordinator_summary_contract.md`, and `references/vps_runtime_contract.md`
 **MANDATORY READ:** Load `../ln-030-vps-bootstrap/references/scope_layers.md`, `../ln-030-vps-bootstrap/references/vps_base_install.md`, `../ln-030-vps-bootstrap/references/agent_runtime_install.md`, and `../ln-030-vps-bootstrap/references/substitution_rules.md`
 
+**Conditional read (load when host has multiple bot users sharing one Anthropic account)**: `../ln-030-vps-bootstrap/references/shared_auth_state.md` — symlink-based shared-state pattern at `/var/lib/claude-shared/`. ln-031 detects this pattern by checking for `claude-shared` group membership and `~${BOT_USER}/.claude` being a symlink; in that case verify shared state instead of reinstalling per-bot auth.
+
 ---
 
 ## Input / Output

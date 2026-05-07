@@ -1,10 +1,12 @@
 # Shared `agent-bot` user pattern
 
+> **Alternative**: when an existing fleet already uses per-project Linux users (`<project>-bot`) and migrating to a single `agent-bot` is too disruptive, see `shared_auth_state.md` for the symlink-based shared-state pattern. It keeps per-project Linux/systemd isolation while letting one Claude Max device slot + one Codex login serve all bots through `/var/lib/claude-shared/`.
+
 ## Why one Linux user for all projects
 
 Claude Code is designed for "one developer, many projects" usage: one `$HOME` with one `~/.claude/.credentials.json` (one Anthropic OAuth) and many cwd's for many projects, with per-project memory isolated automatically in `~/.claude/projects/<encoded-cwd>/`. There is no per-project `$HOME`.
 
-This skill mirrors that pattern on the VPS: one shared `agent-bot` Linux user owns every project's god-session. Per-project Linux users would force a separate Anthropic OAuth flow per project (Anthropic device-fingerprints refresh tokens, copying `.credentials.json` across users does not work), duplicate the nvm + `node_modules` tree, consume Claude Max device slots, and double the disk footprint of plugin marketplaces — for zero security gain when one operator owns all projects.
+This skill mirrors that pattern on the VPS: one shared `agent-bot` Linux user owns every project's god-session. Per-project Linux users would force a separate Anthropic OAuth flow per project (Anthropic device-fingerprints refresh tokens, copying `.credentials.json` across users does not work — empirically validated, see `shared_auth_state.md`), duplicate the nvm + `node_modules` tree, consume Claude Max device slots, and double the disk footprint of plugin marketplaces — for zero security gain when one operator owns all projects. The shared-state alternative (`shared_auth_state.md`) preserves the single-device-slot benefit without merging Linux users.
 
 ## Directory tree under shared `BOT_USER=agent-bot`
 

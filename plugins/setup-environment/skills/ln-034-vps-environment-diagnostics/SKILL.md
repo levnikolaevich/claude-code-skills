@@ -21,6 +21,8 @@ Inspects one VPS project environment and reports health, drift, logs, auth state
 **MANDATORY READ:** Load `references/worker_runtime_contract.md`, `references/coordinator_summary_contract.md`, and `references/vps_runtime_contract.md`
 **MANDATORY READ:** Load `../ln-030-vps-bootstrap/references/scope_layers.md`, `../ln-030-vps-bootstrap/references/troubleshooting.md`, and `../ln-030-vps-bootstrap/references/verification_recipes.md`
 
+**Conditional read (load when `/var/lib/claude-shared/` exists on the host)**: `../ln-030-vps-bootstrap/references/shared_auth_state.md` — Phase 2 ACL-mask checks (`getfacl` on `.credentials.json` and `.codex/auth.json` must show `mask::rw-`, not `mask::---`) and Phase 5 safe repair `chmod 0660` come from this reference. Required when diagnosing shared-auth fleets.
+
 ---
 
 ## Input / Output
@@ -55,10 +57,11 @@ Inspect:
 - required binaries
 - `${BOT_USER}`
 - Node/Claude/Codex versions
-- auth health indicators without printing tokens
+- auth health indicators without printing tokens (per bot: `claude --print` smoke + `codex login status`)
 - `${AGENT_SKILLS_DIR}` git state
 - marketplace/plugin health
-- `agent-update.timer` and log tail
+- `agent-update.timer` schedule, `agent-update.service` `is-failed` state, `/usr/local/bin/agent-update` exec bit (`[[ -x ... ]]`) and `bash -n` syntax
+- when `/var/lib/claude-shared/` exists: `claude-shared` group membership for every bot user, ACL mask on `/var/lib/claude-shared/.claude/.credentials.json` and `/var/lib/claude-shared/.codex/auth.json` (mask must be `rw-`, not `---`); `~/.claude.json` symlink target reachable for each bot
 
 ### Phase 3: Project Runtime
 
@@ -88,6 +91,9 @@ Allowed safe repairs only:
 - recreate missing non-secret directories with documented owner/mode
 - rerun `systemctl daemon-reload`
 - report, but do not rewrite, missing auth or secrets
+- `chmod +x /usr/local/bin/agent-update` when the file is a non-executable bash script (validated by `file` and `bash -n`); follow with `systemctl reset-failed agent-update.service`
+- `chmod 0660` on `/var/lib/claude-shared/.claude/.credentials.json` or `/var/lib/claude-shared/.codex/auth.json` when ACL mask reads `---` (Claude/Codex write mode `0600`; the chmod restores ACL group access without touching the underlying token)
+- append a missing bot user to `RUNTIME_USERS=(...)` in `/usr/local/bin/agent-update` when that bot has its own `~/.nvm/nvm.sh` and is otherwise healthy
 
 Forbidden repairs:
 - secret creation or token edits
@@ -129,5 +135,5 @@ Write a `vps-environment-diagnostics` summary artifact with:
 
 ---
 
-**Version:** 1.0.0
-**Last Updated:** 2026-05-05
+**Version:** 1.1.0
+**Last Updated:** 2026-05-06

@@ -36,7 +36,13 @@ copy_if_missing() {
   local dst=$2
   local mode=$3
   if [[ -e "$src" && ! -e "$dst" ]]; then
-    cp -a "$src" "$dst"
+    # cp -aL dereferences source symlinks (required when ~/.claude.json or
+    # ~/.claude/settings.json is a symlink to /var/lib/claude-shared/...).
+    # cp -a alone preserves the symlink, which then resolves to a path that is
+    # not bind-mounted into the sandbox; claude reads ENOENT and re-runs onboarding
+    # with a fresh userID, breaking the OAuth refresh-token binding for everyone.
+    # See `shared_auth_state.md` and `troubleshooting.md`.
+    cp -aL "$src" "$dst"
     chmod "$mode" "$dst" 2>/dev/null || true
   fi
 }

@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import pino from "pino";
 import { Context, GrammyError, Api } from "grammy";
 import type { Update, UserFromGetMe } from "grammy/types";
-import { renderSessionsList } from "../src/handlers/telegram/sessions.js";
+import { buildSessionsHandler, renderSessionsList } from "../src/handlers/telegram/sessions.js";
 import { buildSessionsCallbackHandler } from "../src/handlers/telegram/sessionsCallback.js";
 import type { Logger } from "../src/lib/logger.js";
 import type { SessionService } from "../src/services/session.service.js";
@@ -91,6 +91,7 @@ test("renderSessionsList: preserves Markdown reserved chars in slug verbatim", (
 interface CtxRecording {
   edits: { text: string }[];
   acks: ({ text: string; show_alert: boolean | undefined } | "noargs")[];
+  sends?: { text: string }[];
 }
 
 function fakeSessionService(args: {
@@ -164,14 +165,52 @@ function makeApi(rec: CtxRecording, opts: { editError?: Error } = {}): Api {
       return { ok: true, result: true } as any;
     }
     if (method === "editMessageReplyMarkup") return { ok: true, result: true } as any;
-    if (method === "sendMessage")
+    if (method === "sendMessage") {
+      rec.sends?.push({ text: String((payload as any).text) });
       return {
         ok: true,
         result: { message_id: 1, date: 0, chat: { id: 0, type: "private" } },
       } as any;
+    }
     return { ok: true, result: true } as any;
   });
   return api;
+}
+
+function makeCommandUpdate(text: string, fromId: number): Update {
+  return {
+    update_id: 1,
+    message: {
+      message_id: 7,
+      date: 0,
+      chat: { id: fromId, type: "private", first_name: "u" },
+      from: { id: fromId, is_bot: false, first_name: "u" },
+      text,
+      entities: [{ type: "bot_command", offset: 0, length: "/sessions".length }],
+    },
+  } as Update;
+}
+
+async function dispatchCommand(args: {
+  text: string;
+  fromId: number;
+  rec: CtxRecording;
+  sessionService: SessionService;
+  controlLane: ControlLane;
+  sessionLocks: MutexMap;
+}) {
+  const api = makeApi(args.rec);
+  const ctx = new Context(makeCommandUpdate(args.text, args.fromId), api, ME);
+  const handler = buildSessionsHandler({
+    log,
+    sessionService: args.sessionService,
+    controlLane: args.controlLane,
+    sessionLocks: args.sessionLocks,
+  });
+  const middleware = handler.middleware();
+  await middleware(ctx, async () => {
+    /* no next */
+  });
 }
 
 function makeUpdate(data: string, fromId: number): Update {
@@ -302,4 +341,100 @@ test("sessionsCallback: s_view by non-owner is rejected without edit", async () 
   assert.equal(rec.acks.length, 1);
   const ack = rec.acks[0];
   if (ack !== "noargs") assert.equal(ack.text, "not your session");
+});
+
+test("/sessions delete takes session lock before controlLane", async () => {
+  const sid = "ffffffff-ffff-ffff-ffff-ffffffffffff";
+  const order: string[] = [];
+  const rec: CtxRecording = { edits: [], acks: [], sends: [] };
+  const sessionService = {
+    listSessions: () => [],
+    getOwner: () => 111,
+    validateSessionPath: () => `/tmp/${sid}.jsonl`,
+    deleteSessionFile: () => {
+      order.push("delete");
+      return true;
+    },
+    primaryOperator: 111,
+  } as unknown as SessionService;
+  const controlLane = {
+    run: async <T>(_label: string, fn: () => Promise<T> | T): Promise<T> => {
+      order.push("control:start");
+      try {
+        return await fn();
+      } finally {
+        order.push("control:end");
+      }
+    },
+  } as unknown as ControlLane;
+  const sessionLocks = {
+    for: () => ({
+      run: async <T>(_label: string, fn: () => Promise<T> | T): Promise<T> => {
+        order.push("lock:start");
+        try {
+          return await fn();
+        } finally {
+          order.push("lock:end");
+        }
+      },
+    }),
+  } as unknown as MutexMap;
+
+  await dispatchCommand({
+    text: `/sessions delete ${sid}`,
+    fromId: 111,
+    rec,
+    sessionService,
+    controlLane,
+    sessionLocks,
+  });
+
+  assert.deepEqual(order, ["lock:start", "control:start", "delete", "control:end", "lock:end"]);
+  assert.match(rec.sends?.at(-1)?.text ?? "", /Deleted/);
+});
+
+test("/sessions delete is race-safe when session disappears inside lock", async () => {
+  const sid = "abababab-abab-abab-abab-abababababab";
+  const rec: CtxRecording = { edits: [], acks: [], sends: [] };
+  let validateCalls = 0;
+  const order: string[] = [];
+  const sessionService = {
+    listSessions: () => [],
+    getOwner: () => 111,
+    validateSessionPath: () => {
+      validateCalls += 1;
+      return validateCalls === 1 ? `/tmp/${sid}.jsonl` : null;
+    },
+    deleteSessionFile: () => {
+      order.push("delete");
+      return true;
+    },
+    primaryOperator: 111,
+  } as unknown as SessionService;
+  const controlLane = {
+    run: async <T>(_label: string, fn: () => Promise<T> | T): Promise<T> => {
+      order.push("control");
+      return fn();
+    },
+  } as unknown as ControlLane;
+  const sessionLocks = {
+    for: () => ({
+      run: async <T>(_label: string, fn: () => Promise<T> | T): Promise<T> => {
+        order.push("lock");
+        return fn();
+      },
+    }),
+  } as unknown as MutexMap;
+
+  await dispatchCommand({
+    text: `/sessions delete ${sid}`,
+    fromId: 111,
+    rec,
+    sessionService,
+    controlLane,
+    sessionLocks,
+  });
+
+  assert.deepEqual(order, ["lock"]);
+  assert.match(rec.sends?.at(-1)?.text ?? "", /not found or already deleted/);
 });

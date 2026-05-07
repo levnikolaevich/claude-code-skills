@@ -59,18 +59,23 @@ function buildFakes(opts: {
   instances: { userId: number; agent: AgentKind }[];
   lastActivity: Map<string, number | null>;
   inFlight: Map<string, boolean>;
+  activeInbound?: Map<string, boolean>;
   stopShouldThrow?: boolean;
 }): {
   godStatus: GodStatusProbe;
   messagesRepo: MessagesRepo;
   pendingRepo: PendingReplyRepo;
+  controlLane: IdleSessionDeps["controlLane"];
   fake: FakeGodStatus;
+  order: string[];
 } {
   const stopped: { userId: number; agent: AgentKind }[] = [];
+  const order: string[] = [];
   const fake: FakeGodStatus = {
     listActiveInstances: async () => opts.instances,
     stop: async (userId, agent) => {
       if (opts.stopShouldThrow) throw new Error("boom");
+      order.push(`stop:${userId}:${agent}`);
       stopped.push({ userId, agent });
     },
     stopped,
@@ -84,16 +89,35 @@ function buildFakes(opts: {
   } as unknown as GodStatusProbe;
 
   const messagesRepo = {
-    lastActivityForUserAgent: (userId: number, agent: AgentKind) =>
-      opts.lastActivity.get(`${userId}:${agent}`) ?? null,
+    lastActivityForUserAgent: (userId: number, agent: AgentKind) => {
+      order.push(`lastActivity:${userId}:${agent}`);
+      return opts.lastActivity.get(`${userId}:${agent}`) ?? null;
+    },
+    hasActiveInboundForUserAgent: (userId: number, agent: AgentKind) => {
+      order.push(`activeInbound:${userId}:${agent}`);
+      return opts.activeInbound?.get(`${userId}:${agent}`) ?? false;
+    },
   } as unknown as MessagesRepo;
 
   const pendingRepo = {
-    hasOpenForUserAgent: (userId: number, agent: AgentKind) =>
-      opts.inFlight.get(`${userId}:${agent}`) ?? false,
+    hasOpenForUserAgent: (userId: number, agent: AgentKind) => {
+      order.push(`pending:${userId}:${agent}`);
+      return opts.inFlight.get(`${userId}:${agent}`) ?? false;
+    },
   } as unknown as PendingReplyRepo;
 
-  return { godStatus, messagesRepo, pendingRepo, fake };
+  const controlLane = {
+    run: async <T>(_label: string, fn: () => Promise<T> | T): Promise<T> => {
+      order.push("control:start");
+      try {
+        return await fn();
+      } finally {
+        order.push("control:end");
+      }
+    },
+  } as IdleSessionDeps["controlLane"];
+
+  return { godStatus, messagesRepo, pendingRepo, controlLane, fake, order };
 }
 
 function buildDeps(
@@ -108,6 +132,9 @@ function buildDeps(
     idleThresholdSec: 600,
     bootGraceSec: 0,
     bootTimestampSec: 0,
+    controlLane: {
+      run: async <T>(_label: string, fn: () => Promise<T> | T): Promise<T> => fn(),
+    },
     nowFn: () => 10_000,
     ...overrides,
   };
@@ -154,6 +181,22 @@ test("evaluate: skips mid-turn instance", async () => {
   assert.equal(fakes.fake.stopped.length, 0);
 });
 
+test("evaluate: skips mid-turn when active inbound is queued/delivering/transcribing", async () => {
+  for (const status of ["queued", "delivering", "transcribing"]) {
+    const fakes = buildFakes({
+      instances: [{ userId: 1077, agent: "claude" }],
+      lastActivity: new Map([["1077:claude", 5000]]),
+      inFlight: new Map(),
+      activeInbound: new Map([["1077:claude", true]]),
+    });
+    const service = createIdleSessionService(buildDeps({ ...fakes }));
+    const result = await service.evaluate();
+    assert.equal(result.skippedMidTurn, 1, status);
+    assert.equal(result.stopped, 0, status);
+    assert.equal(fakes.fake.stopped.length, 0, status);
+  }
+});
+
 test("evaluate: skips recently active instance", async () => {
   const fakes = buildFakes({
     instances: [{ userId: 1077, agent: "claude" }],
@@ -197,4 +240,24 @@ test("evaluate: counts errors when stop fails", async () => {
   const result = await service.evaluate();
   assert.equal(result.errors, 1);
   assert.equal(result.stopped, 0);
+});
+
+test("evaluate: idle decision and stop run inside controlLane", async () => {
+  const fakes = buildFakes({
+    instances: [{ userId: 1077, agent: "claude" }],
+    lastActivity: new Map([["1077:claude", 5000]]),
+    inFlight: new Map(),
+  });
+  const service = createIdleSessionService(buildDeps({ ...fakes }));
+  const result = await service.evaluate();
+
+  assert.equal(result.stopped, 1);
+  assert.deepEqual(fakes.order, [
+    "control:start",
+    "pending:1077:claude",
+    "activeInbound:1077:claude",
+    "lastActivity:1077:claude",
+    "stop:1077:claude",
+    "control:end",
+  ]);
 });

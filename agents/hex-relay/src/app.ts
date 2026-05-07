@@ -335,6 +335,7 @@ export function buildApp(env: Env, log: Logger = createLogger()): App {
         godStatus,
         messagesRepo: repos.messages,
         pendingRepo: repos.pendingReply,
+        controlLane,
         idleThresholdSec: env.idleShutdownSec,
         bootGraceSec: env.idleBootGraceSec,
         bootTimestampSec: Math.floor(Date.now() / 1000),
@@ -406,19 +407,26 @@ export function buildApp(env: Env, log: Logger = createLogger()): App {
         await pollPromise;
         pollPromise = null;
       }
-      inboundWorker.stop();
-      voiceTranscriptionWorker.stop();
-      outboxWorker.stop();
-      errorAlerterWorker.stop();
-      mediaCleanupWorker.stop();
-      if (idleSessionWorker) idleSessionWorker.stop();
-      pendingReplyGcWorker.stop();
-      typing.stopAll();
       try {
         await httpServer.close();
       } catch (error) {
         log.warn({ err: String(error) }, "http close failed");
       }
+      const stopResults = await Promise.allSettled([
+        inboundWorker.stop(),
+        voiceTranscriptionWorker.stop(),
+        outboxWorker.stop(),
+        errorAlerterWorker.stop(),
+        mediaCleanupWorker.stop(),
+        ...(idleSessionWorker ? [idleSessionWorker.stop()] : []),
+        pendingReplyGcWorker.stop(),
+      ]);
+      for (const result of stopResults) {
+        if (result.status === "rejected") {
+          log.warn({ err: String(result.reason) }, "worker stop failed");
+        }
+      }
+      typing.stopAll();
       closeDb(db);
       log.info("shutdown complete");
     },

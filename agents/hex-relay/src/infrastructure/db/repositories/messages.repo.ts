@@ -96,6 +96,11 @@ export function createMessagesRepo(db: Db) {
       "    (SELECT id FROM messages WHERE direction = 'inbound' AND from_user_id = ?))" +
       ")"
   );
+  const hasActiveInboundForUserAgent = db.prepare(
+    "SELECT 1 FROM messages " +
+      "WHERE direction='inbound' AND from_user_id=? AND agent=? " +
+      "AND status IN ('queued','delivering','transcribing') LIMIT 1"
+  );
 
   return {
     insertInbound(
@@ -190,6 +195,9 @@ export function createMessagesRepo(db: Db) {
         | { ts: number | null }
         | undefined;
       return row?.ts ?? null;
+    },
+    hasActiveInboundForUserAgent(userId: number, agent: AgentKind): boolean {
+      return hasActiveInboundForUserAgent.get(userId, agent) !== undefined;
     },
   };
 }

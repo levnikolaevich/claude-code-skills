@@ -92,12 +92,20 @@ export function buildSessionsHandler(deps: SessionsDeps): Composer<Context> {
         await ctx.reply(`❌ Session ${sid} not found or invalid id.`);
         return;
       }
-      await deps.controlLane.run("delete_session", async () => {
-        await deps.sessionLocks.for(sid).run("delete", () => {
+      let deleted = false;
+      await deps.sessionLocks.for(sid).run("delete", async () => {
+        const stillThere = deps.sessionService.validateSessionPath(sid, owner);
+        if (stillThere === null) return;
+        await deps.controlLane.run("delete_session", () => {
           deps.sessionService.deleteSessionFile(sid);
+          deleted = true;
           return Promise.resolve();
         });
       });
+      if (!deleted) {
+        await ctx.reply(`❌ Session ${sid.slice(0, 8)}… not found or already deleted.`);
+        return;
+      }
       await ctx.reply(`✓ Deleted ${sid.slice(0, 8)}….`);
       return;
     }

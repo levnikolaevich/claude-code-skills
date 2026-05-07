@@ -1,11 +1,13 @@
 import type { Logger } from "../lib/logger.js";
 import type { GodStatusPort, MessagesRepository, PendingReplyRepository } from "./ports.js";
+import type { ControlLane } from "./controlLane.service.js";
 
 export interface IdleSessionDeps {
   log: Logger;
   godStatus: GodStatusPort;
   messagesRepo: MessagesRepository;
   pendingRepo: PendingReplyRepository;
+  controlLane: ControlLane;
   /** Seconds; if last activity was longer ago, the instance is eligible for shutdown. */
   idleThresholdSec: number;
   /** Seconds since `bootTimestampSec`; instances are not evaluated until this elapses. */
@@ -53,30 +55,37 @@ export function createIdleSessionService(deps: IdleSessionDeps): IdleSessionServ
       result.active = instances.length;
       for (const inst of instances) {
         try {
-          const decision = decide({
-            now: now(),
-            lastActivity: deps.messagesRepo.lastActivityForUserAgent(inst.userId, inst.agent),
-            inFlight: deps.pendingRepo.hasOpenForUserAgent(inst.userId, inst.agent),
-            idleThresholdSec: deps.idleThresholdSec,
-          });
-          if (decision === "skip_recent") {
-            result.skippedRecent += 1;
-            continue;
-          }
-          if (decision === "skip_mid_turn") {
-            result.skippedMidTurn += 1;
-            deps.log.info(
-              { userId: inst.userId, agent: inst.agent },
-              "idle worker: skipping mid-turn instance"
+          await deps.controlLane.run("idle_shutdown", async () => {
+            const pendingOpen = deps.pendingRepo.hasOpenForUserAgent(inst.userId, inst.agent);
+            const activeInbound = deps.messagesRepo.hasActiveInboundForUserAgent(
+              inst.userId,
+              inst.agent
             );
-            continue;
-          }
-          await deps.godStatus.stop(inst.userId, inst.agent);
-          result.stopped += 1;
-          deps.log.info(
-            { userId: inst.userId, agent: inst.agent, idleThresholdSec: deps.idleThresholdSec },
-            "idle worker: stopped idle god-session"
-          );
+            const decision = decide({
+              now: now(),
+              lastActivity: deps.messagesRepo.lastActivityForUserAgent(inst.userId, inst.agent),
+              inFlight: pendingOpen || activeInbound,
+              idleThresholdSec: deps.idleThresholdSec,
+            });
+            if (decision === "skip_recent") {
+              result.skippedRecent += 1;
+              return;
+            }
+            if (decision === "skip_mid_turn") {
+              result.skippedMidTurn += 1;
+              deps.log.info(
+                { userId: inst.userId, agent: inst.agent, pendingOpen, activeInbound },
+                "idle worker: skipping mid-turn instance"
+              );
+              return;
+            }
+            await deps.godStatus.stop(inst.userId, inst.agent);
+            result.stopped += 1;
+            deps.log.info(
+              { userId: inst.userId, agent: inst.agent, idleThresholdSec: deps.idleThresholdSec },
+              "idle worker: stopped idle god-session"
+            );
+          });
         } catch (error) {
           result.errors += 1;
           deps.log.warn(

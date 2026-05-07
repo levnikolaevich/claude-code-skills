@@ -1,12 +1,12 @@
-import { setTimeout as delay } from "node:timers/promises";
 import type { Logger } from "../lib/logger.js";
 import type { PendingReplyRepo } from "../infrastructure/db/repositories/pendingReply.repo.js";
 import type { MessagesRepo } from "../infrastructure/db/repositories/messages.repo.js";
 import type { OutboxService } from "../services/outbox.service.js";
+import { createWorkerLoop } from "./workerLoop.js";
 
 export interface PendingReplyGcWorker {
   start(): Promise<void>;
-  stop(): void;
+  stop(): Promise<void>;
   /** Visible for tests: run a single GC pass and return how many rows were retired. */
   evaluate(): { retired: number; skippedNoInbound: number; errors: number };
 }
@@ -22,8 +22,6 @@ export interface PendingReplyGcDeps {
 }
 
 export function createPendingReplyGcWorker(deps: PendingReplyGcDeps): PendingReplyGcWorker {
-  let running = false;
-
   function evaluate(): { retired: number; skippedNoInbound: number; errors: number } {
     const result = { retired: 0, skippedNoInbound: 0, errors: 0 };
     const stale = deps.pendingRepo.findStaleOlderThan(deps.retentionSec);
@@ -76,31 +74,29 @@ export function createPendingReplyGcWorker(deps: PendingReplyGcDeps): PendingRep
     return result;
   }
 
+  const loop = createWorkerLoop({
+    log: deps.log,
+    name: "pending-reply gc",
+    intervalMs: deps.tickIntervalMs,
+    runOnce() {
+      const result = evaluate();
+      if (result.retired > 0 || result.skippedNoInbound > 0 || result.errors > 0) {
+        deps.log.info(result, "pending-reply gc tick");
+      } else {
+        deps.log.debug(result, "pending-reply gc tick");
+      }
+    },
+  });
+
   return {
     evaluate,
     async start() {
-      if (running) return;
-      running = true;
       deps.log.info(
         { retentionSec: deps.retentionSec, tickIntervalMs: deps.tickIntervalMs },
         "pending-reply gc worker started"
       );
-      while (running) {
-        try {
-          const result = evaluate();
-          if (result.retired > 0 || result.skippedNoInbound > 0 || result.errors > 0) {
-            deps.log.info(result, "pending-reply gc tick");
-          } else {
-            deps.log.debug(result, "pending-reply gc tick");
-          }
-        } catch (error) {
-          deps.log.error({ err: String(error) }, "pending-reply gc iteration failed");
-        }
-        await delay(deps.tickIntervalMs);
-      }
+      await loop.start();
     },
-    stop() {
-      running = false;
-    },
+    stop: () => loop.stop(),
   };
 }

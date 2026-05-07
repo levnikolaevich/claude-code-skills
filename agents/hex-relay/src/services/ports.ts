@@ -121,6 +121,7 @@ export interface MessagesRepository {
   getChatId(id: number): number | null;
   counts(): MessageCounts;
   lastActivityForUserAgent(userId: number, agent: AgentKind): number | null;
+  hasActiveInboundForUserAgent(userId: number, agent: AgentKind): boolean;
 }
 
 export interface HookMessagesRepository {

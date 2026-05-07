@@ -10,6 +10,7 @@ export interface WorkerLoopOptions {
   log: Logger;
   name: string;
   intervalMs: number | (() => number);
+  runImmediately?: boolean;
   runOnce(): Promise<void> | void;
 }
 
@@ -39,18 +40,19 @@ export function createWorkerLoop(opts: WorkerLoopOptions): DrainableWorker {
 
   return {
     async start() {
-      if (running) {
-        await loopPromise;
-        return;
-      }
+      if (running) return;
       running = true;
       loopPromise = (async () => {
+        let first = true;
         while (running) {
-          try {
-            await opts.runOnce();
-          } catch (error) {
-            opts.log.error({ err: String(error) }, `${opts.name} iteration failed`);
+          if (!first || opts.runImmediately !== false) {
+            try {
+              await opts.runOnce();
+            } catch (error) {
+              opts.log.error({ err: String(error) }, `${opts.name} iteration failed`);
+            }
           }
+          first = false;
           if (!running) break;
           await sleep(intervalValue(opts.intervalMs));
         }

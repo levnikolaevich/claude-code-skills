@@ -24,6 +24,7 @@ export function createMediaCleanupWorker(deps: {
     log: deps.log,
     name: "media cleanup",
     intervalMs: msUntilNext4am,
+    runImmediately: false,
     runOnce() {
       const cutoffMs = Date.now() - TIMING.mediaRetentionDays * 86_400 * 1000;
       let deleted = 0;

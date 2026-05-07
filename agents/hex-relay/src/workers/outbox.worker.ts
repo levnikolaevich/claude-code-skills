@@ -1,4 +1,3 @@
-import { setTimeout as delay } from "node:timers/promises";
 import type { Bot, GrammyError } from "grammy";
 import type { Logger } from "../lib/logger.js";
 import type { OutboxService } from "../services/outbox.service.js";
@@ -6,11 +5,9 @@ import type { OutboxRow } from "../domain/message.js";
 import { TIMING } from "../config/paths.js";
 import { splitForTelegram, splitForTelegramMarkdown } from "../lib/telegramSplit.js";
 import { toTelegramMarkdownV2 } from "../lib/telegramMarkdown.js";
+import { createWorkerLoop, type DrainableWorker } from "./workerLoop.js";
 
-export interface OutboxWorker {
-  start(): Promise<void>;
-  stop(): void;
-}
+export type OutboxWorker = DrainableWorker;
 
 function nowTs(): number {
   return Math.floor(Date.now() / 1000);
@@ -68,9 +65,6 @@ export function createOutboxWorker(deps: {
   bot: Bot;
   outbox: OutboxService;
 }): OutboxWorker {
-  let running = false;
-  let stopPromise: Promise<void> | null = null;
-
   async function sendChunks(
     row: OutboxRow,
     chunks: string[],
@@ -203,27 +197,16 @@ export function createOutboxWorker(deps: {
   }
 
   return {
-    async start() {
-      if (running) return;
-      running = true;
-      deps.log.info({ pollMs: TIMING.outboxPollMs }, "outbox worker started");
-      stopPromise = (async () => {
-        while (running) {
-          try {
-            const rows = deps.outbox.selectDue(5);
-            for (const row of rows) {
-              await deliverRow(row);
-            }
-          } catch (error) {
-            deps.log.error({ err: String(error) }, "outbox worker iteration failed");
-          }
-          await delay(TIMING.outboxPollMs);
+    ...createWorkerLoop({
+      log: deps.log,
+      name: "outbox worker",
+      intervalMs: TIMING.outboxPollMs,
+      async runOnce() {
+        const rows = deps.outbox.selectDue(5);
+        for (const row of rows) {
+          await deliverRow(row);
         }
-      })();
-      await stopPromise;
-    },
-    stop() {
-      running = false;
-    },
+      },
+    }),
   };
 }

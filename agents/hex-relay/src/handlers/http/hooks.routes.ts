@@ -469,6 +469,17 @@ function buildSessionStartContext(
     "",
     `_Session start: source=${args.source}, prev=${args.previousSession ?? "none"}_`,
     "",
+    "### Telegram message formatting",
+    "",
+    "Replies you produce will be rendered as Telegram MarkdownV2 by hex-relay. Use only:",
+    "- `**bold**`, `_italic_`, `` `inline code` ``, fenced code blocks with language (` ```python ... ``` `)",
+    "- `[text](url)` links",
+    "- `>` blockquotes (single `>` per line)",
+    "- `-` bullet lists (rendered as `•` by the converter)",
+    "",
+    "Avoid: headings (`#`), tables, horizontal rules (`---`), images. The converter degrades them but the visual result is poor.",
+    "Keep individual messages compact; the relay splits long replies automatically.",
+    "",
   ];
   const mems = deps.memory.recent(TIMING.memoryInjectLimit, null);
   if (mems.length > 0) {

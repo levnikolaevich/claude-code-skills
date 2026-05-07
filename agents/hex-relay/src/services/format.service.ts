@@ -7,11 +7,18 @@ import {
   formatAgentEvent,
   prefixReply,
 } from "../domain/events.js";
-import { utf16Len, splitForTelegram } from "../lib/telegramSplit.js";
+import { utf16Len, splitForTelegram, splitForTelegramMarkdown } from "../lib/telegramSplit.js";
+import { toTelegramMarkdownV2 } from "../lib/telegramMarkdown.js";
 
 export const FormatService = {
   splitForTelegram(text: string): string[] {
     return splitForTelegram(text, TIMING.tgMaxLen);
+  },
+  splitForTelegramMarkdown(text: string): string[] {
+    return splitForTelegramMarkdown(text, TIMING.tgMaxLen);
+  },
+  toTelegramMarkdownV2(text: string): string | null {
+    return toTelegramMarkdownV2(text);
   },
   utf16Len,
   mdSafe,

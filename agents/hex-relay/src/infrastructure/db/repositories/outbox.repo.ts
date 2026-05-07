@@ -62,7 +62,9 @@ export function createOutboxRepo(db: Db) {
   const claimDueSelect = db.prepare(
     "SELECT id FROM outbox WHERE status='queued' AND next_attempt_at<=? ORDER BY id LIMIT ?"
   );
-  const claimDueUpdate = db.prepare("UPDATE outbox SET status='sending' WHERE id=? AND status='queued'");
+  const claimDueUpdate = db.prepare(
+    "UPDATE outbox SET status='sending' WHERE id=? AND status='queued'"
+  );
   const findById = db.prepare("SELECT * FROM outbox WHERE id=? LIMIT 1");
   const countQueued = db.prepare("SELECT COUNT(*) AS c FROM outbox WHERE status='queued'");
   const countAbandoned = db.prepare("SELECT COUNT(*) AS c FROM outbox WHERE status='abandoned'");
@@ -103,7 +105,7 @@ export function createOutboxRepo(db: Db) {
     claimDue(limit = 5): OutboxRow[] {
       const started = performance.now();
       try {
-        const rows = claimDueTxn(nowTs(), limit) as Record<string, unknown>[];
+        const rows = claimDueTxn(nowTs(), limit);
         return rows.map(mapOutboxRow);
       } finally {
         observeDbOperation("outbox.claimDue", performance.now() - started);

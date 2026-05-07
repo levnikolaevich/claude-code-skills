@@ -129,14 +129,12 @@ export function registerHealthRoutes(app: FastifyInstance, deps: HealthRoutesDep
 
   zodApp.get("/metrics", async (_req, reply) => {
     const s = await collectRuntimeStatus(deps);
-    return reply
-      .type("text/plain; version=0.0.4; charset=utf-8")
-      .send(
-        renderPrometheusMetrics({
-          inboundQueued: s.inboundQueued,
-          outboxQueued: s.outboxQueued,
-          pendingReplies: s.pendingCount,
-        })
-      );
+    return reply.type("text/plain; version=0.0.4; charset=utf-8").send(
+      renderPrometheusMetrics({
+        inboundQueued: s.inboundQueued,
+        outboxQueued: s.outboxQueued,
+        pendingReplies: s.pendingCount,
+      })
+    );
   });
 }

@@ -180,7 +180,7 @@ export function createMessagesRepo(db: Db) {
     claimDue(limit = 5): InboundMessage[] {
       const started = performance.now();
       try {
-        const rows = claimDueTxn(nowTs(), limit) as Record<string, unknown>[];
+        const rows = claimDueTxn(nowTs(), limit);
         return rows.map(mapInboundRow);
       } finally {
         observeDbOperation("messages.claimDue", performance.now() - started);

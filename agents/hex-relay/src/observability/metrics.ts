@@ -7,6 +7,9 @@ const httpRequests = new Map<string, number>();
 const workerTickFailures = new Map<string, number>();
 const dbOperationBuckets = new Map<string, number[]>();
 const DB_BUCKETS_MS = [1, 5, 10, 50, 100, 500, 1000, Number.POSITIVE_INFINITY] as const;
+const BACKSLASH = String.fromCodePoint(92);
+const NEWLINE = String.fromCodePoint(10);
+const QUOTE = String.fromCodePoint(34);
 
 let telegramSendFailures = 0;
 
@@ -19,7 +22,10 @@ function inc(map: Map<string, number>, key: string, by = 1): void {
 }
 
 function label(value: string): string {
-  return value.replaceAll("\\", "\\\\").replaceAll("\n", "\\n").replaceAll('"', '\\"');
+  return value
+    .replaceAll(BACKSLASH, `${BACKSLASH}${BACKSLASH}`)
+    .replaceAll(NEWLINE, `${BACKSLASH}n`)
+    .replaceAll(QUOTE, `${BACKSLASH}${QUOTE}`);
 }
 
 export function recordHttpRequest(route: string, status: number): void {
@@ -35,9 +41,10 @@ export function recordTelegramSendFailure(): void {
 }
 
 export function observeDbOperation(name: string, durationMs: number): void {
-  const buckets = dbOperationBuckets.get(name) ?? Array.from({ length: DB_BUCKETS_MS.length }, () => 0);
-  for (let i = 0; i < DB_BUCKETS_MS.length; i += 1) {
-    if (durationMs <= DB_BUCKETS_MS[i]!) buckets[i]! += 1;
+  const buckets =
+    dbOperationBuckets.get(name) ?? Array.from({ length: DB_BUCKETS_MS.length }, () => 0);
+  for (const [index, upper] of DB_BUCKETS_MS.entries()) {
+    if (durationMs <= upper) buckets[index] = (buckets[index] ?? 0) + 1;
   }
   dbOperationBuckets.set(name, buckets);
 }
@@ -81,11 +88,10 @@ export function renderPrometheusMetrics(snapshot: QueueMetricSnapshot): string {
     "# TYPE hex_relay_db_operation_duration_ms_bucket histogram"
   );
   for (const [name, buckets] of dbOperationBuckets.entries()) {
-    for (let i = 0; i < DB_BUCKETS_MS.length; i += 1) {
-      const upper = DB_BUCKETS_MS[i]!;
+    for (const [index, upper] of DB_BUCKETS_MS.entries()) {
       const le = upper === Number.POSITIVE_INFINITY ? "+Inf" : String(upper);
       lines.push(
-        `hex_relay_db_operation_duration_ms_bucket{operation="${label(name)}",le="${le}"} ${buckets[i] ?? 0}`
+        `hex_relay_db_operation_duration_ms_bucket{operation="${label(name)}",le="${le}"} ${buckets[index] ?? 0}`
       );
     }
   }

@@ -15,7 +15,11 @@ function matchesToken(actual: string, expected: string): boolean {
 export function registerBearerAuth(app: FastifyInstance, opts: BearerAuthOptions): void {
   app.addHook("preHandler", (req, reply, done) => {
     const pathname = req.url.split("?")[0] ?? req.url;
-    if (!opts.protectedPrefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`))) {
+    if (
+      !opts.protectedPrefixes.some(
+        (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
+      )
+    ) {
       done();
       return;
     }

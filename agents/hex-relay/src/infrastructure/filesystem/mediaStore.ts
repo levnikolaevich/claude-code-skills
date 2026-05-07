@@ -34,18 +34,19 @@ function safeToken(raw: string): string {
 
 async function writeResponseBody(resp: Response, dest: string): Promise<void> {
   if (!resp.body) throw new Error("media download response body missing");
-  const reader = resp.body.getReader();
+  const reader: ReadableStreamDefaultReader<Uint8Array> = resp.body.getReader();
   const out = createWriteStream(dest, { flags: "wx", mode: 0o640 });
   let bytes = 0;
   try {
     for (;;) {
       const chunk = await reader.read();
       if (chunk.done) break;
-      bytes += chunk.value.byteLength;
+      const value = chunk.value;
+      bytes += value.byteLength;
       if (bytes > TIMING.mediaMaxBytes) {
         throw new Error(`media exceeds ${TIMING.mediaMaxBytes} bytes`);
       }
-      if (!out.write(Buffer.from(chunk.value))) {
+      if (!out.write(Buffer.from(value))) {
         await once(out, "drain");
       }
     }

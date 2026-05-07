@@ -100,6 +100,7 @@ L1 orchestrators and L2 coordinators that delegate to workers MUST have all thre
 | Required Element | Pattern to Grep | Where |
 |-----------------|----------------|-------|
 | Explicit invocation code | `Skill(skill:` or `Agent(description:.*Skill(skill:` | Per-worker in workflow section |
+| Host invocation bridge | `**Host Skill Invocation:**` | Near Worker Invocation section |
 | Worker Invocation section | `## Worker Invocation (MANDATORY)` | Dedicated section |
 | TodoWrite tracking | `TodoWrite format (mandatory):` | Near Worker Invocation section |
 
@@ -109,10 +110,11 @@ L1 orchestrators and L2 coordinators that delegate to workers MUST have all thre
 1. Count distinct `ln-NNN` skills in worker/delegation tables
 2. Count `Skill(skill: "ln-NNN` code blocks in workflow
 3. If worker count > invocation count → FAIL: workers described but not explicitly invoked
-4. If no `Worker Invocation (MANDATORY)` section → FAIL
-5. If no `TodoWrite format (mandatory)` → WARN
+4. If `Skill(skill:` appears but no `**Host Skill Invocation:**` bridge exists → FAIL
+5. If no `Worker Invocation (MANDATORY)` section → FAIL
+6. If no `TodoWrite format (mandatory)` → WARN
 
-**Why:** Without explicit `Skill()` code blocks, agents "forget" to invoke workers and execute their logic inline. This is a recurring failure pattern in coordinators.
+**Why:** Without explicit `Skill()` code blocks and Codex fallback semantics, agents forget to invoke workers or treat `Skill()` as unknown syntax. This is a recurring failure pattern in coordinators.
 
 ## D9: Pattern Compliance (conditional -- `ln-6*` audit skills only)
 - References `references/two_layer_detection.md` via MANDATORY READ

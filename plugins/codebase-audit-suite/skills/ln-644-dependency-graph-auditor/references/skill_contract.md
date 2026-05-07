@@ -69,8 +69,14 @@ Reference rules:
 
 If a skill delegates to workers, it must include all three:
 - explicit invocation code using `Skill(skill:` or `Agent(... Skill(skill: ...))`
+- `**Host Skill Invocation:**` bridge when `Skill(skill:` appears
 - `## Worker Invocation (MANDATORY)`
 - `TodoWrite format (mandatory):`
+
+`Skill(skill: "...", args: "...")` is mandatory delegation syntax, not an illustrative example:
+- Claude hosts call the `Skill` tool exactly as shown.
+- Codex hosts without a `Skill` tool must locate the named skill in available skills, read its `SKILL.md`, treat `args` as `$ARGUMENTS`, execute that skill workflow, then return to the caller with the worker result or artifact.
+- callers must not inline worker logic or mark delegated work complete without executing the target skill.
 
 Defaults:
 - prefer `Skill` when shared context matters

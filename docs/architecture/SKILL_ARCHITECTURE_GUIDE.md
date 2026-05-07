@@ -182,6 +182,8 @@ Short version:
 | **Direct Skill()** | shared planning, shared repo context, deterministic worker calls | worker logic may bloat caller if boundaries are unclear |
 | **Agent(... Skill())** | isolated implementation, large reviews, heavy scans, long loops | overhead if used for trivial work |
 
+`Skill(skill: "...", args: "...")` is the canonical delegation notation across hosts. Claude executes it through the native Skill tool. Codex has no equivalent tool call, so delegator skills must include the host bridge: locate the named skill in the available skill list, read its `SKILL.md`, pass `args` as `$ARGUMENTS`, execute the workflow, then return to the caller with the result or artifact.
+
 ---
 
 ## Splitting Heuristics
@@ -251,7 +253,7 @@ These are repo heuristics, not universal laws.
 |----------|----------------|---------------|
 | `SKILL.md` keeps growing beyond 800 lines | likely more than one responsibility | split or move detail to refs |
 | worker defines parent or coordinator | reverse coupling | remove ownership wording |
-| caller describes workers but never invokes them explicitly | agents tend to inline logic | add `Skill()` blocks and Worker Invocation section |
+| caller describes workers but never invokes them explicitly | agents tend to inline logic | add `Skill()` blocks, host bridge, and Worker Invocation section |
 | same threshold or rule repeated in many skills | drift risk | move to shared ref |
 | retries are driven only by lifecycle status | retry storms and same-error loops | use `shared/references/loop_health_contract.md` |
 | final DoD carries all safety checks | agents may miss point-of-use risks | colocate SOP/TWI checklist at the risky step |

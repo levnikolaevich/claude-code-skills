@@ -8,15 +8,15 @@ import {
 } from "./cli-test-helpers.mjs";
 import { WORKER_SUMMARY_STATUSES } from "../lib/runtime-constants.mjs";
 
-const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../../../..");
+const scriptsRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 
-const envCli = join(repoRoot, "shared/scripts/environment-setup-runtime/cli.mjs");
-const storyCli = join(repoRoot, "shared/scripts/story-planning-runtime/cli.mjs");
-const taskCli = join(repoRoot, "shared/scripts/task-planning-runtime/cli.mjs");
-const evaluationCli = join(repoRoot, "shared/scripts/evaluation-runtime/cli.mjs");
-const executionCli = join(repoRoot, "shared/scripts/story-execution-runtime/cli.mjs");
-const gateCli = join(repoRoot, "shared/scripts/story-gate-runtime/cli.mjs");
-const optimizationCli = join(repoRoot, "shared/scripts/optimization-runtime/cli.mjs");
+const envCli = join(scriptsRoot, "environment-setup-runtime/cli.mjs");
+const storyCli = join(scriptsRoot, "story-planning-runtime/cli.mjs");
+const taskCli = join(scriptsRoot, "task-planning-runtime/cli.mjs");
+const evaluationCli = join(scriptsRoot, "evaluation-runtime/cli.mjs");
+const executionCli = join(scriptsRoot, "story-execution-runtime/cli.mjs");
+const gateCli = join(scriptsRoot, "story-gate-runtime/cli.mjs");
+const optimizationCli = join(scriptsRoot, "optimization-runtime/cli.mjs");
 
 function assert(condition, message) {
     if (!condition) {

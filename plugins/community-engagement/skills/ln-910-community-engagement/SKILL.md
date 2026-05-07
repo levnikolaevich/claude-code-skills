@@ -185,6 +185,11 @@ Skill type: `planning-coordinator`. Run after Phase 3 completes. Output to chat 
 
 ## Worker Invocation (MANDATORY)
 
+**Host Skill Invocation:** `Skill(skill: "...", args: "...")` is mandatory delegation.
+- Claude: call the Skill tool exactly as shown.
+- Codex: if no Skill tool exists, locate the named skill in available skills, read its `SKILL.md`, treat `args` as `$ARGUMENTS`, execute that skill workflow, then return here with its result/artifact.
+- Do not inline worker logic or mark the worker complete without executing the target skill.
+
 | Phase | Worker | Context |
 |-------|--------|---------|
 | 1 | ln-911-github-triager | Shared (Skill tool) — community health summary |

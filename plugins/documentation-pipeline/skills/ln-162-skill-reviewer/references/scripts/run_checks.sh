@@ -225,6 +225,9 @@ for f in $SCOPE; do
   grep -qF '| None |' "$f" && continue
   skill_calls=$(grep -c 'Skill(skill:' "$f" || true)
   [ "$skill_calls" -eq 0 ] && fail "$level skill delegates to $worker_count workers but has no Skill() invocation code blocks: $f"
+  if [ "$skill_calls" -gt 0 ] && ! grep -q '\*\*Host Skill Invocation:\*\*' "$f"; then
+    fail "$level skill has Skill() invocation code but no Host Skill Invocation bridge: $f"
+  fi
   grep -q 'Worker Invocation (MANDATORY)' "$f" || fail "$level skill missing Worker Invocation (MANDATORY) section: $f"
   grep -q 'TodoWrite format (mandatory)' "$f" || warn "$level skill missing TodoWrite format section: $f"
 done

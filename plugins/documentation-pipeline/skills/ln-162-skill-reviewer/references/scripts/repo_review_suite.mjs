@@ -160,10 +160,10 @@ function checkMarketplaceCount(pluginName) {
 
 function runQuickRuntimeSuite() {
     const quickTests = [
-        "references/scripts/coordinator-runtime/test/platform-regression.mjs",
-        "references/scripts/coordinator-runtime/test/consistency-scan.mjs",
-        "references/scripts/story-planning-runtime/test/smoke.mjs",
-        "references/scripts/task-planning-runtime/test/smoke.mjs",
+        "plugins/documentation-pipeline/skills/ln-162-skill-reviewer/references/scripts/coordinator-runtime/test/platform-regression.mjs",
+        "plugins/documentation-pipeline/skills/ln-162-skill-reviewer/references/scripts/coordinator-runtime/test/consistency-scan.mjs",
+        "plugins/documentation-pipeline/skills/ln-162-skill-reviewer/references/scripts/story-planning-runtime/test/smoke.mjs",
+        "plugins/documentation-pipeline/skills/ln-162-skill-reviewer/references/scripts/task-planning-runtime/test/smoke.mjs",
         "plugins/agile-workflow/skills/ln-1000-pipeline-orchestrator/scripts/test/smoke.mjs",
         "plugins/agile-workflow/skills/ln-1000-pipeline-orchestrator/scripts/test/isolation.mjs",
     ];

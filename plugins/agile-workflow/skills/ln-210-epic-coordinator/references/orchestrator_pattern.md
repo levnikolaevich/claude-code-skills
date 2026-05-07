@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/orchestrator_pattern.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Orchestrator Pattern
 
 Generic L2 coordinator lifecycle for skills that delegate to L3 workers.

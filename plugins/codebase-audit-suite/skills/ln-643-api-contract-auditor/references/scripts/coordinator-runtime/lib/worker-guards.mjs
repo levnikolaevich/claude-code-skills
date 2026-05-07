@@ -1,3 +1,5 @@
+// SOURCE-OF-TRUTH: shared/scripts/coordinator-runtime/lib/worker-guards.mjs. Edit ONLY here; run `node tools/marketplace/shared.mjs sync`
+
 export function createLinearPhaseMap(phases) {
     const phaseList = Array.isArray(phases) ? [...phases] : [];
     const transitions = new Map();

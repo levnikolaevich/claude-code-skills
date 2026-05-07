@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/epistemic_protocol.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Epistemic Protocol
 
 <!-- SCOPE: Source attribution and anti-hallucination rules for ALL fact-sensitive skill outputs. Covers versions, APIs, standards, market data, performance claims. -->

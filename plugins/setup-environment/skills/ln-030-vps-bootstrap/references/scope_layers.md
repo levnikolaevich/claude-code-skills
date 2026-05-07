@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/scope_layers.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Scope layers — ln-030-vps-bootstrap
 
 Deployment shape: **one VPS = one `BOT_USER=agent-bot` (shared) = one Anthropic OAuth + one Codex login + one nvm/Node toolchain**, then **one project = one Telegram bot token = one set of systemd units = one `PROJECT_NAME`/`PROJECT_DIR`/`SERVICE_PREFIX`/`RELAY_HOOK_PORT`**. Each allowed Telegram user gets a separate project god-session target on the project's tmux socket.

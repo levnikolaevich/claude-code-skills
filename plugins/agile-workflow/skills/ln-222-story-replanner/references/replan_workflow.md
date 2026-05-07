@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/replan_workflow.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Epic Replan Workflow
 
 <!-- SCOPE: Epic REPLAN mode algorithm ONLY. Contains comparison logic, operations (KEEP/UPDATE/OBSOLETE/CREATE), merge strategy. -->

@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/optimization_categories.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Optimization Categories Checklist
 
 <!-- SCOPE: Optimization pattern reference for the executor. Categories to scan during implementation. -->

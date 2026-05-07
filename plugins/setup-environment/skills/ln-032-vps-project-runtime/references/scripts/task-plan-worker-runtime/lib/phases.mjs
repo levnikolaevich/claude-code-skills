@@ -1,3 +1,5 @@
+// SOURCE-OF-TRUTH: shared/scripts/task-plan-worker-runtime/lib/phases.mjs. Edit ONLY here; run `node tools/marketplace/shared.mjs sync`
+
 export const WORKER_PHASES = Object.freeze({
     "ln-301": Object.freeze([
         "PHASE_0_CONFIG",

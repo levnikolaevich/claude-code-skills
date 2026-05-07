@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/research_methodology.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Research Methodology
 
 <!-- SCOPE: Standardized research methodology for MCP Ref/Context7 research. Source credibility, domain standards, quality criteria. -->

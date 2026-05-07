@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/layer_rules.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Layer Boundary Rules
 
 Layer violation detection and cross-layer consistency rules for ln-642.

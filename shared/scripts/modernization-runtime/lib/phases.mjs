@@ -1,3 +1,5 @@
+// SOURCE-OF-TRUTH: shared/scripts/modernization-runtime/lib/phases.mjs. Edit ONLY here; run `node tools/marketplace/shared.mjs sync`
+
 export const PHASES = {
     PREFLIGHT: "PHASE_0_PREFLIGHT",
     ANALYZE_INPUT: "PHASE_1_ANALYZE_INPUT",

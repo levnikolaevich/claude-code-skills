@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/two_layer_detection.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Two-Layer Detection Methodology
 
 Unified methodology for L3 audit workers. Replaces pure grep-based scanning with grep + agent reasoning.

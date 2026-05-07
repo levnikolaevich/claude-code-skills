@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/evaluation_parallelism_policy.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Evaluation Parallelism Policy
 
 Canonical parallelism policy for the evaluation platform.

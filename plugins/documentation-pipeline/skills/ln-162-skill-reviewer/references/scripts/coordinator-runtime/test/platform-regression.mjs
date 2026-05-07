@@ -1,3 +1,5 @@
+// SOURCE-OF-TRUTH: shared/scripts/coordinator-runtime/test/platform-regression.mjs. Edit ONLY here; run `node tools/marketplace/shared.mjs sync`
+
 import { writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";

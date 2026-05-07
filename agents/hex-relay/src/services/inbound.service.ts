@@ -216,13 +216,13 @@ export function createInboundService(deps: {
   async function tick(): Promise<ServiceOutcome<InboundTickResult, InboundError>> {
     let due: InboundMessage[];
     try {
-      due = deps.messagesRepo.selectDue(5);
+      due = deps.messagesRepo.claimDue(5);
     } catch (error) {
       return fail(
         serviceError({
-          code: "inbound_select_due_failed",
+          code: "inbound_claim_due_failed",
           kind: "transient",
-          message: "failed to select due inbound messages",
+          message: "failed to claim due inbound messages",
           cause: error,
         })
       );

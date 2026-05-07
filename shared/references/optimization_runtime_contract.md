@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/optimization_runtime_contract.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Optimization Runtime Contract
 
 Deterministic runtime for `ln-810-performance-optimizer`.

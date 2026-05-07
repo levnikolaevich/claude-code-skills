@@ -7,6 +7,8 @@ import {
   DEFAULT_AGENT,
 } from "../../../domain/message.js";
 import { mapInboundRow } from "../rowMappers.js";
+import { observeDbOperation } from "../../../observability/metrics.js";
+import { buildUpdateSet } from "./updateSet.js";
 
 export interface MessageUpdate {
   status?: MessageStatus;
@@ -69,6 +71,13 @@ export function createMessagesRepo(db: Db) {
     "SELECT * FROM messages WHERE direction='inbound' " +
       "AND status='queued' AND next_attempt_at<=? ORDER BY id LIMIT ?"
   );
+  const claimDueSelect = db.prepare(
+    "SELECT id FROM messages WHERE direction='inbound' " +
+      "AND status='queued' AND next_attempt_at<=? ORDER BY id LIMIT ?"
+  );
+  const claimDueUpdate = db.prepare(
+    "UPDATE messages SET status='delivering' WHERE id=? AND status='queued'"
+  );
   const selectTranscribing = db.prepare(
     "SELECT * FROM messages WHERE direction='inbound' " +
       "AND status='transcribing' ORDER BY id LIMIT ?"
@@ -101,6 +110,18 @@ export function createMessagesRepo(db: Db) {
       "WHERE direction='inbound' AND from_user_id=? AND agent=? " +
       "AND status IN ('queued','delivering','transcribing') LIMIT 1"
   );
+
+  const claimDueTxn = db.transaction((ts: number, limit: number) => {
+    const selected = claimDueSelect.all(ts, limit) as { id: number }[];
+    const claimed: Record<string, unknown>[] = [];
+    for (const row of selected) {
+      const result = claimDueUpdate.run(row.id);
+      if (result.changes !== 1) continue;
+      const claimedRow = findById.get(row.id) as Record<string, unknown> | undefined;
+      if (claimedRow) claimed.push(claimedRow);
+    }
+    return claimed;
+  });
 
   return {
     insertInbound(
@@ -156,16 +177,36 @@ export function createMessagesRepo(db: Db) {
       const rows = selectDue.all(nowTs(), limit) as Record<string, unknown>[];
       return rows.map(mapInboundRow);
     },
+    claimDue(limit = 5): InboundMessage[] {
+      const started = performance.now();
+      try {
+        const rows = claimDueTxn(nowTs(), limit) as Record<string, unknown>[];
+        return rows.map(mapInboundRow);
+      } finally {
+        observeDbOperation("messages.claimDue", performance.now() - started);
+      }
+    },
     selectTranscribing(limit = 2): InboundMessage[] {
-      const rows = selectTranscribing.all(limit) as Record<string, unknown>[];
-      return rows.map(mapInboundRow);
+      const started = performance.now();
+      try {
+        const rows = selectTranscribing.all(limit) as Record<string, unknown>[];
+        return rows.map(mapInboundRow);
+      } finally {
+        observeDbOperation("messages.selectTranscribing", performance.now() - started);
+      }
     },
     update(msgId: number, fields: MessageUpdate): void {
-      const entries = Object.entries(fields).filter(([, v]) => v !== undefined);
-      if (entries.length === 0) return;
-      const cols = entries.map(([k]) => `${FIELD_MAP[k as keyof MessageUpdate]}=?`).join(", ");
-      const values = entries.map(([, v]) => v as unknown);
-      db.prepare(`UPDATE messages SET ${cols} WHERE id=?`).run(...(values as never[]), msgId);
+      const updateSet = buildUpdateSet<MessageUpdate>(fields, FIELD_MAP);
+      if (!updateSet) return;
+      const started = performance.now();
+      try {
+        db.prepare(`UPDATE messages SET ${updateSet.clause} WHERE id=?`).run(
+          ...updateSet.values,
+          msgId
+        );
+      } finally {
+        observeDbOperation("messages.update", performance.now() - started);
+      }
     },
     findByTg(chatId: number, msgId: number): InboundMessage | null {
       const row = findByTg.get(chatId, msgId) as Record<string, unknown> | undefined;

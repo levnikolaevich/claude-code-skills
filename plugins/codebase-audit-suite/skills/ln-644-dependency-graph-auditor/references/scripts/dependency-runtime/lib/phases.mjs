@@ -1,3 +1,5 @@
+// SOURCE-OF-TRUTH: shared/scripts/dependency-runtime/lib/phases.mjs. Edit ONLY here; run `node tools/marketplace/shared.mjs sync`
+
 export const PHASES = {
     PREFLIGHT: "PHASE_0_PREFLIGHT",
     DETECT_PACKAGE_MANAGERS: "PHASE_1_DETECT_PACKAGE_MANAGERS",

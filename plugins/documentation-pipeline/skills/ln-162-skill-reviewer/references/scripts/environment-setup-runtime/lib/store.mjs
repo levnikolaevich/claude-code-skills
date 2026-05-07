@@ -1,3 +1,5 @@
+// SOURCE-OF-TRUTH: shared/scripts/environment-setup-runtime/lib/store.mjs. Edit ONLY here; run `node tools/marketplace/shared.mjs sync`
+
 import { resolve } from "node:path";
 import {
     createRuntimeStore,

@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/refinement_trace_contract.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Refinement Trace Contract
 
 Canonical trace format for iterative refinement.

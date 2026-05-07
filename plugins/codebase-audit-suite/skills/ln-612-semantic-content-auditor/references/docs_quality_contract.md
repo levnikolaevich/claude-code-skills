@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/docs_quality_contract.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Docs Quality Contract
 
 <!-- SCOPE: Shared contract for documentation creation and documentation audit families. Defines SSOT for document headers, doc kinds, top sections, placeholders, freshness, link validity, and read protocol without coupling family workflows. -->

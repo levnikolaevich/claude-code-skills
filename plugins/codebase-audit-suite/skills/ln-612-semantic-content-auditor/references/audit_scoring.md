@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/audit_scoring.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Audit Scoring Algorithm
 
 Unified scoring formula for audit workers.

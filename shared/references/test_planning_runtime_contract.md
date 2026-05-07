@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/test_planning_runtime_contract.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Test Planning Runtime Contract
 
 Runtime contract for `ln-520`.

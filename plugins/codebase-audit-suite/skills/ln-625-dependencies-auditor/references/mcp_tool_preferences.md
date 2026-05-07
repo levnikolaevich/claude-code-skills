@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/mcp_tool_preferences.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Tool Preferences for Code Work
 
 Repo-level MCP policy for code files and semantic codebase analysis.

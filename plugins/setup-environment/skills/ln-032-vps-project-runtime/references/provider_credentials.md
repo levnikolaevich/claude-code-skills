@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/provider_credentials.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Git provider credentials
 
 <!-- SCOPE: Provider-specific git/API credential setup for ln-032-vps-project-runtime. -->

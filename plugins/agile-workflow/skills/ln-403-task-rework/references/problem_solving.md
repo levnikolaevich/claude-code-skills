@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/problem_solving.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Problem-Solving: Root Cause First
 
 > **Iron Law:** NO FIXES WITHOUT ROOT CAUSE INVESTIGATION FIRST.

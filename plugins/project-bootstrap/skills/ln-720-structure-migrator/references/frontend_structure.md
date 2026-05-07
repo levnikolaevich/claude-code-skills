@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/frontend_structure.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Frontend Structure Template
 
 <!-- SCOPE: React frontend folder structure ONLY. Contains components/hooks/services directories, naming conventions. -->

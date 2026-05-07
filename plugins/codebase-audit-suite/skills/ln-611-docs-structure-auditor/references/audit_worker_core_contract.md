@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/audit_worker_core_contract.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Audit Worker Core Contract
 
 Shared contract for audit workers that analyze one category, write one report file, and return a machine-readable summary to a coordinator.

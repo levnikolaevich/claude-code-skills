@@ -1,3 +1,5 @@
+// SOURCE-OF-TRUTH: shared/scripts/docs-quality/lib/verify.mjs. Edit ONLY here; run `node tools/marketplace/shared.mjs sync`
+
 import { existsSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { classifyDoc, detectStack, loadRules, normalizePath } from "./rules.mjs";

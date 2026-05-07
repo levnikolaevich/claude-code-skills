@@ -1,3 +1,5 @@
+// SOURCE-OF-TRUTH: shared/scripts/coordinator-runtime/test/cli-test-helpers.mjs. Edit ONLY here; run `node tools/marketplace/shared.mjs sync`
+
 import { execFileSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";

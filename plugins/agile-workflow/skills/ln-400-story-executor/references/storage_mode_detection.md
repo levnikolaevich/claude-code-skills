@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/storage_mode_detection.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Storage Mode Operations
 
 <!-- SCOPE: Compact routing table for all providers. Provider selection comes from .hex-skills/environment_state.json → task_management.provider (NOT detected here). This file defines WHAT to call at summary level. For full pseudocode, load the provider-specific file. -->

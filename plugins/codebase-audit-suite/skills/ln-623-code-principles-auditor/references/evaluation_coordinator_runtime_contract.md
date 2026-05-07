@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/evaluation_coordinator_runtime_contract.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Evaluation Coordinator Runtime Contract
 
 Canonical coordinator runtime contract for evaluator, validator, and audit skills.

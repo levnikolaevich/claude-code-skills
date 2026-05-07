@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/procedural_extraction_rules.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Procedural Extraction Rules
 
 <!-- SCOPE: Shared scoring rules for extracting procedural sections from markdown docs into .claude/commands. Used by ln-160 and ln-161. -->

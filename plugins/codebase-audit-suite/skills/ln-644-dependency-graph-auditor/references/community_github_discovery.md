@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/community_github_discovery.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # GitHub Discovery Protocol
 
 Phase 0 reference for all community engagement skills.

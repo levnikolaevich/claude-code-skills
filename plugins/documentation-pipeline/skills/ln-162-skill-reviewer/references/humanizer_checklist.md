@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/humanizer_checklist.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Humanizer Checklist
 
 <!-- SCOPE: Anti-AI-slop audit for any skill that publishes text. Final pass before presenting draft to user. -->

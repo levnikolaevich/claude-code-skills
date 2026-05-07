@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/quality_validation.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Quality Validation (Criteria #14-#15)
 
 <!-- SCOPE: Documentation and code quality criteria #14-#15 ONLY. Contains completeness checks, hardcoded values rules. -->

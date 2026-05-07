@@ -1,3 +1,5 @@
+// SOURCE-OF-TRUTH: shared/scripts/coordinator-runtime/lib/environment-state.mjs. Edit ONLY here; run `node tools/marketplace/shared.mjs sync`
+
 import { join } from "node:path";
 import { environmentStateSchema } from "./schemas.mjs";
 import { readJsonFile } from "./core.mjs";

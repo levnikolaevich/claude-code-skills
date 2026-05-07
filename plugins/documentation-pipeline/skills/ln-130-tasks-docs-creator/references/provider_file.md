@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/provider_file.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # File Mode Provider Operations
 
 <!-- SCOPE: Full operation pseudocode for File Mode. Loaded only when environment_state.json task_management.provider=file. -->

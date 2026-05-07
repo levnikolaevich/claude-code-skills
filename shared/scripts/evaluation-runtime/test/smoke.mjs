@@ -1,3 +1,5 @@
+// SOURCE-OF-TRUTH: shared/scripts/evaluation-runtime/test/smoke.mjs. Edit ONLY here; run `node tools/marketplace/shared.mjs sync`
+
 import { join, resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import {

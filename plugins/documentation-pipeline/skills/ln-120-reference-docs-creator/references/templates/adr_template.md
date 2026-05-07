@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/templates/adr_template.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # ADR-{{NUMBER}}: {{TITLE}}
 
 **Date:** {{DATE}} | **Status:** {{STATUS}} | **Category:** {{CATEGORY}} | **Decision Makers:** {{DECISION_MAKERS}}

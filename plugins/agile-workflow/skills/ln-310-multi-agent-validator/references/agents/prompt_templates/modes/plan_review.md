@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/agents/prompt_templates/modes/plan_review.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 ## header
 # Task: Review Implementation Plan
 

@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/breaking_changes_patterns.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Breaking Changes Patterns
 
 <!-- SCOPE: Breaking changes and migration patterns ONLY. Contains per-library upgrade tables (React, Next.js, Express, etc.). -->

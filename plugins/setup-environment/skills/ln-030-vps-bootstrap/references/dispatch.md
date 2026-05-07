@@ -21,6 +21,7 @@ Create a dispatch audit row. Use `trigger="telegram_task"` for `/tasks` handoffs
 
 ```bash
 RUN_ID=$(curl -fsS -X POST http://127.0.0.1:${RELAY_HOOK_PORT}/dispatch/start \
+  -H "Authorization: Bearer ${RELAY_HTTP_TOKEN}" \
   -H 'Content-Type: application/json' \
   -d "{\"trigger\":\"telegram_task\",\"issue_number\":<N>,\"issue_title\":\"<title>\"}" \
   | jq -r .run_id)
@@ -48,9 +49,11 @@ Record the approval gate:
 
 ```bash
 curl -fsS -X POST http://127.0.0.1:${RELAY_HOOK_PORT}/dispatch/phase \
+  -H "Authorization: Bearer ${RELAY_HTTP_TOKEN}" \
   -H 'Content-Type: application/json' \
   -d "{\"run_id\":$RUN_ID,\"phase\":\"approval\",\"status\":\"waiting_approval\",\"verdict\":\"plan_sent\",\"details\":\"#<N> <title>\"}"
 curl -fsS -X POST http://127.0.0.1:${RELAY_HOOK_PORT}/dispatch/end \
+  -H "Authorization: Bearer ${RELAY_HTTP_TOKEN}" \
   -H 'Content-Type: application/json' \
   -d "{\"run_id\":$RUN_ID,\"status\":\"waiting_approval\",\"error\":\"operator approval required for #<N>\"}"
 ```
@@ -71,6 +74,7 @@ For each stage, open a phase row before the Skill call and close it with the ver
 
 ```bash
 curl -fsS -X POST http://127.0.0.1:${RELAY_HOOK_PORT}/dispatch/phase \
+  -H "Authorization: Bearer ${RELAY_HTTP_TOKEN}" \
   -H 'Content-Type: application/json' \
   -d "{\"run_id\":$RUN_ID,\"phase\":\"ln-300\",\"status\":\"running\"}"
 ```
@@ -121,6 +125,7 @@ Close the dispatch run:
 
 ```bash
 curl -fsS -X POST http://127.0.0.1:${RELAY_HOOK_PORT}/dispatch/end \
+  -H "Authorization: Bearer ${RELAY_HTTP_TOKEN}" \
   -H 'Content-Type: application/json' \
   -d "{\"run_id\":$RUN_ID,\"status\":\"completed\",\"branch\":\"agent/issue-<N>-<slug>\"}"
 ```

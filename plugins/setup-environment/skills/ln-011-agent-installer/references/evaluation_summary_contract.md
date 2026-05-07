@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/evaluation_summary_contract.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Evaluation Summary Contract
 
 Machine-readable summary rules for the evaluation platform.

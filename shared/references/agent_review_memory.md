@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/agent_review_memory.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Agent Review Memory (Shared)
 
 Write-only format for `.hex-skills/agent-review/review_history.md` — human audit trail of agent review decisions. Not read by agents or the review workflow (stateless review model).

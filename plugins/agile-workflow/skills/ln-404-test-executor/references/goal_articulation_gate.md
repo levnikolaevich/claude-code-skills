@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/goal_articulation_gate.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Goal Articulation Gate
 
 Mandatory micro-step before execution/review/analysis. Forces explicit statement of the REAL goal to prevent surface-level reasoning failures.

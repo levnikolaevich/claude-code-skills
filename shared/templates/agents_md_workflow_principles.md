@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/templates/agents_md_workflow_principles.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 <!-- Opt-in shard. Inserted into agents_md_template.md at {{WORKFLOW_PRINCIPLES_BLOCK}} when ENABLE_WORKFLOW_PRINCIPLES=true. Universal workflow rules only — anything harness-specific, project-specific, or path-scoped goes elsewhere. See references/agent_instructions_writing_guide.md for rationale. -->
 
 ## Workflow Principles

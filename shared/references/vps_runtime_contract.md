@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/vps_runtime_contract.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # VPS Runtime Contract
 
 <!-- SCOPE: Shared runtime contract for ln-031 through ln-034 VPS environment workers. -->

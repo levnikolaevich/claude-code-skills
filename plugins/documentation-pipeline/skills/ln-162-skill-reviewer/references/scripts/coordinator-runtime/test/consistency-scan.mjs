@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SOURCE-OF-TRUTH: shared/scripts/coordinator-runtime/test/consistency-scan.mjs. Edit ONLY here; run `node tools/marketplace/shared.mjs sync`
 
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, extname, join, resolve } from "node:path";

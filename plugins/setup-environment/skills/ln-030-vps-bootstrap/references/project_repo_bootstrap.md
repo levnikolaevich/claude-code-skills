@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/project_repo_bootstrap.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Project repo bootstrap
 
 <!-- SCOPE: Executable repo setup recipe for ln-032-vps-project-runtime. -->

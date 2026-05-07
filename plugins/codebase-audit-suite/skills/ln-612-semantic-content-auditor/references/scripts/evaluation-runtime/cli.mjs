@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SOURCE-OF-TRUTH: shared/scripts/evaluation-runtime/cli.mjs. Edit ONLY here; run `node tools/marketplace/shared.mjs sync`
 
 import { existsSync } from "node:fs";
 import { parseArgs } from "node:util";

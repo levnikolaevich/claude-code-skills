@@ -124,6 +124,9 @@ export function createOutboxService(deps: { outboxRepo: OutboxRepository; log: L
     selectDue(limit = 5): OutboxRow[] {
       return deps.outboxRepo.selectDue(limit);
     },
+    claimDue(limit = 5): OutboxRow[] {
+      return deps.outboxRepo.claimDue(limit);
+    },
     isStatusEvent,
     update: (...args: Parameters<typeof deps.outboxRepo.update>) => deps.outboxRepo.update(...args),
     counts: () => deps.outboxRepo.counts(),

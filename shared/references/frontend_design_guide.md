@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/frontend_design_guide.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Frontend Design Guide
 
 Framework-agnostic design principles for frontend task execution and review. Loaded conditionally when task involves UI files (`.tsx`, `.vue`, `.svelte`, `.html`, `.css`, `.scss`) or Story AC mentions UI/page/component/layout/screen/form/dashboard.

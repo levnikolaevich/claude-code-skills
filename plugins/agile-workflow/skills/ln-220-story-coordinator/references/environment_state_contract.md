@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/environment_state_contract.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Environment State Contract
 
 Shared project-scoped contract for `.hex-skills/environment_state.json`.

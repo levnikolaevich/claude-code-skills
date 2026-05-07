@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/templates/guide_template.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # [Pattern Name]
 
 <!-- SCOPE: Pattern documentation using TABLES and brief descriptions ONLY.

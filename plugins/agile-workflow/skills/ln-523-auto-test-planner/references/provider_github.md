@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/provider_github.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # GitHub Issues Provider Operations
 
 <!-- SCOPE: Full operation pseudocode for GitHub Mode. Loaded only when environment_state.json task_management.provider=github. Uses gh CLI + GitHub REST API for sub-issues and Projects v2 for status tracking. -->

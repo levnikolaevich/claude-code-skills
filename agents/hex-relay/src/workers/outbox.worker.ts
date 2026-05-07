@@ -6,6 +6,7 @@ import { TIMING } from "../config/paths.js";
 import { splitForTelegram, splitForTelegramMarkdown } from "../lib/telegramSplit.js";
 import { toTelegramMarkdownV2 } from "../lib/telegramMarkdown.js";
 import { createWorkerLoop, type DrainableWorker } from "./workerLoop.js";
+import { recordTelegramSendFailure } from "../observability/metrics.js";
 
 export type OutboxWorker = DrainableWorker;
 
@@ -143,15 +144,16 @@ export function createOutboxWorker(deps: {
           );
           return;
         } catch (fallbackError) {
-          handleSendError(row, fallbackError);
+          handleTelegramFailure(row, fallbackError);
           return;
         }
       }
-      handleSendError(row, error);
+      handleTelegramFailure(row, error);
     }
   }
 
-  function handleSendError(row: OutboxRow, error: unknown): void {
+  function handleTelegramFailure(row: OutboxRow, error: unknown): void {
+    recordTelegramSendFailure();
     if (isRetryAfter(error)) {
       const retryAfter = (error.parameters?.retry_after ?? 30) + 1;
       deps.outbox.update(row.id, {
@@ -202,7 +204,7 @@ export function createOutboxWorker(deps: {
       name: "outbox worker",
       intervalMs: TIMING.outboxPollMs,
       async runOnce() {
-        const rows = deps.outbox.selectDue(5);
+        const rows = deps.outbox.claimDue(5);
         for (const row of rows) {
           await deliverRow(row);
         }

@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/shared_auth_state.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Shared Claude/Codex auth state (`/var/lib/claude-shared/`)
 
 <!-- SCOPE: Multi-bot deployment pattern that lets one Claude Max OAuth + one Codex OAuth serve N project-bot Linux users on the same VPS without burning N device slots. -->

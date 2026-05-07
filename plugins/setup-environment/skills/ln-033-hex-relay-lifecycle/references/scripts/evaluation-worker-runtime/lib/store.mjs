@@ -1,3 +1,5 @@
+// SOURCE-OF-TRUTH: shared/scripts/evaluation-worker-runtime/lib/store.mjs. Edit ONLY here; run `node tools/marketplace/shared.mjs sync`
+
 import {
     buildWorkerManifestSchema,
     createWorkerRuntimeStore,

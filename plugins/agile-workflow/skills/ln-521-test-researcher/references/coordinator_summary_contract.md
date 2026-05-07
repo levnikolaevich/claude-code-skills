@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/coordinator_summary_contract.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Coordinator Summary Contract
 
 Machine-readable worker outputs for standalone workers and coordinator runtimes.

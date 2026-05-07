@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/agent_review_workflow.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Agent Review Workflow (Shared)
 
 Common workflow for all agent review workers. Each skill provides parameters and unique logic; this reference defines the shared execution mechanics.

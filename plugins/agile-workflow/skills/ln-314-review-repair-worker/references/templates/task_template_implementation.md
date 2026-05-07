@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/templates/task_template_implementation.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Task Title
 <!-- Task Size Guideline: Optimal 3-5 hours development time (atomic, testable unit). Too small < 3h -> combine with related work. Too large > 8h -> decompose further. -->
 <!-- SCOPE: Implementation tasks ONLY. DO NOT create new tests in this task.

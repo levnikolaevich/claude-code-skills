@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/planning_worker_runtime_contract.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Planning Worker Runtime Contract
 
 Runtime family for `ln-201`, `ln-221`, `ln-222`, and `ln-230`.

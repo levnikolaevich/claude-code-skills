@@ -1,3 +1,5 @@
+// SOURCE-OF-TRUTH: shared/scripts/story-gate-runtime/lib/guards.mjs. Edit ONLY here; run `node tools/marketplace/shared.mjs sync`
+
 import {
     STORY_GATE_COMPLETED_TEST_STATUS_LIST,
     STORY_GATE_PRE_VERIFICATION_ALLOWED_TEST_STATUS_LIST,

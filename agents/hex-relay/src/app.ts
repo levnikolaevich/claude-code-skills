@@ -1,6 +1,5 @@
 import Fastify from "fastify";
 import type { FastifyInstance } from "fastify";
-import { Composer } from "grammy";
 import type { Env } from "./config/env.js";
 import { loadBuildInfo } from "./config/buildInfo.js";
 import { buildPaths, buildUserRuntimePaths } from "./config/paths.js";
@@ -49,6 +48,8 @@ import { buildSetBuddyHandler } from "./handlers/telegram/setBuddy.js";
 import { buildUsageHandler } from "./handlers/telegram/usage.js";
 import { createReactToInbound, createReactToVoiceTranscribing } from "./handlers/telegram/react.js";
 import { registerErrorHandler } from "./handlers/http/plugins/errorHandler.plugin.js";
+import { registerBearerAuth } from "./handlers/http/plugins/auth.plugin.js";
+import { registerRequestContext } from "./handlers/http/plugins/requestContext.plugin.js";
 import { configureZodFastify } from "./handlers/http/zodFastify.js";
 import { registerHookRoutes } from "./handlers/http/hooks.routes.js";
 import { registerDispatchRoutes } from "./handlers/http/dispatch.routes.js";
@@ -286,14 +287,17 @@ export function buildApp(env: Env, log: Logger = createLogger()): App {
   bot.use(usageHandler);
   bot.use(inboundHandler);
 
-  void Composer;
-
   const httpServer: FastifyInstance = Fastify({
     logger: false,
     bodyLimit: 1 * 1024 * 1024,
   });
   configureZodFastify(httpServer);
+  registerRequestContext(httpServer, log);
   registerErrorHandler(httpServer, log);
+  registerBearerAuth(httpServer, {
+    token: env.httpToken,
+    protectedPrefixes: ["/hook", "/tasks", "/dispatch", "/memory"],
+  });
   registerHookRoutes(httpServer, {
     hookIngestion,
   });
@@ -360,6 +364,48 @@ export function buildApp(env: Env, log: Logger = createLogger()): App {
   let started = false;
   let pollPromise: Promise<void> | null = null;
 
+  async function stopApp(markFatal = false): Promise<void> {
+    if (!started) {
+      if (markFatal) process.exitCode = 1;
+      return;
+    }
+    if (markFatal) process.exitCode = 1;
+    started = false;
+    log.info("stopping bot polling");
+    try {
+      await bot.stop();
+    } catch (error) {
+      log.warn({ err: String(error) }, "bot.stop failed");
+    }
+    if (pollPromise) {
+      await pollPromise;
+      pollPromise = null;
+    }
+    try {
+      await httpServer.close();
+    } catch (error) {
+      log.warn({ err: String(error) }, "http close failed");
+    }
+    const stopResults = await Promise.allSettled([
+      inboundWorker.stop(),
+      voiceTranscriptionWorker.stop(),
+      outboxWorker.stop(),
+      errorAlerterWorker.stop(),
+      mediaCleanupWorker.stop(),
+      ...(idleSessionWorker ? [idleSessionWorker.stop()] : []),
+      pendingReplyGcWorker.stop(),
+    ]);
+    for (const result of stopResults) {
+      if (result.status === "rejected") {
+        process.exitCode = 1;
+        log.warn({ err: String(result.reason) }, "worker stop failed");
+      }
+    }
+    typing.stopAll();
+    closeDb(db);
+    log.info("shutdown complete");
+  }
+
   return {
     async start() {
       if (started) return;
@@ -388,47 +434,15 @@ export function buildApp(env: Env, log: Logger = createLogger()): App {
         .start({
           drop_pending_updates: false,
         })
-        .catch((error: unknown) => {
+        .catch(async (error: unknown) => {
           if (!started) return;
           log.error({ err: String(error) }, "telegram polling stopped unexpectedly");
-          process.exit(1);
+          pollPromise = null;
+          await stopApp(true);
         });
     },
     async stop() {
-      if (!started) return;
-      started = false;
-      log.info("stopping bot polling");
-      try {
-        await bot.stop();
-      } catch (error) {
-        log.warn({ err: String(error) }, "bot.stop failed");
-      }
-      if (pollPromise) {
-        await pollPromise;
-        pollPromise = null;
-      }
-      try {
-        await httpServer.close();
-      } catch (error) {
-        log.warn({ err: String(error) }, "http close failed");
-      }
-      const stopResults = await Promise.allSettled([
-        inboundWorker.stop(),
-        voiceTranscriptionWorker.stop(),
-        outboxWorker.stop(),
-        errorAlerterWorker.stop(),
-        mediaCleanupWorker.stop(),
-        ...(idleSessionWorker ? [idleSessionWorker.stop()] : []),
-        pendingReplyGcWorker.stop(),
-      ]);
-      for (const result of stopResults) {
-        if (result.status === "rejected") {
-          log.warn({ err: String(result.reason) }, "worker stop failed");
-        }
-      }
-      typing.stopAll();
-      closeDb(db);
-      log.info("shutdown complete");
+      await stopApp(false);
     },
   };
 }

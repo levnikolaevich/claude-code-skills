@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/plan_review_pipeline.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Plan Review Pipeline (mode=plan_review)
 
 Pipeline orchestration for MCP Ref research. Runs in parallel with agent background tasks.

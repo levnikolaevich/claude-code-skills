@@ -1,3 +1,5 @@
+// SOURCE-OF-TRUTH: shared/scripts/docs-pipeline-runtime/lib/store.mjs. Edit ONLY here; run `node tools/marketplace/shared.mjs sync`
+
 import { resolve } from "node:path";
 import { docsGenerationWorkerSummarySchema } from "../../coordinator-runtime/lib/schemas.mjs";
 import {

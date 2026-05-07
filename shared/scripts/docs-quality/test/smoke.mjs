@@ -1,3 +1,5 @@
+// SOURCE-OF-TRUTH: shared/scripts/docs-quality/test/smoke.mjs. Edit ONLY here; run `node tools/marketplace/shared.mjs sync`
+
 import { afterEach, describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";

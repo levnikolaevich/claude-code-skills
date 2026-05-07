@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/agents/prompt_templates/refinement_perspectives.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Refinement Perspectives
 
 Perspective definitions for the refinement state machine. Each perspective launches an independent advisor session. The orchestrator loads the matching `## perspective_{name}` section and fills `{review_perspective}` in the prompt.

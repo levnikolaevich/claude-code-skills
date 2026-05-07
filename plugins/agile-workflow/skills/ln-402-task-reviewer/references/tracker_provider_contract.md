@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/tracker_provider_contract.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Tracker Provider Contract
 
 <!-- SCOPE: Provider-agnostic task tracker operations for skills that support Linear, GitHub Issues, and File Mode. -->

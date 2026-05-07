@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/premortem_validation.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Pre-mortem Validation (Criterion #27)
 
 <!-- SCOPE: Pre-mortem analysis criterion #27 ONLY. Contains Tiger/Paper Tiger/Elephant classification, evidence test, actions. -->

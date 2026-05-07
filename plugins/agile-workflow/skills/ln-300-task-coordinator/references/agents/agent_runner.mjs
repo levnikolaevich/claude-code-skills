@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+// SOURCE-OF-TRUTH: shared/agents/agent_runner.mjs. Edit ONLY here; run `node tools/marketplace/shared.mjs sync`
+
 /**
  * Universal Agent Runner for Multi-Model Orchestration (Node.js ESM port).
  *

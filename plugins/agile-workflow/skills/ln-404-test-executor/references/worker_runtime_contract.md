@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/worker_runtime_contract.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Worker Runtime Contract
 
 Shared deterministic runtime model for stateful L3 workers.

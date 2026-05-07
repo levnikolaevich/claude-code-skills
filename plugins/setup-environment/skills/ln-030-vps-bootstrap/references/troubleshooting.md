@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/troubleshooting.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Troubleshooting - ln-030-vps-bootstrap
 
 Reactive lookup for issues that surface during or after install. The sections are ordered by operational impact: restore auth/service first, then isolation/session correctness, then updater/provider issues, then low-risk noise.

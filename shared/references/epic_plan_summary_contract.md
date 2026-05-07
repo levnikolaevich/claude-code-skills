@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/epic_plan_summary_contract.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Epic Plan Summary Contract
 
 Machine-readable final summary for `ln-210`.

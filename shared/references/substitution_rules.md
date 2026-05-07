@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/substitution_rules.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Substitution rules — ln-030-vps-bootstrap
 
 Two distinct substitution paths exist in the skill. Confusing them silently breaks the install.

@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/clean_code_checklist.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Clean Code Checklist
 
 Universal patterns for detecting dead code, backward-compat shims, and legacy remnants.

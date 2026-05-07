@@ -1,3 +1,5 @@
+// SOURCE-OF-TRUTH: shared/scripts/coordinator-runtime/lib/loop-health.mjs. Edit ONLY here; run `node tools/marketplace/shared.mjs sync`
+
 export const LOOP_HEALTH_FAILURE_CLASSES = Object.freeze({
     NONE: "none",
     TIMEOUT_IDLE: "timeout_idle",

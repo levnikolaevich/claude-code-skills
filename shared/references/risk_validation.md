@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/risk_validation.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Risk Validation (Criterion #20)
 
 <!-- SCOPE: Implementation risk analysis criterion #20 ONLY. Contains risk categories, Impact x Probability scoring, auto-fix rules. -->

@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/test_planning_worker_runtime_contract.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Test Planning Worker Runtime Contract
 
 Runtime family for `ln-521`, `ln-522`, and `ln-523`.

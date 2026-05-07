@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/templates/agents_md_template.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # {{PROJECT_NAME}}
 
 {{PROJECT_DESCRIPTION}}

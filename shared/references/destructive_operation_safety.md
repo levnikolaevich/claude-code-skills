@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/destructive_operation_safety.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Destructive Operation Safety
 
 Single source of truth for detecting, classifying, and guarding against destructive operations across the pipeline.

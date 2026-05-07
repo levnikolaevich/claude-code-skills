@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SOURCE-OF-TRUTH: shared/scripts/environment-setup-runtime/test/negative.mjs. Edit ONLY here; run `node tools/marketplace/shared.mjs sync`
 
 import { rmSync } from "node:fs";
 import { join } from "node:path";

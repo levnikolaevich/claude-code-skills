@@ -1,3 +1,5 @@
+// SOURCE-OF-TRUTH: shared/scripts/benchmark-worker-runtime/lib/phases.mjs. Edit ONLY here; run `node tools/marketplace/shared.mjs sync`
+
 export const BENCHMARK_WORKER_PHASES = Object.freeze([
     "PHASE_0_CONFIG",
     "PHASE_1_PREFLIGHT",

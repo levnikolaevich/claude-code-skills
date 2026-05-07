@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/hex_relay_deploy.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # hex-relay deploy
 
 <!-- SCOPE: hex-relay deployment and compatibility procedure for ln-030-vps-bootstrap. -->

@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/benchmark_generation.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Benchmark Generation Guide
 
 <!-- SCOPE: Auto-generating benchmarks for target functions when no existing benchmark exists. -->

@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/replan_algorithm.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Replan Algorithm Pattern
 
 Universal comparison logic for REPLAN operations across Epic, Story, and Task levels.

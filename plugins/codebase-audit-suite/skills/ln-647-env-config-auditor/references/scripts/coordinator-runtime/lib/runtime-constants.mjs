@@ -1,3 +1,5 @@
+// SOURCE-OF-TRUTH: shared/scripts/coordinator-runtime/lib/runtime-constants.mjs. Edit ONLY here; run `node tools/marketplace/shared.mjs sync`
+
 export const TERMINAL_RUNTIME_PHASES = Object.freeze({
     PAUSED: "PAUSED",
     DONE: "DONE",

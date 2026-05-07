@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/standards_validation.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Standards Validation (Criterion #5)
 
 <!-- SCOPE: RFC/OWASP/REST/Security compliance criterion #5 ONLY. Contains standard types, compliance checks. -->

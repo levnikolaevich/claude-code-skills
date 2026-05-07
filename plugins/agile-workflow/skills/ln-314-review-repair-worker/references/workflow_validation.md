@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/workflow_validation.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Workflow Validation (Criteria #7-#13)
 
 <!-- SCOPE: Workflow validation criteria #7-#13 ONLY. Contains test strategy, KISS/YAGNI, task order, Story size rules. -->

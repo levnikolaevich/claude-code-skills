@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/auto_discovery_pattern.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Auto-Discovery Fallback Chains
 
 <!-- SCOPE: Standard pattern for loading context with fallback sources. Phase 0 reads environment state, subsequent phases use provider-aware discovery. -->

@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/audit_summary_contract.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Audit Summary Contract
 
 Audit payload rules for 6XX workers running on the evaluation-worker summary envelope.

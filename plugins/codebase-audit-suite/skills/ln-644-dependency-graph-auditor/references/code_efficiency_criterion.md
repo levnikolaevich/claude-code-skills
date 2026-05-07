@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/code_efficiency_criterion.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Code Efficiency Criterion
 
 Self-check for code-writing skills. Applied before submitting code for review.

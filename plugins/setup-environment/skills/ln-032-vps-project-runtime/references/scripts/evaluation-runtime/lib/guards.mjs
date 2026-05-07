@@ -1,3 +1,5 @@
+// SOURCE-OF-TRUTH: shared/scripts/evaluation-runtime/lib/guards.mjs. Edit ONLY here; run `node tools/marketplace/shared.mjs sync`
+
 import { REVIEW_RESOLVED_AGENT_STATUS_SET } from "../../coordinator-runtime/lib/runtime-constants.mjs";
 
 function latestPayload(checkpoints, phase) {

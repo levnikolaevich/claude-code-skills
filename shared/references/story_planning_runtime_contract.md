@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/story_planning_runtime_contract.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Story Planning Runtime Contract
 
 Runtime contract for `ln-220`.

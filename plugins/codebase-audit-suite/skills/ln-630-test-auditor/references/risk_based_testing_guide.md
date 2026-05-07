@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/risk_based_testing_guide.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Risk-Based Testing Guide
 
 <!-- SCOPE: Risk-Based Testing philosophy and usefulness criteria ONLY. Contains prioritization rules, Test Usefulness Criteria, Kent Beck principle. -->

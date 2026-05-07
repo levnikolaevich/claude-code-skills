@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/phase2_research_audit.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Phase 3: Research & Audit
 
 **Always execute — no exceptions.** Steps 1-5 are mode=story only. Steps 3-4 and criteria #5, #6, #21, #28 apply to ALL modes (story, plan_review).

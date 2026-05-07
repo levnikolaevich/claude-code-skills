@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/environment_worker_runtime_contract.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Environment Worker Runtime Contract
 
 Runtime contract for `ln-011` through `ln-015`.

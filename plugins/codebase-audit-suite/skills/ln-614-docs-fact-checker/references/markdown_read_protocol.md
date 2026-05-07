@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/markdown_read_protocol.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Markdown Read Protocol
 
 <!-- SCOPE: Shared protocol for reading markdown files efficiently in documentation skills and audits. Defines progressive disclosure and section-first reading. -->

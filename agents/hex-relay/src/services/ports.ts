@@ -116,6 +116,7 @@ export interface MessagesRepository {
   ): number;
   update(msgId: number, fields: MessageUpdateCommand): void;
   selectDue(limit?: number): InboundMessage[];
+  claimDue(limit?: number): InboundMessage[];
   findById(id: number): InboundMessage | null;
   findByTg(chatId: number, msgId: number): InboundMessage | null;
   getChatId(id: number): number | null;
@@ -192,6 +193,7 @@ export interface OutboxEnqueueCommand {
 export interface OutboxRepository {
   enqueue(args: OutboxEnqueueCommand): number;
   selectDue(limit?: number): OutboxRow[];
+  claimDue(limit?: number): OutboxRow[];
   update(id: number, fields: Partial<OutboxRow>): void;
   counts(): { queued: number; abandoned: number; unknown: number };
 }

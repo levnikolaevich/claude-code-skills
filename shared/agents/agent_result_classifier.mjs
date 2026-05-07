@@ -1,3 +1,5 @@
+// SOURCE-OF-TRUTH: shared/agents/agent_result_classifier.mjs. Edit ONLY here; run `node tools/marketplace/shared.mjs sync`
+
 export const AGENT_FAILURE_CLASSES = Object.freeze({
     NONE: "none",
     TIMEOUT_IDLE: "timeout_idle",

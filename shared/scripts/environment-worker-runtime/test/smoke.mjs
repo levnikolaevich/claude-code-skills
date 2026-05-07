@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SOURCE-OF-TRUTH: shared/scripts/environment-worker-runtime/test/smoke.mjs. Edit ONLY here; run `node tools/marketplace/shared.mjs sync`
 
 import { existsSync, rmSync } from "node:fs";
 import { join } from "node:path";

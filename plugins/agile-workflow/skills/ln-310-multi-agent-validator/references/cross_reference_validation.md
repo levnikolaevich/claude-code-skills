@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/cross_reference_validation.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Cross-Reference Validation (Criteria #25-#26)
 
 <!-- SCOPE: Cross-Story overlap and duplication criteria #25-#26 ONLY. Contains AC overlap detection, task duplication checks. -->

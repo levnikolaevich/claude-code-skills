@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/research_tool_fallback.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Research Tool Fallback
 
 <!-- SCOPE: Standardized fallback chain for documentation/standards research across MCP tools. Read provider from .hex-skills/environment_state.json → research section, execute in priority order. -->

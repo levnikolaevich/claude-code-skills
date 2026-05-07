@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/god_session_install.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # God-session install
 
 <!-- SCOPE: tmux, systemd, scheduler, sandbox, statusLine, and host updater setup for ln-030-vps-bootstrap. -->

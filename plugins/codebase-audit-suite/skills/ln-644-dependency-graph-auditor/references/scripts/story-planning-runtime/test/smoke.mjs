@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SOURCE-OF-TRUTH: shared/scripts/story-planning-runtime/test/smoke.mjs. Edit ONLY here; run `node tools/marketplace/shared.mjs sync`
 
 import { rmSync } from "node:fs";
 import { join } from "node:path";

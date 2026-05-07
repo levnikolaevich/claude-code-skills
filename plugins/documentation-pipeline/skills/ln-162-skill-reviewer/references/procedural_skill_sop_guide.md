@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/procedural_skill_sop_guide.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Procedural Skill SOP/TWI Guide
 
 **Version:** 1.0.0

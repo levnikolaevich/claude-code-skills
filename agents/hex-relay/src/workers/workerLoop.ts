@@ -1,5 +1,6 @@
 import { setTimeout as delay } from "node:timers/promises";
 import type { Logger } from "../lib/logger.js";
+import { recordWorkerTickFailure } from "../observability/metrics.js";
 
 export interface DrainableWorker {
   start(): Promise<void>;
@@ -49,6 +50,7 @@ export function createWorkerLoop(opts: WorkerLoopOptions): DrainableWorker {
             try {
               await opts.runOnce();
             } catch (error) {
+              recordWorkerTickFailure(opts.name);
               opts.log.error({ err: String(error) }, `${opts.name} iteration failed`);
             }
           }

@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/quality_worker_runtime_contract.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Quality Worker Runtime Contract
 
 Runtime family for `ln-511`, `ln-512`, `ln-513`, and `ln-514`.

@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/output_normalization.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Output Normalization
 
 <!-- SCOPE: Shared reference for normalizing, deduplicating, and grouping CLI output before presenting to agent or truncating. -->

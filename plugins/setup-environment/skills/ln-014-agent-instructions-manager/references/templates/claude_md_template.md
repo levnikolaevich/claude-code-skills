@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/templates/claude_md_template.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # {{PROJECT_NAME}}
 
 <!-- SCOPE: Thin Claude Code projection of AGENTS.md via the @ import. AGENTS.md is the canonical source. Do not duplicate content here — add it to AGENTS.md instead, or scope it to `.claude/rules/*.md` with a `paths:` filter. -->

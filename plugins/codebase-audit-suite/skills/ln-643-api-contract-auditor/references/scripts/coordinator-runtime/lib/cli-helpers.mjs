@@ -1,3 +1,5 @@
+// SOURCE-OF-TRUTH: shared/scripts/coordinator-runtime/lib/cli-helpers.mjs. Edit ONLY here; run `node tools/marketplace/shared.mjs sync`
+
 export function outputJson(data) {
     process.stdout.write(JSON.stringify(data, null, 2) + "\n");
 }

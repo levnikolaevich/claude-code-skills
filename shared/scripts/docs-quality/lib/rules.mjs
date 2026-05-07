@@ -1,3 +1,5 @@
+// SOURCE-OF-TRUTH: shared/scripts/docs-quality/lib/rules.mjs. Edit ONLY here; run `node tools/marketplace/shared.mjs sync`
+
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";

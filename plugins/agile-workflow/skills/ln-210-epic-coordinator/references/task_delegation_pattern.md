@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/task_delegation_pattern.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Agent Tool Delegation Pattern
 
 Standard pattern for coordinators delegating work through the Agent tool with context isolation.

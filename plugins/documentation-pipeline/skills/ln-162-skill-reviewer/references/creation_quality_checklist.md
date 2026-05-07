@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/creation_quality_checklist.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Creation Quality Checklist
 
 Prevention checklist for content creators. Maps to story validation criteria — following these rules prevents penalty points at validation stage.

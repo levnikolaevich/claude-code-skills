@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/mcp_integration_patterns.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # MCP Integration Patterns
 
 <!-- SCOPE: Hex MCP integration patterns for skills. Referenced via MANDATORY READ. -->

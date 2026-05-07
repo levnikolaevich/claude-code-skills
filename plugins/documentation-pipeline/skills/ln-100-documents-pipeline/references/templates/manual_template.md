@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/templates/manual_template.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # {{PACKAGE_NAME}} v{{VERSION}} - Usage Manual
 
 <!-- SCOPE: API/Method reference ONLY. Contains technical descriptions, parameters, return types. -->

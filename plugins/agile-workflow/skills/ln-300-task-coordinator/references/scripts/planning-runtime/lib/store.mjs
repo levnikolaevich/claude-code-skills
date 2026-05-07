@@ -1,3 +1,5 @@
+// SOURCE-OF-TRUTH: shared/scripts/planning-runtime/lib/store.mjs. Edit ONLY here; run `node tools/marketplace/shared.mjs sync`
+
 import { createRuntimeStore, readJsonFile } from "../../coordinator-runtime/lib/core.mjs";
 import { pendingDecisionSchema } from "../../coordinator-runtime/lib/schemas.mjs";
 import { assertSchema } from "../../coordinator-runtime/lib/validate.mjs";

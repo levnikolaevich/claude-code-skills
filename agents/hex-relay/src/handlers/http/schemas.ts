@@ -113,11 +113,11 @@ export const MemoryForgetBodySchema = z.object({
 });
 
 export const DispatchRecentQuerySchema = z.object({
-  n: z.coerce.number().int().default(10),
+  n: z.coerce.number().int().min(1).max(100).default(10),
 });
 
 export const MemoryRecentQuerySchema = z.object({
-  n: z.coerce.number().int().default(20),
+  n: z.coerce.number().int().min(1).max(100).default(20),
   category: z.string().optional(),
 });
 

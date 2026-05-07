@@ -9,6 +9,7 @@ import pino from "pino";
 import { z } from "zod/v4";
 import { configureZodFastify } from "../src/handlers/http/zodFastify.js";
 import { registerErrorHandler } from "../src/handlers/http/plugins/errorHandler.plugin.js";
+import { registerBearerAuth } from "../src/handlers/http/plugins/auth.plugin.js";
 import {
   registerHealthRoutes,
   type RuntimeStatusDeps,
@@ -130,6 +131,88 @@ test("health returns compatible fields plus explicit versions", async () => {
   await app.close();
 });
 
+test("live ready and metrics are public operational endpoints", async () => {
+  const app = createApp();
+  registerBearerAuth(app, {
+    token: "x".repeat(32),
+    protectedPrefixes: ["/hook", "/tasks", "/dispatch", "/memory"],
+  });
+  registerHealthRoutes(app, runtimeDeps());
+
+  const live = await app.inject({ method: "GET", url: "/live" });
+  assert.equal(live.statusCode, 200);
+  assert.deepEqual(live.json(), { ok: true });
+
+  const ready = await app.inject({ method: "GET", url: "/ready" });
+  assert.equal(ready.statusCode, 200);
+  assert.deepEqual(ready.json(), { ok: true });
+
+  const metrics = await app.inject({ method: "GET", url: "/metrics" });
+  assert.equal(metrics.statusCode, 200);
+  assert.match(metrics.body, /hex_relay_queue_depth\{queue="inbound"\} 3/);
+  assert.match(metrics.body, /hex_relay_queue_depth\{queue="outbox"\} 2/);
+  assert.match(metrics.body, /hex_relay_queue_depth\{queue="pending_replies"\} 5/);
+  await app.close();
+});
+
+test("ready returns 503 when dependencies fail", async () => {
+  const app = createApp();
+  registerHealthRoutes(app, {
+    ...runtimeDeps(),
+    outboxRepo: {
+      counts: () => {
+        throw new Error("db closed");
+      },
+    },
+  });
+
+  const response = await app.inject({ method: "GET", url: "/ready" });
+  assert.equal(response.statusCode, 503);
+  assert.equal(response.json().error.code, "dependency_unavailable");
+  await app.close();
+});
+
+test("protected HTTP routes require bearer token", async () => {
+  const app = createApp();
+  registerBearerAuth(app, {
+    token: "super-secret-token-value-32-chars",
+    protectedPrefixes: ["/hook", "/tasks", "/dispatch", "/memory"],
+  });
+  registerDispatchRoutes(app, {
+    log,
+    dispatch: {
+      start: () => 1,
+      phase: noop,
+      end: noop,
+      recent: () => [],
+    },
+  });
+  registerHealthRoutes(app, runtimeDeps());
+
+  const missing = await app.inject({ method: "GET", url: "/dispatch/recent" });
+  assert.equal(missing.statusCode, 401);
+  assert.equal(missing.json().error.code, "unauthorized");
+
+  const wrong = await app.inject({
+    method: "GET",
+    url: "/dispatch/recent",
+    headers: { authorization: "Bearer wrong" },
+  });
+  assert.equal(wrong.statusCode, 401);
+
+  const health = await app.inject({ method: "GET", url: "/health" });
+  assert.equal(health.statusCode, 200);
+
+  const okResponse = await app.inject({
+    method: "GET",
+    url: "/dispatch/recent",
+    headers: { authorization: "Bearer super-secret-token-value-32-chars" },
+  });
+  assert.equal(okResponse.statusCode, 200);
+  assert.deepEqual(okResponse.json(), { runs: [] });
+  await app.close();
+});
+
 test("dispatch routes use Fastify schema validation", async () => {
   const app = createApp();
   let phaseRunId = 0;
@@ -180,6 +263,10 @@ test("dispatch routes use Fastify schema validation", async () => {
   assert.equal(phaseRunId, 11);
   const recent = await app.inject({ method: "GET", url: "/dispatch/recent?n=1" });
   assert.equal(recent.json().runs[0].id, 7);
+  const zero = await app.inject({ method: "GET", url: "/dispatch/recent?n=0" });
+  assert.equal(zero.statusCode, 400);
+  const tooMany = await app.inject({ method: "GET", url: "/dispatch/recent?n=101" });
+  assert.equal(tooMany.statusCode, 400);
   await app.close();
 });
 
@@ -231,6 +318,10 @@ test("memory and task routes validate and serialize stable contracts", async () 
   assert.deepEqual(added.json(), { memory_id: 9 });
   const recent = await app.inject({ method: "GET", url: "/memory/recent" });
   assert.equal(recent.json().memories[0].text, "keep hooks compatible");
+  const negativeRecent = await app.inject({ method: "GET", url: "/memory/recent?n=-1" });
+  assert.equal(negativeRecent.statusCode, 400);
+  const tooManyRecent = await app.inject({ method: "GET", url: "/memory/recent?n=101" });
+  assert.equal(tooManyRecent.statusCode, 400);
   const tasks = await app.inject({ method: "POST", url: "/tasks/poll" });
   assert.deepEqual(tasks.json(), { ok: true, count: 3 });
   await app.close();

@@ -33,6 +33,7 @@ const RawEnvSchema = z.object({
   SERVICE_PREFIX: UnitFragmentSchema,
   BOT_USER: LinuxUserSchema,
   RELAY_HOOK_PORT: z.coerce.number().int().min(1).max(65_535),
+  RELAY_HTTP_TOKEN: z.string().min(32, "RELAY_HTTP_TOKEN must be at least 32 characters"),
   RELAY_VERBOSITY: z.enum(["quiet", "normal", "verbose"]).default("normal"),
   RELAY_INBOUND_REACTIONS: z.string().optional(),
   RELAY_VOICE_TRANSCRIPTION: z.enum(["off", "local"]).default("off"),
@@ -68,6 +69,7 @@ export interface Env {
   dbPath: string;
   hookHost: string;
   hookPort: number;
+  httpToken: string;
   verbosity: "quiet" | "normal" | "verbose";
   inboundReactions: string[];
   voiceTranscription: "off" | "local";
@@ -126,6 +128,7 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
     dbPath: `/var/lib/${projectName}/relay.db`,
     hookHost: "127.0.0.1",
     hookPort: v.RELAY_HOOK_PORT,
+    httpToken: v.RELAY_HTTP_TOKEN,
     verbosity: v.RELAY_VERBOSITY,
     inboundReactions: parseReactions(v.RELAY_INBOUND_REACTIONS),
     voiceTranscription: v.RELAY_VOICE_TRANSCRIPTION,

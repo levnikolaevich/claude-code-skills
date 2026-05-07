@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SOURCE-OF-TRUTH: shared/scripts/story-execution-runtime/test/loop-health.mjs. Edit ONLY here; run `node tools/marketplace/shared.mjs sync`
 
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";

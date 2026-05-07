@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/agents/prompt_templates/iterative_refinement.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Task: Iterative Refinement Review
 
 You are performing an independent quality review of {artifact_type} that has already been through initial validation and agent review. Your job is to find remaining issues that were missed.

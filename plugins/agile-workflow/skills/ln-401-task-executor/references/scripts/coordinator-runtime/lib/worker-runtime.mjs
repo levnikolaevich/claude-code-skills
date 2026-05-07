@@ -1,3 +1,5 @@
+// SOURCE-OF-TRUTH: shared/scripts/coordinator-runtime/lib/worker-runtime.mjs. Edit ONLY here; run `node tools/marketplace/shared.mjs sync`
+
 import { randomUUID } from "node:crypto";
 import { resolve } from "node:path";
 import { createRuntimeStore, readJsonFile } from "./core.mjs";

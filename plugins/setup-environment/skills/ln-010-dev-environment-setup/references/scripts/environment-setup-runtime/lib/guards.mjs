@@ -1,3 +1,5 @@
+// SOURCE-OF-TRUTH: shared/scripts/environment-setup-runtime/lib/guards.mjs. Edit ONLY here; run `node tools/marketplace/shared.mjs sync`
+
 import { PHASES } from "./phases.mjs";
 
 const ALLOWED_TRANSITIONS = new Map([

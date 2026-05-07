@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/benchmark_worker_runtime_contract.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Benchmark Worker Runtime Contract
 
 Runtime family for stateful benchmark workers.

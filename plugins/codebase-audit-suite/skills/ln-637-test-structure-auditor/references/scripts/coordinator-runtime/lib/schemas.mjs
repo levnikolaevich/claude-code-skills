@@ -1,3 +1,5 @@
+// SOURCE-OF-TRUTH: shared/scripts/coordinator-runtime/lib/schemas.mjs. Edit ONLY here; run `node tools/marketplace/shared.mjs sync`
+
 import {
     OPTIMIZATION_CYCLE_STATUS_LIST,
     REVIEW_AGENT_STATUS_LIST,

@@ -1,3 +1,5 @@
+// SOURCE-OF-TRUTH: shared/scripts/story-execution-runtime/lib/guards.mjs. Edit ONLY here; run `node tools/marketplace/shared.mjs sync`
+
 import { TASK_BOARD_STATUSES } from "../../coordinator-runtime/lib/runtime-constants.mjs";
 import { PHASES } from "./phases.mjs";
 

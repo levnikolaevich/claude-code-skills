@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/provider_linear.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Linear Provider Operations
 
 <!-- SCOPE: Full operation pseudocode for Linear Mode. Loaded only when environment_state.json task_management.provider=linear. -->

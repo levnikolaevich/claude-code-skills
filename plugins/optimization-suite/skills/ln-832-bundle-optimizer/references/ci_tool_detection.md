@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/ci_tool_detection.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # CI Tool Detection & Execution Guide
 
 <!-- SCOPE: Unified reference for detecting and running lint, typecheck, test, and build commands across stacks. Single Source of Truth — all skills reference this instead of inline detection logic. -->

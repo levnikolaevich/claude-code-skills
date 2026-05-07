@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/traceability_validation.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Traceability & Verification (Criteria #16-#17, #17b-#17c, #22)
 
 <!-- SCOPE: Story-Task alignment (#16), AC coverage (#17), AC invocability (#17b), scenario completeness (#17c), and AC verify methods (#22). -->

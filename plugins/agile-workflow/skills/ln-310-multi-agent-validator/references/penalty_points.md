@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/penalty_points.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Penalty Points System
 
 <!-- SCOPE: Calculation rules, report format, and edge cases ONLY. -->

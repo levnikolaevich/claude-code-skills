@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/plan_mode_pattern.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Plan Mode Pattern
 
 Standard behavior when skill runs in Plan Mode (read-only).

@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/runtime_status_catalog.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Runtime Status Catalog
 
 Canonical status and terminal-phase names for shared runtimes.

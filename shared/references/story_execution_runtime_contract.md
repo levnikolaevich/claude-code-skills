@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/story_execution_runtime_contract.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Story Execution Runtime Contract
 
 Deterministic runtime for `ln-400-story-executor`.

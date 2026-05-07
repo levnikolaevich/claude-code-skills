@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/operator_dispatcher_install.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Operator dispatcher install
 
 <!-- SCOPE: Local operator-side dispatcher command setup for ln-030-vps-bootstrap. -->

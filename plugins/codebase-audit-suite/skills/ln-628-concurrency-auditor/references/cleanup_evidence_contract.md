@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/cleanup_evidence_contract.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Cleanup Evidence Contract
 
 Canonical evidence model for process cleanup in evaluation workflows.

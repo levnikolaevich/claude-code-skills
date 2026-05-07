@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/community_discussion_formatting.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # GitHub Discussion Formatting Reference
 
 Formatting rules for GitHub Discussions content. Used by announcement and debate skills.

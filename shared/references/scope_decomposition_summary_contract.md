@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/scope_decomposition_summary_contract.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Scope Decomposition Summary Contract
 
 Machine-readable final summary for `ln-200`.

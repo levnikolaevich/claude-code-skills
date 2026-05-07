@@ -1,3 +1,5 @@
+// SOURCE-OF-TRUTH: shared/scripts/task-plan-worker-runtime/lib/guards.mjs. Edit ONLY here; run `node tools/marketplace/shared.mjs sync`
+
 import { computeLinearWorkerResumeAction, validateLinearWorkerTransition } from "../../coordinator-runtime/lib/worker-guards.mjs";
 import { getWorkerPhases } from "./phases.mjs";
 

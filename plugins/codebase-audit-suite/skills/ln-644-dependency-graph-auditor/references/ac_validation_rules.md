@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/ac_validation_rules.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # AC Validation Rules
 
 Standard criteria for validating Acceptance Criteria quality.

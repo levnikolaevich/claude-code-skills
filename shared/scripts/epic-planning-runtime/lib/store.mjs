@@ -1,3 +1,5 @@
+// SOURCE-OF-TRUTH: shared/scripts/epic-planning-runtime/lib/store.mjs. Edit ONLY here; run `node tools/marketplace/shared.mjs sync`
+
 import { resolve } from "node:path";
 import { epicPlanCoordinatorSummarySchema } from "../../coordinator-runtime/lib/schemas.mjs";
 import {

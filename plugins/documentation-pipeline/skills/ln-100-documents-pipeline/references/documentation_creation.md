@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/documentation_creation.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Documentation Creation
 
 <!-- SCOPE: Standardized documentation creation workflow. Doc types, templates, naming, format rules, output contract. -->

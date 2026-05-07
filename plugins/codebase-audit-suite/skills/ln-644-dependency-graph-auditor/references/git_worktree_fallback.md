@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/git_worktree_fallback.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Git Worktree Isolation
 
 <!-- SCOPE: Universal worktree isolation for code-writing skills. Self-detection + branch naming + fallback. -->

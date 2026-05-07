@@ -1,3 +1,5 @@
+// SOURCE-OF-TRUTH: shared/scripts/optimization-runtime/lib/guards.mjs. Edit ONLY here; run `node tools/marketplace/shared.mjs sync`
+
 import {
     OPTIMIZATION_CHECKPOINT_STATUSES,
     OPTIMIZATION_EXECUTION_ALLOWED_VERDICT_LIST,

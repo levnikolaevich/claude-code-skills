@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/mcp_applicability_matrix.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # MCP Applicability Matrix
 
 <!-- SCOPE: Catalog-wide policy for when skills should prefer hex-line, prefer hex-graph, or avoid them. Used by skill authors and ln-162-skill-reviewer. -->

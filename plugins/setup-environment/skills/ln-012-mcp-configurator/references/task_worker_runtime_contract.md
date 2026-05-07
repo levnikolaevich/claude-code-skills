@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/task_worker_runtime_contract.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Task Worker Runtime Contract
 
 Runtime family for `ln-401`, `ln-402`, `ln-403`, and `ln-404`.

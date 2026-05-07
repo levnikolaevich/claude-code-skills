@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/community_strategy_template.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Community Engagement Strategy
 
 > **Scope:** Decision criteria, media plan, and engagement metrics for GitHub Discussions.

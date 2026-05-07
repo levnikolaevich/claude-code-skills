@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/verification_recipes.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Verification recipes — ln-030-vps-bootstrap
 
 Detailed verification commands referenced from `SKILL.md` Definition of Done. Each section maps to a DoD gate.

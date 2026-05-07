@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/numbering_conventions.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Numbering Conventions
 
 Unified rules for Epic, Story, and Task numbering across the workflow.

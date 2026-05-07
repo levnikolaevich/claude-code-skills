@@ -21,6 +21,7 @@ Skills collection for Codex with config-driven Agile task management (Linear, Gi
 | **YAML description quoting** | `SKILL.md` frontmatter | If `description:` contains `:`, wrap it in double quotes |
 | **Research-to-Action Gate** | Before turning research into changes | Ask: "What specific defect in current skill output does this fix?" No defect means informational, not actionable |
 | **Plugin-first edits** | Any skill or shared-resource change | Edit real skills under `plugins/<plugin>/skills/<skill>/`. Single-skill support files live in that skill's `references/`. Files reused by 2+ skills live in root `shared/`, are mapped in `tools/marketplace/shared-registry.json`, then distributed with `node tools/marketplace/shared.mjs sync` and validated with `node tools/marketplace/validate.mjs` |
+| **Distributed file marker** | Reading any file under `plugins/*/skills/*/references/` | If the file's first ~5 lines contain a `SOURCE-OF-TRUTH: shared/<path>` marker — edit the file at that shared path instead, then run `node tools/marketplace/shared.mjs sync`. Never edit the marked copy under `references/`. JSON files use a sidecar `<file>.SOURCE.md` next to them — same rule applies |
 | **No hardcoded counts** | Documentation files | Counts only in the README badge (`skills-NNN`). Everywhere else: no aggregate counts |
 | **No Changes sections** | `SKILL.md` versioning | Use `**Version:** X.Y.Z` and `**Last Updated:** YYYY-MM-DD` only |
 | **DoD with checkboxes** | All `SKILL.md` files | `## Definition of Done` with `- [ ]` items |

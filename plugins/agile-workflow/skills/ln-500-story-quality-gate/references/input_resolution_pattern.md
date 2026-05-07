@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/input_resolution_pattern.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Input Resolution Pattern
 
 Standard workflow for resolving Story/Task/Epic identifiers when a skill is invoked standalone (without orchestrator args).

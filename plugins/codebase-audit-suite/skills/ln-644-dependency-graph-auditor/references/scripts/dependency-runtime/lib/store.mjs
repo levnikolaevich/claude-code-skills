@@ -1,3 +1,5 @@
+// SOURCE-OF-TRUTH: shared/scripts/dependency-runtime/lib/store.mjs. Edit ONLY here; run `node tools/marketplace/shared.mjs sync`
+
 import { resolve } from "node:path";
 import { createRuntimeStore, readJsonFile } from "../../coordinator-runtime/lib/core.mjs";
 import {

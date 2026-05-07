@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/templates/research_template.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # RSH-{{NUMBER}}: {{QUESTION}}
 
 **Date:** {{DATE}} | **Status:** {{STATUS}}

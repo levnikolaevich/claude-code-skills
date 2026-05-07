@@ -1,3 +1,5 @@
+// SOURCE-OF-TRUTH: shared/scripts/scope-decomposition-runtime/lib/guards.mjs. Edit ONLY here; run `node tools/marketplace/shared.mjs sync`
+
 import { computePlanningBaseResumeAction, validatePlanningBaseTransition } from "../../planning-runtime/lib/guards.mjs";
 import { PHASES } from "./phases.mjs";
 

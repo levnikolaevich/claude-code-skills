@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/codex_hooks_config.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Codex hooks config
 
 > **SCOPE:** Reference for codex hook integration. Loaded only when ln-013-config-syncer aligns codex hooks.

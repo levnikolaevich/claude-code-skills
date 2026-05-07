@@ -11,6 +11,7 @@ import type {
 import type { BuildInfo } from "../../config/buildInfo.js";
 import { HealthResponseSchema } from "./schemas.js";
 import { getPendingFanoutAcksTotal } from "./hooks.routes.js";
+import { renderPrometheusMetrics } from "../../observability/metrics.js";
 
 interface RuntimePendingReplyRepository {
   countActive(maxAgeSec: number): number;
@@ -75,6 +76,8 @@ export async function collectRuntimeStatus(deps: RuntimeStatusDeps): Promise<Run
 
 export function registerHealthRoutes(app: FastifyInstance, deps: HealthRoutesDeps): void {
   const zodApp = app.withTypeProvider<ZodTypeProvider>();
+  zodApp.get("/live", async (_req, reply) => reply.send({ ok: true }));
+
   zodApp.route({
     method: "GET",
     url: "/health",
@@ -105,5 +108,35 @@ export function registerHealthRoutes(app: FastifyInstance, deps: HealthRoutesDep
         db_size_bytes: s.dbSizeBytes,
       });
     },
+  });
+
+  zodApp.get("/ready", async (_req, reply) => {
+    try {
+      await collectRuntimeStatus(deps);
+      return reply.send({ ok: true });
+    } catch (error) {
+      return reply.code(503).send({
+        ok: false,
+        error: {
+          code: "dependency_unavailable",
+          message: "relay dependencies are not ready",
+          retryable: true,
+          details: { error: String(error) },
+        },
+      });
+    }
+  });
+
+  zodApp.get("/metrics", async (_req, reply) => {
+    const s = await collectRuntimeStatus(deps);
+    return reply
+      .type("text/plain; version=0.0.4; charset=utf-8")
+      .send(
+        renderPrometheusMetrics({
+          inboundQueued: s.inboundQueued,
+          outboxQueued: s.outboxQueued,
+          pendingReplies: s.pendingCount,
+        })
+      );
   });
 }

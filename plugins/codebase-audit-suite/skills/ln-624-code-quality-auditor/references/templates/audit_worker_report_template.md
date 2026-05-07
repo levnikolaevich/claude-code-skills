@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/templates/audit_worker_report_template.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Audit Worker Report Template
 
 Standardized markdown format for audit workers writing evidence reports.

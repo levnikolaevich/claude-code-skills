@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/scope_decomposition_runtime_contract.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Scope Decomposition Runtime Contract
 
 Runtime contract for `ln-200`.

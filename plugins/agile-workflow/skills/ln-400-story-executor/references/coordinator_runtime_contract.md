@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/coordinator_runtime_contract.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Coordinator Runtime Contract
 
 Shared deterministic runtime model for stateful coordinators.

@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/agent_skill_roots_contract.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Agent Skill Roots Contract
 
 Shared contract for active skill discovery roots versus cache roots across supported agents.

@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/audit_output_schema.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Audit Worker Output Schema
 
 Standard output format for all L3 audit workers in the stateful 6XX runtime.

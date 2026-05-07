@@ -1,3 +1,5 @@
+// SOURCE-OF-TRUTH: shared/scripts/planning-runtime/lib/template-compliance.mjs. Edit ONLY here; run `node tools/marketplace/shared.mjs sync`
+
 // Template Compliance Validation
 // Used by story-planning and task-planning guards to enforce
 // mandatory section structure before allowing phase transitions.

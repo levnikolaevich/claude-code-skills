@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/replan_algorithm_stories.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Story Replan Algorithm
 
 <!-- SCOPE: ln-222-story-replanner comparison logic ONLY. Contains KEEP/UPDATE/OBSOLETE/CREATE operations, diff generation, status constraints. -->

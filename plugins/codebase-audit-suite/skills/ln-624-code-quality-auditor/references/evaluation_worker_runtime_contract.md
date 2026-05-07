@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/evaluation_worker_runtime_contract.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Evaluation Worker Runtime Contract
 
 Canonical worker runtime contract for workers launched by `evaluation-runtime`.

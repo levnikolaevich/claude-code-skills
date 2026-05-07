@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/environment_setup_runtime_contract.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Environment Setup Runtime Contract
 
 Runtime contract for `ln-010`.

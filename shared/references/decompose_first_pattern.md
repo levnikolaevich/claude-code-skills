@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/decompose_first_pattern.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Decompose-First Pattern
 
 Build IDEAL plan FIRST, then check existing state to determine mode.

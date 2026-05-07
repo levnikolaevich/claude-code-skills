@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/vps_base_install.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # VPS base install
 
 <!-- SCOPE: Host package, git CLI, and service-user setup for ln-030-vps-bootstrap. -->

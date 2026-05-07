@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/dependency_validation.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Dependency Validation (Criteria #18-#19)
 
 <!-- SCOPE: Story/Task dependency validation criteria #18-#19 ONLY. Contains forward dependency detection, sequential completability checks. -->

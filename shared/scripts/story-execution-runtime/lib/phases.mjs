@@ -1,3 +1,5 @@
+// SOURCE-OF-TRUTH: shared/scripts/story-execution-runtime/lib/phases.mjs. Edit ONLY here; run `node tools/marketplace/shared.mjs sync`
+
 import { TERMINAL_RUNTIME_PHASES } from "../../coordinator-runtime/lib/runtime-constants.mjs";
 
 export const PHASES = Object.freeze({

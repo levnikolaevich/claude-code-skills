@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/ai_ready_architecture.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # AI-Ready Architecture Reference
 
 Single source of truth for AI-architecture concepts, detection patterns, and thresholds.

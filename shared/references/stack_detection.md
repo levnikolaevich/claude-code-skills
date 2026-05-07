@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/stack_detection.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Stack Detection Reference
 
 <!-- SCOPE: Technology detection patterns ONLY. Contains file markers, dependency patterns, detection priority. -->

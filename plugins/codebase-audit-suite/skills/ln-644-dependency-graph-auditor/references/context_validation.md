@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/context_validation.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Context Validation Rules (Post-Filter)
 
 Apply in coordinator aggregation phase after collecting worker findings.

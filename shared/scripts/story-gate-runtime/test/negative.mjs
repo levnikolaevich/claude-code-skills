@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SOURCE-OF-TRUTH: shared/scripts/story-gate-runtime/test/negative.mjs. Edit ONLY here; run `node tools/marketplace/shared.mjs sync`
 
 import { execFileSync } from "node:child_process";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";

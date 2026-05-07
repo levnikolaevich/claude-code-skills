@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/agent_runtime_install.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Agent runtime install
 
 <!-- SCOPE: Node, Claude Code, Codex, MCP, and skills marketplace setup for ln-030-vps-bootstrap. -->

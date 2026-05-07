@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/dependency_runtime_contract.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Dependency Runtime Contract
 
 Deterministic runtime for `ln-820-dependency-optimization-coordinator`.

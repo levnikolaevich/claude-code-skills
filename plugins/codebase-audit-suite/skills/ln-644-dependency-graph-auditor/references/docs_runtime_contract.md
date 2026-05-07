@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/docs_runtime_contract.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Docs Runtime Contract
 
 Runtime contract for `ln-110`.

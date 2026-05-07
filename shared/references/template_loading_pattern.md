@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/template_loading_pattern.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Template Loading Pattern
 
 Standard workflow for loading templates from shared repository to target project.

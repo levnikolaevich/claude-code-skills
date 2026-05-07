@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/evaluation_research_contract.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Evaluation Research Contract
 
 Canonical research contract for every evaluation and audit run.

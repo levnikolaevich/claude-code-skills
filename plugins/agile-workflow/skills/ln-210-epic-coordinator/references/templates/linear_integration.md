@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/templates/linear_integration.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Linear Integration Guide
 
 <!-- SCOPE: Linear API discovery and usage patterns ONLY. Contains Team ID discovery, Epic/Story creation, status workflow. -->

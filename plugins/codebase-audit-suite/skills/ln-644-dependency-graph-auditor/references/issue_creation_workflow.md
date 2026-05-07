@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/issue_creation_workflow.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Issue Creation Workflow
 
 <!-- SCOPE: Standard workflow for creating Epics, Stories, and Tasks with kanban updates. Supports Linear, File, and GitHub modes per .hex-skills/environment_state.json → task_management.provider. -->

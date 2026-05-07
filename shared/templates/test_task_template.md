@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/templates/test_task_template.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Tests for Story: [Story Title]
 
 **User Story:** [USXXX Story Name](link-or-path) *(parent story - this is the FINAL task of Story)*

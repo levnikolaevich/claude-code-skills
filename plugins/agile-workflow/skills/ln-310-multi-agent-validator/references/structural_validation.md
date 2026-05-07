@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/structural_validation.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Structural Validation (Criteria #1-#4, #23-#24)
 
 <!-- SCOPE: Structure and template compliance criteria #1-#4, Architecture Considerations #23, Assumption Registry #24. -->

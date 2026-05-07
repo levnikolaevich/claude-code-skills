@@ -1,3 +1,5 @@
+// SOURCE-OF-TRUTH: shared/scripts/planning-runtime/lib/guards.mjs. Edit ONLY here; run `node tools/marketplace/shared.mjs sync`
+
 export function hasCheckpoint(checkpoints, phase) {
     return Boolean(checkpoints?.[phase]);
 }

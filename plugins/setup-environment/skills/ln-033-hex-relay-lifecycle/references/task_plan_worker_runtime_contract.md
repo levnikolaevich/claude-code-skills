@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/task_plan_worker_runtime_contract.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Task Plan Worker Runtime Contract
 
 Runtime family for `ln-301` and `ln-302`.

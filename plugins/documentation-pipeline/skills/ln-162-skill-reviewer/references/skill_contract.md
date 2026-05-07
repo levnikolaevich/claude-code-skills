@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/skill_contract.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Skill Contract
 
 <!-- SCOPE: Canonical shared contract for SKILL.md files in this repository. Contains enforceable structure, delegation, and coupling rules. -->

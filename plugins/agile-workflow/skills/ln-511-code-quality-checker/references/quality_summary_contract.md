@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/quality_summary_contract.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Quality Summary Contract
 
 Machine-readable summaries for the `ln-510` family.

@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/agents/prompt_templates/modes/code.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 ## header
 # Task: Review Code Implementation
 

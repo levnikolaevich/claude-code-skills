@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/test_planning_summary_contract.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Test Planning Summary Contract
 
 Machine-readable summaries for the `ln-520` family.

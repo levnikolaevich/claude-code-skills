@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/solution_validation.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Solution Validation (Criteria #6, #21)
 
 <!-- SCOPE: Library version (#6) and alternative solutions (#21). Contains version verification, alternatives analysis. -->

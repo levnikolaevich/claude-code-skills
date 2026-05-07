@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/git_scope_detection.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Git Scope Detection
 
 Algorithm for building `changed_files[]` — the set of files to analyze for code quality.

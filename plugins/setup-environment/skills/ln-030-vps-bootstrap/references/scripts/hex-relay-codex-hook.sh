@@ -13,7 +13,8 @@
 #        so those routes are never invoked from this shim.
 #
 # Environment:
-#   RELAY_HOOK_PORT   hex-relay listener port (default: 8090)
+#   RELAY_HOOK_PORT   hex-relay listener port
+#   RELAY_HTTP_TOKEN  bearer token for protected hex-relay hook routes
 #
 # Exit policy:
 #   Always exit 0. Hex-relay observability hooks must never block a Codex turn — a
@@ -23,7 +24,9 @@
 # Required tools: bash, jq, curl. Provided by ln-031-vps-host-runtime base packages.
 set -euo pipefail
 
-PORT="${RELAY_HOOK_PORT:-8090}"
+: "${RELAY_HOOK_PORT:?RELAY_HOOK_PORT is required}"
+: "${RELAY_HTTP_TOKEN:?RELAY_HTTP_TOKEN is required}"
+PORT="${RELAY_HOOK_PORT}"
 EVENT_NAME="${1:-}"
 
 warn() { printf '%s [hex-relay-codex-hook] %s\n' "$(date -Iseconds)" "$*" >&2; }
@@ -58,6 +61,7 @@ fi
 URL="http://127.0.0.1:${PORT}/hook/${KEBAB}"
 
 if ! curl -sS --max-time 5 -X POST -H 'Content-Type: application/json' \
+     -H "Authorization: Bearer ${RELAY_HTTP_TOKEN}" \
      --data "$PAYLOAD" "$URL" >/dev/null 2>&1; then
   warn "POST $URL failed (event=$EVENT_NAME); soft-failing"
 fi

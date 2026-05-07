@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/loop_health_contract.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Loop Health Contract
 
 **Version:** 1.0.0

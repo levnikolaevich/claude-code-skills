@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/meta_analysis_protocol.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Meta-Analysis Protocol
 
 Universal post-completion protocol for all coordinators and orchestrators.

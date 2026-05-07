@@ -67,6 +67,34 @@ function hashFile(file) {
   return crypto.createHash("sha256").update(fs.readFileSync(file)).digest("hex");
 }
 
+const MARKER_PATTERN = /SOURCE-OF-TRUTH:\s+(shared\/\S+?)\.\s/;
+
+function readHead(file, lines = 8) {
+  try {
+    const text = fs.readFileSync(file, "utf8");
+    return text.split(/\r?\n/).slice(0, lines).join("\n");
+  } catch {
+    return "";
+  }
+}
+
+function hasDistributionMarker(file, expectedSharedPath) {
+  // .json files use a sidecar `<file>.SOURCE.md` since JSON has no comment syntax.
+  if (file.endsWith(".json")) {
+    return fs.existsSync(`${file}.SOURCE.md`);
+  }
+  const head = readHead(file);
+  const m = head.match(MARKER_PATTERN);
+  if (!m) return false;
+  if (!expectedSharedPath) return true;
+  if (m[1] === expectedSharedPath) return true;
+  // Sidecar (.json.SOURCE.md) carries a marker pointing to its companion .json.
+  if (expectedSharedPath.endsWith(".json.SOURCE.md") && m[1] === expectedSharedPath.replace(/\.SOURCE\.md$/, "")) {
+    return true;
+  }
+  return false;
+}
+
 function loadRegistry() {
   if (!fs.existsSync(REGISTRY_PATH)) {
     throw new Error(`Missing shared registry: ${rel(REGISTRY_PATH)}`);
@@ -162,7 +190,7 @@ function sharedTextRefDeps(source) {
   return [...deps].sort();
 }
 
-function buildExtendedRegistry(registry) {
+export function buildExtendedRegistry(registry) {
   const extended = new Map();
   const transitiveSources = new Set();
   function addTarget(source, skill, targetPath) {
@@ -518,6 +546,9 @@ export function syncShared() {
   for (const [source, skillTargets] of extended) {
     const sourcePath = path.join(ROOT, fromPosix(source));
     if (!fs.existsSync(sourcePath)) throw new Error(`Missing shared source: ${source}`);
+    if (!hasDistributionMarker(sourcePath, source)) {
+      throw new Error(`Shared source missing SOURCE-OF-TRUTH marker (expected to reference ${source}): ${source}`);
+    }
     for (const [skill, targetRel] of skillTargets) {
       if (!targetRel.startsWith("references/")) {
         throw new Error(`Shared target must stay under references/: ${skill}/${targetRel}`);
@@ -562,6 +593,9 @@ export function validateSharedDistribution() {
       problems.push(`missing shared source: ${source}`);
       continue;
     }
+    if (!hasDistributionMarker(sourcePath, source)) {
+      problems.push(`shared source missing SOURCE-OF-TRUTH marker: ${source}`);
+    }
     for (const [skill, targetRel] of skillTargets) {
       const skillRoot = path.join(ROOT, fromPosix(skill));
       const targetPath = path.join(skillRoot, fromPosix(targetRel));
@@ -570,6 +604,8 @@ export function validateSharedDistribution() {
       if (!fs.existsSync(targetPath)) problems.push(`registry target missing: ${skill}/${targetRel}`);
       else if (hashFile(targetPath) !== hashFile(sourcePath)) {
         problems.push(`registry target hash mismatch: ${skill}/${targetRel}`);
+      } else if (!hasDistributionMarker(targetPath, source)) {
+        problems.push(`registry target missing distribution marker: ${skill}/${targetRel}`);
       }
     }
   }

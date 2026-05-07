@@ -1,3 +1,5 @@
+// SOURCE-OF-TRUTH: shared/scripts/planning-runtime/lib/cli.mjs. Edit ONLY here; run `node tools/marketplace/shared.mjs sync`
+
 import {
     outputGuardFailure,
     outputInactiveRuntime,

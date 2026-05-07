@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/platform_artifacts.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Platform Artifacts Reference
 
 <!-- SCOPE: Platform-specific artifact catalogs for all supported platforms. Contains file lists, detection patterns, cleanup actions. -->

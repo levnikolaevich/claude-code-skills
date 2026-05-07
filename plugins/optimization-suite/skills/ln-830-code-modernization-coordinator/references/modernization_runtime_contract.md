@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/modernization_runtime_contract.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Modernization Runtime Contract
 
 Deterministic runtime for `ln-830-code-modernization-coordinator`.

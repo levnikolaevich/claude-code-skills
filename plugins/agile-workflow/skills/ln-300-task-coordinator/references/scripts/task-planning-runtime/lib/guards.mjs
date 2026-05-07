@@ -1,3 +1,5 @@
+// SOURCE-OF-TRUTH: shared/scripts/task-planning-runtime/lib/guards.mjs. Edit ONLY here; run `node tools/marketplace/shared.mjs sync`
+
 import {
     computePlanningBaseResumeAction,
     hasChoice,

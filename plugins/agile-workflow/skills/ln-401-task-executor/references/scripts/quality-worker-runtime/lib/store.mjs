@@ -1,3 +1,5 @@
+// SOURCE-OF-TRUTH: shared/scripts/quality-worker-runtime/lib/store.mjs. Edit ONLY here; run `node tools/marketplace/shared.mjs sync`
+
 import { resolveWorkerManifestBase, buildWorkerManifestSchema, createWorkerRuntimeStore, createWorkerState } from "../../coordinator-runtime/lib/worker-runtime.mjs";
 import { qualityWorkerSummarySchema } from "../../coordinator-runtime/lib/schemas.mjs";
 import { getWorkerPhases } from "./phases.mjs";

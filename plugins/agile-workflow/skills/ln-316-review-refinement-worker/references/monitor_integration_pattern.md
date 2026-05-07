@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/monitor_integration_pattern.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Monitor Integration Pattern
 
 Claude Code `Monitor` tool (2.1.98+) for streaming background shell command output.

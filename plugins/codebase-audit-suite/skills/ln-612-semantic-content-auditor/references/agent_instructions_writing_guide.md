@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/agent_instructions_writing_guide.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Agent Instructions Writing Guide
 
 > **SCOPE:** How to author AGENTS.md and CLAUDE.md at the root of a project. Canonical reference for `ln-014-agent-instructions-manager`, `ln-111-root-docs-creator`, `ln-611-docs-structure-auditor`, and `ln-612-semantic-content-auditor`.

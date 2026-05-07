@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/agent_delegation_pattern.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Agent Delegation Pattern
 
 Standard pattern for skills delegating work to a non-host external CLI AI advisor via `references/agents/agent_runner.mjs`. Host self-review is the native fallback.

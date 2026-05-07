@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/references/story_gate_runtime_contract.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 # Story Gate Runtime Contract
 
 Deterministic runtime for `ln-500-story-quality-gate`.

@@ -1,3 +1,5 @@
+// SOURCE-OF-TRUTH: shared/scripts/coordinator-runtime/lib/core.mjs. Edit ONLY here; run `node tools/marketplace/shared.mjs sync`
+
 import { randomUUID } from "node:crypto";
 import {
     appendFileSync,

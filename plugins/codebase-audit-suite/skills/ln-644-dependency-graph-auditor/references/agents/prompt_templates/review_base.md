@@ -1,3 +1,5 @@
+<!-- SOURCE-OF-TRUTH: shared/agents/prompt_templates/review_base.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+
 {mode_header}
 
 ## CRITICAL CONSTRAINTS

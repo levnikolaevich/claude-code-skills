@@ -19,7 +19,7 @@ if [[ -z "${TELEGRAM_BOT_TOKEN:-}" ]]; then
 fi
 
 commands='{"commands":[
-    {"command":"usage","description":"Show Claude usage limits"},
+    {"command":"usage","description":"Show Claude/Codex usage limits"},
     {"command":"new_session","description":"Start a new Claude session"},
     {"command":"sessions","description":"Resume or delete Claude sessions"},
     {"command":"tasks","description":"List open tasks"},
@@ -36,7 +36,7 @@ curl -fsS -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/setMyComman
 
 curl -fsS "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getMyCommands" \
   | jq -e '.result == [
-      {"command":"usage","description":"Show Claude usage limits"},
+      {"command":"usage","description":"Show Claude/Codex usage limits"},
       {"command":"new_session","description":"Start a new Claude session"},
       {"command":"sessions","description":"Resume or delete Claude sessions"},
       {"command":"tasks","description":"List open tasks"},
@@ -46,7 +46,7 @@ curl -fsS "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getMyCommands" \
 curl -fsS -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getMyCommands" \
   -d 'scope={"type":"all_private_chats"}' \
   | jq -e '.result == [
-      {"command":"usage","description":"Show Claude usage limits"},
+      {"command":"usage","description":"Show Claude/Codex usage limits"},
       {"command":"new_session","description":"Start a new Claude session"},
       {"command":"sessions","description":"Resume or delete Claude sessions"},
       {"command":"tasks","description":"List open tasks"},

@@ -40,6 +40,7 @@ import { buildTasksHandler } from "./handlers/telegram/tasks.js";
 import { buildTasksCallbackHandler } from "./handlers/telegram/tasksCallback.js";
 import { buildInboundHandler } from "./handlers/telegram/inbound.js";
 import { buildSetBuddyHandler } from "./handlers/telegram/setBuddy.js";
+import { buildUsageHandler } from "./handlers/telegram/usage.js";
 import { createReactToInbound, createReactToVoiceTranscribing } from "./handlers/telegram/react.js";
 import { registerErrorHandler } from "./handlers/http/plugins/errorHandler.plugin.js";
 import { configureZodFastify } from "./handlers/http/zodFastify.js";
@@ -53,6 +54,7 @@ import { createOutboxWorker } from "./workers/outbox.worker.js";
 import { createErrorAlerterWorker } from "./workers/errorAlerter.worker.js";
 import { createMediaCleanupWorker } from "./workers/mediaCleanup.worker.js";
 import { createVoiceTranscriptionWorker } from "./workers/voiceTranscription.worker.js";
+import { runProcess } from "./infrastructure/process/runProcess.js";
 
 export interface App {
   start(): Promise<void>;
@@ -185,6 +187,22 @@ export function buildApp(env: Env, log: Logger = createLogger()): App {
   const tasksHandler = buildTasksHandler({ log, tasks });
   const tasksCallback = buildTasksCallbackHandler({ log, tasks });
   const setBuddyHandler = buildSetBuddyHandler({ log, userBuddy });
+  const usageHandler = buildUsageHandler({
+    log,
+    godRuntime,
+    runClaudeUsageReport: async () => {
+      const result = await runProcess("/usr/local/bin/claude-usage-report", [], {
+        timeoutMs: 5000,
+        label: "claude-usage-report",
+      });
+      if (result.code !== 0) {
+        throw new Error(
+          `claude-usage-report exit ${result.code}: ${result.stderr.trim().slice(0, 200) || "no stderr"}`
+        );
+      }
+      return result.stdout.trim();
+    },
+  });
   const inboundHandler = buildInboundHandler({
     log,
     messagesRepo: repos.messages,
@@ -202,6 +220,7 @@ export function buildApp(env: Env, log: Logger = createLogger()): App {
   bot.use(tasksHandler);
   bot.use(tasksCallback);
   bot.use(setBuddyHandler);
+  bot.use(usageHandler);
   bot.use(inboundHandler);
 
   void Composer;

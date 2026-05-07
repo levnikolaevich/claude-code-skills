@@ -16,16 +16,16 @@ export function buildSetBuddyHandler(deps: SetBuddyDeps): Composer<Context> {
     const arg = (ctx.match ?? "").toString().trim().toLowerCase();
     if (arg.length === 0) {
       const current = deps.userBuddy.getDefault(userId);
-      await ctx.reply(`Текущий агент по умолчанию: ${current}.`);
+      await ctx.reply(`Default agent: ${current}.`);
       return;
     }
     if (!isAgentKind(arg)) {
-      await ctx.reply("Использование: /set_buddy claude или /set_buddy codex.");
+      await ctx.reply("Usage: /set_buddy claude or /set_buddy codex.");
       return;
     }
     deps.userBuddy.setDefault(userId, arg);
     deps.log.info({ userId, agent: arg }, "user_buddy default updated");
-    await ctx.reply(`Агент по умолчанию для тебя: ${arg}.`);
+    await ctx.reply(`Default agent set to ${arg}.`);
   });
   return c;
 }

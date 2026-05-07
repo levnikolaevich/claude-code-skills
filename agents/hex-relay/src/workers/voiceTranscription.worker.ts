@@ -12,7 +12,7 @@ export interface VoiceTranscriptionWorker {
 }
 
 const TRANSCRIPTION_FAILED_REPLY =
-  "Не смог распознать голосовое сообщение локально. Отправь команду текстом или попробуй короче.";
+  "Local voice transcription failed. Send a text command or a shorter voice message.";
 
 function shortError(error: unknown): string {
   return String(error).slice(0, 300);

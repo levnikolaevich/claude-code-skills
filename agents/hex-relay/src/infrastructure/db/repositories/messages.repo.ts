@@ -93,6 +93,14 @@ export function createMessagesRepo(db: Db) {
   const countInboundRejected = db.prepare(
     "SELECT COUNT(*) AS c FROM messages WHERE direction='inbound' AND status='rejected'"
   );
+  const lastActivityForUserAgent = db.prepare(
+    "SELECT MAX(ts) AS ts FROM messages " +
+      "WHERE agent = ? AND (" +
+      "  (direction = 'inbound' AND from_user_id = ?) " +
+      "  OR (direction = 'outbound' AND replied_to_id IN " +
+      "    (SELECT id FROM messages WHERE direction = 'inbound' AND from_user_id = ?))" +
+      ")"
+  );
 
   return {
     insertInbound(
@@ -187,6 +195,12 @@ export function createMessagesRepo(db: Db) {
         inboundFailed: f.c,
         inboundRejected: r.c,
       };
+    },
+    lastActivityForUserAgent(userId: number, agent: AgentKind): number | null {
+      const row = lastActivityForUserAgent.get(agent, userId, userId) as
+        | { ts: number | null }
+        | undefined;
+      return row?.ts ?? null;
     },
   };
 }

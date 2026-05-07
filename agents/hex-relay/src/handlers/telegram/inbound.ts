@@ -17,17 +17,17 @@ export interface InboundDeps {
 }
 
 const UNSUPPORTED_MEDIA_REPLY =
-  "Из media сейчас принимаются картинки (PNG/JPG/GIF/WebP) и любые документы " +
-  "(PDF/DOCX/TXT/CSV/JSON/код-файлы — claude сам решит, как читать). " +
-  "Аудио/видео/стикеры — пока нет.";
+  "Supported media: images (PNG/JPG/GIF/WebP) and any document " +
+  "(PDF/DOCX/TXT/CSV/JSON/code — the agent decides how to read it). " +
+  "Audio/video/stickers are not supported yet.";
 const VOICE_DISABLED_REPLY =
-  "Голосовые сообщения сейчас выключены для этого relay. Включи RELAY_VOICE_TRANSCRIPTION=local.";
+  "Voice messages are disabled for this relay. Set RELAY_VOICE_TRANSCRIPTION=local to enable.";
 const VOICE_TOO_LONG_REPLY =
-  "Голосовое сообщение слишком длинное для relay. Отправь короткую команду текстом или более короткий voice.";
+  "Voice message exceeds the relay duration limit. Send a shorter voice or a text command.";
 const VOICE_DOWNLOAD_FAILED_REPLY =
-  "Не смог скачать голосовое сообщение из Telegram. Попробуй отправить его ещё раз или текстом.";
+  "Failed to download the voice message from Telegram. Send it again or use text.";
 const VOICE_TOO_BIG_REPLY =
-  "Голосовое сообщение слишком большое для relay. Отправь короткую команду текстом или более короткий voice.";
+  "Voice message exceeds the relay size limit. Send a shorter voice or a text command.";
 
 function userTag(ctx: Context): string {
   const u = ctx.from;

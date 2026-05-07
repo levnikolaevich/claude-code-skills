@@ -10,9 +10,8 @@ import type { GodRuntimeService } from "./godRuntime.service.js";
 export type InboundService = ReturnType<typeof createInboundService>;
 
 const PERMANENT_FAILURE_MESSAGE =
-  "⚠️ Не смог доставить твоё сообщение в god-session после многократных " +
-  "попыток. Проверь `/dispatcher status` и отправь сообщение снова, когда " +
-  "tmux восстановится.";
+  "⚠️ Failed to deliver your message to the god-session after several retries. " +
+  "Check `/dispatcher status` and resend once tmux is back up.";
 
 function nowTs(): number {
   return Math.floor(Date.now() / 1000);

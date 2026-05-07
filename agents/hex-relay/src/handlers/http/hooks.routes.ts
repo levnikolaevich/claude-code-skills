@@ -95,7 +95,7 @@ function bindPendingInbound(args: {
   const { deps, sessionId, inbound, prompt, chatId, tgMsgId, source, agent } = args;
   deps.messagesRepo.update(inbound.id, { sessionId });
   if (inbound.fromUserId !== null) {
-    deps.sessionService.ensureOwner(sessionId, inbound.fromUserId);
+    deps.sessionService.ensureOwner(sessionId, inbound.fromUserId, agent);
   }
   deps.pendingRepo.set(sessionId, inbound.id, prompt, agent);
   if (chatId !== null) {
@@ -267,7 +267,7 @@ export function registerHookRoutes(app: FastifyInstance, deps: HookDeps): void {
         orphanInbound?.tgChatId ?? deps.messagesRepo.getChatId(orphan.inboundMsgId) ?? replyChatId;
       const ackRepliedTo = orphanInbound?.tgMsgId ?? null;
       deps.outbox.enqueueAck({
-        text: "↳ объединено с общим ответом",
+        text: "↳ merged into the combined reply",
         chatId: ackChatId,
         repliedToId: ackRepliedTo,
         sessionId: session_id,

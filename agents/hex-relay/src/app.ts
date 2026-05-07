@@ -111,7 +111,7 @@ export function buildApp(env: Env, log: Logger = createLogger()): App {
     sessionEventsRepo: repos.sessionEvents,
     sessionsDir,
     lastGodCommand,
-    lastSessionForUser: (userId) => godRuntime.runtimeFor(userId).lastSession,
+    lastSessionForUser: (userId, agent) => godRuntime.runtimeFor(userId, agent).lastSession,
     primaryOperator: env.allowedChat,
   });
   const reactToInbound = createReactToInbound({
@@ -190,6 +190,8 @@ export function buildApp(env: Env, log: Logger = createLogger()): App {
   const usageHandler = buildUsageHandler({
     log,
     godRuntime,
+    messagesRepo: repos.messages,
+    userBuddy,
     runClaudeUsageReport: async () => {
       const result = await runProcess("/usr/local/bin/claude-usage-report", [], {
         timeoutMs: 5000,

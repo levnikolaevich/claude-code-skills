@@ -34,7 +34,7 @@ export function createSessionService(deps: {
   sessionEventsRepo: SessionEventsRepo;
   sessionsDir: SessionsDirCache;
   lastGodCommand: LastGodCommandReader;
-  lastSessionForUser(userId: number): { write(sid: string): void };
+  lastSessionForUser(userId: number, agent: AgentKind): { write(sid: string): void };
   primaryOperator: number;
 }) {
   function validateSessionPath(sid: string, ownerUserId?: number | null): string | null {
@@ -145,7 +145,7 @@ export function createSessionService(deps: {
       agent: args.agent,
     });
     deps.sessionsDir.remember(owner, args.transcriptPath);
-    deps.lastSessionForUser(owner).write(args.sessionId);
+    deps.lastSessionForUser(owner, args.agent ?? "claude").write(args.sessionId);
     deps.sessionEventsRepo.insert(args.sessionId, "session_start", {
       source: args.source,
       model: args.model,
@@ -159,7 +159,7 @@ export function createSessionService(deps: {
     validateSessionPath,
     listSessions,
     deleteSessionFile,
-    ensureOwner(sessionId: string, owner: number): void {
+    ensureOwner(sessionId: string, owner: number, agent: AgentKind = "claude"): void {
       if (!UUID_RE.test(sessionId)) return;
       deps.sessionsRepo.upsert({
         sessionId,
@@ -170,7 +170,7 @@ export function createSessionService(deps: {
         previousSession: deps.sessionsRepo.lastActiveSid(owner),
         createdByUserId: owner,
       });
-      deps.lastSessionForUser(owner).write(sessionId);
+      deps.lastSessionForUser(owner, agent).write(sessionId);
     },
     recordStart,
     getOwner(sid: string) {

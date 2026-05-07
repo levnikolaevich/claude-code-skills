@@ -49,6 +49,51 @@ export function createGodStatusProbe(deps: GodStatusDeps) {
         throw new Error(`systemctl restart ${service} rc=${r.code}: ${r.stderr.slice(0, 240)}`);
       }
     },
+    async stop(userId: number, agent: AgentKind = "claude"): Promise<void> {
+      const service = serviceName(userId, agent);
+      const r = await runSystemctl(["stop", service], 15_000);
+      if (r.code !== 0) {
+        throw new Error(`systemctl stop ${service} rc=${r.code}: ${r.stderr.slice(0, 240)}`);
+      }
+    },
+    async listActiveInstances(): Promise<{ userId: number; agent: AgentKind }[]> {
+      try {
+        const r = await runSystemctl(
+          [
+            "list-units",
+            `${deps.env.servicePrefix}-god@*.service`,
+            `${deps.env.servicePrefix}-god-codex@*.service`,
+            "--state=active",
+            "--no-legend",
+            "--plain",
+          ],
+          timeout
+        );
+        if (r.code !== 0) return [];
+        const out: { userId: number; agent: AgentKind }[] = [];
+        const codexRe = new RegExp(
+          `^${deps.env.servicePrefix}-god-codex@(\\d+)\\.service\\b`
+        );
+        const claudeRe = new RegExp(`^${deps.env.servicePrefix}-god@(\\d+)\\.service\\b`);
+        for (const line of r.stdout.split(/\r?\n/)) {
+          const trimmed = line.trim();
+          if (!trimmed) continue;
+          const codex = codexRe.exec(trimmed);
+          if (codex) {
+            out.push({ userId: Number(codex[1]), agent: "codex" });
+            continue;
+          }
+          const claude = claudeRe.exec(trimmed);
+          if (claude) {
+            out.push({ userId: Number(claude[1]), agent: "claude" });
+          }
+        }
+        return out;
+      } catch (error) {
+        deps.log.warn({ err: String(error) }, "list active god instances failed");
+        return [];
+      }
+    },
     async isAnyActive(): Promise<boolean> {
       try {
         const r = await runSystemctl(

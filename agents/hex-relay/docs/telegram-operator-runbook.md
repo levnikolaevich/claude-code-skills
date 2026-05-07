@@ -30,7 +30,7 @@ Optional cosmetic: `setMyDescription`, `setMyShortDescription` Bot API calls.
 
 Registered commands:
 
-- `/usage` — show Claude/Codex usage limits. Relay runs `claude-usage-report` directly (Claude rate-limit cache populated by statusLine) and appends the codex god-session active/inactive status.
+- `/usage` — show Claude/Codex usage limits. Relay collects raw Claude rate-limit data from `claude-usage-report` plus the codex god-session active/inactive flag, then routes the bundle through the user's buddy agent so the reply lands in the user's chat language. If no buddy session is active the relay sends a direct English fallback.
 - `/new_session` — start a new Claude session for the current Telegram user.
 - `/sessions` — resume or delete the current user's sessions.
 - `/tasks` — list open provider issues; [Take] sends one selected task to the clicking user's current session.

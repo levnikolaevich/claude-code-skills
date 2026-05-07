@@ -386,7 +386,7 @@ test("stop hook fans out acks for orphan pending inbounds", async () => {
   assert.equal(acks.length, 2);
   assert.equal((acks[0] as { repliedToId: number }).repliedToId, 1001);
   assert.equal((acks[1] as { repliedToId: number }).repliedToId, 1002);
-  assert.ok((acks[0] as { text: string }).text.includes("объединено"));
+  assert.ok((acks[0] as { text: string }).text.includes("merged"));
   assert.equal(cleared, 1);
   await app.close();
 });

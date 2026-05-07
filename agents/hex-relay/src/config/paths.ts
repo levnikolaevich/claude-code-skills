@@ -49,7 +49,10 @@ export function buildUserRuntimePaths(
     userStateDir,
     cmdFile: path.join(userStateDir, "god-command.json"),
     lastCmdFile: path.join(userStateDir, "last-god-command.json"),
-    lastSessionFile: path.join(userStateDir, "last-session.id"),
+    lastSessionFile: path.join(
+      userStateDir,
+      agent === "codex" ? "last-session-codex.id" : "last-session.id"
+    ),
     sessionsDirCacheFile: path.join(userStateDir, "sessions-dir.path"),
     claudeProjectsHome: path.join("/home", env.botUser, ".claude", "projects"),
     cmdLockFile: path.join(userStateDir, ".cmd-lock"),

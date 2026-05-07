@@ -52,9 +52,7 @@ export class CodexAppServerError extends Error {
  * what the TUI `/status` shows: 5h/weekly `usedPercent`, `windowDurationMins`,
  * `resetsAt`, plus per-`limitId` breakdown. No LLM round-trip is performed.
  */
-export function readCodexRateLimitsJson(
-  options: CodexRateLimitsOptions
-): Promise<string> {
+export function readCodexRateLimitsJson(options: CodexRateLimitsOptions): Promise<string> {
   return new Promise((resolve, reject) => {
     const child = spawn("codex", ["app-server"], {
       stdio: ["pipe", "pipe", "pipe"],
@@ -92,7 +90,7 @@ export function readCodexRateLimitsJson(
           } catch {
             /* skip non-JSON line */
           }
-          if (parsed && parsed.id === 2) {
+          if (parsed?.id === 2) {
             if (settled) return;
             settled = true;
             clearTimeout(timer);

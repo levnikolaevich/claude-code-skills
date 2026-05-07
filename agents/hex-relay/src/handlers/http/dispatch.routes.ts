@@ -11,7 +11,6 @@ import {
   DispatchRecentResponseSchema,
   OkResponseSchema,
 } from "./schemas.js";
-import type { DispatchPhaseStatus, DispatchRunStatus } from "../../domain/dispatch.js";
 import { dispatchRunToWire } from "./apiSerializers.js";
 
 export interface DispatchRoutesDeps {
@@ -55,7 +54,7 @@ export function registerDispatchRoutes(app: FastifyInstance, deps: DispatchRoute
       deps.dispatch.phase({
         runId: d.run_id,
         phase: d.phase,
-        status: d.status as DispatchPhaseStatus,
+        status: d.status,
         verdict: d.verdict ?? null,
         details: d.details ?? null,
       });
@@ -73,7 +72,7 @@ export function registerDispatchRoutes(app: FastifyInstance, deps: DispatchRoute
     handler: async (req, reply) => {
       const d = req.body;
       deps.dispatch.end(d.run_id, {
-        status: d.status as DispatchRunStatus,
+        status: d.status,
         prNumber: d.pr_number ?? null,
         prUrl: d.pr_url ?? null,
         branch: d.branch ?? null,

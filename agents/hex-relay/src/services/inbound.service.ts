@@ -1,11 +1,11 @@
 import type { Logger } from "../lib/logger.js";
 import { TIMING } from "../config/paths.js";
-import type { MessagesRepo } from "../infrastructure/db/repositories/messages.repo.js";
 import type { OutboxService } from "./outbox.service.js";
 import type { ControlLane } from "./controlLane.service.js";
 import type { InboundMessage } from "../domain/message.js";
 import type { VerbosityService } from "./verbosity.service.js";
 import type { GodRuntimeService } from "./godRuntime.service.js";
+import type { MessagesRepository } from "./ports.js";
 
 export type InboundService = ReturnType<typeof createInboundService>;
 
@@ -29,7 +29,7 @@ export type ReactToInbound = (
 
 export function createInboundService(deps: {
   log: Logger;
-  messagesRepo: MessagesRepo;
+  messagesRepo: MessagesRepository;
   outboxService: OutboxService;
   controlLane: ControlLane;
   godRuntime: GodRuntimeService;

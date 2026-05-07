@@ -18,7 +18,7 @@ function taskText(id: number, title: string, labels: string[]): string {
 export function buildTasksHandler(deps: TasksDeps): Composer<Context> {
   const c = new Composer<Context>();
   c.command("tasks", async (ctx) => {
-    const tasks = await deps.tasks.listOpenTasks();
+    const tasks = await deps.tasks.fetchOpenTasks();
     if (tasks.length === 0) {
       await ctx.reply("No open tasks.");
       return;

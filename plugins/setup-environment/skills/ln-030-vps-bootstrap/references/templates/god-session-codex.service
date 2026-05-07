@@ -15,6 +15,7 @@ Environment=BOT_USER=${BOT_USER}
 Environment=AGENT_SKILLS_DIR=${AGENT_SKILLS_DIR}
 Environment=AGENT_HOME=${PROJECT_DIR}/.agent-home/users/%i
 Environment=OPERATOR_USER_ID=%i
+Environment=RELAY_HOOK_PORT=${RELAY_HOOK_PORT}
 WorkingDirectory=${PROJECT_DIR}
 ExecStart=/usr/local/bin/${SERVICE_PREFIX}-god-codex %i
 ExecStop=/usr/bin/tmux -L ${SERVICE_PREFIX} kill-session -t ${SERVICE_PREFIX}-god-codex-%i

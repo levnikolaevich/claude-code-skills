@@ -5,7 +5,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import pino from "pino";
 import { createDb, closeDb, type Db } from "../src/infrastructure/db/client.js";
-import { createRepositories, type Repositories } from "../src/infrastructure/db/repositories/index.js";
+import {
+  createRepositories,
+  type Repositories,
+} from "../src/infrastructure/db/repositories/index.js";
 import { createPendingReplyGcWorker } from "../src/workers/pendingReplyGc.worker.js";
 import type { Logger } from "../src/lib/logger.js";
 
@@ -34,9 +37,11 @@ async function withDb<T>(fn: (ctx: DbCtx) => Promise<T>): Promise<T> {
 }
 
 function backdatePending(db: Db, sessionId: string, inboundId: number, createdAt: number): void {
-  db.prepare(
-    "UPDATE pending_reply SET created_at=? WHERE session_id=? AND inbound_msg_id=?"
-  ).run(createdAt, sessionId, inboundId);
+  db.prepare("UPDATE pending_reply SET created_at=? WHERE session_id=? AND inbound_msg_id=?").run(
+    createdAt,
+    sessionId,
+    inboundId
+  );
 }
 
 test("findStaleOlderThan filters by created_at boundary", async () => {
@@ -116,7 +121,7 @@ test("worker retires stale row with error ack and clears it", async () => {
       } as unknown as Parameters<typeof createPendingReplyGcWorker>[0]["outbox"],
       primaryOperator: 1,
       retentionSec: 86_400,
-      tickIntervalMs: 1_000,
+      tickIntervalMs: 1000,
     });
 
     const result = worker.evaluate();
@@ -150,7 +155,7 @@ test("worker leaves live (within-retention) row alone", async () => {
       } as unknown as Parameters<typeof createPendingReplyGcWorker>[0]["outbox"],
       primaryOperator: 1,
       retentionSec: 86_400,
-      tickIntervalMs: 1_000,
+      tickIntervalMs: 1000,
     });
 
     const result = worker.evaluate();
@@ -179,7 +184,7 @@ test("worker silently purges stale row when inbound is missing", async () => {
       } as unknown as Parameters<typeof createPendingReplyGcWorker>[0]["outbox"],
       primaryOperator: 1,
       retentionSec: 86_400,
-      tickIntervalMs: 1_000,
+      tickIntervalMs: 1000,
     });
 
     const result = worker.evaluate();
@@ -215,7 +220,7 @@ test("worker retires only stale rows in a burst session, leaves fresh ones", asy
       } as unknown as Parameters<typeof createPendingReplyGcWorker>[0]["outbox"],
       primaryOperator: 1,
       retentionSec: 86_400,
-      tickIntervalMs: 1_000,
+      tickIntervalMs: 1000,
     });
 
     const result = worker.evaluate();
@@ -225,9 +230,7 @@ test("worker retires only stale rows in a burst session, leaves fresh ones", asy
       enqueued.map((e) => e.repliedToId).sort((a, b) => (a ?? 0) - (b ?? 0)),
       [5001, 5002]
     );
-    const survivors = repos.pendingReply
-      .getAllForSession("sid-burst")
-      .map((r) => r.inboundMsgId);
+    const survivors = repos.pendingReply.getAllForSession("sid-burst").map((r) => r.inboundMsgId);
     assert.deepEqual(survivors, [idFresh], "only fresh row survives the burst-GC pass");
   });
 });

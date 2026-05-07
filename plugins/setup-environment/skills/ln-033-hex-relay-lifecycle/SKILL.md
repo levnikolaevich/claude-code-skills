@@ -55,7 +55,7 @@ If `summaryArtifactPath` is provided, write the same summary JSON there. If not 
 ### Phase 1: Preflight
 
 Verify:
-- Telegram is enabled for deploy/sync modes
+- Telegram is enabled for deploy/sync modes; when disabled, report relay deploy/start as `N/A` and do not start `hex-relay`
 - `${PROJECT_NAME}`, `${SERVICE_PREFIX}`, `${PROJECT_DIR}`, `${RELAY_HOOK_PORT}` are set
 - project runtime exists
 - `/etc/${PROJECT_NAME}/secrets.env` exists but secret values are not printed

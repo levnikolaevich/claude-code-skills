@@ -1,10 +1,9 @@
 import { createSign } from "node:crypto";
 import { readFileSync } from "node:fs";
-import type { Env } from "../config/env.js";
-import type { ProviderTask } from "../domain/task.js";
-import type { Logger } from "../lib/logger.js";
-
-export type TaskProviderService = ReturnType<typeof createTaskProviderService>;
+import type { Env } from "../../config/env.js";
+import type { ProviderTask } from "../../domain/task.js";
+import type { Logger } from "../../lib/logger.js";
+import type { TaskProviderPort } from "../../services/ports.js";
 
 const API_VERSION = "2022-11-28";
 
@@ -77,7 +76,7 @@ function sortTasks(tasks: ProviderTask[]): ProviderTask[] {
   });
 }
 
-export function createTaskProviderService(deps: { env: Env; log: Logger }) {
+export function createTaskProviderClient(deps: { env: Env; log: Logger }): TaskProviderPort {
   async function githubToken(): Promise<string> {
     const { githubAppId, githubInstallationId, githubAppPrivateKeyPath } = deps.env;
     if (!githubAppId || !githubInstallationId || !githubAppPrivateKeyPath) {
@@ -99,7 +98,7 @@ export function createTaskProviderService(deps: { env: Env; log: Logger }) {
     return data.token;
   }
 
-  async function listGithubTasks(): Promise<ProviderTask[]> {
+  async function fetchGithubTasks(): Promise<ProviderTask[]> {
     if (!deps.env.repoSlug) throw new Error("REPO_SLUG is not configured");
     const token = await githubToken();
     const issues = await fetchJson<GitHubIssue[]>(
@@ -127,7 +126,7 @@ export function createTaskProviderService(deps: { env: Env; log: Logger }) {
     );
   }
 
-  async function listGitlabTasks(): Promise<ProviderTask[]> {
+  async function fetchGitlabTasks(): Promise<ProviderTask[]> {
     if (!deps.env.repoSlug) throw new Error("REPO_SLUG is not configured");
     if (!deps.env.gitlabHost) throw new Error("GITLAB_HOST is not configured");
     if (!deps.env.gitlabApiToken) throw new Error("GITLAB_API_TOKEN is not configured");
@@ -154,10 +153,13 @@ export function createTaskProviderService(deps: { env: Env; log: Logger }) {
   }
 
   return {
-    async listOpenTasks(): Promise<ProviderTask[]> {
+    async fetchOpenTasks(): Promise<ProviderTask[]> {
       const tasks =
-        deps.env.gitProvider === "github" ? await listGithubTasks() : await listGitlabTasks();
-      deps.log.info({ count: tasks.length, provider: deps.env.gitProvider }, "TASKS provider list");
+        deps.env.gitProvider === "github" ? await fetchGithubTasks() : await fetchGitlabTasks();
+      deps.log.info(
+        { count: tasks.length, provider: deps.env.gitProvider },
+        "TASKS provider fetch"
+      );
       return tasks;
     },
   };

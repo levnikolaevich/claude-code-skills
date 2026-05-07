@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-04-25",
+  "generated_at": "2026-05-07",
   "summary": {
     "semantic_suite": {
       "runner": "node --test test/*.mjs",

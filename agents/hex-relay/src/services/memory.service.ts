@@ -1,10 +1,10 @@
-import type { MemoryRepo, MemoryAddArgs } from "../infrastructure/db/repositories/memory.repo.js";
+import type { MemoryAddCommand, MemoryRepository } from "./ports.js";
 
 export type MemoryService = ReturnType<typeof createMemoryService>;
 
-export function createMemoryService(deps: { repo: MemoryRepo }) {
+export function createMemoryService(deps: { repo: MemoryRepository }) {
   return {
-    add(args: MemoryAddArgs): number {
+    add(args: MemoryAddCommand): number {
       return deps.repo.add(args);
     },
     recent(n: number, category: string | null) {

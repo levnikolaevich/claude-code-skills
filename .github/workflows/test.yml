@@ -15,7 +15,7 @@ jobs:
 
       - uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version: 24
 
       - name: Install ripgrep
         run: sudo apt-get update -qq && sudo apt-get install -y ripgrep
@@ -130,6 +130,21 @@ jobs:
       - name: MCP hex-common test
         run: cd mcp/hex-common && npm test
 
+      - name: hex-relay install
+        run: cd agents/hex-relay && npm ci
+
+      - name: hex-relay typecheck
+        run: cd agents/hex-relay && npm run typecheck
+
+      - name: hex-relay test
+        run: cd agents/hex-relay && npm test
+
+      - name: hex-relay lint
+        run: cd agents/hex-relay && npm run lint
+
+      - name: hex-relay format check
+        run: cd agents/hex-relay && npm run format:check
+
   hex-ssh-interop:
     name: hex-ssh interop
     runs-on: ubuntu-latest
@@ -139,7 +154,7 @@ jobs:
 
       - uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version: 24
 
       - name: Install MCP dependencies
         run: cd mcp && npm install --ignore-scripts

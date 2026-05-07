@@ -3,8 +3,8 @@ import assert from "node:assert/strict";
 import { formatDurationSuffix } from "../src/domain/durationFormat.js";
 
 test("formatDurationSuffix: undefined/invalid returns empty string", () => {
-  assert.equal(formatDurationSuffix(undefined), "");
-  assert.equal(formatDurationSuffix(NaN), "");
+  assert.equal(formatDurationSuffix(), "");
+  assert.equal(formatDurationSuffix(Number.NaN), "");
   assert.equal(formatDurationSuffix(Number.POSITIVE_INFINITY), "");
   assert.equal(formatDurationSuffix(-1), "");
 });
@@ -17,9 +17,9 @@ test("formatDurationSuffix: sub-second uses ms with rounding", () => {
 });
 
 test("formatDurationSuffix: sub-10s uses one decimal", () => {
-  assert.equal(formatDurationSuffix(1_000), " (1.0s)");
-  assert.equal(formatDurationSuffix(2_456), " (2.5s)");
-  assert.equal(formatDurationSuffix(9_949), " (9.9s)");
+  assert.equal(formatDurationSuffix(1000), " (1.0s)");
+  assert.equal(formatDurationSuffix(2456), " (2.5s)");
+  assert.equal(formatDurationSuffix(9949), " (9.9s)");
 });
 
 test("formatDurationSuffix: 10s+ rounds to whole seconds", () => {

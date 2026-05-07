@@ -59,6 +59,10 @@ Optional:
 | ------------------------------------------------------------------------ | -------------------------------------------------------------------- |
 | `RELAY_VERBOSITY`                                                        | `quiet`, `normal`, or `verbose`; defaults to `normal`.               |
 | `RELAY_INBOUND_REACTIONS`                                                | Comma-separated Telegram reaction pool for inbound acknowledgements. |
+| `RELAY_IDLE_SHUTDOWN_ENABLED`                                            | Enables idle god-session shutdown; defaults to `true`.               |
+| `RELAY_IDLE_SHUTDOWN_SEC`                                                | Idle seconds before stopping a god-session; defaults to `600`.       |
+| `RELAY_IDLE_TICK_SEC`                                                    | Idle watchdog polling interval; defaults to `60`.                    |
+| `RELAY_IDLE_BOOT_GRACE_SEC`                                              | Grace window after relay boot before idle stops; defaults to `120`.  |
 | `RELAY_VOICE_TRANSCRIPTION`                                              | `off` or `local`; local uses `ffmpeg` plus `whisper.cpp`.            |
 | `FFMPEG_BIN`                                                             | `ffmpeg` executable path/name for voice normalization.               |
 | `WHISPER_CPP_BIN`                                                        | `whisper-cli` executable path for local voice transcription.         |

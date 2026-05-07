@@ -11,10 +11,15 @@ import { createRepositories } from "./infrastructure/db/repositories/index.js";
 import { createTelegramClient } from "./infrastructure/telegram/client.js";
 import { createGodStatusProbe } from "./infrastructure/systemd/godStatus.js";
 import { createSessionsDirCache } from "./infrastructure/filesystem/sessionsDirCache.js";
+import { createSessionTranscriptStore } from "./infrastructure/filesystem/sessionTranscriptStore.js";
 import { createGodErrorReader } from "./infrastructure/filesystem/godError.js";
 import { createMediaStore } from "./infrastructure/filesystem/mediaStore.js";
 import { createLastGodCommandReader } from "./infrastructure/filesystem/lastGodCommand.js";
+import { createAtomicCommandWriter } from "./infrastructure/filesystem/atomicCommand.js";
+import { createLastSessionWriter } from "./infrastructure/filesystem/lastSession.js";
+import { createTmuxPane } from "./infrastructure/tmux/pane.js";
 import { createLocalVoiceTranscriber } from "./infrastructure/process/localVoiceTranscriber.js";
+import { createTaskProviderClient } from "./infrastructure/providers/taskProviderClient.js";
 import { TIMING } from "./config/paths.js";
 import { createControlLane } from "./services/controlLane.service.js";
 import { createOutboxService } from "./services/outbox.service.js";
@@ -27,7 +32,6 @@ import { createAllowlistService } from "./services/allowlist.service.js";
 import { createTodoDiffService } from "./services/todoDiff.service.js";
 import { createVerbosityService } from "./services/verbosity.service.js";
 import { createTypingService } from "./services/typing.service.js";
-import { createTaskProviderService } from "./services/taskProvider.service.js";
 import { createTaskService } from "./services/task.service.js";
 import { createUserBuddyService } from "./services/userBuddy.service.js";
 import { buildAllowlistMiddleware } from "./handlers/telegram/allowlist.middleware.js";
@@ -95,10 +99,33 @@ export function buildApp(env: Env, log: Logger = createLogger()): App {
     ttlSec: TIMING.lastCmdTtlSec,
     log,
   });
+  const transcriptStore = createSessionTranscriptStore({ log, sessionsDir });
 
   const controlLane = createControlLane();
   const sessionLocks = new MutexMap();
-  const godRuntime = createGodRuntimeService({ env, log, godStatus });
+  const godRuntime = createGodRuntimeService({
+    env,
+    godStatus,
+    adapters: {
+      pane: (runtimePaths) =>
+        createTmuxPane({
+          target: runtimePaths.tmuxTarget,
+          socketName: env.tmuxSocketName,
+          log,
+        }),
+      atomicCommand: (runtimePaths) =>
+        createAtomicCommandWriter({
+          cmdFile: runtimePaths.cmdFile,
+          stateDir: runtimePaths.userStateDir,
+          log,
+        }),
+      lastSession: (runtimePaths) =>
+        createLastSessionWriter({
+          filePath: runtimePaths.lastSessionFile,
+          log,
+        }),
+    },
+  });
 
   const outbox = createOutboxService({ outboxRepo: repos.outbox, log });
   const verbosity = createVerbosityService(env.verbosity);
@@ -113,7 +140,7 @@ export function buildApp(env: Env, log: Logger = createLogger()): App {
     log,
     sessionsRepo: repos.sessions,
     sessionEventsRepo: repos.sessionEvents,
-    sessionsDir,
+    transcriptStore,
     lastGodCommand,
     lastSessionForUser: (userId, agent) => godRuntime.runtimeFor(userId, agent).lastSession,
     primaryOperator: env.allowedChat,
@@ -154,7 +181,7 @@ export function buildApp(env: Env, log: Logger = createLogger()): App {
   const dispatch = createDispatchService({ repo: repos.dispatch });
   const memory = createMemoryService({ repo: repos.memory });
   const todoDiff = createTodoDiffService({ log, repo: repos.todoState });
-  const taskProvider = createTaskProviderService({ env, log });
+  const taskProvider = createTaskProviderClient({ env, log });
   const tasks = createTaskService({
     env,
     log,

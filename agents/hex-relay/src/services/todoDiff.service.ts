@@ -1,11 +1,11 @@
 import type { Logger } from "../lib/logger.js";
 import { TIMING } from "../config/paths.js";
-import type { TodoStateRepo } from "../infrastructure/db/repositories/todoState.repo.js";
 import { computeTodoTransitions, type TodoTransition } from "../domain/todoState.js";
+import type { TodoStateRepository } from "./ports.js";
 
 export type TodoDiffService = ReturnType<typeof createTodoDiffService>;
 
-export function createTodoDiffService(deps: { log: Logger; repo: TodoStateRepo }) {
+export function createTodoDiffService(deps: { log: Logger; repo: TodoStateRepository }) {
   function diffAndPersist(sessionId: string, todos: unknown[]): TodoTransition[] {
     if (!sessionId) return [];
     let prevMap: Map<string, { status: string }>;

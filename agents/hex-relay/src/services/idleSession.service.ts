@@ -1,13 +1,11 @@
 import type { Logger } from "../lib/logger.js";
-import type { GodStatusProbe } from "../infrastructure/systemd/godStatus.js";
-import type { MessagesRepo } from "../infrastructure/db/repositories/messages.repo.js";
-import type { PendingReplyRepo } from "../infrastructure/db/repositories/pendingReply.repo.js";
+import type { GodStatusPort, MessagesRepository, PendingReplyRepository } from "./ports.js";
 
 export interface IdleSessionDeps {
   log: Logger;
-  godStatus: GodStatusProbe;
-  messagesRepo: MessagesRepo;
-  pendingRepo: PendingReplyRepo;
+  godStatus: GodStatusPort;
+  messagesRepo: MessagesRepository;
+  pendingRepo: PendingReplyRepository;
   /** Seconds; if last activity was longer ago, the instance is eligible for shutdown. */
   idleThresholdSec: number;
   /** Seconds since `bootTimestampSec`; instances are not evaluated until this elapses. */

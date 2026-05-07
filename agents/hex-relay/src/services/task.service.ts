@@ -1,11 +1,9 @@
 import type { Env } from "../config/env.js";
 import type { ProviderTask } from "../domain/task.js";
-import type { MessagesRepo } from "../infrastructure/db/repositories/messages.repo.js";
-import type { TaskPollStateRepo } from "../infrastructure/db/repositories/taskPollState.repo.js";
 import type { Logger } from "../lib/logger.js";
 import type { InboundService } from "./inbound.service.js";
 import type { OutboxService } from "./outbox.service.js";
-import type { TaskProviderService } from "./taskProvider.service.js";
+import type { MessagesRepository, TaskPollStateRepository, TaskProviderPort } from "./ports.js";
 import { buildTgPrefix } from "../domain/tgPrefix.js";
 
 export type TaskService = ReturnType<typeof createTaskService>;
@@ -42,18 +40,18 @@ function taskHandoffPrompt(task: ProviderTask): string {
 export function createTaskService(deps: {
   env: Env;
   log: Logger;
-  provider: TaskProviderService;
+  provider: TaskProviderPort;
   outbox: OutboxService;
-  messagesRepo: MessagesRepo;
-  taskPollState: TaskPollStateRepo;
+  messagesRepo: MessagesRepository;
+  taskPollState: TaskPollStateRepository;
   inbound: InboundService;
 }) {
-  async function listOpenTasks(): Promise<ProviderTask[]> {
-    return deps.provider.listOpenTasks();
+  async function fetchOpenTasks(): Promise<ProviderTask[]> {
+    return deps.provider.fetchOpenTasks();
   }
 
   async function pollAndNotifyPrimary(): Promise<{ count: number }> {
-    const tasks = await listOpenTasks();
+    const tasks = await fetchOpenTasks();
     if (tasks.length === 0) {
       const prev = deps.taskPollState.get();
       deps.taskPollState.save({ lastNotifiedAt: prev?.lastNotifiedAt ?? null, lastCount: 0 });
@@ -92,7 +90,7 @@ export function createTaskService(deps: {
     fromUserId: number;
     telegramMessageId: number;
   }): Promise<ProviderTask | null> {
-    const tasks = await listOpenTasks();
+    const tasks = await fetchOpenTasks();
     const task = tasks.find((t) => t.id === args.taskId) ?? null;
     if (!task) return null;
 
@@ -113,5 +111,5 @@ export function createTaskService(deps: {
     return task;
   }
 
-  return { listOpenTasks, pollAndNotifyPrimary, queueTaskForUser };
+  return { fetchOpenTasks, pollAndNotifyPrimary, queueTaskForUser };
 }

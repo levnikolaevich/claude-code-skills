@@ -1,21 +1,21 @@
 import type {
-  DispatchRepo,
-  DispatchStartArgs,
-  DispatchPhaseArgs,
-  DispatchEndArgs,
-} from "../infrastructure/db/repositories/dispatch.repo.js";
+  DispatchEndCommand,
+  DispatchPhaseCommand,
+  DispatchRepository,
+  DispatchStartCommand,
+} from "./ports.js";
 
 export type DispatchService = ReturnType<typeof createDispatchService>;
 
-export function createDispatchService(deps: { repo: DispatchRepo }) {
+export function createDispatchService(deps: { repo: DispatchRepository }) {
   return {
-    start(args: DispatchStartArgs): number {
+    start(args: DispatchStartCommand): number {
       return deps.repo.start(args);
     },
-    phase(args: DispatchPhaseArgs): void {
+    phase(args: DispatchPhaseCommand): void {
       deps.repo.phase(args);
     },
-    end(runId: number, args: DispatchEndArgs): void {
+    end(runId: number, args: DispatchEndCommand): void {
       deps.repo.end(runId, args);
     },
     recent(n: number) {

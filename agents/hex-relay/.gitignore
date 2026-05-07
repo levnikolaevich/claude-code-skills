@@ -1,5 +1,10 @@
 # local overrides for relay-bot
 !package-lock.json
+*.pem
+*.key
+*.crt
+*.cert
+secrets/
 
 # install/build outputs are produced on the target VPS
 node_modules/

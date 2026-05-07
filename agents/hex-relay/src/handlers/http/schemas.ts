@@ -65,17 +65,34 @@ export const DispatchStartBodySchema = z.object({
   budget_week_pct: z.number().int().nullable().optional(),
 });
 
+export const DispatchPhaseStatusSchema = z.enum([
+  "running",
+  "waiting_approval",
+  "done",
+  "failed",
+  "skipped",
+]);
+
+export const DispatchRunStatusSchema = z.enum([
+  "started",
+  "running",
+  "waiting_approval",
+  "finished",
+  "failed",
+  "abandoned",
+]);
+
 export const DispatchPhaseBodySchema = z.object({
   run_id: z.coerce.number().int(),
   phase: z.string().min(1),
-  status: z.string().default("running"),
+  status: DispatchPhaseStatusSchema.default("running"),
   verdict: z.string().nullable().optional(),
   details: z.string().nullable().optional(),
 });
 
 export const DispatchEndBodySchema = z.object({
   run_id: z.coerce.number().int(),
-  status: z.string().default("finished"),
+  status: DispatchRunStatusSchema.default("finished"),
   pr_number: z.number().int().nullable().optional(),
   pr_url: z.string().nullable().optional(),
   branch: z.string().nullable().optional(),

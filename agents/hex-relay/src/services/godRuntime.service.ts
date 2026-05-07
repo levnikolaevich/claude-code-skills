@@ -1,37 +1,22 @@
 import type { Env } from "../config/env.js";
 import { buildUserRuntimePaths } from "../config/paths.js";
-import type { Logger } from "../lib/logger.js";
-import { createTmuxPane } from "../infrastructure/tmux/pane.js";
-import { createAtomicCommandWriter } from "../infrastructure/filesystem/atomicCommand.js";
-import { createLastSessionWriter } from "../infrastructure/filesystem/lastSession.js";
-import type { GodStatusProbe } from "../infrastructure/systemd/godStatus.js";
 import type { AgentKind } from "../domain/message.js";
+import type { GodRuntimeAdapters, GodStatusPort } from "./ports.js";
 
 export type GodRuntimeService = ReturnType<typeof createGodRuntimeService>;
 
 export function createGodRuntimeService(deps: {
   env: Env;
-  log: Logger;
-  godStatus: GodStatusProbe;
+  adapters: GodRuntimeAdapters;
+  godStatus: GodStatusPort;
 }) {
   function runtimeFor(userId: number, agent: AgentKind = "claude") {
     const paths = buildUserRuntimePaths(deps.env, userId, agent);
     return {
       paths,
-      pane: createTmuxPane({
-        target: paths.tmuxTarget,
-        socketName: deps.env.tmuxSocketName,
-        log: deps.log,
-      }),
-      atomicCmd: createAtomicCommandWriter({
-        cmdFile: paths.cmdFile,
-        stateDir: paths.userStateDir,
-        log: deps.log,
-      }),
-      lastSession: createLastSessionWriter({
-        filePath: paths.lastSessionFile,
-        log: deps.log,
-      }),
+      pane: deps.adapters.pane(paths),
+      atomicCmd: deps.adapters.atomicCommand(paths),
+      lastSession: deps.adapters.lastSession(paths),
     };
   }
 

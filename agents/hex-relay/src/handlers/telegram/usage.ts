@@ -29,7 +29,8 @@ const PROMPT_INSTRUCTION =
 const CLAUDE_FAILED = "📊 Claude usage\n⚠️ claude-usage-report failed (see relay logs).";
 const CODEX_FAILED =
   "\u{1F7E2} Codex usage\n⚠️ codex app-server account/rateLimits/read failed (see relay logs).";
-const CODEX_INACTIVE = "⚪ Codex god-session: not running. Start: `@codex hi` or `/set_buddy codex`.";
+const CODEX_INACTIVE =
+  "⚪ Codex god-session: not running. Start: `@codex hi` or `/set_buddy codex`.";
 
 async function runCodexJsonReport(deps: UsageDeps): Promise<string> {
   try {

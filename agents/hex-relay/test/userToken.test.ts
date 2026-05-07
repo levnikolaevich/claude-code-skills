@@ -3,12 +3,12 @@ import assert from "node:assert/strict";
 import type { Context } from "grammy";
 import { userTokenFromContext } from "../src/handlers/telegram/userToken.js";
 
-function ctx(from: { id?: number; username?: string } | undefined): Context {
+function ctx(from?: { id?: number; username?: string }): Context {
   return { from } as unknown as Context;
 }
 
 test("userTokenFromContext: missing ctx.from returns null", () => {
-  assert.equal(userTokenFromContext(ctx(undefined)), null);
+  assert.equal(userTokenFromContext(ctx()), null);
 });
 
 test("userTokenFromContext: prefers username when present", () => {

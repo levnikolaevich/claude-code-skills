@@ -17,6 +17,11 @@ Use this when any file under `agents/hex-relay/` changes. Do not edit `dist/` on
 tar -czf /tmp/${SERVICE_PREFIX}-hex-relay-src.tgz \
   --exclude node_modules \
   --exclude dist \
+  --exclude .hex-skills \
+  --exclude .codegraph \
+  --exclude .cache \
+  --exclude '*.tgz' \
+  --exclude '*.tsbuildinfo' \
   -C agents/hex-relay .
 
 # 2. Upload /tmp/${SERVICE_PREFIX}-hex-relay-src.tgz to the VPS.

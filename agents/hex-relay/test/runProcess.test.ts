@@ -22,10 +22,10 @@ test("runProcess rejects on timeout after child close", async () => {
       process.execPath,
       [
         "-e",
-        "console.log('before sleep'); console.error('stderr before sleep'); setTimeout(() => {}, 2000);",
+        String.raw`const fs = require('node:fs'); fs.writeSync(1, 'before sleep\n'); fs.writeSync(2, 'stderr before sleep\n'); setTimeout(() => {}, 2000);`,
       ],
       {
-        timeoutMs: 50,
+        timeoutMs: 500,
         label: "slow fixture",
       }
     );
@@ -34,10 +34,10 @@ test("runProcess rejects on timeout after child close", async () => {
   }
 
   assert.ok(error instanceof RunProcessTimeoutError);
-  assert.match(error.message, /slow fixture timed out after 50ms/);
+  assert.match(error.message, /slow fixture timed out after 500ms/);
   assert.equal(error.code, -1);
   assert.equal(error.signal, "SIGKILL");
   assert.match(error.stdout, /before sleep/);
   assert.match(error.stderr, /stderr before sleep/);
-  assert.ok(Date.now() - started >= 50);
+  assert.ok(Date.now() - started >= 500);
 });

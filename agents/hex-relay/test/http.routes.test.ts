@@ -118,6 +118,12 @@ test("dispatch routes use Fastify schema validation", async () => {
   const bad = await app.inject({ method: "POST", url: "/dispatch/phase", payload: { phase: "x" } });
   assert.equal(bad.statusCode, 400);
   assert.equal(bad.json().error, "validation");
+  const badStatus = await app.inject({
+    method: "POST",
+    url: "/dispatch/phase",
+    payload: { run_id: 11, phase: "review", status: "surprised" },
+  });
+  assert.equal(badStatus.statusCode, 400);
   const ok = await app.inject({
     method: "POST",
     url: "/dispatch/phase",
@@ -155,7 +161,7 @@ test("memory and task routes validate and serialize stable contracts", async () 
   registerTaskRoutes(app, {
     log,
     tasks: {
-      listOpenTasks: async () => [],
+      fetchOpenTasks: async () => [],
       pollAndNotifyPrimary: async () => ({ count: 3 }),
       queueTaskForUser: async () => null,
     },
@@ -371,7 +377,7 @@ test("post-tool-use Skill emits duration suffix in verbose_bash", async () => {
       session_id: "sid-mid",
       tool_name: "Skill",
       tool_input: { skill: "ln-300-validator" },
-      duration_ms: 2_456,
+      duration_ms: 2456,
     },
   });
   assert.equal(fractional.statusCode, 200);

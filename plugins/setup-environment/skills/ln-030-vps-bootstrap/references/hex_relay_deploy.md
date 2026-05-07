@@ -2,7 +2,7 @@
 
 <!-- SCOPE: hex-relay deployment and compatibility procedure for ln-030-vps-bootstrap. -->
 
-Gated on `TELEGRAM_BOT_TOKEN`. If Telegram is skipped, the god-session can still run, but task polling, Telegram inbound, and outbound mirroring are absent.
+Gated on both `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID`. If Telegram is skipped, do not deploy or start `${SERVICE_PREFIX}-hex-relay.service`; the god-session can still run without task polling, Telegram inbound, or outbound mirroring.
 
 ## Compatibility gate
 
@@ -33,6 +33,8 @@ Do not run both services for one project; they bind the same hook port and own t
 Upload source files from `agents/hex-relay/`; do not upload `dist/` or `node_modules/`.
 
 ## Install
+
+Run this section only when the Telegram/relay gate is enabled. Blank Telegram values are valid only when this whole relay path is skipped.
 
 ```bash
 install -d -o ${BOT_USER} -g ${BOT_USER} -m 755 /opt/${SERVICE_PREFIX}-hex-relay

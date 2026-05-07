@@ -4,6 +4,11 @@
 .env.*.local
 *.env
 .envrc
+*.pem
+*.key
+*.crt
+*.cert
+secrets/
 
 # IDE and Editor Files
 .vscode/

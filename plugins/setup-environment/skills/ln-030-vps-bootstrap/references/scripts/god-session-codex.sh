@@ -81,9 +81,9 @@ command -v jq    >/dev/null || fatal 2 "missing_runtime" "jq not on PATH"
 [[ -r "$SECRETS" ]] || fatal 3 "secrets_unreadable" "cannot read $SECRETS"
 set -a; . "$SECRETS"; set +a
 
-# RELAY_HOOK_PORT is read by hex-relay-codex-hook.sh inside the sandbox. Default
-# matches the relay listener default; the per-project secrets.env can override it.
-RELAY_HOOK_PORT=${RELAY_HOOK_PORT:-8090}
+# RELAY_HOOK_PORT is read by hex-relay-codex-hook.sh inside the sandbox.
+# It must come from the systemd unit so hooks target the project relay.
+[[ -n "${RELAY_HOOK_PORT:-}" ]] || fatal 3 "missing_config" "RELAY_HOOK_PORT is required"
 
 # Codex runs the interactive TUI by default. workspace-write keeps the agent confined
 # to the project tree at the Codex layer; bwrap still enforces the host-level boundary.

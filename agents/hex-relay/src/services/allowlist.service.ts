@@ -1,16 +1,12 @@
 import type { Logger } from "../lib/logger.js";
-import type {
-  UsersRepo,
-  AuthRejectArgs,
-  UpsertUserArgs,
-} from "../infrastructure/db/repositories/users.repo.js";
+import type { AuthRejectCommand, UsersRepository, UserUpsertCommand } from "./ports.js";
 import type { AllowedUserStatus, AllowedUserRow } from "../domain/user.js";
 
 export type AllowlistService = ReturnType<typeof createAllowlistService>;
 
 export function createAllowlistService(deps: {
   log: Logger;
-  usersRepo: UsersRepo;
+  usersRepo: UsersRepository;
   primaryOperator: number;
 }) {
   let cache = new Map<number, AllowedUserStatus>();
@@ -43,7 +39,7 @@ export function createAllowlistService(deps: {
     return userId !== null && userId !== undefined && userId === deps.primaryOperator;
   }
 
-  function upsertUser(args: UpsertUserArgs): void {
+  function upsertUser(args: UserUpsertCommand): void {
     deps.usersRepo.upsert(args);
     refresh();
   }
@@ -60,7 +56,7 @@ export function createAllowlistService(deps: {
     status,
     isPrimary,
     primaryOperator: deps.primaryOperator,
-    insertAuthReject(args: AuthRejectArgs): void {
+    insertAuthReject(args: AuthRejectCommand): void {
       try {
         deps.usersRepo.insertAuthReject(args);
       } catch (error) {

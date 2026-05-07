@@ -1,9 +1,9 @@
 import type { Logger } from "../lib/logger.js";
 import { TokenBucket } from "../lib/tokenBucket.js";
 import { TIMING } from "../config/paths.js";
-import type { OutboxRepo } from "../infrastructure/db/repositories/outbox.repo.js";
 import type { OutboxEventType, OutboxRow, AgentKind } from "../domain/message.js";
 import { isStatusEvent, DEFAULT_AGENT } from "../domain/message.js";
+import type { OutboxRepository } from "./ports.js";
 
 export type OutboxService = ReturnType<typeof createOutboxService>;
 
@@ -17,7 +17,7 @@ export interface EnqueueArgs {
   agent?: AgentKind;
 }
 
-export function createOutboxService(deps: { outboxRepo: OutboxRepo; log: Logger }) {
+export function createOutboxService(deps: { outboxRepo: OutboxRepository; log: Logger }) {
   const bucket = new TokenBucket(TIMING.tokenBucketMax, TIMING.tokenBucketWindowSec * 1000);
 
   function enqueueStatus(args: EnqueueArgs): number | null {

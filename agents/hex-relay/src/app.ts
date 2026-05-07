@@ -34,6 +34,8 @@ import { createVerbosityService } from "./services/verbosity.service.js";
 import { createTypingService } from "./services/typing.service.js";
 import { createTaskService } from "./services/task.service.js";
 import { createUserBuddyService } from "./services/userBuddy.service.js";
+import { createHookIngestionService } from "./services/hookIngestion.service.js";
+import { createTelegramInboundCaptureService } from "./services/telegramInboundCapture.service.js";
 import { buildAllowlistMiddleware } from "./handlers/telegram/allowlist.middleware.js";
 import { buildNewSessionHandler } from "./handlers/telegram/newSession.js";
 import { buildSessionsHandler } from "./handlers/telegram/sessions.js";
@@ -104,7 +106,9 @@ export function buildApp(env: Env, log: Logger = createLogger()): App {
   const controlLane = createControlLane();
   const sessionLocks = new MutexMap();
   const godRuntime = createGodRuntimeService({
-    env,
+    runtimePaths: {
+      forUser: (userId, agent) => buildUserRuntimePaths(env, userId, agent),
+    },
     godStatus,
     adapters: {
       pane: (runtimePaths) =>
@@ -181,9 +185,34 @@ export function buildApp(env: Env, log: Logger = createLogger()): App {
   const dispatch = createDispatchService({ repo: repos.dispatch });
   const memory = createMemoryService({ repo: repos.memory });
   const todoDiff = createTodoDiffService({ log, repo: repos.todoState });
+  const hookIngestion = createHookIngestionService({
+    log,
+    messagesRepo: repos.messages,
+    pendingRepo: repos.pendingReply,
+    outbox,
+    sessionService,
+    todoDiff,
+    memory,
+    dispatch,
+    verbosity,
+    typing,
+    primaryOperator: env.allowedChat,
+    dbPath: env.dbPath,
+  });
+  const telegramInboundCapture = createTelegramInboundCaptureService({
+    log,
+    messagesRepo: repos.messages,
+    userBuddy,
+    voiceTranscription: env.voiceTranscription,
+    voiceMaxDurationSec: env.voiceMaxDurationSec,
+    reactToVoiceTranscribing: verbosity.allows("L1") ? reactToVoiceTranscribing : undefined,
+  });
   const taskProvider = createTaskProviderClient({ env, log });
   const tasks = createTaskService({
-    env,
+    config: {
+      allowedChat: env.allowedChat,
+      gitProvider: env.gitProvider,
+    },
     log,
     provider: taskProvider,
     outbox,
@@ -241,12 +270,8 @@ export function buildApp(env: Env, log: Logger = createLogger()): App {
   });
   const inboundHandler = buildInboundHandler({
     log,
-    messagesRepo: repos.messages,
     mediaStore,
-    userBuddy,
-    voiceTranscription: env.voiceTranscription,
-    voiceMaxDurationSec: env.voiceMaxDurationSec,
-    reactToVoiceTranscribing: verbosity.allows("L1") ? reactToVoiceTranscribing : undefined,
+    capture: telegramInboundCapture,
   });
   bot.use(newSessionHandler);
   bot.use(sessionsHandler);
@@ -268,19 +293,7 @@ export function buildApp(env: Env, log: Logger = createLogger()): App {
   configureZodFastify(httpServer);
   registerErrorHandler(httpServer, log);
   registerHookRoutes(httpServer, {
-    log,
-    messagesRepo: repos.messages,
-    pendingRepo: repos.pendingReply,
-    sessionsRepo: repos.sessions,
-    outbox,
-    sessionService,
-    todoDiff,
-    memory,
-    dispatch,
-    verbosity,
-    typing,
-    primaryOperator: env.allowedChat,
-    dbPath: env.dbPath,
+    hookIngestion,
   });
   registerDispatchRoutes(httpServer, { log, dispatch });
   registerTaskRoutes(httpServer, { log, tasks });

@@ -1,4 +1,3 @@
-import type { Env } from "../config/env.js";
 import type { ProviderTask } from "../domain/task.js";
 import type { Logger } from "../lib/logger.js";
 import type { InboundService } from "./inbound.service.js";
@@ -7,6 +6,11 @@ import type { MessagesRepository, TaskPollStateRepository, TaskProviderPort } fr
 import { buildTgPrefix } from "../domain/tgPrefix.js";
 
 export type TaskService = ReturnType<typeof createTaskService>;
+
+export interface TaskServiceConfig {
+  allowedChat: number;
+  gitProvider: "github" | "gitlab";
+}
 
 const TASK_BODY_LIMIT = 5000;
 const NOTIFY_COOLDOWN_SEC = 24 * 60 * 60;
@@ -38,7 +42,7 @@ function taskHandoffPrompt(task: ProviderTask): string {
 }
 
 export function createTaskService(deps: {
-  env: Env;
+  config: TaskServiceConfig;
   log: Logger;
   provider: TaskProviderPort;
   outbox: OutboxService;
@@ -55,7 +59,7 @@ export function createTaskService(deps: {
     if (tasks.length === 0) {
       const prev = deps.taskPollState.get();
       deps.taskPollState.save({ lastNotifiedAt: prev?.lastNotifiedAt ?? null, lastCount: 0 });
-      deps.log.info({ provider: deps.env.gitProvider }, "TASKS poll empty");
+      deps.log.info({ provider: deps.config.gitProvider }, "TASKS poll empty");
       return { count: 0 };
     }
 
@@ -65,19 +69,19 @@ export function createTaskService(deps: {
     const shouldNotify = lastNotifiedAt === null || now - lastNotifiedAt >= NOTIFY_COOLDOWN_SEC;
     if (shouldNotify) {
       deps.outbox.enqueueStatus({
-        chatId: deps.env.allowedChat,
+        chatId: deps.config.allowedChat,
         eventType: "system",
         text: `Tasks: ${tasks.length} open task(s). Use /tasks to choose one.`,
       });
       deps.taskPollState.save({ lastNotifiedAt: now, lastCount: tasks.length });
       deps.log.info(
-        { count: tasks.length, provider: deps.env.gitProvider },
+        { count: tasks.length, provider: deps.config.gitProvider },
         "TASKS poll notified primary"
       );
     } else {
       deps.taskPollState.save({ lastNotifiedAt, lastCount: tasks.length });
       deps.log.info(
-        { count: tasks.length, provider: deps.env.gitProvider, lastNotifiedAt },
+        { count: tasks.length, provider: deps.config.gitProvider, lastNotifiedAt },
         "TASKS poll notification suppressed by daily throttle"
       );
     }

@@ -1,4 +1,4 @@
-import type { Db } from "../client.js";
+import type { Db } from "../types.js";
 
 export interface HealthSnapshotArgs {
   source: string;

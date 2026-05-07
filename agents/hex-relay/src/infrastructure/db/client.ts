@@ -4,8 +4,7 @@ import { dirname } from "node:path";
 import type { Logger } from "../../lib/logger.js";
 import { runMigrations } from "./migrations.js";
 import { SCHEMA_SQL } from "./schema.js";
-
-export type Db = Database.Database;
+import type { Db } from "./types.js";
 
 export interface DbDeps {
   dbPath: string;

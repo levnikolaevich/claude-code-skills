@@ -1,8 +1,8 @@
 import { Composer, type Context } from "grammy";
 import type { Logger } from "../../lib/logger.js";
 import type { GodRuntimeService } from "../../services/godRuntime.service.js";
-import type { MessagesRepo } from "../../infrastructure/db/repositories/messages.repo.js";
 import type { UserBuddyService } from "../../services/userBuddy.service.js";
+import type { MessagesRepository } from "../../services/ports.js";
 import { type AgentKind, DEFAULT_AGENT } from "../../domain/message.js";
 import { buildTgPrefix } from "../../domain/tgPrefix.js";
 import { userTokenFromContext } from "./userToken.js";
@@ -13,7 +13,7 @@ export type RunCodexUsageReport = () => Promise<string>;
 export interface UsageDeps {
   log: Logger;
   godRuntime: GodRuntimeService;
-  messagesRepo: MessagesRepo;
+  messagesRepo: Pick<MessagesRepository, "insertInbound">;
   userBuddy: UserBuddyService;
   runClaudeUsageReport: RunClaudeUsageReport;
   runCodexUsageReport: RunCodexUsageReport;

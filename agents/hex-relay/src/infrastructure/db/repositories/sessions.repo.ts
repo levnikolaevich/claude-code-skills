@@ -1,4 +1,4 @@
-import type { Db } from "../client.js";
+import type { Db } from "../types.js";
 import type { SessionRow } from "../../../domain/session.js";
 import { type AgentKind, DEFAULT_AGENT } from "../../../domain/message.js";
 import { mapSessionRow } from "../rowMappers.js";

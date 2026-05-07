@@ -1,4 +1,4 @@
-import type { Db } from "../client.js";
+import type { Db } from "../types.js";
 import type { AgentKind } from "../../../domain/message.js";
 import type { UserBuddy } from "../../../domain/userBuddy.js";
 import { mapUserBuddyRow } from "../rowMappers.js";

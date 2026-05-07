@@ -7,7 +7,7 @@ import type { OutboxRepository } from "./ports.js";
 
 export type OutboxService = ReturnType<typeof createOutboxService>;
 
-export interface EnqueueArgs {
+export interface OutboxEnqueueRequest {
   text: string;
   chatId: number;
   repliedToId?: number | null;
@@ -20,7 +20,7 @@ export interface EnqueueArgs {
 export function createOutboxService(deps: { outboxRepo: OutboxRepository; log: Logger }) {
   const bucket = new TokenBucket(TIMING.tokenBucketMax, TIMING.tokenBucketWindowSec * 1000);
 
-  function enqueueStatus(args: EnqueueArgs): number | null {
+  function enqueueStatus(args: OutboxEnqueueRequest): number | null {
     const event = args.eventType ?? "reply";
     const skipBucketed = event === "status_skill" || event === "status_todo";
     if (skipBucketed && !bucket.tryAdd(args.chatId, Date.now())) {
@@ -46,7 +46,7 @@ export function createOutboxService(deps: { outboxRepo: OutboxRepository; log: L
     }
   }
 
-  function enqueueReply(args: EnqueueArgs): number {
+  function enqueueReply(args: OutboxEnqueueRequest): number {
     return deps.outboxRepo.enqueue({
       text: args.text,
       chatId: args.chatId,
@@ -58,7 +58,7 @@ export function createOutboxService(deps: { outboxRepo: OutboxRepository; log: L
     });
   }
 
-  function enqueueAck(args: EnqueueArgs): number {
+  function enqueueAck(args: OutboxEnqueueRequest): number {
     return deps.outboxRepo.enqueue({
       text: args.text,
       chatId: args.chatId,

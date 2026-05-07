@@ -1,4 +1,4 @@
-import type { Db } from "../client.js";
+import type { Db } from "../types.js";
 
 export interface TaskPollState {
   lastNotifiedAt: number | null;

@@ -13,7 +13,7 @@ import {
 
 export type SessionService = ReturnType<typeof createSessionService>;
 
-export interface SessionUpsertArgs {
+export interface SessionStartCommand {
   sessionId: string;
   source: string;
   model: string | null;
@@ -65,7 +65,7 @@ export function createSessionService(deps: {
     return deps.transcriptStore.deleteSessionFile(sid, owner);
   }
 
-  function recordStart(args: SessionUpsertArgs): number {
+  function recordStart(args: SessionStartCommand): number {
     const ownerFromCmd = deps.lastGodCommand.consumeOwner();
     const existingOwner = deps.sessionsRepo.getOwner(args.sessionId);
     const previousSession =

@@ -1,4 +1,4 @@
-import type { Db } from "../client.js";
+import type { Db } from "../types.js";
 import type { AllowedUserRow, AllowedUserStatus } from "../../../domain/user.js";
 import { mapUserRow } from "../rowMappers.js";
 

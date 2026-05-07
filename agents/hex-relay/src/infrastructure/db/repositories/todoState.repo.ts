@@ -1,4 +1,4 @@
-import type { Db } from "../client.js";
+import type { Db } from "../types.js";
 import type { TodoStateRow } from "../../../domain/todoState.js";
 import { mapTodoRow } from "../rowMappers.js";
 

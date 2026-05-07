@@ -6,6 +6,7 @@ import type {
   MessageKind,
   OutboxEventType,
   OutboxRow,
+  PendingReply,
 } from "../domain/message.js";
 import type { MemoryRow } from "../domain/memory.js";
 import type { SessionListItem } from "../domain/session.js";
@@ -122,6 +123,19 @@ export interface MessagesRepository {
   lastActivityForUserAgent(userId: number, agent: AgentKind): number | null;
 }
 
+export interface HookMessagesRepository {
+  findByTg(chatId: number, msgId: number): InboundMessage | null;
+  findById(id: number): InboundMessage | null;
+  getChatId(id: number): number | null;
+  update(msgId: number, fields: MessageUpdateCommand): void;
+  insertOutboundAudit(
+    text: string,
+    sessionId: string,
+    repliedToId: number | null,
+    agent?: AgentKind
+  ): number;
+}
+
 export interface TaskPollStateRepository {
   get(): { lastNotifiedAt: number | null; lastCount: number; updatedAt: number } | null;
   save(args: { lastNotifiedAt: number | null; lastCount: number }): void;
@@ -129,6 +143,39 @@ export interface TaskPollStateRepository {
 
 export interface PendingReplyRepository {
   hasOpenForUserAgent(userId: number, agent: AgentKind): boolean;
+}
+
+export interface HookPendingReplyRepository {
+  get(sessionId: string): PendingReply | null;
+  getAllForSession(sessionId: string): PendingReply[];
+  set(sessionId: string, inboundMsgId: number, prompt: string, agent?: AgentKind): void;
+  clear(sessionId: string): void;
+  listOthers(currentSessionId: string): PendingReply[];
+}
+
+export interface TelegramInboundMessagesRepository {
+  insertRejected(
+    text: string,
+    tgChatId: number,
+    tgMsgId: number,
+    error: string,
+    agent?: AgentKind
+  ): number;
+  insertTranscribingVoice(
+    tgChatId: number,
+    tgMsgId: number,
+    fromUserId: number,
+    mediaPath: string,
+    agent?: AgentKind
+  ): number;
+  insertInbound(
+    text: string,
+    tgChatId: number,
+    tgMsgId: number,
+    fromUserId: number,
+    agent?: AgentKind
+  ): number;
+  update(msgId: number, fields: MessageUpdateCommand): void;
 }
 
 export interface OutboxEnqueueCommand {
@@ -198,6 +245,10 @@ export interface GodRuntimeAdapters {
   pane(paths: GodRuntimePaths): TmuxPanePort;
   atomicCommand(paths: GodRuntimePaths): AtomicCommandWriterPort;
   lastSession(paths: GodRuntimePaths): LastSessionWriterPort;
+}
+
+export interface GodRuntimePathResolver {
+  forUser(userId: number, agent: AgentKind): GodRuntimePaths;
 }
 
 export interface SessionRepository {

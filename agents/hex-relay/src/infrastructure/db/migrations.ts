@@ -2,7 +2,7 @@ import { readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import type { Logger } from "../../lib/logger.js";
 import { UUID_RE } from "../../config/paths.js";
-import type { Db } from "./client.js";
+import type { Db } from "./types.js";
 
 export interface MigrationDeps {
   log: Logger;

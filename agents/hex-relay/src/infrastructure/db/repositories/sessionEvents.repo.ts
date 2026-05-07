@@ -1,4 +1,4 @@
-import type { Db } from "../client.js";
+import type { Db } from "../types.js";
 
 function nowTs(): number {
   return Math.floor(Date.now() / 1000);

@@ -1,4 +1,4 @@
-import type { Db } from "../client.js";
+import type { Db } from "../types.js";
 import { createMessagesRepo, type MessagesRepo } from "./messages.repo.js";
 import { createPendingReplyRepo, type PendingReplyRepo } from "./pendingReply.repo.js";
 import { createOutboxRepo, type OutboxRepo } from "./outbox.repo.js";

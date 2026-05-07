@@ -1,17 +1,15 @@
-import type { Env } from "../config/env.js";
-import { buildUserRuntimePaths } from "../config/paths.js";
 import type { AgentKind } from "../domain/message.js";
-import type { GodRuntimeAdapters, GodStatusPort } from "./ports.js";
+import type { GodRuntimeAdapters, GodRuntimePathResolver, GodStatusPort } from "./ports.js";
 
 export type GodRuntimeService = ReturnType<typeof createGodRuntimeService>;
 
 export function createGodRuntimeService(deps: {
-  env: Env;
+  runtimePaths: GodRuntimePathResolver;
   adapters: GodRuntimeAdapters;
   godStatus: GodStatusPort;
 }) {
   function runtimeFor(userId: number, agent: AgentKind = "claude") {
-    const paths = buildUserRuntimePaths(deps.env, userId, agent);
+    const paths = deps.runtimePaths.forUser(userId, agent);
     return {
       paths,
       pane: deps.adapters.pane(paths),

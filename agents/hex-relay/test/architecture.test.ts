@@ -31,6 +31,48 @@ test("services do not import concrete infrastructure", () => {
   assert.deepEqual(violations, []);
 });
 
+test("handlers do not import concrete infrastructure", () => {
+  const violations = tsFiles(join(srcRoot, "handlers")).flatMap((filePath) =>
+    importsFrom(filePath)
+      .filter((specifier) => specifier.includes("/infrastructure/"))
+      .map((specifier) => `${relative(root, filePath)} -> ${specifier}`)
+  );
+
+  assert.deepEqual(violations, []);
+});
+
+test("services do not depend on the full environment object", () => {
+  const violations = tsFiles(join(srcRoot, "services")).flatMap((filePath) => {
+    return importsFrom(filePath)
+      .filter((specifier) => specifier === "../config/env.js")
+      .map((specifier) => `${relative(root, filePath)} -> ${specifier}`);
+  });
+
+  assert.deepEqual(violations, []);
+});
+
+test("service public DTOs use command/request naming instead of Args", () => {
+  const violations = tsFiles(join(srcRoot, "services")).flatMap((filePath) => {
+    const source = readFileSync(filePath, "utf8");
+    return [...source.matchAll(/\bexport\s+(?:interface|type)\s+([A-Za-z0-9_]*Args)\b/g)].map(
+      (match) => `${relative(root, filePath)} -> ${match[1]}`
+    );
+  });
+
+  assert.deepEqual(violations, []);
+});
+
+test("db repositories import Db from infrastructure db types only", () => {
+  const violations = tsFiles(join(srcRoot, "infrastructure", "db")).flatMap((filePath) =>
+    importsFrom(filePath)
+      .filter((specifier) => specifier.endsWith("/client.js") || specifier === "./client.js")
+      .filter((_specifier) => readFileSync(filePath, "utf8").includes("import type { Db }"))
+      .map((specifier) => `${relative(root, filePath)} -> ${specifier}`)
+  );
+
+  assert.deepEqual(violations, []);
+});
+
 test("domain modules do not import outward layers", () => {
   const violations = tsFiles(join(srcRoot, "domain")).flatMap((filePath) =>
     importsFrom(filePath)

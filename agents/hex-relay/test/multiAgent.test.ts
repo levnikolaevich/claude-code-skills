@@ -14,6 +14,8 @@ import { createRepositories } from "../src/infrastructure/db/repositories/index.
 import { createUserBuddyService } from "../src/services/userBuddy.service.js";
 import { buildSetBuddyHandler } from "../src/handlers/telegram/setBuddy.js";
 import { buildInboundHandler } from "../src/handlers/telegram/inbound.js";
+import { createHookIngestionService } from "../src/services/hookIngestion.service.js";
+import { createTelegramInboundCaptureService } from "../src/services/telegramInboundCapture.service.js";
 import type { Logger } from "../src/lib/logger.js";
 import type { MediaStore } from "../src/infrastructure/filesystem/mediaStore.js";
 
@@ -91,13 +93,17 @@ test("inbound parses @codex prefix and routes to codex agent", async () => {
     const fakeMediaStore: MediaStore = {
       download: async () => null as any,
     } as MediaStore;
-    const handler = buildInboundHandler({
+    const capture = createTelegramInboundCaptureService({
       log,
       messagesRepo: repos.messages,
-      mediaStore: fakeMediaStore,
       userBuddy,
       voiceTranscription: "off",
       voiceMaxDurationSec: 60,
+    });
+    const handler = buildInboundHandler({
+      log,
+      mediaStore: fakeMediaStore,
+      capture,
     });
     bot.use(handler);
     await bot.init();
@@ -129,13 +135,17 @@ test("inbound without prefix uses userBuddy default", async () => {
     const fakeMediaStore: MediaStore = {
       download: async () => null as any,
     } as MediaStore;
-    const handler = buildInboundHandler({
+    const capture = createTelegramInboundCaptureService({
       log,
       messagesRepo: repos.messages,
-      mediaStore: fakeMediaStore,
       userBuddy,
       voiceTranscription: "off",
       voiceMaxDurationSec: 60,
+    });
+    const handler = buildInboundHandler({
+      log,
+      mediaStore: fakeMediaStore,
+      capture,
     });
     bot.use(handler);
     await bot.init();
@@ -180,15 +190,20 @@ test("pending stop hook respects agent and uses agent-aware reply prefix", async
   registerErrorHandler(app, log);
 
   const replies: Record<string, unknown>[] = [];
-  registerHookRoutes(app, {
+  const hookIngestion = createHookIngestionService({
     log,
     messagesRepo: {
+      findByTg: () => null,
       findById: (id: number) =>
-        id === 410 ? { id: 410, tgChatId: 5050, tgMsgId: 1, fromUserId: 7, agent: "codex" } : null,
+        id === 410
+          ? ({ id: 410, tgChatId: 5050, tgMsgId: 1, fromUserId: 7, agent: "codex" } as any)
+          : null,
       getChatId: (id: number) => (id === 410 ? 5050 : null),
+      update: noop,
       insertOutboundAudit: () => 999,
-    } as any,
+    },
     pendingRepo: {
+      get: () => null,
       getAllForSession: (sid: string) =>
         sid === "sid-codex"
           ? [
@@ -201,32 +216,33 @@ test("pending stop hook respects agent and uses agent-aware reply prefix", async
               },
             ]
           : [],
+      set: noop,
       clear: noop,
-    } as any,
-
-    sessionsRepo: {} as any,
+      listOthers: () => [],
+    },
     outbox: {
       enqueueReply: (args: Record<string, unknown>) => {
         replies.push(args);
         return 1;
       },
       enqueueAck: () => 2,
-    } as any,
+      enqueueStatus: () => 1,
+    },
     sessionService: {
       insertEvent: noop,
       ensureOwner: noop,
-    } as any,
-
-    todoDiff: {} as any,
-
-    memory: {} as any,
-
-    dispatch: {} as any,
-
-    verbosity: {} as any,
+      recordStart: () => 1,
+    },
+    todoDiff: { diffAndPersist: () => [] },
+    memory: { recent: () => [], markUsed: noop },
+    dispatch: { recent: () => [] },
+    verbosity: { allows: () => false },
     typing: { start: noop, stop: noop, stopAll: noop, activeCount: () => 0 },
     primaryOperator: 1,
     dbPath: "Z:/missing/relay.db",
+  } as any);
+  registerHookRoutes(app, {
+    hookIngestion,
   });
 
   const stopped = await app.inject({

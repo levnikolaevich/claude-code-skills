@@ -1,4 +1,4 @@
-import type { Db } from "../client.js";
+import type { Db } from "../types.js";
 import type { MemoryRow } from "../../../domain/memory.js";
 import { mapMemoryRow } from "../rowMappers.js";
 

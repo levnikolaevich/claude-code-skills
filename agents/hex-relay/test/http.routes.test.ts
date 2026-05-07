@@ -17,6 +17,10 @@ import { registerDispatchRoutes } from "../src/handlers/http/dispatch.routes.js"
 import { registerMemoryRoutes } from "../src/handlers/http/memory.routes.js";
 import { registerTaskRoutes } from "../src/handlers/http/tasks.routes.js";
 import { registerHookRoutes } from "../src/handlers/http/hooks.routes.js";
+import {
+  createHookIngestionService,
+  type HookIngestionDeps,
+} from "../src/services/hookIngestion.service.js";
 import type { BuildInfo } from "../src/config/buildInfo.js";
 import type { Logger } from "../src/lib/logger.js";
 import { closeDb, createDb } from "../src/infrastructure/db/client.js";
@@ -37,6 +41,45 @@ function createApp() {
   configureZodFastify(app);
   registerErrorHandler(app, log);
   return app;
+}
+
+function registerHooks(app: ReturnType<typeof createApp>, overrides: Record<string, unknown> = {}) {
+  const hookIngestion = createHookIngestionService({
+    log,
+    messagesRepo: {
+      findByTg: () => null,
+      findById: () => null,
+      getChatId: () => null,
+      update: noop,
+      insertOutboundAudit: () => 1,
+    },
+    pendingRepo: {
+      get: () => null,
+      getAllForSession: () => [],
+      set: noop,
+      clear: noop,
+      listOthers: () => [],
+    },
+    outbox: {
+      enqueueReply: () => 1,
+      enqueueAck: () => 1,
+      enqueueStatus: () => 1,
+    },
+    sessionService: {
+      insertEvent: noop,
+      ensureOwner: noop,
+      recordStart: () => 1,
+    },
+    todoDiff: { diffAndPersist: () => [] },
+    memory: { recent: () => [], markUsed: noop },
+    dispatch: { recent: () => [] },
+    verbosity: { allows: () => false },
+    typing: { start: noop, stop: noop, stopAll: noop, activeCount: () => 0 },
+    primaryOperator: 1,
+    dbPath: "Z:/missing/relay.db",
+    ...overrides,
+  } as HookIngestionDeps);
+  registerHookRoutes(app, { hookIngestion });
 }
 
 function runtimeDeps(): RuntimeStatusDeps & BuildInfo {
@@ -202,21 +245,7 @@ test("response serialization errors return internal error", async () => {
 
 test("Claude hook malformed payload compatibility stays 200 empty object", async () => {
   const app = createApp();
-  registerHookRoutes(app, {
-    log,
-    messagesRepo: {},
-    pendingRepo: {},
-    sessionsRepo: {},
-    outbox: {},
-    sessionService: {},
-    todoDiff: {},
-    memory: {},
-    dispatch: {},
-    verbosity: {},
-    typing: { start: noop, stop: noop, stopAll: noop, activeCount: () => 0 },
-    primaryOperator: 1,
-    dbPath: "Z:/missing/relay.db",
-  } as Parameters<typeof registerHookRoutes>[1]);
+  registerHooks(app);
   const response = await app.inject({
     method: "POST",
     url: "/hook/user-prompt-submit",
@@ -252,32 +281,53 @@ test("stop hook fans out acks for orphan pending inbounds", async () => {
   const acks: Record<string, unknown>[] = [];
   const inboundsById = new Map<
     number,
-    { id: number; tgChatId: number; tgMsgId: number; fromUserId: number }
+    { id: number; tgChatId: number; tgMsgId: number; fromUserId: number; agent: "claude" }
   >([
-    [201, { id: 201, tgChatId: 999, tgMsgId: 1001, fromUserId: 5 }],
-    [202, { id: 202, tgChatId: 999, tgMsgId: 1002, fromUserId: 5 }],
-    [203, { id: 203, tgChatId: 999, tgMsgId: 1003, fromUserId: 5 }],
+    [201, { id: 201, tgChatId: 999, tgMsgId: 1001, fromUserId: 5, agent: "claude" }],
+    [202, { id: 202, tgChatId: 999, tgMsgId: 1002, fromUserId: 5, agent: "claude" }],
+    [203, { id: 203, tgChatId: 999, tgMsgId: 1003, fromUserId: 5, agent: "claude" }],
   ]);
   const pending = [
-    { sessionId: "sid-burst", inboundMsgId: 201, promptHash: "h1", createdAt: 1000 },
-    { sessionId: "sid-burst", inboundMsgId: 202, promptHash: "h2", createdAt: 1001 },
-    { sessionId: "sid-burst", inboundMsgId: 203, promptHash: "h3", createdAt: 1002 },
+    {
+      sessionId: "sid-burst",
+      inboundMsgId: 201,
+      promptHash: "h1",
+      createdAt: 1000,
+      agent: "claude",
+    },
+    {
+      sessionId: "sid-burst",
+      inboundMsgId: 202,
+      promptHash: "h2",
+      createdAt: 1001,
+      agent: "claude",
+    },
+    {
+      sessionId: "sid-burst",
+      inboundMsgId: 203,
+      promptHash: "h3",
+      createdAt: 1002,
+      agent: "claude",
+    },
   ];
   let cleared = 0;
-  registerHookRoutes(app, {
-    log,
+  registerHooks(app, {
     messagesRepo: {
       findById: (id: number) => inboundsById.get(id) ?? null,
+      findByTg: () => null,
       getChatId: (id: number) => inboundsById.get(id)?.tgChatId ?? null,
+      update: noop,
       insertOutboundAudit: () => 777,
     },
     pendingRepo: {
+      get: () => null,
       getAllForSession: (sid: string) => (sid === "sid-burst" ? pending : []),
+      set: noop,
       clear: () => {
         cleared += 1;
       },
+      listOthers: () => [],
     },
-    sessionsRepo: {},
     outbox: {
       enqueueReply: (args: Record<string, unknown>) => {
         replies.push(args);
@@ -287,19 +337,9 @@ test("stop hook fans out acks for orphan pending inbounds", async () => {
         acks.push(args);
         return 92;
       },
+      enqueueStatus: () => 1,
     },
-    sessionService: {
-      insertEvent: noop,
-      ensureOwner: noop,
-    },
-    todoDiff: {},
-    memory: {},
-    dispatch: {},
-    verbosity: {},
-    typing: { start: noop, stop: noop, stopAll: noop, activeCount: () => 0 },
-    primaryOperator: 1,
-    dbPath: "Z:/missing/relay.db",
-  } as Parameters<typeof registerHookRoutes>[1]);
+  });
 
   const stopped = await app.inject({
     method: "POST",
@@ -321,26 +361,16 @@ test("stop hook fans out acks for orphan pending inbounds", async () => {
 test("post-tool-use Skill emits duration suffix in verbose_bash", async () => {
   const app = createApp();
   const statuses: Record<string, unknown>[] = [];
-  registerHookRoutes(app, {
-    log,
-    messagesRepo: {},
+  registerHooks(app, {
     pendingRepo: { get: () => null },
-    sessionsRepo: {},
     outbox: {
       enqueueStatus: (args: Record<string, unknown>) => {
         statuses.push(args);
         return 1;
       },
     },
-    sessionService: {},
-    todoDiff: {},
-    memory: {},
-    dispatch: {},
     verbosity: { allows: (layer: string) => layer === "verbose_bash" },
-    typing: { start: noop, stop: noop, stopAll: noop, activeCount: () => 0 },
-    primaryOperator: 1,
-    dbPath: "Z:/missing/relay.db",
-  } as Parameters<typeof registerHookRoutes>[1]);
+  });
 
   const subSecond = await app.inject({
     method: "POST",
@@ -403,26 +433,16 @@ test("post-tool-use Skill emits duration suffix in verbose_bash", async () => {
 test("post-tool-use stays silent below verbose verbosity", async () => {
   const app = createApp();
   const statuses: Record<string, unknown>[] = [];
-  registerHookRoutes(app, {
-    log,
-    messagesRepo: {},
+  registerHooks(app, {
     pendingRepo: { get: () => null },
-    sessionsRepo: {},
     outbox: {
       enqueueStatus: (args: Record<string, unknown>) => {
         statuses.push(args);
         return 1;
       },
     },
-    sessionService: {},
-    todoDiff: {},
-    memory: {},
-    dispatch: {},
     verbosity: { allows: () => false },
-    typing: { start: noop, stop: noop, stopAll: noop, activeCount: () => 0 },
-    primaryOperator: 1,
-    dbPath: "Z:/missing/relay.db",
-  } as Parameters<typeof registerHookRoutes>[1]);
+  });
 
   const response = await app.inject({
     method: "POST",
@@ -443,26 +463,16 @@ test("post-tool-use stays silent below verbose verbosity", async () => {
 test("post-tool-use ignores non-Skill tools even with verbose_bash and duration_ms", async () => {
   const app = createApp();
   const statuses: Record<string, unknown>[] = [];
-  registerHookRoutes(app, {
-    log,
-    messagesRepo: {},
+  registerHooks(app, {
     pendingRepo: { get: () => null },
-    sessionsRepo: {},
     outbox: {
       enqueueStatus: (args: Record<string, unknown>) => {
         statuses.push(args);
         return 1;
       },
     },
-    sessionService: {},
-    todoDiff: {},
-    memory: {},
-    dispatch: {},
     verbosity: { allows: () => true },
-    typing: { start: noop, stop: noop, stopAll: noop, activeCount: () => 0 },
-    primaryOperator: 1,
-    dbPath: "Z:/missing/relay.db",
-  } as Parameters<typeof registerHookRoutes>[1]);
+  });
 
   for (const tool_name of ["Bash", "TodoWrite", "Agent", "Read", "Edit"]) {
     const response = await app.inject({

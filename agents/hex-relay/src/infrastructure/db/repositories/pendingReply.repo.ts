@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import type { Db } from "../client.js";
+import type { Db } from "../types.js";
 import { type PendingReply, type AgentKind, DEFAULT_AGENT } from "../../../domain/message.js";
 import { mapPendingRow } from "../rowMappers.js";
 

@@ -1,23 +1,28 @@
 import { existsSync, statSync } from "node:fs";
 import type { FastifyInstance } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
-import type { OutboxRepo } from "../../infrastructure/db/repositories/outbox.repo.js";
-import type { MessagesRepo } from "../../infrastructure/db/repositories/messages.repo.js";
-import type { PendingReplyRepo } from "../../infrastructure/db/repositories/pendingReply.repo.js";
-import type { SessionsRepo } from "../../infrastructure/db/repositories/sessions.repo.js";
 import type { ControlLane } from "../../services/controlLane.service.js";
-import type { GodStatusProbe } from "../../infrastructure/systemd/godStatus.js";
+import type {
+  GodStatusPort,
+  MessagesRepository,
+  OutboxRepository,
+  SessionRepository,
+} from "../../services/ports.js";
 import type { BuildInfo } from "../../config/buildInfo.js";
 import { HealthResponseSchema } from "./schemas.js";
 import { getPendingFanoutAcksTotal } from "./hooks.routes.js";
 
+interface RuntimePendingReplyRepository {
+  countActive(maxAgeSec: number): number;
+}
+
 export interface RuntimeStatusDeps {
-  outboxRepo: OutboxRepo;
-  messagesRepo: MessagesRepo;
-  pendingRepo: PendingReplyRepo;
-  sessionsRepo: SessionsRepo;
+  outboxRepo: Pick<OutboxRepository, "counts">;
+  messagesRepo: Pick<MessagesRepository, "counts">;
+  pendingRepo: RuntimePendingReplyRepository;
+  sessionsRepo: Pick<SessionRepository, "lastActiveSid">;
   controlLane: ControlLane;
-  godStatus: GodStatusProbe;
+  godStatus: Pick<GodStatusPort, "isAnyActive">;
   dbPath: string;
 }
 

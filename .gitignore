@@ -111,3 +111,4 @@ NUL
 
 # Benchmark results (machine-specific)
 **/benchmark/results/
+.claude/scheduled_tasks.lock

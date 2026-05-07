@@ -21,6 +21,7 @@ import {
   SubagentStopSchema,
   ToolUseSchema,
 } from "./schemas.js";
+import { formatDurationSuffix } from "../../domain/durationFormat.js";
 
 export interface HookDeps {
   log: Logger;
@@ -89,10 +90,9 @@ function bindPendingInbound(args: {
   prompt: string;
   chatId: number | null;
   tgMsgId: number | null;
-  source: "telegram_prefix" | "voice_transcript";
   agent: AgentKind;
 }): void {
-  const { deps, sessionId, inbound, prompt, chatId, tgMsgId, source, agent } = args;
+  const { deps, sessionId, inbound, prompt, chatId, tgMsgId, agent } = args;
   deps.messagesRepo.update(inbound.id, { sessionId });
   if (inbound.fromUserId !== null) {
     deps.sessionService.ensureOwner(sessionId, inbound.fromUserId, agent);
@@ -107,7 +107,6 @@ function bindPendingInbound(args: {
       inboundId: inbound.id,
       chatId,
       tgMsgId,
-      source,
     },
     "HOOK user-prompt-submit pending set"
   );
@@ -199,29 +198,12 @@ export function registerHookRoutes(app: FastifyInstance, deps: HookDeps): void {
           prompt,
           chatId,
           tgMsgId,
-          source: "telegram_prefix",
           agent,
         });
       }
       return reply.code(200).send({});
     }
 
-    const voiceInbound = deps.messagesRepo.findRecentDeliveredVoiceByText(
-      prompt.trim(),
-      TIMING.lastCmdTtlSec
-    );
-    if (voiceInbound) {
-      bindPendingInbound({
-        deps,
-        sessionId: session_id,
-        inbound: voiceInbound,
-        prompt,
-        chatId: voiceInbound.tgChatId,
-        tgMsgId: voiceInbound.tgMsgId,
-        source: "voice_transcript",
-        agent,
-      });
-    }
     return reply.code(200).send({});
   });
 
@@ -443,13 +425,14 @@ export function registerHookRoutes(app: FastifyInstance, deps: HookDeps): void {
     }
     const parsed = ToolUseSchema.safeParse(req.body);
     if (!parsed.success) return reply.code(200).send({});
-    const { tool_name, tool_input, session_id } = parsed.data;
+    const { tool_name, tool_input, session_id, duration_ms } = parsed.data;
     if (tool_name === "Skill") {
       const text = FormatService.formatSkill(tool_input, "✅");
       if (text) {
         const chatId = operatorChatForSession(deps, session_id || null);
+        const suffix = formatDurationSuffix(duration_ms);
         deps.outbox.enqueueStatus({
-          text: `${text} done`,
+          text: `${text} done${suffix}`,
           chatId,
           sessionId: session_id || null,
           eventType: "status_skill",

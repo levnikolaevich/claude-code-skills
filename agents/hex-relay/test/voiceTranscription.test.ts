@@ -100,7 +100,7 @@ test("local voice transcriber rejects ffmpeg failures", async () => {
   await assert.rejects(() => transcriber.transcribe(input), /ffmpeg failed/);
 });
 
-test("voice row success becomes queued plain transcript", async () => {
+test("voice row success queues transcript with [tg id=...] prefix", async () => {
   const updates: unknown[] = [];
   await transcribeVoiceRow(
     {
@@ -116,12 +116,57 @@ test("voice row success becomes queued plain transcript", async () => {
 
   assert.deepEqual(updates[0], {
     status: "queued",
-    text: "restart service",
+    text: "[tg id=100:200 user=300] restart service",
     attempts: 1,
     nextAttemptAt: (updates[0] as { nextAttemptAt: number }).nextAttemptAt,
     error: null,
   });
   assert.equal(typeof (updates[0] as { nextAttemptAt: number }).nextAttemptAt, "number");
+});
+
+test("voice rows from different users keep distinct prefixes for identical transcripts", async () => {
+  const updates: { text: string }[] = [];
+  for (const opts of [
+    { tgChatId: 100, tgMsgId: 200, fromUserId: 300 },
+    { tgChatId: 100, tgMsgId: 201, fromUserId: 700 },
+  ]) {
+    await transcribeVoiceRow(
+      {
+        log,
+        messagesRepo: {
+          update: (_id: number, fields: unknown) => updates.push(fields as { text: string }),
+        } as any,
+        outbox: { enqueueReply: () => void updates.length } as any,
+        transcriber: { transcribe: async () => ({ text: "привет" }) },
+      },
+      baseRow(opts)
+    );
+  }
+  assert.equal(updates[0].text, "[tg id=100:200 user=300] привет");
+  assert.equal(updates[1].text, "[tg id=100:201 user=700] привет");
+  assert.notEqual(updates[0].text, updates[1].text);
+});
+
+test("voice row missing tg identifiers is rejected", async () => {
+  const updates: Record<string, unknown>[] = [];
+  const replies: { chatId: number | null; repliedToId: number | null }[] = [];
+  await transcribeVoiceRow(
+    {
+      log,
+      messagesRepo: {
+        update: (_id: number, fields: unknown) => updates.push(fields as Record<string, unknown>),
+      } as any,
+      outbox: {
+        enqueueReply: (reply: { chatId: number | null; repliedToId: number | null }) =>
+          replies.push(reply),
+      } as any,
+      transcriber: { transcribe: async () => ({ text: "orphan" }) },
+    },
+    baseRow({ tgChatId: null, tgMsgId: null })
+  );
+  assert.equal(updates[0].status, "rejected");
+  assert.equal(updates[0].error, "voice row missing tg identifiers");
+  assert.equal(replies.length, 0, "no Telegram reply when chat id is missing");
 });
 
 test("voice row failure becomes rejected and replies to Telegram", async () => {

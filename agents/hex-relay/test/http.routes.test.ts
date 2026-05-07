@@ -221,85 +221,6 @@ test("Claude hook malformed payload compatibility stays 200 empty object", async
   await app.close();
 });
 
-test("voice transcript prompt binds pending reply without Telegram prefix", async () => {
-  const app = createApp();
-  const updates: unknown[] = [];
-  const replies: unknown[] = [];
-  const pending = new Map<string, { inboundMsgId: number }>();
-  registerHookRoutes(app, {
-    log,
-    messagesRepo: {
-      findRecentDeliveredVoiceByText: (text: string) =>
-        text === "Привет, ты живой?"
-          ? {
-              id: 103,
-              tgChatId: 1_633_575,
-              tgMsgId: 362,
-              fromUserId: 300,
-            }
-          : null,
-      findById: (id: number) =>
-        id === 103
-          ? {
-              id: 103,
-              tgChatId: 1_633_575,
-              tgMsgId: 362,
-              fromUserId: 300,
-            }
-          : null,
-      update: (id: number, fields: unknown) => updates.push({ id, fields }),
-      getChatId: (id: number) => (id === 103 ? 1_633_575 : null),
-      insertOutboundAudit: () => 501,
-    },
-    pendingRepo: {
-      set: (sessionId: string, inboundMsgId: number) => pending.set(sessionId, { inboundMsgId }),
-      get: (sessionId: string) => pending.get(sessionId) ?? null,
-      getAllForSession: (sessionId: string) => {
-        const p = pending.get(sessionId);
-        return p ? [p] : [];
-      },
-      clear: (sessionId: string) => pending.delete(sessionId),
-    },
-    sessionsRepo: {},
-    outbox: {
-      enqueueReply: (reply: unknown) => {
-        replies.push(reply);
-        return 77;
-      },
-    },
-    sessionService: {
-      insertEvent: noop,
-      ensureOwner: noop,
-    },
-    todoDiff: {},
-    memory: {},
-    dispatch: {},
-    verbosity: {},
-    typing: { start: noop, stop: noop, stopAll: noop, activeCount: () => 0 },
-    primaryOperator: 1,
-    dbPath: "Z:/missing/relay.db",
-  } as Parameters<typeof registerHookRoutes>[1]);
-
-  const submitted = await app.inject({
-    method: "POST",
-    url: "/hook/user-prompt-submit",
-    payload: { session_id: "sid-voice", prompt: "Привет, ты живой?" },
-  });
-  assert.equal(submitted.statusCode, 200);
-  assert.deepEqual(updates[0], { id: 103, fields: { sessionId: "sid-voice" } });
-
-  const stopped = await app.inject({
-    method: "POST",
-    url: "/hook/stop",
-    payload: { session_id: "sid-voice", last_assistant_message: "Да, тут" },
-  });
-  assert.equal(stopped.statusCode, 200);
-  assert.equal((replies[0] as { chatId: number }).chatId, 1_633_575);
-  assert.equal((replies[0] as { repliedToId: number }).repliedToId, 362);
-  assert.equal((replies[0] as { auditMsgId: number }).auditMsgId, 501);
-  await app.close();
-});
-
 test("pending reply updates to the latest prompt for steering bursts", async () => {
   const dir = await mkdtemp(join(tmpdir(), "hex-relay-pending-"));
   const db = createDb({
@@ -388,5 +309,168 @@ test("stop hook fans out acks for orphan pending inbounds", async () => {
   assert.equal((acks[1] as { repliedToId: number }).repliedToId, 1002);
   assert.ok((acks[0] as { text: string }).text.includes("merged"));
   assert.equal(cleared, 1);
+  await app.close();
+});
+
+test("post-tool-use Skill emits duration suffix in verbose_bash", async () => {
+  const app = createApp();
+  const statuses: Record<string, unknown>[] = [];
+  registerHookRoutes(app, {
+    log,
+    messagesRepo: {},
+    pendingRepo: { get: () => null },
+    sessionsRepo: {},
+    outbox: {
+      enqueueStatus: (args: Record<string, unknown>) => {
+        statuses.push(args);
+        return 1;
+      },
+    },
+    sessionService: {},
+    todoDiff: {},
+    memory: {},
+    dispatch: {},
+    verbosity: { allows: (layer: string) => layer === "verbose_bash" },
+    typing: { start: noop, stop: noop, stopAll: noop, activeCount: () => 0 },
+    primaryOperator: 1,
+    dbPath: "Z:/missing/relay.db",
+  } as Parameters<typeof registerHookRoutes>[1]);
+
+  const subSecond = await app.inject({
+    method: "POST",
+    url: "/hook/post-tool-use",
+    payload: {
+      session_id: "sid-fast",
+      tool_name: "Skill",
+      tool_input: { skill: "ln-100-task-implementer" },
+      duration_ms: 423,
+    },
+  });
+  assert.equal(subSecond.statusCode, 200);
+  assert.equal(statuses.length, 1);
+  assert.match(String((statuses[0] as { text: string }).text), / done \(423 ms\)$/);
+
+  const multiSecond = await app.inject({
+    method: "POST",
+    url: "/hook/post-tool-use",
+    payload: {
+      session_id: "sid-slow",
+      tool_name: "Skill",
+      tool_input: { skill: "ln-200-implementer" },
+      duration_ms: 12_734,
+    },
+  });
+  assert.equal(multiSecond.statusCode, 200);
+  assert.equal(statuses.length, 2);
+  assert.match(String((statuses[1] as { text: string }).text), / done \(13s\)$/);
+
+  const fractional = await app.inject({
+    method: "POST",
+    url: "/hook/post-tool-use",
+    payload: {
+      session_id: "sid-mid",
+      tool_name: "Skill",
+      tool_input: { skill: "ln-300-validator" },
+      duration_ms: 2_456,
+    },
+  });
+  assert.equal(fractional.statusCode, 200);
+  assert.equal(statuses.length, 3);
+  assert.match(String((statuses[2] as { text: string }).text), / done \(2\.5s\)$/);
+
+  const noDuration = await app.inject({
+    method: "POST",
+    url: "/hook/post-tool-use",
+    payload: {
+      session_id: "sid-nd",
+      tool_name: "Skill",
+      tool_input: { skill: "ln-400-merger" },
+    },
+  });
+  assert.equal(noDuration.statusCode, 200);
+  assert.equal(statuses.length, 4);
+  assert.match(String((statuses[3] as { text: string }).text), / done$/);
+
+  await app.close();
+});
+
+test("post-tool-use stays silent below verbose verbosity", async () => {
+  const app = createApp();
+  const statuses: Record<string, unknown>[] = [];
+  registerHookRoutes(app, {
+    log,
+    messagesRepo: {},
+    pendingRepo: { get: () => null },
+    sessionsRepo: {},
+    outbox: {
+      enqueueStatus: (args: Record<string, unknown>) => {
+        statuses.push(args);
+        return 1;
+      },
+    },
+    sessionService: {},
+    todoDiff: {},
+    memory: {},
+    dispatch: {},
+    verbosity: { allows: () => false },
+    typing: { start: noop, stop: noop, stopAll: noop, activeCount: () => 0 },
+    primaryOperator: 1,
+    dbPath: "Z:/missing/relay.db",
+  } as Parameters<typeof registerHookRoutes>[1]);
+
+  const response = await app.inject({
+    method: "POST",
+    url: "/hook/post-tool-use",
+    payload: {
+      session_id: "sid-quiet",
+      tool_name: "Skill",
+      tool_input: { skill: "ln-100-task-implementer" },
+      duration_ms: 999,
+    },
+  });
+  assert.equal(response.statusCode, 200);
+  assert.equal(statuses.length, 0);
+
+  await app.close();
+});
+
+test("post-tool-use ignores non-Skill tools even with verbose_bash and duration_ms", async () => {
+  const app = createApp();
+  const statuses: Record<string, unknown>[] = [];
+  registerHookRoutes(app, {
+    log,
+    messagesRepo: {},
+    pendingRepo: { get: () => null },
+    sessionsRepo: {},
+    outbox: {
+      enqueueStatus: (args: Record<string, unknown>) => {
+        statuses.push(args);
+        return 1;
+      },
+    },
+    sessionService: {},
+    todoDiff: {},
+    memory: {},
+    dispatch: {},
+    verbosity: { allows: () => true },
+    typing: { start: noop, stop: noop, stopAll: noop, activeCount: () => 0 },
+    primaryOperator: 1,
+    dbPath: "Z:/missing/relay.db",
+  } as Parameters<typeof registerHookRoutes>[1]);
+
+  for (const tool_name of ["Bash", "TodoWrite", "Agent", "Read", "Edit"]) {
+    const response = await app.inject({
+      method: "POST",
+      url: "/hook/post-tool-use",
+      payload: {
+        session_id: "sid-bash",
+        tool_name,
+        tool_input: {},
+        duration_ms: 12_345,
+      },
+    });
+    assert.equal(response.statusCode, 200);
+  }
+  assert.equal(statuses.length, 0, "only Skill emits a duration suffix; other tools stay silent");
   await app.close();
 });

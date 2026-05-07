@@ -56,7 +56,9 @@ import { createMediaCleanupWorker } from "./workers/mediaCleanup.worker.js";
 import { createVoiceTranscriptionWorker } from "./workers/voiceTranscription.worker.js";
 import { createIdleSessionService } from "./services/idleSession.service.js";
 import { createIdleSessionWorker } from "./workers/idleSession.worker.js";
+import { createPendingReplyGcWorker } from "./workers/pendingReplyGc.worker.js";
 import { runProcess } from "./infrastructure/process/runProcess.js";
+import { readCodexRateLimitsJson } from "./infrastructure/process/codexAppServerClient.js";
 
 export interface App {
   start(): Promise<void>;
@@ -206,6 +208,9 @@ export function buildApp(env: Env, log: Logger = createLogger()): App {
       }
       return result.stdout.trim();
     },
+    runCodexUsageReport: async () => {
+      return readCodexRateLimitsJson({ timeoutMs: 10_000 });
+    },
   });
   const inboundHandler = buildInboundHandler({
     log,
@@ -300,6 +305,15 @@ export function buildApp(env: Env, log: Logger = createLogger()): App {
         tickIntervalMs: env.idleTickSec * 1000,
       })
     : null;
+  const pendingReplyGcWorker = createPendingReplyGcWorker({
+    log,
+    pendingRepo: repos.pendingReply,
+    messagesRepo: repos.messages,
+    outbox,
+    primaryOperator: env.allowedChat,
+    retentionSec: TIMING.pendingReplyRetentionSec,
+    tickIntervalMs: TIMING.pendingReplyGcTickMs,
+  });
   let started = false;
   let pollPromise: Promise<void> | null = null;
 
@@ -326,6 +340,7 @@ export function buildApp(env: Env, log: Logger = createLogger()): App {
       void errorAlerterWorker.start();
       void mediaCleanupWorker.start();
       if (idleSessionWorker) void idleSessionWorker.start();
+      void pendingReplyGcWorker.start();
       pollPromise = bot
         .start({
           drop_pending_updates: false,
@@ -355,6 +370,7 @@ export function buildApp(env: Env, log: Logger = createLogger()): App {
       errorAlerterWorker.stop();
       mediaCleanupWorker.stop();
       if (idleSessionWorker) idleSessionWorker.stop();
+      pendingReplyGcWorker.stop();
       typing.stopAll();
       try {
         await httpServer.close();

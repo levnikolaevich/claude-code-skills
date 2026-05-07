@@ -6,6 +6,7 @@ import type { Logger } from "../lib/logger.js";
 import type { InboundService } from "./inbound.service.js";
 import type { OutboxService } from "./outbox.service.js";
 import type { TaskProviderService } from "./taskProvider.service.js";
+import { buildTgPrefix } from "../domain/tgPrefix.js";
 
 export type TaskService = ReturnType<typeof createTaskService>;
 
@@ -95,7 +96,12 @@ export function createTaskService(deps: {
     const task = tasks.find((t) => t.id === args.taskId) ?? null;
     if (!task) return null;
 
-    const paneText = `[tg id=${args.chatId}:${args.telegramMessageId} user=${args.fromUserId}] ${taskHandoffPrompt(task)}`;
+    const prefix = buildTgPrefix({
+      chatId: args.chatId,
+      msgId: args.telegramMessageId,
+      userToken: String(args.fromUserId),
+    });
+    const paneText = `${prefix} ${taskHandoffPrompt(task)}`;
     const id = deps.messagesRepo.insertInbound(
       paneText,
       args.chatId,

@@ -27,6 +27,11 @@ export function createPendingReplyRepo(db: Db) {
       "ORDER BY created_at ASC, inbound_msg_id ASC"
   );
   const del = db.prepare("DELETE FROM pending_reply WHERE session_id=?");
+  const delOne = db.prepare("DELETE FROM pending_reply WHERE session_id=? AND inbound_msg_id=?");
+  const findStaleStmt = db.prepare(
+    "SELECT * FROM pending_reply WHERE created_at <= ? " +
+      "ORDER BY created_at ASC, inbound_msg_id ASC"
+  );
   const listOthers = db.prepare("SELECT * FROM pending_reply WHERE session_id != ?");
   const countActive = db.prepare("SELECT COUNT(*) AS c FROM pending_reply WHERE created_at > ?");
   const hasOpenForUserAgentStmt = db.prepare(
@@ -55,6 +60,14 @@ export function createPendingReplyRepo(db: Db) {
     },
     clear(sessionId: string): void {
       del.run(sessionId);
+    },
+    deleteOne(sessionId: string, inboundId: number): void {
+      delOne.run(sessionId, inboundId);
+    },
+    findStaleOlderThan(retentionSec: number): PendingReply[] {
+      const cutoff = nowTs() - retentionSec;
+      const rows = findStaleStmt.all(cutoff) as Record<string, unknown>[];
+      return rows.map(mapPendingRow);
     },
     listOthers(currentSessionId: string): PendingReply[] {
       const rows = listOthers.all(currentSessionId) as Record<string, unknown>[];

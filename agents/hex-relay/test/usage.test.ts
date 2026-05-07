@@ -105,7 +105,9 @@ test("/usage routes through buddy agent when buddy session is active", async () 
       godRuntime: fakeGodRuntime({ claudeActive: true, codexActive: true }),
       messagesRepo: repos.messages,
       userBuddy,
-      runClaudeUsageReport: async () => "📊 Claude usage\nSession (5hr): 42% used",
+      runClaudeUsageReport: async () => "\u{1F4CA} Claude usage\nSession (5hr): 42% used",
+      runCodexUsageReport: async () =>
+        '{"type":"token_count","info":{"total_tokens":123,"rate_limits":{"hour_remaining":17}}}',
     });
     bot.use(handler);
     await bot.init();
@@ -126,7 +128,10 @@ test("/usage routes through buddy agent when buddy session is active", async () 
     );
     assert.ok(row!.text.includes("📊 Claude usage"), "claude data block preserved");
     assert.ok(row!.text.includes("42% used"), "raw numbers preserved");
-    assert.ok(row!.text.includes("Codex god-session: active"), "codex active block included");
+    assert.ok(
+      row!.text.includes("hour_remaining"),
+      "codex JSON usage block included when codex is active"
+    );
   } finally {
     closeDb(db);
   }
@@ -150,7 +155,8 @@ test("/usage honors user buddy preference (codex)", async () => {
       godRuntime: fakeGodRuntime({ claudeActive: false, codexActive: true }),
       messagesRepo: repos.messages,
       userBuddy,
-      runClaudeUsageReport: async () => "📊 Claude usage\nok",
+      runClaudeUsageReport: async () => "\u{1F4CA} Claude usage\nok",
+      runCodexUsageReport: async () => '{"type":"token_count","info":{}}',
     });
     bot.use(handler);
     await bot.init();
@@ -183,7 +189,8 @@ test("/usage falls back to direct English reply when buddy session is inactive",
       godRuntime: fakeGodRuntime({ claudeActive: false, codexActive: false }),
       messagesRepo: repos.messages,
       userBuddy,
-      runClaudeUsageReport: async () => "📊 Claude usage\nSession (5hr): 7% used",
+      runClaudeUsageReport: async () => "\u{1F4CA} Claude usage\nSession (5hr): 7% used",
+      runCodexUsageReport: async () => '{"type":"token_count","info":{}}',
     });
     bot.use(handler);
     await bot.init();
@@ -228,6 +235,7 @@ test("/usage fallback path still renders when claude-usage-report throws", async
       runClaudeUsageReport: async () => {
         throw new Error("ENOENT");
       },
+      runCodexUsageReport: async () => '{"type":"token_count","info":{}}',
     });
     bot.use(handler);
     await bot.init();
@@ -260,7 +268,8 @@ test("/usage fallback handles codex isActive throw", async () => {
       godRuntime: fakeGodRuntime({ isActiveThrows: true }),
       messagesRepo: repos.messages,
       userBuddy,
-      runClaudeUsageReport: async () => "📊 Claude usage\nok",
+      runClaudeUsageReport: async () => "\u{1F4CA} Claude usage\nok",
+      runCodexUsageReport: async () => '{"type":"token_count","info":{}}',
     });
     bot.use(handler);
     await bot.init();

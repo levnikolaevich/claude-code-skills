@@ -89,6 +89,8 @@ export const TIMING = {
   sendKeysRetries: 8,
   sendKeysRetryDelayMs: 1500,
   mediaMaxBytes: 25 * 1024 * 1024,
+  pendingReplyRetentionSec: 24 * 3600,
+  pendingReplyGcTickMs: 5 * 60 * 1000,
 } as const;
 
 export const IMAGE_MIMES: Record<string, string> = {

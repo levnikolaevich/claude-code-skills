@@ -52,6 +52,7 @@ export const ToolUseSchema = z
     tool_input: z.record(z.string(), z.unknown()).default({}),
     session_id: z.string().default(""),
     agent: AgentEnum,
+    duration_ms: z.number().nonnegative().optional(),
   })
   .passthrough();
 

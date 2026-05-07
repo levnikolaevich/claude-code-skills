@@ -4,8 +4,11 @@ import type { GodRuntimeService } from "../../services/godRuntime.service.js";
 import type { MessagesRepo } from "../../infrastructure/db/repositories/messages.repo.js";
 import type { UserBuddyService } from "../../services/userBuddy.service.js";
 import { type AgentKind, DEFAULT_AGENT } from "../../domain/message.js";
+import { buildTgPrefix } from "../../domain/tgPrefix.js";
+import { userTokenFromContext } from "./userToken.js";
 
 export type RunClaudeUsageReport = () => Promise<string>;
+export type RunCodexUsageReport = () => Promise<string>;
 
 export interface UsageDeps {
   log: Logger;
@@ -13,6 +16,7 @@ export interface UsageDeps {
   messagesRepo: MessagesRepo;
   userBuddy: UserBuddyService;
   runClaudeUsageReport: RunClaudeUsageReport;
+  runCodexUsageReport: RunCodexUsageReport;
 }
 
 const PROMPT_INSTRUCTION =
@@ -23,20 +27,19 @@ const PROMPT_INSTRUCTION =
   "Keep numbers, percentages, and reset windows verbatim; only translate labels and prose.";
 
 const CLAUDE_FAILED = "📊 Claude usage\n⚠️ claude-usage-report failed (see relay logs).";
-const CODEX_STATUS_FAILED = "🟢 Codex god-session: status unavailable (systemd query failed).";
+const CODEX_FAILED =
+  "\u{1F7E2} Codex usage\n⚠️ codex app-server account/rateLimits/read failed (see relay logs).";
+const CODEX_INACTIVE = "⚪ Codex god-session: not running. Start: `@codex hi` or `/set_buddy codex`.";
 
-function codexStatusLine(isActive: boolean): string {
-  if (isActive) {
-    return "🟢 Codex god-session: active. Detailed limits via `@codex /status` in this chat.";
+async function runCodexJsonReport(deps: UsageDeps): Promise<string> {
+  try {
+    const out = await deps.runCodexUsageReport();
+    const trimmed = out.trim();
+    return trimmed.length > 0 ? trimmed : CODEX_FAILED;
+  } catch (error) {
+    deps.log.warn({ err: String(error) }, "codex-usage-report failed");
+    return CODEX_FAILED;
   }
-  return "⚪ Codex god-session: not running. Start: `@codex hi` or `/set_buddy codex`.";
-}
-
-function userTag(ctx: Context): string {
-  const u = ctx.from;
-  if (!u) return "";
-  if (u.username) return ` user=${u.username}`;
-  return ` user=${u.id}`;
 }
 
 async function gatherClaudeBlock(deps: UsageDeps): Promise<string> {
@@ -53,11 +56,12 @@ async function gatherClaudeBlock(deps: UsageDeps): Promise<string> {
 async function gatherCodexBlock(deps: UsageDeps, userId: number): Promise<string> {
   try {
     const isActive = await deps.godRuntime.isActive(userId, "codex");
-    return codexStatusLine(isActive);
+    if (!isActive) return CODEX_INACTIVE;
   } catch (error) {
     deps.log.warn({ err: String(error) }, "codex status probe failed");
-    return CODEX_STATUS_FAILED;
+    return "\u{1F7E2} Codex god-session: status unavailable (systemd query failed).";
   }
+  return runCodexJsonReport(deps);
 }
 
 export function buildUsageHandler(deps: UsageDeps): Composer<Context> {
@@ -80,10 +84,12 @@ export function buildUsageHandler(deps: UsageDeps): Composer<Context> {
       });
 
     if (targetActive) {
-      const tag = userTag(ctx);
-      const paneText =
-        `[tg id=${ctx.chat.id}:${ctx.message.message_id}${tag}] ` +
-        `${PROMPT_INSTRUCTION}\n\n${dataPayload}`;
+      const prefix = buildTgPrefix({
+        chatId: ctx.chat.id,
+        msgId: ctx.message.message_id,
+        userToken: userTokenFromContext(ctx),
+      });
+      const paneText = `${prefix} ${PROMPT_INSTRUCTION}\n\n${dataPayload}`;
       deps.messagesRepo.insertInbound(
         paneText,
         ctx.chat.id,

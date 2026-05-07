@@ -5,6 +5,8 @@ import type { MediaStore } from "../../infrastructure/filesystem/mediaStore.js";
 import { TIMING } from "../../config/paths.js";
 import type { UserBuddyService } from "../../services/userBuddy.service.js";
 import { type AgentKind, DEFAULT_AGENT } from "../../domain/message.js";
+import { buildTgPrefix } from "../../domain/tgPrefix.js";
+import { userTokenFromContext } from "./userToken.js";
 
 export interface InboundDeps {
   log: Logger;
@@ -28,13 +30,6 @@ const VOICE_DOWNLOAD_FAILED_REPLY =
   "Failed to download the voice message from Telegram. Send it again or use text.";
 const VOICE_TOO_BIG_REPLY =
   "Voice message exceeds the relay size limit. Send a shorter voice or a text command.";
-
-function userTag(ctx: Context): string {
-  const u = ctx.from;
-  if (!u) return "";
-  if (u.username) return ` user=${u.username}`;
-  return ` user=${u.id}`;
-}
 
 function hasUnsupportedMedia(ctx: Context): boolean {
   const m = ctx.message;
@@ -164,7 +159,7 @@ export function buildInboundHandler(deps: InboundDeps): Composer<Context> {
       }
       return;
     }
-    const tag = userTag(ctx);
+    const userToken = userTokenFromContext(ctx);
     let body: string;
     if (media) {
       const marker = `[${media.kind}: ${media.path}]`;
@@ -172,7 +167,11 @@ export function buildInboundHandler(deps: InboundDeps): Composer<Context> {
     } else {
       body = text;
     }
-    const paneText = `[tg id=${ctx.chat.id}:${ctx.message.message_id}${tag}] ${body}`;
+    const paneText = `${buildTgPrefix({
+      chatId: ctx.chat.id,
+      msgId: ctx.message.message_id,
+      userToken,
+    })} ${body}`;
     const id = deps.messagesRepo.insertInbound(
       paneText,
       ctx.chat.id,

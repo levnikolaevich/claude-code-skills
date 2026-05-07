@@ -5,6 +5,7 @@ import type { MessagesRepo } from "../infrastructure/db/repositories/messages.re
 import type { OutboxService } from "../services/outbox.service.js";
 import type { LocalVoiceTranscriber } from "../infrastructure/process/localVoiceTranscriber.js";
 import type { InboundMessage } from "../domain/message.js";
+import { buildTgPrefix } from "../domain/tgPrefix.js";
 
 export interface VoiceTranscriptionWorker {
   start(): Promise<void>;
@@ -53,16 +54,26 @@ export async function transcribeVoiceRow(
     reject(deps, row, "voice media_path missing");
     return;
   }
+  if (row.tgChatId === null || row.tgMsgId === null || row.fromUserId === null) {
+    reject(deps, row, "voice row missing tg identifiers");
+    return;
+  }
   try {
     const transcript = await deps.transcriber.transcribe(row.mediaPath);
+    const prefix = buildTgPrefix({
+      chatId: row.tgChatId,
+      msgId: row.tgMsgId,
+      userToken: String(row.fromUserId),
+    });
+    const queuedText = `${prefix} ${transcript.text}`;
     deps.messagesRepo.update(row.id, {
       status: "queued",
-      text: transcript.text,
+      text: queuedText,
       attempts: row.attempts + 1,
       nextAttemptAt: Math.floor(Date.now() / 1000),
       error: null,
     });
-    deps.log.info({ id: row.id, len: transcript.text.length }, "VOICE transcribed");
+    deps.log.info({ id: row.id, len: queuedText.length }, "VOICE transcribed");
   } catch (error) {
     reject(deps, row, error);
     deps.log.warn({ id: row.id, err: String(error) }, "VOICE transcription rejected");

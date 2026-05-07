@@ -29,6 +29,11 @@ export function createPendingReplyRepo(db: Db) {
   const del = db.prepare("DELETE FROM pending_reply WHERE session_id=?");
   const listOthers = db.prepare("SELECT * FROM pending_reply WHERE session_id != ?");
   const countActive = db.prepare("SELECT COUNT(*) AS c FROM pending_reply WHERE created_at > ?");
+  const hasOpenForUserAgentStmt = db.prepare(
+    "SELECT 1 FROM pending_reply pr " +
+      "INNER JOIN sessions s ON s.session_id = pr.session_id " +
+      "WHERE s.created_by_user_id = ? AND pr.agent = ? LIMIT 1"
+  );
 
   return {
     set(
@@ -58,6 +63,10 @@ export function createPendingReplyRepo(db: Db) {
     countActive(ttlSec = 3600): number {
       const r = countActive.get(nowTs() - ttlSec) as { c: number };
       return r.c;
+    },
+    hasOpenForUserAgent(userId: number, agent: AgentKind): boolean {
+      const row = hasOpenForUserAgentStmt.get(userId, agent) as { 1: number } | undefined;
+      return row !== undefined;
     },
   };
 }

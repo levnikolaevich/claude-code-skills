@@ -1,9 +1,9 @@
 import { resolve } from "node:path";
 import { computeResumeAction } from "./guards.mjs";
-import { createRuntimeStore } from "../../../../references/scripts/coordinator-runtime/lib/core.mjs";
-import { updateLoopHealthMap } from "../../../../references/scripts/coordinator-runtime/lib/loop-health.mjs";
-import { pipelineStageCoordinatorSummarySchema } from "../../../../references/scripts/coordinator-runtime/lib/schemas.mjs";
-import { assertSchema } from "../../../../references/scripts/coordinator-runtime/lib/validate.mjs";
+import { createRuntimeStore } from "../../references/scripts/coordinator-runtime/lib/core.mjs";
+import { updateLoopHealthMap } from "../../references/scripts/coordinator-runtime/lib/loop-health.mjs";
+import { pipelineStageCoordinatorSummarySchema } from "../../references/scripts/coordinator-runtime/lib/schemas.mjs";
+import { assertSchema } from "../../references/scripts/coordinator-runtime/lib/validate.mjs";
 import { PHASES } from "./phases.mjs";
 
 const pipelineManifestSchema = {

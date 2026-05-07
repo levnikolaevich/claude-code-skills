@@ -21,7 +21,7 @@ import { PHASES } from "./lib/phases.mjs";
 import {
     failJson as fail,
     outputJson as output,
-} from "../../../references/scripts/coordinator-runtime/lib/cli-helpers.mjs";
+} from "../references/scripts/coordinator-runtime/lib/cli-helpers.mjs";
 
 const { values, positionals } = parseArgs({
     allowPositionals: true,

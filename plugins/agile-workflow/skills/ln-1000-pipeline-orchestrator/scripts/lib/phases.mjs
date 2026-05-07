@@ -1,4 +1,4 @@
-import { TERMINAL_RUNTIME_PHASES } from "../../../../references/scripts/coordinator-runtime/lib/runtime-constants.mjs";
+import { TERMINAL_RUNTIME_PHASES } from "../../references/scripts/coordinator-runtime/lib/runtime-constants.mjs";
 
 export const PHASES = Object.freeze({
     QUEUED: "QUEUED",

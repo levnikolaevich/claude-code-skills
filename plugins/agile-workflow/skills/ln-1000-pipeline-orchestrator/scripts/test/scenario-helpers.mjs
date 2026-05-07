@@ -8,23 +8,23 @@ import {
     STORY_GATE_FINALIZATION_STATUSES,
     STORY_GATE_VERDICTS,
     TASK_BOARD_STATUSES,
-} from "../../../../references/scripts/coordinator-runtime/lib/runtime-constants.mjs";
+} from "../../references/scripts/coordinator-runtime/lib/runtime-constants.mjs";
 import {
     createJsonCliRunner,
     createProjectRoot,
     writeJson,
-} from "../../../../references/scripts/coordinator-runtime/test/cli-test-helpers.mjs";
+} from "../../references/scripts/coordinator-runtime/test/cli-test-helpers.mjs";
 import { PHASES as PIPELINE_PHASES } from "../lib/phases.mjs";
-import { PHASES as TASK_PLANNING_PHASES } from "../../../../references/scripts/task-planning-runtime/lib/phases.mjs";
-import { PHASES as EXECUTION_PHASES } from "../../../../references/scripts/story-execution-runtime/lib/phases.mjs";
-import { PHASES as GATE_PHASES } from "../../../../references/scripts/story-gate-runtime/lib/phases.mjs";
+import { PHASES as TASK_PLANNING_PHASES } from "../../references/scripts/task-planning-runtime/lib/phases.mjs";
+import { PHASES as EXECUTION_PHASES } from "../../references/scripts/story-execution-runtime/lib/phases.mjs";
+import { PHASES as GATE_PHASES } from "../../references/scripts/story-gate-runtime/lib/phases.mjs";
 
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
 const pipelineCliPath = join(__dirname, "..", "cli.mjs");
-const taskPlanningCliPath = join(__dirname, "../../../../references/scripts/task-planning-runtime/cli.mjs");
-const reviewCliPath = join(__dirname, "../../../../references/scripts/evaluation-runtime/cli.mjs");
-const executionCliPath = join(__dirname, "../../../../references/scripts/story-execution-runtime/cli.mjs");
-const gateCliPath = join(__dirname, "../../../../references/scripts/story-gate-runtime/cli.mjs");
+const taskPlanningCliPath = join(__dirname, "../../references/scripts/task-planning-runtime/cli.mjs");
+const reviewCliPath = join(__dirname, "../../references/scripts/evaluation-runtime/cli.mjs");
+const executionCliPath = join(__dirname, "../../references/scripts/story-execution-runtime/cli.mjs");
+const gateCliPath = join(__dirname, "../../references/scripts/story-gate-runtime/cli.mjs");
 const FIXED_TIME = "2026-04-06T00:00:00Z";
 const REVIEW_PHASES = {
     CONFIG: "PHASE_0_CONFIG",

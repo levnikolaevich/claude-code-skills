@@ -10,8 +10,8 @@ let _findCycles = null;
 async function ensureGraph() {
     if (_graphAvailable !== null) return _graphAvailable;
     try {
-        const storeUrl = new URL("../../../../mcp/hex-graph-mcp/lib/store.mjs", import.meta.url).href;
-        const cyclesUrl = new URL("../../../../mcp/hex-graph-mcp/lib/cycles.mjs", import.meta.url).href;
+        const storeUrl = new URL("../../../../../../mcp/hex-graph-mcp/lib/store.mjs", import.meta.url).href;
+        const cyclesUrl = new URL("../../../../../../mcp/hex-graph-mcp/lib/cycles.mjs", import.meta.url).href;
         const store = await import(storeUrl);
         const cycles = await import(cyclesUrl);
         _getArchReport = store.getArchitectureReport;

@@ -192,7 +192,7 @@ If corrupted: fix via `mcp__hex-line__edit_file` (set_line the arg to `"/c"`).
 
 ### Phase 2b: Verify Graph Provider Dependencies
 
-**MANDATORY READ:** Load `plugins/setup-environment/skills/ln-012-mcp-configurator/references/hex_graph_provider_matrix.md` and `plugins/project-bootstrap/skills/ln-700-project-bootstrap/references/stack_detection.md`.
+**MANDATORY READ:** Load `references/hex_graph_provider_matrix.md` and `references/stack_detection.md`.
 
 After registration + connection, verify only the extra system binaries or packages needed for fuller MCP behavior. Assume the project already has its own runtimes and app dependencies. This phase does NOT install project dependencies, framework packages, or runtimes.
 

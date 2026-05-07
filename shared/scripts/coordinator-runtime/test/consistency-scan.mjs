@@ -9,6 +9,8 @@ const skillsRepoRoot = resolve(__dirname, "../../../..");
 const parentRepoRoot = resolve(skillsRepoRoot, "..");
 
 const selfPath = normalizePath(fileURLToPath(import.meta.url));
+const CONSISTENCY_SCAN_SUFFIX = "/coordinator-runtime/test/consistency-scan.mjs";
+const isConsistencyScanFile = filePath => normalizePath(filePath).endsWith(CONSISTENCY_SCAN_SUFFIX);
 
 const allowedLegacyPhaseDocs = new Set([
     selfPath,
@@ -85,7 +87,8 @@ const checks = [
             if (!/\bPHASE_6_REFINE\b/.test(content) && !/\bPHASE_6_REFINEMENT\b/.test(content)) {
                 return null;
             }
-            if (allowedLegacyPhaseDocs.has(normalizePath(filePath))) {
+            const np = normalizePath(filePath);
+            if (allowedLegacyPhaseDocs.has(np) || np.endsWith("/references/runtime_status_catalog.md") || isConsistencyScanFile(filePath)) {
                 return null;
             }
             return "Use PHASE_7_REFINEMENT only; PHASE_6_REFINE and PHASE_6_REFINEMENT must not appear outside explicit invalid-usage docs.";
@@ -126,13 +129,13 @@ const checks = [
         name: "mojibake artifacts in docs or script text",
         regex: /[\u00c3\u00a2\u00c3\u0192\u00c3\u201a\ufffd]/,
         message: "Remove mojibake artifacts and normalize text to ASCII-safe wording.",
-        include: filePath => (isDocumentationLike(filePath) || isJavaScript(filePath)) && normalizePath(filePath) !== selfPath,
+        include: filePath => (isDocumentationLike(filePath) || isJavaScript(filePath)) && !isConsistencyScanFile(filePath),
     },
     {
         name: "uncentralized story gate shortcut status in code",
         regex: /"skipped_by_verdict"/,
         message: "Use STORY_GATE_FINALIZATION_STATUSES.SKIPPED_BY_VERDICT instead of string literals.",
-        include: filePath => isJavaScript(filePath) && !filePath.endsWith("runtime-constants.mjs") && normalizePath(filePath) !== selfPath,
+        include: filePath => isJavaScript(filePath) && !filePath.endsWith("runtime-constants.mjs") && !isConsistencyScanFile(filePath),
     },
     {
         name: "pipeline phase field drift in docs",

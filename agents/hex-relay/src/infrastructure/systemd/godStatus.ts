@@ -72,9 +72,9 @@ export function createGodStatusProbe(deps: GodStatusDeps) {
         if (r.code !== 0) return [];
         const out: { userId: number; agent: AgentKind }[] = [];
         const codexRe = new RegExp(
-          `^${deps.env.servicePrefix}-god-codex@(\\d+)\\.service\\b`
+          String.raw`^${deps.env.servicePrefix}-god-codex@(\d+)\.service\b`
         );
-        const claudeRe = new RegExp(`^${deps.env.servicePrefix}-god@(\\d+)\\.service\\b`);
+        const claudeRe = new RegExp(String.raw`^${deps.env.servicePrefix}-god@(\d+)\.service\b`);
         for (const line of r.stdout.split(/\r?\n/)) {
           const trimmed = line.trim();
           if (!trimmed) continue;

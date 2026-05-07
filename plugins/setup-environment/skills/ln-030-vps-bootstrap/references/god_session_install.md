@@ -9,8 +9,10 @@ Render placeholders, upload, set ownership/mode, and install these targets:
 | Template | Target | Owner | Mode |
 |---|---|---|---|
 | `god-session.sh` | `/usr/local/bin/${SERVICE_PREFIX}-god` | root:root | 755 |
+| `god-session-codex.sh` | `/usr/local/bin/${SERVICE_PREFIX}-god-codex` | root:root | 755 |
 | `agent-sandbox.sh` | `/usr/local/bin/${SERVICE_PREFIX}-agent-sandbox` | root:root | 755 |
 | `god-session.service` | `/etc/systemd/system/${SERVICE_PREFIX}-god@.service` | root:root | 644 |
+| `god-session-codex.service` | `/etc/systemd/system/${SERVICE_PREFIX}-god-codex@.service` | root:root | 644 |
 | `dispatch.timer` | `/etc/systemd/system/${SERVICE_PREFIX}-dispatch.timer` | root:root | 644 |
 | `dispatch.service` | `/etc/systemd/system/${SERVICE_PREFIX}-dispatch.service` | root:root | 644 |
 | `dispatch.md` | `/home/${BOT_USER}/.claude/commands/${DISPATCH_COMMAND_NAME}.md` | `${BOT_USER}`:`${BOT_USER}` | 644 |
@@ -38,7 +40,7 @@ Allow `hex-relay` to control only this project's god template:
 ```bash
 SYSTEMCTL=$(command -v systemctl)
 cat > /etc/sudoers.d/${SERVICE_PREFIX}-god-control <<EOF
-${BOT_USER} ALL=(root) NOPASSWD: ${SYSTEMCTL} start ${SERVICE_PREFIX}-god@*.service, ${SYSTEMCTL} restart ${SERVICE_PREFIX}-god@*.service, ${SYSTEMCTL} is-active ${SERVICE_PREFIX}-god@*.service, ${SYSTEMCTL} list-units ${SERVICE_PREFIX}-god@*.service *
+${BOT_USER} ALL=(root) NOPASSWD: ${SYSTEMCTL} start ${SERVICE_PREFIX}-god@*.service, ${SYSTEMCTL} restart ${SERVICE_PREFIX}-god@*.service, ${SYSTEMCTL} stop ${SERVICE_PREFIX}-god@*.service, ${SYSTEMCTL} is-active ${SERVICE_PREFIX}-god@*.service, ${SYSTEMCTL} list-units ${SERVICE_PREFIX}-god@*.service *, ${SYSTEMCTL} start ${SERVICE_PREFIX}-god-codex@*.service, ${SYSTEMCTL} restart ${SERVICE_PREFIX}-god-codex@*.service, ${SYSTEMCTL} stop ${SERVICE_PREFIX}-god-codex@*.service, ${SYSTEMCTL} is-active ${SERVICE_PREFIX}-god-codex@*.service, ${SYSTEMCTL} list-units ${SERVICE_PREFIX}-god-codex@*.service *
 EOF
 chmod 440 /etc/sudoers.d/${SERVICE_PREFIX}-god-control
 visudo -cf /etc/sudoers.d/${SERVICE_PREFIX}-god-control
@@ -107,5 +109,5 @@ Verify:
 systemctl list-timers agent-update.timer --no-pager
 systemctl start agent-update.service
 journalctl -u agent-update.service -n 100 --no-pager
-systemctl list-units --type=service --state=active '*-god@*.service' --no-pager
+systemctl list-units --type=service --state=active '*-god@*.service' '*-god-codex@*.service' --no-pager
 ```

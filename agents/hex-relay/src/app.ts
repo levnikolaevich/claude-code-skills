@@ -54,6 +54,8 @@ import { createOutboxWorker } from "./workers/outbox.worker.js";
 import { createErrorAlerterWorker } from "./workers/errorAlerter.worker.js";
 import { createMediaCleanupWorker } from "./workers/mediaCleanup.worker.js";
 import { createVoiceTranscriptionWorker } from "./workers/voiceTranscription.worker.js";
+import { createIdleSessionService } from "./services/idleSession.service.js";
+import { createIdleSessionWorker } from "./workers/idleSession.worker.js";
 import { runProcess } from "./infrastructure/process/runProcess.js";
 
 export interface App {
@@ -280,7 +282,24 @@ export function buildApp(env: Env, log: Logger = createLogger()): App {
     log,
     mediaDir: paths.mediaDir,
   });
-
+  const idleSessionService = env.idleShutdownEnabled
+    ? createIdleSessionService({
+        log,
+        godStatus,
+        messagesRepo: repos.messages,
+        pendingRepo: repos.pendingReply,
+        idleThresholdSec: env.idleShutdownSec,
+        bootGraceSec: env.idleBootGraceSec,
+        bootTimestampSec: Math.floor(Date.now() / 1000),
+      })
+    : null;
+  const idleSessionWorker = idleSessionService
+    ? createIdleSessionWorker({
+        log,
+        service: idleSessionService,
+        tickIntervalMs: env.idleTickSec * 1000,
+      })
+    : null;
   let started = false;
   let pollPromise: Promise<void> | null = null;
 
@@ -306,6 +325,7 @@ export function buildApp(env: Env, log: Logger = createLogger()): App {
       void outboxWorker.start();
       void errorAlerterWorker.start();
       void mediaCleanupWorker.start();
+      if (idleSessionWorker) void idleSessionWorker.start();
       pollPromise = bot
         .start({
           drop_pending_updates: false,
@@ -334,6 +354,7 @@ export function buildApp(env: Env, log: Logger = createLogger()): App {
       outboxWorker.stop();
       errorAlerterWorker.stop();
       mediaCleanupWorker.stop();
+      if (idleSessionWorker) idleSessionWorker.stop();
       typing.stopAll();
       try {
         await httpServer.close();

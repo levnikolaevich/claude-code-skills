@@ -216,9 +216,17 @@ ensure_tmux_session() {
 }
 
 if verify_session_alive; then
-  log "tmux session $SESSION already exists; attaching as watcher"
-  if [[ -n "$RESOLVED" ]]; then
-    log "WARN: command was consumed but tmux already alive; command had no effect on this boot"
+  if pane_has_agent_running; then
+    log "tmux session $SESSION already exists; attaching as watcher"
+    if [[ -n "$RESOLVED" ]]; then
+      log "WARN: command was consumed but tmux already alive; command had no effect on this boot"
+    fi
+  else
+    kill_orphan_session
+    sleep 1
+    if ! ensure_tmux_session; then
+      fatal 5 "tmux_create_failed" "could not recreate tmux session $SESSION after orphan cleanup"
+    fi
   fi
 else
   if ! ensure_tmux_session; then

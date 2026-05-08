@@ -62,6 +62,63 @@ function loadSkillText(skill) {
   return fs.existsSync(file) ? fs.readFileSync(file, "utf8") : "";
 }
 
+function readText(file) {
+  return fs.existsSync(file) ? fs.readFileSync(file, "utf8") : "";
+}
+
+function isTextFile(file) {
+  return [".md", ".json", ".toml", ".yaml", ".yml", ".txt", ".mjs", ".js", ".cjs", ".sh", ".ps1", ".py"].includes(path.extname(file).toLowerCase());
+}
+
+function mentionsTarget(text, targetPath) {
+  const basename = path.posix.basename(targetPath);
+  return text.includes(targetPath) || text.includes(basename);
+}
+
+function scriptImportsTarget(text, targetPath) {
+  const basename = path.posix.basename(targetPath);
+  const importPatterns = [
+    /import\s+(?:[^"']+\s+from\s+)?["']([^"']+)["']/g,
+    /export\s+[^"']*\s+from\s+["']([^"']+)["']/g,
+    /import\(["']([^"']+)["']\)/g,
+    /require\(["']([^"']+)["']\)/g,
+  ];
+  for (const pattern of importPatterns) {
+    for (const match of text.matchAll(pattern)) {
+      const specifier = match[1].replaceAll("\\", "/");
+      if (specifier.includes(basename) || specifier.includes(targetPath.replace(/^references\//, ""))) return true;
+    }
+  }
+  return false;
+}
+
+function targetEvidence(target) {
+  const skillRoot = path.join(ROOT, fromPosix(target.skill));
+  const skillText = readText(path.join(skillRoot, "SKILL.md"));
+  const mandatoryLines = skillText.split(/\r?\n/).filter((line) => /MANDATORY READ/i.test(line));
+  const targetFile = path.join(skillRoot, fromPosix(target.path));
+  const directMention = mentionsTarget(skillText, target.path);
+  const mandatory = mandatoryLines.some((line) => mentionsTarget(line, target.path));
+  let nestedMention = false;
+  let scriptImport = false;
+  for (const file of walkFiles(path.join(skillRoot, "references")).filter(isTextFile)) {
+    if (file === targetFile || file === `${targetFile}.SOURCE.md`) continue;
+    const text = readText(file);
+    if (mentionsTarget(text, target.path)) nestedMention = true;
+    if (/\.(mjs|js|cjs)$/i.test(file) && scriptImportsTarget(text, target.path)) scriptImport = true;
+  }
+  return { directMention, mandatory, nestedMention, scriptImport };
+}
+
+function protectedReason(row) {
+  if (row.source.endsWith(".SOURCE.md")) return "json-sidecar";
+  if (row.mandatoryBy > 0) return "mandatory-read";
+  if (row.scriptImportConsumers > 0) return "script-import";
+  if (row.nestedMentions > 0) return "nested-reference";
+  if (row.directMentions > 0) return "direct-skill-reference";
+  return "";
+}
+
 function parseArgs() {
   return {
     json: process.argv.includes("--json"),
@@ -76,15 +133,18 @@ function buildReport() {
     const size = fileSize(entry.source);
     const mentionedBy = [];
     const mandatoryBy = [];
+    const directMentionBy = [];
+    const nestedMentionBy = [];
+    const scriptImportBy = [];
     for (const target of entry.targets ?? []) {
-      const text = skillTexts.get(target.skill) ?? "";
-      const basename = path.posix.basename(target.path);
-      const mentionsTarget = text.includes(target.path) || text.includes(basename);
-      if (mentionsTarget) mentionedBy.push(target.skill);
-      const mandatoryLines = text.split(/\r?\n/).filter((line) => /MANDATORY READ/i.test(line));
-      if (mandatoryLines.some((line) => line.includes(target.path) || line.includes(basename))) mandatoryBy.push(target.skill);
+      const evidence = targetEvidence(target);
+      if (evidence.directMention || evidence.nestedMention) mentionedBy.push(target.skill);
+      if (evidence.directMention) directMentionBy.push(target.skill);
+      if (evidence.nestedMention) nestedMentionBy.push(target.skill);
+      if (evidence.scriptImport) scriptImportBy.push(target.skill);
+      if (evidence.mandatory) mandatoryBy.push(target.skill);
     }
-    return {
+    const row = {
       source: entry.source,
       sourceGroup: sourceGroup(entry.source),
       kind: entry.kind,
@@ -92,9 +152,17 @@ function buildReport() {
       targets: entry.targets?.length ?? 0,
       mentionedBy: mentionedBy.length,
       mandatoryBy: mandatoryBy.length,
+      directMentions: directMentionBy.length,
+      nestedMentions: nestedMentionBy.length,
+      scriptImportConsumers: scriptImportBy.length,
       replicatedBytes: size * (entry.targets?.length ?? 0),
       topHeavySkills: mandatoryBy.slice(0, 8),
+      topDirectMentionSkills: directMentionBy.slice(0, 8),
+      topNestedMentionSkills: nestedMentionBy.slice(0, 8),
+      topScriptImportSkills: scriptImportBy.slice(0, 8),
     };
+    row.protectedReason = protectedReason(row);
+    return row;
   });
   rows.sort((a, b) => b.replicatedBytes - a.replicatedBytes || b.size - a.size || a.source.localeCompare(b.source));
 

@@ -65,6 +65,50 @@ function sourceGroup(source) {
   return /^plugins\/[^/]+\/shared\//.test(source) ? "pluginShared" : "rootShared";
 }
 
+function isTextFile(file) {
+  return [".md", ".json", ".toml", ".yaml", ".yml", ".txt", ".mjs", ".js", ".cjs", ".sh", ".ps1", ".py"].includes(path.extname(file).toLowerCase());
+}
+
+function mentionsTarget(text, targetPath) {
+  const basename = path.posix.basename(targetPath);
+  return text.includes(targetPath) || text.includes(basename);
+}
+
+function scriptImportsTarget(text, targetPath) {
+  const basename = path.posix.basename(targetPath);
+  const importPatterns = [
+    /import\s+(?:[^"']+\s+from\s+)?["']([^"']+)["']/g,
+    /export\s+[^"']*\s+from\s+["']([^"']+)["']/g,
+    /import\(["']([^"']+)["']\)/g,
+    /require\(["']([^"']+)["']\)/g,
+  ];
+  for (const pattern of importPatterns) {
+    for (const match of text.matchAll(pattern)) {
+      const specifier = match[1].replaceAll("\\", "/");
+      if (specifier.includes(basename) || specifier.includes(targetPath.replace(/^references\//, ""))) return true;
+    }
+  }
+  return false;
+}
+
+function targetEvidence(target) {
+  const skillRoot = path.join(ROOT, fromPosix(target.skill));
+  const skillText = readText(path.join(skillRoot, "SKILL.md"));
+  const mandatoryLines = skillText.split(/\r?\n/).filter((line) => /MANDATORY READ/i.test(line));
+  const targetFile = path.join(skillRoot, fromPosix(target.path));
+  const directMention = mentionsTarget(skillText, target.path);
+  const mandatory = mandatoryLines.some((line) => mentionsTarget(line, target.path));
+  let nestedMention = false;
+  let scriptImport = false;
+  for (const file of walkFiles(path.join(skillRoot, "references"), isTextFile)) {
+    if (file === targetFile || file === `${targetFile}.SOURCE.md`) continue;
+    const text = readText(file);
+    if (mentionsTarget(text, target.path)) nestedMention = true;
+    if (/\.(mjs|js|cjs)$/i.test(file) && scriptImportsTarget(text, target.path)) scriptImport = true;
+  }
+  return { directMention, mandatory, nestedMention, scriptImport };
+}
+
 function categoryFor(entry, row) {
   const source = entry.source.toLowerCase();
   if (row.mentionedBy === 0) return "passive/dead";
@@ -77,11 +121,21 @@ function categoryFor(entry, row) {
 }
 
 function candidateFor(category, row, entry) {
+  if (row.protectedReason) return "keep";
   if (row.mentionedBy === 0) return "delete-or-localize";
   if (row.mandatoryBy === 0 && row.targets > 2 && entry.kind !== "script") return "localize-or-keep-passive";
   if (category === "orchestration harness" && row.mandatoryBy > 0) return "demote-mandatory";
   if (category === "review loop" && row.mandatoryBy > 0 && row.mandatoryBy < row.targets) return "keep-conditional";
   return "keep";
+}
+
+function protectedReason(row) {
+  if (row.source.endsWith(".SOURCE.md")) return "json-sidecar";
+  if (row.mandatoryBy > 0) return "mandatory-read";
+  if (row.scriptImportConsumers > 0) return "script-import";
+  if (row.nestedMentions > 0) return "nested-reference";
+  if (row.directMentions > 0) return "direct-skill-reference";
+  return "";
 }
 
 function buildReport() {
@@ -92,14 +146,17 @@ function buildReport() {
     const size = sourceSize(entry.source);
     const mentioned = [];
     const mandatory = [];
+    const directMention = [];
+    const nestedMention = [];
+    const scriptImport = [];
     const targets = entry.targets ?? [];
     for (const target of targets) {
-      const text = skillText.get(target.skill) ?? "";
-      const basename = path.posix.basename(target.path);
-      const isMentioned = text.includes(target.path) || text.includes(basename);
-      if (isMentioned) mentioned.push(target.skill);
-      const mandatoryLines = text.split(/\r?\n/).filter((line) => /MANDATORY READ/i.test(line));
-      if (mandatoryLines.some((line) => line.includes(target.path) || line.includes(basename))) mandatory.push(target.skill);
+      const evidence = targetEvidence(target);
+      if (evidence.directMention || evidence.nestedMention) mentioned.push(target.skill);
+      if (evidence.directMention) directMention.push(target.skill);
+      if (evidence.nestedMention) nestedMention.push(target.skill);
+      if (evidence.scriptImport) scriptImport.push(target.skill);
+      if (evidence.mandatory) mandatory.push(target.skill);
     }
     const row = {
       source: entry.source,
@@ -109,10 +166,17 @@ function buildReport() {
       targets: targets.length,
       mentionedBy: mentioned.length,
       mandatoryBy: mandatory.length,
+      directMentions: directMention.length,
+      nestedMentions: nestedMention.length,
+      scriptImportConsumers: scriptImport.length,
       replicatedBytes: size * targets.length,
       mandatoryBytes: size * mandatory.length,
       topMandatorySkills: mandatory.slice(0, 8),
+      topDirectMentionSkills: directMention.slice(0, 8),
+      topNestedMentionSkills: nestedMention.slice(0, 8),
+      topScriptImportSkills: scriptImport.slice(0, 8),
     };
+    row.protectedReason = protectedReason(row);
     row.category = categoryFor(entry, row);
     row.candidate = candidateFor(row.category, row, entry);
     return row;

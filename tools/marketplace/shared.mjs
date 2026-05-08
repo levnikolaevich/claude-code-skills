@@ -626,6 +626,19 @@ export function syncShared() {
       fs.copyFileSync(sourcePath, targetPath);
     }
   }
+  const expectedTargets = new Set(seenTargets.keys());
+  for (const skillRoot of listSkillDirs()) {
+    const skillRel = rel(skillRoot);
+    const refsDir = path.join(skillRoot, "references");
+    for (const file of walkFiles(refsDir)) {
+      const fileRel = rel(file);
+      const targetRel = toPosix(path.relative(skillRoot, file));
+      const targetKey = `${skillRel}/${targetRel}`;
+      if (expectedTargets.has(targetKey)) continue;
+      if (!hasDistributionMarker(file)) continue;
+      fs.unlinkSync(file);
+    }
+  }
 }
 
 export function validateSharedDistribution() {

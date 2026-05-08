@@ -2,9 +2,7 @@
 
 # Environment State Contract
 
-Project-scoped runtime contract for `.hex-skills/environment_state.json`.
-
-Use this only when a skill must read or write agent availability, task provider routing, research fallback, setup health, hook mode, or Codex skill-root health.
+Project-scoped runtime contract for `.hex-skills/environment_state.json`. Load only when reading or writing agent availability, provider routing, research fallback, setup health, hook mode, or Codex skill-root health.
 
 ## Location
 
@@ -18,9 +16,9 @@ Rules:
 - Malformed JSON is a deterministic contract error.
 - Schema details are writer/runtime-validator assets owned by environment setup skills; routine readers use only this contract.
 
-## Required Runtime Reads
+## Reader Fields
 
-Readers need only these fields:
+Routine readers need only:
 
 ```json
 {
@@ -53,17 +51,7 @@ Readers need only these fields:
 
 ## Writer Fields
 
-Writers may populate these sections when relevant:
-
-| Section | Purpose |
-|---|---|
-| `agents` | Claude/Codex availability, disabled state, versions, skill-root health |
-| `task_management` | active provider plus Linear/GitHub config and fallback metadata |
-| `research` | preferred research tool and fallback chain |
-| `claude_md` | instruction file metadata |
-| `assessment` | setup quality score, warnings, worker run history |
-| `hooks` | hook mode and script capability state |
-| `ide_extension` | IDE permission override diagnostics |
+Writers may populate only relevant sections: `agents`, `task_management`, `research`, `claude_md`, `assessment`, `hooks`, `ide_extension`.
 
 ## Reader Pattern
 
@@ -71,7 +59,7 @@ Writers may populate these sections when relevant:
 2. If missing, default to `task_provider="file"` and all agents enabled.
 3. If malformed, fail with a contract error.
 4. Extract `task_provider = task_management.provider || "file"`.
-5. Use `storage_mode_detection.md` to select provider operations.
+5. Use `storage_mode_detection.md` for provider operations.
 
 **Version:** 3.1.0
 **Last Updated:** 2026-04-07

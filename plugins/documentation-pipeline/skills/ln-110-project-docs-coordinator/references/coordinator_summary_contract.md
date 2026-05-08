@@ -2,18 +2,18 @@
 
 # Coordinator Summary Contract
 
-Small runtime summary envelope for cross-skill routing. Domain-specific fields live in the active family runtime or summary contract.
+Runtime summary envelope for cross-skill routing. Domain fields live in the active family runtime or summary contract.
 
 ## Hard Rules
 
 - Write summaries only under the active run output directory or the explicit caller-provided summary path.
 - Never write outside `.hex-skills/runtime-artifacts/` unless the active skill contract names another path.
 - Resolve the target path before writing and reject absolute or traversal paths from user input.
-- Always include this envelope; add family fields from the active domain contract.
+- Include this envelope; add only active-family fields.
 
 ## Shared Envelope
 
-Required fields for every coordinator or worker summary:
+Required fields:
 
 ```json
 {
@@ -28,4 +28,4 @@ Required fields for every coordinator or worker summary:
 }
 ```
 
-Load only the active family contract for specialized fields: Agile, evaluation/review, documentation, optimization, setup, or codebase audit.
+Load only the active family contract for specialized fields.

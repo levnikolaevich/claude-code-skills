@@ -15,7 +15,7 @@
 > [!TIP]
 > **Two-Agent AI Review** — Claude and Codex can review each other’s work through host-aware external advisor routing.
 
-[Plugins](#plugins) · [Installation](#installation) · [Quick Start](#quick-start) · [Workflow](#workflow) · [VPS Agent](#vps-agent) · [MCP](#mcp-servers-optional) · [AI Review](#ai-review-models-optional) · [FAQ](#faq) · [Full Skill Tree](#whats-inside) · [Links](#links)
+[Plugins](#plugins) · [Installation](#installation) · [Quick Start](#quick-start) · [Workflow](#workflow) · [MCP](#mcp-servers-optional) · [AI Review](#ai-review-models-optional) · [FAQ](#faq) · [Full Skill Tree](#whats-inside) · [Links](#links)
 
 ---
 
@@ -119,15 +119,6 @@ Coordinators keep lifecycle status separate from Loop Health: `status` says wher
 
 ---
 
-## VPS Agent
-
-The former VPS Agent package (`ln-030-vps-bootstrap`, workers `ln-031` through `ln-034`, and `agents/hex-relay`) has moved to the standalone [`hex-bridge`](https://github.com/levnikolaevich/hex-bridge) repository.
-
-This skills marketplace now keeps only general local setup skills. Use `hex-bridge` for Telegram/HTTP relay runtime, VPS bootstrap, project runtime provisioning, worker orchestration, diagnostics, and the planned Telegram workspace architecture.
-
-The preserved VPS environment template is kept at [`docs/examples/hex_bridge_vps.env.example`](docs/examples/hex_bridge_vps.env.example) for reference; active runtime configuration lives in the standalone `hex-bridge` repository.
-
----
 
 ## MCP Servers (Optional)
 
@@ -640,7 +631,8 @@ claude-code-skills/                      # MARKETPLACE
 |   |-- ln-013-config-syncer/          # Align marketplace plugins, MCP state, and Codex defaults
 |   |-- ln-014-agent-instructions-manager/ # Single owner of CLAUDE.md/AGENTS.md creation and audit
 |   |-- ln-015-hex-line-uninstaller/   # Standalone cleanup for Claude-side hex-line integration
-|-- ln-020-codegraph/                  # Code knowledge graph for dependency analysis & impact checking
+|-- ln-021-codegraph/                  # Code knowledge graph for dependency analysis & impact checking
+|-- ln-022-researchgraph/              # Research hypothesis/goal graph queries & audits
 |
 |  └──────────────────────────────────────────────┘
 |

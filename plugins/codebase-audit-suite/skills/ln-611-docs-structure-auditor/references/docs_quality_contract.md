@@ -2,7 +2,7 @@
 
 # Docs Quality Contract
 
-Small hard contract for generated project documentation. Rule IDs, path matrices, allowlists, and validator implementation details live in the optional docs-quality rule catalog loaded only by skills that name it directly.
+Hard contract for generated project documentation. Rule IDs, path matrices, allowlists, and validator details live in `docs_quality_rules.json`, loaded only by skills that name it directly.
 
 ## Acceptance Gate
 
@@ -33,20 +33,17 @@ Required top sections: `## Quick Navigation`, `## Agent Entry`, `## Maintenance`
 
 ## Content Rules
 
-- Use doc kinds: `index`, `reference`, `how-to`, `explanation`, `record`.
-- Keep canonical facts in one place and link outward.
-- Allowed code fences are operational/data formats: shell, yaml, json, toml, env, mermaid, text/plaintext.
-- Treat stale dates, obsolete workflow references, broken links, and missing current paths as findings.
+Use doc kinds `index`, `reference`, `how-to`, `explanation`, `record`. Keep canonical facts in one place and link outward. Allowed code fences are operational/data formats: shell, yaml, json, toml, env, mermaid, text/plaintext. Treat stale dates, obsolete workflows, broken links, and missing current paths as findings.
 
 ## Placeholder Policy
 
-Forbidden in published docs unless allowlisted by the rule catalog: `{{...}}`, `[TBD: ...]`, `TODO`, `Coming soon`, `Lorem ipsum`, `Template Last Updated:`, `Template Version:`.
+Forbidden unless allowlisted: `{{...}}`, `[TBD: ...]`, `TODO`, `Coming soon`, `Lorem ipsum`, `Template Last Updated:`, `Template Version:`.
 
 ## Repair and Output
 
-Route semantic repairs to the owning creator skill: root docs `ln-111`, project docs `ln-112` to `ln-115`, reference docs `ln-120`, task docs `ln-130`, test docs `ln-140`. `ln-100` may apply deterministic mechanical fixes.
+Route semantic repairs to the owning creator: root docs `ln-111`, project docs `ln-112` to `ln-115`, reference docs `ln-120`, task docs `ln-130`, test docs `ln-140`. `ln-100` may apply deterministic mechanical fixes.
 
-Creators used by `ln-100` return `created_files`, `skipped_files`, `quality_inputs.doc_paths`, `quality_inputs.owners`, and `validation_status` (`passed|passed_with_fixes|skipped|failed`).
+Creator outputs: `created_files`, `skipped_files`, `quality_inputs.doc_paths`, `quality_inputs.owners`, `validation_status=passed|passed_with_fixes|skipped|failed`.
 
 ---
 **Version:** 1.0.0

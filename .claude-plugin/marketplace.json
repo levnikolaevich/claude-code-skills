@@ -198,7 +198,8 @@
         "./skills/ln-013-config-syncer",
         "./skills/ln-014-agent-instructions-manager",
         "./skills/ln-015-hex-line-uninstaller",
-        "./skills/ln-020-codegraph"
+        "./skills/ln-021-codegraph",
+        "./skills/ln-022-researchgraph"
       ]
     }
   ]

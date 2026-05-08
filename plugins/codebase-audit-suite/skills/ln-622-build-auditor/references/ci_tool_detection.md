@@ -6,26 +6,17 @@ Small runtime contract for discovering lint, typecheck, test, build, and benchma
 
 ## Discovery Order
 
-Use the first reliable source per category:
-
-1. `docs/project/tech_stack.md`
-2. `docs/project/infrastructure.md`
-3. `docs/project/runbook.md`
-4. tool config files
-5. package/build manifests
-6. skip with evidence
-
-Explicit project docs override auto-detection.
+Use the first reliable source per category: project docs (`tech_stack`, `infrastructure`, `runbook`), tool config, package/build manifest, then skip with evidence. Explicit docs override auto-detection.
 
 ## Detection Map
 
-| Category | Signals | Default shape |
+| Category | Signals | Command shape |
 |---|---|---|
-| lint | eslint/biome/ruff/dotnet format configs | `npm run lint`, `npx eslint .`, `ruff check .`, `dotnet format --verify-no-changes` |
-| typecheck | `tsconfig`, mypy/pyright, Go/Rust manifests | `tsc --noEmit`, `mypy .`, `pyright`, `go vet ./...`, `cargo check` |
+| lint | eslint/biome/ruff/dotnet format | `npm run lint`, `npx eslint .`, `ruff check .`, `dotnet format --verify-no-changes` |
+| typecheck | `tsconfig`, mypy/pyright, Go/Rust | `tsc --noEmit`, `mypy .`, `pyright`, `go vet ./...`, `cargo check` |
 | test | Jest/Vitest/Pytest, test project refs | `npm test`, `npx vitest run`, `pytest`, `go test ./...`, `dotnet test`, `cargo test` |
-| build | package/build manifests, solutions, Maven, Cargo | `npm run build`, `python -m build`, `go build ./...`, `dotnet build`, `cargo build`, `mvn compile` |
-| benchmark | benchmark files/framework markers | framework benchmark command with JSON/text artifact |
+| build | manifests, solutions, Maven, Cargo | `npm run build`, `python -m build`, `go build ./...`, `dotnet build`, `cargo build`, `mvn compile` |
+| benchmark | benchmark files/framework markers | framework command with JSON/text artifact |
 
 ## Execution Rules
 
@@ -35,16 +26,11 @@ Explicit project docs override auto-detection.
 - Auto-fix flow is `fix -> rerun without fix -> verify`.
 - On failure, keep compact context and preserve full logs under `.hex-skills/logs/error_recovery/` when the skill writes artifacts.
 
-## Skip/Failure Evidence
+## Evidence
 
-| Situation | Result |
-|---|---|
-| no config found | skip with `No {category} tooling detected` |
-| command missing | skip with `{tool} not found in PATH` |
-| timeout | fail category with timeout evidence |
-| project docs missing | continue to config detection |
+Record `{category, command, source, status, evidence}` where `source=docs|config|manifest|fallback` and `status=pass|fail|skipped`.
 
-Record `{category, command, source, status, evidence}` where `source` is `docs|config|manifest|fallback` and `status` is `pass|fail|skipped`.
+Skip with evidence when no config is found, command is missing, or project docs are absent. Timeout is a category failure with timeout evidence.
 
 Long provider recipes are skill-local or conditional; this file is only detection and evidence SSOT.
 

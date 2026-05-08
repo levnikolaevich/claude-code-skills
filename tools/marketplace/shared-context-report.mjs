@@ -1,13 +1,16 @@
 #!/usr/bin/env node
 import fs from "node:fs";
 import path from "node:path";
+import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import { buildExtendedRegistry } from "./shared.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const ROOT = path.resolve(__dirname, "../..");
 const REGISTRY_PATH = path.join(ROOT, "tools/marketplace/shared-registry.json");
 const PLUGINS_ROOT = path.join(ROOT, "plugins");
+const MARKER_PATTERN = /SOURCE-OF-TRUTH:\s+((?:shared|plugins\/[^/]+\/shared)\/\S+?)\.\s/;
 
 function toPosix(file) {
   return file.split(path.sep).join("/");
@@ -64,6 +67,72 @@ function loadSkillText(skill) {
 
 function readText(file) {
   return fs.existsSync(file) ? fs.readFileSync(file, "utf8") : "";
+}
+
+function readHead(file, lines = 8) {
+  return readText(file).split(/\r?\n/).slice(0, lines).join("\n");
+}
+
+function markerSource(file) {
+  const markerFile = file.endsWith(".json") ? `${file}.SOURCE.md` : file;
+  const match = readHead(markerFile).match(MARKER_PATTERN);
+  return match?.[1] ?? null;
+}
+
+function markerMatchesSource(marker, source) {
+  return marker === source || (source.endsWith(".json.SOURCE.md") && marker === source.replace(/\.SOURCE\.md$/, ""));
+}
+
+function listTrackedPluginFiles() {
+  try {
+    return execFileSync("git", ["ls-files", "-z", "plugins"], { cwd: ROOT, encoding: "utf8" })
+      .split("\0")
+      .filter(Boolean)
+      .sort();
+  } catch {
+    return walkFiles(PLUGINS_ROOT).map(rel);
+  }
+}
+
+function collectGeneratedCopies(extended) {
+  const expectedTargets = new Map();
+  const sourceExpectedTargets = new Map();
+  for (const [source, skillTargets] of extended) {
+    for (const [skill, targetRel] of skillTargets) {
+      const key = `${skill}/${targetRel}`;
+      expectedTargets.set(key, source);
+      if (!sourceExpectedTargets.has(source)) sourceExpectedTargets.set(source, new Set());
+      sourceExpectedTargets.get(source).add(key);
+    }
+  }
+
+  const sourceTracked = new Map();
+  const sourceStale = new Map();
+  const staleGeneratedCopies = [];
+  for (const fileRel of listTrackedPluginFiles()) {
+    if (!/^plugins\/[^/]+\/skills\/[^/]+\/references\//.test(fileRel)) continue;
+    const file = path.join(ROOT, fromPosix(fileRel));
+    const marker = markerSource(file);
+    if (!marker) continue;
+    const skill = fileRel.split("/references/")[0];
+    const targetRel = `references/${fileRel.split("/references/")[1]}`;
+    const key = `${skill}/${targetRel}`;
+    const expectedSource = expectedTargets.get(key);
+    const current = expectedSource && markerMatchesSource(marker, expectedSource);
+    const countSource = current ? expectedSource : marker;
+    const bucket = current ? sourceTracked : sourceStale;
+    if (!bucket.has(countSource)) bucket.set(countSource, []);
+    bucket.get(countSource).push(fileRel);
+    if (!current) {
+      staleGeneratedCopies.push({
+        file: fileRel,
+        markerSource: marker,
+        expectedSource: expectedSource ?? null,
+      });
+    }
+  }
+
+  return { sourceExpectedTargets, sourceTracked, sourceStale, staleGeneratedCopies };
 }
 
 function isTextFile(file) {
@@ -128,6 +197,8 @@ function parseArgs() {
 
 function buildReport() {
   const registry = JSON.parse(fs.readFileSync(REGISTRY_PATH, "utf8"));
+  const { extended } = buildExtendedRegistry(registry);
+  const generated = collectGeneratedCopies(extended);
   const skillTexts = new Map(listSkillDirs().map((skill) => [skill, loadSkillText(skill)]));
   const rows = registry.map((entry) => {
     const size = fileSize(entry.source);
@@ -150,12 +221,17 @@ function buildReport() {
       kind: entry.kind,
       size,
       targets: entry.targets?.length ?? 0,
+      directRegistryTargets: entry.targets?.length ?? 0,
+      extendedTargets: generated.sourceExpectedTargets.get(entry.source)?.size ?? 0,
+      trackedGeneratedCopies: generated.sourceTracked.get(entry.source)?.length ?? 0,
+      staleGeneratedCopies: generated.sourceStale.get(entry.source)?.length ?? 0,
       mentionedBy: mentionedBy.length,
       mandatoryBy: mandatoryBy.length,
       directMentions: directMentionBy.length,
       nestedMentions: nestedMentionBy.length,
       scriptImportConsumers: scriptImportBy.length,
       replicatedBytes: size * (entry.targets?.length ?? 0),
+      extendedReplicatedBytes: size * (generated.sourceExpectedTargets.get(entry.source)?.size ?? 0),
       topHeavySkills: mandatoryBy.slice(0, 8),
       topDirectMentionSkills: directMentionBy.slice(0, 8),
       topNestedMentionSkills: nestedMentionBy.slice(0, 8),
@@ -165,28 +241,55 @@ function buildReport() {
     return row;
   });
   rows.sort((a, b) => b.replicatedBytes - a.replicatedBytes || b.size - a.size || a.source.localeCompare(b.source));
+  const extendedTargetsTotal = [...generated.sourceExpectedTargets.values()].reduce((sum, targets) => sum + targets.size, 0);
+  const trackedGeneratedCopiesTotal = [...generated.sourceTracked.values()].reduce((sum, copies) => sum + copies.length, 0);
+  const extendedReplicatedBytesTotal = [...generated.sourceExpectedTargets.entries()].reduce((sum, [source, targets]) => sum + fileSize(source) * targets.size, 0);
+  const transitiveGeneratedSources = [...generated.sourceExpectedTargets.keys()].filter((source) => !registry.some((entry) => entry.source === source)).length;
 
   return {
     generatedAt: new Date().toISOString(),
     totals: {
       registryEntries: rows.length,
       registryTargets: rows.reduce((sum, row) => sum + row.targets, 0),
+      directRegistryTargets: rows.reduce((sum, row) => sum + row.directRegistryTargets, 0),
+      extendedTargets: extendedTargetsTotal,
+      trackedGeneratedCopies: trackedGeneratedCopiesTotal,
+      staleGeneratedCopies: generated.staleGeneratedCopies.length,
+      transitiveGeneratedSources,
       sourceBytes: rows.reduce((sum, row) => sum + row.size, 0),
       replicatedBytes: rows.reduce((sum, row) => sum + row.replicatedBytes, 0),
+      extendedReplicatedBytes: extendedReplicatedBytesTotal,
       mandatoryReadBytes: rows.reduce((sum, row) => sum + row.size * row.mandatoryBy, 0),
     },
     sourceGroups: rows.reduce((acc, row) => {
-      acc[row.sourceGroup] ??= { registryEntries: 0, registryTargets: 0, sourceBytes: 0, replicatedBytes: 0, mandatoryReadBytes: 0 };
+      acc[row.sourceGroup] ??= {
+        registryEntries: 0,
+        registryTargets: 0,
+        directRegistryTargets: 0,
+        extendedTargets: 0,
+        trackedGeneratedCopies: 0,
+        staleGeneratedCopies: 0,
+        sourceBytes: 0,
+        replicatedBytes: 0,
+        extendedReplicatedBytes: 0,
+        mandatoryReadBytes: 0,
+      };
       acc[row.sourceGroup].registryEntries += 1;
       acc[row.sourceGroup].registryTargets += row.targets;
+      acc[row.sourceGroup].directRegistryTargets += row.directRegistryTargets;
+      acc[row.sourceGroup].extendedTargets += row.extendedTargets;
+      acc[row.sourceGroup].trackedGeneratedCopies += row.trackedGeneratedCopies;
+      acc[row.sourceGroup].staleGeneratedCopies += row.staleGeneratedCopies;
       acc[row.sourceGroup].sourceBytes += row.size;
       acc[row.sourceGroup].replicatedBytes += row.replicatedBytes;
+      acc[row.sourceGroup].extendedReplicatedBytes += row.extendedReplicatedBytes;
       acc[row.sourceGroup].mandatoryReadBytes += row.size * row.mandatoryBy;
       return acc;
     }, {}),
     rows,
     zeroMention: rows.filter((row) => row.mentionedBy === 0),
     zeroMandatory: rows.filter((row) => row.mandatoryBy === 0),
+    staleGeneratedCopies: generated.staleGeneratedCopies,
   };
 }
 

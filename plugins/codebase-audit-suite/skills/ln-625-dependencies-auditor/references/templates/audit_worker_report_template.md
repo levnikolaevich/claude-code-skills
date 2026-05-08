@@ -2,19 +2,13 @@
 
 # Audit Worker Report Template
 
-Markdown report envelope for audit workers. Coordinators consume the JSON summary first; this report is supporting evidence.
+Markdown evidence envelope for audit workers. Coordinators consume JSON summaries first; this report supports the verdict.
 
-## Location
+## Path
 
-Write reports under:
+Write once under `.hex-skills/runtime-artifacts/runs/{run_id}/audit-report/` using a stable name such as `{worker-id}-{slug}.md` or `{worker-id}-{slug}-{domain}.md`.
 
-```text
-.hex-skills/runtime-artifacts/runs/{run_id}/audit-report/
-```
-
-Use stable names such as `{worker-id}-{slug}.md` or `{worker-id}-{slug}-{domain}.md`.
-
-## Required Markdown
+## Required Shape
 
 ```markdown
 # {Category Name} Audit Report
@@ -48,10 +42,7 @@ status: completed
 
 ## Optional Machine Blocks
 
-Add only when the local worker or coordinator needs extra structured data:
-- `FINDINGS-EXTENDED` for pattern signatures, domain grouping, or evidence metadata.
-- `DATA-EXTENDED` for worker-specific aggregate payloads.
-- extra informational score fields beside the primary penalty-based `score`.
+Add only when consumed by the worker or coordinator: `FINDINGS-EXTENDED`, `DATA-EXTENDED`, or extra informational score fields. The primary penalty-based `score` remains canonical.
 
 ## Writing Rules
 

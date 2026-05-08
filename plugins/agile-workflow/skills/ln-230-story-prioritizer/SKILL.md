@@ -62,6 +62,7 @@ docs/market/[epic-slug]/
 ## Runtime Contract
 
 **MANDATORY READ:** Load `references/planning_worker_runtime_contract.md`, `references/coordinator_summary_contract.md`
+**MANDATORY READ:** Load `references/researchgraph_mcp_usage.md` when Stories cite H/G/run IDs or project researchgraph evidence can change priority confidence.
 
 Runtime family: `planning-worker-runtime`
 
@@ -112,6 +113,7 @@ Extract: `task_provider` = Task Management → Provider
 |------|---------|---------------|
 | **WebSearch** | Market size, competitors | "[domain] market size {current_year}" |
 | **mcp__Ref** | Industry reports | "[domain] market analysis report" |
+| **hex-research** | Local hypothesis, goal, and benchmark evidence | `find_hypotheses`, `inspect_goal`, `find_runs` for explicit H/G/run context |
 | **Task provider** | Load Stories | IF linear: list_issues / ELSE: Glob story.md |
 | **Glob** | Check existing | "docs/market/[epic]/*" |
 
@@ -197,6 +199,8 @@ Extract: `task_provider` = Task Management → Provider
 **Objective:** Score all Stories cheaply first, then spend deep research only on candidates where it changes the decision.
 
 **Critical:** Keep maximum context to one full Story at a time even during deep research.
+
+If a researchgraph layout exists, run local graph checks only for Stories whose priority depends on hypothesis status, goal coverage, benchmark evidence, or implementation readiness. Local graph evidence can change RICE confidence and risk; it does not replace market-size or competitor research.
 
 #### Pass A: Cheap Triage For All Stories
 

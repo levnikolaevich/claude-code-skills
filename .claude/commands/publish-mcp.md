@@ -69,7 +69,7 @@ Display summary table:
 | hex-line-mcp  | 1.1.1  | 1.1.1  | 2       | 6 files  | needs release  |
 | hex-graph-mcp | 0.2.1  | 0.2.1  | 0       | 3 files  | needs release  |
 | hex-ssh-mcp   | 1.1.1  | 1.1.1  | 0       | 0        | up to date     |
-| hex-research-mcp | 0.1.0 | not published | 1 | 0 | needs first release |
+| hex-research-mcp | 0.1.1 | 0.1.1 | 0 | 0 | up to date |
 ```
 
 If no packages need release → report "All packages up to date" and stop.

@@ -14,7 +14,6 @@ license: MIT
 ## Mandatory Read
 
 **MANDATORY READ:** Load `references/evaluation_worker_runtime_contract.md`, `references/evaluation_summary_contract.md`
-**MANDATORY READ:** Load `references/agent_delegation_pattern.md` (Critical Verification + Background Execution sections)
 
 ## Purpose
 
@@ -24,7 +23,15 @@ license: MIT
 
 ## Wait/Patience Protocol
 
-Codex typically takes 10-20 minutes. Do NOT skip or declare an agent failed based on elapsed time. Only the Liveness Protocol in `agent_delegation_pattern.md` determines failure.
+This worker does not launch agents. It consumes worker summaries and existing agent result artifacts after the evaluation runtime barrier. Do not mark an agent failed from elapsed time alone; accept only the runtime's resolved status or result metadata as the completion signal.
+
+## Agent Finding Verification
+
+For every agent suggestion:
+- treat transport, auth, permission, timeout-without-output, or tool-missing results as operator evidence, not domain findings
+- verify supported claims against code, docs, tests, runtime logs, or worker summaries before accepting
+- reject unsupported, stale, duplicate, or architecture-shim suggestions
+- never rewrite runner-owned result files
 
 ## Runtime
 
@@ -59,7 +66,7 @@ Recommended `phase_order`:
    - worker findings
    - agent findings
    - prior review history
-2. For each agent suggestion: independently verify per `agent_delegation_pattern.md` Critical Verification criteria.
+2. For each agent suggestion: independently verify per the Agent Finding Verification policy.
 3. Mark each suggestion `AGREE` or `REJECT`.
 4. **Architecture Gate:** Before accepting any AGREE'd suggestion, verify: "Does this implement the correct architecture directly, without backward compatibility shims or legacy workarounds?" If a suggestion introduces unnecessary compat layers, convert AGREE to REJECT.
 5. Reject unsupported findings.

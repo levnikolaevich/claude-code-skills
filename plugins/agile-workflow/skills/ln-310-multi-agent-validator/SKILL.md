@@ -38,6 +38,7 @@ Mode detection:
 **MANDATORY READ:** Load `references/evaluation_coordinator_runtime_contract.md`, `references/evaluation_summary_contract.md`, `references/evaluation_parallelism_policy.md`, `references/evaluation_research_contract.md`
 **MANDATORY READ:** Load `references/agent_delegation_pattern.md`
 **MANDATORY READ:** Load `references/penalty_points.md`
+**MANDATORY READ:** Load `references/researchgraph_mcp_usage.md` when researchgraph files changed or the target claims hypothesis, goal, benchmark, or proposal readiness.
 Conditional read: load `references/phase2_research_audit.md` only when the coordinator performs inline criteria mapping instead of consuming ln-312 findings summaries.
 
 Agent review policy: run health check, record skipped reason when no advisor is available, verify every advisor claim before merge, and treat transport/auth/tool failures as operator evidence rather than domain findings. Load `references/agent_review_workflow.md` only when debugging lifecycle/liveness details outside the evaluation runtime.
@@ -160,7 +161,8 @@ node references/scripts/evaluation-runtime/cli.mjs start \
 2. Load only the metadata needed for the current mode.
 3. In `mode=story`, resolve Story and child tasks.
 4. In `mode=plan_review`, resolve the plan file.
-5. Checkpoint Phase 1 with resolved refs.
+5. If researchgraph files changed or the target cites `H##`, `G##`, run IDs, benchmark manifests, or readiness claims, run read-only researchgraph verification/audits and attach the result as validation evidence.
+6. Checkpoint Phase 1 with resolved refs.
 
 ### Phase 2: Agent Launch
 

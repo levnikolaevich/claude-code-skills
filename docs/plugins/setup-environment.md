@@ -27,7 +27,8 @@ Sets up and maintains the multi-agent development environment. The coordinator i
 | ln-013-config-syncer | Install/verify Claude and Codex marketplace plugins, align MCP state, and align Codex execution defaults |
 | ln-014-agent-instructions-manager | Single owner of instruction file creation, audit, and MCP Tool Preferences sync |
 | ln-015-hex-line-uninstaller | Standalone cleanup: remove Claude-side hex-line registration, permissions, hooks, and output style |
-| ln-020-codegraph | Code knowledge graph for dependency analysis and impact checking |
+| ln-021-codegraph | Code knowledge graph for dependency analysis and impact checking |
+| ln-022-researchgraph | Research hypothesis and goal graph queries, audits, evidence, and canvas export |
 
 ## How it works
 

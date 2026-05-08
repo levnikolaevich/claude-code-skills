@@ -1,7 +1,7 @@
 ---
 name: ln-300-task-coordinator
 description: "Analyzes Story and builds optimal task plan (1-8 tasks), then routes to create or replan. Use when Story needs task breakdown or replanning."
-allowed-tools: Read, Grep, Glob, Bash, Skill, mcp__hex-graph__index_project, mcp__hex-graph__analyze_architecture, mcp__hex-graph__find_symbols, mcp__hex-graph__inspect_symbol
+allowed-tools: Read, Grep, Glob, Bash, Skill, mcp__hex-graph__index_project, mcp__hex-graph__analyze_architecture, mcp__hex-graph__find_symbols, mcp__hex-graph__inspect_symbol, mcp__hex-research__verify_index, mcp__hex-research__find_hypotheses, mcp__hex-research__inspect_hypothesis, mcp__hex-research__inspect_goal, mcp__hex-research__audit_orphans, mcp__hex-research__analyze_proposed
 license: MIT
 ---
 
@@ -17,6 +17,7 @@ Runtime-backed task planning coordinator. The runtime owns readiness gating, pau
 **MANDATORY READ:** Load `references/coordinator_runtime_contract.md`, `references/task_planning_runtime_contract.md`, `references/coordinator_summary_contract.md`, and `references/task_plan_worker_runtime_contract.md`
 **MANDATORY READ:** Load `references/environment_state_contract.md`, `references/storage_mode_detection.md`, `references/problem_solving.md`, and `references/creation_quality_checklist.md`
 **MANDATORY READ:** Load `references/agent_delegation_pattern.md` when Phase 3 external validation is triggered
+**MANDATORY READ:** Load `references/researchgraph_mcp_usage.md` when the Story references H/G/run IDs or implementation readiness depends on project hypotheses.
 Tool policy: follow host AGENTS.md MCP preferences; load `references/mcp_tool_preferences.md` and `references/mcp_integration_patterns.md` only when host policy is absent or MCP behavior is unclear.
 
 ## Purpose
@@ -77,6 +78,8 @@ Do NOT load existing tasks here. Existing tasks load in Phase 4 only.
   - `analyze_architecture(path=project_root, verbosity="minimal")`
   - `find_symbols` + `inspect_symbol` for named components from Story AC or Technical Notes, but only after narrowing `path` where possible; if symbol discovery is truncated, refine to `name + file` or `workspace_qualified_name` before planning from it
 - Use graph context to confirm real affected modules and entrypoints before decomposition
+- For Stories that cite hypotheses, goals, or run evidence, run `verify_index` and then inspect only the referenced `H##`/`G##` IDs or proposed candidates.
+- Use `hex-research` to confirm hypothesis implementation status, refinement gaps, and proposal readiness; keep `hex-graph` as the source for code symbol and module boundaries.
 
 Checkpoint payload:
 - `discovery_ready`

@@ -12,23 +12,11 @@
         "path": "references/agents/agent_registry.json"
       },
       {
-        "skill": "plugins/agile-workflow/skills/ln-315-review-merge-worker",
-        "path": "references/agents/agent_registry.json"
-      },
-      {
         "skill": "plugins/agile-workflow/skills/ln-316-review-refinement-worker",
         "path": "references/agents/agent_registry.json"
       },
       {
         "skill": "plugins/agile-workflow/skills/ln-510-quality-coordinator",
-        "path": "references/agents/agent_registry.json"
-      },
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/agents/agent_registry.json"
-      },
-      {
-        "skill": "plugins/documentation-pipeline/skills/ln-162-skill-reviewer",
         "path": "references/agents/agent_registry.json"
       },
       {
@@ -50,23 +38,11 @@
         "path": "references/agents/agent_registry.json.SOURCE.md"
       },
       {
-        "skill": "plugins/agile-workflow/skills/ln-315-review-merge-worker",
-        "path": "references/agents/agent_registry.json.SOURCE.md"
-      },
-      {
         "skill": "plugins/agile-workflow/skills/ln-316-review-refinement-worker",
         "path": "references/agents/agent_registry.json.SOURCE.md"
       },
       {
         "skill": "plugins/agile-workflow/skills/ln-510-quality-coordinator",
-        "path": "references/agents/agent_registry.json.SOURCE.md"
-      },
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/agents/agent_registry.json.SOURCE.md"
-      },
-      {
-        "skill": "plugins/documentation-pipeline/skills/ln-162-skill-reviewer",
         "path": "references/agents/agent_registry.json.SOURCE.md"
       },
       {
@@ -84,15 +60,7 @@
         "path": "references/agents/agent_result_classifier.mjs"
       },
       {
-        "skill": "plugins/agile-workflow/skills/ln-315-review-merge-worker",
-        "path": "references/agents/agent_result_classifier.mjs"
-      },
-      {
         "skill": "plugins/agile-workflow/skills/ln-316-review-refinement-worker",
-        "path": "references/agents/agent_result_classifier.mjs"
-      },
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
         "path": "references/agents/agent_result_classifier.mjs"
       }
     ]
@@ -218,10 +186,6 @@
         "path": "references/agents/prompt_templates/review_base.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/agents/prompt_templates/review_base.md"
-      },
-      {
         "skill": "plugins/optimization-suite/skills/ln-813-optimization-plan-validator",
         "path": "references/agents/prompt_templates/review_base.md"
       }
@@ -240,23 +204,11 @@
         "path": "references/agent_delegation_pattern.md"
       },
       {
-        "skill": "plugins/agile-workflow/skills/ln-315-review-merge-worker",
-        "path": "references/agent_delegation_pattern.md"
-      },
-      {
         "skill": "plugins/agile-workflow/skills/ln-316-review-refinement-worker",
         "path": "references/agent_delegation_pattern.md"
       },
       {
         "skill": "plugins/agile-workflow/skills/ln-510-quality-coordinator",
-        "path": "references/agent_delegation_pattern.md"
-      },
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/agent_delegation_pattern.md"
-      },
-      {
-        "skill": "plugins/documentation-pipeline/skills/ln-162-skill-reviewer",
         "path": "references/agent_delegation_pattern.md"
       },
       {
@@ -300,23 +252,11 @@
         "path": "references/agent_review_workflow.md"
       },
       {
-        "skill": "plugins/agile-workflow/skills/ln-315-review-merge-worker",
-        "path": "references/agent_review_workflow.md"
-      },
-      {
         "skill": "plugins/agile-workflow/skills/ln-316-review-refinement-worker",
         "path": "references/agent_review_workflow.md"
       },
       {
         "skill": "plugins/agile-workflow/skills/ln-510-quality-coordinator",
-        "path": "references/agent_review_workflow.md"
-      },
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/agent_review_workflow.md"
-      },
-      {
-        "skill": "plugins/documentation-pipeline/skills/ln-162-skill-reviewer",
         "path": "references/agent_review_workflow.md"
       },
       {
@@ -2852,7 +2792,7 @@
         "path": "references/mcp_integration_patterns.md"
       },
       {
-        "skill": "plugins/setup-environment/skills/ln-020-codegraph",
+        "skill": "plugins/setup-environment/skills/ln-021-codegraph",
         "path": "references/mcp_integration_patterns.md"
       }
     ]
@@ -3006,8 +2946,42 @@
         "path": "references/mcp_tool_preferences.md"
       },
       {
-        "skill": "plugins/setup-environment/skills/ln-020-codegraph",
+        "skill": "plugins/setup-environment/skills/ln-021-codegraph",
         "path": "references/mcp_tool_preferences.md"
+      }
+    ]
+  },
+  {
+    "source": "shared/references/researchgraph_mcp_usage.md",
+    "kind": "reference",
+    "targets": [
+      {
+        "skill": "plugins/setup-environment/skills/ln-022-researchgraph",
+        "path": "references/researchgraph_mcp_usage.md"
+      },
+      {
+        "skill": "plugins/agile-workflow/skills/ln-210-epic-coordinator",
+        "path": "references/researchgraph_mcp_usage.md"
+      },
+      {
+        "skill": "plugins/agile-workflow/skills/ln-220-story-coordinator",
+        "path": "references/researchgraph_mcp_usage.md"
+      },
+      {
+        "skill": "plugins/agile-workflow/skills/ln-230-story-prioritizer",
+        "path": "references/researchgraph_mcp_usage.md"
+      },
+      {
+        "skill": "plugins/agile-workflow/skills/ln-300-task-coordinator",
+        "path": "references/researchgraph_mcp_usage.md"
+      },
+      {
+        "skill": "plugins/agile-workflow/skills/ln-310-multi-agent-validator",
+        "path": "references/researchgraph_mcp_usage.md"
+      },
+      {
+        "skill": "plugins/agile-workflow/skills/ln-311-review-research-worker",
+        "path": "references/researchgraph_mcp_usage.md"
       }
     ]
   },
@@ -3356,10 +3330,6 @@
       {
         "skill": "plugins/agile-workflow/skills/ln-230-story-prioritizer",
         "path": "references/planning_worker_runtime_contract.md"
-      },
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/planning_worker_runtime_contract.md"
       }
     ]
   },
@@ -3581,10 +3551,6 @@
       },
       {
         "skill": "plugins/agile-workflow/skills/ln-514-test-log-analyzer",
-        "path": "references/quality_worker_runtime_contract.md"
-      },
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
         "path": "references/quality_worker_runtime_contract.md"
       }
     ]
@@ -4213,10 +4179,6 @@
       },
       {
         "skill": "plugins/agile-workflow/skills/ln-523-auto-test-planner",
-        "path": "references/test_planning_worker_runtime_contract.md"
-      },
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
         "path": "references/test_planning_worker_runtime_contract.md"
       }
     ]
@@ -4912,34 +4874,6 @@
       {
         "skill": "plugins/agile-workflow/skills/ln-404-test-executor",
         "path": "references/scripts/planning-worker-runtime/cli.mjs"
-      },
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/scripts/planning-worker-runtime/cli.mjs"
-      },
-      {
-        "skill": "plugins/documentation-pipeline/skills/ln-162-skill-reviewer",
-        "path": "references/scripts/planning-worker-runtime/cli.mjs"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-011-agent-installer",
-        "path": "references/scripts/planning-worker-runtime/cli.mjs"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-012-mcp-configurator",
-        "path": "references/scripts/planning-worker-runtime/cli.mjs"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-013-config-syncer",
-        "path": "references/scripts/planning-worker-runtime/cli.mjs"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-014-agent-instructions-manager",
-        "path": "references/scripts/planning-worker-runtime/cli.mjs"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-015-hex-line-uninstaller",
-        "path": "references/scripts/planning-worker-runtime/cli.mjs"
       }
     ]
   },
@@ -5164,34 +5098,6 @@
       {
         "skill": "plugins/agile-workflow/skills/ln-523-auto-test-planner",
         "path": "references/scripts/task-plan-worker-runtime/cli.mjs"
-      },
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/scripts/task-plan-worker-runtime/cli.mjs"
-      },
-      {
-        "skill": "plugins/documentation-pipeline/skills/ln-162-skill-reviewer",
-        "path": "references/scripts/task-plan-worker-runtime/cli.mjs"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-011-agent-installer",
-        "path": "references/scripts/task-plan-worker-runtime/cli.mjs"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-012-mcp-configurator",
-        "path": "references/scripts/task-plan-worker-runtime/cli.mjs"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-013-config-syncer",
-        "path": "references/scripts/task-plan-worker-runtime/cli.mjs"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-014-agent-instructions-manager",
-        "path": "references/scripts/task-plan-worker-runtime/cli.mjs"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-015-hex-line-uninstaller",
-        "path": "references/scripts/task-plan-worker-runtime/cli.mjs"
       }
     ]
   },
@@ -5282,34 +5188,6 @@
       {
         "skill": "plugins/agile-workflow/skills/ln-404-test-executor",
         "path": "references/scripts/task-worker-runtime/cli.mjs"
-      },
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/scripts/task-worker-runtime/cli.mjs"
-      },
-      {
-        "skill": "plugins/documentation-pipeline/skills/ln-162-skill-reviewer",
-        "path": "references/scripts/task-worker-runtime/cli.mjs"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-011-agent-installer",
-        "path": "references/scripts/task-worker-runtime/cli.mjs"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-012-mcp-configurator",
-        "path": "references/scripts/task-worker-runtime/cli.mjs"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-013-config-syncer",
-        "path": "references/scripts/task-worker-runtime/cli.mjs"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-014-agent-instructions-manager",
-        "path": "references/scripts/task-worker-runtime/cli.mjs"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-015-hex-line-uninstaller",
-        "path": "references/scripts/task-worker-runtime/cli.mjs"
       }
     ]
   },
@@ -5369,34 +5247,6 @@
       },
       {
         "skill": "plugins/agile-workflow/skills/ln-523-auto-test-planner",
-        "path": "references/scripts/test-planning-worker-runtime/cli.mjs"
-      },
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/scripts/test-planning-worker-runtime/cli.mjs"
-      },
-      {
-        "skill": "plugins/documentation-pipeline/skills/ln-162-skill-reviewer",
-        "path": "references/scripts/test-planning-worker-runtime/cli.mjs"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-011-agent-installer",
-        "path": "references/scripts/test-planning-worker-runtime/cli.mjs"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-012-mcp-configurator",
-        "path": "references/scripts/test-planning-worker-runtime/cli.mjs"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-013-config-syncer",
-        "path": "references/scripts/test-planning-worker-runtime/cli.mjs"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-014-agent-instructions-manager",
-        "path": "references/scripts/test-planning-worker-runtime/cli.mjs"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-015-hex-line-uninstaller",
         "path": "references/scripts/test-planning-worker-runtime/cli.mjs"
       }
     ]

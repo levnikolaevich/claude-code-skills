@@ -16,6 +16,7 @@ Structured research worker for validation, audit, and review flows.
 ## Mandatory Read
 
 **MANDATORY READ:** Load `references/evaluation_worker_runtime_contract.md`, `references/evaluation_summary_contract.md`, `references/evaluation_research_contract.md`, `references/epistemic_protocol.md`
+**MANDATORY READ:** Load `references/researchgraph_mcp_usage.md` only when the review target explicitly cites `H##`, `G##`, benchmark run IDs, or researchgraph files.
 
 ## Purpose
 
@@ -60,6 +61,7 @@ Recommended `phase_order`:
 1. Detect language, framework, libraries, and domain.
 2. Build a bounded research topic list.
 3. Keep topic count small and evidence-oriented.
+4. If the target explicitly cites local H/G/run IDs, do a read-only researchgraph preflight to capture local context before external research. Do not replace official-doc, MCP Ref, Context7, or current-web lanes with local graph evidence.
 
 ### Phase 2: Official Docs
 

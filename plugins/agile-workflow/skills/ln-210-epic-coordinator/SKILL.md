@@ -33,6 +33,7 @@ This skill should be used when:
 ## Runtime Contract
 
 **MANDATORY READ:** Load `references/coordinator_runtime_contract.md`, `references/epic_planning_runtime_contract.md`, `references/epic_plan_summary_contract.md`
+**MANDATORY READ:** Load `references/researchgraph_mcp_usage.md` when the project has `docs/hypotheses/`, `docs/goals/`, or benchmark run manifests that can change Epic boundaries.
 
 Runtime family: `epic-planning-runtime`
 
@@ -140,6 +141,11 @@ Auto-discovers Team ID and Next Epic Number from `docs/tasks/kanban_board.md`:
 **Objective:** Research project documentation AND frontend code to understand context BEFORE asking user questions.
 
 **Process:**
+
+0. **Researchgraph Preflight (if present):**
+   - If `docs/hypotheses/`, `docs/goals/`, or `benchmark/runs/*/manifest.yaml` exists, run read-only `verify_index` first.
+   - Use `inspect_goal`, `trace_goal_tree`, `find_hypotheses`, or `audit_goal_alignment` only when goals/hypotheses can change Epic boundaries, validation scope, or promotion/generalization work.
+   - Treat `STALE` graph debt as planning context, not as an Epic blocker by itself.
 
 1. **Document Scan:**
    - Use `Glob` to find: `docs/requirements.md`, `docs/architecture.md`, `docs/tech_stack.md`

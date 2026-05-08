@@ -87,7 +87,7 @@ Put in AGENTS.md (not the stub):
 - Critical rules that apply regardless of harness.
 - Build and test commands.
 - Coding standards and naming conventions.
-- MCP tool preferences (hex-line, hex-graph, etc. — these apply to any harness that can load MCP tools).
+- MCP tool preferences (hex-line, hex-graph, hex-research, etc. — these apply to any harness that can load MCP tools). Include `hex-research` only for projects with `docs/hypotheses/`, `docs/goals/`, or benchmark run manifests where graph state changes planning or validation decisions.
 - Navigation tables.
 - Compact-instructions preservation lists *(terminology differs per harness — but the preservation priority list itself is shared, so keep the list in AGENTS.md and mention only the command name in the stub)*.
 

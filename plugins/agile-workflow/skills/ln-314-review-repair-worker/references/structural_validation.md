@@ -1,4 +1,4 @@
-<!-- SOURCE-OF-TRUTH: shared/references/structural_validation.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+<!-- SOURCE-OF-TRUTH: plugins/agile-workflow/shared/references/structural_validation.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
 
 # Structural Validation (Criteria #1-#4, #23-#24)
 

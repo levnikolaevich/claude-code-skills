@@ -1,4 +1,4 @@
-<!-- SOURCE-OF-TRUTH: shared/references/cross_reference_validation.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+<!-- SOURCE-OF-TRUTH: plugins/agile-workflow/shared/references/cross_reference_validation.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
 
 # Cross-Reference Validation (Criteria #25-#26)
 

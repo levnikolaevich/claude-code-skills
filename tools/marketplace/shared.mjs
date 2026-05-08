@@ -59,6 +59,15 @@ function walkFiles(dir) {
   return files.sort((a, b) => rel(a).localeCompare(rel(b)));
 }
 
+function listPluginSharedFiles() {
+  const files = [];
+  for (const plugin of fs.readdirSync(PLUGINS_ROOT, { withFileTypes: true }).filter((entry) => entry.isDirectory())) {
+    const sharedRoot = path.join(PLUGINS_ROOT, plugin.name, "shared");
+    files.push(...walkFiles(sharedRoot).map(rel));
+  }
+  return files.sort();
+}
+
 function isTextFile(file) {
   return TEXT_EXTENSIONS.has(path.extname(file).toLowerCase()) || path.basename(file) === "SKILL.md";
 }
@@ -67,7 +76,7 @@ function hashFile(file) {
   return crypto.createHash("sha256").update(fs.readFileSync(file)).digest("hex");
 }
 
-const MARKER_PATTERN = /SOURCE-OF-TRUTH:\s+(shared\/\S+?)\.\s/;
+const MARKER_PATTERN = /SOURCE-OF-TRUTH:\s+((?:shared|plugins\/[^/]+\/shared)\/\S+?)\.\s/;
 
 function readHead(file, lines = 8) {
   try {
@@ -119,7 +128,29 @@ function listSkillDirs() {
   return skills;
 }
 
-function sourceForTarget(target) {
+function pluginForSkill(skill) {
+  return skill.match(/^plugins\/([^/]+)\//)?.[1] ?? null;
+}
+
+function pluginForSource(source) {
+  return source.match(/^plugins\/([^/]+)\/shared\//)?.[1] ?? null;
+}
+
+function isSharedSource(source) {
+  return source.startsWith("shared/") || /^plugins\/[^/]+\/shared\//.test(source);
+}
+
+function pluginSharedSourceForTarget(target, plugin) {
+  if (!plugin) return null;
+  if (target === "references/replan_algorithm_common.md") return `plugins/${plugin}/shared/references/replan_algorithm.md`;
+  if (target.startsWith("references/scripts/")) return `plugins/${plugin}/shared/scripts/${target.slice("references/scripts/".length)}`;
+  if (target.startsWith("references/templates/")) return `plugins/${plugin}/shared/templates/${target.slice("references/templates/".length)}`;
+  if (target.startsWith("references/agents/")) return `plugins/${plugin}/shared/agents/${target.slice("references/agents/".length)}`;
+  if (target.startsWith("references/")) return `plugins/${plugin}/shared/references/${target.slice("references/".length)}`;
+  return null;
+}
+
+function rootSharedSourceForTarget(target) {
   if (target === "references/replan_algorithm_common.md") return "shared/references/replan_algorithm.md";
   if (target.startsWith("references/scripts/")) return `shared/scripts/${target.slice("references/scripts/".length)}`;
   if (target.startsWith("references/templates/")) return `shared/templates/${target.slice("references/templates/".length)}`;
@@ -128,8 +159,23 @@ function sourceForTarget(target) {
   return null;
 }
 
+function sourceForTarget(target, plugin = null) {
+  const pluginSource = pluginSharedSourceForTarget(target, plugin);
+  if (pluginSource && fs.existsSync(path.join(ROOT, fromPosix(pluginSource)))) return pluginSource;
+  const rootSource = rootSharedSourceForTarget(target);
+  if (rootSource && fs.existsSync(path.join(ROOT, fromPosix(rootSource)))) return rootSource;
+  return null;
+}
+
 function targetForSource(source) {
   if (source === "shared/references/replan_algorithm.md") return "references/replan_algorithm_common.md";
+  const pluginSourceMatch = source.match(/^plugins\/[^/]+\/shared\/(references|scripts|templates|agents)\/(.+)$/);
+  if (pluginSourceMatch) {
+    const [, kind, rest] = pluginSourceMatch;
+    if (kind === "references" && rest === "replan_algorithm.md") return "references/replan_algorithm_common.md";
+    if (kind === "references") return `references/${rest}`;
+    return `references/${kind}/${rest}`;
+  }
   if (source.startsWith("shared/scripts/")) return `references/scripts/${source.slice("shared/scripts/".length)}`;
   if (source.startsWith("shared/templates/")) return `references/templates/${source.slice("shared/templates/".length)}`;
   if (source.startsWith("shared/agents/")) return `references/agents/${source.slice("shared/agents/".length)}`;
@@ -166,7 +212,7 @@ function sharedImportDeps(source) {
       const hit = candidates.find((candidate) => fs.existsSync(candidate) && fs.statSync(candidate).isFile());
       if (!hit) continue;
       const relPath = toPosix(path.relative(ROOT, hit));
-      if (relPath.startsWith("shared/")) deps.add(relPath);
+      if (isSharedSource(relPath)) deps.add(relPath);
     }
   }
   return [...deps].sort();
@@ -178,11 +224,12 @@ function sharedTextRefDeps(source) {
   if (!fs.existsSync(fullPath)) return [];
   const text = fs.readFileSync(fullPath, "utf8");
   const deps = new Set();
+  const plugin = pluginForSource(source);
   for (const match of text.matchAll(/references[\\/][A-Za-z0-9_@=:+\-.[\]/]+/g)) {
     const target = cleanToken(match[0]);
     if (target.endsWith("/")) continue;
     if (!/\.\w+$/.test(target)) continue;
-    const sharedSource = sourceForTarget(target);
+    const sharedSource = sourceForTarget(target, plugin);
     if (sharedSource && fs.existsSync(path.join(ROOT, fromPosix(sharedSource)))) {
       deps.add(sharedSource);
     }
@@ -280,23 +327,18 @@ function buildUsageFromSkillLocalRefs() {
       const text = fs.readFileSync(file, "utf8");
       for (const match of text.matchAll(/references[\\/][A-Za-z0-9_@=:+\-.[\]/]+/g)) {
         const target = cleanToken(match[0]);
-        const source = sourceForTarget(target);
+        const source = sourceForTarget(target, pluginForSkill(skillRel));
         if (source && fs.existsSync(path.join(ROOT, fromPosix(source)))) directTargets.add(source);
       }
     }
     const sources = new Set();
     const seenTargets = new Set();
-    const stack = [...directTargets].map((source) => {
-      if (source.startsWith("shared/scripts/")) return `references/scripts/${source.slice("shared/scripts/".length)}`;
-      if (source.startsWith("shared/templates/")) return `references/templates/${source.slice("shared/templates/".length)}`;
-      if (source.startsWith("shared/agents/")) return `references/agents/${source.slice("shared/agents/".length)}`;
-      return `references/${source.slice("shared/references/".length)}`;
-    });
+    const stack = [...directTargets].map((source) => targetForSource(source)).filter(Boolean);
     while (stack.length) {
       const target = stack.pop();
       if (seenTargets.has(target)) continue;
       seenTargets.add(target);
-      const source = sourceForTarget(target);
+      const source = sourceForTarget(target, pluginForSkill(skillRel));
       if (source && fs.existsSync(path.join(ROOT, fromPosix(source)))) sources.add(source);
       for (const dep of importDeps(skillRoot, target)) stack.push(dep);
     }
@@ -475,6 +517,7 @@ export function buildReport() {
   const registry = loadRegistry();
   const registrySources = new Set(registry.map((entry) => entry.source));
   const rootSharedFiles = walkFiles(SHARED_ROOT).map(rel);
+  const pluginSharedFiles = listPluginSharedFiles();
   const usage = buildUsageFromSkillLocalRefs();
   const { extended, transitiveSources } = buildExtendedRegistry(registry);
   const reachableSources = new Set(extended.keys());
@@ -506,6 +549,7 @@ export function buildReport() {
   }
 
   const orphanRootShared = [];
+  const orphanPluginShared = [];
   const singleUseRootShared = [];
   for (const source of rootSharedFiles) {
     if (!reachableSources.has(source)) {
@@ -517,6 +561,11 @@ export function buildReport() {
     if (transitiveSources.has(source)) continue;
     singleUseRootShared.push({ source });
   }
+  for (const source of pluginSharedFiles) {
+    if (!reachableSources.has(source)) {
+      orphanPluginShared.push({ source, plugin: pluginForSource(source) });
+    }
+  }
 
   const skillRefsOrphans = buildSkillRefsOrphans(extended);
   const crossSkillDuplicates = buildCrossSkillDuplicates(extended);
@@ -524,6 +573,13 @@ export function buildReport() {
 
   return {
     rootSharedFiles: rootSharedFiles.length,
+    pluginSharedFiles: pluginSharedFiles.length,
+    sharedSourceGroups: {
+      rootShared: rootSharedFiles.length,
+      pluginShared: pluginSharedFiles.length,
+      registryRootShared: registry.filter((entry) => entry.source.startsWith("shared/")).length,
+      registryPluginShared: registry.filter((entry) => /^plugins\/[^/]+\/shared\//.test(entry.source)).length,
+    },
     registryEntries: registry.length,
     registryTargets: registry.reduce((sum, entry) => sum + entry.targets.length, 0),
     extendedTargets: [...extended.values()].reduce((sum, m) => sum + m.size, 0),
@@ -532,6 +588,7 @@ export function buildReport() {
     skillSharedPathRefs,
     unresolvedDynamicRefs: [],
     orphanRootShared,
+    orphanPluginShared,
     singleUseRootShared,
     skillRefsOrphans,
     crossSkillDuplicates,
@@ -562,7 +619,9 @@ export function syncShared() {
       const targetPath = path.join(ROOT, fromPosix(skill), fromPosix(targetRel));
       fs.mkdirSync(path.dirname(targetPath), { recursive: true });
       if (fs.existsSync(targetPath) && hashFile(targetPath) !== hashFile(sourcePath)) {
-        throw new Error(`Shared target differs; refusing overwrite: ${targetKey}`);
+        if (!hasDistributionMarker(targetPath)) {
+          throw new Error(`Shared target differs and is not marked as generated; refusing overwrite: ${targetKey}`);
+        }
       }
       fs.copyFileSync(sourcePath, targetPath);
     }
@@ -575,16 +634,25 @@ export function validateSharedDistribution() {
   const report = buildReport();
   const { extended } = buildExtendedRegistry(registry);
 
-  for (const dir of report.pluginSharedDirs) problems.push(`plugin shared directory must not exist: ${dir}`);
   for (const ref of report.skillSharedPathRefs) problems.push(`skill runtime references root shared path: ${ref.file}: ${ref.token}`);
 
   for (const entry of registry) {
     const sourcePath = path.join(ROOT, fromPosix(entry.source));
+    const sourcePlugin = pluginForSource(entry.source);
+    if (!entry.source.startsWith("shared/") && !sourcePlugin) {
+      problems.push(`shared source must be under shared/ or plugins/<plugin>/shared/: ${entry.source}`);
+    }
     if (!fs.existsSync(sourcePath)) {
       problems.push(`missing shared source: ${entry.source}`);
       continue;
     }
     if (!entry.targets || entry.targets.length < 2) problems.push(`registry source must have 2+ targets: ${entry.source}`);
+    for (const target of entry.targets ?? []) {
+      const targetPlugin = pluginForSkill(target.skill);
+      if (sourcePlugin && targetPlugin !== sourcePlugin) {
+        problems.push(`plugin-local shared source targets another plugin: ${entry.source} -> ${target.skill}`);
+      }
+    }
   }
 
   for (const [source, skillTargets] of extended) {
@@ -619,6 +687,9 @@ export function validateSharedDistribution() {
     } else {
       problems.push(`shared file unused (remove or wire to skills): ${o.source}`);
     }
+  }
+  for (const o of report.orphanPluginShared) {
+    problems.push(`plugin shared file unused (remove or wire to skills): ${o.source}`);
   }
 
   for (const f of report.skillRefsOrphans) {

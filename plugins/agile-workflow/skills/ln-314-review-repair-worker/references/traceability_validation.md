@@ -1,4 +1,4 @@
-<!-- SOURCE-OF-TRUTH: shared/references/traceability_validation.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+<!-- SOURCE-OF-TRUTH: plugins/agile-workflow/shared/references/traceability_validation.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
 
 # Traceability & Verification (Criteria #16-#17, #17b-#17c, #22)
 

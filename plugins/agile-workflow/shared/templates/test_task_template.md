@@ -1,4 +1,4 @@
-<!-- SOURCE-OF-TRUTH: shared/templates/test_task_template.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+<!-- SOURCE-OF-TRUTH: plugins/agile-workflow/shared/templates/test_task_template.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
 
 # Tests for Story: [Story Title]
 

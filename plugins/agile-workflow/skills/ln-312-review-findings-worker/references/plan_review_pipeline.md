@@ -1,4 +1,4 @@
-<!-- SOURCE-OF-TRUTH: shared/references/plan_review_pipeline.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+<!-- SOURCE-OF-TRUTH: plugins/agile-workflow/shared/references/plan_review_pipeline.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
 
 # Plan Review Pipeline (mode=plan_review)
 

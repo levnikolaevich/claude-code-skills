@@ -1,4 +1,4 @@
-<!-- SOURCE-OF-TRUTH: shared/references/optimization_categories.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+<!-- SOURCE-OF-TRUTH: plugins/optimization-suite/shared/references/optimization_categories.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
 
 # Optimization Categories Checklist
 

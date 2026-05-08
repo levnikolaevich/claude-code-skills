@@ -1,4 +1,4 @@
-<!-- SOURCE-OF-TRUTH: shared/references/dependency_validation.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+<!-- SOURCE-OF-TRUTH: plugins/agile-workflow/shared/references/dependency_validation.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
 
 # Dependency Validation (Criteria #18-#19)
 

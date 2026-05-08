@@ -1,4 +1,4 @@
-<!-- SOURCE-OF-TRUTH: shared/references/cleanup_evidence_contract.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+<!-- SOURCE-OF-TRUTH: plugins/agile-workflow/shared/references/cleanup_evidence_contract.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
 
 # Cleanup Evidence Contract
 

@@ -1,4 +1,4 @@
-<!-- SOURCE-OF-TRUTH: shared/references/breaking_changes_patterns.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+<!-- SOURCE-OF-TRUTH: plugins/optimization-suite/shared/references/breaking_changes_patterns.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
 
 # Breaking Changes Patterns
 

@@ -53,6 +53,10 @@ function fileSize(source) {
   return fs.existsSync(fullPath) ? fs.statSync(fullPath).size : 0;
 }
 
+function sourceGroup(source) {
+  return /^plugins\/[^/]+\/shared\//.test(source) ? "pluginShared" : "rootShared";
+}
+
 function loadSkillText(skill) {
   const file = path.join(ROOT, fromPosix(skill), "SKILL.md");
   return fs.existsSync(file) ? fs.readFileSync(file, "utf8") : "";
@@ -82,6 +86,7 @@ function buildReport() {
     }
     return {
       source: entry.source,
+      sourceGroup: sourceGroup(entry.source),
       kind: entry.kind,
       size,
       targets: entry.targets?.length ?? 0,
@@ -102,6 +107,15 @@ function buildReport() {
       replicatedBytes: rows.reduce((sum, row) => sum + row.replicatedBytes, 0),
       mandatoryReadBytes: rows.reduce((sum, row) => sum + row.size * row.mandatoryBy, 0),
     },
+    sourceGroups: rows.reduce((acc, row) => {
+      acc[row.sourceGroup] ??= { registryEntries: 0, registryTargets: 0, sourceBytes: 0, replicatedBytes: 0, mandatoryReadBytes: 0 };
+      acc[row.sourceGroup].registryEntries += 1;
+      acc[row.sourceGroup].registryTargets += row.targets;
+      acc[row.sourceGroup].sourceBytes += row.size;
+      acc[row.sourceGroup].replicatedBytes += row.replicatedBytes;
+      acc[row.sourceGroup].mandatoryReadBytes += row.size * row.mandatoryBy;
+      return acc;
+    }, {}),
     rows,
     zeroMention: rows.filter((row) => row.mentionedBy === 0),
     zeroMandatory: rows.filter((row) => row.mandatoryBy === 0),

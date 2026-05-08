@@ -1,4 +1,4 @@
-<!-- SOURCE-OF-TRUTH: shared/references/provider_github.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+<!-- SOURCE-OF-TRUTH: plugins/agile-workflow/shared/references/provider_github.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
 
 # GitHub Issues Provider Operations
 

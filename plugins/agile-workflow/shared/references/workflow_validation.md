@@ -1,4 +1,4 @@
-<!-- SOURCE-OF-TRUTH: shared/references/workflow_validation.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+<!-- SOURCE-OF-TRUTH: plugins/agile-workflow/shared/references/workflow_validation.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
 
 # Workflow Validation (Criteria #7-#13)
 

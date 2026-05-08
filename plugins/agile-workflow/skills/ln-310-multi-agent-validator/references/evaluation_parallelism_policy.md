@@ -1,4 +1,4 @@
-<!-- SOURCE-OF-TRUTH: shared/references/evaluation_parallelism_policy.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+<!-- SOURCE-OF-TRUTH: plugins/agile-workflow/shared/references/evaluation_parallelism_policy.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
 
 # Evaluation Parallelism Policy
 

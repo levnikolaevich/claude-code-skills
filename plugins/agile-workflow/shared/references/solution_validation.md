@@ -1,4 +1,4 @@
-<!-- SOURCE-OF-TRUTH: shared/references/solution_validation.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+<!-- SOURCE-OF-TRUTH: plugins/agile-workflow/shared/references/solution_validation.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
 
 # Solution Validation (Criteria #6, #21)
 

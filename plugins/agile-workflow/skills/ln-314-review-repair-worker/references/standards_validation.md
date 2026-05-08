@@ -1,4 +1,4 @@
-<!-- SOURCE-OF-TRUTH: shared/references/standards_validation.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+<!-- SOURCE-OF-TRUTH: plugins/agile-workflow/shared/references/standards_validation.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
 
 # Standards Validation (Criterion #5)
 

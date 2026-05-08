@@ -61,6 +61,10 @@ function sourceSize(source) {
   return fs.existsSync(file) ? fs.statSync(file).size : 0;
 }
 
+function sourceGroup(source) {
+  return /^plugins\/[^/]+\/shared\//.test(source) ? "pluginShared" : "rootShared";
+}
+
 function categoryFor(entry, row) {
   const source = entry.source.toLowerCase();
   if (row.mentionedBy === 0) return "passive/dead";
@@ -99,6 +103,7 @@ function buildReport() {
     }
     const row = {
       source: entry.source,
+      sourceGroup: sourceGroup(entry.source),
       kind: entry.kind,
       size,
       targets: targets.length,
@@ -154,6 +159,14 @@ function buildReport() {
       skills: skillRows.length,
     },
     categories,
+    sourceGroups: rows.reduce((acc, row) => {
+      acc[row.sourceGroup] ??= { sources: 0, targets: 0, replicatedBytes: 0, mandatoryBytes: 0 };
+      acc[row.sourceGroup].sources += 1;
+      acc[row.sourceGroup].targets += row.targets;
+      acc[row.sourceGroup].replicatedBytes += row.replicatedBytes;
+      acc[row.sourceGroup].mandatoryBytes += row.mandatoryBytes;
+      return acc;
+    }, {}),
     sources: rows.sort((a, b) => b.mandatoryBytes - a.mandatoryBytes || b.replicatedBytes - a.replicatedBytes),
     skills: skillRows.sort((a, b) => b.mandatoryBytes - a.mandatoryBytes || b.mandatoryReads - a.mandatoryReads),
   };

@@ -1,4 +1,4 @@
-<!-- SOURCE-OF-TRUTH: shared/references/phase2_research_audit.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+<!-- SOURCE-OF-TRUTH: plugins/agile-workflow/shared/references/phase2_research_audit.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
 
 # Phase 3: Research & Audit
 

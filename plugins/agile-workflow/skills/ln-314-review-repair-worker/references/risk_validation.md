@@ -1,4 +1,4 @@
-<!-- SOURCE-OF-TRUTH: shared/references/risk_validation.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+<!-- SOURCE-OF-TRUTH: plugins/agile-workflow/shared/references/risk_validation.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
 
 # Risk Validation (Criterion #20)
 

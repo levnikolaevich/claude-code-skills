@@ -1,4 +1,4 @@
-<!-- SOURCE-OF-TRUTH: shared/references/ai_ready_architecture.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+<!-- SOURCE-OF-TRUTH: plugins/codebase-audit-suite/shared/references/ai_ready_architecture.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
 
 # AI-Ready Architecture Reference
 

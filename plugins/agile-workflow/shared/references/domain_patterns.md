@@ -1,4 +1,4 @@
-<!-- SOURCE-OF-TRUTH: shared/references/domain_patterns.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+<!-- SOURCE-OF-TRUTH: plugins/agile-workflow/shared/references/domain_patterns.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
 
 # Domain Patterns Registry
 

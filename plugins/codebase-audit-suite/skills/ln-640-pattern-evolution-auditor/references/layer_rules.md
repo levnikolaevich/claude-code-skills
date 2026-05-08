@@ -1,4 +1,4 @@
-<!-- SOURCE-OF-TRUTH: shared/references/layer_rules.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+<!-- SOURCE-OF-TRUTH: plugins/codebase-audit-suite/shared/references/layer_rules.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
 
 # Layer Boundary Rules
 

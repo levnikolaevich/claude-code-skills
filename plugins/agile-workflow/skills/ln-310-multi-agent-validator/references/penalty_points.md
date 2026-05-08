@@ -1,4 +1,4 @@
-<!-- SOURCE-OF-TRUTH: shared/references/penalty_points.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
+<!-- SOURCE-OF-TRUTH: plugins/agile-workflow/shared/references/penalty_points.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
 
 # Penalty Points System
 

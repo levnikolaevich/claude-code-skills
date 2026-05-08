@@ -40,7 +40,7 @@ L3 Worker that analyzes a single architectural pattern against best practices an
 ## Workflow
 
 **MANDATORY READ:** Load `references/two_layer_detection.md` for detection methodology.
-**MANDATORY READ:** Load `references/mcp_tool_preferences.md` and `references/mcp_integration_patterns.md`
+Tool policy: follow host AGENTS.md MCP preferences; load `references/mcp_tool_preferences.md` and `references/mcp_integration_patterns.md` only when host policy is absent or MCP behavior is unclear.
 
 Use `hex-graph` first when implementation discovery materially improves confidence. Use `hex-line` first for local code reads when available. If MCP is unavailable, unsupported, or not indexed, continue with built-in `Read/Grep/Glob/Bash` and state the fallback in the report.
 
@@ -117,7 +117,7 @@ gaps = {
 
 ### Phase 6: Write Report
 
-**MANDATORY READ:** Load `references/audit_worker_core_contract.md` and `references/templates/audit_worker_report_template.md`.
+**MANDATORY READ:** Load `references/templates/audit_worker_report_template.md`.
 
 Write JSON summary per `references/audit_summary_contract.md`. In managed mode the caller passes both `runId` and `summaryArtifactPath`; in standalone mode the worker generates its own run-scoped artifact path per shared contract.
 
@@ -143,7 +143,7 @@ Score: 7.9/10 (C:72 K:85 Q:68 I:90) | Issues: 3 (H:1 M:2 L:0)
 
 ## Critical Rules
 
-**MANDATORY READ:** Load `references/audit_worker_core_contract.md`.
+Apply the already-loaded `references/audit_worker_core_contract.md`.
 
 - **One pattern only:** Analyze only the pattern passed by coordinator
 - **Read before score:** Never score without reading actual code
@@ -153,7 +153,7 @@ Score: 7.9/10 (C:72 K:85 Q:68 I:90) | Issues: 3 (H:1 M:2 L:0)
 
 ## Definition of Done
 
-**MANDATORY READ:** Load `references/audit_worker_core_contract.md`.
+Apply the already-loaded `references/audit_worker_core_contract.md`.
 
 - [ ] All implementations found via Glob/Grep (using pattern_library.md keywords or adaptive evidence)
 - [ ] Key files read and analyzed

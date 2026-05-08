@@ -529,9 +529,9 @@ SKIP_TESTS=false
 
 ## Phase 5: Meta-Analysis
 
-**MANDATORY READ:** Load `references/meta_analysis_protocol.md`
+Optional reference: load `references/meta_analysis_protocol.md` only when the user asks for post-run meta-analysis or protocol-formatted run reflection.
 
-Skill type: `execution-orchestrator`. Run after all phases complete. Output to chat using the `execution-orchestrator` format.
+Skill type: `execution-orchestrator`. When requested, run after all phases complete. Output to chat using the `execution-orchestrator` format.
 
 ---
 

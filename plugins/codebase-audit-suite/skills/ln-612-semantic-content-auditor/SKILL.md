@@ -44,7 +44,7 @@ Called ONLY for project documents (not reference/tasks):
 ## Inputs
 
 **MANDATORY READ:** Load `references/audit_worker_core_contract.md`, `references/docs_quality_contract.md`, and `references/markdown_read_protocol.md`.
-**MANDATORY READ:** Load `references/mcp_tool_preferences.md` and `references/mcp_integration_patterns.md`
+Tool policy: follow host AGENTS.md MCP preferences; load `references/mcp_tool_preferences.md` and `references/mcp_integration_patterns.md` only when host policy is absent or MCP behavior is unclear.
 
 Receives from coordinator per invocation:
 
@@ -128,11 +128,11 @@ Coverage: how completely the scope is addressed. Relevance: how much content ser
 
 ## Scoring Algorithm
 
-**MANDATORY READ:** Load `references/audit_worker_core_contract.md` and `references/audit_scoring.md`.
+**MANDATORY READ:** Load `references/audit_scoring.md`.
 
 ## Output Format
 
-**MANDATORY READ:** Load `references/audit_worker_core_contract.md` and `references/templates/audit_worker_report_template.md`.
+**MANDATORY READ:** Load `references/templates/audit_worker_report_template.md`.
 
 Write JSON summary per `references/audit_summary_contract.md`. In managed mode the caller passes both `runId` and `summaryArtifactPath`; in standalone mode the worker generates its own run-scoped artifact path per shared contract.
 
@@ -150,7 +150,7 @@ Score: X.X/10 | Issues: N (C:N H:N M:N L:N)
 
 ## Critical Rules
 
-**MANDATORY READ:** Load `references/audit_worker_core_contract.md`.
+Apply the already-loaded `references/audit_worker_core_contract.md`.
 
 - **Read progressively:** Use section-first reading; full reads only when needed for safe judgment
 - **Scope inference:** If no SCOPE tag, use document filename to infer expected scope
@@ -163,7 +163,7 @@ Score: X.X/10 | Issues: N (C:N H:N M:N L:N)
 
 ## Definition of Done
 
-**MANDATORY READ:** Load `references/audit_worker_core_contract.md`.
+Apply the already-loaded `references/audit_worker_core_contract.md`.
 
 - [ ] Header contract extracted or inferred
 - [ ] Content-scope alignment analyzed (OFF_TOPIC, MISSING_COVERAGE, SCOPE_CREEP, SSOT_VIOLATION)

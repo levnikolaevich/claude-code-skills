@@ -584,9 +584,9 @@ Before completing work, verify ALL checkpoints:
 
 ## Phase 6: Meta-Analysis
 
-**MANDATORY READ:** Load `references/meta_analysis_protocol.md`
+Optional reference: load `references/meta_analysis_protocol.md` only when the user asks for post-run meta-analysis or protocol-formatted run reflection.
 
-Skill type: `planning-coordinator`. Run after all phases complete. Output to chat using the `planning-coordinator` format.
+Skill type: `planning-coordinator`. When requested, run after all phases complete. Output to chat using the `planning-coordinator` format.
 
 ## Reference Files
 

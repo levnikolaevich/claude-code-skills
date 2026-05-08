@@ -23,7 +23,7 @@ Analyzes Done implementation tasks with quantitative Code Quality Score based on
 **Resolution:** Story Resolution Chain.
 **Status filter:** In Progress, To Review
 
-**MANDATORY READ:** Load `references/mcp_tool_preferences.md` and `references/mcp_integration_patterns.md` - use `hex-graph` as the primary path for clone, architecture, and semantic quality evidence when the project is indexed. Fall back to Grep/Read only when graph is unavailable or unsupported.
+Tool policy: follow host AGENTS.md MCP preferences; load `references/mcp_tool_preferences.md` and `references/mcp_integration_patterns.md` only when host policy is absent or MCP behavior is unclear. - use `hex-graph` as the primary path for clone, architecture, and semantic quality evidence when the project is indexed. Fall back to Grep/Read only when graph is unavailable or unsupported.
 
 ## Purpose & Scope
 - Load Story and Done implementation tasks (exclude test tasks)

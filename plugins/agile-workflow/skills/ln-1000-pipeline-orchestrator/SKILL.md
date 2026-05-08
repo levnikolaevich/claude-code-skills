@@ -575,9 +575,9 @@ When invoked in Plan Mode, show available Stories and ask user which one to plan
 
 ## Phase 6: Meta-Analysis
 
-**MANDATORY READ:** Load `references/meta_analysis_protocol.md` and `references/phases/phase6_meta_analysis.md`
+**MANDATORY READ:** Load  and `references/phases/phase6_meta_analysis.md`
 
-Skill type: `execution-orchestrator`. Runs after Phase 5. Pipeline-specific implementation (recovery map, trend tracking, assumption audit, report format) in `phase6_meta_analysis.md`.
+Skill type: `execution-orchestrator`. When requested, run after Phase 5. Pipeline-specific implementation (recovery map, trend tracking, assumption audit, report format) in `phase6_meta_analysis.md`.
 
 ## Reference Files
 

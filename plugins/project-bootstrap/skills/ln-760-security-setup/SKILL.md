@@ -169,9 +169,9 @@ Mode: vulnerabilities_only (only CVE scan, skip outdated/unused checks)",
 
 ## Meta-Analysis
 
-**MANDATORY READ:** Load `references/meta_analysis_protocol.md`
+Optional reference: load `references/meta_analysis_protocol.md` only when the user asks for post-run meta-analysis or protocol-formatted run reflection.
 
-Skill type: `planning-coordinator`. Run after all phases complete. Output to chat using the protocol format.
+Skill type: `planning-coordinator`. When requested, run after all phases complete. Output to chat using the protocol format.
 
 ## Reference Files
 

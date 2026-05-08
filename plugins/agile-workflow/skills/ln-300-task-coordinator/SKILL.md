@@ -16,7 +16,8 @@ Runtime-backed task planning coordinator. The runtime owns readiness gating, pau
 
 **MANDATORY READ:** Load `references/coordinator_runtime_contract.md`, `references/task_planning_runtime_contract.md`, `references/coordinator_summary_contract.md`, and `references/task_plan_worker_runtime_contract.md`
 **MANDATORY READ:** Load `references/environment_state_contract.md`, `references/storage_mode_detection.md`, `references/problem_solving.md`, and `references/creation_quality_checklist.md`
-**MANDATORY READ:** Load `references/mcp_tool_preferences.md`, `references/mcp_integration_patterns.md`, and `references/agent_delegation_pattern.md` when Phase 3 external validation is triggered
+**MANDATORY READ:** Load `references/agent_delegation_pattern.md` when Phase 3 external validation is triggered
+Tool policy: follow host AGENTS.md MCP preferences; load `references/mcp_tool_preferences.md` and `references/mcp_integration_patterns.md` only when host policy is absent or MCP behavior is unclear.
 
 ## Purpose
 
@@ -312,9 +313,9 @@ node references/scripts/task-planning-runtime/cli.mjs record-plan --story {story
 
 ## Meta-Analysis
 
-**MANDATORY READ:** Load `references/meta_analysis_protocol.md`
+Optional reference: load `references/meta_analysis_protocol.md` only when the user asks for post-run meta-analysis or protocol-formatted run reflection.
 
-Skill type: `planning-coordinator`. Run after all phases complete. Output to chat using the protocol format.
+Skill type: `planning-coordinator`. When requested, run after all phases complete. Output to chat using the protocol format.
 
 ---
 **Version:** 4.0.0

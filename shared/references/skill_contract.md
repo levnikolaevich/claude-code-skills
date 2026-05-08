@@ -146,7 +146,7 @@ Additional enforced rules:
 - skills without code-file or semantic-code decisions must not cargo-cult `hex-graph` requirements
 
 Special cases:
-- L1/L2 skills need Meta-Analysis with `references/meta_analysis_protocol.md`
+- Meta-analysis is an optional post-run diagnostic, not a default runtime requirement. Load `references/meta_analysis_protocol.md` only when requested or when debugging repeated skill failures.
 - publishing skills need their extra review requirements
 - domain-specific families may add stricter shared contracts on top of this base contract
 

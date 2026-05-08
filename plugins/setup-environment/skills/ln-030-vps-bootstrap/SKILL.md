@@ -19,7 +19,7 @@ Public entrypoint for VPS agent environments. This skill routes between fresh in
 
 ## MANDATORY READ
 
-**MANDATORY READ:** Load `references/skill_contract.md`, `references/worker_runtime_contract.md`, `references/coordinator_summary_contract.md`, `references/vps_runtime_contract.md`, and `references/meta_analysis_protocol.md`
+**MANDATORY READ:** Load `references/skill_contract.md`, `references/worker_runtime_contract.md`, `references/coordinator_summary_contract.md`, `references/vps_runtime_contract.md`
 **MANDATORY READ:** Load `references/scope_layers.md`, `references/shared_user_pattern.md`, `references/troubleshooting_bootstrap.md`, `references/verification_recipes_common.md`, `references/verification_recipes_agent_runtime.md`, `references/verification_recipes_project_runtime.md`, and `references/verification_recipes_hex_relay.md`
 
 **Auth model selection** (read before deciding which user model to bootstrap):
@@ -204,13 +204,13 @@ Risk Checklist:
 - [ ] Post-deploy gate verified agent CLI versions, skills/plugin caches, Telegram commands, hook settings/auth smoke, and shared-auth repair state when the operation touched those surfaces.
 - [ ] Fleet plan/apply used the live VPS registry path and wrote or consumed a run-scoped artifact with registry evidence.
 - [ ] Final coordinator summary lists applied changes, skipped gates, blockers, warnings, and verification evidence.
-- [ ] Meta-analysis completed using `references/meta_analysis_protocol.md`.
+- [ ] Meta-analysis completed only when requested, using `references/meta_analysis_protocol.md`.
 
 ## Meta-Analysis
 
-**MANDATORY READ:** Load `references/meta_analysis_protocol.md`
+Optional reference: load `references/meta_analysis_protocol.md` only when the user asks for post-run meta-analysis or protocol-formatted run reflection.
 
-Skill type: `domain-coordinator`. Run after Phase 6 and include whether the split reduced inline execution, preserved worker independence, and kept fleet apply guarded by a plan artifact.
+Skill type: `domain-coordinator`. When requested, run after Phase 6 and include whether the split reduced inline execution, preserved worker independence, and kept fleet apply guarded by a plan artifact.
 
 ---
 

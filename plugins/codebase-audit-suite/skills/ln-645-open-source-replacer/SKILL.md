@@ -44,7 +44,7 @@ L3 Worker that discovers custom modules, analyzes their purpose, and finds battl
 ## Workflow
 
 **MANDATORY READ:** Load `references/two_layer_detection.md` for detection methodology.
-**MANDATORY READ:** Load `references/mcp_tool_preferences.md` and `references/mcp_integration_patterns.md`
+Tool policy: follow host AGENTS.md MCP preferences; load `references/mcp_tool_preferences.md` and `references/mcp_integration_patterns.md` only when host policy is absent or MCP behavior is unclear.
 
 Use `hex-graph` first when architecture or cross-file references materially improve module discovery. Use `hex-line` first for local code reads when available. If MCP is unavailable, unsupported, or not indexed, continue with built-in `Read/Grep/Glob/Bash` and state the fallback in the report.
 
@@ -301,7 +301,7 @@ Severity mapping:
 
 ## Critical Rules
 
-**MANDATORY READ:** Load `references/audit_worker_core_contract.md`.
+Apply the already-loaded `references/audit_worker_core_contract.md`.
 
 - **Goal-based, not pattern-based:** Read code to understand PURPOSE before searching alternatives
 - **MCP Research mandatory:** Always search via WebSearch/Context7/Ref, never assume packages exist
@@ -316,7 +316,7 @@ Severity mapping:
 
 ## Definition of Done
 
-**MANDATORY READ:** Load `references/audit_worker_core_contract.md`.
+Apply the already-loaded `references/audit_worker_core_contract.md`.
 
 - [ ] Custom modules discovered (>= 100 LOC, utility/integration type)
 - [ ] Pre-classification gate applied: domain-specific modules excluded with documented reason

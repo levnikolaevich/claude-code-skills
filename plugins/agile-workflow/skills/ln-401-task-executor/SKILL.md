@@ -37,7 +37,7 @@ Executes a single implementation (or refactor) task from Todo to To Review using
 Extract: `task_provider` = Task Management → Provider (`linear` | `github` | `file`). Operations stay provider-agnostic in this skill — see `references/tracker_provider_contract.md` for the canonical operation set and `provider_*.md` for transport binding.
 
 
-**MANDATORY READ:** Load `references/mcp_tool_preferences.md` and `references/mcp_integration_patterns.md` — use hex-line MCP for code files when available and hex-graph for semantic edit-risk questions.
+Tool policy: follow host AGENTS.md MCP preferences; load `references/mcp_tool_preferences.md` and `references/mcp_integration_patterns.md` only when host policy is absent or MCP behavior is unclear. — use hex-line MCP for code files when available and hex-graph for semantic edit-risk questions.
 
 ## Mode Detection
 

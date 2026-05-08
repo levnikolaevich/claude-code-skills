@@ -209,9 +209,9 @@ After all workers complete, verify the quality pipeline works.
 
 ## Phase 5: Meta-Analysis
 
-**MANDATORY READ:** Load `references/meta_analysis_protocol.md`
+Optional reference: load `references/meta_analysis_protocol.md` only when the user asks for post-run meta-analysis or protocol-formatted run reflection.
 
-Skill type: `execution-orchestrator`. Analyze this session per protocol §7. Output per protocol format.
+Skill type: `execution-orchestrator`. When requested, analyze this session per protocol §7. Output per protocol format.
 
 ---
 

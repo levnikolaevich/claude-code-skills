@@ -42,7 +42,7 @@ Executes OSS replacement plans from `ln-645-open-source-replacer`. For each cust
 | Workspace baseline safe | Yes | In managed runs coordinator already prepared it; in standalone runs protect rollback locally |
 
 **MANDATORY READ:** Load `references/ci_tool_detection.md` for test detection.
-**MANDATORY READ:** Load `references/mcp_tool_preferences.md` and `references/mcp_integration_patterns.md`
+Tool policy: follow host AGENTS.md MCP preferences; load `references/mcp_tool_preferences.md` and `references/mcp_integration_patterns.md` only when host policy is absent or MCP behavior is unclear.
 
 Use `hex-line` first for local code edits and reads when available, and use `hex-graph` first when cross-file reference checks materially improve replacement safety. If MCP is unavailable, unsupported, or not indexed, continue with built-in `Read/Grep/Glob/Bash` and state the fallback in the summary.
 

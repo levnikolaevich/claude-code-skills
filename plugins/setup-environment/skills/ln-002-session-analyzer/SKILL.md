@@ -254,9 +254,9 @@ IF no findings AND no errors: "Session analysis: clean run."
 
 ## Phase 5: Meta-Analysis
 
-**MANDATORY READ:** Load `references/meta_analysis_protocol.md`
+Optional reference: load `references/meta_analysis_protocol.md` only when the user asks for post-run meta-analysis or protocol-formatted run reflection.
 
-Analyze this session per protocol §7. Output per protocol format.
+When requested, analyze this session per protocol §7. Output per protocol format.
 
 ---
 

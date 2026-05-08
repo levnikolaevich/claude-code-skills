@@ -57,7 +57,7 @@ Detect operating mode at startup:
 ## Plan Mode Support
 
 **MANDATORY READ:** Load `references/plan_mode_pattern.md` Workflow A (Preview-Only) for plan mode behavior.
-**MANDATORY READ:** Load `references/mcp_tool_preferences.md` and `references/mcp_integration_patterns.md`
+Tool policy: follow host AGENTS.md MCP preferences; load `references/mcp_tool_preferences.md` and `references/mcp_integration_patterns.md` only when host policy is absent or MCP behavior is unclear.
 
 **CRITICAL: In Plan Mode, plan file = REVIEW PLAN (what will be checked). NEVER write review findings or verdicts to plan file.**
 

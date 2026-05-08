@@ -166,7 +166,7 @@ Manual test metadata includes: `suite_dir`, `has_expected_dir`, `harness_sourced
 
 ## Scoring Algorithm
 
-**MANDATORY READ:** Load `references/audit_worker_core_contract.md` and `references/audit_scoring.md`.
+**MANDATORY READ:** Load `references/audit_scoring.md`.
 
 **Severity mapping:**
 - Missing harness adoption (when harness exists), No golden files (when expected-based), No fail-fast -> HIGH
@@ -175,7 +175,7 @@ Manual test metadata includes: `suite_dir`, `has_expected_dir`, `harness_sourced
 
 ## Output Format
 
-**MANDATORY READ:** Load `references/audit_worker_core_contract.md` and `references/templates/audit_worker_report_template.md`.
+**MANDATORY READ:** Load `references/templates/audit_worker_report_template.md`.
 
 Write JSON summary per `references/audit_summary_contract.md`. In managed mode the caller passes both `runId` and `summaryArtifactPath`; in standalone mode the worker generates its own run-scoped artifact path per shared contract.
 
@@ -191,7 +191,7 @@ Score: X.X/10 | Issues: N (C:N H:N M:N L:N)
 
 ## Critical Rules
 
-**MANDATORY READ:** Load `references/audit_worker_core_contract.md`.
+Apply the already-loaded `references/audit_worker_core_contract.md`.
 
 - **Do not auto-fix:** Report only
 - **Effort realism:** S = <1h, M = 1-4h, L = >4h
@@ -201,7 +201,7 @@ Score: X.X/10 | Issues: N (C:N H:N M:N L:N)
 
 ## Definition of Done
 
-**MANDATORY READ:** Load `references/audit_worker_core_contract.md`.
+Apply the already-loaded `references/audit_worker_core_contract.md`.
 
 - [ ] contextStore parsed successfully (including output_dir)
 - [ ] Manual test infrastructure discovered (config.sh, harness, templates)

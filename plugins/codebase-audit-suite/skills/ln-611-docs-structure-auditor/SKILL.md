@@ -24,7 +24,7 @@ Specialized worker auditing structural quality of project documentation.
 ## Inputs
 
 **MANDATORY READ:** Load `references/audit_worker_core_contract.md`, `references/docs_quality_contract.md`, `references/docs_quality_rules.json`, and `references/markdown_read_protocol.md`.
-**MANDATORY READ:** Load `references/mcp_tool_preferences.md` and `references/mcp_integration_patterns.md`
+Tool policy: follow host AGENTS.md MCP preferences; load `references/mcp_tool_preferences.md` and `references/mcp_integration_patterns.md` only when host policy is absent or MCP behavior is unclear.
 
 Receives `contextStore` with: `tech_stack`, `project_root`, `output_dir`.
 
@@ -70,11 +70,11 @@ Receives `contextStore` with: `tech_stack`, `project_root`, `output_dir`.
 
 ## Scoring Algorithm
 
-**MANDATORY READ:** Load `references/audit_worker_core_contract.md` and `references/audit_scoring.md`.
+**MANDATORY READ:** Load `references/audit_scoring.md`.
 
 ## Output Format
 
-**MANDATORY READ:** Load `references/audit_worker_core_contract.md` and `references/templates/audit_worker_report_template.md`.
+**MANDATORY READ:** Load `references/templates/audit_worker_report_template.md`.
 
 Write JSON summary per `references/audit_summary_contract.md`. In managed mode the caller passes both `runId` and `summaryArtifactPath`; in standalone mode the worker generates its own run-scoped artifact path per shared contract.
 
@@ -86,7 +86,7 @@ Standalone mode still writes the same JSON summary to a worker-owned run-scoped 
 
 ## Critical Rules
 
-**MANDATORY READ:** Load `references/audit_worker_core_contract.md`.
+Apply the already-loaded `references/audit_worker_core_contract.md`.
 
 - **Do not auto-fix:** Report violations only; coordinator aggregates for user
 - **Tech stack aware:** Use contextStore `tech_stack` to apply stack-specific checks (e.g., .NET vs Node.js doc standards)
@@ -100,7 +100,7 @@ Standalone mode still writes the same JSON summary to a worker-owned run-scoped 
 
 ## Definition of Done
 
-**MANDATORY READ:** Load `references/audit_worker_core_contract.md`.
+Apply the already-loaded `references/audit_worker_core_contract.md`.
 
 - [ ] contextStore parsed successfully (including output_dir)
 - [ ] All 8 structural categories audited

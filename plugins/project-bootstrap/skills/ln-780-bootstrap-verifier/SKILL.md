@@ -168,9 +168,9 @@ Skill(skill: "ln-783-container-launcher", args: "{compose_file_path}")
 
 ## Meta-Analysis
 
-**MANDATORY READ:** Load `references/meta_analysis_protocol.md`
+Optional reference: load `references/meta_analysis_protocol.md` only when the user asks for post-run meta-analysis or protocol-formatted run reflection.
 
-Skill type: `review-coordinator — workers only`. Run after all phases complete. Output to chat using the `review-coordinator — workers only` format.
+Skill type: `review-coordinator — workers only`. When requested, run after all phases complete. Output to chat using the `review-coordinator — workers only` format.
 
 ---
 

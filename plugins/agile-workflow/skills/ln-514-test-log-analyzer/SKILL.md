@@ -163,9 +163,9 @@ Output report to chat with header `## Test Log Analysis`. Include:
 
 ### Phase 6: Meta-Analysis
 
-**MANDATORY READ:** Load `references/meta_analysis_protocol.md`
+Optional reference: load `references/meta_analysis_protocol.md` only when the user asks for post-run meta-analysis or protocol-formatted run reflection.
 
-Skill type: `execution-worker`. Run after all phases complete.
+Skill type: `execution-worker`. When requested, run after all phases complete.
 
 ## Verdict Contribution
 

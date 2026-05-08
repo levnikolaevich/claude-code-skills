@@ -23,7 +23,7 @@ Specialized worker auditing security vulnerabilities in codebase.
 ## Inputs
 
 **MANDATORY READ:** Load `references/audit_worker_core_contract.md`.
-**MANDATORY READ:** Load `references/mcp_tool_preferences.md` and `references/mcp_integration_patterns.md`
+Tool policy: follow host AGENTS.md MCP preferences; load `references/mcp_tool_preferences.md` and `references/mcp_integration_patterns.md` only when host policy is absent or MCP behavior is unclear.
 
 Receives `contextStore` with: `tech_stack`, `best_practices`, `principles`, `codebase_root`, `output_dir`.
 
@@ -133,11 +133,11 @@ Use `hex-graph` first when dataflow or cross-file reference analysis materially 
 
 ## Scoring Algorithm
 
-**MANDATORY READ:** Load `references/audit_worker_core_contract.md` and `references/audit_scoring.md`.
+**MANDATORY READ:** Load `references/audit_scoring.md`.
 
 ## Output Format
 
-**MANDATORY READ:** Load `references/audit_worker_core_contract.md` and `references/templates/audit_worker_report_template.md`.
+**MANDATORY READ:** Load `references/templates/audit_worker_report_template.md`.
 
 Write JSON summary per `references/audit_summary_contract.md`. In managed mode the caller passes both `runId` and `summaryArtifactPath`; in standalone mode the worker generates its own run-scoped artifact path per shared contract.
 
@@ -149,7 +149,7 @@ Standalone mode still writes the same JSON summary to a worker-owned run-scoped 
 
 ## Critical Rules
 
-**MANDATORY READ:** Load `references/audit_worker_core_contract.md`.
+Apply the already-loaded `references/audit_worker_core_contract.md`.
 
 - **Do not auto-fix:** Report violations only; coordinator creates task for user to fix
 - **Tech stack aware:** Use contextStore to apply framework-specific patterns (e.g., React XSS vs PHP XSS)
@@ -159,7 +159,7 @@ Standalone mode still writes the same JSON summary to a worker-owned run-scoped 
 
 ## Definition of Done
 
-**MANDATORY READ:** Load `references/audit_worker_core_contract.md`.
+Apply the already-loaded `references/audit_worker_core_contract.md`.
 
 - [ ] contextStore parsed successfully (including output_dir)
 - [ ] All 5 security checks completed (secrets, SQL injection, XSS, deps, validation)

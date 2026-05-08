@@ -336,9 +336,9 @@ Worker token substitution: `{worker}` is one of `ln-821-npm-upgrader`, `ln-822-n
 
 ## Phase 7: Meta-Analysis
 
-**MANDATORY READ:** Load `references/meta_analysis_protocol.md`
+Optional reference: load `references/meta_analysis_protocol.md` only when the user asks for post-run meta-analysis or protocol-formatted run reflection.
 
-Skill type: `optimization-coordinator`. Run after all phases complete. Output to chat using the `optimization-coordinator` format.
+Skill type: `optimization-coordinator`. When requested, run after all phases complete. Output to chat using the `optimization-coordinator` format.
 
 ---
 

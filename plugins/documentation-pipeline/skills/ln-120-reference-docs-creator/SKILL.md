@@ -555,9 +555,9 @@ Return normalized status to ln-100:
 
 ## Meta-Analysis
 
-**MANDATORY READ:** Load `references/meta_analysis_protocol.md`
+Optional reference: load `references/meta_analysis_protocol.md` only when the user asks for post-run meta-analysis or protocol-formatted run reflection.
 
-Skill type: `documentation-creator`. Run after all phases complete. Output to chat using the `documentation-creator` format.
+Skill type: `documentation-creator`. When requested, run after all phases complete. Output to chat using the `documentation-creator` format.
 
 ---
 

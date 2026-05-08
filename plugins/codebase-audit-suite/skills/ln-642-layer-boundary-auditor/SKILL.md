@@ -47,7 +47,7 @@ L3 Worker that audits architectural layer boundaries and detects violations.
 ## Workflow
 
 **MANDATORY READ:** Load `references/two_layer_detection.md` for detection methodology.
-**MANDATORY READ:** Load `references/mcp_tool_preferences.md` and `references/mcp_integration_patterns.md`
+Tool policy: follow host AGENTS.md MCP preferences; load `references/mcp_tool_preferences.md` and `references/mcp_integration_patterns.md` only when host policy is absent or MCP behavior is unclear.
 
 Use `hex-graph` first when references, call paths, or architecture coupling materially improve the audit. Use `hex-line` first for local code and config reads when available. If MCP is unavailable, unsupported, or not indexed, continue with built-in `Read/Grep/Glob/Bash` and state the fallback in the report.
 
@@ -221,7 +221,7 @@ IF len(unique_files) > 2:
 
 ### Phase 6: Write Report
 
-**MANDATORY READ:** Load `references/audit_worker_core_contract.md` and `references/templates/audit_worker_report_template.md`.
+**MANDATORY READ:** Load `references/templates/audit_worker_report_template.md`.
 
 Write JSON summary per `references/audit_summary_contract.md`. In managed mode the caller passes both `runId` and `summaryArtifactPath`; in standalone mode the worker generates its own run-scoped artifact path per shared contract.
 
@@ -247,7 +247,7 @@ Score: 4.5/10 | Issues: 8 (C:1 H:3 M:4 L:0)
 
 ## Critical Rules
 
-**MANDATORY READ:** Load `references/audit_worker_core_contract.md`.
+Apply the already-loaded `references/audit_worker_core_contract.md`.
 
 - **Read architecture.md first** - never assume architecture type
 - **Skip violations list** - respect legacy files marked for gradual fix
@@ -257,7 +257,7 @@ Score: 4.5/10 | Issues: 8 (C:1 H:3 M:4 L:0)
 
 ## Definition of Done
 
-**MANDATORY READ:** Load `references/audit_worker_core_contract.md`.
+Apply the already-loaded `references/audit_worker_core_contract.md`.
 
 - [ ] Architecture discovered from docs/architecture.md (or fallback used)
 - [ ] All violation types from layer_rules.md checked

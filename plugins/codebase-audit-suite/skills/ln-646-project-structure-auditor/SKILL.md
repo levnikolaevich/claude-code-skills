@@ -44,7 +44,7 @@ L3 Worker that audits the physical directory structure of a project against fram
 ## Workflow
 
 **MANDATORY READ:** Load `references/two_layer_detection.md` for detection methodology.
-**MANDATORY READ:** Load `references/mcp_tool_preferences.md` and `references/mcp_integration_patterns.md`
+Tool policy: follow host AGENTS.md MCP preferences; load `references/mcp_tool_preferences.md` and `references/mcp_integration_patterns.md` only when host policy is absent or MCP behavior is unclear.
 
 Use `hex-graph` first when architecture summaries materially improve structure findings. Use `hex-line` first for local code, config, and manifest reads when available. If MCP is unavailable, unsupported, or not indexed, continue with built-in `Read/Grep/Glob/Bash` and state the fallback in the report.
 
@@ -294,7 +294,7 @@ Score: X.X/10 | Issues: N (C:N H:N M:N L:N)
 
 ## Scoring
 
-**MANDATORY READ:** Load `references/audit_worker_core_contract.md` and `references/audit_scoring.md`.
+**MANDATORY READ:** Load `references/audit_scoring.md`.
 
 Severity mapping:
 - **HIGH:** Build artifacts tracked, missing .gitignore, source in wrong location, multiple lock files, missing secrets in .gitignore. **Exception:** Build artifacts in Git LFS -> skip
@@ -303,7 +303,7 @@ Severity mapping:
 
 ## Critical Rules
 
-**MANDATORY READ:** Load `references/audit_worker_core_contract.md`.
+Apply the already-loaded `references/audit_worker_core_contract.md`.
 
 - **Auto-detect, never assume:** Always detect tech stack before applying framework rules
 - **No false positives on conventions:** Apply framework rules ONLY for detected stack
@@ -316,7 +316,7 @@ Severity mapping:
 
 ## Definition of Done
 
-**MANDATORY READ:** Load `references/audit_worker_core_contract.md`.
+Apply the already-loaded `references/audit_worker_core_contract.md`.
 
 - [ ] Tech stack detected (from `docs/project/tech_stack.md` or auto-detection)
 - [ ] File hygiene checked: build artifacts, temp files, platform remnants, lock files, binaries

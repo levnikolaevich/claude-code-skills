@@ -267,9 +267,9 @@ Agent(... Skill(skill: "ln-814-optimization-executor"))
 
 ## Phase 12: Meta-Analysis
 
-**MANDATORY READ:** Load `references/meta_analysis_protocol.md`
+Optional reference: load `references/meta_analysis_protocol.md` only when the user asks for post-run meta-analysis or protocol-formatted run reflection.
 
-Skill type: `optimization-coordinator`. Run after phases complete. Output to chat using the `optimization-coordinator` format.
+Skill type: `optimization-coordinator`. When requested, run after phases complete. Output to chat using the `optimization-coordinator` format.
 
 ## Reference Files
 

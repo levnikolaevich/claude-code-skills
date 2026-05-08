@@ -24,7 +24,8 @@ Specialized worker that extracts verifiable claims from documentation and valida
 
 ## Inputs
 
-**MANDATORY READ:** Load `references/audit_worker_core_contract.md`, `references/docs_quality_contract.md`, `references/docs_quality_rules.json`, `references/markdown_read_protocol.md`, `references/mcp_tool_preferences.md`, and `references/mcp_integration_patterns.md`.
+**MANDATORY READ:** Load `references/audit_worker_core_contract.md`, `references/docs_quality_contract.md`, `references/docs_quality_rules.json`, and `references/markdown_read_protocol.md`.
+Tool policy: follow host AGENTS.md MCP preferences; load `references/mcp_tool_preferences.md` and `references/mcp_integration_patterns.md` only when host policy is absent or MCP behavior is unclear.
 
 Receives `contextStore` with: `tech_stack`, `project_root`, `output_dir`.
 
@@ -126,7 +127,7 @@ FOR key, entries IN claim_index:
 
 ### Phase 6: Score & Report
 
-**MANDATORY READ:** Load `references/audit_worker_core_contract.md` and `references/audit_scoring.md`.
+**MANDATORY READ:** Load `references/audit_scoring.md`.
 
 Calculate score using penalty formula. Write report.
 
@@ -163,7 +164,7 @@ Calculate score using penalty formula. Write report.
 
 ## Output Format
 
-**MANDATORY READ:** Load `references/audit_worker_core_contract.md` and `references/templates/audit_worker_report_template.md`.
+**MANDATORY READ:** Load `references/templates/audit_worker_report_template.md`.
 
 Write JSON summary per `references/audit_summary_contract.md`. In managed mode the caller passes both `runId` and `summaryArtifactPath`; in standalone mode the worker generates its own run-scoped artifact path per shared contract.
 
@@ -179,7 +180,7 @@ Score: X.X/10 | Issues: N (C:N H:N M:N L:N)
 
 ## Critical Rules
 
-**MANDATORY READ:** Load `references/audit_worker_core_contract.md`.
+Apply the already-loaded `references/audit_worker_core_contract.md`.
 
 - **Do not auto-fix:** Report violations only; coordinator aggregates for user
 - **Code is truth:** When docs contradict code, document is wrong (unless code is a bug)
@@ -195,7 +196,7 @@ Score: X.X/10 | Issues: N (C:N H:N M:N L:N)
 
 ## Definition of Done
 
-**MANDATORY READ:** Load `references/audit_worker_core_contract.md`.
+Apply the already-loaded `references/audit_worker_core_contract.md`.
 
 - [ ] contextStore parsed successfully (including output_dir)
 - [ ] All `.md` files discovered (broad scope)

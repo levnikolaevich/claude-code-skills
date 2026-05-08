@@ -30,7 +30,7 @@ Indexes codebase into a layered graph (tree-sitter AST → SQLite) and provides 
 
 ## MCP Availability
 
-**MANDATORY READ:** Load `references/mcp_tool_preferences.md` and `references/mcp_integration_patterns.md`
+Tool policy: follow host AGENTS.md MCP preferences; load `references/mcp_tool_preferences.md` and `references/mcp_integration_patterns.md` only when host policy is absent or MCP behavior is unclear.
 
 Use `hex-graph` first when the task depends on symbol identity, references, implementations, architecture, dataflow, or edit impact. Use `hex-line` first for targeted local code reads when available. If MCP is unavailable, unsupported, or not indexed, continue with built-in `Glob/Grep/Read/Bash`, answer with manual evidence, and explicitly note the degraded confidence instead of blocking the skill.
 

@@ -372,9 +372,9 @@ Recommended payload fields:
 
 ## Meta-Analysis
 
-**MANDATORY READ:** Load `references/meta_analysis_protocol.md`
+Optional reference: load `references/meta_analysis_protocol.md` only when the user asks for post-run meta-analysis or protocol-formatted run reflection.
 
-After the coordinator run, analyze the session per protocol section 7 and include the protocol-formatted output with the final review result.
+When requested after the coordinator run, analyze the session per protocol section 7 and include the protocol-formatted output with the final review result.
 
 ## References
 

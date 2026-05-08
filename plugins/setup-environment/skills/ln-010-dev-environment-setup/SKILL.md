@@ -298,9 +298,9 @@ node references/scripts/environment-setup-runtime/cli.mjs record-worker --identi
 
 ## Meta-Analysis
 
-**MANDATORY READ:** Load `references/meta_analysis_protocol.md`
+Optional reference: load `references/meta_analysis_protocol.md` only when the user asks for post-run meta-analysis or protocol-formatted run reflection.
 
-Skill type: `domain-coordinator`. Run after all phases complete. Output to chat using the protocol format.
+Skill type: `domain-coordinator`. When requested, run after all phases complete. Output to chat using the protocol format.
 
 ---
 

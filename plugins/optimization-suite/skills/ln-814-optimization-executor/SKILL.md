@@ -58,7 +58,7 @@ If file not found: check conversation context for the same data (standalone invo
 **MANDATORY READ:** Load `references/git_worktree_fallback.md` — use optimization rows.
 **MANDATORY READ:** Load `references/ci_tool_detection.md` — use Test Frameworks + Benchmarks sections.
 
-**MANDATORY READ:** Load `references/mcp_tool_preferences.md` and `references/mcp_integration_patterns.md`.
+Tool policy: follow host AGENTS.md MCP preferences; load `references/mcp_tool_preferences.md` and `references/mcp_integration_patterns.md` only when host policy is absent or MCP behavior is unclear..
 
 Use `hex-line` as the primary path for code/config/script edits in this worker. Profilers and benchmarks stay the source of truth; do not treat `hex-graph` as runtime evidence here.
 

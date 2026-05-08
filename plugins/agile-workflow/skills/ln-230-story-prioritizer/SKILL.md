@@ -538,9 +538,9 @@ ln-230-story-prioritizer epic="Epic 7" stories="US001,US002,US003"
 
 ## Phase 6: Meta-Analysis
 
-**MANDATORY READ:** Load `references/meta_analysis_protocol.md`
+Optional reference: load `references/meta_analysis_protocol.md` only when the user asks for post-run meta-analysis or protocol-formatted run reflection.
 
-Skill type: `planning-worker`. Run after all phases complete. Output to chat using the `planning-worker` format.
+Skill type: `planning-worker`. When requested, run after all phases complete. Output to chat using the `planning-worker` format.
 
 ## Reference Files
 

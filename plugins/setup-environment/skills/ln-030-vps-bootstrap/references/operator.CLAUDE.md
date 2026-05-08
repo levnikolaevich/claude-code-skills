@@ -99,7 +99,7 @@ Plan reply format: goal, touched areas, steps, checks, risks/rollback. Then stop
 
 After approval, create a `TodoWrite` plan and execute it. If the operator changes the request, send a revised plan and wait for approval again. Emergency fixes still need a short plan and explicit approval before mutation.
 
-If the operator approves a selected issue with `approve #N` or `делай #N`, inspect `/dispatch/recent`, find the matching `waiting_approval` run for issue `#N`, then continue the project work. Do not implement an issue without that approval.
+If the operator approves a selected issue with `approve #N` or `делай #N`, inspect `/dispatch/recent` using the bearer-authenticated command above, find the matching `waiting_approval` run for issue `#N`, then continue the project work. Do not implement an issue without that approval.
 
 ### Mobile Telegram output format (CRITICAL)
 

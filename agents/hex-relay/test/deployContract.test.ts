@@ -82,6 +82,7 @@ test("protected local API examples include bearer auth", () => {
   assert.match(operator, /memory\/recent\?n=20/);
   assert.match(operator, /dispatch\/recent\?n=10/);
   assert.match(operator, /Authorization: Bearer \${RELAY_HTTP_TOKEN}.*dispatch\/recent/s);
+  assert.match(operator, /inspect `\/dispatch\/recent` using the bearer-authenticated command/);
   assert.match(verification, /Authorization: Bearer \${RELAY_HTTP_TOKEN}.*\/tasks\/poll/);
   assert.match(refsReadme, /\/hook\/\*/, "README documents protected hook routes");
   assert.match(refsReadme, /Authorization: Bearer \${RELAY_HTTP_TOKEN}/);

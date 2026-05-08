@@ -116,6 +116,7 @@ ro_bind_if_exists /etc/hosts /etc/hosts
 ro_bind_if_exists /etc/nsswitch.conf /etc/nsswitch.conf
 ro_bind_if_exists /etc/passwd /etc/passwd
 ro_bind_if_exists /etc/group /etc/group
+ro_bind_if_exists /etc/codex /etc/codex
 
 args+=(
   --tmpfs /home

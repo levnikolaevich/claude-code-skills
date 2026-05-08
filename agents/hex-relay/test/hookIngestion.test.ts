@@ -104,7 +104,17 @@ test("user-prompt-submit binds pending Telegram inbound", () => {
   });
   assert.equal(outcome.ok, true);
 
-  assert.deepEqual(state.updates[0], [5, { sessionId: "11111111-1111-4111-8111-111111111111" }]);
+  assert.equal((state.updates[0] as any[])[0], 5);
+  assert.equal(
+    ((state.updates[0] as any[])[1] as Record<string, unknown>).sessionId,
+    "11111111-1111-4111-8111-111111111111"
+  );
+  assert.equal(((state.updates[0] as any[])[1] as Record<string, unknown>).status, "delivered");
+  assert.equal(((state.updates[0] as any[])[1] as Record<string, unknown>).error, null);
+  assert.equal(
+    typeof ((state.updates[0] as any[])[1] as Record<string, unknown>).deliveredAt,
+    "number"
+  );
   assert.deepEqual(state.pendingSets[0], [
     "11111111-1111-4111-8111-111111111111",
     5,
@@ -323,5 +333,41 @@ test("verbosity gates subagent and tool status events", () => {
     "sid",
     "subagent_stop",
     { agent_id: "agent-123456", agent_type: "review-worker", effort_level: null },
+  ]);
+  assert.deepEqual(state.typed, []);
+});
+
+test("tool and subagent hooks refresh typing only for open pending sessions", () => {
+  const { service, state } = createService({
+    messagesRepo: {
+      findByTg: () => null,
+      findById: () => null,
+      getChatId: () => 1234,
+      update: (...args: unknown[]) => state.updates.push(args),
+      insertOutboundAudit: () => 700,
+    },
+    pendingRepo: {
+      get: () => ({ sessionId: "sid", inboundMsgId: 1, promptHash: "h", createdAt: 1, agent: "claude" }),
+      getAllForSession: () => [],
+      set: (...args: unknown[]) => state.pendingSets.push(args),
+      clear: noop,
+      listOthers: () => [],
+    },
+  });
+
+  assert.equal(service.subagentStop({ sessionId: "sid", agentId: "a1", agentType: "" }).ok, true);
+  assert.equal(
+    service.preToolUse({ sessionId: "sid", toolName: "Bash", toolInput: {} }).ok,
+    true
+  );
+  assert.equal(
+    service.postToolUse({ sessionId: "sid", toolName: "Bash", toolInput: {} }).ok,
+    true
+  );
+
+  assert.deepEqual(state.typed, [
+    ["start", "sid", 1234],
+    ["start", "sid", 1234],
+    ["start", "sid", 1234],
   ]);
 });

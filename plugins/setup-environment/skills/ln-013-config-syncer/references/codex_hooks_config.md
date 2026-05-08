@@ -10,20 +10,19 @@ Claude-driven one.
 
 ## 1. Where the config lives
 
-Codex reads its config from `~/.codex/config.toml` for the user it runs as. Discovery
-order:
+For unattended VPS god-sessions, hex-relay hooks must be installed as system-managed
+Codex config in `/etc/codex/config.toml`, not as per-user `~/.codex/config.toml`
+hooks. User-scope hooks require trust state under `hooks.state`; a newly rendered or
+changed hook can appear in the TUI as "hooks need review" and then will not run.
 
-1. `$CODEX_HOME/config.toml` (when set)
-2. `~/.codex/config.toml`
-3. project-scoped `.codex/config.toml` under the current `cwd` (lower precedence; requires
-   `trust_level = "trusted"` for the project)
-
-We manage the user-scope file under `${BOT_USER}` because the bwrap sandbox in
-`agent-sandbox.sh` bind-mounts `~/.codex` as writable into each god-session.
+`agent-sandbox.sh` must read-only bind `/etc/codex` into the sandbox because it uses
+`--tmpfs /etc`. Without that bind, Codex starts successfully but cannot see the
+system-managed hook block.
 
 ## 2. Canonical block
 
-The block below must be inserted between markers managed by `ln-013-config-syncer`:
+The block below must be inserted between markers managed by `ln-013-config-syncer` in
+`/etc/codex/config.toml`:
 
 ```toml
 # BEGIN ln-013 managed codex hooks
@@ -61,8 +60,8 @@ timeout = 30
 
 Notes:
 
-- Do not add `[features] codex_hooks = true`; that key is a legacy alias. Current Codex
-  uses the stable `hooks` feature, which is enabled by default for user-scope hook config.
+- Do not add the old Codex hooks feature alias; that key is legacy. Current Codex
+  uses the stable `hooks` feature, which is enabled by default.
 - Codex does not emit `StopFailure` or `SubagentStop`. Those routes stay Claude-only.
 - Do not configure `PermissionRequest` for hex-relay until the relay has a dedicated
   route for it. Posting it to `/hook/permission-request` only creates swallowed 404s.
@@ -70,31 +69,38 @@ Notes:
   uses a 5s curl timeout and always exits 0; the larger Codex-side budget tolerates slow
   relay startup without breaking turns.
 - Codex 0.129 added `/hooks` browsing/toggling. Use it for diagnosis, but keep this
-  user-scope block as the source of truth installed by setup skills.
+  system-managed block as the source of truth installed by setup skills.
 - Codex 0.129 also added compact lifecycle hooks. Do not wire `PreCompact` or
   `PostCompact` to hex-relay yet; the relay has no stable behavior for those events.
 
-## 3. Trust requirement for project-scope configs
+## 3. Trust and duplicate rules
+
+Per-user `~/.codex/config.toml` should contain project trust and marketplace/plugin
+settings, but no hex-relay hook entries. The effective hook list should show the five
+relay hooks with `source: system`, `isManaged: true`, and `trustStatus: managed`.
 
 Project-scoped `.codex/config.toml` files (under a repo) are ignored unless the project
 appears under `[projects."<absolute_path>"]` in the user-scope config with
-`trust_level = "trusted"`. The shared host runtime already writes that block per project
-(see `agent_runtime_install.md`), so the user-scope hook block above is the authoritative
-configuration for every god-session.
+`trust_level = "trusted"`. Do not put relay hooks there either; project hooks are
+unmanaged and can be blocked by hook trust review.
 
 ## 4. Verification
 
 After writing the block, a god-session start should produce hex-relay log entries.
 
 ```bash
-# 1. Restart Codex god-session and wait for SessionStart
-sudo -u "${BOT_USER}" systemctl --user restart "${SERVICE_PREFIX}-god-codex@${TELEGRAM_CHAT_ID}.service"
+# 1. Verify system-managed hook block and sandbox visibility
+grep -Ec '^\[\[hooks\.(UserPromptSubmit|Stop|SessionStart|PreToolUse|PostToolUse)\]\]$' /etc/codex/config.toml
+grep -q -- '--ro-bind /etc/codex /etc/codex' /usr/local/bin/${SERVICE_PREFIX}-agent-sandbox
+
+# 2. Restart Codex god-session and wait for SessionStart
+systemctl restart "${SERVICE_PREFIX}-god-codex@${TELEGRAM_CHAT_ID}.service"
 sleep 4
 
-# 2. Tail relay journal for hook arrivals (relay logs include event_type)
+# 3. Tail relay journal for hook arrivals (relay logs include event_type)
 journalctl -u "${SERVICE_PREFIX}-hex-relay.service" -n 50 --no-pager | grep -E 'HOOK|user-prompt-submit|session-start'
 
-# 3. Confirm health endpoint counters move
+# 4. Confirm health endpoint counters move
 curl -s "http://127.0.0.1:${RELAY_HOOK_PORT}/health" | jq '{
   ok,
   god_session_ready,
@@ -116,7 +122,7 @@ If the shim is missing or `/usr/local/bin/hex-relay-codex-hook.sh` is not execut
 Codex will print `hook command not found` once at startup and skip the hook. The TUI
 itself stays usable — hex-relay simply degrades to claude-only observability.
 
-`SessionStart` is the only event where the shim returns relay stdout to Codex. This lets
-hex-relay's existing SessionStart `additionalContext` response inject memories and dispatch
-history into Codex sessions. Other events stay silent so status/outbox telemetry cannot
-pollute the Codex turn.
+`SessionStart` is the only event where the shim returns relay stdout to Codex. The shim
+strips relay's Claude-compatible top-level `ok` field and returns only the strict
+Codex `hookSpecificOutput` envelope; otherwise Codex reports "invalid session start JSON
+output". Other events stay silent so status/outbox telemetry cannot pollute the Codex turn.

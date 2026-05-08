@@ -11,6 +11,10 @@ const bootstrapRefs = join(
   repoRoot,
   "plugins/setup-environment/skills/ln-030-vps-bootstrap/references"
 );
+const configSyncRefs = join(
+  repoRoot,
+  "plugins/setup-environment/skills/ln-013-config-syncer/references"
+);
 
 function read(path: string): string {
   return readFileSync(join(repoRoot, path), "utf8");
@@ -99,7 +103,7 @@ test("Claude resumed god-session starts without placeholder prompt", () => {
 });
 
 test("Codex hooks use 0.129 command hook shape and SessionStart context passthrough", () => {
-  const codexHooks = readFileSync(join(bootstrapRefs, "codex_hooks_config.md"), "utf8");
+  const codexHooks = readFileSync(join(configSyncRefs, "codex_hooks_config.md"), "utf8");
   const shim = readFileSync(join(bootstrapRefs, "scripts/hex-relay-codex-hook.sh"), "utf8");
 
   assert.match(codexHooks, /\[\[hooks\.SessionStart\.hooks\]\]/);
@@ -108,14 +112,13 @@ test("Codex hooks use 0.129 command hook shape and SessionStart context passthro
   assert.match(codexHooks, /timeout = 30/);
   assert.doesNotMatch(codexHooks, /timeout_ms/);
   assert.doesNotMatch(codexHooks, /\[\[hooks\.PermissionRequest\]\]/);
-  assert.match(codexHooks, /SessionStart.*additionalContext/s);
+  assert.match(codexHooks, /SessionStart.*hookSpecificOutput/s);
   assert.match(shim, /\[\[ "\$EVENT_NAME" == "SessionStart" \]\]/);
-  assert.match(shim, /--data "\$PAYLOAD" "\$URL";/);
+  assert.match(shim, /jq -c '\{hookSpecificOutput: \.hookSpecificOutput\}'/);
 });
 
 test("protected local API examples include bearer auth", () => {
   const operator = readFileSync(join(bootstrapRefs, "operator.CLAUDE.md"), "utf8");
-  const verification = readFileSync(join(bootstrapRefs, "verification_recipes.md"), "utf8");
   const refsReadme = readFileSync(join(bootstrapRefs, "README.md"), "utf8");
 
   assert.match(operator, /memory\/add[\s\S]*Authorization: Bearer \${RELAY_HTTP_TOKEN}/);
@@ -123,7 +126,7 @@ test("protected local API examples include bearer auth", () => {
   assert.match(operator, /dispatch\/recent\?n=10/);
   assert.match(operator, /Authorization: Bearer \${RELAY_HTTP_TOKEN}.*dispatch\/recent/s);
   assert.match(operator, /inspect `\/dispatch\/recent` using the bearer-authenticated command/);
-  assert.match(verification, /Authorization: Bearer \${RELAY_HTTP_TOKEN}.*\/tasks\/poll/);
+  assert.match(refsReadme, /\/tasks\/poll[\s\S]*Authorization: Bearer \${RELAY_HTTP_TOKEN}/);
   for (const prefix of PROTECTED_HTTP_PREFIXES) {
     assert.match(refsReadme, new RegExp(prefix.replace("/", String.raw`\/`)));
   }

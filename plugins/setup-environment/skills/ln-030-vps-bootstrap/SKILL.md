@@ -23,8 +23,8 @@ Public entrypoint for VPS agent environments. This skill routes between fresh in
 **MANDATORY READ:** Load `references/scope_layers.md`, `references/shared_user_pattern.md`, `references/troubleshooting_bootstrap.md`, `references/verification_recipes_common.md`, `references/verification_recipes_agent_runtime.md`, `references/verification_recipes_project_runtime.md`, and `references/verification_recipes_hex_relay_bootstrap.md`
 
 **Auth model selection** (read before deciding which user model to bootstrap):
-- `references/shared_user_pattern.md` — canonical model: one shared `agent-bot` Linux user owns every project on the VPS. Use for **fresh installs**.
-- `references/shared_auth_state.md` — alternative for fleets that already use **per-project bot users** (`<project>-bot`): keeps Linux/systemd isolation per project but symlinks `~/.claude`, `~/.claude.json`, `~/.codex` from each bot home to a shared `/var/lib/claude-shared/` dir (group `claude-shared` + ACL). One Claude Max device slot, one Codex login, N bot users. Use when migrating to shared auth without restructuring existing per-project Linux user layout.
+- `references/shared_user_pattern.md` - canonical model: one shared `agent-bot` Linux user owns every project on the VPS. Use for **fresh installs**.
+- `references/shared_auth_state.md` - alternative for fleets that already use **per-project bot users** (`<project>-bot`): keeps Linux/systemd isolation per project, symlinks Claude auth/runtime to `/var/lib/claude-shared/`, and shares only Codex `auth.json` while each `~/.codex` runtime directory stays per-bot. One Claude Max device slot, one Codex login, N bot users. Use when migrating to shared auth without restructuring existing per-project Linux user layout.
 
 Reference inventory is maintained in `references/README.md`. Workers load only the files named in their own `MANDATORY READ` block or required by the selected phase.
 

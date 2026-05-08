@@ -235,6 +235,7 @@ export interface TmuxPanePort {
   send(text: string): Promise<void>;
   killGracefully(): Promise<void>;
   hasSession(): Promise<boolean>;
+  captureText?(limitLines?: number): Promise<string>;
 }
 
 export interface AtomicCommandWriterPort {

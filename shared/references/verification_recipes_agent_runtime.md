@@ -14,6 +14,9 @@ sudo -u ${BOT_USER} jq '.model,.effortLevel,.permissions.defaultMode' ~/.claude/
 sudo -u ${BOT_USER} grep -E '^(model|model_reasoning_effort|approval_policy|sandbox_mode)\b' ~/.codex/config.toml
 # Expected: model = "gpt-5.5", model_reasoning_effort = "xhigh",
 #           approval_policy = "never", sandbox_mode = "workspace-write"
+# god-session-codex overrides the runtime CLI with
+# --dangerously-bypass-approvals-and-sandbox because the outer agent-sandbox is
+# already the host-level isolation boundary.
 ```
 
 ## Agent skills/plugins marketplace (`ln-031`)
@@ -35,6 +38,15 @@ sudo -i -u ${BOT_USER} bash -lc '. /home/${BOT_USER}/.nvm/nvm.sh && claude plugi
 sudo -u ${BOT_USER} grep -Ec '^\[marketplaces\.levnikolaevich-skills-marketplace\]$' ~/.codex/config.toml
 # Expected: 1
 sudo -u ${BOT_USER} grep -E '^\[plugins\."(agile-workflow|[^"]+)@levnikolaevich-skills-marketplace"\]$' ~/.codex/config.toml
+
+# Codex hook config: no legacy codex_hooks alias, and five system-managed relay hook entries.
+! sudo -u ${BOT_USER} grep -q 'codex_hooks' ~/.codex/config.toml
+grep -Ec '^\[\[hooks\.(UserPromptSubmit|Stop|SessionStart|PreToolUse|PostToolUse)\]\]$' /etc/codex/config.toml
+# Expected: 5
+sudo -u ${BOT_USER} grep -Ec '^\[\[hooks\.(UserPromptSubmit|Stop|SessionStart|PreToolUse|PostToolUse)\]\]$' ~/.codex/config.toml
+# Expected: 0
+# The sandbox must expose system Codex config; otherwise managed hooks are invisible.
+grep -q -- '--ro-bind /etc/codex /etc/codex' /usr/local/bin/${SERVICE_PREFIX}-agent-sandbox
 ```
 
 ## Agent freshness and plugin cache consistency (`ln-031` / post-deploy)
@@ -93,6 +105,8 @@ for bot in $(getent group claude-shared | awk -F: '{print $4}' | tr ',' ' '); do
   sudo -u "$bot" test -w /home/"$bot"/.claude.json
   sudo -u "$bot" test -r /home/"$bot"/.codex/auth.json
   sudo -u "$bot" test -w /home/"$bot"/.codex/auth.json
+  test -d /home/"$bot"/.codex
+  test ! -L /home/"$bot"/.codex
 done
 
 getfacl /var/lib/claude-shared/.claude/.credentials.json /var/lib/claude-shared/.claude.json /var/lib/claude-shared/.codex/auth.json \

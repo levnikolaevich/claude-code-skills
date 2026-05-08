@@ -37,7 +37,7 @@ sudo -i -u ${BOT_USER} codex --version
 
 Manual follow-up: complete `claude /login` and **`codex login --device-auth`** for `${BOT_USER}` before starting unattended sessions. The `--device-auth` flag is required on headless VPS — plain `codex login` opens an HTTP callback on `localhost:1455` that the operator's local browser cannot reach without an SSH tunnel.
 
-For the **shared-auth pattern** (one Claude Max device + one Codex login serving all project bots on this VPS), do these logins **once** as any single bot whose `~/.claude`, `~/.claude.json`, and `~/.codex` symlink to `/var/lib/claude-shared/`. Install and enable `claude-shared-auth-perms.path` before or immediately after login, then start `claude-shared-auth-perms.service` once. See `shared_auth_state.md` for the full migration script and durable ACL/permission repair required.
+For the **shared-auth pattern** (one Claude Max device + one Codex login serving all project bots on this VPS), do these logins **once** as any single bot. Claude uses shared `~/.claude` and `~/.claude.json` symlinks; Codex keeps a real per-bot `~/.codex` runtime directory and shares only `auth.json` through `/var/lib/claude-shared/.codex/auth.json`. Install and enable `claude-shared-auth-perms.path` before or immediately after login, then start `claude-shared-auth-perms.service` once. See `shared_auth_state.md` for the full migration script and durable ACL/permission repair required.
 
 ## 3. MCP servers and Codex config
 
@@ -49,7 +49,7 @@ sudo -u ${BOT_USER} bash -lc 'claude mcp add --transport http -s user context7 h
 sudo -u ${BOT_USER} bash -lc 'claude mcp list'
 ```
 
-Codex config is shared across projects under `${BOT_USER}`. In shared-auth fleets, each bot user's `~/.codex` symlink points at the same shared store, but the rendered config still uses the active `${BOT_USER}` path for this install pass. Render `codex-config.toml.template` only on first install, then append this project's trust block if absent:
+Codex config is user-scoped under `${BOT_USER}`. In shared-auth fleets, each bot user's `~/.codex` is a real per-bot runtime directory; do not symlink the whole directory to shared storage. Render `codex-config.toml.template` only on first install, then append this project's trust block if absent:
 
 ```bash
 if [ ! -f /home/${BOT_USER}/.codex/config.toml ]; then

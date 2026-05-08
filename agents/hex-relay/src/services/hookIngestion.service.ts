@@ -190,11 +190,15 @@ export function createHookIngestionService(deps: HookIngestionDeps) {
   const stopFailureAlertDedup = new Map<string, number>();
 
   function operatorChatForSession(sessionId: string | null): number {
-    if (!sessionId) return deps.primaryOperator;
+    return pendingChatForSession(sessionId) ?? deps.primaryOperator;
+  }
+
+  function pendingChatForSession(sessionId: string | null): number | null {
+    if (!sessionId) return null;
     const pending = deps.pendingRepo.get(sessionId);
-    if (!pending) return deps.primaryOperator;
+    if (!pending) return null;
     const chatId = deps.messagesRepo.getChatId(pending.inboundMsgId);
-    return chatId ?? deps.primaryOperator;
+    return chatId ?? null;
   }
 
   function bindPendingInbound(args: {
@@ -208,7 +212,12 @@ export function createHookIngestionService(deps: HookIngestionDeps) {
   }): ServiceOutcome<void, HookIngestionError> {
     const { sessionId, inbound, prompt, chatId, tgMsgId, agent } = args;
     try {
-      deps.messagesRepo.update(inbound.id, { sessionId });
+      deps.messagesRepo.update(inbound.id, {
+        sessionId,
+        status: "delivered",
+        deliveredAt: inbound.deliveredAt ?? Math.floor(Date.now() / 1000),
+        error: null,
+      });
       if (inbound.fromUserId !== null) {
         deps.sessionService.ensureOwner(sessionId, inbound.fromUserId, agent);
       }
@@ -550,6 +559,8 @@ export function createHookIngestionService(deps: HookIngestionDeps) {
           },
           "HOOK subagent-stop"
         );
+        const pendingChatId = pendingChatForSession(args.sessionId);
+        if (pendingChatId !== null) deps.typing.start(args.sessionId, pendingChatId);
         if (deps.verbosity.allows("L4") && args.agentType) {
           const chatId = operatorChatForSession(args.sessionId);
           const queued = deps.outbox.enqueueStatus({
@@ -581,6 +592,8 @@ export function createHookIngestionService(deps: HookIngestionDeps) {
           effort_level: args.effortLevel ?? null,
         });
         const chatId = operatorChatForSession(args.sessionId || null);
+        const pendingChatId = pendingChatForSession(args.sessionId || null);
+        if (pendingChatId !== null) deps.typing.start(args.sessionId, pendingChatId);
         if (args.toolName === "Skill" && deps.verbosity.allows("L2")) {
           const text = FormatService.formatSkill(args.toolInput, "🔧");
           if (text) {
@@ -639,11 +652,13 @@ export function createHookIngestionService(deps: HookIngestionDeps) {
           duration_ms: args.durationMs ?? null,
           effort_level: args.effortLevel ?? null,
         });
+        const chatId = operatorChatForSession(args.sessionId || null);
+        const pendingChatId = pendingChatForSession(args.sessionId || null);
+        if (pendingChatId !== null) deps.typing.start(args.sessionId, pendingChatId);
         if (!deps.verbosity.allows("verbose_bash")) return okVoid();
         if (args.toolName !== "Skill") return okVoid();
         const text = FormatService.formatSkill(args.toolInput, "✅");
         if (!text) return okVoid();
-        const chatId = operatorChatForSession(args.sessionId || null);
         const suffix = formatDurationSuffix(args.durationMs);
         const queued = deps.outbox.enqueueStatus({
           text: `${text} done${suffix}${effortSuffix(args.effortLevel)}`,

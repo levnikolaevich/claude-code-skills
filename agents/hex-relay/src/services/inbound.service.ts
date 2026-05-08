@@ -1,10 +1,9 @@
 import type { Logger } from "../lib/logger.js";
 import { TIMING } from "../config/paths.js";
 import type { OutboxService } from "./outbox.service.js";
-import type { ControlLane } from "./controlLane.service.js";
 import type { InboundMessage } from "../domain/message.js";
 import type { VerbosityService } from "./verbosity.service.js";
-import type { GodRuntimeService } from "./godRuntime.service.js";
+import type { AgentSessionService } from "./agentSession.service.js";
 import type { MessagesRepository } from "./ports.js";
 import { fail, ok, serviceError, type ServiceError, type ServiceOutcome } from "./outcome.js";
 
@@ -47,8 +46,7 @@ export function createInboundService(deps: {
   log: Logger;
   messagesRepo: MessagesRepository;
   outboxService: OutboxService;
-  controlLane: ControlLane;
-  godRuntime: GodRuntimeService;
+  agentSessions: AgentSessionService;
   verbosity: VerbosityService;
   reactToInbound: ReactToInbound;
 }) {
@@ -60,14 +58,8 @@ export function createInboundService(deps: {
       return markTerminal(row, "failed", 1, "inbound has no Telegram user id");
     }
     try {
-      await deps.controlLane.run("deliver_inbound", async () => {
-        deps.messagesRepo.update(row.id, { status: "delivering" });
-        const started = await deps.godRuntime.ensureStarted(userId, row.agent);
-        if (!started.ok) throw new Error(started.error.message);
-        const runtime = deps.godRuntime.runtimeFor(userId, row.agent);
-        if (!runtime.ok) throw new Error(runtime.error.message);
-        await runtime.value.pane.send(row.text);
-      });
+      const submitted = await deps.agentSessions.submitPrompt({ row, userId });
+      if (!submitted.ok) throw new Error(submitted.error.message);
     } catch (error) {
       return scheduleDeliveryFailure(row, error);
     }

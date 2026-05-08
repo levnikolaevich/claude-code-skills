@@ -21,7 +21,7 @@ Inspects one VPS project environment and reports health, drift, logs, auth state
 **MANDATORY READ:** Load `references/worker_runtime_contract.md`, `references/coordinator_summary_contract.md`, and `references/vps_runtime_contract.md`
 **MANDATORY READ:** Load `references/scope_layers.md`, `references/troubleshooting_diagnostics.md`, `references/verification_recipes_common.md`, `references/verification_recipes_agent_runtime.md`, `references/verification_recipes_project_runtime.md`, and `references/verification_recipes_hex_relay_diagnostics.md`
 
-**Conditional read (load when `/var/lib/claude-shared/` exists on the host)**: `../ln-030-vps-bootstrap/references/shared_auth_state.md` — Phase 2 checks include `claude-shared-auth-perms.path`, ACL masks, and per-bot read/write access for `.credentials.json`, `.claude.json`, and `.codex/auth.json`. Required when diagnosing shared-auth fleets.
+**Conditional read (load when `/var/lib/claude-shared/` exists on the host)**: `../ln-030-vps-bootstrap/references/shared_auth_state.md` â€” Phase 2 checks include `claude-shared-auth-perms.path`, ACL masks, and per-bot read/write access for `.credentials.json`, `.claude.json`, and `.codex/auth.json`. Required when diagnosing shared-auth fleets.
 
 ---
 
@@ -61,7 +61,7 @@ Inspect:
 - `${AGENT_SKILLS_DIR}` git state
 - marketplace/plugin health across `${AGENT_SKILLS_DIR}`, Claude active marketplace, Claude plugin cache, Codex plugin cache, `known_marketplaces.json`, and `installed_plugins.json`
 - `agent-update.timer` schedule, `agent-update.service` `is-failed` state, `/usr/local/bin/agent-update` exec bit (`[[ -x ... ]]`) and `bash -n` syntax
-- when `/var/lib/claude-shared/` exists: `claude-shared` group membership for every bot user, `claude-shared-auth-perms.path` active, ACL mask on `/var/lib/claude-shared/.claude/.credentials.json`, `/var/lib/claude-shared/.claude.json`, and `/var/lib/claude-shared/.codex/auth.json` (mask must be `rw-`, not `---`), and each bot user can read/write all three files through its home symlinks
+- when `/var/lib/claude-shared/` exists: `claude-shared` group membership for every bot user, `claude-shared-auth-perms.path` active, ACL mask on `/var/lib/claude-shared/.claude/.credentials.json`, `/var/lib/claude-shared/.claude.json`, and `/var/lib/claude-shared/.codex/auth.json` (mask must be `rw-`, not `---`), each bot user can read/write those auth files, and each bot keeps a real per-bot `~/.codex` directory rather than a symlink to shared storage
 
 ### Phase 3: Project Runtime
 
@@ -77,7 +77,7 @@ Named drift checks (block-level findings; map to safe repairs in Phase 5):
 - **timer enabled-inactive**: `systemctl is-enabled ${SERVICE_PREFIX}-dispatch.timer` is `enabled` but `is-active` is `inactive`, or `LastTriggerUSec` is empty for >30 min after install
 - **god/tmux parity**: any `${SERVICE_PREFIX}-god@<id>.service` is `active` while `tmux -L ${SERVICE_PREFIX} has-session -t "=${SERVICE_PREFIX}-god-<id>"` returns non-zero
 - **stale tmux socket**: `tmux -L ${SERVICE_PREFIX} ls` lists session names that no longer correspond to any active god@<id>.service (orphans from killed instances)
-- **missing .agent-home/users**: `${PROJECT_DIR}/.agent-home/users` absent or wrong owner — relay will fail with `status=226/NAMESPACE` on next restart
+- **missing .agent-home/users**: `${PROJECT_DIR}/.agent-home/users` absent or wrong owner â€” relay will fail with `status=226/NAMESPACE` on next restart
 - **shared-auth-repair-missing**: `/var/lib/claude-shared/` exists but `claude-shared-auth-perms.path` is missing or inactive
 - **shared-auth-acl-drift**: repair automation exists but one or more shared auth files has `mask::---` or fails per-bot read/write checks
 - **stale-agent-cli**: `claude --version` or `codex --version` differs from the package registry latest version after a requested update
@@ -101,9 +101,9 @@ Named drift checks from `/health` JSON and relay integration probes:
 - **idle-session-normal**: `god_session_ready:false` with `/ready` 200, no pending inbound, and idle-shutdown journal evidence is informational, not a failed deploy
 - **hook-auth-misconfigured**: project hook JSON lacks Bearer auth, uses the wrong port, or authenticated `SessionStart` smoke does not return 200
 - **telegram-command-drift**: command list differs between default and `all_private_chats` scopes or misses `/usage`, `/new_session`, `/sessions`, `/tasks`, `/users`
-- **inbound-failure backlog**: `inbound_failed > 0` or `outbox_abandoned > 0` — emit a finding with the offending message ids from the journal (`grep -oE '"id":[0-9]+,"terminal":"failed"'`) so the operator can ack or replay
-- **send-keys regression**: `journalctl -u ${SERVICE_PREFIX}-hex-relay.service --since '24h ago'` contains any `send-keys -l rc=1: command send-keys: invalid flag` — marker that the relay binary predates the buffer-paste fix
-- **stop-failure unknowns**: more than 3 `"error_type":"unknown"` entries in 24h with `"kind":"stop_failure"` — relay binary predates the typed-classifier fix; aggregate by `kind` to surface the underlying cause
+- **inbound-failure backlog**: `inbound_failed > 0` or `outbox_abandoned > 0` â€” emit a finding with the offending message ids from the journal (`grep -oE '"id":[0-9]+,"terminal":"failed"'`) so the operator can ack or replay
+- **send-keys regression**: `journalctl -u ${SERVICE_PREFIX}-hex-relay.service --since '24h ago'` contains any `send-keys -l rc=1: command send-keys: invalid flag` â€” marker that the relay binary predates the buffer-paste fix
+- **stop-failure unknowns**: more than 3 `"error_type":"unknown"` entries in 24h with `"kind":"stop_failure"` â€” relay binary predates the typed-classifier fix; aggregate by `kind` to surface the underlying cause
 
 ### Phase 5: Safe Repair
 

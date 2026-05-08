@@ -86,7 +86,7 @@ Two viable Linux-user/auth shapes for a multi-project VPS. Pick one before boots
 | Reference | When to use | What it covers |
 |---|---|---|
 | `shared_user_pattern.md` | Fresh install. One operator owns all projects. | Canonical model: one shared `agent-bot` Linux user owns every project's god-session. One `~/.claude.json`, one OAuth, one nvm. Strongest cache locality. |
-| `shared_auth_state.md` | Existing fleet already uses per-project bot users (`<project>-bot`). Adding a new project to it without burning another Claude Max device slot. | Symlink-based shared-state pattern: per-bot Linux/systemd isolation preserved, but `~/.claude`, `~/.claude.json`, `~/.codex` symlink to `/var/lib/claude-shared/` (group `claude-shared` + ACL setgid+default rwx + `claude-shared-auth-perms.path` repair). One device slot serves N bots. Includes migration script and one-time login flow. |
+| `shared_auth_state.md` | Existing fleet already uses per-project bot users (`<project>-bot`). Adding a new project to it without burning another Claude Max device slot. | Shared-auth pattern: per-bot Linux/systemd isolation preserved; `~/.claude` and `~/.claude.json` point to `/var/lib/claude-shared/`, while Codex keeps per-bot `~/.codex` runtime dirs and shares only `auth.json` (group `claude-shared` + ACL setgid+default rwx + `claude-shared-auth-perms.path` repair). One device slot serves N bots. Includes migration script and one-time login flow. |
 
 `troubleshooting.md` covers failure modes for both shapes (HTTP 401 between bots, ACL mask `---` after token rotation, `agent-update` `+x` bit loss, etc.). `ln-034-vps-environment-diagnostics` reads both references and inspects the active shape automatically.
 

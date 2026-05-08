@@ -63,6 +63,7 @@ import { createErrorAlerterWorker } from "./workers/errorAlerter.worker.js";
 import { createMediaCleanupWorker } from "./workers/mediaCleanup.worker.js";
 import { createVoiceTranscriptionWorker } from "./workers/voiceTranscription.worker.js";
 import { createIdleSessionService } from "./services/idleSession.service.js";
+import { createAgentSessionService } from "./services/agentSession.service.js";
 import { createIdleSessionWorker } from "./workers/idleSession.worker.js";
 import { createPendingReplyGcWorker } from "./workers/pendingReplyGc.worker.js";
 import { runProcess } from "./infrastructure/process/runProcess.js";
@@ -179,12 +180,17 @@ export function buildApp(env: Env, log: Logger = createLogger()): App {
           timeoutMs: env.voiceTranscribeTimeoutSec * 1000,
         })
       : null;
+  const agentSessions = createAgentSessionService({
+    log,
+    messagesRepo: repos.messages,
+    controlLane,
+    godRuntime,
+  });
   const inboundService = createInboundService({
     log,
     messagesRepo: repos.messages,
     outboxService: outbox,
-    controlLane,
-    godRuntime,
+    agentSessions,
     verbosity,
     reactToInbound,
   });

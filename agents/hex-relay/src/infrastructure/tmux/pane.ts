@@ -127,5 +127,18 @@ export function createTmuxPane(deps: TmuxPaneDeps) {
         return false;
       }
     },
+
+    async captureText(limitLines = 80): Promise<string> {
+      const safeLimit = Math.max(1, Math.min(limitLines, 500));
+      const r = await runTmuxProcess(
+        "tmux",
+        tmuxArgs(["capture-pane", "-p", "-t", target, "-S", `-${safeLimit}`]),
+        3000
+      );
+      if (r.code !== 0) {
+        throw new Error(`capture-pane rc=${r.code}: ${r.stderr.slice(0, 200)}`);
+      }
+      return r.stdout;
+    },
   };
 }

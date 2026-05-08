@@ -84,11 +84,18 @@ set -a; . "$SECRETS"; set +a
 # RELAY_HOOK_PORT is read by hex-relay-codex-hook.sh inside the sandbox.
 # It must come from the systemd unit so hooks target the project relay.
 [[ -n "${RELAY_HOOK_PORT:-}" ]] || fatal 3 "missing_config" "RELAY_HOOK_PORT is required"
+[[ -n "${RELAY_HTTP_TOKEN:-}" ]] || fatal 3 "missing_config" "RELAY_HTTP_TOKEN is required"
 
-# Codex runs the interactive TUI by default. workspace-write keeps the agent confined
-# to the project tree at the Codex layer; bwrap still enforces the host-level boundary.
+# Make hook env available to tmux child panes without embedding bearer tokens in
+# command strings, logs, or process argv.
+"${TMUX[@]}" start-server 2>/dev/null || true
+"${TMUX[@]}" set-environment -g RELAY_HOOK_PORT "$RELAY_HOOK_PORT" 2>/dev/null || true
+"${TMUX[@]}" set-environment -g RELAY_HTTP_TOKEN "$RELAY_HTTP_TOKEN" 2>/dev/null || true
+
+# Codex runs inside the external project sandbox. Disable Codex's nested sandbox
+# here because AppArmor can block nested user namespaces on VPS hosts.
 CODEX_BASE="OPERATOR_USER_ID=$OPERATOR_USER_ID AGENT_SKILLS_DIR=${AGENT_SKILLS_DIR:-/opt/agent-skills} RELAY_HOOK_PORT=$RELAY_HOOK_PORT /usr/local/bin/${SERVICE_PREFIX}-agent-sandbox codex"
-CODEX_TAIL="--sandbox workspace-write"
+CODEX_TAIL="--dangerously-bypass-approvals-and-sandbox"
 CODEX_CMD="$CODEX_BASE $CODEX_TAIL"
 BOOT_RESUME_SID=""
 RESUME_SOURCE=""

@@ -80,7 +80,7 @@ Responsibilities:
 
 Verify both agents are reachable for `${BOT_USER}` and every rendered `RUNTIME_USERS` entry:
 - `claude --version` exits 0 and that user's `~/.claude/.credentials.json` (or shared symlink target) exists.
-- `codex --version` exits 0 and that user's `~/.codex/auth.json` (or shared symlink target) exists.
+- `codex --version` exits 0 and that user's `~/.codex/auth.json` exists; in shared-auth fleets it is a hardlink to `/var/lib/claude-shared/.codex/auth.json`, not a whole-directory symlink.
 - Under the shared-auth pattern, `.credentials.json`, `.claude.json`, and `.codex/auth.json` must live under `/var/lib/claude-shared/`, remain readable/writable by every bot user via the `claude-shared` group ACL, and have `claude-shared-auth-perms.path` active so atomic token rewrites are repaired after refresh.
 
 Do not overwrite existing auth files. Missing `claude` or `codex` login is a blocker or warning, not an automated fake success.

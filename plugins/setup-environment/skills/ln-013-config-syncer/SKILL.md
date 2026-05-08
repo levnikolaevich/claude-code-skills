@@ -162,25 +162,26 @@ Codex-only fields to preserve:
 
 **Codex hooks:**
 
-When the host has hex-relay deployed (`/usr/local/bin/hex-relay-codex-hook.sh` exists and is executable), the syncer idempotently inserts/updates a managed Codex hooks block in `~/.codex/config.toml`. The block lives between fenced markers:
+When the host has hex-relay deployed (`/usr/local/bin/hex-relay-codex-hook.sh` exists and is executable), the syncer idempotently inserts/updates a system-managed Codex hooks block in `/etc/codex/config.toml`. Per-user `~/.codex/config.toml` must not contain duplicate hex-relay hook entries because user-scope hooks require trust review. The block lives between fenced markers:
 
 ```text
 # BEGIN ln-013 managed codex hooks
-[features]
-codex_hooks = true
-
 [[hooks.UserPromptSubmit]]
-command = ["/usr/local/bin/hex-relay-codex-hook.sh", "UserPromptSubmit"]
-timeout_ms = 30000
-# ... Stop, SessionStart, PreToolUse, PostToolUse, PermissionRequest ...
+[[hooks.UserPromptSubmit.hooks]]
+type = "command"
+command = "/usr/local/bin/hex-relay-codex-hook.sh UserPromptSubmit"
+timeout = 30
+# ... Stop, SessionStart, PreToolUse, PostToolUse ...
 # END ln-013 managed codex hooks
 ```
 
 Rules:
-- Only the content between `# BEGIN ln-013 managed codex hooks` and `# END ln-013 managed codex hooks` is rewritten. Unrelated `[hooks.*]` blocks the user added by hand are preserved untouched.
-- If the shim script is missing, the syncer reports `codex_hooks: skipped (shim missing)` instead of writing a stale block.
-- A `.bak` of `config.toml` is written before any edit (same policy as the MCP merge).
-- See `../ln-030-vps-bootstrap/references/codex_hooks_config.md` for the canonical block, discovery order, and verification recipe.
+- Only the content between `# BEGIN ln-013 managed codex hooks` and `# END ln-013 managed codex hooks` is rewritten in `/etc/codex/config.toml`.
+- Remove prior ln-013 hook and hook-trust blocks from per-user `~/.codex/config.toml` after migrating to system-managed hooks.
+- If the shim script is missing, the syncer reports `codex hooks: skipped (shim missing)` instead of writing a stale block.
+- Do not write the legacy `[features] codex_hooks = true` alias. Current Codex uses the stable hooks feature and the canonical block is pure `[hooks.*]` TOML.
+- A `.bak` of each edited `config.toml` is written before any edit (same policy as the MCP merge).
+- See `references/codex_hooks_config.md` for the canonical block, discovery order, and verification recipe.
 
 **Codex execution defaults:**
 

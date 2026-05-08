@@ -62,10 +62,15 @@ fi
 URL="http://127.0.0.1:${PORT}/hook/${KEBAB}"
 
 if [[ "$EVENT_NAME" == "SessionStart" ]]; then
-  if ! curl -sS --max-time 5 -X POST -H 'Content-Type: application/json' \
+  RESPONSE=''
+  if ! RESPONSE=$(curl -sS --max-time 5 -X POST -H 'Content-Type: application/json' \
        -H "Authorization: Bearer ${RELAY_HTTP_TOKEN}" \
-       --data "$PAYLOAD" "$URL"; then
+       --data "$PAYLOAD" "$URL"); then
     warn "POST $URL failed (event=$EVENT_NAME); soft-failing"
+  elif [[ -n "$RESPONSE" ]]; then
+    # Codex SessionStart output is strict JSON and rejects relay's Claude-compatible
+    # top-level `ok` field. Preserve only the hook-specific context envelope.
+    printf '%s' "$RESPONSE" | jq -c '{hookSpecificOutput: .hookSpecificOutput}' 2>/dev/null || true
   fi
 else
   if ! curl -sS --max-time 5 -X POST -H 'Content-Type: application/json' \

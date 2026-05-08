@@ -6,7 +6,7 @@
 
 ## Why this pattern
 
-Claude Code generates a `userID` (SHA-256 hex) on first login and stores it in `~/.claude.json`. Anthropic binds the OAuth refresh token to that `userID` server-side. The same is true for Codex with `~/.codex/auth.json` + `~/.codex/installation_id`.
+Claude Code generates a `userID` (SHA-256 hex) on first login and stores it in `~/.claude.json`. Anthropic binds the OAuth refresh token to that `userID` server-side. Codex stores OAuth in `~/.codex/auth.json`, but Codex also owns per-user runtime files under `~/.codex/` (`tmp/arg0`, SQLite state, logs, sessions, history). Those runtime files are not safe to share as one directory across multiple Linux users.
 
 Empirical consequences (validated 2026-05-06):
 
@@ -19,7 +19,7 @@ Empirical consequences (validated 2026-05-06):
 Two viable shapes:
 
 1. **One shared Linux user** (`agent-bot`) for all projects. Strongest cache-locality. Documented in `shared_user_pattern.md`. Existing fleets do not always follow this pattern.
-2. **Multi-Linux-user with shared state via filesystem** (`/var/lib/claude-shared/` + symlinks + setgid group + ACL). Documented here. Lets per-project bot users keep filesystem and systemd isolation while sharing a single Claude Max device slot and a single Codex login.
+2. **Multi-Linux-user with shared state via filesystem** (`/var/lib/claude-shared/` + setgid group + ACL). Documented here. Lets per-project bot users keep filesystem and systemd isolation while sharing a single Claude Max device slot and a single Codex login. Claude state is shared by symlink; Codex uses a per-bot runtime directory with only `auth.json` shared.
 
 Pick option (2) when:
 - You already have per-project bot users (`civic-bot`, `prompsit-bot`, `btc-bot`, ...) and migrating to a shared user is expensive
@@ -37,17 +37,23 @@ Pick option (1) when:
 /var/lib/claude-shared/                 ← canonical state, owner=<seed-bot>:claude-shared, mode 2770
 ├── .claude/                            ← shared (config, plugins, projects/, sessions/, commands/, statusline.sh)
 ├── .claude.json                        ← shared (userID + oauthAccount + cachedExperimentFeatures)
-└── .codex/                             ← shared (auth.json, config.toml, installation_id, history)
+└── .codex/
+    └── auth.json                       ← shared Codex OAuth file only
 
 /home/<bot-A>/                          ← per-project bot home (still isolated)
 ├── .nvm/                               ← per-bot Node toolchain (bot-A's npm globals: claude, codex CLIs)
 ├── .profile                            ← MUST source ~/.nvm/nvm.sh for login shells
 ├── .claude       → /var/lib/claude-shared/.claude         (symlink)
 ├── .claude.json  → /var/lib/claude-shared/.claude.json    (symlink)
-└── .codex        → /var/lib/claude-shared/.codex          (symlink)
+└── .codex/                              ← real per-bot dir, owner=<bot>, mode 0700
+    ├── auth.json  → /var/lib/claude-shared/.codex/auth.json
+    ├── config.toml
+    ├── tmp/
+    ├── sessions/
+    └── ...
 
 /home/<bot-B>/                          ← second project, same layout
-└── ... (symlinks point to the same shared dir)
+└── ... (Claude symlinks point to the same shared dir; Codex runtime stays per-bot)
 ```
 
 `group claude-shared` (any free GID) is the membership list. Add every bot that should share auth.
@@ -88,6 +94,8 @@ systemctl start claude-shared-auth-perms.service
 
 Manual `chmod 0660 /var/lib/claude-shared/.claude/.credentials.json` or `chmod 0660 /var/lib/claude-shared/.codex/auth.json` is only immediate recovery when the watcher is missing. It is not durable because the next token refresh can replace the file again.
 
+Do not symlink `/home/<bot>/.codex` to `/var/lib/claude-shared/.codex`. Current Codex creates runtime paths such as `tmp/arg0` with mode `0700` and writes per-user SQLite/log/session files. Whole-directory sharing causes cross-user permission drift and startup failures. Share `auth.json` only.
+
 ## Migration script (idempotent)
 
 Backs up existing per-bot state before symlinking. Safe to run once per VPS.
@@ -107,9 +115,12 @@ for bot in "${BOTS[@]}"; do usermod -aG claude-shared "$bot"; done
 # 2. shared dir
 install -d -o "$SEED_BOT" -g claude-shared -m 2770 "$SHARED"
 
-# 3. seed from seed-bot (preserves existing plugins, project trust blocks, etc.)
+# 3. seed from seed-bot (preserves existing Claude plugins and project trust blocks)
 [[ -d "$SHARED/.claude" ]] || cp -a "/home/$SEED_BOT/.claude" "$SHARED/.claude"
-[[ -d "$SHARED/.codex"  ]] || cp -a "/home/$SEED_BOT/.codex"  "$SHARED/.codex"
+install -d -o "$SEED_BOT" -g claude-shared -m 2770 "$SHARED/.codex"
+if [[ ! -e "$SHARED/.codex/auth.json" && -e "/home/$SEED_BOT/.codex/auth.json" ]]; then
+  cp -a "/home/$SEED_BOT/.codex/auth.json" "$SHARED/.codex/auth.json"
+fi
 
 # 4. drop existing creds — fresh /login below will recreate, bound to one device
 for f in "$SHARED/.claude/.credentials.json" "$SHARED/.codex/auth.json"; do
@@ -124,24 +135,32 @@ setfacl -R    -m g:claude-shared:rwX "$SHARED"
 setfacl -R -d -m g:claude-shared:rwX "$SHARED"
 # Install and start claude-shared-auth-perms.service/.path before the login flow.
 
-# 6. backup + symlink for each bot
+# 6. backup + link for each bot
 for bot in "${BOTS[@]}"; do
   HOMEDIR="/home/$bot"
-  for path in .claude .codex .claude.json; do
+  for path in .claude .claude.json; do
     src="$HOMEDIR/$path"
     if   [[ -L "$src" ]]; then unlink "$src"
     elif [[ -e "$src" ]]; then mv "$src" "$src.before-shared-migration.$TS"
     fi
   done
   sudo -u "$bot" ln -s "$SHARED/.claude"      "$HOMEDIR/.claude"
-  sudo -u "$bot" ln -s "$SHARED/.codex"       "$HOMEDIR/.codex"
   sudo -u "$bot" ln -s "$SHARED/.claude.json" "$HOMEDIR/.claude.json"
+
+  if [[ -L "$HOMEDIR/.codex" ]]; then unlink "$HOMEDIR/.codex"; fi
+  install -d -o "$bot" -g "$bot" -m 0700 "$HOMEDIR/.codex"
+  find "$HOMEDIR/.codex" -mindepth 1 -maxdepth 1 \
+    ! -name auth.json ! -name config.toml ! -name notify.sh ! -name plugins \
+    -exec rm -rf {} +
+  [[ -e "$HOMEDIR/.codex/auth.json" ]] && unlink "$HOMEDIR/.codex/auth.json"
+  ln "$SHARED/.codex/auth.json" "$HOMEDIR/.codex/auth.json"
+  chown "$bot:$bot" "$HOMEDIR/.codex"
 done
 ```
 
 ## One-time login flow
 
-After migration, run **one** `claude /login` and **one** `codex login --device-auth` as **any** bot. Both write to the shared dir; all other bots inherit through their symlinks.
+After migration, run **one** `claude /login` and **one** `codex login --device-auth` as **any** bot. Claude writes to the shared dir through symlinks. Codex writes to that bot's real `~/.codex/auth.json` hardlink; all other bots inherit the same inode through their own hardlinks.
 
 ```bash
 # Pre-seed a minimal .claude.json so the onboarding theme picker is skipped
@@ -189,9 +208,9 @@ The `--resume <session-uuid>` flag (set automatically by the wrapper from each u
 
 `agent-sandbox.sh` does two things for shared-auth bots:
 
-1. **bind-mounts** `/home/${BOT_USER}/.claude` and `/home/${BOT_USER}/.codex` into `${AGENT_HOME}/.claude` and `${AGENT_HOME}/.codex` via `bwrap --bind`. The bind syscall resolves the source symlink at mount time, so inside the sandbox `${AGENT_HOME}/.claude` shows the actual `/var/lib/claude-shared/.claude/` contents (incl. `.credentials.json`, plugins, projects). No sandbox config change is required for this.
+1. **bind-mounts** `/home/${BOT_USER}/.claude` and `/home/${BOT_USER}/.codex` into `${AGENT_HOME}/.claude` and `${AGENT_HOME}/.codex` via `bwrap --bind`. The bind syscall resolves the Claude source symlink at mount time, so inside the sandbox `${AGENT_HOME}/.claude` shows the actual `/var/lib/claude-shared/.claude/` contents. Codex sees the bot's own real `~/.codex` directory, with only `auth.json` shared by hardlink.
 
-2. **copies** the small per-cwd config file `~/.claude.json` into `${AGENT_HOME}/.claude.json` with `cp -aL` (dereference). **Do not use plain `cp -a`** — it preserves the symlink, and inside the sandbox the symlink target (`/var/lib/claude-shared/.claude.json`) is not reachable, so claude reads ENOENT, falls into onboarding, and regenerates a fresh `userID` that breaks the OAuth refresh-token binding for every bot sharing the dir. Same applies to `~/.codex/config.toml` if it ever becomes a symlink.
+2. **copies** the small per-cwd config file `~/.claude.json` into `${AGENT_HOME}/.claude.json` with `cp -aL` (dereference). **Do not use plain `cp -a`** — it preserves the symlink, and inside the sandbox the symlink target (`/var/lib/claude-shared/.claude.json`) is not reachable, so claude reads ENOENT, falls into onboarding, and regenerates a fresh `userID` that breaks the OAuth refresh-token binding for every bot sharing the dir.
 
 If you migrate an existing fleet to shared-auth, audit each `${SERVICE_PREFIX}-agent-sandbox` script for `cp -a "$src" "$dst"` inside `copy_if_missing` and change it to `cp -aL`. The skills repo template `references/scripts/agent-sandbox.sh` already uses `cp -aL`. Recovery sequence if you hit this: (1) patch sandbox script, (2) `unlink ${PROJECT_DIR}/.agent-home/users/<id>/.claude.json`, (3) restart `${SERVICE_PREFIX}-god@<id>.service`, (4) one fresh `claude /login` from inside the sandbox to re-establish a consistent `(userID, refresh_token)` pair in the shared dir.
 

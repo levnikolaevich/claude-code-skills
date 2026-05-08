@@ -68,7 +68,7 @@
 
 ### Secrets Protection (always required regardless of stack)
 
-**Reference:** `../ln-733-env-configurator/references/gitignore_secrets.template`
+**Baseline used by this auditor:** secrets patterns below.
 
 Minimal required patterns:
 
@@ -83,7 +83,7 @@ Minimal required patterns:
 
 ### .dockerignore Baseline (if Dockerfile exists)
 
-**Reference:** `../ln-731-docker-generator/references/dockerignore.template`
+**Baseline used by this auditor:** dockerignore patterns below.
 
 Required entries: `node_modules`, `.git`, `.env`, `*.log`, `dist`, `tests`, `docs`
 
@@ -93,7 +93,7 @@ Required entries: `node_modules`, `.git`, `.env`, `*.log`, `dist`, `tests`, `doc
 
 ### React / Vite / CRA / Next.js
 
-**Reference:** `../ln-720-structure-migrator/references/frontend_structure.md`
+**Baseline used by this auditor:** React/Vite/CRA/Next.js layout table below.
 
 | Expected Directory | Purpose | Required? |
 |--------------------|---------|-----------|
@@ -115,7 +115,7 @@ Required entries: `node_modules`, `.git`, `.env`, `*.log`, `dist`, `tests`, `doc
 
 ### .NET / ASP.NET Core / Clean Architecture
 
-**Reference:** `../ln-720-structure-migrator/references/clean_architecture_dotnet.md`
+**Baseline used by this auditor:** .NET / ASP.NET Core / Clean Architecture layout table below.
 
 | Expected Directory | Purpose | Required? |
 |--------------------|---------|-----------|

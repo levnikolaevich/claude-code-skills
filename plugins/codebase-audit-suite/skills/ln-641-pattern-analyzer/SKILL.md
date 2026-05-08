@@ -166,8 +166,8 @@ Apply the already-loaded `references/audit_worker_core_contract.md`.
 
 ## Reference Files
 
-- Scoring rules: `../ln-640-pattern-evolution-auditor/references/scoring_rules.md`
-- Pattern library: `../ln-640-pattern-evolution-auditor/references/pattern_library.md`
+- Scoring rules: `references/scoring_rules.md`
+- Pattern library: `references/pattern_library.md`
 - **MANDATORY READ:** Load `references/research_tool_fallback.md`
 
 ---

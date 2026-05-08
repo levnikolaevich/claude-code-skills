@@ -135,8 +135,8 @@ If assertions fail, the pipeline pauses or retries according to [SKILL.md](SKILL
 |------|------|
 | Executable specification | [SKILL.md](SKILL.md) |
 | State machine rules | [references/pipeline_states.md](references/pipeline_states.md) |
-| Delegation runtime | [../../docs/architecture/AGENT_DELEGATION_PLATFORM_GUIDE.md](../../docs/architecture/AGENT_DELEGATION_PLATFORM_GUIDE.md) |
-| Architecture principles | [../../docs/architecture/SKILL_ARCHITECTURE_GUIDE.md](../../docs/architecture/SKILL_ARCHITECTURE_GUIDE.md) |
+| Delegation runtime | [../../../../docs/architecture/AGENT_DELEGATION_PLATFORM_GUIDE.md](../../../../docs/architecture/AGENT_DELEGATION_PLATFORM_GUIDE.md) |
+| Architecture principles | [../../../../docs/architecture/SKILL_ARCHITECTURE_GUIDE.md](../../../../docs/architecture/SKILL_ARCHITECTURE_GUIDE.md) |
 
 ---
 

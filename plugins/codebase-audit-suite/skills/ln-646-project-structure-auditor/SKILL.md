@@ -50,7 +50,7 @@ Use `hex-graph` first when architecture summaries materially improve structure f
 
 ### Phase 1: Detect Tech Stack
 
-**MANDATORY READ:** Load `../ln-700-project-bootstrap/references/stack_detection.md` -- use Detection Algorithm, Frontend Detection, Backend Detection, Structure Detection.
+**MANDATORY READ:** Load `references/stack_detection.md` -- use Detection Algorithm, Frontend Detection, Backend Detection, Structure Detection.
 
 ```
 scan_root = scan_path IF domain_mode == "domain-aware" ELSE codebase_root
@@ -77,7 +77,7 @@ ELSE:
 
 ### Phase 2: File Hygiene Audit
 
-**MANDATORY READ:** Load `references/structure_rules.md` -- use "File Hygiene Rules" section. Also reference: `../ln-724-artifact-cleaner/references/platform_artifacts.md` (Platform Detection Matrix, Generic Prototype Artifacts).
+**MANDATORY READ:** Load `references/structure_rules.md` -- use "File Hygiene Rules" section. Also load `references/platform_artifacts.md` for Platform Detection Matrix and Generic Prototype Artifacts.
 
 ```
 # Check 2.1: Build artifacts tracked in git
@@ -111,7 +111,7 @@ FOR EACH file IN Glob("{scan_root}/**/*.{zip,tar,gz,rar,exe,dll,so,dylib,jar,war
 
 ### Phase 3: Ignore File Quality
 
-**MANDATORY READ:** Load `references/structure_rules.md` -- use "Ignore File Rules" section. Also reference: `../ln-733-env-configurator/references/gitignore_secrets.template` (secrets baseline), `../ln-731-docker-generator/references/dockerignore.template` (dockerignore baseline).
+**MANDATORY READ:** Load `references/structure_rules.md` -- use the embedded ignore-file rules, secrets baseline, and dockerignore baseline.
 
 ```
 # Check 3.1: .gitignore exists
@@ -332,10 +332,6 @@ Apply the already-loaded `references/audit_worker_core_contract.md`.
 ## Reference Files
 
 - **Structure rules:** `references/structure_rules.md`
-- **Stack detection:** `../ln-700-project-bootstrap/references/stack_detection.md`
-- **Platform artifacts:** `../ln-724-artifact-cleaner/references/platform_artifacts.md`
-- **Gitignore secrets:** `../ln-733-env-configurator/references/gitignore_secrets.template`
-- **Dockerignore baseline:** `../ln-731-docker-generator/references/dockerignore.template`
 
 ---
 **Version:** 1.0.0

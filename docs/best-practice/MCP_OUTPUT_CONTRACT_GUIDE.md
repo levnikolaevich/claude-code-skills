@@ -258,7 +258,7 @@ On error: set BOTH. On success: omit `isError`, use `status: "OK"` or other succ
 
 ### Domain envelopes
 
-Domain-specific envelopes live INSIDE `structuredContent` for structured-output tools. Text-grammar tools such as `hex-graph` intentionally do not have a structured domain envelope; their domain contract is the grammar document (`mcp/hex-graph-mcp/PROTOCOL.md`).
+Domain-specific envelopes live INSIDE `structuredContent` for structured-output tools such as `hex-research`. Text-grammar tools such as `hex-graph` intentionally do not have a structured domain envelope; their domain contract is the grammar document (`mcp/hex-graph-mcp/PROTOCOL.md`).
 
 ## 9. Result metadata (`_meta`)
 

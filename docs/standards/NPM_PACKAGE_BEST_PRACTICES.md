@@ -108,7 +108,7 @@ npm search uses keywords for discovery. Optimal count: **8-12 keywords**.
 | **Protocol** | MCP ecosystem discovery | `mcp`, `model-context-protocol` |
 | **Platform** | Agent compatibility | `claude`, `ai`, `llm`, `coding-agent` |
 | **Domain** | Feature-specific search | `file-edit`, `ssh`, `tree-sitter`, `knowledge-graph` |
-| **Brand** | Package family | `hex-line`, `hex-ssh`, `hex-graph` |
+| **Brand** | Package family | `hex-line`, `hex-ssh`, `hex-graph`, `hex-research` |
 
 ### Rules
 

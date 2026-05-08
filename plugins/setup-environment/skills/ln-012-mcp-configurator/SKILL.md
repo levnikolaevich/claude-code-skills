@@ -79,6 +79,7 @@ Two transport types: **stdio** (local process) and **HTTP** (cloud endpoint).
 | hex-line | stdio | `npx -y @levnikolaevich/hex-line-mcp` | Yes | No |
 | hex-ssh | stdio | `npx -y @levnikolaevich/hex-ssh-mcp` | No | No |
 | hex-graph | stdio | `npx -y @levnikolaevich/hex-graph-mcp` | No | No |
+| hex-research | stdio | `npx -y @levnikolaevich/hex-research-mcp` | No | No |
 | context7 | HTTP | `https://mcp.context7.com/mcp` | Yes | Optional |
 | Ref | HTTP | `https://api.ref.tools/mcp` | Yes | Yes (prompt user) |
 | linear | HTTP | `https://mcp.linear.app/mcp` | Ask user | No (OAuth) |
@@ -108,7 +109,7 @@ Run `claude mcp list` -> parse each hex server:
 
 **Step 1b: Version check for connected hex-* servers**
 
-For each connected hex server, run in parallel:
+For each connected published hex server, run in parallel:
 ```bash
 npm view @levnikolaevich/${PKG} version 2>/dev/null
 ```
@@ -118,7 +119,7 @@ Then compare npm latest against the running local version:
 
 Use the npx cache version. If probe returns nothing, report `running=unknown` and treat the server as refresh-recommended rather than claiming it is current.
 
-Note: hex packages run via `npx -y`, NOT global install. Never probe global npm paths.
+Note: published hex packages run via `npx -y`, NOT global install. Never probe global npm paths.
 
 | npm latest | cached local version | Action |
 |------------|---------|--------|
@@ -169,6 +170,7 @@ Registration commands (OS-dependent prefix):
 | hex-line | `MSYS_NO_PATHCONV=1 claude mcp add -s user hex-line -- cmd /c npx -y @levnikolaevich/hex-line-mcp` |
 | hex-ssh | `MSYS_NO_PATHCONV=1 claude mcp add -s user hex-ssh -- cmd /c npx -y @levnikolaevich/hex-ssh-mcp` |
 | hex-graph | `MSYS_NO_PATHCONV=1 claude mcp add -s user hex-graph -- cmd /c npx -y @levnikolaevich/hex-graph-mcp` |
+| hex-research | `MSYS_NO_PATHCONV=1 claude mcp add -s user hex-research -- cmd /c npx -y @levnikolaevich/hex-research-mcp` |
 | context7 | `claude mcp add -s user --transport http context7 https://mcp.context7.com/mcp` |
 | Ref | `claude mcp add -s user --transport http Ref https://api.ref.tools/mcp` |
 | linear | `claude mcp add -s user --transport http linear-server https://mcp.linear.app/mcp` |
@@ -402,6 +404,7 @@ Ensure built-in tools and MCP server prefixes are in `~/.claude/settings.json` -
 | hex-line | `mcp__hex-line` |
 | hex-ssh | `mcp__hex-ssh` |
 | hex-graph | `mcp__hex-graph` |
+| hex-research | `mcp__hex-research` |
 | context7 | `mcp__context7` |
 | Ref | `mcp__Ref` |
 | linear | `mcp__linear-server` |
@@ -497,8 +500,9 @@ When applying changes:
 MCP Configuration:
 | Server    | Transport | Version | Status        | Permission | Detail                  |
 |-----------|-----------|---------|---------------|------------|-------------------------|
-| hex-line  | stdio     | 1.5.0   | configured    | granted    | global npm (hex-line-mcp) |
+| hex-line  | stdio     | 1.5.0   | configured    | granted    | npx package (hex-line-mcp) |
 | hex-ssh   | stdio     | 1.2.0   | updated       | granted    | was 1.1.6, now 1.2.0     |
+| hex-research | stdio  | 0.1.0   | configured    | granted    | npx package (hex-research-mcp) |
 | context7  | HTTP      | —       | configured    | granted    | mcp.context7.com        |
 | Ref       | HTTP      | —       | configured    | granted    | api.ref.tools (key set) |
 | linear    | HTTP      | —       | skipped       | skipped    | user declined           |
@@ -518,7 +522,7 @@ IDE Extension Permission Mode:
 1. **Write only via sanctioned paths.** Register servers via `claude mcp add`. Write to `~/.claude/settings.json` ONLY for permissions (`permissions.allow[]`) or when explicit hook/style verification requires correction after autosync fails
 2. **Verify after add.** Always run `claude mcp list` after registration to confirm connection
 3. **Ask before optional servers.** Linear requires explicit user consent
-4. **npx -y for all hex MCP.** Never `npm i -g` — npx provides process isolation and avoids EBUSY on Windows. On Windows, wrap with `cmd /c npx` (see Phase 2 OS prefix table)
+4. **npx -y for all hex MCP.** Never `npm i -g` — npx provides process isolation and avoids EBUSY on Windows. On Windows, wrap packages with `cmd /c npx` (see Phase 2 OS prefix table).
 5. **Remove unsupported servers.** Clean up servers no longer in the registry
 6. **Grant permissions.** After registration, add `mcp__{server}` to user settings
 7. **Minimize `claude mcp list` calls.** Phase 1 runs it once (discovery). Phase 2 reuses that data. Only Phase 2 Step 4 runs it again (post-mutation verify). Max 2 calls total

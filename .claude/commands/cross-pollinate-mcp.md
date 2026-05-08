@@ -5,7 +5,7 @@ allowed-tools: "Bash,Agent,mcp__hex-line__read_file,mcp__hex-line__grep_search,m
 
 # Cross-Pollinate Hex MCP Servers
 
-Diff-driven audit: find real transferable changes across hex-line-mcp, hex-ssh-mcp, hex-graph-mcp. Each delta is classified, not blindly ported.
+Diff-driven audit: find real transferable changes across hex-line-mcp, hex-ssh-mcp, hex-graph-mcp, and hex-research-mcp. Each delta is classified, not blindly ported.
 
 ## Source
 
@@ -26,6 +26,7 @@ Diff-driven audit: find real transferable changes across hex-line-mcp, hex-ssh-m
 | hex-line-mcp | `mcp/hex-line-mcp/` | 9 | Local file ops (source of current deltas) |
 | hex-ssh-mcp | `mcp/hex-ssh-mcp/` | 8 | SSH remote ops |
 | hex-graph-mcp | `mcp/hex-graph-mcp/` | 14 | Workspace-first code knowledge graph |
+| hex-research-mcp | `mcp/hex-research-mcp/` | 15 | Research hypothesis/goal graph |
 
 ---
 
@@ -58,7 +59,7 @@ Classify each changed symbol by category:
 
 ### Phase 1: Transfer Matrix
 
-For EACH change from Phase 0, check if it applies to hex-ssh and hex-graph.
+For EACH change from Phase 0, check if it applies to the other three hex MCP servers. Do not assume every common helper applies to every package; verify direct overlap first.
 
 **Use hex-graph to verify target server status:**
 
@@ -66,6 +67,7 @@ For EACH change from Phase 0, check if it applies to hex-ssh and hex-graph.
 # Check if equivalent function exists in target
 mcp__hex-graph__find_symbols(pattern: "{function_name}", path: "mcp/hex-ssh-mcp/")
 mcp__hex-graph__find_symbols(pattern: "{function_name}", path: "mcp/hex-graph-mcp/")
+mcp__hex-graph__find_symbols(pattern: "{function_name}", path: "mcp/hex-research-mcp/")
 
 # Compare signatures between source and target
 mcp__hex-graph__inspect_symbol(symbol: "{function_name}", path: "mcp/hex-line-mcp/server.mjs")
@@ -88,10 +90,10 @@ Output:
 
 | Check | Query | What to look for |
 |-------|-------|------------------|
-| Dynamic version | `find_symbols(query: "createRequire")` | Should exist in all 3 servers; hardcoded version string = gap |
+| Dynamic version | `find_symbols(query: "createRequire")` | Should exist in all 4 servers; hardcoded version string = gap |
 | Dead imports | `find_references(name: "{import}", file: "{file}")` | 0 refs = dead import to remove |
 | Safe process spawning | `find_symbols(query: "execSync")` | Should be `execFileSync` (arg array) in production code |
-| Tool registration | `grep_search(pattern: "server\\.registerTool\\(")` | hex-graph can't index method calls; use grep |
+| Tool registration | `grep_search(pattern: "server\\.registerTool\\(|registerStructuredTool")` | hex-graph can't index method calls; use grep |
 | CRLF normalization | `grep_search(pattern: "\\r\\n")` | Consistent `.replace(/\r\n/g, "\n")` where files are read |
 | Benchmark parity | `grep_search(pattern: "benchmark", glob: "*.mjs")` | README claims token efficiency -> benchmark.mjs must exist |
 
@@ -114,12 +116,25 @@ Use `hex-line grep_search` for edit-ready matches in files touched by Phase 0:
 ### Phase 4: Verify
 
 ```bash
-cd mcp/hex-ssh-mcp && npm run check && npm run lint && npm test
-cd mcp/hex-graph-mcp && npm run check && npm run lint && npm test  
-cd mcp/hex-line-mcp && npm run check && npm run lint && npm test
+npm --prefix mcp --workspace @levnikolaevich/hex-line-mcp run check
+npm --prefix mcp --workspace @levnikolaevich/hex-line-mcp run lint
+npm --prefix mcp --workspace @levnikolaevich/hex-line-mcp test
+npm --prefix mcp --workspace @levnikolaevich/hex-ssh-mcp run check
+npm --prefix mcp --workspace @levnikolaevich/hex-ssh-mcp run lint
+npm --prefix mcp --workspace @levnikolaevich/hex-ssh-mcp test
+npm --prefix mcp --workspace @levnikolaevich/hex-graph-mcp run check
+npm --prefix mcp --workspace @levnikolaevich/hex-graph-mcp run lint
+npm --prefix mcp --workspace @levnikolaevich/hex-graph-mcp test
+npm --prefix mcp --workspace @levnikolaevich/hex-research-mcp run check
+npm --prefix mcp --workspace @levnikolaevich/hex-research-mcp run lint
+npm --prefix mcp --workspace @levnikolaevich/hex-research-mcp test
+npm --prefix mcp --workspace @levnikolaevich/hex-research-mcp run evals
+npm --prefix mcp --workspace @levnikolaevich/hex-research-mcp run benchmark
+npm --prefix mcp --workspace @levnikolaevich/hex-research-mcp run docs:quality:check
+npm --prefix mcp test
 ```
 
-**Gate:** 0 errors on all 3 servers.
+**Gate:** 0 errors on all 4 servers.
 
 ### Phase 5: Report + Meta-Analysis
 

@@ -118,17 +118,27 @@ jobs:
           node plugins/agile-workflow/skills/ln-1000-pipeline-orchestrator/scripts/test/smoke.mjs
           node plugins/agile-workflow/skills/ln-1000-pipeline-orchestrator/scripts/test/isolation.mjs
 
-      - name: MCP hex-line lint + test
-        run: cd mcp/hex-line-mcp && npm run lint && npm test
+      - name: MCP hex-line check + lint + test
+        run: cd mcp/hex-line-mcp && npm run check && npm run lint && npm test
 
-      - name: MCP hex-graph test
-        run: cd mcp/hex-graph-mcp && npm test
+      - name: MCP hex-graph check + lint + test
+        run: cd mcp/hex-graph-mcp && npm run check && npm run lint && npm test
 
-      - name: MCP hex-ssh test
-        run: cd mcp/hex-ssh-mcp && npm test
+      - name: MCP hex-ssh check + lint + test
+        run: cd mcp/hex-ssh-mcp && npm run check && npm run lint && npm test
 
       - name: MCP hex-common test
         run: cd mcp/hex-common && npm test
+
+      - name: MCP hex-research test + quality
+        run: |
+          cd mcp/hex-research-mcp
+          npm run check
+          npm run lint
+          npm test
+          npm run evals
+          npm run benchmark
+          npm run docs:quality:check
 
   hex-ssh-interop:
     name: hex-ssh interop

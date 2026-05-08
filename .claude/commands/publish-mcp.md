@@ -24,8 +24,9 @@ Publishes one of the bundled MCP servers to npm. Tag push triggers GitHub Action
 | @levnikolaevich/hex-line-mcp | `mcp/hex-line-mcp/` | `hex-line-v*` | publish-hex-line.yml |
 | @levnikolaevich/hex-ssh-mcp | `mcp/hex-ssh-mcp/` | `hex-ssh-v*` | publish-hex-ssh.yml |
 | @levnikolaevich/hex-graph-mcp | `mcp/hex-graph-mcp/` | `hex-graph-v*` | publish-hex-graph.yml |
+| @levnikolaevich/hex-research-mcp | `mcp/hex-research-mcp/` | `hex-research-v*` | publish-hex-research.yml |
 
-**Shared dependency:** `mcp/hex-common/` (private, `file:` linked) — changes there affect ALL 3 packages.
+**Shared dependency:** `mcp/hex-common/` (private, bundled into publishable packages) — changes there affect ALL 4 packages.
 
 **Repository gates:** publishing commits all repo changes, so marketplace and shared registry validation must pass before tagging.
 
@@ -33,7 +34,7 @@ Publishes one of the bundled MCP servers to npm. Tag push triggers GitHub Action
 
 ### 1. Scan all packages for unpublished changes
 
-For each of the 3 packages above, run in parallel:
+For each of the 4 packages above, run in parallel:
 
 ```bash
 # Last tag for this package
@@ -68,6 +69,7 @@ Display summary table:
 | hex-line-mcp  | 1.1.1  | 1.1.1  | 2       | 6 files  | needs release  |
 | hex-graph-mcp | 0.2.1  | 0.2.1  | 0       | 3 files  | needs release  |
 | hex-ssh-mcp   | 1.1.1  | 1.1.1  | 0       | 0        | up to date     |
+| hex-research-mcp | 0.1.0 | not published | 1 | 0 | needs first release |
 ```
 
 If no packages need release → report "All packages up to date" and stop.
@@ -79,7 +81,7 @@ AskUserQuestion: "Which MCP server to publish?" — list only packages that need
 Set variables:
 - `PKG` = selected package name (e.g. `hex-line-mcp`)
 - `PKG_DIR` = `mcp/${PKG}/`
-- `TAG_PREFIX` = `hex-line-v` | `hex-ssh-v` | `hex-graph-v`
+- `TAG_PREFIX` = `hex-line-v` | `hex-ssh-v` | `hex-graph-v` | `hex-research-v`
 - `PKG_NAME` = `@levnikolaevich/${PKG}`
 - `LAST_TAG` = most recent tag for this package
 
@@ -124,10 +126,24 @@ AskUserQuestion with the recommendation marked "(Recommended)":
 ### 5. Pre-publish checks
 
 ```bash
-cd $PROJECT_ROOT/mcp/hex-common && npm test && cd $PROJECT_ROOT/mcp/${PKG} && npm run check && npm run lint && npm test
+npm --prefix "$PROJECT_ROOT/mcp" --workspace @levnikolaevich/hex-common test
+npm --prefix "$PROJECT_ROOT/mcp" --workspace "${PKG_NAME}" run check
+npm --prefix "$PROJECT_ROOT/mcp" --workspace "${PKG_NAME}" run lint
+npm --prefix "$PROJECT_ROOT/mcp" --workspace "${PKG_NAME}" test
+npm --prefix "$PROJECT_ROOT/mcp" test
+npm --prefix "$PROJECT_ROOT/mcp" audit --audit-level=moderate
 ```
 
-**Gate:** hex-common tests + package check/lint/test must all pass. If any fails — fix before proceeding.
+**Gate:** hex-common tests + package check/lint/test + workspace test/audit must all pass. If any fails — fix before proceeding.
+
+For `hex-research-mcp`, also run:
+
+```bash
+npm --prefix "$PROJECT_ROOT/mcp" --workspace @levnikolaevich/hex-research-mcp run evals
+npm --prefix "$PROJECT_ROOT/mcp" --workspace @levnikolaevich/hex-research-mcp run benchmark
+npm --prefix "$PROJECT_ROOT/mcp" --workspace @levnikolaevich/hex-research-mcp run docs:quality:check
+npm --prefix "$PROJECT_ROOT/mcp" --workspace @levnikolaevich/hex-research-mcp pack --dry-run
+```
 
 **hex-graph blast radius check** (when `hex-common/` changed):
 
@@ -241,7 +257,7 @@ mcp__hex-line__grep_search(pattern: "${NEW_VERSION}", path: "mcp/${PKG}/dist/ser
 ```
 ### 8. Sync version in server.json (MCP Registry metadata)
 
-Update both `version` and `packages[0].version` in `mcp/${PKG}/server.json`:
+Update both `version` and `packages[0].version` in `mcp/${PKG}/server.json`. If `server.json` does not exist, stop before tagging and add MCP Registry metadata plus the matching `publish-hex-*.yml` workflow first:
 ```bash
 node --input-type=module -e "import{readFileSync,writeFileSync}from'fs';const file='$PROJECT_ROOT/mcp/${PKG}/server.json';const version='${NEW_VERSION}';const json=JSON.parse(readFileSync(file,'utf8'));json.version=version;json.packages[0].version=version;writeFileSync(file, JSON.stringify(json,null,2)+'\n');"
 ```

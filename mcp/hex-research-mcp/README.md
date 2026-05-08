@@ -1,6 +1,17 @@
 # hex-research-mcp
 
-Local MCP server for indexing research hypotheses, goals, tasks, sources, and benchmark run manifests into a SQLite research graph.
+Markdown-first MCP server for indexing research hypotheses, goals, tasks, sources, and benchmark run manifests into a SQLite research graph.
+
+[![npm](https://img.shields.io/npm/v/@levnikolaevich/hex-research-mcp)](https://www.npmjs.com/package/@levnikolaevich/hex-research-mcp)
+[![downloads](https://img.shields.io/npm/dm/@levnikolaevich/hex-research-mcp)](https://www.npmjs.com/package/@levnikolaevich/hex-research-mcp)
+[![license](https://img.shields.io/npm/l/@levnikolaevich/hex-research-mcp)](./LICENSE)
+![node](https://img.shields.io/node/v/@levnikolaevich/hex-research-mcp)
+
+## Install
+
+```powershell
+claude mcp add -s user hex-research -- npx -y @levnikolaevich/hex-research-mcp
+```
 
 ## Local Use
 
@@ -56,7 +67,7 @@ The test fixture covers live, pending implementation, valid refine, refine gap, 
 <!-- HEX_RESEARCH_QUALITY_START -->
 ## Quality Snapshot
 
-Release readiness: Server MVP verified on deterministic fixtures. npm publish, btc-trader migration, Phase 7 pull-up, and skill packaging are intentionally out of scope for this snapshot.
+Release readiness: Server MVP verified on deterministic fixtures with npm packaging enabled. btc-trader migration, Phase 7 pull-up, and skill packaging remain out of scope for this snapshot.
 
 | Metric | Value |
 |---|---:|

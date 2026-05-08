@@ -1,6 +1,6 @@
 ## Quality Snapshot
 
-Release readiness: Server MVP verified on deterministic fixtures. npm publish, btc-trader migration, Phase 7 pull-up, and skill packaging are intentionally out of scope for this snapshot.
+Release readiness: Server MVP verified on deterministic fixtures with npm packaging enabled. btc-trader migration, Phase 7 pull-up, and skill packaging remain out of scope for this snapshot.
 
 | Metric | Value |
 |---|---:|

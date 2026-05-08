@@ -131,7 +131,7 @@ The preserved VPS environment template is kept at [`docs/examples/hex_bridge_vps
 
 ## MCP Servers (Optional)
 
-Bundled MCP servers extend agent capabilities — hash-verified editing, code intelligence, and remote access. All skills work without MCP (fallback to built-in tools), but MCP servers improve accuracy and save tokens. MCP errors stay as `status: "ERROR"` and include `failure_class`, `next_action`, and recovery fields so skills can feed transport/tool/auth/rate-limit signals into Loop Health without inventing a second retry loop.
+Bundled MCP servers extend agent capabilities — hash-verified editing, code intelligence, remote access, and research graph navigation. All skills work without MCP (fallback to built-in tools), but MCP servers improve accuracy and save tokens. MCP errors stay as `status: "ERROR"` and include `failure_class`, `next_action`, and recovery fields so skills can feed transport/tool/auth/rate-limit signals into Loop Health without inventing a second retry loop.
 
 ### Bundled servers
 
@@ -140,8 +140,9 @@ Bundled MCP servers extend agent capabilities — hash-verified editing, code in
 | **[hex-line-mcp](mcp/hex-line-mcp/)** | Every line carries a content hash — edits prove the agent sees current content. Prevents stale-context corruption. Includes validation hooks. | 9 | [README](mcp/hex-line-mcp/README.md) · [npm](https://www.npmjs.com/package/@levnikolaevich/hex-line-mcp) |
 | **[hex-graph-mcp](mcp/hex-graph-mcp/)** | Indexes codebases into a deterministic SQLite graph with framework-aware overlays, capability-first quality tooling, optional SCIP interop, and architecture/reference analysis. | 14 | [README](mcp/hex-graph-mcp/README.md) · [npm](https://www.npmjs.com/package/@levnikolaevich/hex-graph-mcp) |
 | **[hex-ssh-mcp](mcp/hex-ssh-mcp/)** | Hash-verified remote file editing and SFTP transfer over SSH. Normalized output for minimal token usage. | 8 | [README](mcp/hex-ssh-mcp/README.md) · [npm](https://www.npmjs.com/package/@levnikolaevich/hex-ssh-mcp) |
+| **[hex-research-mcp](mcp/hex-research-mcp/)** | Indexes markdown hypotheses, goals, tasks, sources, and benchmark manifests into a local SQLite research graph. | 15 | [README](mcp/hex-research-mcp/README.md) · [npm](https://www.npmjs.com/package/@levnikolaevich/hex-research-mcp) |
 
-Deterministic scope rule: `hex-line` and `hex-graph` keep `path` as the project anchor. In normal use the agent fills it automatically from the active file or project root, so users usually do not need to type it manually. `hex-ssh` runs on Windows/macOS/Linux hosts; remote shell tools stay POSIX-oriented, while SFTP transfers support platform-aware remote paths.
+Deterministic scope rule: `hex-line`, `hex-graph`, and `hex-research` keep `path` as the project anchor. In normal use the agent fills it automatically from the active file or project root, so users usually do not need to type it manually. `hex-research` writes its local index under `.hex-skills/researchgraph/`. `hex-ssh` runs on Windows/macOS/Linux hosts; remote shell tools stay POSIX-oriented, while SFTP transfers support platform-aware remote paths.
 
 <!-- GENERATED:HEX_GRAPH_MCP_STATUS:START -->
 `hex-graph-mcp` quality snapshot: `106/106` tests passing, `1` curated corpus, `1` pinned external corpora, parser-first `green`.
@@ -158,16 +159,16 @@ Deterministic scope rule: `hex-line` and `hex-graph` keep `path` as the project 
 **CLI setup:**
 ```bash
 # hex-line — hash-verified file editing (bundled)
-npm i -g @levnikolaevich/hex-line-mcp
-claude mcp add -s user hex-line -- hex-line-mcp
+claude mcp add -s user hex-line -- npx -y @levnikolaevich/hex-line-mcp
 
 # hex-ssh — token-efficient SSH with hash verification (bundled)
-npm i -g @levnikolaevich/hex-ssh-mcp
-claude mcp add -s user hex-ssh -- hex-ssh-mcp
+claude mcp add -s user hex-ssh -- npx -y @levnikolaevich/hex-ssh-mcp
 
 # hex-graph — code knowledge graph (bundled)
-npm i -g @levnikolaevich/hex-graph-mcp
-claude mcp add -s user hex-graph -- hex-graph-mcp
+claude mcp add -s user hex-graph -- npx -y @levnikolaevich/hex-graph-mcp
+
+# hex-research — research hypothesis graph (bundled)
+claude mcp add -s user hex-research -- npx -y @levnikolaevich/hex-research-mcp
 
 # Context7 — library documentation (HTTP, optional API key)
 claude mcp add -s user --transport http --header "CONTEXT7_API_KEY: YOUR_KEY" context7 https://mcp.context7.com/mcp
@@ -418,7 +419,7 @@ The active host model performs orchestration and verification. For code and stor
 <details>
 <summary><b>What MCP servers are included?</b></summary>
 
-Three bundled MCP servers, all published on npm: `hex-line-mcp` (hash-verified file editing — every line carries a content hash, preventing stale-context corruption), `hex-graph-mcp` (code knowledge graph with symbol search, references, architecture analysis, and SCIP interop), and `hex-ssh-mcp` (hash-verified remote editing and SFTP over SSH). Skills work without MCP servers (fallback to built-in tools), but MCP improves edit accuracy and reduces token usage. See [MCP Servers](#mcp-servers-optional) for setup.
+Four bundled MCP servers are published on npm: `hex-line-mcp` (hash-verified file editing), `hex-graph-mcp` (code knowledge graph), `hex-ssh-mcp` (hash-verified remote editing and SFTP over SSH), and `hex-research-mcp` (markdown research graph indexing). Skills work without MCP servers (fallback to built-in tools), but MCP improves edit accuracy and reduces token usage. See [MCP Servers](#mcp-servers-optional) for setup.
 
 </details>
 

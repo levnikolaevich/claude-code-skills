@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { execFileSync } from "node:child_process";
+import { boundedLimit } from "@levnikolaevich/hex-common/runtime/schema";
 import { auditTaskInvariants, indexProject, verifyProject } from "./indexer.mjs";
 import { dbPathFor, getStore } from "./store.mjs";
 
@@ -9,9 +10,7 @@ function projectPath(path) {
 }
 
 function limit(value, fallback = 50, max = 250) {
-    const n = Number(value ?? fallback);
-    if (!Number.isFinite(n)) return fallback;
-    return Math.max(1, Math.min(max, Math.trunc(n)));
+    return boundedLimit(value, fallback, max);
 }
 
 function ensureIndexed(path) {

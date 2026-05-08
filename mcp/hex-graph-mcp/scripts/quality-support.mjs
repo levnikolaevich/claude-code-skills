@@ -1,7 +1,14 @@
-import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+    ensureDir,
+    readJson,
+    replaceGeneratedBlock,
+    replaceSingleLine,
+    writeJson,
+} from "@levnikolaevich/hex-common/quality/artifacts";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -25,13 +32,7 @@ export const paths = {
     testDir: join(packageRoot, "test"),
 };
 
-export function readJson(path) {
-    return JSON.parse(readFileSync(path, "utf8"));
-}
-
-export function writeJson(path, value) {
-    writeFileSync(path, `${JSON.stringify(value, null, 2)}\n`, "utf8");
-}
+export { ensureDir, readJson, replaceGeneratedBlock, replaceSingleLine, writeJson };
 
 export function todayIso() {
     return new Date().toISOString().slice(0, 10);
@@ -97,30 +98,6 @@ export function isCorpusMaterialized(corpus, cacheRoot = getDefaultCorpusCacheDi
     return existsSync(join(getCorpusCheckoutDir(corpus, cacheRoot), ".git"));
 }
 
-export function ensureDir(path) {
-    mkdirSync(path, { recursive: true });
-}
-
-export function replaceGeneratedBlock(text, marker, content) {
-    const start = `<!-- GENERATED:${marker}:START -->`;
-    const end = `<!-- GENERATED:${marker}:END -->`;
-    const pattern = new RegExp(`${escapeRegExp(start)}[\\s\\S]*?${escapeRegExp(end)}`);
-    if (!pattern.test(text)) {
-        throw new Error(`Generated block ${marker} not found`);
-    }
-    return text.replace(pattern, `${start}\n${content}\n${end}`);
-}
-
-export function replaceSingleLine(text, pattern, replacement, description) {
-    if (!pattern.test(text)) {
-        throw new Error(`${description} not found`);
-    }
-    return text.replace(pattern, replacement);
-}
-
-function escapeRegExp(value) {
-    return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
 
 function summarizeFrameworkCoverage(family) {
     const frameworks = Object.values(family.frameworks || {});

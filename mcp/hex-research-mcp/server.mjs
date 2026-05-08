@@ -4,10 +4,16 @@ const version = typeof __HEX_VERSION__ !== "undefined" ? __HEX_VERSION__
     : (await import("node:module")).createRequire(import.meta.url)("./package.json").version;
 
 import { z } from "zod";
+import { flexLimit } from "@levnikolaevich/hex-common/runtime/schema";
 import { createServerRuntime } from "@levnikolaevich/hex-common/runtime/mcp-bootstrap";
+import {
+    DESTRUCTIVE_IDEMPOTENT_ANNOTATIONS,
+    DESTRUCTIVE_NON_IDEMPOTENT_ANNOTATIONS,
+    READ_ONLY_ANNOTATIONS,
+    registerStructuredTool,
+} from "@levnikolaevich/hex-common/runtime/structured-tools";
 import { checkForUpdates } from "@levnikolaevich/hex-common/runtime/update-check";
 import { closeAllStores } from "./lib/store.mjs";
-import { researchResult } from "./lib/result.mjs";
 import { BaseOutputSchema } from "./lib/schemas.mjs";
 import {
     analyzeProgress,
@@ -39,7 +45,7 @@ const PathSchema = z.object({
     path: z.string().optional().describe("Project root containing docs/hypotheses, docs/goals, and benchmark/runs"),
 }).strict();
 
-const Limit = z.union([z.number(), z.string()]).optional();
+const Limit = flexLimit();
 
 const SelectorSchema = z.object({
     path: z.string().optional().describe("Indexed project root"),
@@ -47,20 +53,13 @@ const SelectorSchema = z.object({
     claim_substring: z.string().optional().describe("Fallback selector by claim substring"),
 }).strict();
 
-const ReadOnly = { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false };
+const ReadOnly = READ_ONLY_ANNOTATIONS;
 
-function tool(name, spec, handler, { indexError = false } = {}) {
-    server.registerTool(name, {
+function tool(name, spec, handler, { errorStatuses = ["ERROR"] } = {}) {
+    registerStructuredTool(server, name, spec, handler, {
         outputSchema: BaseOutputSchema,
-        ...spec,
-    }, async (params) => {
-        try {
-            const structured = handler(params ?? {});
-            const isError = indexError && ["INVALID", "UNSUPPORTED", "ERROR"].includes(structured.status);
-            return researchResult(structured, { isError, large: JSON.stringify(structured).length > 100_000 });
-        } catch (error) {
-            return researchResult(normalizeToolError(error), { isError: true });
-        }
+        errorStatuses,
+        normalizeError: normalizeToolError,
     });
 }
 
@@ -68,8 +67,8 @@ tool("index_hypotheses", {
     title: "Index Hypotheses",
     description: "Rebuild the local SQLite research graph from docs/hypotheses, docs/goals, and benchmark run manifests.",
     inputSchema: PathSchema,
-    annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: false },
-}, indexHypotheses, { indexError: true });
+    annotations: DESTRUCTIVE_IDEMPOTENT_ANNOTATIONS,
+}, indexHypotheses, { errorStatuses: ["INVALID", "UNSUPPORTED", "ERROR"] });
 
 tool("verify_index", {
     title: "Verify Research Index Inputs",
@@ -215,7 +214,7 @@ tool("export_canvas", {
         mode: z.enum(["merge", "overwrite"]).optional().describe("merge preserves existing node positions; overwrite creates a fresh layout"),
         dry_run: z.boolean().optional().describe("Preview canvas JSON without writing the file"),
     }).strict(),
-    annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: false },
+    annotations: DESTRUCTIVE_NON_IDEMPOTENT_ANNOTATIONS,
 }, exportCanvas);
 
 const transport = new StdioServerTransport();

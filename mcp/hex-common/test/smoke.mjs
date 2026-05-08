@@ -8,6 +8,9 @@ import { getParser, getLanguage, treeSitterArtifactManifest, treeSitterArtifactP
 import { existsSync } from "node:fs";
 
 import { result, errorResult } from "../src/runtime/results.mjs";
+import { structuredToolResult } from "../src/runtime/structured-tools.mjs";
+import { baseOutputSchema, boundedLimit } from "../src/runtime/schema.mjs";
+import { replaceGeneratedBlock, stableJson, textStats } from "../src/quality/artifacts.mjs";
 
 
 test("hash protocol stays stable", () => {
@@ -78,6 +81,25 @@ test("result() with status ERROR sets isError", () => {
     const r = result({ status: "ERROR", error: { code: "X", message: "fail", recovery: "fix" } });
     assert.equal(r.isError, true);
     assert.equal(r.structuredContent.status, "ERROR");
+});
+
+test("structured results support explicit domain error statuses", () => {
+    const invalid = structuredToolResult({ status: "INVALID" }, { errorStatuses: ["INVALID"] });
+    assert.equal(invalid.isError, true);
+    const diagnostic = structuredToolResult({ status: "INVALID" }, { isError: false, errorStatuses: ["INVALID"] });
+    assert.equal(diagnostic.isError, undefined);
+});
+
+test("schema and quality helpers cover shared MCP package needs", () => {
+    assert.equal(boundedLimit("5", 20, 10), 5);
+    assert.equal(boundedLimit("bad", 20, 10), 10);
+    assert.deepEqual(baseOutputSchema().parse({ status: "OK", summary: { count: 1 } }).summary, { count: 1 });
+    assert.equal(stableJson({ a: 1 }), '{\n  "a": 1\n}\n');
+    assert.deepEqual(textStats("abcd"), { chars: 4, estimated_tokens: 1 });
+    assert.equal(
+        replaceGeneratedBlock("x\n<!-- GENERATED:A:START -->\nold\n<!-- GENERATED:A:END -->", "A", "new"),
+        "x\n<!-- GENERATED:A:START -->\nnew\n<!-- GENERATED:A:END -->",
+    );
 });
 
 test("errorResult() builds canonical error envelope", () => {

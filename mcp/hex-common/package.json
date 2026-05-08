@@ -8,6 +8,7 @@
     "./runtime/error-classifier": "./src/runtime/error-classifier.mjs",
     "./runtime/schema": "./src/runtime/schema.mjs",
     "./runtime/results": "./src/runtime/results.mjs",
+    "./runtime/structured-tools": "./src/runtime/structured-tools.mjs",
     "./runtime/update-check": "./src/runtime/update-check.mjs",
     "./text-protocol/hash": "./src/text-protocol/hash.mjs",
     "./output/normalize": "./src/output/normalize.mjs",
@@ -15,7 +16,8 @@
     "./parser/languages": "./src/parser/languages.mjs",
     "./parser/outline": "./src/parser/outline.mjs",
     "./git/semantic-diff": "./src/git/semantic-diff.mjs",
-    "./text/file-text": "./src/text/file-text.mjs"
+    "./text/file-text": "./src/text/file-text.mjs",
+    "./quality/artifacts": "./src/quality/artifacts.mjs"
   },
   "files": [
     "src/",

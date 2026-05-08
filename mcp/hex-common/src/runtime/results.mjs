@@ -9,16 +9,21 @@ import { classifyMcpFailure } from "./error-classifier.mjs";
  *   Must include `status` field matching canonical vocabulary (OK, ERROR, CONFLICT, etc.).
  * @param {object} [opts]
  * @param {boolean} [opts.large=false] - Set _meta for large result persistence override.
+ * @param {boolean|null} [opts.isError=null] - Force or suppress MCP tool-level error marking.
+ * @param {string[]} [opts.errorStatuses=["ERROR"]] - Status values treated as errors when isError is null.
  * @returns {{ content: Array, structuredContent: object, isError?: boolean, _meta?: object }}
  */
-export function result(structured, { large = false } = {}) {
+export function result(structured, { large = false, isError = null, errorStatuses = ["ERROR"] } = {}) {
     const text = JSON.stringify(structured);
     const response = {
         content: [{ type: "text", text }],
         structuredContent: structured,
     };
     if (large) response._meta = LARGE_RESULT_META;
-    if (structured.status === "ERROR") response.isError = true;
+    const resolvedError = isError === null
+        ? new Set(errorStatuses).has(structured?.status)
+        : isError;
+    if (resolvedError) response.isError = true;
     return response;
 }
 

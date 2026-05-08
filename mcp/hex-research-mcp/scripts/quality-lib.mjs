@@ -1,8 +1,16 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+    assertExactCoverage,
+    compareOrWrite as compareOrWriteArtifact,
+    readJson,
+    stableJson,
+    textStats,
+    writeJson,
+} from "@levnikolaevich/hex-common/quality/artifacts";
 import { researchResult } from "../lib/result.mjs";
 import {
     analyzeProgress,
@@ -62,32 +70,14 @@ export function ensureDirs() {
     }
 }
 
-export function stableJson(value) {
-    return `${JSON.stringify(value, null, 2)}\n`;
-}
+export { readJson, stableJson, textStats, writeJson };
 
-export function readJson(path) {
-    return JSON.parse(readFileSync(path, "utf8"));
-}
-
-export function writeJson(path, value) {
-    mkdirSync(dirname(path), { recursive: true });
-    writeFileSync(path, stableJson(value), "utf8");
-}
-
-export function compareOrWrite(path, content, { check = false } = {}) {
-    const current = existsSync(path) ? readFileSync(path, "utf8") : null;
-    if (check) {
-        assert.equal(current, content, `${relative(PACKAGE_ROOT, path)} is out of sync`);
-        return false;
-    }
-    mkdirSync(dirname(path), { recursive: true });
-    writeFileSync(path, content, "utf8");
-    return current !== content;
+export function compareOrWrite(path, content, options = {}) {
+    return compareOrWriteArtifact(path, content, { root: PACKAGE_ROOT, ...options });
 }
 
 export function assertToolCoverage(names) {
-    assert.deepEqual([...names].sort(), [...TOOL_NAMES].sort(), "tool matrix must cover exactly TOOL_NAMES");
+    assertExactCoverage(names, TOOL_NAMES, "tool matrix must cover exactly TOOL_NAMES");
 }
 
 export function callTool(name, params = {}) {
@@ -137,11 +127,6 @@ export function fixtureResearchFiles(root = FIXTURE_ROOT) {
     }
     walk(root);
     return files.sort();
-}
-
-export function textStats(value) {
-    const chars = value.length;
-    return { chars, estimated_tokens: Math.ceil(chars / 4) };
 }
 
 export function baselineCorpusStats(root = FIXTURE_ROOT) {

@@ -2,6 +2,7 @@
 
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { replaceDelimitedBlock } from "@levnikolaevich/hex-common/quality/artifacts";
 import {
     README_PATH,
     QUALITY_SUMMARY_PATH,
@@ -18,9 +19,7 @@ const block = `${start}\n${summary}\n${end}`;
 
 let next;
 if (readme.includes(start) || readme.includes(end)) {
-    const pattern = new RegExp(`${start}[\\s\\S]*?${end}`);
-    assert.ok(pattern.test(readme), "README quality markers are incomplete");
-    next = readme.replace(pattern, block);
+    next = replaceDelimitedBlock(readme, start, end, summary);
 } else {
     const anchor = "\n## Goal-Directed Workflow";
     assert.ok(readme.includes(anchor), "README missing Goal-Directed Workflow anchor");

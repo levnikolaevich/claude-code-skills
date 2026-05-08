@@ -35,7 +35,6 @@
     "zod": "Zod schemas are registered directly with the current MCP TypeScript SDK."
   },
   "dependencies": {
-    "@levnikolaevich/hex-common": "file:../hex-common",
     "@modelcontextprotocol/sdk": "^1.29.0",
     "better-sqlite3": "^12.9.0",
     "chokidar": "^5.0.0",

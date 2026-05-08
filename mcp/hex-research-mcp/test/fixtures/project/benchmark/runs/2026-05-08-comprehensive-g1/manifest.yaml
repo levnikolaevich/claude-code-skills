@@ -1,0 +1,12 @@
+id: R-comprehensive-g1
+type: comprehensive
+comprehensive: true
+hypothesis: null
+goals:
+  - G1
+included_hypotheses:
+  - H01
+created_at: 2026-05-08
+branch: main
+git_commit: def5678
+results_path: results.json

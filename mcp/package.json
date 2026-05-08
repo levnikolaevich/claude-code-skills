@@ -8,13 +8,14 @@
     "hex-common",
     "hex-line-mcp",
     "hex-ssh-mcp",
-    "hex-graph-mcp"
+    "hex-graph-mcp",
+    "hex-research-mcp"
   ],
   "scripts": {
     "build:tree-sitter-artifacts": "node hex-common/scripts/build-tree-sitter-artifacts.mjs",
     "build": "npm --workspaces --if-present run build",
     "check": "node check-output-contracts.mjs && npm --workspaces --if-present run check",
-    "test": "node check-output-contracts.mjs && npm --workspace @levnikolaevich/hex-common test && npm --workspace @levnikolaevich/hex-line-mcp test && npm --workspace @levnikolaevich/hex-graph-mcp run test:unit && npm --workspace @levnikolaevich/hex-ssh-mcp test",
+    "test": "node check-output-contracts.mjs && npm --workspace @levnikolaevich/hex-common test && npm --workspace @levnikolaevich/hex-line-mcp test && npm --workspace @levnikolaevich/hex-graph-mcp run test:unit && npm --workspace @levnikolaevich/hex-ssh-mcp test && npm --workspace @levnikolaevich/hex-research-mcp test",
     "test:full": "npm run test && npm --workspace @levnikolaevich/hex-graph-mcp test"
   },
   "overrides": {

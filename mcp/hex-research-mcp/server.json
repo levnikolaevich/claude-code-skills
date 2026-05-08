@@ -2,17 +2,17 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.levnikolaevich/hex-research-mcp",
   "title": "Hex Research",
-  "description": "Markdown-first research hypothesis graph MCP server for goals, hypotheses, run manifests, task links, sources, and coherent goal metrics.",
+  "description": "Markdown-first research graph MCP for hypotheses, goals, run manifests, tasks, and sources.",
   "repository": {
     "url": "https://github.com/levnikolaevich/claude-code-skills",
     "source": "github"
   },
-  "version": "0.1.0",
+  "version": "0.1.1",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "@levnikolaevich/hex-research-mcp",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "transport": {
         "type": "stdio"
       }

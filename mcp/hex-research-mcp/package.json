@@ -1,6 +1,6 @@
 {
   "name": "@levnikolaevich/hex-research-mcp",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "mcpName": "io.github.levnikolaevich/hex-research-mcp",
   "type": "module",
   "description": "Markdown-first research hypothesis graph MCP server for goals, hypotheses, run manifests, task links, sources, and coherent goal metrics.",

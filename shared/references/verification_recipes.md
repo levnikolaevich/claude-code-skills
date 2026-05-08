@@ -133,7 +133,7 @@ sqlite3 /var/lib/${PROJECT_NAME}/relay.db "SELECT user_id, status FROM allowed_u
 # Expected: primary operator with status='allowed'
 
 # Task polling endpoint: non-empty queues notify primary only once per 24 hours; empty queues log only.
-curl -fsS -X POST http://127.0.0.1:${RELAY_HOOK_PORT}/tasks/poll | jq .
+curl -fsS -X POST -H "Authorization: Bearer ${RELAY_HTTP_TOKEN}" http://127.0.0.1:${RELAY_HOOK_PORT}/tasks/poll | jq .
 systemctl list-timers ${SERVICE_PREFIX}-dispatch.timer --no-pager
 # Expected: JSON {ok:true,count:N}; timer cadence is 15 minutes.
 
@@ -251,7 +251,7 @@ grep -oE '\$\{[A-Z_][A-Z_]*\}' ${TARGET_REPO_PATH}/.claude/commands/dispatcher.m
 # Expected: empty output
 
 # .env.local has the required VPS_* keys
-for key in HOST SSH_KEY BOT_USER PROJECT_NAME SERVICE_PREFIX TELEGRAM_CHAT_ID PROJECT_DIR GIT_PROVIDER REPO_SLUG RELAY_HOOK_PORT DISPATCH_COMMAND_NAME AGENT_SKILLS_DIR AGENT_SKILLS_PLUGINS; do
+for key in HOST SSH_KEY BOT_USER PROJECT_NAME SERVICE_PREFIX TELEGRAM_CHAT_ID PROJECT_DIR GIT_PROVIDER REPO_SLUG RELAY_HOOK_PORT RELAY_HTTP_TOKEN DISPATCH_COMMAND_NAME AGENT_SKILLS_DIR AGENT_SKILLS_PLUGINS; do
   grep -q "^VPS_${key}=" ${TARGET_REPO_PATH}/.env.local || echo "missing VPS_${key}"
 done
 # Expected: no missing VPS_* output

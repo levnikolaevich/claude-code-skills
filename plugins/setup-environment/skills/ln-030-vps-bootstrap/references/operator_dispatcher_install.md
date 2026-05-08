@@ -36,6 +36,7 @@ append_env VPS_PROJECT_DIR "${PROJECT_DIR}"
 append_env VPS_GIT_PROVIDER "${GIT_PROVIDER}"
 append_env VPS_REPO_SLUG "${REPO_SLUG}"
 append_env VPS_RELAY_HOOK_PORT "${RELAY_HOOK_PORT}"
+append_env VPS_RELAY_HTTP_TOKEN "$(grep -E '^RELAY_HTTP_TOKEN=' /etc/${PROJECT_NAME}/secrets.env | cut -d= -f2-)"
 append_env VPS_DISPATCH_COMMAND_NAME "${DISPATCH_COMMAND_NAME}"
 append_env VPS_AGENT_SKILLS_DIR "${AGENT_SKILLS_DIR}"
 append_env VPS_AGENT_SKILLS_PLUGINS "${AGENT_SKILLS_PLUGINS}"
@@ -47,7 +48,7 @@ Confirm `.env.local` is git-ignored.
 
 ```bash
 grep -oE '\$\{[A-Z_][A-Z_]*\}' ${TARGET_REPO_PATH}/.claude/commands/dispatcher.md | grep -v '^\$\{VPS_'
-grep -E '^VPS_(HOST|SSH_KEY|BOT_USER|PROJECT_NAME|SERVICE_PREFIX|TELEGRAM_CHAT_ID|PROJECT_DIR|GIT_PROVIDER|REPO_SLUG|RELAY_HOOK_PORT|DISPATCH_COMMAND_NAME|AGENT_SKILLS_DIR|AGENT_SKILLS_PLUGINS)=' ${TARGET_REPO_PATH}/.env.local
+grep -E '^VPS_(HOST|SSH_KEY|BOT_USER|PROJECT_NAME|SERVICE_PREFIX|TELEGRAM_CHAT_ID|PROJECT_DIR|GIT_PROVIDER|REPO_SLUG|RELAY_HOOK_PORT|RELAY_HTTP_TOKEN|DISPATCH_COMMAND_NAME|AGENT_SKILLS_DIR|AGENT_SKILLS_PLUGINS)=' ${TARGET_REPO_PATH}/.env.local
 ```
 
-The first command should be empty. The second should print 13 lines.
+The first command should be empty. The second should print 14 lines.

@@ -49,6 +49,44 @@ test("env docs keep idle vars and remove dead GitHub client id", () => {
   assert.doesNotMatch(secrets, /GITHUB_APP_CLIENT_ID/);
 });
 
+test("relay HTTP token is propagated through deploy references", () => {
+  const substitutions = readFileSync(join(bootstrapRefs, "substitution_rules.md"), "utf8");
+  const operatorInstall = readFileSync(
+    join(bootstrapRefs, "operator_dispatcher_install.md"),
+    "utf8"
+  );
+  const settingsHooks = JSON.parse(
+    readFileSync(join(bootstrapRefs, "settings.hooks.fragment.json"), "utf8")
+  ) as { hooks: Record<string, { hooks: { headers?: Record<string, string> }[] }[]> };
+
+  assert.match(substitutions, /\$RELAY_HTTP_TOKEN/);
+  assert.match(operatorInstall, /append_env VPS_RELAY_HTTP_TOKEN/);
+  assert.match(operatorInstall, /RELAY_HTTP_TOKEN=/);
+  assert.match(operatorInstall, /RELAY_HTTP_TOKEN\|DISPATCH_COMMAND_NAME/);
+
+  const hookHeaders = Object.values(settingsHooks.hooks)
+    .flat()
+    .flatMap((entry) => entry.hooks.map((hook) => hook.headers?.Authorization));
+  assert.ok(hookHeaders.length > 0);
+  for (const authorization of hookHeaders) {
+    assert.equal(authorization, "Bearer ${RELAY_HTTP_TOKEN}");
+  }
+});
+
+test("protected local API examples include bearer auth", () => {
+  const operator = readFileSync(join(bootstrapRefs, "operator.CLAUDE.md"), "utf8");
+  const verification = readFileSync(join(bootstrapRefs, "verification_recipes.md"), "utf8");
+  const refsReadme = readFileSync(join(bootstrapRefs, "README.md"), "utf8");
+
+  assert.match(operator, /memory\/add[\s\S]*Authorization: Bearer \${RELAY_HTTP_TOKEN}/);
+  assert.match(operator, /memory\/recent\?n=20/);
+  assert.match(operator, /dispatch\/recent\?n=10/);
+  assert.match(operator, /Authorization: Bearer \${RELAY_HTTP_TOKEN}.*dispatch\/recent/s);
+  assert.match(verification, /Authorization: Bearer \${RELAY_HTTP_TOKEN}.*\/tasks\/poll/);
+  assert.match(refsReadme, /\/hook\/\*/, "README documents protected hook routes");
+  assert.match(refsReadme, /Authorization: Bearer \${RELAY_HTTP_TOKEN}/);
+});
+
 test("redeploy archive excludes local artifacts and package outputs", () => {
   const redeploy = read("agents/hex-relay/docs/redeploy.md");
 

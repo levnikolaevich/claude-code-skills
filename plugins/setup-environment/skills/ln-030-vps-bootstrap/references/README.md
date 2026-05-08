@@ -13,6 +13,7 @@ Template files and runbooks used by `ln-030` and its VPS runtime workers. Most t
 | `${BOT_USER}` | `/home/${BOT_USER}/...`, owner of agent files | Linux user (typically UID 1000) |
 | `${PROJECT_DIR}` | working dir for the agent | Cloned repo path on VPS |
 | `${RELAY_HOOK_PORT}` | hex-relay localhost listener and Claude hook URLs | Default `9999`; override for a second project on the same VPS |
+| `${RELAY_HTTP_TOKEN}` | Bearer auth for protected hex-relay hook/API URLs | Required in `/etc/${PROJECT_NAME}/secrets.env`; min 32 chars |
 | `${DISPATCH_COMMAND_NAME}` | VPS slash command name and timer injection | Default `${SERVICE_PREFIX}-dispatch` |
 | `${AGENT_SKILLS_REPO_URL}` | Claude/Codex marketplace source | Default `https://github.com/levnikolaevich/claude-code-skills.git` |
 | `${AGENT_SKILLS_REF}` | Git ref for the marketplace source | Default `master` |
@@ -35,17 +36,17 @@ Template files and runbooks used by `ln-030` and its VPS runtime workers. Most t
 | `agent-update.timer` | `/etc/systemd/system/agent-update.timer` | root:root | 644 | — | — (system-wide; always installs) |
 | `settings.agent-config.fragment.json` | jq-merged into `/home/${BOT_USER}/.claude/settings.json` | `${BOT_USER}` | 644 | — (no placeholders) | — (always installs) |
 | `agents/hex-relay/` | `/opt/${SERVICE_PREFIX}-hex-relay` | `${BOT_USER}` | 755 dirs / 644 files | `PROJECT_NAME`, `PROJECT_DIR`, `SERVICE_PREFIX`, `BOT_USER` via service env | `TELEGRAM_BOT_TOKEN` (`ln-033`) |
-| `hex-relay.service` | `/etc/systemd/system/${SERVICE_PREFIX}-hex-relay.service` | root:root | 644 | `PROJECT_NAME`, `PROJECT_DIR`, `SERVICE_PREFIX`, `BOT_USER`, `RELAY_HOOK_PORT` | `TELEGRAM_BOT_TOKEN` (`ln-033`) |
+| `hex-relay.service` | `/etc/systemd/system/${SERVICE_PREFIX}-hex-relay.service` | root:root | 644 | `PROJECT_NAME`, `PROJECT_DIR`, `SERVICE_PREFIX`, `BOT_USER`, `RELAY_HOOK_PORT` | `TELEGRAM_BOT_TOKEN`, `RELAY_HTTP_TOKEN` (`ln-033`) |
 | `register-telegram-commands.sh` | `/usr/local/bin/${SERVICE_PREFIX}-register-telegram-commands` | root:root | 755 | — | `TELEGRAM_BOT_TOKEN` (`ln-033`) |
 | `statusline.sh` | `/home/${BOT_USER}/.claude/statusline.sh` | `${BOT_USER}` | 755 | — (no placeholders) | `TELEGRAM_BOT_TOKEN` (`ln-032`) |
 | `claude-usage-report.sh` | `/usr/local/bin/claude-usage-report` | root:root | 755 | — | `TELEGRAM_BOT_TOKEN` (`ln-032`) |
 | `mint-gh-token.sh` | `/usr/local/bin/${SERVICE_PREFIX}-mint-gh-token` | root:`${BOT_USER}` | 750 | `PROJECT_NAME`, `SERVICE_PREFIX` | `GITHUB_APP_ID` (`ln-032`) |
-| `dispatch.md` | `/home/${BOT_USER}/.claude/commands/${DISPATCH_COMMAND_NAME}.md` | `${BOT_USER}` | 644 | `PROJECT_NAME`, `SERVICE_PREFIX`, `PROJECT_DIR`, `GIT_PROVIDER`, `REPO_SLUG`, `RELAY_HOOK_PORT`, `DISPATCH_COMMAND_NAME` | — |
-| `operator.CLAUDE.md` | **`${PROJECT_DIR}/.claude/CLAUDE.md`** (project-scope, NEVER user-scope under shared `BOT_USER`) | `${BOT_USER}` | 644 | `PROJECT_NAME`, `SERVICE_PREFIX`, `PROJECT_DIR`, `BOT_USER`, `TELEGRAM_CHAT_ID`, `RELAY_HOOK_PORT`, `DISPATCH_COMMAND_NAME`, `GIT_PROVIDER`, `REPO_SLUG` | — |
+| `dispatch.md` | `/home/${BOT_USER}/.claude/commands/${DISPATCH_COMMAND_NAME}.md` | `${BOT_USER}` | 644 | `PROJECT_NAME`, `SERVICE_PREFIX`, `PROJECT_DIR`, `GIT_PROVIDER`, `REPO_SLUG`, `RELAY_HOOK_PORT`, `RELAY_HTTP_TOKEN`, `DISPATCH_COMMAND_NAME` | — |
+| `operator.CLAUDE.md` | **`${PROJECT_DIR}/.claude/CLAUDE.md`** (project-scope, NEVER user-scope under shared `BOT_USER`) | `${BOT_USER}` | 644 | `PROJECT_NAME`, `SERVICE_PREFIX`, `PROJECT_DIR`, `BOT_USER`, `TELEGRAM_CHAT_ID`, `RELAY_HOOK_PORT`, `RELAY_HTTP_TOKEN`, `DISPATCH_COMMAND_NAME`, `GIT_PROVIDER`, `REPO_SLUG` | — |
 | `codex-config.toml.template` | `/home/${BOT_USER}/.codex/config.toml` | `${BOT_USER}` | 644 | `BOT_USER`, `PROJECT_DIR`, `AGENT_SKILLS_REPO_URL`, `AGENT_SKILLS_REF`, selected `AGENT_SKILLS_PLUGINS` block | `REF_API_KEY`, `CONTEXT7_API_KEY` |
 | `codex-notify.sh` | `/home/${BOT_USER}/.codex/notify.sh` | `${BOT_USER}` | 755 | `PROJECT_NAME`, `BOT_USER` | `TELEGRAM_BOT_TOKEN` (`ln-032`, opt-in) |
 | `settings.statusline.fragment.json` | jq-merged into `/home/${BOT_USER}/.claude/settings.json` | `${BOT_USER}` | 644 | `BOT_USER` | `TELEGRAM_BOT_TOKEN` (`ln-032`) |
-| `settings.hooks.fragment.json` | **`${PROJECT_DIR}/.claude/settings.json`** (project-scope; under shared `BOT_USER`, hooks MUST NOT be in user-scope or projects' tmux sessions cross-route between hex-relay instances) | `${BOT_USER}` | 644 | `RELAY_HOOK_PORT` (default `9999`) | `TELEGRAM_BOT_TOKEN` (`ln-033`) |
+| `settings.hooks.fragment.json` | **`${PROJECT_DIR}/.claude/settings.json`** (project-scope; under shared `BOT_USER`, hooks MUST NOT be in user-scope or projects' tmux sessions cross-route between hex-relay instances) | `${BOT_USER}` | 644 | `RELAY_HOOK_PORT`, `RELAY_HTTP_TOKEN` | `TELEGRAM_BOT_TOKEN`, `RELAY_HTTP_TOKEN` (`ln-033`) |
 | `secrets.env.template` | `/etc/${PROJECT_NAME}/secrets.env` | root:`${BOT_USER}` | 640 | `PROJECT_NAME`, `SERVICE_PREFIX` | (operator fills values; ships with `RELAY_VERBOSITY=normal` and `RELAY_INBOUND_REACTIONS`) |
 
 ## Operator-side artifact (rendered → written LOCALLY to operator's project repo)
@@ -67,6 +68,7 @@ VPS_PROJECT_DIR=<repo-clone-path-on-vps>
 VPS_GIT_PROVIDER=<github-or-gitlab>
 VPS_REPO_SLUG=<owner/repo>
 VPS_RELAY_HOOK_PORT=<relay-port>
+VPS_RELAY_HTTP_TOKEN=<relay-http-token>
 VPS_DISPATCH_COMMAND_NAME=<slash-command-name>
 VPS_AGENT_SKILLS_DIR=<skills-clone-path>
 VPS_AGENT_SKILLS_PLUGINS=<agile-workflow-or-list>
@@ -100,7 +102,7 @@ Components:
 
 - **grammY polling** (Telegram inbound) → durable SQLite `messages(kind='text'|'image'|'document', status='queued')` queue → inbound worker delivers with `tmux send-keys "[tg id=<chat>:<msg>] <text>"` only when god-session is ready
 - **Serialized control lane** — `/new_session`, Resume, Delete, and inbound delivery share one async queue/lock so operator text cannot be lost during tmux restarts
-- **Fastify listener on `127.0.0.1:${RELAY_HOOK_PORT}`** — Claude Code HTTP hook receivers (`UserPromptSubmit`, `Stop`, `StopFailure`, `SessionStart`, `PostCompact` via SessionStart route, `SubagentStop`, `PreToolUse`, `PostToolUse`) + application API endpoints (`/tasks/poll`, `/dispatch/*`, `/memory/*`, `/health`)
+- **Fastify listener on `127.0.0.1:${RELAY_HOOK_PORT}`** — Claude Code HTTP hook receivers (`UserPromptSubmit`, `Stop`, `StopFailure`, `SessionStart`, `PostCompact` via SessionStart route, `SubagentStop`, `PreToolUse`, `PostToolUse`) + application API endpoints (`/tasks/poll`, `/dispatch/*`, `/memory/*`, `/health`). `/hook/*`, `/tasks/*`, `/dispatch/*`, and `/memory/*` require `Authorization: Bearer ${RELAY_HTTP_TOKEN}`.
 - **Outbox worker** — drains a SQLite queue of outbound messages with retry/backoff. Stop hook never blocks on Telegram API; even Telegram outage doesn't lose messages
 - **SQLite at `/var/lib/${PROJECT_NAME}/relay.db`** with core tables for messages, pending replies, outbox status routing, sessions/events, dispatch runs/phases, memories, health snapshots, auth rejects, allowed users, and todo state
 - **SessionStart additionalContext injection** — claude sees recent memories + dispatch history at start of every new session

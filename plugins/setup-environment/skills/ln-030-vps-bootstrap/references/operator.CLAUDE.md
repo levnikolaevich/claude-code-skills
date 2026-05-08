@@ -60,6 +60,7 @@ When the operator says «remember X» (or you yourself want to remember an insig
 
 ```bash
 curl -fsS -X POST http://127.0.0.1:${RELAY_HOOK_PORT}/memory/add \
+  -H "Authorization: Bearer ${RELAY_HTTP_TOKEN}" \
   -H 'Content-Type: application/json' \
   -d '{"category":"operator_pref","text":"X","tags":"telegram,style","source":"operator"}'
 ```
@@ -68,14 +69,14 @@ Categories: `operator_pref` | `project_fact` | `incident` | `decision` | `todo`.
 
 Memories are auto-injected into the start of EVERY future session via the `SessionStart` hook — you'll see them in the system context as «Recent memories». Don't manually re-inject; relay does it.
 
-To recall: `curl -fsS http://127.0.0.1:${RELAY_HOOK_PORT}/memory/recent?n=20`. To forget: `POST /memory/forget {"memory_id":N}` or `{"tag_match":"..."}`.
+To recall: `curl -fsS -H "Authorization: Bearer ${RELAY_HTTP_TOKEN}" http://127.0.0.1:${RELAY_HOOK_PORT}/memory/recent?n=20`. To forget: `POST /memory/forget {"memory_id":N}` or `{"tag_match":"..."}` with the same bearer header.
 
 ### Dispatch tracking
 
 `${DISPATCH_COMMAND_NAME}.md` already wires `POST /dispatch/start /phase /end` calls for selected tasks. Direct provider-token access from the work plane is intentionally unavailable; if a path requires GitHub/GitLab secrets, stop and ask the operator/control plane to perform that step externally. To inspect prior runs:
 
 ```bash
-curl -fsS http://127.0.0.1:${RELAY_HOOK_PORT}/dispatch/recent?n=10 | jq .
+curl -fsS -H "Authorization: Bearer ${RELAY_HTTP_TOKEN}" http://127.0.0.1:${RELAY_HOOK_PORT}/dispatch/recent?n=10 | jq .
 ```
 
 ### Health check

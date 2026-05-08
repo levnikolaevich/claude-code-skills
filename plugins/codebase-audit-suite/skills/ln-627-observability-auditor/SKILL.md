@@ -30,7 +30,7 @@ Use `hex-graph` first when traces, call paths, or cross-file references material
 
 ## Workflow
 
-**MANDATORY READ:** Load `references/two_layer_detection.md` for detection methodology.
+Detection policy: use two-layer detection (candidate scan, then context verification); load `references/two_layer_detection.md` only when the verification method is ambiguous.
 
 1) Parse context + output_dir
 2) **Determine project type (Layer 2 pre-check):** Is this a web service (all checks apply), CLI tool (health/probes not applicable), or library (most checks optional)? Adjust applicable checks accordingly.

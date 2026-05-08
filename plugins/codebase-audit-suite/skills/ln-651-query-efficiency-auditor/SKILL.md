@@ -33,7 +33,7 @@ Use `hex-graph` first when reference chains or call paths materially improve que
 
 ## Workflow
 
-**MANDATORY READ:** Load `references/two_layer_detection.md` for detection methodology.
+Detection policy: use two-layer detection (candidate scan, then context verification); load `references/two_layer_detection.md` only when the verification method is ambiguous.
 
 1) **Parse context from contextStore**
    - Extract tech_stack, best_practices, db_config, output_dir

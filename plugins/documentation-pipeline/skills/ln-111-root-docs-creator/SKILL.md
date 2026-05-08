@@ -30,7 +30,8 @@ From coordinator:
   - `ENABLE_WORKFLOW_PRINCIPLES` (optional boolean; default `false`) — when `true`, expands the `{{WORKFLOW_PRINCIPLES_BLOCK}}` placeholder in AGENTS.md with the content of `references/templates/agents_md_workflow_principles.md`
 - `targetDir`: Project root directory
 
-**MANDATORY READ:** Load `references/docs_quality_contract.md`, `references/docs_quality_rules.json`, and `references/agent_instructions_writing_guide.md` (the canonical writing guide for AGENTS.md / CLAUDE.md).
+**MANDATORY READ:** Load `references/docs_quality_contract.md`, and `references/agent_instructions_writing_guide.md` (the canonical writing guide for AGENTS.md / CLAUDE.md).
+Optional rule catalog: load `references/docs_quality_rules.json` only when exact rule IDs, path matrices, or allowlisted placeholder exceptions are needed.
 
 ## Documents Created
 

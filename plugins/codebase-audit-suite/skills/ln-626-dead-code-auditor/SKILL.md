@@ -30,7 +30,7 @@ Use `hex-graph` first when export liveness or workspace hotspots materially impr
 
 ## Workflow
 
-**MANDATORY READ:** Load `references/two_layer_detection.md` for detection methodology.
+Detection policy: use two-layer detection (candidate scan, then context verification); load `references/two_layer_detection.md` only when the verification method is ambiguous.
 
 1) Parse context + output_dir
 2) Run dead code detection (Layer 1: linters, grep)

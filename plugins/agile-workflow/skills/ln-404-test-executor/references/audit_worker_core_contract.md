@@ -2,11 +2,11 @@
 
 # Audit Worker Core Contract
 
-Shared contract for audit workers that analyze one category, write one report file, and return a machine-readable summary to a coordinator.
+Compact envelope for audit workers that analyze one category, write one run-scoped report, and produce one machine-readable summary.
 
-## Required Inputs
+## Inputs
 
-Workers receive the minimum context needed to stay decision-complete:
+Workers receive only the fields they use:
 
 ```json
 {
@@ -16,61 +16,32 @@ Workers receive the minimum context needed to stay decision-complete:
   "summaryArtifactPath": ".hex-skills/runtime-artifacts/runs/{run_id}/evaluation-worker/{worker}--{identifier}.json",
   "tech_stack": {},
   "best_practices": {},
-  "principles": {},
   "domain_mode": "global|domain-aware",
-  "current_domain": {
-    "name": "users",
-    "path": "src/users"
-  },
+  "current_domain": {"name": "users", "path": "src/users"},
   "scan_path": "src/users"
 }
 ```
 
-Rules:
-- Pass only the fields the worker actually uses.
-- `output_dir` is a run-scoped runtime artifact directory, not a public project docs directory.
-- In managed mode, pass both `runId` and `summaryArtifactPath`.
-- In standalone mode, pass neither and let the worker runtime create them.
-- If `summaryArtifactPath` is present, write the worker JSON summary there per `references/evaluation_summary_contract.md` and the audit payload rules in `references/audit_summary_contract.md`.
-- If `domain_mode="domain-aware"`, scope scanning to `scan_path` and tag findings with the domain.
-- If `domain_mode="global"`, use `codebase_root` unless the skill defines a narrower scan target.
+- `output_dir` is a run-scoped runtime artifact directory, not public docs.
+- Managed mode passes `runId` and `summaryArtifactPath`; standalone mode lets the worker runtime create them.
+- Domain-aware runs scan only `scan_path` and tag findings with the domain.
 
-## Runtime Contract
+## Required Runtime Shape
 
-**MANDATORY READ:** Load `references/evaluation_worker_runtime_contract.md`.
+**MANDATORY READ:** Load `references/evaluation_worker_runtime_contract.md`, `references/evaluation_summary_contract.md`, `references/audit_summary_contract.md`, `references/audit_scoring.md`, and `references/templates/audit_worker_report_template.md`.
 
-Workers remain standalone-capable, but coordinator-invoked runs must be backed by `references/scripts/evaluation-worker-runtime/cli.mjs`.
+Workers must:
+- report only unless the skill explicitly allows fixes
+- verify Layer 1 candidates before reporting
+- use precise `file:line` locations
+- apply worker-specific false-positive filters
+- score with the shared audit scoring formula
+- write the markdown report in one complete write
+- write the evaluation-worker JSON summary to `summaryArtifactPath` or the standalone runtime path
 
-## Scoring
+## Summary Payload
 
-**MANDATORY READ:** Load `references/audit_scoring.md`.
-
-Use the shared penalty formula unless the worker adds a diagnostic score that is explicitly informational only.
-
-## Report Contract
-
-**MANDATORY READ:** Load `references/templates/audit_worker_report_template.md`.
-
-Rules:
-- Build the full markdown report in memory, then write it in one call.
-- Use the template's `AUDIT-META`, `Checks`, and `Findings` structure.
-- Add optional blocks such as `FINDINGS-EXTENDED` or `DATA-EXTENDED` only when the worker's local workflow requires them.
-
-## Summary Contract
-
-**MANDATORY READ:** Load `references/evaluation_summary_contract.md`, `references/audit_summary_contract.md`.
-
-Workers must produce the evaluation-worker JSON summary envelope in both modes:
-- managed mode -> write to the exact `summaryArtifactPath`
-- standalone mode -> write to the canonical run-scoped path from the runtime contract
-
-Required JSON fields:
-- `schema_version`
-- `summary_kind`
-- `run_id`
-- `identifier`
-- `producer_skill`
-- `produced_at`
+Minimum audit payload fields:
 - `payload.worker`
 - `payload.status`
 - `payload.operation=auditing`
@@ -80,33 +51,15 @@ Required JSON fields:
 - `payload.audit.score`
 - `payload.audit.issues_total`
 - `payload.audit.severity_counts`
-- `payload.evidence_basis_counts` — optional breakdown by evidence basis (e.g. `{"code_evidence": 5, "research_claim": 1, "agent_inference": 0}`)
+- optional `payload.evidence_basis_counts`
 
-Diagnostic sub-scores never replace the primary penalty-based score.
+Evidence basis defaults to `code_evidence` when omitted for audit findings.
 
-## Evidence Basis
+## Definition of Done
 
-When audit findings are consumed by downstream coordinators, each finding should include `evidence_basis` where determinable:
-- `code_evidence` — finding verified directly in code (grep, AST, pattern match, test result)
-- `research_claim` — finding from external documentation or standards
-- `agent_inference` — finding from agent review opinion
-
-Most audit findings are `code_evidence` by nature (two-layer detection scans code directly). Workers that cannot determine basis should omit the field — the merge worker treats missing `evidence_basis` as `code_evidence` for audit workers.
-
-## Generic Critical Rules
-
-- Report only. Do not auto-fix unless the skill explicitly says otherwise.
-- Use precise locations (`file:line`) for findings.
-- Apply worker-specific false-positive filters before reporting.
-- Keep effort estimates realistic: `S` = `<1h`, `M` = `1-4h`, `L` = `>4h`.
-- If the worker uses two-layer detection, no Layer 1 match is a valid finding without Layer 2 verification.
-
-## Generic Definition of Done
-
-- Input parsed successfully, including `output_dir`.
-- Scan scope resolved correctly (`scan_path` or equivalent).
-- All worker-specific checks completed.
-- Findings collected with severity, location, recommendation, and effort.
-- Score calculated via the shared scoring reference.
-- Report written to `{output_dir}/...` using the shared report template.
-- JSON summary written to the managed or standalone evaluation-worker runtime path.
+- Input parsed, including `output_dir`.
+- Scan scope resolved.
+- Worker-specific checks completed.
+- Findings include severity, location, recommendation, and effort.
+- Report written under `output_dir`.
+- JSON summary written through the worker runtime contract.

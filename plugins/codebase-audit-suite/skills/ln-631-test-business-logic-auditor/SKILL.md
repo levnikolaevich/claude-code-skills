@@ -27,7 +27,7 @@ Receives `contextStore` with: `tech_stack`, `testFilesMetadata`, `codebase_root`
 
 ## Workflow
 
-**MANDATORY READ:** Load `references/two_layer_detection.md` for detection methodology.
+Detection policy: use two-layer detection (candidate scan, then context verification); load `references/two_layer_detection.md` only when the verification method is ambiguous.
 
 1) **Parse Context:** Extract tech stack, framework detection patterns, test file list, output_dir from contextStore
 2) **Scan Codebase (Layer 1):** Scan test files for framework/library tests (see Audit Rules below)

@@ -39,7 +39,7 @@ Use `hex-graph` first when symbol or reference analysis materially improves env-
 
 ## Workflow
 
-**MANDATORY READ:** Load `references/two_layer_detection.md` for detection methodology.
+Detection policy: use two-layer detection (candidate scan, then context verification); load `references/two_layer_detection.md` only when the verification method is ambiguous.
 
 **MANDATORY READ:** Load `references/config_rules.md` for detection patterns.
 

@@ -31,7 +31,7 @@ Use `hex-graph` first when dataflow or call-path analysis materially improves co
 
 ## Workflow
 
-**MANDATORY READ:** Load `references/two_layer_detection.md` for detection methodology.
+Detection policy: use two-layer detection (candidate scan, then context verification); load `references/two_layer_detection.md` only when the verification method is ambiguous.
 
 1) **Parse context** -- extract tech_stack, language, output_dir from contextStore
 2) **Per check (1-7):**

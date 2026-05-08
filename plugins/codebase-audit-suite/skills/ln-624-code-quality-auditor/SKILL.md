@@ -33,7 +33,7 @@ Use `hex-graph` first when hotspots, architecture coupling, or semantic relation
 
 ## Workflow
 
-**MANDATORY READ:** Load `references/two_layer_detection.md` for detection methodology.
+Detection policy: use two-layer detection (candidate scan, then context verification); load `references/two_layer_detection.md` only when the verification method is ambiguous.
 
 1) **Parse context** -- extract fields, determine `scan_path` (domain-aware if specified), extract `output_dir`
 2) **Scan codebase for violations (Layer 1)**

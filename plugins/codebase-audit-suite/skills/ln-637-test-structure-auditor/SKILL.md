@@ -32,7 +32,7 @@ Receives `contextStore` with: `tech_stack`, `testFilesMetadata` (ALL types -- bo
 
 ## Workflow
 
-**MANDATORY READ:** Load `references/two_layer_detection.md` for detection methodology.
+Detection policy: use two-layer detection (candidate scan, then context verification); load `references/two_layer_detection.md` only when the verification method is ambiguous.
 
 1) **Parse Context:** Extract test file list, output_dir, codebase_root, domain info from contextStore
 2) **Map Source Structure:** Glob source directories (`src/`, `app/`, `lib/`) to build source domain/module tree

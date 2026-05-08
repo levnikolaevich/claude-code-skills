@@ -31,7 +31,7 @@ Use `hex-graph` first when dataflow or cross-file reference analysis materially 
 
 ## Workflow
 
-**MANDATORY READ:** Load `references/two_layer_detection.md` for detection methodology.
+Detection policy: use two-layer detection (candidate scan, then context verification); load `references/two_layer_detection.md` only when the verification method is ambiguous.
 
 1) **Parse Context:** Extract tech stack, best practices, codebase root, output_dir from contextStore
 2) **Scan Codebase (Layer 1):** Run security checks using Glob/Grep patterns (see Audit Rules below)

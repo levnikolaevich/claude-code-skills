@@ -31,7 +31,8 @@ This skill should be used directly when:
 
 The skill follows a 3-phase workflow: **CREATE** → **VALIDATE STRUCTURE** → **VALIDATE CONTENT**. Each phase builds on the previous, ensuring complete structure and semantic validation.
 
-**MANDATORY READ:** Load `references/docs_quality_contract.md`, `references/docs_quality_rules.json`, and `references/markdown_read_protocol.md`.
+**MANDATORY READ:** Load `references/docs_quality_contract.md`, and `references/markdown_read_protocol.md`.
+Optional rule catalog: load `references/docs_quality_rules.json` only when exact rule IDs, path matrices, or allowlisted placeholder exceptions are needed.
 
 ---
 

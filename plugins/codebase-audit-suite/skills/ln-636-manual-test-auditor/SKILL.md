@@ -29,7 +29,7 @@ Manual test metadata includes: `suite_dir`, `has_expected_dir`, `harness_sourced
 
 ## Workflow
 
-**MANDATORY READ:** Load `references/two_layer_detection.md` for detection methodology.
+Detection policy: use two-layer detection (candidate scan, then context verification); load `references/two_layer_detection.md` only when the verification method is ambiguous.
 
 1) **Parse Context:** Extract manual test file list, output_dir, codebase_root from contextStore
 2) **Discover Infrastructure:** Detect shared infrastructure files:

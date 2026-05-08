@@ -34,7 +34,7 @@ Use `hex-graph` first when hotspots materially improve coverage-gap discovery. U
 
 ## Workflow
 
-**MANDATORY READ:** Load `references/two_layer_detection.md` for detection methodology.
+Detection policy: use two-layer detection (candidate scan, then context verification); load `references/two_layer_detection.md` only when the verification method is ambiguous.
 
 1) **Parse context** -- extract fields, determine `scan_path` (domain-aware if specified)
      ELSE:

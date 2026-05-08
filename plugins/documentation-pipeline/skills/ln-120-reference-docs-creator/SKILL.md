@@ -48,7 +48,8 @@ This skill should be used directly when:
 
 **TECH_STACK** is used for smart document creation in Phase 2.
 
-**MANDATORY READ:** Load `references/docs_quality_contract.md`, `references/docs_quality_rules.json`, and `references/markdown_read_protocol.md`.
+**MANDATORY READ:** Load `references/docs_quality_contract.md`, and `references/markdown_read_protocol.md`.
+Optional rule catalog: load `references/docs_quality_rules.json` only when exact rule IDs, path matrices, or allowlisted placeholder exceptions are needed.
 
 ## Workflow
 

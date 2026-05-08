@@ -24,7 +24,8 @@ Specialized worker that extracts verifiable claims from documentation and valida
 
 ## Inputs
 
-**MANDATORY READ:** Load `references/audit_worker_core_contract.md`, `references/docs_quality_contract.md`, `references/docs_quality_rules.json`, and `references/markdown_read_protocol.md`.
+**MANDATORY READ:** Load `references/audit_worker_core_contract.md`, `references/docs_quality_contract.md`, and `references/markdown_read_protocol.md`.
+Optional rule catalog: load `references/docs_quality_rules.json` only when exact rule IDs, path matrices, or allowlisted placeholder exceptions are needed.
 Tool policy: follow host AGENTS.md MCP preferences; load `references/mcp_tool_preferences.md` and `references/mcp_integration_patterns.md` only when host policy is absent or MCP behavior is unclear.
 
 Receives `contextStore` with: `tech_stack`, `project_root`, `output_dir`.
@@ -50,7 +51,7 @@ If `docs/project/.context/doc_registry.json` exists:
 
 ### Phase 3: Extract Claims (Layer 1)
 
-**MANDATORY READ:** Load `references/two_layer_detection.md` for detection methodology.
+Detection policy: use two-layer detection (candidate scan, then context verification); load `references/two_layer_detection.md` only when the verification method is ambiguous.
 
 For each prioritized document, use section-first reads to extract verifiable claims using Grep/regex patterns.
 

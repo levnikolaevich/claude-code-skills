@@ -32,7 +32,7 @@ Use `hex-graph` first when clone groups, implementations, or semantic relationsh
 
 ## Workflow
 
-**MANDATORY READ:** Load `references/two_layer_detection.md` for detection methodology.
+Detection policy: use two-layer detection (candidate scan, then context verification); load `references/two_layer_detection.md` only when the verification method is ambiguous.
 
 1) **Parse context** -- extract fields, determine `scan_path` (domain-aware if specified), extract `output_dir`
 2) **Load detection patterns**
@@ -61,9 +61,9 @@ Use `hex-graph` first when clone groups, implementations, or semantic relationsh
 8) **Write Report:** Build full markdown report in memory per `references/templates/audit_worker_report_template.md`, write to `{output_dir}/ln-623--{domain}.md` (or `623-principles.md` in global mode) in single Write call. **Include `<!-- FINDINGS-EXTENDED -->` JSON block** with pattern_signature fields for cross-domain DRY analysis
 9) **Return Summary:** Return minimal summary to coordinator (see Output Format)
 
-## Two-Layer Detection (MANDATORY)
+## Two-Layer Detection
 
-**MANDATORY READ:** Load `references/two_layer_detection.md`
+Detection policy: use two-layer detection (candidate scan, then context verification); load `references/two_layer_detection.md` only when the verification method is ambiguous.
 
 All findings require Layer 2 context analysis. Layer 1 finding without Layer 2 = NOT a valid finding. Before reporting, ask: "Is this violation intentional or justified by design?"
 

@@ -40,7 +40,7 @@ Use `hex-graph` first when dependency references or code reuse evidence material
 
 ## Workflow
 
-**MANDATORY READ:** Load `references/two_layer_detection.md` for detection methodology.
+Detection policy: use two-layer detection (candidate scan, then context verification); load `references/two_layer_detection.md` only when the verification method is ambiguous.
 
 1) Parse context + mode parameter + output_dir
 2) Run dependency checks (Layer 1: audit tools, based on mode)

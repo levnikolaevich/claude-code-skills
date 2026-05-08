@@ -28,7 +28,7 @@ Receives `contextStore` with: `tech_stack`, `testFilesMetadata`, `codebase_root`
 
 ## Workflow
 
-**MANDATORY READ:** Load `references/two_layer_detection.md` for detection methodology.
+Detection policy: use two-layer detection (candidate scan, then context verification); load `references/two_layer_detection.md` only when the verification method is ambiguous.
 
 1) **Parse Context:** Extract tech stack, Impact/Probability matrices, test file list, output_dir from contextStore
 2) **Calculate Scores (Layer 1):** For each test: calculate Usefulness Score = Impact x Probability

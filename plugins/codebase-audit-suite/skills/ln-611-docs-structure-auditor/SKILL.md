@@ -23,7 +23,8 @@ Specialized worker auditing structural quality of project documentation.
 
 ## Inputs
 
-**MANDATORY READ:** Load `references/audit_worker_core_contract.md`, `references/docs_quality_contract.md`, `references/docs_quality_rules.json`, and `references/markdown_read_protocol.md`.
+**MANDATORY READ:** Load `references/audit_worker_core_contract.md`, `references/docs_quality_contract.md`, and `references/markdown_read_protocol.md`.
+Optional rule catalog: load `references/docs_quality_rules.json` only when exact rule IDs, path matrices, or allowlisted placeholder exceptions are needed.
 Tool policy: follow host AGENTS.md MCP preferences; load `references/mcp_tool_preferences.md` and `references/mcp_integration_patterns.md` only when host policy is absent or MCP behavior is unclear.
 
 Receives `contextStore` with: `tech_stack`, `project_root`, `output_dir`.

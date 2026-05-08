@@ -29,7 +29,7 @@ Receives `contextStore` with: `tech_stack`, `testFilesMetadata`, `codebase_root`
 
 ## Workflow
 
-**MANDATORY READ:** Load `references/two_layer_detection.md` for detection methodology.
+Detection policy: use two-layer detection (candidate scan, then context verification); load `references/two_layer_detection.md` only when the verification method is ambiguous.
 
 1) **Parse Context:** Extract tech stack, isolation checklist, anti-patterns catalog, test file list, output_dir from contextStore
 2) **Check Isolation (Layer 1):** Check isolation for 6 categories (APIs, DB, FS, Time, Random, Network)

@@ -30,7 +30,7 @@ Receives `contextStore` with: `tech_stack` (including build_tool, test_framework
 
 ## Workflow
 
-**MANDATORY READ:** Load `references/two_layer_detection.md` for detection methodology.
+Detection policy: use two-layer detection (candidate scan, then context verification); load `references/two_layer_detection.md` only when the verification method is ambiguous.
 
 1) **Parse Context:** Extract tech stack, build tools, test framework, output_dir from contextStore
 2) **Run Build Checks (Layer 1):** Execute compiler, linter, type checker, tests (see Audit Rules below)

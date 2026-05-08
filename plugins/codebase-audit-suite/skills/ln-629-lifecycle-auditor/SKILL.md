@@ -31,7 +31,7 @@ Use `hex-graph` first when lifecycle tracing materially improves confidence. Use
 
 ## Workflow
 
-**MANDATORY READ:** Load `references/two_layer_detection.md` for detection methodology.
+Detection policy: use two-layer detection (candidate scan, then context verification); load `references/two_layer_detection.md` only when the verification method is ambiguous.
 
 1) Parse context + output_dir
 2) Check lifecycle patterns (Layer 1: grep for SIGTERM, shutdown handlers, probes)

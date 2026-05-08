@@ -15,7 +15,6 @@
         "summary",
         "warnings"
       ],
-      "output_chars": 986,
       "bounded": true,
       "structured_mirror": true
     },
@@ -30,7 +29,6 @@
         "summary",
         "warnings"
       ],
-      "output_chars": 161,
       "bounded": true,
       "structured_mirror": true
     },
@@ -46,7 +44,6 @@
         "status",
         "summary"
       ],
-      "output_chars": 414,
       "bounded": true,
       "structured_mirror": true
     },
@@ -69,7 +66,6 @@
         "summary",
         "tasks"
       ],
-      "output_chars": 6838,
       "bounded": true,
       "structured_mirror": true
     },
@@ -85,7 +81,6 @@
         "status",
         "summary"
       ],
-      "output_chars": 816,
       "bounded": true,
       "structured_mirror": true
     },
@@ -100,7 +95,6 @@
         "status",
         "summary"
       ],
-      "output_chars": 745,
       "bounded": true,
       "structured_mirror": true
     },
@@ -116,7 +110,6 @@
         "status",
         "summary"
       ],
-      "output_chars": 2205,
       "bounded": true,
       "structured_mirror": true
     },
@@ -131,7 +124,6 @@
         "status",
         "summary"
       ],
-      "output_chars": 931,
       "bounded": true,
       "structured_mirror": true
     },
@@ -146,7 +138,6 @@
         "status",
         "summary"
       ],
-      "output_chars": 1533,
       "bounded": true,
       "structured_mirror": true
     },
@@ -162,7 +153,6 @@
         "status",
         "summary"
       ],
-      "output_chars": 182,
       "bounded": true,
       "structured_mirror": true
     },
@@ -179,7 +169,6 @@
         "status",
         "summary"
       ],
-      "output_chars": 441,
       "bounded": true,
       "structured_mirror": true
     },
@@ -199,7 +188,6 @@
         "status",
         "summary"
       ],
-      "output_chars": 2420,
       "bounded": true,
       "structured_mirror": true
     },
@@ -215,7 +203,6 @@
         "status",
         "summary"
       ],
-      "output_chars": 931,
       "bounded": true,
       "structured_mirror": true
     },
@@ -230,7 +217,6 @@
         "status",
         "summary"
       ],
-      "output_chars": 912,
       "bounded": true,
       "structured_mirror": true
     },
@@ -245,7 +231,6 @@
         "status",
         "summary"
       ],
-      "output_chars": 3392,
       "bounded": true,
       "structured_mirror": true
     }

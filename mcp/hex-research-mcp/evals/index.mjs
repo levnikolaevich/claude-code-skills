@@ -165,14 +165,14 @@ function runScenario(scenario) {
         }
         const result = callTool(scenario.tool, scenario.params(root));
         scenario.expect(result);
+        const outputChars = result.content[0].text.length;
         return {
             tool: scenario.tool,
             description: scenario.description,
             status: "verified",
             output_status: result.structuredContent.status,
             key_fields: Object.keys(result.structuredContent).sort(),
-            output_chars: result.content[0].text.length,
-            bounded: result.content[0].text.length < 100_000,
+            bounded: outputChars < 100_000,
             structured_mirror: true,
         };
     });
@@ -193,7 +193,7 @@ const report = {
 writeFileSync(EVAL_REPORT_PATH, stableJson(report), "utf8");
 
 for (const result of results) {
-    console.log(`${result.tool}: ${result.output_status} (${result.output_chars} chars)`);
+    console.log(`${result.tool}: ${result.output_status} (${result.bounded ? "bounded" : "unbounded"})`);
 }
 console.log(`evals: ${results.length}/${TOOL_NAMES.length} tools verified`);
 

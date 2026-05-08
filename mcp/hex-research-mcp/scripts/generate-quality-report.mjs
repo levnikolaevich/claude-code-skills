@@ -71,7 +71,6 @@ const mergedTools = tools.map((tool) => {
         ...tool,
         eval_status: evalResult.status,
         output_status: evalResult.output_status,
-        output_chars: evalResult.output_chars,
         bounded: evalResult.bounded,
         structured_mirror: evalResult.structured_mirror,
     };

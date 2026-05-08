@@ -21,11 +21,16 @@ export function registerHookRoutes(app: FastifyInstance, deps: HookDeps): void {
   app.post("/hook/user-prompt-submit", async (req, reply) => {
     const parsed = UserPromptSubmitSchema.safeParse(req.body);
     if (!parsed.success) return sendValidationError(reply, "invalid user-prompt-submit hook");
-    const { session_id, prompt, agent } = parsed.data;
+    const { session_id, prompt, agent, effort } = parsed.data;
     if (!session_id) return sendValidationError(reply, "missing hook session id");
     return sendOutcome(
       reply,
-      deps.hookIngestion.userPromptSubmit({ sessionId: session_id, prompt, agent }),
+      deps.hookIngestion.userPromptSubmit({
+        sessionId: session_id,
+        prompt,
+        agent,
+        effortLevel: effort?.level,
+      }),
       () => ({ ok: true })
     );
   });
@@ -33,13 +38,14 @@ export function registerHookRoutes(app: FastifyInstance, deps: HookDeps): void {
   app.post("/hook/stop", async (req, reply) => {
     const parsed = StopSchema.safeParse(req.body);
     if (!parsed.success) return sendValidationError(reply, "invalid stop hook");
-    const { session_id, last_assistant_message } = parsed.data;
+    const { session_id, last_assistant_message, effort } = parsed.data;
     if (!session_id) return sendValidationError(reply, "missing hook session id");
     return sendOutcome(
       reply,
       deps.hookIngestion.stop({
         sessionId: session_id,
         lastAssistantMessage: last_assistant_message,
+        effortLevel: effort?.level,
       }),
       () => ({ ok: true })
     );
@@ -48,13 +54,14 @@ export function registerHookRoutes(app: FastifyInstance, deps: HookDeps): void {
   app.post("/hook/stop-failure", async (req, reply) => {
     const parsed = StopFailureSchema.safeParse(req.body);
     if (!parsed.success) return sendValidationError(reply, "invalid stop-failure hook");
-    const { session_id, error_type, agent } = parsed.data;
+    const { session_id, error_type, agent, effort } = parsed.data;
     return sendOutcome(
       reply,
       deps.hookIngestion.stopFailure({
         sessionId: session_id,
         errorType: error_type,
         agent,
+        effortLevel: effort?.level,
         payload: parsed.data,
       }),
       () => ({ ok: true })
@@ -64,7 +71,7 @@ export function registerHookRoutes(app: FastifyInstance, deps: HookDeps): void {
   app.post("/hook/session-start", async (req, reply) => {
     const parsed = SessionStartSchema.safeParse(req.body);
     if (!parsed.success) return sendValidationError(reply, "invalid session-start hook");
-    const { session_id, source, model, cwd, transcript_path, agent } = parsed.data;
+    const { session_id, source, model, cwd, transcript_path, agent, effort } = parsed.data;
     const outcome = deps.hookIngestion.sessionStart({
       sessionId: session_id,
       source,
@@ -72,6 +79,7 @@ export function registerHookRoutes(app: FastifyInstance, deps: HookDeps): void {
       cwd: cwd ?? null,
       transcriptPath: transcript_path ?? null,
       agent,
+      effortLevel: effort?.level,
     });
     if (!outcome.ok) return sendServiceError(reply, outcome.error);
     const { additionalContext } = outcome.value;
@@ -87,13 +95,14 @@ export function registerHookRoutes(app: FastifyInstance, deps: HookDeps): void {
   app.post("/hook/subagent-stop", async (req, reply) => {
     const parsed = SubagentStopSchema.safeParse(req.body);
     if (!parsed.success) return sendValidationError(reply, "invalid subagent-stop hook");
-    const { session_id, agent_id, agent_type } = parsed.data;
+    const { session_id, agent_id, agent_type, effort } = parsed.data;
     return sendOutcome(
       reply,
       deps.hookIngestion.subagentStop({
         sessionId: session_id,
         agentId: agent_id,
         agentType: agent_type,
+        effortLevel: effort?.level,
       }),
       () => ({ ok: true })
     );
@@ -102,7 +111,7 @@ export function registerHookRoutes(app: FastifyInstance, deps: HookDeps): void {
   app.post("/hook/pre-tool-use", async (req, reply) => {
     const parsed = ToolUseSchema.safeParse(req.body);
     if (!parsed.success) return sendValidationError(reply, "invalid pre-tool-use hook");
-    const { tool_name, tool_input, session_id, duration_ms } = parsed.data;
+    const { tool_name, tool_input, session_id, duration_ms, effort } = parsed.data;
     return sendOutcome(
       reply,
       deps.hookIngestion.preToolUse({
@@ -110,6 +119,7 @@ export function registerHookRoutes(app: FastifyInstance, deps: HookDeps): void {
         toolName: tool_name,
         toolInput: tool_input,
         durationMs: duration_ms,
+        effortLevel: effort?.level,
       }),
       () => ({ ok: true })
     );
@@ -121,7 +131,7 @@ export function registerHookRoutes(app: FastifyInstance, deps: HookDeps): void {
     }
     const parsed = ToolUseSchema.safeParse(req.body);
     if (!parsed.success) return sendValidationError(reply, "invalid post-tool-use hook");
-    const { tool_name, tool_input, session_id, duration_ms } = parsed.data;
+    const { tool_name, tool_input, session_id, duration_ms, effort } = parsed.data;
     return sendOutcome(
       reply,
       deps.hookIngestion.postToolUse({
@@ -129,6 +139,7 @@ export function registerHookRoutes(app: FastifyInstance, deps: HookDeps): void {
         toolName: tool_name,
         toolInput: tool_input,
         durationMs: duration_ms,
+        effortLevel: effort?.level,
       }),
       () => ({ ok: true })
     );

@@ -333,25 +333,21 @@ export function buildApp(env: Env, log: Logger = createLogger()): App {
     log,
     mediaDir: paths.mediaDir,
   });
-  const idleSessionService = env.idleShutdownEnabled
-    ? createIdleSessionService({
-        log,
-        godStatus,
-        messagesRepo: repos.messages,
-        pendingRepo: repos.pendingReply,
-        controlLane,
-        idleThresholdSec: env.idleShutdownSec,
-        bootGraceSec: env.idleBootGraceSec,
-        bootTimestampSec: Math.floor(Date.now() / 1000),
-      })
-    : null;
-  const idleSessionWorker = idleSessionService
-    ? createIdleSessionWorker({
-        log,
-        service: idleSessionService,
-        tickIntervalMs: env.idleTickSec * 1000,
-      })
-    : null;
+  const idleSessionService = createIdleSessionService({
+    log,
+    godStatus,
+    messagesRepo: repos.messages,
+    pendingRepo: repos.pendingReply,
+    controlLane,
+    idleThresholdSec: env.idleShutdownSec,
+    bootGraceSec: env.idleBootGraceSec,
+    bootTimestampSec: Math.floor(Date.now() / 1000),
+  });
+  const idleSessionWorker = createIdleSessionWorker({
+    log,
+    service: idleSessionService,
+    tickIntervalMs: env.idleTickSec * 1000,
+  });
   const pendingReplyGcWorker = createPendingReplyGcWorker({
     log,
     pendingRepo: repos.pendingReply,
@@ -392,7 +388,7 @@ export function buildApp(env: Env, log: Logger = createLogger()): App {
       outboxWorker.stop(),
       errorAlerterWorker.stop(),
       mediaCleanupWorker.stop(),
-      ...(idleSessionWorker ? [idleSessionWorker.stop()] : []),
+      idleSessionWorker.stop(),
       pendingReplyGcWorker.stop(),
     ]);
     for (const result of stopResults) {
@@ -428,7 +424,7 @@ export function buildApp(env: Env, log: Logger = createLogger()): App {
       void outboxWorker.start();
       void errorAlerterWorker.start();
       void mediaCleanupWorker.start();
-      if (idleSessionWorker) void idleSessionWorker.start();
+      void idleSessionWorker.start();
       void pendingReplyGcWorker.start();
       pollPromise = bot
         .start({

@@ -13,7 +13,7 @@ Install the common package set. `bubblewrap` is the hard filesystem boundary for
 ```bash
 DEBIAN_FRONTEND=noninteractive apt-get install -y \
   curl wget git jq sqlite3 build-essential ca-certificates gnupg pipx \
-  python3 bubblewrap apparmor-profiles apparmor-utils unzip tmux
+  python3 bubblewrap apparmor-profiles apparmor-utils unzip tmux acl
 
 if [ -f /usr/share/apparmor/extra-profiles/bwrap-userns-restrict ]; then
   install -m 0644 /usr/share/apparmor/extra-profiles/bwrap-userns-restrict /etc/apparmor.d/bwrap-userns-restrict
@@ -24,7 +24,7 @@ fi
 Verify:
 
 ```bash
-which curl wget git jq sqlite3 gpg pipx python3 bwrap unzip tmux
+which curl wget git jq sqlite3 gpg pipx python3 bwrap unzip tmux getfacl setfacl
 pipx --version
 bwrap --version
 tmux -V

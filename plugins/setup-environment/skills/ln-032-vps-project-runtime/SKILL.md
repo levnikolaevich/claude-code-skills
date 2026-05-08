@@ -83,6 +83,8 @@ Responsibilities:
 
 Both god templates are installed per project. Only the Claude template is enabled by default for each declared `${TELEGRAM_CHAT_ID}`; the Codex template stays loaded but inactive until hex-relay starts the unit on demand (operator switches buddy via `/set_buddy codex`). Verify both templates exist via `systemctl list-unit-files '${SERVICE_PREFIX}-god*@.service'` and confirm the Codex unit is `disabled` (not `not-found`).
 
+Before starting or restarting god sessions under the shared-auth pattern, verify `${BOT_USER}` can read and write `/home/${BOT_USER}/.claude/.credentials.json`, `/home/${BOT_USER}/.claude.json`, and `/home/${BOT_USER}/.codex/auth.json`, and verify `claude-shared-auth-perms.path` is active. Missing write access is a blocker because Claude/Codex refresh rotates auth files atomically.
+
 ### Phase 4: Provider Credentials
 
 Use `provider_credentials.md`.
@@ -123,6 +125,7 @@ Write a `vps-project-runtime` summary artifact with project runtime changes, loc
 - [ ] Project `.claude/` settings and instructions are rendered.
 - [ ] `${SERVICE_PREFIX}-god@.service` and `${SERVICE_PREFIX}-god-codex@.service` templates and scheduler templates installed or verified; Codex template is present and idle (`disabled` or stopped, not `not-found`).
 - [ ] `/usr/local/bin/hex-relay-codex-hook.sh` exists, is executable (mode 755), and reachable from the Codex sandbox.
+- [ ] Shared auth read/write access and `claude-shared-auth-perms.path` are verified before god-session start when `${BOT_USER}` uses `/var/lib/claude-shared/`.
 - [ ] `${PROJECT_DIR}/.agent-home/users` and `.agent-cache` exist with `${BOT_USER}:${BOT_USER}` 0700 (relay's `ReadWritePaths=` requires the path to exist before first start).
 - [ ] Primary `${SERVICE_PREFIX}-god@${TELEGRAM_CHAT_ID}.service` is `active` AND `tmux -L ${SERVICE_PREFIX} has-session -t "=${SERVICE_PREFIX}-god-${TELEGRAM_CHAT_ID}"` exits 0 (use exact-match `=name` form).
 - [ ] Provider credentials are configured or explicitly gated `N/A:`.

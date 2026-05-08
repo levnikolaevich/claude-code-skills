@@ -47,7 +47,7 @@ sudo -i -u ${BOT_USER} bash -lc 'cd /opt/${SERVICE_PREFIX}-hex-relay && . /home/
 # Render hex-relay.service with PROJECT_NAME, PROJECT_DIR, SERVICE_PREFIX, BOT_USER, RELAY_HOOK_PORT.
 # Install it at /etc/systemd/system/${SERVICE_PREFIX}-hex-relay.service.
 
-# Render settings.hooks.fragment.json with RELAY_HOOK_PORT and install at project scope.
+# Render settings.hooks.fragment.json with RELAY_HOOK_PORT and RELAY_HTTP_TOKEN, then install at project scope.
 sudo -u ${BOT_USER} mkdir -p ${PROJECT_DIR}/.claude
 sudo -u ${BOT_USER} install -o ${BOT_USER} -g ${BOT_USER} -m 644 /tmp/hooks.json ${PROJECT_DIR}/.claude/settings.json
 sudo -u ${BOT_USER} bash -lc 'jq -e "has(\"hooks\")" ~/.claude/settings.json >/dev/null 2>&1 && jq "del(.hooks)" ~/.claude/settings.json > ~/.claude/settings.json.new && mv ~/.claude/settings.json.new ~/.claude/settings.json && echo "stripped stale user-scope hooks" || echo "user-scope hooks already absent"'
@@ -61,6 +61,8 @@ systemctl restart ${SERVICE_PREFIX}-god@${TELEGRAM_CHAT_ID}.service
 ```
 
 `npm ci` is mandatory before `npm run build`: `tsc` is a devDependency and remains installed for later VPS-side rebuilds.
+
+Claude hooks may include `effort.level`; hex-relay records it as telemetry in session events and verbose status messages. No extra hook configuration is required beyond installing `settings.hooks.fragment.json`.
 
 After source changes, use `agents/hex-relay/docs/redeploy.md`. Upload source, rebuild on VPS, restart `${SERVICE_PREFIX}-hex-relay.service`, and recheck `/health`. Do not hand-edit VPS `dist/`.
 

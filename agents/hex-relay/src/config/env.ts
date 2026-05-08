@@ -49,10 +49,6 @@ const RawEnvSchema = z.object({
   GITHUB_APP_PRIVATE_KEY_PATH: AbsolutePosixPathSchema.optional(),
   GITLAB_HOST: OptionalHostnameSchema,
   GITLAB_API_TOKEN: OptionalNoWhitespaceSchema,
-  RELAY_IDLE_SHUTDOWN_ENABLED: z
-    .enum(["true", "false"])
-    .default("true")
-    .transform((v) => v === "true"),
   RELAY_IDLE_SHUTDOWN_SEC: z.coerce.number().int().min(60).max(86_400).default(600),
   RELAY_IDLE_TICK_SEC: z.coerce.number().int().min(15).max(3600).default(60),
   RELAY_IDLE_BOOT_GRACE_SEC: z.coerce.number().int().min(0).max(3600).default(120),
@@ -85,7 +81,6 @@ export interface Env {
   githubAppPrivateKeyPath: string | null;
   gitlabHost: string | null;
   gitlabApiToken: string | null;
-  idleShutdownEnabled: boolean;
   idleShutdownSec: number;
   idleTickSec: number;
   idleBootGraceSec: number;
@@ -155,7 +150,6 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
     gitlabHost: v.GITLAB_HOST && v.GITLAB_HOST.trim().length > 0 ? v.GITLAB_HOST.trim() : null,
     gitlabApiToken:
       v.GITLAB_API_TOKEN && v.GITLAB_API_TOKEN.trim().length > 0 ? v.GITLAB_API_TOKEN.trim() : null,
-    idleShutdownEnabled: v.RELAY_IDLE_SHUTDOWN_ENABLED,
     idleShutdownSec: v.RELAY_IDLE_SHUTDOWN_SEC,
     idleTickSec: v.RELAY_IDLE_TICK_SEC,
     idleBootGraceSec: v.RELAY_IDLE_BOOT_GRACE_SEC,

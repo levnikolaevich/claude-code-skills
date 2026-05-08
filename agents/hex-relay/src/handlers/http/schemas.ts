@@ -1,12 +1,19 @@
 import { z } from "zod/v4";
 
 const AgentEnum = z.enum(["claude", "codex"]).default("claude");
+export const EffortLevelSchema = z.enum(["low", "medium", "high", "xhigh", "max"]);
+const HookEffortSchema = z
+  .object({
+    level: EffortLevelSchema,
+  })
+  .optional();
 
 export const UserPromptSubmitSchema = z
   .object({
     session_id: z.string().default(""),
     prompt: z.string().default(""),
     agent: AgentEnum,
+    effort: HookEffortSchema,
   })
   .passthrough();
 
@@ -15,6 +22,7 @@ export const StopSchema = z
     session_id: z.string().default(""),
     last_assistant_message: z.string().default(""),
     agent: AgentEnum,
+    effort: HookEffortSchema,
   })
   .passthrough();
 
@@ -23,6 +31,7 @@ export const StopFailureSchema = z
     session_id: z.string().default(""),
     error_type: z.string().default("unknown"),
     agent: AgentEnum,
+    effort: HookEffortSchema,
   })
   .passthrough();
 
@@ -34,6 +43,7 @@ export const SessionStartSchema = z
     cwd: z.string().nullable().optional(),
     transcript_path: z.string().nullable().optional(),
     agent: AgentEnum,
+    effort: HookEffortSchema,
   })
   .passthrough();
 
@@ -43,6 +53,7 @@ export const SubagentStopSchema = z
     agent_id: z.string().default(""),
     agent_type: z.string().default(""),
     agent: AgentEnum,
+    effort: HookEffortSchema,
   })
   .passthrough();
 
@@ -53,6 +64,7 @@ export const ToolUseSchema = z
     session_id: z.string().default(""),
     agent: AgentEnum,
     duration_ms: z.number().nonnegative().optional(),
+    effort: HookEffortSchema,
   })
   .passthrough();
 

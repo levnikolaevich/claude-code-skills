@@ -1,0 +1,7 @@
+[Unit]
+Description=Repair shared Claude/Codex auth permissions
+ConditionPathExists=/var/lib/claude-shared
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/claude-shared-auth-perms

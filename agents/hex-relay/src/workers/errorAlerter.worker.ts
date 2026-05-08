@@ -53,7 +53,7 @@ function formatGodError(err: Record<string, unknown>): string {
   ].filter(Boolean);
   if (kind === "auth_failed") {
     lines.push(
-      "action: verify sandbox mounts ~/.claude and ~/.codex as writable directories, then run Claude login for the VPS-wide agent account if needed and restart affected god sessions."
+      "action: verify Claude Code includes the parallel-session refresh-token race fix; for shared /var/lib/claude-shared auth, verify claude-shared-auth-perms.path is active and shared auth files are group-rw/readable by every bot; run one Claude /login only if the refresh token is already invalid, then restart affected god sessions."
     );
   }
   return lines.join("\n").slice(0, 3500);

@@ -58,6 +58,27 @@ sudo -u ${BOT_USER} grep -Ec '^\[marketplaces\.levnikolaevich-skills-marketplace
 sudo -u ${BOT_USER} grep -E '^\[plugins\."(agile-workflow|[^"]+)@levnikolaevich-skills-marketplace"\]$' ~/.codex/config.toml
 ```
 
+## Shared auth repair (`ln-031` / `ln-034`, conditional)
+
+Run this section only when `/var/lib/claude-shared/` exists. It verifies the durable repair automation and read/write access for every bot in the `claude-shared` group without printing auth file contents.
+
+```bash
+systemctl is-active claude-shared-auth-perms.path
+systemctl cat claude-shared-auth-perms.service claude-shared-auth-perms.path >/dev/null
+
+for bot in $(getent group claude-shared | awk -F: '{print $4}' | tr ',' ' '); do
+  sudo -u "$bot" test -r /home/"$bot"/.claude/.credentials.json
+  sudo -u "$bot" test -w /home/"$bot"/.claude/.credentials.json
+  sudo -u "$bot" test -r /home/"$bot"/.claude.json
+  sudo -u "$bot" test -w /home/"$bot"/.claude.json
+  sudo -u "$bot" test -r /home/"$bot"/.codex/auth.json
+  sudo -u "$bot" test -w /home/"$bot"/.codex/auth.json
+done
+
+getfacl /var/lib/claude-shared/.claude/.credentials.json /var/lib/claude-shared/.claude.json /var/lib/claude-shared/.codex/auth.json \
+  | grep -E '^(group:claude-shared:rw-|mask::rw-)'
+```
+
 ## Nightly agent updates (`ln-031`)
 
 ```bash

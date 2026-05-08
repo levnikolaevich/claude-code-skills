@@ -366,6 +366,50 @@ test("Claude hook malformed payload returns typed validation error", async () =>
   await app.close();
 });
 
+test("Claude hook effort level is accepted and invalid effort is rejected", async () => {
+  const app = createApp();
+  const statuses: Record<string, unknown>[] = [];
+  registerHooks(app, {
+    verbosity: { allows: (layer: string) => layer === "verbose_bash" },
+    outbox: {
+      enqueueReply: () => ok(1),
+      enqueueAck: () => ok(1),
+      enqueueStatus: (args: Record<string, unknown>) => {
+        statuses.push(args);
+        return ok(1);
+      },
+    },
+  });
+
+  const valid = await app.inject({
+    method: "POST",
+    url: "/hook/post-tool-use",
+    payload: {
+      session_id: "sid",
+      tool_name: "Skill",
+      tool_input: { skill: "ln-401" },
+      duration_ms: 1500,
+      effort: { level: "xhigh" },
+    },
+  });
+  assert.equal(valid.statusCode, 200);
+  assert.match(String(statuses[0]?.text), /effort xhigh$/);
+
+  const invalid = await app.inject({
+    method: "POST",
+    url: "/hook/post-tool-use",
+    payload: {
+      session_id: "sid",
+      tool_name: "Skill",
+      tool_input: { skill: "ln-401" },
+      effort: { level: "turbo" },
+    },
+  });
+  assert.equal(invalid.statusCode, 400);
+  assert.equal(invalid.json().error.code, "hook_payload_invalid");
+  await app.close();
+});
+
 test("pending reply updates to the latest prompt for steering bursts", async () => {
   const dir = await mkdtemp(join(tmpdir(), "hex-relay-pending-"));
   const db = createDb({

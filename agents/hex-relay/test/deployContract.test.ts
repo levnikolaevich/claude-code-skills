@@ -32,13 +32,12 @@ test("Telegram relay gate is documented as all-or-nothing for hex-relay", () => 
   assert.doesNotMatch(secrets, /optional; leave blank to disable Telegram integration/);
 });
 
-test("env docs keep idle vars and remove dead GitHub client id", () => {
+test("env docs keep mandatory idle watchdog vars and remove dead GitHub client id", () => {
   const envExample = read("agents/hex-relay/.env.example");
   const readme = read("agents/hex-relay/README.md");
   const secrets = readFileSync(join(bootstrapRefs, "templates/secrets.env.template"), "utf8");
 
   for (const name of [
-    "RELAY_IDLE_SHUTDOWN_ENABLED",
     "RELAY_IDLE_SHUTDOWN_SEC",
     "RELAY_IDLE_TICK_SEC",
     "RELAY_IDLE_BOOT_GRACE_SEC",
@@ -46,6 +45,9 @@ test("env docs keep idle vars and remove dead GitHub client id", () => {
     assert.match(envExample, new RegExp(name));
     assert.match(readme, new RegExp(name));
   }
+  assert.doesNotMatch(envExample, /RELAY_IDLE_SHUTDOWN_ENABLED/);
+  assert.doesNotMatch(readme, /RELAY_IDLE_SHUTDOWN_ENABLED/);
+  assert.doesNotMatch(secrets, /RELAY_IDLE_SHUTDOWN_ENABLED/);
   assert.doesNotMatch(secrets, /GITHUB_APP_CLIENT_ID/);
 });
 
@@ -71,6 +73,18 @@ test("relay HTTP token is propagated through deploy references", () => {
   for (const authorization of hookHeaders) {
     assert.equal(authorization, "Bearer ${RELAY_HTTP_TOKEN}");
   }
+});
+
+test("Claude worktrees branch from local head for god sessions", () => {
+  const settings = JSON.parse(
+    readFileSync(join(bootstrapRefs, "settings.agent-config.fragment.json"), "utf8")
+  ) as { worktree?: { baseRef?: string } };
+  const install = readFileSync(join(bootstrapRefs, "god_session_install.md"), "utf8");
+  const refsReadme = readFileSync(join(bootstrapRefs, "README.md"), "utf8");
+
+  assert.equal(settings.worktree?.baseRef, "head");
+  assert.match(install, /worktree\.baseRef.*head/);
+  assert.match(refsReadme, /worktree\.baseRef.*head/);
 });
 
 test("protected local API examples include bearer auth", () => {

@@ -22,6 +22,7 @@ import {
 
 const STOP_FAILURE_DEDUP_MS = 10_000;
 const STOP_FAILURE_ALERT_DEDUP_MS = 5 * 60_000;
+export type EffortLevel = "low" | "medium" | "high" | "xhigh" | "max";
 
 const MONTH_ABBR = [
   "Jan",
@@ -63,17 +64,20 @@ export interface UserPromptSubmitHook {
   sessionId: string;
   prompt: string;
   agent: AgentKind;
+  effortLevel?: EffortLevel;
 }
 
 export interface StopHook {
   sessionId: string;
   lastAssistantMessage: string;
+  effortLevel?: EffortLevel;
 }
 
 export interface StopFailureHook {
   sessionId: string;
   errorType: string;
   agent: AgentKind;
+  effortLevel?: EffortLevel;
   payload: Record<string, unknown>;
 }
 
@@ -84,12 +88,14 @@ export interface SessionStartHook {
   cwd: string | null;
   transcriptPath: string | null;
   agent: AgentKind;
+  effortLevel?: EffortLevel;
 }
 
 export interface SubagentStopHook {
   sessionId: string;
   agentId: string;
   agentType: string;
+  effortLevel?: EffortLevel;
 }
 
 export interface ToolUseHook {
@@ -97,6 +103,7 @@ export interface ToolUseHook {
   toolName: string;
   toolInput: Record<string, unknown>;
   durationMs?: number;
+  effortLevel?: EffortLevel;
 }
 
 export type HookIngestionService = ReturnType<typeof createHookIngestionService>;
@@ -112,6 +119,10 @@ function formatDispatchTs(epoch: number): string {
   const hh = String(d.getHours()).padStart(2, "0");
   const mm = String(d.getMinutes()).padStart(2, "0");
   return `${month} ${day} ${hh}:${mm}`;
+}
+
+function effortSuffix(level: EffortLevel | undefined): string {
+  return level ? ` effort ${level}` : "";
 }
 
 function classifyStopFailure(errorType: string, payload: Record<string, unknown>): string {
@@ -168,7 +179,7 @@ function formatStopFailureAlert(args: {
   ].filter(Boolean);
   if (args.kind === "auth_failed") {
     lines.push(
-      "action: verify sandbox mounts ~/.claude and ~/.codex as writable directories, then run Claude login for the VPS-wide agent account if needed and restart affected god sessions."
+      "action: verify Claude Code includes the parallel-session refresh-token race fix; for shared /var/lib/claude-shared auth, verify claude-shared-auth-perms.path is active and shared auth files are group-rw/readable by every bot; run one Claude /login only if the refresh token is already invalid, then restart affected god sessions."
     );
   }
   return lines.join("\n");
@@ -193,6 +204,7 @@ export function createHookIngestionService(deps: HookIngestionDeps) {
     chatId: number | null;
     tgMsgId: number | null;
     agent: AgentKind;
+    effortLevel?: EffortLevel;
   }): ServiceOutcome<void, HookIngestionError> {
     const { sessionId, inbound, prompt, chatId, tgMsgId, agent } = args;
     try {
@@ -210,6 +222,7 @@ export function createHookIngestionService(deps: HookIngestionDeps) {
           inboundId: inbound.id,
           chatId,
           tgMsgId,
+          effort: args.effortLevel,
         },
         "HOOK user-prompt-submit pending set"
       );
@@ -301,6 +314,7 @@ export function createHookIngestionService(deps: HookIngestionDeps) {
         deps.sessionService.insertEvent(args.sessionId, "user_prompt_submit", {
           prompt_len: args.prompt.length,
           starts_with_tg: args.prompt.startsWith("[tg id="),
+          effort_level: args.effortLevel ?? null,
         });
         const m = TG_PREFIX_RE.exec(args.prompt);
         if (!m) return okVoid();
@@ -315,6 +329,7 @@ export function createHookIngestionService(deps: HookIngestionDeps) {
           chatId,
           tgMsgId,
           agent: args.agent,
+          effortLevel: args.effortLevel,
         });
       } catch (error) {
         return fail(
@@ -332,7 +347,10 @@ export function createHookIngestionService(deps: HookIngestionDeps) {
     stop(args: StopHook): ServiceOutcome<void, HookIngestionError> {
       try {
         const lastMsg = args.lastAssistantMessage.trim();
-        deps.sessionService.insertEvent(args.sessionId, "stop", { msg_len: lastMsg.length });
+        deps.sessionService.insertEvent(args.sessionId, "stop", {
+          msg_len: lastMsg.length,
+          effort_level: args.effortLevel ?? null,
+        });
         if (!lastMsg) return okVoid();
         const pendings = deps.pendingRepo.getAllForSession(args.sessionId);
         if (pendings.length === 0) {
@@ -393,6 +411,7 @@ export function createHookIngestionService(deps: HookIngestionDeps) {
             len: lastMsg.length,
             pendingCount: pendings.length,
             fanoutAcks,
+            effort: args.effortLevel,
           },
           "HOOK stop enqueued reply"
         );
@@ -415,6 +434,7 @@ export function createHookIngestionService(deps: HookIngestionDeps) {
         const kind = classifyStopFailure(args.errorType, args.payload);
         deps.sessionService.insertEvent(args.sessionId, "stop_failure", {
           error_type: args.errorType,
+          effort_level: args.effortLevel ?? null,
         });
         if (args.sessionId) deps.typing.stop(args.sessionId);
         const now = Date.now();
@@ -422,7 +442,13 @@ export function createHookIngestionService(deps: HookIngestionDeps) {
         if (now - last > STOP_FAILURE_DEDUP_MS) {
           const detail = JSON.stringify(args.payload).slice(0, 280);
           deps.log.warn(
-            { session: args.sessionId.slice(0, 8), error_type: args.errorType, kind, detail },
+            {
+              session: args.sessionId.slice(0, 8),
+              error_type: args.errorType,
+              kind,
+              detail,
+              effort: args.effortLevel,
+            },
             "HOOK stop-failure (non-terminal; pending preserved)"
           );
           stopFailureDedup.set(args.sessionId, now);
@@ -445,7 +471,7 @@ export function createHookIngestionService(deps: HookIngestionDeps) {
           if (!queued.ok) return fail(queued.error);
           stopFailureAlertDedup.set(alertKey, now);
           deps.log.info(
-            { session: args.sessionId.slice(0, 8), kind },
+            { session: args.sessionId.slice(0, 8), kind, effort: args.effortLevel },
             "admin stop-failure alert queued"
           );
         }
@@ -475,6 +501,7 @@ export function createHookIngestionService(deps: HookIngestionDeps) {
           previousSession,
           primaryOperator: deps.primaryOperator,
           agent: args.agent,
+          effortLevel: args.effortLevel,
         });
         deps.log.info(
           {
@@ -483,6 +510,7 @@ export function createHookIngestionService(deps: HookIngestionDeps) {
             model: args.model,
             prev: (previousSession ?? "").slice(0, 8),
             owner,
+            effort: args.effortLevel,
           },
           "HOOK session-start"
         );
@@ -511,19 +539,21 @@ export function createHookIngestionService(deps: HookIngestionDeps) {
         deps.sessionService.insertEvent(args.sessionId, "subagent_stop", {
           agent_id: args.agentId,
           agent_type: args.agentType,
+          effort_level: args.effortLevel ?? null,
         });
         deps.log.info(
           {
             session: args.sessionId.slice(0, 8),
             agent: args.agentId.slice(0, 8),
             agent_type: args.agentType,
+            effort: args.effortLevel,
           },
           "HOOK subagent-stop"
         );
         if (deps.verbosity.allows("L4") && args.agentType) {
           const chatId = operatorChatForSession(args.sessionId);
           const queued = deps.outbox.enqueueStatus({
-            text: FormatService.subagentDone(args.agentType),
+            text: `${FormatService.subagentDone(args.agentType)}${effortSuffix(args.effortLevel)}`,
             chatId,
             sessionId: args.sessionId || null,
             eventType: "status_subagent",
@@ -551,7 +581,7 @@ export function createHookIngestionService(deps: HookIngestionDeps) {
           const text = FormatService.formatSkill(args.toolInput, "🔧");
           if (text) {
             const queued = deps.outbox.enqueueStatus({
-              text,
+              text: `${text}${effortSuffix(args.effortLevel)}`,
               chatId,
               sessionId: args.sessionId || null,
               eventType: "status_skill",
@@ -564,7 +594,7 @@ export function createHookIngestionService(deps: HookIngestionDeps) {
             const transitions = deps.todoDiff.diffAndPersist(args.sessionId, todos);
             for (const t of transitions) {
               const queued = deps.outbox.enqueueStatus({
-                text: `${t.emoji} ${t.display}`,
+                text: `${t.emoji} ${t.display}${effortSuffix(args.effortLevel)}`,
                 chatId,
                 sessionId: args.sessionId || null,
                 eventType: "status_todo",
@@ -576,7 +606,7 @@ export function createHookIngestionService(deps: HookIngestionDeps) {
           const text = FormatService.formatAgent(args.toolInput);
           if (text) {
             const queued = deps.outbox.enqueueStatus({
-              text,
+              text: `${text}${effortSuffix(args.effortLevel)}`,
               chatId,
               sessionId: args.sessionId || null,
               eventType: "status_skill",
@@ -607,7 +637,7 @@ export function createHookIngestionService(deps: HookIngestionDeps) {
         const chatId = operatorChatForSession(args.sessionId || null);
         const suffix = formatDurationSuffix(args.durationMs);
         const queued = deps.outbox.enqueueStatus({
-          text: `${text} done${suffix}`,
+          text: `${text} done${suffix}${effortSuffix(args.effortLevel)}`,
           chatId,
           sessionId: args.sessionId || null,
           eventType: "status_skill",

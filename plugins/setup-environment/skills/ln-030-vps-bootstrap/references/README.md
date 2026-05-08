@@ -34,7 +34,10 @@ Template files and runbooks used by `ln-030` and its VPS runtime workers. Most t
 | `agent-update.sh` | `/usr/local/bin/agent-update` | root:root | 755 | `BOT_USER`, `AGENT_SKILLS_REPO_URL`, `AGENT_SKILLS_REF`, `AGENT_SKILLS_DIR`, `AGENT_SKILLS_PLUGINS` | — (system-wide; always installs) |
 | `agent-update.service` | `/etc/systemd/system/agent-update.service` | root:root | 644 | — | — (system-wide; always installs) |
 | `agent-update.timer` | `/etc/systemd/system/agent-update.timer` | root:root | 644 | — | — (system-wide; always installs) |
-| `settings.agent-config.fragment.json` | jq-merged into `/home/${BOT_USER}/.claude/settings.json` | `${BOT_USER}` | 644 | — (no placeholders) | — (always installs) |
+| `claude-shared-auth-perms.sh` | `/usr/local/bin/claude-shared-auth-perms` | root:root | 755 | — | shared `/var/lib/claude-shared/` auth only |
+| `claude-shared-auth-perms.service` | `/etc/systemd/system/claude-shared-auth-perms.service` | root:root | 644 | — | shared `/var/lib/claude-shared/` auth only |
+| `claude-shared-auth-perms.path` | `/etc/systemd/system/claude-shared-auth-perms.path` | root:root | 644 | — | shared `/var/lib/claude-shared/` auth only |
+| `settings.agent-config.fragment.json` | jq-merged into `/home/${BOT_USER}/.claude/settings.json` | `${BOT_USER}` | 644 | — (sets `worktree.baseRef=head`) | — (always installs) |
 | `agents/hex-relay/` | `/opt/${SERVICE_PREFIX}-hex-relay` | `${BOT_USER}` | 755 dirs / 644 files | `PROJECT_NAME`, `PROJECT_DIR`, `SERVICE_PREFIX`, `BOT_USER` via service env | `TELEGRAM_BOT_TOKEN` (`ln-033`) |
 | `hex-relay.service` | `/etc/systemd/system/${SERVICE_PREFIX}-hex-relay.service` | root:root | 644 | `PROJECT_NAME`, `PROJECT_DIR`, `SERVICE_PREFIX`, `BOT_USER`, `RELAY_HOOK_PORT` | `TELEGRAM_BOT_TOKEN`, `RELAY_HTTP_TOKEN` (`ln-033`) |
 | `register-telegram-commands.sh` | `/usr/local/bin/${SERVICE_PREFIX}-register-telegram-commands` | root:root | 755 | — | `TELEGRAM_BOT_TOKEN` (`ln-033`) |
@@ -83,7 +86,7 @@ Two viable Linux-user/auth shapes for a multi-project VPS. Pick one before boots
 | Reference | When to use | What it covers |
 |---|---|---|
 | `shared_user_pattern.md` | Fresh install. One operator owns all projects. | Canonical model: one shared `agent-bot` Linux user owns every project's god-session. One `~/.claude.json`, one OAuth, one nvm. Strongest cache locality. |
-| `shared_auth_state.md` | Existing fleet already uses per-project bot users (`<project>-bot`). Adding a new project to it without burning another Claude Max device slot. | Symlink-based shared-state pattern: per-bot Linux/systemd isolation preserved, but `~/.claude`, `~/.claude.json`, `~/.codex` symlink to `/var/lib/claude-shared/` (group `claude-shared` + ACL setgid+default rwx). One device slot serves N bots. Includes migration script and one-time login flow. |
+| `shared_auth_state.md` | Existing fleet already uses per-project bot users (`<project>-bot`). Adding a new project to it without burning another Claude Max device slot. | Symlink-based shared-state pattern: per-bot Linux/systemd isolation preserved, but `~/.claude`, `~/.claude.json`, `~/.codex` symlink to `/var/lib/claude-shared/` (group `claude-shared` + ACL setgid+default rwx + `claude-shared-auth-perms.path` repair). One device slot serves N bots. Includes migration script and one-time login flow. |
 
 `troubleshooting.md` covers failure modes for both shapes (HTTP 401 between bots, ACL mask `---` after token rotation, `agent-update` `+x` bit loss, etc.). `ln-034-vps-environment-diagnostics` reads both references and inspects the active shape automatically.
 

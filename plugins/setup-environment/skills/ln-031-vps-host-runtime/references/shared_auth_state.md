@@ -54,7 +54,7 @@ Pick option (1) when:
 
 ## Required permissions
 
-Filesystem ACL gives the group rwx access without changing the canonical owner of individual files (so token rotation that writes mode `0600` still leaves the file readable through the ACL mask):
+Filesystem ACL gives the group rwx access without changing the canonical owner of individual files. Claude/Codex may still atomically replace auth files and chmod them back to `0600`, which collapses the effective ACL mask. Shared auth therefore requires both default ACLs and a persistent permission repair watcher:
 
 ```bash
 groupadd claude-shared
@@ -73,9 +73,20 @@ setfacl -R -d -m g:claude-shared:rwX /var/lib/claude-shared
 
 `acl` package required (`apt-get install -y acl`).
 
-After `claude /login` writes `.credentials.json` with mode `0600`, run `chmod 0660 /var/lib/claude-shared/.claude/.credentials.json` once so the ACL mask becomes `rw-` (otherwise `getfacl` shows `mask::---` and group access is effectively zero).
+## Persistent permission repair
 
-Same fix applies to `/var/lib/claude-shared/.codex/auth.json` after `codex login --device-auth` writes it `0600`.
+Install the repair helper and systemd path unit whenever `/var/lib/claude-shared/` is used. The helper repairs only owner group, mode, and ACL on the shared auth files; it never prints token contents.
+
+```bash
+install -o root -g root -m 755 references/scripts/claude-shared-auth-perms.sh /usr/local/bin/claude-shared-auth-perms
+install -o root -g root -m 644 references/templates/claude-shared-auth-perms.service /etc/systemd/system/claude-shared-auth-perms.service
+install -o root -g root -m 644 references/templates/claude-shared-auth-perms.path /etc/systemd/system/claude-shared-auth-perms.path
+systemctl daemon-reload
+systemctl enable --now claude-shared-auth-perms.path
+systemctl start claude-shared-auth-perms.service
+```
+
+Manual `chmod 0660 /var/lib/claude-shared/.claude/.credentials.json` or `chmod 0660 /var/lib/claude-shared/.codex/auth.json` is only immediate recovery when the watcher is missing. It is not durable because the next token refresh can replace the file again.
 
 ## Migration script (idempotent)
 
@@ -111,6 +122,7 @@ find "$SHARED" -type d -exec chmod 2770 {} +
 find "$SHARED" -type f -exec chmod 0660 {} +
 setfacl -R    -m g:claude-shared:rwX "$SHARED"
 setfacl -R -d -m g:claude-shared:rwX "$SHARED"
+# Install and start claude-shared-auth-perms.service/.path before the login flow.
 
 # 6. backup + symlink for each bot
 for bot in "${BOTS[@]}"; do
@@ -152,9 +164,8 @@ sudo -u btc-bot tmux -L btc-codex-login new-session -d -s login -x 200 -y 50 \
 # Show the operator the auth.openai.com/codex/device URL + 8-char code; codex picks the token up
 # automatically when the browser flow completes.
 
-# Fix ACL masks (claude/codex write mode 0600; chmod 0660 lets ACL group=rwX become effective)
-chmod 0660 /var/lib/claude-shared/.claude/.credentials.json
-chmod 0660 /var/lib/claude-shared/.codex/auth.json
+# Repair ACL masks immediately after login; the path unit keeps future rotations healthy.
+systemctl start claude-shared-auth-perms.service
 ```
 
 ## Migrating an existing fleet (per-bot → shared)
@@ -198,6 +209,17 @@ The shared part is exactly the LLM-account state (auth tokens, plugin marketplac
 ## Smoke verification
 
 ```bash
+systemctl is-active claude-shared-auth-perms.path
+
+for bot in civic-bot prompsit-bot btc-bot; do
+  sudo -u "$bot" test -r /home/"$bot"/.claude/.credentials.json
+  sudo -u "$bot" test -w /home/"$bot"/.claude/.credentials.json
+  sudo -u "$bot" test -r /home/"$bot"/.claude.json
+  sudo -u "$bot" test -w /home/"$bot"/.claude.json
+  sudo -u "$bot" test -r /home/"$bot"/.codex/auth.json
+  sudo -u "$bot" test -w /home/"$bot"/.codex/auth.json
+done
+
 for bot in civic-bot prompsit-bot btc-bot; do
   echo "-- $bot --"
   sudo -u "$bot" bash -c ". /home/$bot/.nvm/nvm.sh && echo 'reply ok' | timeout 30 claude --print 2>&1" | head -1
@@ -209,7 +231,7 @@ All three should return non-401 claude output and `Logged in using ChatGPT` for 
 
 ## Failure modes (see also `troubleshooting.md`)
 
-- **`HTTP 401 Invalid authentication credentials`** after migration: ACL mask is `---` because token rotation wrote mode `0600`. Fix: `chmod 0660 /var/lib/claude-shared/.claude/.credentials.json` (sets ACL mask to `rw-`).
+- **`HTTP 401 Invalid authentication credentials`** after migration: ACL mask is `---` because token rotation wrote mode `0600`, or the shared-auth repair watcher is missing. Immediate fix: `systemctl start claude-shared-auth-perms.service` if installed, or `chmod 0660 /var/lib/claude-shared/.claude/.credentials.json` as one-shot recovery. Durable fix: install and enable `claude-shared-auth-perms.path`.
 - **`Claude configuration file not found at: /home/<bot>/.claude.json`**: the symlink target does not exist. The first `claude` run creates it through the symlink; if you see this message, just complete the login flow once.
 - **`getfacl: cannot get extended attributes`**: filesystem does not support ACLs. Mount with `acl` option (most modern ext4 mounts have it on by default).
 - **Service restart breaks auth**: a long-running god-session held an in-memory token bound to the OLD per-bot userID. Restarting it forces a fresh disk read; the new shared userID + token will work because both are now consistent on disk.

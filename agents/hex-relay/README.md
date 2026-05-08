@@ -60,7 +60,6 @@ Optional:
 | ------------------------------------------------------------------------ | -------------------------------------------------------------------- |
 | `RELAY_VERBOSITY`                                                        | `quiet`, `normal`, or `verbose`; defaults to `normal`.               |
 | `RELAY_INBOUND_REACTIONS`                                                | Comma-separated Telegram reaction pool for inbound acknowledgements. |
-| `RELAY_IDLE_SHUTDOWN_ENABLED`                                            | Enables idle god-session shutdown; defaults to `true`.               |
 | `RELAY_IDLE_SHUTDOWN_SEC`                                                | Idle seconds before stopping a god-session; defaults to `600`.       |
 | `RELAY_IDLE_TICK_SEC`                                                    | Idle watchdog polling interval; defaults to `60`.                    |
 | `RELAY_IDLE_BOOT_GRACE_SEC`                                              | Grace window after relay boot before idle stops; defaults to `120`.  |
@@ -108,6 +107,7 @@ npm run dev
 - A serialized control lane coordinates `/new_session`, resume/delete actions, and inbound delivery so operator messages are not lost during tmux restarts.
 - Outbound Telegram messages are written to a durable outbox and drained with retry/backoff.
 - Claude Code hooks post local HTTP events into the same SQLite-backed state store.
+- Hook telemetry preserves Claude's active `effort.level` when present; it is observational only and does not change routing or delivery policy.
 - SessionStart context injection exposes recent memories and dispatch history to each new god-session.
 
 ## HTTP Surface

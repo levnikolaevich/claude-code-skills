@@ -12,6 +12,7 @@ import {
 } from "./ports.js";
 
 export type SessionService = ReturnType<typeof createSessionService>;
+type EffortLevel = "low" | "medium" | "high" | "xhigh" | "max";
 
 export interface SessionStartCommand {
   sessionId: string;
@@ -22,6 +23,7 @@ export interface SessionStartCommand {
   previousSession: string | null;
   primaryOperator: number;
   agent?: AgentKind;
+  effortLevel?: EffortLevel;
 }
 
 export function createSessionService(deps: {
@@ -96,6 +98,7 @@ export function createSessionService(deps: {
       model: args.model,
       previous: previousSession,
       owner,
+      effort_level: args.effortLevel ?? null,
     });
     return owner;
   }

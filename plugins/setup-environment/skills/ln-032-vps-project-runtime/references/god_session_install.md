@@ -22,6 +22,8 @@ Render placeholders, upload, set ownership/mode, and install these targets:
 
 Before enabling the god service, run `project_repo_bootstrap.md` to create or verify `${PROJECT_DIR}`.
 
+The settings fragment intentionally sets `worktree.baseRef` to `head`. Claude's `fresh` default branches new `--worktree`, `EnterWorktree`, and isolated subagent worktrees from `origin/<default>`, which can hide local god-session refactor commits. `head` keeps those sessions aligned with the current local branch.
+
 ```bash
 install -d -o ${BOT_USER} -g ${BOT_USER} -m 700 /var/lib/${PROJECT_NAME}
 install -d -o root -g ${BOT_USER} -m 750 /etc/${PROJECT_NAME}
@@ -82,6 +84,25 @@ systemctl restart ${SERVICE_PREFIX}-god@${TELEGRAM_CHAT_ID}.service
 sleep 10
 sudo -u ${BOT_USER} ls -la /home/${BOT_USER}/.claude/cache/usage.json
 sudo -u ${BOT_USER} claude-usage-report
+```
+
+## Shared-auth permission repair
+
+Install this host-level repair unit when the VPS uses `/var/lib/claude-shared/`. Claude/Codex can atomically replace auth files with `0600` during login or refresh; the path unit restores group rw access for all project bot users.
+
+| Template | Target | Owner | Mode |
+|---|---|---|---|
+| `claude-shared-auth-perms.sh` | `/usr/local/bin/claude-shared-auth-perms` | root:root | 755 |
+| `claude-shared-auth-perms.service` | `/etc/systemd/system/claude-shared-auth-perms.service` | root:root | 644 |
+| `claude-shared-auth-perms.path` | `/etc/systemd/system/claude-shared-auth-perms.path` | root:root | 644 |
+
+```bash
+install -o root -g root -m 755 references/scripts/claude-shared-auth-perms.sh /usr/local/bin/claude-shared-auth-perms
+install -o root -g root -m 644 references/templates/claude-shared-auth-perms.service /etc/systemd/system/claude-shared-auth-perms.service
+install -o root -g root -m 644 references/templates/claude-shared-auth-perms.path /etc/systemd/system/claude-shared-auth-perms.path
+systemctl daemon-reload
+systemctl enable --now claude-shared-auth-perms.path
+systemctl start claude-shared-auth-perms.service
 ```
 
 ## System-wide updater

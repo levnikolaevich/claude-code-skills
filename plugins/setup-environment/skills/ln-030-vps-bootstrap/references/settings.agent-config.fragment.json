@@ -1,6 +1,9 @@
 {
   "model": "opus",
   "effortLevel": "xhigh",
+  "worktree": {
+    "baseRef": "head"
+  },
   "permissions": {
     "defaultMode": "bypassPermissions"
   }

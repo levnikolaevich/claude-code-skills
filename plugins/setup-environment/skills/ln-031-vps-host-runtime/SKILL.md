@@ -80,7 +80,7 @@ Responsibilities:
 Verify both agents are reachable for each bot user:
 - `claude --version` exits 0 and `~${BOT_USER}/.claude/.credentials.json` (or shared symlink target) exists.
 - `codex --version` exits 0 and `~${BOT_USER}/.codex/auth.json` (or shared symlink target) exists.
-- Under the shared-auth pattern, both files must live under `/var/lib/claude-shared/` and remain readable by every bot user via the `claude-shared` group ACL — verify with `getfacl /var/lib/claude-shared/.codex/auth.json` shows the group entry. The same ACL pattern applies to `~/.codex` as already documented for `~/.claude`.
+- Under the shared-auth pattern, `.credentials.json`, `.claude.json`, and `.codex/auth.json` must live under `/var/lib/claude-shared/`, remain readable/writable by every bot user via the `claude-shared` group ACL, and have `claude-shared-auth-perms.path` active so atomic token rewrites are repaired after refresh.
 
 Do not overwrite existing auth files. Missing `claude` or `codex` login is a blocker or warning, not an automated fake success.
 
@@ -92,6 +92,7 @@ Install or verify:
 - `agent-update.timer`
 - `/var/lib/agent-update`
 - `/var/log/agent-update.log`
+- when shared-auth is detected: `/usr/local/bin/claude-shared-auth-perms`, `claude-shared-auth-perms.service`, and `claude-shared-auth-perms.path`
 
 Smoke-run only when requested by mode and safe for the host.
 
@@ -118,10 +119,10 @@ Write a `vps-host-runtime` summary artifact with:
 - [ ] Required inputs and SSH/root access verified or reported as blockers.
 - [ ] Base packages and platform CLIs installed, updated, or verified.
 - [ ] `${BOT_USER}` exists with expected SSH ownership and login shell.
-- [ ] Node, Claude Code, and Codex versions verified under `${BOT_USER}`; `~/.codex/auth.json` (or shared symlink target) is readable by every bot user when shared-auth is in use.
+- [ ] Node, Claude Code, and Codex versions verified under `${BOT_USER}`; shared auth files are readable/writable by every bot user and `claude-shared-auth-perms.path` is active when shared-auth is in use.
 - [ ] Current `${PROJECT_DIR}` Codex trust block exists or is reported as planned drift.
 - [ ] Marketplace clone and selected plugins verified.
-- [ ] `agent-update.service` and `agent-update.timer` installed or verified.
+- [ ] `agent-update.service` and `agent-update.timer` installed or verified; shared-auth permission repair unit/path installed or verified when applicable.
 - [ ] `dry_run=true` / `verify_only` performed no mutation.
 - [ ] Structured `vps-host-runtime` summary artifact written.
 

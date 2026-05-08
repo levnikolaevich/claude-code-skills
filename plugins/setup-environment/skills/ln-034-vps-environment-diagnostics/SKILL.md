@@ -21,7 +21,7 @@ Inspects one VPS project environment and reports health, drift, logs, auth state
 **MANDATORY READ:** Load `references/worker_runtime_contract.md`, `references/coordinator_summary_contract.md`, and `references/vps_runtime_contract.md`
 **MANDATORY READ:** Load `../ln-030-vps-bootstrap/references/scope_layers.md`, `../ln-030-vps-bootstrap/references/troubleshooting.md`, and `../ln-030-vps-bootstrap/references/verification_recipes.md`
 
-**Conditional read (load when `/var/lib/claude-shared/` exists on the host)**: `../ln-030-vps-bootstrap/references/shared_auth_state.md` — Phase 2 ACL-mask checks (`getfacl` on `.credentials.json` and `.codex/auth.json` must show `mask::rw-`, not `mask::---`) and Phase 5 safe repair `chmod 0660` come from this reference. Required when diagnosing shared-auth fleets.
+**Conditional read (load when `/var/lib/claude-shared/` exists on the host)**: `../ln-030-vps-bootstrap/references/shared_auth_state.md` — Phase 2 checks include `claude-shared-auth-perms.path`, ACL masks, and per-bot read/write access for `.credentials.json`, `.claude.json`, and `.codex/auth.json`. Required when diagnosing shared-auth fleets.
 
 ---
 
@@ -61,7 +61,7 @@ Inspect:
 - `${AGENT_SKILLS_DIR}` git state
 - marketplace/plugin health
 - `agent-update.timer` schedule, `agent-update.service` `is-failed` state, `/usr/local/bin/agent-update` exec bit (`[[ -x ... ]]`) and `bash -n` syntax
-- when `/var/lib/claude-shared/` exists: `claude-shared` group membership for every bot user, ACL mask on `/var/lib/claude-shared/.claude/.credentials.json` and `/var/lib/claude-shared/.codex/auth.json` (mask must be `rw-`, not `---`); `~/.claude.json` symlink target reachable for each bot
+- when `/var/lib/claude-shared/` exists: `claude-shared` group membership for every bot user, `claude-shared-auth-perms.path` active, ACL mask on `/var/lib/claude-shared/.claude/.credentials.json`, `/var/lib/claude-shared/.claude.json`, and `/var/lib/claude-shared/.codex/auth.json` (mask must be `rw-`, not `---`), and each bot user can read/write all three files through its home symlinks
 
 ### Phase 3: Project Runtime
 
@@ -78,6 +78,8 @@ Named drift checks (block-level findings; map to safe repairs in Phase 5):
 - **god/tmux parity**: any `${SERVICE_PREFIX}-god@<id>.service` is `active` while `tmux -L ${SERVICE_PREFIX} has-session -t "=${SERVICE_PREFIX}-god-<id>"` returns non-zero
 - **stale tmux socket**: `tmux -L ${SERVICE_PREFIX} ls` lists session names that no longer correspond to any active god@<id>.service (orphans from killed instances)
 - **missing .agent-home/users**: `${PROJECT_DIR}/.agent-home/users` absent or wrong owner — relay will fail with `status=226/NAMESPACE` on next restart
+- **shared-auth-repair-missing**: `/var/lib/claude-shared/` exists but `claude-shared-auth-perms.path` is missing or inactive
+- **shared-auth-acl-drift**: repair automation exists but one or more shared auth files has `mask::---` or fails per-bot read/write checks
 
 ### Phase 4: Relay Runtime
 
@@ -103,7 +105,7 @@ Allowed safe repairs only:
 - rerun `systemctl daemon-reload`
 - report, but do not rewrite, missing auth or secrets
 - `chmod +x /usr/local/bin/agent-update` when the file is a non-executable bash script (validated by `file` and `bash -n`); follow with `systemctl reset-failed agent-update.service`
-- `chmod 0660` on `/var/lib/claude-shared/.claude/.credentials.json` or `/var/lib/claude-shared/.codex/auth.json` when ACL mask reads `---` (Claude/Codex write mode `0600`; the chmod restores ACL group access without touching the underlying token)
+- `systemctl start claude-shared-auth-perms.service` when shared-auth ACL drift is detected and the unit exists; manual `chmod 0660` on `/var/lib/claude-shared/.claude/.credentials.json`, `/var/lib/claude-shared/.claude.json`, or `/var/lib/claude-shared/.codex/auth.json` is immediate recovery only when the repair unit is missing
 - append a missing bot user to `RUNTIME_USERS=(...)` in `/usr/local/bin/agent-update` when that bot has its own `~/.nvm/nvm.sh` and is otherwise healthy
 - **timer enabled-inactive**: `systemctl daemon-reload && systemctl start ${SERVICE_PREFIX}-dispatch.timer` followed by `systemctl list-timers ${SERVICE_PREFIX}-dispatch.timer --all` to confirm `NEXT` is populated
 - **god/tmux parity**: `systemctl restart ${SERVICE_PREFIX}-god@<id>.service` and re-verify `tmux -L ${SERVICE_PREFIX} has-session -t "=${SERVICE_PREFIX}-god-<id>"` exits 0; do NOT rename or kill the orphaned tmux session of a different user

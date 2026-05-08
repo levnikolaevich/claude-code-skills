@@ -297,7 +297,12 @@ test("verbosity gates subagent and tool status events", () => {
     true
   );
   assert.equal(
-    service.preToolUse({ sessionId: "sid", toolName: "Skill", toolInput: { skill: "ln-400" } }).ok,
+    service.preToolUse({
+      sessionId: "sid",
+      toolName: "Skill",
+      toolInput: { skill: "ln-400" },
+      effortLevel: "xhigh",
+    }).ok,
     true
   );
   const post = service.postToolUse({
@@ -305,11 +310,18 @@ test("verbosity gates subagent and tool status events", () => {
     toolName: "Skill",
     toolInput: { skill: "ln-401" },
     durationMs: 1500,
+    effortLevel: "high",
   });
   assert.equal(post.ok, true);
 
   assert.equal(state.statuses.length, 3);
   assert.equal(state.statuses[0]?.eventType, "status_subagent");
   assert.equal(state.statuses[1]?.eventType, "status_skill");
-  assert.match(String(state.statuses[2]?.text), /done \(1\.5s\)$/);
+  assert.match(String(state.statuses[1]?.text), /effort xhigh$/);
+  assert.match(String(state.statuses[2]?.text), /done \(1\.5s\) effort high$/);
+  assert.deepEqual(state.events[0], [
+    "sid",
+    "subagent_stop",
+    { agent_id: "agent-123456", agent_type: "review-worker", effort_level: null },
+  ]);
 });

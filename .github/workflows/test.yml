@@ -130,21 +130,6 @@ jobs:
       - name: MCP hex-common test
         run: cd mcp/hex-common && npm test
 
-      - name: hex-relay install
-        run: cd agents/hex-relay && npm ci
-
-      - name: hex-relay typecheck
-        run: cd agents/hex-relay && npm run typecheck
-
-      - name: hex-relay test
-        run: cd agents/hex-relay && npm test
-
-      - name: hex-relay lint
-        run: cd agents/hex-relay && npm run lint
-
-      - name: hex-relay format check
-        run: cd agents/hex-relay && npm run format:check
-
   hex-ssh-interop:
     name: hex-ssh interop
     runs-on: ubuntu-latest

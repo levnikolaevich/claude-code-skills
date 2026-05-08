@@ -28,4 +28,4 @@ Required fields for every coordinator or worker summary:
 }
 ```
 
-Load only the active family contract for specialized fields: Agile, evaluation/review, documentation, optimization, setup/VPS, or codebase audit.
+Load only the active family contract for specialized fields: Agile, evaluation/review, documentation, optimization, setup, or codebase audit.

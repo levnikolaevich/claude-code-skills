@@ -1,5 +1,3 @@
-<!-- SOURCE-OF-TRUTH: shared/templates/patterns_template.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
-
 # Patterns Catalog
 
 Architectural patterns with 4-score evaluation.

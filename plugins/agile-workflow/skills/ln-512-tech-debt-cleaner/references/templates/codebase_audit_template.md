@@ -1,5 +1,3 @@
-<!-- SOURCE-OF-TRUTH: shared/templates/codebase_audit_template.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
-
 # Codebase Audit Report Template
 
 ---

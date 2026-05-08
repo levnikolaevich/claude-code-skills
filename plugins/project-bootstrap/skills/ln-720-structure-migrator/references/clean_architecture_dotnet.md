@@ -1,5 +1,3 @@
-<!-- SOURCE-OF-TRUTH: shared/references/clean_architecture_dotnet.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
-
 # Clean Architecture Template (.NET)
 
 <!-- SCOPE: .NET Clean Architecture folder structure ONLY. Contains Api/Domain/Infrastructure layers, file naming. -->

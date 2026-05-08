@@ -2,18 +2,14 @@
 
 # Coordinator Summary Contract
 
-Runtime summary envelope shared by coordinators and workers. Domain-specific fields live in the family runtime or summary contract loaded by the active skill.
+Small runtime summary envelope for cross-skill routing. Domain-specific fields live in the active family runtime or summary contract.
 
-## General Rules
+## Hard Rules
 
-- Write summaries only under the active run output directory or the explicit summary path provided by the caller.
-- Never write summary artifacts outside `.hex-skills/runtime-artifacts/` unless the skill contract names another path.
-- Use the shared envelope below for cross-skill routing; add family fields from the active runtime contract.
-- If a domain contract conflicts with this file, this envelope remains required and the domain contract owns its specialized fields.
-
-### Output Path Guard
-
-Before writing a summary, resolve the target path and verify it is under the intended run directory. Reject absolute or traversal paths from user input.
+- Write summaries only under the active run output directory or the explicit caller-provided summary path.
+- Never write outside `.hex-skills/runtime-artifacts/` unless the active skill contract names another path.
+- Resolve the target path before writing and reject absolute or traversal paths from user input.
+- Always include this envelope; add family fields from the active domain contract.
 
 ## Shared Envelope
 
@@ -32,13 +28,4 @@ Required fields for every coordinator or worker summary:
 }
 ```
 
-## Domain Contract Routing
-
-| Family | Load domain contract |
-| --- | --- |
-| Agile planning and execution | Family runtime contract plus matching summary contract when present |
-| Evaluation and review | Evaluation coordinator, worker, research, and summary contracts |
-| Documentation pipeline | Docs runtime and docs generation summary contracts |
-| Optimization | Optimization, dependency, modernization, or benchmark runtime contracts |
-| Setup environment and VPS | Environment runtime contracts plus the VPS runtime contract |
-| Codebase audit | Audit worker, scoring, output, and summary contracts |
+Load only the active family contract for specialized fields: Agile, evaluation/review, documentation, optimization, setup/VPS, or codebase audit.

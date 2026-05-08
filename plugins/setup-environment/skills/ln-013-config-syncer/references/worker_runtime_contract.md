@@ -2,89 +2,39 @@
 
 # Worker Runtime Contract
 
-Shared deterministic runtime model for stateful L3 workers.
+Small deterministic runtime contract for stateful L3 workers.
 
-## Core Model
+## Runtime Files
 
-Every stateful worker runtime has:
+Every stateful worker runtime uses:
 - `manifest.json` for immutable invocation inputs
 - `state.json` for mutable execution snapshot
 - `checkpoints.json` for latest checkpoint per phase plus history
 - `history.jsonl` for append-only runtime events
-- `resume_action` derived from state and checkpoints only
 
-Terminal phases:
-- `DONE`
-- `PAUSED`
+Terminal phases: `DONE`, `PAUSED`.
 
-## Required Goals
+## Required Fields
 
-The worker runtime exists to guarantee:
-- deterministic phase progression
-- guard-checked transitions
-- resumability without chat memory
-- machine-readable completion
+`run_id`, `skill`, `identifier`, `phase`, `complete`, `paused_reason`, `pending_decision`, `final_result`, `resume_action`.
 
-AC validation is one domain guard, not the runtime's only purpose.
-
-## Required Vocabulary
-
-Required fields:
-- `run_id`
-- `skill`
-- `identifier`
-- `phase`
-- `complete`
-- `paused_reason`
-- `pending_decision`
-- `final_result`
+`resume_action` must be derived from `state.json` and checkpoints only, never from chat memory.
 
 ## Artifact Contract
 
-Coordinator-invoked workers must:
-- receive `runId`
-- receive `summaryArtifactPath`
-- write a validated summary artifact before `DONE`
+Coordinator-invoked workers must receive `runId` and `summaryArtifactPath`, then write a validated summary artifact before `DONE`. Standalone workers may generate a run id and write the summary to the family-specific run-scoped path. Coordinators consume worker artifacts, not worker prose.
 
-Standalone workers may:
-- generate a standalone `run_id`
-- write their summary artifact to the family-specific run-scoped path
+## Independence and Guards
 
-Coordinator-invoked workers must receive both:
-- `runId`
-- `summaryArtifactPath`
-
-Coordinators consume worker artifacts, not worker prose.
-
-## Worker Independence
-
-- workers depend only on shared contracts and their own domain inputs
-- workers must not encode `Parent`, `Coordinator`, or caller hierarchy in the public contract
-- workers stay standalone-invocable even when a coordinator usually calls them
-- upward orchestration state is never a worker input
-
-## Guard Rules
-
-- no transition without a checkpoint for the current phase
-- no `DONE` before required worker self-check passes
-- no `DONE` before the required summary artifact is written
-- `resume_action` must be derivable from runtime state only
-- public outputs and runtime artifacts must stay separate
-
-## Relationship to Coordinator Runtime
-
-Use `references/scripts/coordinator-runtime/` as the implementation base.
-Worker runtimes are family-specific thin layers over the shared runtime engine, not a separate framework.
+- Workers depend only on shared contracts and their own domain inputs.
+- Workers must not encode `Parent`, `Coordinator`, caller hierarchy, or upward orchestration state.
+- No transition without a checkpoint for the current phase.
+- No `DONE` before self-checks pass and the summary artifact is written.
+- Public outputs and runtime artifacts stay separate.
 
 ## Family Contracts
 
-- environment setup workers: `references/environment_worker_runtime_contract.md`
-- audits: evaluation-worker runtime envelope plus `references/audit_worker_core_contract.md`
-- task execution: `references/task_worker_runtime_contract.md`
-- quality: `references/quality_worker_runtime_contract.md`
-- test planning: `references/test_planning_worker_runtime_contract.md`
-- task planning: `references/task_plan_worker_runtime_contract.md`
-- planning: `references/planning_worker_runtime_contract.md`
+Load the matching family contract only when it applies: environment worker, audit worker, task worker, quality worker, test planning, task planning, or planning worker.
 
 ---
 **Version:** 1.0.0

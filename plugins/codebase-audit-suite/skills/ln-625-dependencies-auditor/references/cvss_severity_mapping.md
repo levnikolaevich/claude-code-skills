@@ -1,5 +1,3 @@
-<!-- SOURCE-OF-TRUTH: shared/references/cvss_severity_mapping.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
-
 # CVSS Severity Mapping Reference
 
 <!-- SCOPE: CVSS severity level mapping ONLY. Contains score ranges, action requirements, blocking rules. -->

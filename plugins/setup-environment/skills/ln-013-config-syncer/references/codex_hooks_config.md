@@ -1,5 +1,3 @@
-<!-- SOURCE-OF-TRUTH: shared/references/codex_hooks_config.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
-
 # Codex hooks config
 
 > **SCOPE:** Reference for codex hook integration. Loaded only when ln-013-config-syncer aligns codex hooks.
@@ -29,9 +27,6 @@ The block below must be inserted between markers managed by `ln-013-config-synce
 
 ```toml
 # BEGIN ln-013 managed codex hooks
-[features]
-codex_hooks = true
-
 [[hooks.UserPromptSubmit]]
 [[hooks.UserPromptSubmit.hooks]]
 type = "command"
@@ -66,6 +61,8 @@ timeout = 30
 
 Notes:
 
+- Do not add `[features] codex_hooks = true`; that key is a legacy alias. Current Codex
+  uses the stable `hooks` feature, which is enabled by default for user-scope hook config.
 - Codex does not emit `StopFailure` or `SubagentStop`. Those routes stay Claude-only.
 - Do not configure `PermissionRequest` for hex-relay until the relay has a dedicated
   route for it. Posting it to `/hook/permission-request` only creates swallowed 404s.

@@ -1,5 +1,3 @@
-<!-- SOURCE-OF-TRUTH: shared/references/results_log_pattern.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
-
 # Results Log Pattern
 
 Append-only trend tracking for audit coordinators. Inspired by autoresearch `results.tsv`.

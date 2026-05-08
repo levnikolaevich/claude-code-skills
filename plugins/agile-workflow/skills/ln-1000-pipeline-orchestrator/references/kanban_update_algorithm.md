@@ -1,5 +1,3 @@
-<!-- SOURCE-OF-TRUTH: shared/references/kanban_update_algorithm.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
-
 # Kanban Board Update Algorithm
 
 Standard algorithm for updating `docs/tasks/kanban_board.md` with Epic/Story/Task links.

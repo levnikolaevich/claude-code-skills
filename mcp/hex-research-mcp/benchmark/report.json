@@ -1,0 +1,82 @@
+{
+  "generated_at": "fixture-deterministic",
+  "methodology": "Rough deterministic estimate: baseline reads all Markdown/YAML/JSON fixture research files; workflow output is JSON.stringify(structuredContent); estimated tokens = ceil(chars / 4). This is not production tokenizer accuracy.",
+  "baseline": {
+    "files": [
+      "benchmark/runs/2026-05-07-target-h01/manifest.yaml",
+      "benchmark/runs/2026-05-07-target-h01/results.json",
+      "benchmark/runs/2026-05-08-comprehensive-g1/manifest.yaml",
+      "benchmark/runs/2026-05-08-comprehensive-g1/results.json",
+      "docs/goals/G1.1.md",
+      "docs/goals/G1.md",
+      "docs/goals/G2.md",
+      "docs/hypotheses/H01.md",
+      "docs/hypotheses/H02.md",
+      "docs/hypotheses/H03.md",
+      "docs/hypotheses/H04.md",
+      "docs/hypotheses/H05.md",
+      "docs/hypotheses/H06.md",
+      "docs/hypotheses/H90.md"
+    ],
+    "file_count": 14,
+    "chars": 6952,
+    "estimated_tokens": 1738,
+    "method": "All Markdown, YAML, and JSON fixture research files; token estimate is ceil(chars / 4)."
+  },
+  "workflows": [
+    {
+      "id": "find_live_hypotheses",
+      "label": "Find live hypotheses",
+      "baseline_tokens": 1738,
+      "output": {
+        "chars": 416,
+        "estimated_tokens": 104
+      },
+      "estimated_savings_percent": 94
+    },
+    {
+      "id": "find_pending_implementation",
+      "label": "Find pending implementation",
+      "baseline_tokens": 1738,
+      "output": {
+        "chars": 438,
+        "estimated_tokens": 110
+      },
+      "estimated_savings_percent": 93.7
+    },
+    {
+      "id": "inspect_goal",
+      "label": "Inspect goal",
+      "baseline_tokens": 1738,
+      "output": {
+        "chars": 2422,
+        "estimated_tokens": 606
+      },
+      "estimated_savings_percent": 65.1
+    },
+    {
+      "id": "trace_lineage",
+      "label": "Trace lineage",
+      "baseline_tokens": 1738,
+      "output": {
+        "chars": 2207,
+        "estimated_tokens": 552
+      },
+      "estimated_savings_percent": 68.2
+    },
+    {
+      "id": "audit_drift_refine_gaps",
+      "label": "Audit drift/refine gaps",
+      "baseline_tokens": 1738,
+      "output": {
+        "chars": 1535,
+        "estimated_tokens": 384
+      },
+      "estimated_savings_percent": 77.9
+    }
+  ],
+  "summary": {
+    "workflow_count": 5,
+    "average_estimated_savings_percent": 79.8
+  }
+}

@@ -1,0 +1,253 @@
+{
+  "generated_at": "fixture-deterministic",
+  "tool_count": 15,
+  "scenario_count": 15,
+  "status": "verified",
+  "results": [
+    {
+      "tool": "index_hypotheses",
+      "description": "rebuilds the fixture SQLite index",
+      "status": "verified",
+      "output_status": "OK",
+      "key_fields": [
+        "reason",
+        "status",
+        "summary",
+        "warnings"
+      ],
+      "output_chars": 986,
+      "bounded": true,
+      "structured_mirror": true
+    },
+    {
+      "tool": "verify_index",
+      "description": "validates fixture corpus without treating diagnostics as tool errors",
+      "status": "verified",
+      "output_status": "OK",
+      "key_fields": [
+        "reason",
+        "status",
+        "summary",
+        "warnings"
+      ],
+      "output_chars": 161,
+      "bounded": true,
+      "structured_mirror": true
+    },
+    {
+      "tool": "find_hypotheses",
+      "description": "finds live hypotheses with bounded rows",
+      "status": "verified",
+      "output_status": "OK",
+      "key_fields": [
+        "follow_ups",
+        "hypotheses",
+        "reason",
+        "status",
+        "summary"
+      ],
+      "output_chars": 414,
+      "bounded": true,
+      "structured_mirror": true
+    },
+    {
+      "tool": "inspect_hypothesis",
+      "description": "inspects one hypothesis with linked graph data",
+      "status": "verified",
+      "output_status": "OK",
+      "key_fields": [
+        "edges",
+        "evidence",
+        "follow_ups",
+        "frontmatter",
+        "goals",
+        "hypothesis",
+        "reason",
+        "runs",
+        "sources",
+        "status",
+        "summary",
+        "tasks"
+      ],
+      "output_chars": 6838,
+      "bounded": true,
+      "structured_mirror": true
+    },
+    {
+      "tool": "find_evidence",
+      "description": "finds evidence and cited sources",
+      "status": "verified",
+      "output_status": "OK",
+      "key_fields": [
+        "evidence",
+        "reason",
+        "sources",
+        "status",
+        "summary"
+      ],
+      "output_chars": 816,
+      "bounded": true,
+      "structured_mirror": true
+    },
+    {
+      "tool": "find_runs",
+      "description": "finds comprehensive benchmark runs",
+      "status": "verified",
+      "output_status": "OK",
+      "key_fields": [
+        "reason",
+        "runs",
+        "status",
+        "summary"
+      ],
+      "output_chars": 745,
+      "bounded": true,
+      "structured_mirror": true
+    },
+    {
+      "tool": "trace_lineage",
+      "description": "returns bounded lineage graph",
+      "status": "verified",
+      "output_status": "OK",
+      "key_fields": [
+        "edges",
+        "nodes",
+        "reason",
+        "status",
+        "summary"
+      ],
+      "output_chars": 2205,
+      "bounded": true,
+      "structured_mirror": true
+    },
+    {
+      "tool": "analyze_topology",
+      "description": "summarizes topology without graph dump",
+      "status": "verified",
+      "output_status": "OK",
+      "key_fields": [
+        "hubs",
+        "reason",
+        "status",
+        "summary"
+      ],
+      "output_chars": 931,
+      "bounded": true,
+      "structured_mirror": true
+    },
+    {
+      "tool": "audit_orphans",
+      "description": "audits drift and task/refine gaps",
+      "status": "verified",
+      "output_status": "STALE",
+      "key_fields": [
+        "issues",
+        "reason",
+        "status",
+        "summary"
+      ],
+      "output_chars": 1533,
+      "bounded": true,
+      "structured_mirror": true
+    },
+    {
+      "tool": "analyze_progress",
+      "description": "detects changed research files through git diff",
+      "status": "verified",
+      "output_status": "OK",
+      "key_fields": [
+        "changed_files",
+        "next_action",
+        "reason",
+        "status",
+        "summary"
+      ],
+      "output_chars": 182,
+      "bounded": true,
+      "structured_mirror": true
+    },
+    {
+      "tool": "analyze_proposed",
+      "description": "checks proposal readiness gaps",
+      "status": "verified",
+      "output_status": "OK",
+      "key_fields": [
+        "follow_ups",
+        "issues",
+        "proposal",
+        "reason",
+        "status",
+        "summary"
+      ],
+      "output_chars": 441,
+      "bounded": true,
+      "structured_mirror": true
+    },
+    {
+      "tool": "inspect_goal",
+      "description": "inspects one goal and linked hypotheses",
+      "status": "verified",
+      "output_status": "OK",
+      "key_fields": [
+        "children",
+        "follow_ups",
+        "frontmatter",
+        "goal",
+        "hypotheses",
+        "parents",
+        "reason",
+        "status",
+        "summary"
+      ],
+      "output_chars": 2420,
+      "bounded": true,
+      "structured_mirror": true
+    },
+    {
+      "tool": "trace_goal_tree",
+      "description": "returns bounded goal tree",
+      "status": "verified",
+      "output_status": "OK",
+      "key_fields": [
+        "edges",
+        "goals",
+        "reason",
+        "status",
+        "summary"
+      ],
+      "output_chars": 931,
+      "bounded": true,
+      "structured_mirror": true
+    },
+    {
+      "tool": "audit_goal_alignment",
+      "description": "audits goal coverage and comprehensive metrics",
+      "status": "verified",
+      "output_status": "STALE",
+      "key_fields": [
+        "issues",
+        "reason",
+        "status",
+        "summary"
+      ],
+      "output_chars": 912,
+      "bounded": true,
+      "structured_mirror": true
+    },
+    {
+      "tool": "export_canvas",
+      "description": "exports bounded JSON Canvas in dry-run mode",
+      "status": "verified",
+      "output_status": "OK",
+      "key_fields": [
+        "canvas",
+        "reason",
+        "status",
+        "summary"
+      ],
+      "output_chars": 3392,
+      "bounded": true,
+      "structured_mirror": true
+    }
+  ]
+}

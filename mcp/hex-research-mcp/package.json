@@ -20,7 +20,11 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "test": "node --test test/*.mjs",
-    "check": "node --check server.mjs",
+    "check": "node --check server.mjs && node --check scripts/quality-lib.mjs && node --check scripts/generate-quality-report.mjs && node --check scripts/sync-quality-docs.mjs && node --check evals/index.mjs && node --check benchmark/index.mjs",
+    "evals": "node evals/index.mjs",
+    "benchmark": "node benchmark/index.mjs",
+    "docs:quality": "node scripts/generate-quality-report.mjs && node scripts/sync-quality-docs.mjs",
+    "docs:quality:check": "node scripts/generate-quality-report.mjs --check && node scripts/sync-quality-docs.mjs --check",
     "prepare": "npm run build"
   },
   "engines": {

@@ -1,0 +1,231 @@
+{
+  "generated_at": "fixture-deterministic",
+  "release_readiness": "Release readiness: Server MVP verified on deterministic fixtures. npm publish, btc-trader migration, Phase 7 pull-up, and skill packaging are intentionally out of scope for this snapshot.",
+  "methodology": "evals call every registered tool against test/fixtures/project with deterministic assertions and structuredContent/text mirror checks. Benchmark token counts are rough ceil(chars / 4) estimates, not production tokenizer measurements.",
+  "summary": {
+    "tools_total": 15,
+    "tools_verified": 15,
+    "eval_scenarios": 15,
+    "benchmark_workflows": 5,
+    "average_estimated_savings_percent": 79.8
+  },
+  "tools": [
+    {
+      "name": "index_hypotheses",
+      "risk": "high",
+      "scenarios": [
+        "fixture index rebuild",
+        "structured output mirror",
+        "INVALID error semantics"
+      ],
+      "test_source": "test/indexing.mjs",
+      "eval_status": "verified",
+      "output_status": "OK",
+      "output_chars": 986,
+      "bounded": true,
+      "structured_mirror": true
+    },
+    {
+      "name": "verify_index",
+      "risk": "medium",
+      "scenarios": [
+        "fixture validation",
+        "diagnostic INVALID non-error semantics"
+      ],
+      "test_source": "test/schema-contract.mjs",
+      "eval_status": "verified",
+      "output_status": "OK",
+      "output_chars": 161,
+      "bounded": true,
+      "structured_mirror": true
+    },
+    {
+      "name": "find_hypotheses",
+      "risk": "low",
+      "scenarios": [
+        "live status query",
+        "pending implementation query",
+        "bounded result set"
+      ],
+      "test_source": "test/tools.mjs",
+      "eval_status": "verified",
+      "output_status": "OK",
+      "output_chars": 414,
+      "bounded": true,
+      "structured_mirror": true
+    },
+    {
+      "name": "inspect_hypothesis",
+      "risk": "low",
+      "scenarios": [
+        "hypothesis detail",
+        "linked goals/tasks/evidence/runs/sources"
+      ],
+      "test_source": "test/tools.mjs",
+      "eval_status": "verified",
+      "output_status": "OK",
+      "output_chars": 6838,
+      "bounded": true,
+      "structured_mirror": true
+    },
+    {
+      "name": "find_evidence",
+      "risk": "low",
+      "scenarios": [
+        "hypothesis evidence",
+        "cited source query"
+      ],
+      "test_source": "test/tools.mjs",
+      "eval_status": "verified",
+      "output_status": "OK",
+      "output_chars": 816,
+      "bounded": true,
+      "structured_mirror": true
+    },
+    {
+      "name": "find_runs",
+      "risk": "low",
+      "scenarios": [
+        "targeted run query",
+        "comprehensive run query"
+      ],
+      "test_source": "test/tools.mjs",
+      "eval_status": "verified",
+      "output_status": "OK",
+      "output_chars": 745,
+      "bounded": true,
+      "structured_mirror": true
+    },
+    {
+      "name": "trace_lineage",
+      "risk": "medium",
+      "scenarios": [
+        "bounded hypothesis lineage",
+        "edge traversal"
+      ],
+      "test_source": "test/tools.mjs",
+      "eval_status": "verified",
+      "output_status": "OK",
+      "output_chars": 2205,
+      "bounded": true,
+      "structured_mirror": true
+    },
+    {
+      "name": "analyze_topology",
+      "risk": "low",
+      "scenarios": [
+        "topology summary",
+        "bounded hub list"
+      ],
+      "test_source": "evals/index.mjs",
+      "eval_status": "verified",
+      "output_status": "OK",
+      "output_chars": 931,
+      "bounded": true,
+      "structured_mirror": true
+    },
+    {
+      "name": "audit_orphans",
+      "risk": "medium",
+      "scenarios": [
+        "orphan categories",
+        "status-verdict drift",
+        "refine implementation gap"
+      ],
+      "test_source": "test/audit.mjs",
+      "eval_status": "verified",
+      "output_status": "STALE",
+      "output_chars": 1533,
+      "bounded": true,
+      "structured_mirror": true
+    },
+    {
+      "name": "analyze_progress",
+      "risk": "low",
+      "scenarios": [
+        "git diff research-file detection"
+      ],
+      "test_source": "evals/index.mjs",
+      "eval_status": "verified",
+      "output_status": "OK",
+      "output_chars": 182,
+      "bounded": true,
+      "structured_mirror": true
+    },
+    {
+      "name": "analyze_proposed",
+      "risk": "medium",
+      "scenarios": [
+        "proposal readiness gaps",
+        "bounded follow-ups"
+      ],
+      "test_source": "evals/index.mjs",
+      "eval_status": "verified",
+      "output_status": "OK",
+      "output_chars": 441,
+      "bounded": true,
+      "structured_mirror": true
+    },
+    {
+      "name": "inspect_goal",
+      "risk": "low",
+      "scenarios": [
+        "goal detail",
+        "linked hypotheses",
+        "goal children/parents"
+      ],
+      "test_source": "test/tools.mjs",
+      "eval_status": "verified",
+      "output_status": "OK",
+      "output_chars": 2420,
+      "bounded": true,
+      "structured_mirror": true
+    },
+    {
+      "name": "trace_goal_tree",
+      "risk": "medium",
+      "scenarios": [
+        "bounded goal tree",
+        "goal decomposition edges"
+      ],
+      "test_source": "test/tools.mjs",
+      "eval_status": "verified",
+      "output_status": "OK",
+      "output_chars": 931,
+      "bounded": true,
+      "structured_mirror": true
+    },
+    {
+      "name": "audit_goal_alignment",
+      "risk": "medium",
+      "scenarios": [
+        "active goal alignment",
+        "comprehensive-run metric gaps"
+      ],
+      "test_source": "test/audit.mjs",
+      "eval_status": "verified",
+      "output_status": "STALE",
+      "output_chars": 912,
+      "bounded": true,
+      "structured_mirror": true
+    },
+    {
+      "name": "export_canvas",
+      "risk": "high",
+      "scenarios": [
+        "dry-run canvas",
+        "merge mode",
+        "overwrite mode",
+        "position preservation"
+      ],
+      "test_source": "test/export.mjs",
+      "eval_status": "verified",
+      "output_status": "OK",
+      "output_chars": 3392,
+      "bounded": true,
+      "structured_mirror": true
+    }
+  ],
+  "eval_report": "evals/report.json",
+  "benchmark_report": "benchmark/report.json"
+}

@@ -5,8 +5,25 @@
 >
 > **Приложение A** — примеры файлов после миграции (H##.md, G##.md).
 > **Приложение B** — пример MCP wire format (B.1) и human-readable rendering (B.2).
-> **Приложение C** — архитектурное обоснование: сравнение с прайор-артом, FAIR-compliance, reproducibility checklist.
+> **Приложение C** — архитектурное обоснование: сравнение с прайор-артом, FAIR-aligned coverage, reproducibility checklist.
 > **Приложение D** — каталог заимствованных паттернов из изученных продуктов с обоснованием каждого решения.
+
+## Implementation Status
+
+**Current state (2026-05-08): MVP implemented and committed.**
+
+- Implementation commit: `63b5439 feat(mcp): add hex research server MVP`.
+- Implemented package: `mcp/hex-research-mcp`.
+- Workspace wiring: `mcp/package.json` includes the new `hex-research-mcp` workspace and root test script coverage.
+- Implemented MCP surface: all 15 tools from this plan are registered with strict Zod input schemas, output schemas, and explicit annotations.
+- Implemented storage/indexing: markdown hypotheses/goals and run manifests are indexed into `.hex-skills/researchgraph/index.db` with SQLite tables, FTS, synthetic nodes, edges, tasks, sources, and comprehensive-run goal metrics.
+- Implemented validation: status/task invariants, `decision: refine` handling, status-verdict drift, run manifest distinctions between targeted and comprehensive runs, lowercase `reason`/`warnings[].code` wire contract.
+- Implemented docs/tests: `README.md`, `PROTOCOL.md`, fixture corpus, smoke/schema/indexing/tools/audit/export tests.
+- Verification passed before the implementation commit: `npm --prefix mcp --workspace @levnikolaevich/hex-research-mcp test`, `run check`, `run lint`, `run build`, `npm --prefix mcp test`, `npm --prefix mcp audit --audit-level=moderate`, and `git diff --check`.
+
+**MVP scope notes.** The committed MVP intentionally excludes btc-trader migration, npm publish, Phase 7 pull-up into `hex-common`, and a new skill package. Those remain follow-up work. The historical design below still describes the broader release vision; when it conflicts with the committed MVP, this status block is authoritative for the current repository state.
+
+**Dependency snapshot note.** The plan target was latest stable npm packages as of 2026-05-08. The committed package uses current workspace-compatible versions and root overrides: MCP SDK `^1.29.0`, `better-sqlite3 ^12.9.0`, `chokidar ^5.0.0`, `gray-matter ^4.0.3`, `picomatch ^4.0.4`, and `zod ^4.3.6`. `npm view zod version` reports `4.4.3`; bumping the workspace-wide Zod override to `^4.4.3` should be handled as a separate dependency-maintenance change if required.
 
 ## 0. TL;DR
 
@@ -73,9 +90,9 @@ Aggregation алгоритм (§4.4.3) работает для любого до
 
 Дать AI-агенту (Claude, Cursor, Cody, любой MCP-клиент) ту же интероперабельность с **деревом исследования**, которую `hex-graph-mcp` даёт с **кодом**: дешёвые, детерминированные, summary-first запросы вместо чтения 1000-строчного markdown-файла.
 
-### 1.4. FAIR-совместимость дизайна
+### 1.4. FAIR-aligned дизайн
 
-План соответствует [FAIR Guiding Principles (Wilkinson et al. 2016)][wilkinson-fair] — это важно для долгосрочной воспроизводимости, даже если работа не публикуется:
+План следует [FAIR Guiding Principles (Wilkinson et al. 2016)][wilkinson-fair] как engineering direction, но не заявляет полную FAIR compliance без PID/license/access-rights слоя:
 
 - **Findable** — канонический `id` (H##, G##), FTS5 индекс по claim/mechanism/tags
 - **Accessible** — plain markdown без зависимости от инструмента (даже без `hex-research-mcp` файлы читаемы)
@@ -207,10 +224,12 @@ provenance: { source: "comprehensive_run", run_id: "2026-05-07_master_combo_l4",
     "chokidar": "^5.0.0",
     "gray-matter": "^4.0.3",
     "picomatch": "^4.0.4",
-    "zod": "^4.3.6"
+    "zod": "^4.4.3"
   }
 }
 ```
+
+Версии MCP npm-зависимостей в примере отражают latest stable на момент ревизии 2026-05-08 (`npm view`: SDK 1.29.0, better-sqlite3 12.9.0, chokidar 5.0.0, gray-matter 4.0.3, picomatch 4.0.4, zod 4.4.3). Runtime policy: Node.js — latest compatible stable, production default = latest Active LTS (Node 24 на 2026-05-08); Current Node 26 разрешён только после CI на native deps. При реализации обновлять до latest stable; pre-release/beta/alpha брать только по явному решению.
 
 `gray-matter` — единственная новая внешняя зависимость относительно `hex-graph-mcp`.
 
@@ -297,7 +316,8 @@ runs:
 # benchmark/runs/2026-05-07_funding_l4/manifest.yaml
 id: 2026-05-07_funding_l4
 created_at: 2026-05-07T14:23:11Z
-hypothesis: H04                # primary hypothesis of this run
+hypothesis: H04                # primary hypothesis for targeted runs; null/omitted for comprehensive goal snapshots
+goals: [G1]                       # goal ids this run contributes to; maps to SQL runs.goal_ids
 type: l4_multi_entry           # l0_unit | l1_smoke | l2_sweep | l3_live_xcheck | l4_multi_entry | l5_walk_forward
 
 # Coherence flags (для goal metrics_current агрегации, см. §4.4.3)
@@ -328,18 +348,24 @@ agent_reviews:
 git_commit: 5eba9d6
 
 # Reproducibility (опционально, по checklist из arxiv 2405.18077)
-dependencies:
-  python: "3.13.2"
-  packages:                    # подмножество `pip freeze` или Poetry lock
-    pandas: "2.2.3"
-    ccxt: "4.4.50"
-data_snapshot:                 # ссылка на data slice
-  funding_rates_through: 2026-05-06
-  klines_through: 2026-05-07
+runner_environment:           # optional benchmark-runner provenance; MCP stores it but does not interpret it
+  toolchain: project-specific
+  lockfile: path/to/lockfile
+data_snapshot:                 # exact data identity, not just cutoff dates
+  - name: funding_rates
+    source: binance
+    artifact: data/snapshots/funding_rates_2026-05-06.parquet
+    through: 2026-05-06
+    sha256: "..."
+  - name: klines
+    source: binance
+    artifact: data/snapshots/klines_2026-05-07.parquet
+    through: 2026-05-07
+    sha256: "..."
 random_seed: 42
 ```
 
-`hex-research-mcp.index_hypotheses` индексирует **И** `docs/hypotheses/*.md` **И** `benchmark/runs/*/manifest.yaml`, строит граф `Hypothesis ←runs_in→ Run` с метриками в edges/properties.
+`hex-research-mcp.index_hypotheses` индексирует **И** `docs/hypotheses/*.md` **И** `benchmark/runs/*/manifest.yaml`, строит граф `Hypothesis --tested_by--> Run --runs_in--> BranchOrCommit` с метриками в edges/properties.
 
 ---
 
@@ -367,11 +393,11 @@ parents: [H02]                  # source — что эта гипотеза ут
 supersedes: []                  # source — что эта гипотеза заменяет
 competes_with: [H08]            # source — какие альтернативы тестировались в одной арене
 refutes: []                     # source — что эта гипотеза опровергает
-blocked_by: []                  # source — на какие гипотезы зависим до тестирования
+blocked_by: []                  # source — на какие гипотезы зависим до тестирования; materializes as depends_on edge
 # === НЕ ПИСАТЬ ВРУЧНУЮ ===
 # children — derived (агрегируется из parents других H##; см. §4.4.3)
 # superseded_by — derived (обратное к supersedes)
-# blocks — derived (обратное к blocked_by)
+# blocks — derived reverse edge from blocked_by/depends_on
 # inspect_hypothesis отдаёт эти поля в structuredContent, но в файл не попадают
 
 # Theory
@@ -537,7 +563,7 @@ frontmatter — остальное доступно агенту через `ins
 | Evidence | `evidence: []` | желательно |
 | Implementation | `implementation.symbols` | если status ∈ {validated_branch, pending_implementation, live} |
 | Tasks | `tasks: []` (см. §4.5) | ✅ status-based invariant: ≥1 task с `type: implementation` и `state ∈ {open, in_progress}` обязательно для `status: pending_implementation`; ≥1 task с `type: implementation` и `state: done` обязательно для `status: live`; ≥1 task с `type: refinement` и `state ∈ {open, in_progress}` обязательно для `status: in_progress` если `last_verdict.decision: refine`; иначе `IMPLEMENTATION_GAP` / `TASK_DRIFT`. Опционально для остальных статусов. |
-| Sources | `sources: []` (см. §4.7) | желательно (FAIR-compliance, citation export) |
+| Sources | `sources: []` (см. §4.7) | желательно (FAIR-aligned metadata, citation export) |
 | Lifecycle | `created_at`, `last_touched` | ✅ |
 | Bayesian | `prior_belief`, `confidence_post`, `assumptions`, `risks` | опционально |
 | Meta | `tags` | опционально |
@@ -609,7 +635,7 @@ metrics_target:
 # === metrics_current НЕ ПИШЕТСЯ СЮДА ===
 # Это derived field — живёт только в SQLite (`goals.metrics_current`) и в
 # `inspect_goal` output. См. §4.4.3 для алгоритма агрегации.
-# verify_index --strict падает с warning "DERIVED_FIELD_IN_SOURCE" если кто-то
+# verify_index --strict падает с warning "derived_field_in_source" если кто-то
 # случайно записал metrics_current в G##.md.
 
 # Дерево целей (Goal может декомпозироваться)
@@ -669,6 +695,8 @@ sources:                            # унифицированный schema, т�
 ```yaml
 # benchmark/runs/2026-05-07_master_combo_l4/manifest.yaml
 id: 2026-05-07_master_combo_l4
+hypothesis: null                         # comprehensive goal snapshot, not owned by one H##
+goals: [G1]                              # maps to SQL runs.goal_ids
 type: l4_multi_entry
 comprehensive: true                     # ← ключевой флаг
 included_hypotheses: [H01, H02, H04, H05, H08]   # все live H##s в этом run
@@ -681,15 +709,15 @@ results_path: results.json
 # ...
 ```
 
-`comprehensive: true` означает «этот run воспроизводит полную текущую live-стратегию, его метрики являются source of truth для целей которые покрываются `included_hypotheses`».
+`comprehensive: true` означает «этот run воспроизводит полную текущую live-стратегию для целей из `goals`, а его метрики являются source of truth для этих goal-level snapshots; `included_hypotheses` фиксирует покрытие live H##s».
 
 **Алгоритм агрегации `metrics_current` при `index_hypotheses`:**
 
 1. Найти goal G##
 2. Собрать множество гипотез которые `serves_goal G##` И имеют `status: live` → set `LiveH(G##)`
-3. Найти **latest comprehensive run** где `included_hypotheses ⊇ LiveH(G##)`:
+3. Найти **latest comprehensive run** где `goal_ids` содержит G## и `included_hypotheses ⊇ LiveH(G##)`:
    - Если найден → его `results.json` метрики записываются в `goals.metrics_current` (с `provenance: { run_id, git_commit, run_date }`)
-   - Если НЕ найден → `metrics_current = null` И `verify_index` репортит warning `NO_COMPREHENSIVE_RUN_FOR_GOAL G##`
+   - Если НЕ найден → `metrics_current = null` И `verify_index` репортит warning `no_comprehensive_run_for_goal G##`
 4. Achievement status вычисляется из `metrics_current` vs `metrics_target.primary` ТОЛЬКО когда coherent snapshot существует
 
 **Что это даёт:**
@@ -702,7 +730,7 @@ results_path: results.json
 После каждого `last_verdict.decision: proceed` для гипотезы H##, которая попадает в `live`:
 1. Запускается comprehensive run на `master` после merge
 2. Run manifest помечается `comprehensive: true` с `included_hypotheses: [...full live list...]`
-3. `index_hypotheses` обновляет `metrics_current` для всех goals покрытых этим run
+3. `index_hypotheses` обновляет `metrics_current` для всех goals из `goals: [...]` этого run
 
 Это явно фиксируется в `HEX_RESEARCH_AGENTS.md` (Phase 6 deliverable) как обязательный шаг.
 
@@ -716,7 +744,7 @@ results_path: results.json
 | `goals.children` | Derived (aggregated from G##.parents) | SQLite + `inspect_goal` |
 | `hypotheses.children` | Derived (aggregated from H##.parents) | SQLite + `inspect_hypothesis` |
 
-`verify_index --strict` репортит warning `DERIVED_FIELD_IN_SOURCE` если в файле обнаружено `metrics_current`, `children` (где expected derived), или `achievement_status`.
+`verify_index --strict` репортит warning `derived_field_in_source` если в файле обнаружено `metrics_current`, `children` (где expected derived), или `achievement_status`.
 
 #### 4.4.4. Goal node в SQLite schema
 
@@ -741,17 +769,17 @@ tasks:
     url: "https://..."             # canonical link
     type: implementation | refinement | research | rollback
     title: "Human-readable одна строка"     # required
-    status_snapshot:                # required block — state и at обязательны (соответствует SQL NOT NULL)
-      state: open | in_progress | done | cancelled    # required; default 'open' если автор не указал явно
-      at: 2026-05-07T14:23:11Z      # ISO timestamp; required (frontmatter-parser проставляет current time если опущен)
-    created_at: 2026-04-20          # опц.
+    status_snapshot:                # optional in YAML, required after parser normalization before SQL insert
+      state: open | in_progress | done | cancelled    # default 'open' если автор не указал явно
+      at: 2026-05-07T14:23:11Z      # required when status_snapshot supplied; no current_time default
+    created_at: 2026-04-20          # required if status_snapshot omitted; parser derives stable snapshot_at from it
     closed_at: 2026-05-06           # опц., обязательно если status_snapshot.state == 'done' или 'cancelled'
 ```
 
-**Schema rationale (зачем status_snapshot обязателен):**
+**Schema rationale (зачем status_snapshot нормализуется до required):**
 - SQL `tasks` table имеет `state TEXT NOT NULL` и `state_snapshot_at TEXT NOT NULL` — это сохраняет фастовые queries `find_hypotheses task_state=open` без NULL handling
-- Frontmatter parser имеет defaults: `state: 'open'` и `at: current_time` если автор опустил block — это эквивалентно «task создан только что, статус неизвестен, считаем open»
-- Это даёт UX «можно написать минимум» (`{ id, system, type, title, url }` parser дополняет до полного), сохраняя SQL invariants
+- Frontmatter может содержать task без `status_snapshot`; parser тогда ставит `state='open'` и `at=created_at`. Если нет ни `status_snapshot.at`, ни `created_at`, это `INVALID/missing_required_field`. Parser никогда не использует `current_time`, чтобы reindex не маскировал stale tracker state.
+- `tasks[].id` — tracker-specific id. Normalized SQL/node id строится как `<system>:<tracker_id>` (например `linear:LIN-1234`), где `tracker_id = tasks[].id`.
 
 **Type vocabulary:**
 - `implementation` — `decision: proceed`, нужно заmerge'ить и задеплоить (типичный случай для `pending_implementation` status)
@@ -761,7 +789,7 @@ tasks:
 
 **Status snapshot semantics:**
 
-`status_snapshot` — это **денормализованный кэш**, обновляется при ручном правке файла или через `refresh_task_status` (отдельный tool, требует tracker MCP установленным). НЕ считается source of truth — реальный source это сам трекер. `verify_index` репортит warning `TASK_STATUS_STALE` если `status_snapshot.at < (now - 30d)` и tracker MCP доступен. Порог 30 дней выбран намеренно — ручное обновление каждый месяц это разумный SLA, переопределяется через config.
+`status_snapshot` — это **денормализованный кэш**, обновляется ручной правкой файла, внешним tracker MCP workflow, или будущим post-v0.6 helper'ом из roadmap. НЕ считается source of truth — реальный source это сам трекер. `verify_index` репортит warning `task_status_stale` если `status_snapshot.at < (now - 30d)` и tracker MCP доступен. Порог 30 дней выбран намеренно — ручное обновление каждый месяц это разумный SLA, переопределяется через config.
 
 **Drift checks (через `audit_orphans`):**
 
@@ -771,6 +799,7 @@ tasks:
 | `status: validated_branch` И `last_verdict.decision: proceed` | `status_verdict_drift` (нужно переходить в `pending_implementation`) |
 | `status: validated_branch` И `last_verdict.decision: refine` | `status_verdict_drift` (нужно возвращаться в `in_progress` с `type: refinement` task) |
 | `status: in_progress` И `last_verdict.decision: refine` И нет ни одной `tasks[].type=refinement, state ∈ {open, in_progress}` | `implementation_gap` (refine verdict без refinement task) |
+| `status: in_progress` И `last_verdict.decision ∈ {proceed, reject, hold}` | `status_verdict_drift` (non-refine verdict должен транзитнуть status: `proceed` → `pending_implementation`, `reject` → `rejected`, `hold` → `deferred`) |
 | `status: pending_implementation` И все `tasks[].state ∈ {done, cancelled}` | `task_drift` (можно promotion на `live` или `rejected`) |
 | `status: live` И **нет ни одной `tasks[]` с `type: implementation` И `state: done`** | `task_drift` (live без завершённой implementation task — не соответствует invariant из §4.5) |
 | `status: live` И есть `tasks[]` с `state ∈ {open, in_progress}` | `task_drift` (live'нулись без закрытия задачи?) |
@@ -798,10 +827,11 @@ tasks:
 - `tasks: []` ≥1 запись с `type: implementation` И `state ∈ {open, in_progress}` — **required для `status: pending_implementation`**; иначе `IMPLEMENTATION_GAP`
 - `tasks: []` ≥1 запись с `type: implementation` И `state: done` — **required для `status: live`** (implementation task должна быть завершена); И не должно быть `state ∈ {open, in_progress}` на момент `live`; иначе `TASK_DRIFT`
 - `tasks: []` ≥1 запись с `type: refinement` И `state ∈ {open, in_progress}` — **required для `status: in_progress` если `last_verdict.decision: refine`** (refine означает перезапустить sweep, требует refinement task); иначе `IMPLEMENTATION_GAP`
-- Для `status ∈ {not_started, in_progress (без refine verdict), validated_branch (без verdict), rejected, deferred}` — `tasks` опционально
+- Для `status ∈ {not_started, in_progress (без verdict), validated_branch (без verdict), rejected, deferred}` — `tasks` опционально
 - **Status-verdict drift detection:** если verdict записан, но status не транзитнулся:
   - `last_verdict.decision: proceed` И `status: validated_branch` → `STATUS_VERDICT_DRIFT` (нужно `pending_implementation`)
   - `last_verdict.decision: refine` И `status: validated_branch` → `STATUS_VERDICT_DRIFT` (нужно вернуться в `in_progress` с refinement task)
+  - `last_verdict.decision ∈ {proceed, reject, hold}` И `status: in_progress` → `STATUS_VERDICT_DRIFT` (non-refine verdict должен транзитнуть status)
   - `last_verdict.decision: reject` И `status ∉ {rejected}` → `STATUS_VERDICT_DRIFT`
   - `last_verdict.decision: hold` И `status ∉ {deferred}` → `STATUS_VERDICT_DRIFT`
   - `pivot` — старая гипотеза остаётся `validated_branch` (verdict не пишется на ней; новая H## создаётся с `parents: [old]`)
@@ -846,6 +876,7 @@ validated_branch                                    │
 | `not_started` | пусто (ничего не делаем) |
 | `in_progress` (без verdict) | пусто или 1 research-task |
 | `in_progress` (с `verdict: refine`) | **минимум 1 task с `type: refinement` И `state ∈ {open, in_progress}`** |
+| `in_progress` (с `verdict: proceed/reject/hold`) | drift — non-refine verdict должен транзитнуть status (`pending_implementation`/`rejected`/`deferred`) |
 | `validated_branch` (без verdict) | пусто; verdict не записан, status переходный |
 | `validated_branch` (с verdict) | drift — должен был транзитнуться (см. status_verdict_drift в drift table) |
 | `pending_implementation` | **минимум 1 task с `type: implementation` И `state ∈ {open, in_progress}`** |
@@ -914,6 +945,7 @@ sources:
 
   - type: dataset
     name: "..."
+    source: "exchange-export"     # опц., identity fallback когда url отсутствует
     url: "https://..."
     snapshot_date: 2026-05-07     # data versioning
     format: "parquet"             # опц.
@@ -927,7 +959,7 @@ sources:
 **Зачем структурированно:**
 
 - Агент может фильтровать через `find_hypotheses cited_source_type=paper cited_source_year_min=2024` — невозможно с opaque strings (отдельный `find_sources` tool НЕ вводим; sources discoverable через filter parameters в `find_hypotheses`)
-- FAIR-compliance: `accessed_at` + url/doi/isbn делают source воспроизводимым
+- FAIR-aligned metadata: `accessed_at` + url/doi/isbn делают source воспроизводимым
 - Citation export — BibTeX/RIS из одного запроса через extension `inspect_hypothesis verbosity=full export_citations=true`
 - Audit «hypothesis claim says X, но ни один source не упоминает X» — quality check
 
@@ -986,7 +1018,7 @@ Type-vocabulary (соответствует L0..L5):
 | `l4_multi_entry` | N разных entry seeds | `pass`, `total`, `ratio` |
 | `l5_walk_forward` | OOS rolling window | `pass`, `total`, `ratio`, `oos_blowups` |
 
-`hex-research-mcp` не парсит `*.parquet` / `*.csv` — это работа sweep-script'а. Manifest несёт сводные метрики и path до сырых данных. Если нужно глубже — агент дёргает свой shell/python.
+`hex-research-mcp` не парсит `*.parquet` / `*.csv` — это работа внешнего sweep-script'а. Manifest несёт сводные метрики и path до сырых данных. Если нужно глубже — агент использует project-specific tooling вне MCP server runtime.
 
 ### 5.3. Mapping run → hypothesis
 
@@ -1010,8 +1042,8 @@ Index-time проверка: оба направления должны совп
 | `supersedes` | H_new → H_old | new заменяет old; old → status=rejected | `reason` |
 | `refutes` | H_a → H_b | результаты H_a опровергают H_b | `evidence_run_id` |
 | `competes_with` | H_a ↔ H_b | оба тестировались в одной арене (L4 / L5) | `arena_run_id` |
-| `depends_on` | H_a → H_b | H_a нельзя тестировать пока H_b не валидирована | `blocker_kind` |
-| `blocks` | H_a → H_b | обратное к `depends_on` | — |
+| `depends_on` | H_a → H_b | H_a нельзя тестировать пока H_b не валидирована; materialized from YAML `blocked_by` | `blocker_kind` |
+| `blocks` | H_a → H_b | derived reverse of `depends_on` / YAML `blocked_by` | — |
 
 ### 6.2. Hypothesis ↔ Run / Symbol / Branch / Metric / Task / Source edges
 
@@ -1022,7 +1054,7 @@ Index-time проверка: оба направления должны совп
 | `runs_in` | Run → BranchOrCommit | run воспроизводим из git-state | `commit_sha` |
 | `gated_by` | H → Metric | гейт описан критерием | `metric`, `threshold` |
 | `tracked_by` | H → Task | гипотеза имеет task в tracker'e (см. §4.5) | `system`, `type`, `state` |
-| `cites` | H → Source | гипотеза опирается на external source (см. §4.7) | `source_type`, `accessed_at` |
+| `cites` | H/G → Source | гипотеза или цель опирается на external source (см. §4.7) | `source_type`, `accessed_at` |
 
 ### 6.3. Goal edges
 
@@ -1091,11 +1123,11 @@ Ambiguous → возвращаем `status: "ERROR"` с `reason: "ambiguous_hypo
 
 ### 7.5. MCP annotations
 
-Каждый tool регистрируется с явными [MCP annotations][mcp-spec] для корректной risk-классификации клиентами. Без этого клиенты считают tools максимально рискованными по умолчанию.
+Каждый tool регистрируется с явными [MCP annotations][mcp-spec] для корректной risk-классификации клиентами. Это advisory metadata: клиенты могут применять более консервативный UX/policy без hints, но annotations не являются enforcement boundary и должны считаться untrusted для недоверенных серверов.
 
 | Tool | `readOnlyHint` | `destructiveHint` | `idempotentHint` | `openWorldHint` |
 |---|:---:|:---:|:---:|:---:|
-| `index_hypotheses` | ❌ | ❌ | ✅ | ❌ |
+| `index_hypotheses` | ❌ | ✅² | ✅ | ❌ |
 | `verify_index` | ✅ | ❌ | ✅ | ❌ |
 | `find_hypotheses` | ✅ | ❌ | ✅ | ❌ |
 | `inspect_hypothesis` | ✅ | ❌ | ✅ | ❌ |
@@ -1113,7 +1145,7 @@ Ambiguous → возвращаем `status: "ERROR"` с `reason: "ambiguous_hypo
 
 **Объяснение колонок:**
 - `readOnlyHint=true` — tool не модифицирует state (13 из 15 — pure queries)
-- `index_hypotheses` пишет в DB (rebuildable cache), **не destructive** — переиндексация безопасна.
+- ² `index_hypotheses` rebuilds SQLite cache rows, so it is static-annotated `destructiveHint=true` per MCP semantics. This is destructive only to rebuildable cache state, not to user-authored markdown/run artifacts.
 - ¹ **`export_canvas` имеет explicit destructive contract:**
   - В default режиме (`mode: "merge"`) tool читает существующий `.canvas` файл, сохраняет позиции (x/y/width/height) для known nodes и добавляет только новые узлы. Поведение additive, но tool всё равно аннотируется `destructiveHint: true`, потому что тот же tool поддерживает `mode: "overwrite"` и MCP annotations — static hints на уровне tool definition, не per-call contract (см. Appendix D, pattern D1).
   - В режиме `mode: "overwrite"` (явный opt-in пользователя) tool полностью перезаписывает `.canvas` файл. Опасно: уничтожает ручную раскладку.
@@ -1128,7 +1160,7 @@ Ambiguous → возвращаем `status: "ERROR"` с `reason: "ambiguous_hypo
 ```js
 server.registerTool("inspect_hypothesis", {
   description: "Full hypothesis card with tree, gate, runs, evidence, implementation",
-  inputSchema: InspectHypothesisInput,        // Zod schema (Standard Schema, без zod-to-json-schema)
+  inputSchema: InspectHypothesisInput,        // Zod schema (без app-level zod-to-json-schema)
   outputSchema: InspectHypothesisOutput,      // Zod schema
   annotations: {
     title: "Inspect Hypothesis",
@@ -1181,8 +1213,8 @@ return {
 |---|---|
 | `content[0].text` | `JSON.stringify(structured)` — для legacy clients и token-economy fallback |
 | `structuredContent` | structured payload (object, валидируется по `outputSchema`) |
-| `outputSchema` | объявляется при `server.registerTool(name, opts, handler)`, генерируется из Zod schema (MCP SDK 1.29+ принимает Zod напрямую через Standard Schema interop — см. §12 Phase 0) |
-| `isError: true` | устанавливается **в tool result** когда `structured.status === "ERROR"` (это соответствует hex-common's `result()` поведению — см. `hex-common/src/runtime/results.mjs:21`). MCP spec различает: `isError: true` в result = **tool execution error** (returned to model для self-correction); JSON-RPC errors = **protocol errors** (transport-level, не проходят через `result()`). Business-level statuses (`STALE`, `NO_CHANGES`, `INVALID`, `UNSUPPORTED`) — НЕ ставят `isError`. |
+| `outputSchema` | объявляется при `server.registerTool(name, opts, handler)`; current TypeScript SDK server docs support direct Zod `inputSchema`/`outputSchema`, поэтому отдельная app-level зависимость `zod-to-json-schema` не нужна (см. §12 Phase 0) |
+| `isError: true` | устанавливается **в tool result** для failed requested operations, которые модель может исправить/retry'нуть: `structured.status === "ERROR"`, а также validation/unsupported failures (`INVALID`, `UNSUPPORTED`) когда конкретный tool call не может быть выполнен. Diagnostic statuses вроде `STALE`, `NO_CHANGES`, `CHANGED` не ставят `isError`. MCP spec различает: `isError: true` в result = **tool execution error**; JSON-RPC errors = **protocol errors**. |
 
 Соответствие [MCP spec 2025-11-25 / Tools][mcp-spec]: spec прямо говорит «structured tool result MUST be conformant to outputSchema» и «for backwards compatibility, also return a response in `content` field with serialized JSON».
 
@@ -1219,9 +1251,9 @@ return {
   - **search no matches** — `find_hypotheses claim_substring="quantum"` legitimately ничего не нашёл (это валидный нулевой результат). В payload `result: []` + `reason: "no_matches"` для трассируемости. Это НЕ ошибка — search legitimately возвращает empty set.
 - `NO_CHANGES` — `analyze_progress` нашёл что между двумя git refs ничего не изменилось
 - `CHANGED` — `analyze_progress` нашёл изменения
-- `STALE` — `verify_index` обнаружил drift (файлы новее DB)
-- `INVALID` — frontmatter validation failed (для `index_hypotheses`/`verify_index`)
-- `UNSUPPORTED` — попытка вызвать tool на unindexed project и т.п.
+- `STALE` — `verify_index` обнаружил drift (файлы новее DB); diagnostic result, `isError` не ставится
+- `INVALID` — frontmatter validation failed. For `index_hypotheses`, this is failed requested operation (`isError: true`); for `verify_index`, this is successful diagnostic report (`isError` omitted/false).
+- `UNSUPPORTED` — попытка вызвать tool на unindexed project и т.п.; failed requested operation, `isError: true`
 - `ERROR` — failure modes:
   - **selector lookup miss** — `inspect_hypothesis id=H99` где H99 не существует → `status: "ERROR"` + `reason: "hypothesis_not_found"`. Это ошибка потому что caller передал конкретный ID и ожидал найти.
   - path not found, ambiguous selector, missing required field, cycle detected, и т.д.
@@ -1283,26 +1315,26 @@ return {
 {
   status: "ERROR",
   reason: "path_not_found" | "hypothesis_not_found" | "goal_not_found" | "task_not_found" | "source_not_found" | "ambiguous_hypothesis" | "ambiguous_goal" | "wrong_node_kind" | "missing_required_field" | "run_manifest_not_found" | "run_hypothesis_drift" | "goal_hypothesis_drift" | "cycle_detected" | "edge_kind_mismatch" | "no_comprehensive_run_for_goal" | "run_id_reused" | "implementation_gap" | "status_verdict_drift" | "task_drift" | "task_status_stale" | "derived_field_in_source" | "not_implemented",
-  // Также используются в status: "OK" / "STALE" / "INVALID" / "UNSUPPORTED" контекстах (не ERROR):
-  //   "no_matches" — search вернул empty set (status: "OK", result: [])
-  //   "index_built_at_<ts>" — для STALE responses
-  //   "frontmatter_validation_failed" — для INVALID
+  // Также используются вне status: "ERROR":
+  //   "no_matches" — search вернул empty set (status: "OK", result: [], isError omitted/false)
+  //   "index_built_at_<ts>" — для STALE diagnostic responses (isError omitted/false)
+  //   "frontmatter_validation_failed" — INVALID; isError depends on tool semantics (`index_hypotheses` true, `verify_index` false)
   next_action: "fix_path" | "widen_query" | "index_project" | "rename_run" | ...,
   message: string,
   details?: Record<string, any>
 }
 ```
 
-Также используется `status: "STALE"` (для `verify_index` когда файлы новее DB), `status: "INVALID"` (для frontmatter validation failures), `status: "UNSUPPORTED"` (для запросов на unindexed project) — эти статусы НЕ ставят `isError: true`, это бизнес-результаты с диагностической `reason`.
+Также используется `status: "STALE"` (для `verify_index` когда файлы новее DB), `status: "INVALID"` (frontmatter validation failures), `status: "UNSUPPORTED"` (для запросов на unindexed project). `STALE` и `verify_index` diagnostics без `isError`; `INVALID`/`UNSUPPORTED` ставят `isError: true` только когда конкретный tool call не может выполнить запрошенное действие (например `index_hypotheses` не может построить индекс).
 
-`isError: true` ↔ `structured.status === "ERROR"` (соответствует hex-common's `result()` поведению, см. `hex-common/src/runtime/results.mjs:21`).
+`isError: true` ↔ failed requested operation, not only `structured.status === "ERROR"` (см. MCP Tools error handling и `hex-common/src/runtime/results.mjs:21` как implementation adapter).
 
 ### 8.5. Human-readable rendering (NOT wire format, для READMEs/docs)
 
 Документация (README, examples) использует **компактную line-grammar для иллюстрации** того как Claude CLI / другие клиенты могут отрендерить structured payload в человекочитаемый вид. Это **не часть wire format**, а формат документации:
 
 ```
-ok find_runs  H04  status=live category=signal
+ok inspect_hypothesis  H04  next=find_runs  status=live category=signal
   tree: parents=[H02] children=[H28] competes=[H08]
   gate: l4 28/30 (t1)  l5_n12 9/12 (t1)  single_path=+154.3
   verdict: proceed (2026-05-07) → next: H28
@@ -1423,11 +1455,11 @@ CREATE TABLE tasks (
   tracker_id TEXT NOT NULL,          -- 'LIN-1234' / 'PROJ-567' / 'owner/repo#123'
   url TEXT,
   type TEXT NOT NULL CHECK (type IN ('implementation','refinement','research','rollback')),
-  title TEXT,
+  title TEXT NOT NULL,
   state TEXT NOT NULL CHECK (state IN ('open','in_progress','done','cancelled')),
   state_snapshot_at TEXT NOT NULL,    -- ISO timestamp of last sync from tracker
   created_at TEXT,
-  closed_at TEXT
+  closed_at TEXT                   -- required by Zod when state IN ('done','cancelled')
 );
 
 CREATE INDEX tasks_state ON tasks(state);
@@ -1514,13 +1546,14 @@ CREATE INDEX edges_kind_src_dst ON edges(kind, src_kind, dst_kind);
 -- - achieves: src='goal', dst='metric_snapshot'
 -- - tracked_by: src='hypothesis', dst='task'
 -- - cites: src ∈ {'hypothesis','goal'}, dst='source' (sources применимы к обоим kind, см. §4.7)
--- index_hypotheses() валидирует эти инварианты, репортит EDGE_KIND_MISMATCH
+-- index_hypotheses() валидирует эти инварианты, репортит edge_kind_mismatch
 
 CREATE TABLE runs (
   id TEXT PRIMARY KEY REFERENCES nodes(id) ON DELETE CASCADE,    -- '2026-05-07_funding_l4'
-  hypothesis_id TEXT NOT NULL REFERENCES hypotheses(id),
+  hypothesis_id TEXT REFERENCES hypotheses(id), -- nullable for comprehensive goal-level snapshots
+  goal_ids TEXT,                      -- JSON array; required when comprehensive=1
   comprehensive INTEGER NOT NULL DEFAULT 0,    -- 1 если run воспроизводит полную live-стратегию (см. §4.4.3)
-  included_hypotheses TEXT,        -- JSON array, для comprehensive=1 must include all current live H##s
+  included_hypotheses TEXT,        -- JSON array, для comprehensive=1 must include all current live H##s for goal_ids
   branch TEXT,                     -- git branch (master = production strategy)
   type TEXT NOT NULL,              -- 'l4_multi_entry' | ...
   manifest_file TEXT NOT NULL REFERENCES files(path) ON DELETE CASCADE,
@@ -1666,8 +1699,8 @@ Generic enough, чтобы оба MCP их использовали без adapt
 
 - [ ] `mcp/hex-research-mcp/package.json` (workspace member, deps на hex-common)
 - [ ] `server.mjs` через `hex-common/runtime/mcp-bootstrap`
-- [ ] **15 stub tool-handlers** (12 hypothesis + 3 goal) — возвращают через `hex-common/result()` payload `{ status: "ERROR", reason: "not_implemented", next_action: "none", message: "Tool <name> is registered but not yet implemented" }` (соответствует §8 contract: `isError: true` ↔ `status === "ERROR"`)
-- [ ] Регистрация `inputSchema` И `outputSchema` для каждого tool (MCP SDK 1.29+ принимает Zod schemas напрямую через Standard Schema interop — отдельная зависимость `zod-to-json-schema` не нужна, см. [TypeScript SDK server docs](https://github.com/modelcontextprotocol/typescript-sdk/blob/main/docs/server.md))
+- [ ] **15 stub tool-handlers** (12 hypothesis + 3 goal) — возвращают через `hex-common/result()` payload `{ status: "ERROR", reason: "not_implemented", next_action: "none", message: "Tool <name> is registered but not yet implemented" }` (соответствует §8 contract: failed requested operation → `isError: true`)
+- [ ] Регистрация `inputSchema` И `outputSchema` для каждого tool (current TypeScript SDK server docs support direct Zod schemas; отдельная app-level зависимость `zod-to-json-schema` не нужна, см. [TypeScript SDK server docs](https://github.com/modelcontextprotocol/typescript-sdk/blob/main/docs/server.md))
 - [ ] Регистрация `annotations` для каждого tool (см. §7.5: `readOnlyHint`/`destructiveHint`/`idempotentHint`/`openWorldHint`)
 - [ ] Все input-схемы — `.strict()`
 - [ ] `PROTOCOL.md` — research grammar (включая goal-секции из §8.2)
@@ -1679,12 +1712,12 @@ Generic enough, чтобы оба MCP их использовали без adapt
 - [ ] `lib/store.mjs` (копия hex-graph + research schema из §9 включая `goals`/`hypothesis_goals`/`tasks`/`sources`/`node_sources` таблицы)
 - [ ] `lib/watcher.mjs` (копия hex-graph) — watch'ит `docs/hypotheses/` И `docs/goals/`
 - [ ] `lib/frontmatter-parser.mjs` + Zod schemas (`hypothesis.mjs`, `goal.mjs`, `task.mjs`, `source.mjs`, `evidence.mjs`, `run.mjs`)
-- [ ] В Zod schema run manifest — опциональные `dependencies`, `data_snapshot`, `random_seed`
+- [ ] В Zod schemas: run manifest — опциональные `runner_environment`, `random_seed`, `data_snapshot[]` с `name/source/artifact/through/sha256` для exact data identity, `goals` → SQL `runs.goal_ids`; task schema — required `title`, required `closed_at` когда `state ∈ {done,cancelled}`, и запрет `current_time` default для `status_snapshot.at`
 - [ ] `tools/index_hypotheses.mjs` — full reindex + incremental по hash:
-  - **(1) Upsert synthetic nodes ДО edges**: для каждого symbol из `hypothesis.implementation.symbols[]` создать `nodes(id=qualified_name, kind='symbol')`; для каждого `git_commit`/`branch` из run manifests — `nodes(id=sha, kind='branch_or_commit')`; для каждого `gate.results.<level>` snapshot — `nodes(id=<H##>:<level>, kind='metric_snapshot')`; для каждого task из `hypothesis.tasks[]` — `nodes(id=<system>:<tracker_id>, kind='task')`; для каждого source из `hypothesis.sources[]` И `goal.sources[]` (unified, см. §4.7) — `nodes(id=<canonical_identity_hash>, kind='source')` с dedup по identity-полям из таблицы §4.7. Без этого FK constraints на edges (`implemented_in`, `runs_in`, `gated_by`, `achieves`, `tracked_by`, `cites`) сломаются.
+  - **(1) Upsert synthetic nodes ДО edges**: для каждого symbol из `hypothesis.implementation.symbols[]` создать `nodes(id=qualified_name, kind='symbol')`; для каждого `git_commit`/`branch` из run manifests — `nodes(id=sha, kind='branch_or_commit')`; для каждого `gate.results.<level>` snapshot — `nodes(id=<H##>:<level>, kind='metric_snapshot')`; для каждого task из `hypothesis.tasks[]` — `nodes(id=<system>:<tracker_id>, kind='task')`, где `tracker_id = tasks[].id`; для каждого source из `hypothesis.sources[]` И `goal.sources[]` (unified, см. §4.7) — `nodes(id=<canonical_identity_hash>, kind='source')` с dedup по identity-полям из таблицы §4.7. Без этого FK constraints на edges (`implemented_in`, `runs_in`, `gated_by`, `achieves`, `tracked_by`, `cites`) сломаются.
   - **(2) Upsert hypothesis/goal/run nodes** в общей таблице `nodes`, потом в domain tables (`hypotheses`, `goals`, `runs`, `tasks`, `sources`, `hypothesis_goals`, `hypothesis_tasks`, `hypothesis_symbols` для denorm symbol bridge на hex-graph-mcp, `node_sources` для cite'ов из обоих H##.sources[] и G##.sources[] с per-cite полями `notes`/`accessed_at`/`cite_extra`).
   - **(3) Insert edges** — теперь все FK targets существуют. Для каждого `node_sources` row создать `cites` edge с `src_kind ∈ {'hypothesis','goal'}` (см. §6.2 SQL invariants).
-  - **(4) Aggregate `metrics_current` для каждой цели**: найти latest comprehensive run где `included_hypotheses ⊇ live_serving_goal`, его results.json metrics → `goals.metrics_current`. Если нет — `null` + warning `NO_COMPREHENSIVE_RUN_FOR_GOAL`.
+  - **(4) Aggregate `metrics_current` для каждой цели**: найти latest comprehensive run где `goal_ids` содержит G## и `included_hypotheses ⊇ LiveH(G##)`, его results.json metrics → `goals.metrics_current`. Если нет — `null` + warning `no_comprehensive_run_for_goal`.
   - **(5) Validate Status × Tasks invariant matrix** (§4.6): репортить warnings (mnemonic upper-case в плане, но в wire format `warnings[].code` — lowercase snake_case, см. §8.2): `implementation_gap` (pending_implementation без implementation task в open/in_progress; ИЛИ in_progress с refine verdict без refinement task), `status_verdict_drift` (verdict записан, status не транзитнулся: validated_branch с любым verdict; in_progress с не-refine verdict; reject/hold не транзитнулись), `task_drift` (pending_implementation с все task done/cancelled, live без done implementation, live с open/in_progress), `task_status_stale` (>30d).
 - [ ] `tools/verify_index.mjs` — drift check (включая `goal_hypothesis_drift` и `derived_field_in_source`)
 - [ ] Test fixtures: 3 валидные H##.md + 1 невалидная + 1 run manifest + 2 G##.md (G1 root + G1.1 sub-goal)
@@ -1732,7 +1765,7 @@ Generic enough, чтобы оба MCP их использовали без adapt
 - [ ] `scripts/generate-quality-report.mjs`
 - [ ] `scripts/sync-quality-docs.mjs`
 - [ ] README — generated quality snapshot + landscape comparison (см. C.2.2) + goal-directed workflow example
-- [ ] FAIR-compliance check — встроить в `verify_index` (warnings если frontmatter не FAIR-complete: H## без `goals:`, G## без `metrics_target.primary`)
+- [ ] FAIR-aligned metadata check — встроить в `verify_index` (warnings если frontmatter не FAIR-complete: H## без `goals:`, G## без `metrics_target.primary`)
 - [ ] Skill: `plugins/hex-research/skills/hex-research/SKILL.md` (соответствует repo convention `plugins/<plugin>/skills/<skill>/` из `claude-code-skills/AGENTS.md` rule "Plugin-first edits"); содержит описание когда вызывать какие MCP tools (workflow: `inspect_goal G1` → `find_hypotheses goal=G1 status=not_started priority_tier=1` → `inspect_hypothesis` → проектирование теста)
 - [ ] `HEX_RESEARCH_AGENTS.md` в корне пакета — короткий контракт «как пользоваться», который ACP-агенты (Claude Code, Codex CLI, Copilot CLI) автоматически читают; включает goal-directed workflow
 - [ ] Pre-commit hook — пример в README: `hex-research-mcp verify_index --strict` падает если frontmatter invalid, `runs[].artifact` указывает на несуществующий path, или гипотеза без `goals:` field. CI-friendly exit code.
@@ -1849,6 +1882,39 @@ btc-trader/docs/hypotheses/H33.md
 
 ## 15. Definition of Done
 
+### 15.0. MVP Acceptance Snapshot
+
+The Server MVP requested for the first implementation pass is complete in commit `63b5439`.
+
+Completed in this repository:
+
+- Local workspace package `@levnikolaevich/hex-research-mcp`.
+- Runtime through `@levnikolaevich/hex-common/runtime/mcp-bootstrap`.
+- All 15 MCP tools with structured-first output, strict input schemas, output schemas, and annotations.
+- SQLite research graph at `.hex-skills/researchgraph/index.db`.
+- Fixture-based tests for server startup, schemas/result contract, indexing, query tools, audits, and JSON Canvas export.
+- `README.md` and `PROTOCOL.md` for local use and wire contract.
+
+Verification evidence for the MVP:
+
+- `npm --prefix mcp --workspace @levnikolaevich/hex-research-mcp test` passed.
+- `npm --prefix mcp --workspace @levnikolaevich/hex-research-mcp run check` passed.
+- `npm --prefix mcp --workspace @levnikolaevich/hex-research-mcp run lint` passed.
+- `npm --prefix mcp --workspace @levnikolaevich/hex-research-mcp run build` passed.
+- `npm --prefix mcp test` passed.
+- `npm --prefix mcp audit --audit-level=moderate` passed with 0 vulnerabilities.
+- `git diff --check` passed, with only pre-existing CRLF warnings in unrelated files.
+
+Not part of this MVP:
+
+- No btc-trader migration.
+- No npm publish.
+- No Phase 7 pull-up into `hex-common`.
+- No new skill package / `HEX_RESEARCH_AGENTS.md`.
+- No generated quality snapshot, eval matrix, or token-savings benchmark beyond the fixture test suite.
+
+The full release DoD below remains the broader target for a published `0.1.0`; the MVP acceptance above is the current completed scope.
+
 `hex-research-mcp@0.1.0` считается готовым когда:
 
 1. Установлено через `npm i -g @levnikolaevich/hex-research-mcp` (после publish) или подключено локально через `claude mcp add`.
@@ -1868,7 +1934,7 @@ btc-trader/docs/hypotheses/H33.md
    - `verify_index` репортит 0 drift (включая `goal_hypothesis_drift`, edges с инвариантами `tracked_by`/`cites`)
    - Все edge-types валидируются: `tracked_by` (H→Task) и `cites` (H/G→Source) корректно создаются и FK работают
    - Pointer на `hex-graph-mcp.inspect_symbol` корректно срабатывает в Claude Code
-3. Test suite: semantic-fixture тестов passing — покрывают все 8 категорий `audit_orphans`, status × tasks invariant matrix (§4.6), refine-scenarios (`validated_branch` + `decision: refine` → `status_verdict_drift`; `in_progress` + `decision: refine` без open/in_progress refinement task → `implementation_gap`; `in_progress` + `decision: refine` с valid refinement task → no drift), все 16 edge-types из §6 (7 H↔H + 6 H↔Run/Symbol/Branch/Metric/Task/Source + 3 Goal)
+3. Test suite: semantic-fixture тестов passing — покрывают все 8 категорий `audit_orphans`, status × tasks invariant matrix (§4.6), refine/non-refine scenarios (`validated_branch` + `decision: refine` → `status_verdict_drift`; `in_progress` + `decision: refine` без open/in_progress refinement task → `implementation_gap`; `in_progress` + `decision: refine` с valid refinement task → no drift; `in_progress` + `decision: proceed/reject/hold` → `status_verdict_drift`), все 16 edge-types из §6 (7 H↔H + 6 H↔Run/Symbol/Branch/Metric/Task/Source + 3 Goal)
 4. Eval matrix: все 15 tools `verified`
 5. Workflow benchmark: ≥5 сценариев с замером token-savings vs «прочитать research-map.md + objective.md полностью» (включая goal-driven «что делать дальше для G1» и task-driven «что в pending_implementation»)
 6. README — generated quality snapshot встроен через `npm run docs:quality`; включает goal-directed workflow example + task tracker bridge example
@@ -2053,7 +2119,7 @@ sources:                          # унифицированный schema (§4.7
 Это **не часть протокола** — это пример того как Claude CLI / Cursor / любой UI клиент может отрендерить structuredContent для пользователя. Конкретный формат рендеринга — на стороне клиента, не у MCP сервера.
 
 ```
-OK find_runs  H04  status=live category=signal
+OK inspect_hypothesis  H04  next=find_runs  status=live category=signal
   claim: Funding rate ENTRY filter — skip ENTRY when 7d mean of 8h funding > 0.0004
   goals: G1, G1.1_signal
   tree: parents=[H02] children=[H28] competes=[H08]
@@ -2072,7 +2138,7 @@ OK find_runs  H04  status=live category=signal
 
 ---
 
-**Объём реализации.** Первый релиз покрывает Phase 0-6 deliverables (каркас + 15 outputSchemas + annotations; index pipeline + nodes/edges/goals/runs/tasks/sources schema + comprehensive flag handling; discovery & inspection; graph traversal; goal navigation; change & proposal; render & export; quality, evals, benchmark, README, skill, AGENTS.md, publish). Pull-up в hex-common — отдельная PR (Phase 7).
+**Объём реализации.** Коммит `63b5439` покрывает Server MVP из Phase 0-5 плюс минимальную документацию/fixture verification из Phase 6: каркас, 15 tools, schemas, annotations, index pipeline, nodes/edges/goals/runs/tasks/sources schema, comprehensive flag handling, discovery & inspection, graph traversal, goal navigation, change/proposal tools, JSON Canvas export, README, PROTOCOL, and fixture tests. Full Phase 6 artifacts (quality report/evals/benchmark, skill package, AGENTS onboarding, publish) are still post-MVP. Pull-up в hex-common — отдельная PR (Phase 7).
 
 Сроки сознательно не фиксируются в плане — зависят от рабочего темпа, доступности fixtures и параллельных задач. Phase 0 и Phase 1 — самые большие по объёму (output contract + index pipeline). Phase 6 — самый по разбросу (quality/benchmarks/docs зависят от внешних факторов).
 
@@ -2089,16 +2155,16 @@ OK find_runs  H04  status=live category=signal
 1. **Strong Inference (Platt 1964) — формальная рамка для дерева гипотез.**
    Работа [Wagstaff et al. 2024 «Design Principles for Falsifiable, Replicable and Reproducible Empirical ML Research»][arxiv-falsifiable] подтверждает falsifiability + per-experiment variable documentation как ядро современной reproducibility-практики.
 
-2. **Markdown frontmatter + MCP — устоявшийся паттерн, не экзотика.**
-   `research-hub` (WenyuChiou), AutoResearchClaw, Tolaria, scientific-agent-skills — все используют markdown-frontmatter-as-source-of-truth с MCP-обёрткой.
+2. **Markdown frontmatter + MCP-adjacent workflows — не экзотика.**
+   Изученные решения используют части этого паттерна: markdown/frontmatter как durable SoT, MCP wrapper, skills loading, или research metadata. План берёт этот подход как synthesis, а не утверждает что каждый prior-art продукт реализует полный markdown-frontmatter+MCP contract.
 
 3. **Parent-child иерархия для experiments — стандартная практика.**
    [MLflow nested runs][mlflow-nested] ровно так же организуют hyperparameter sweep'ы (родитель = эксперимент, дети = конкретные конфиги). Наша tree-структура для гипотез — generalization того же паттерна на уровень исследования.
 
 4. **JSON Canvas v1.0 — open standard.**
-   [jsoncanvas.org][json-canvas] поддерживает MIT-лицензированные библиотеки на C, Dart, Go, Python, React, Rust, TypeScript. `export_canvas` стоит на твёрдом фундаменте.
+   [jsoncanvas.org][json-canvas] поддерживает MIT-лицензированные библиотеки в нескольких экосистемах. `export_canvas` стоит на твёрдом фундаменте.
 
-5. **FAIR principles** — формальная совместимость с [Wilkinson et al. 2016][wilkinson-fair]:
+5. **FAIR principles** — FAIR-aligned coverage по [Wilkinson et al. 2016][wilkinson-fair], без заявления full FAIR compliance:
    - **F**indable: H## / G## ID + FTS5 ✓
    - **A**ccessible: plain markdown без proprietary lock-in ✓
    - **I**nteroperable: open YAML/JSON Canvas/Mermaid ✓
@@ -2123,14 +2189,14 @@ OK find_runs  H04  status=live category=signal
 
 *Что взять:* подтверждение что тип-связи `Hypothesis → Test → Project` — общепринятый паттерн (валидирует наши edges).
 
-##### (b) Graphiti / Zep / Cognee — temporal knowledge graphs [[Graphiti][graphiti], [Cognee][cognee]]
+##### (b) Graphiti / Zep temporal graph и Cognee knowledge-memory systems [[Graphiti][graphiti], [Cognee][cognee]]
 
-Опен-сорс MCP-серверы поверх Neo4j / FalkorDB. Поддержка temporal facts (validity windows), entity extraction, real-time updates. Cognee использовался Bayer R&D для генерации гипотез по 10K научных статей.
+Graphiti/Zep дают temporal knowledge graph с validity windows и real-time updates; Cognee даёт MCP/knowledge-graph memory и heavy document extraction (включая Bayer R&D 10K-paper сценарий), но не тот же temporal-validity model.
 
 *Почему не берём:*
 1. **Heavyweight:** требуют Neo4j / FalkorDB как зависимость. Для 33-узлового дерева — пушка по воробьям.
 2. Designed для **extracting entities** из conversations / unstructured text, не для structured hypothesis trees где автор сам пишет YAML.
-3. Их temporal model (facts с validity windows) ортогональна нашей: статус гипотезы — это её последний state, история — в `git log`, а не в graph properties.
+3. Temporal validity model Graphiti/Zep ортогонален нашей: статус гипотезы — это её последний state, история — в `git log`, а не в graph properties.
 
 *Что взять:* идея temporal facts может пригодиться позже для Bayesian update'ов (`prior_belief` → `confidence_post` после серии runs).
 
@@ -2184,14 +2250,14 @@ Markdown-first knowledge bases с graph view. Покрывают **визуал�
 | Versioning | git + `git_commit` в manifest |
 | Intermediates | parquet/csv в run artifact dir |
 | Literate programming | свободная проза в H##.md под frontmatter |
-| Dependencies | опциональные `dependencies` в manifest §3.4 (`python`, packages list) |
-| Data lineage | опциональный `data_snapshot` в manifest §3.4 (snapshot dates per data source) |
+| Runner provenance | опциональный `runner_environment.lockfile` в manifest §3.4 для внешнего benchmark runner |
+| Data lineage | `data_snapshot[]` в manifest §3.4 with `name/source/artifact/through/sha256` |
 
 ### C.4. MCP best practices
 
 - **Tool count.** 15 tools — в норме per [Webfuse MCP cheat sheet][mcp-cheatsheet] (рекомендация ≤20). Есть запас на расширения.
 - **Strict input validation.** Все Zod-схемы input-параметров используют `.strict()` (additionalProperties: false) — соответствует MCP-спеку.
-- **Annotations.** Все 15 tools имеют explicit `readOnlyHint`/`destructiveHint`/`idempotentHint`/`openWorldHint` (§7.5) — без этого клиенты считают tools максимально рискованными по умолчанию.
+- **Annotations.** Все 15 tools имеют explicit `readOnlyHint`/`destructiveHint`/`idempotentHint`/`openWorldHint` (§7.5). Это risk hints для UX/policy, а не security enforcement; clients still treat untrusted-server annotations as untrusted.
 - **Output contract.** structured-first через `hex-common/result()` — `content[0].text` = `JSON.stringify(structuredContent)` (см. §8). Соответствует [MCP spec 2025-11-25][mcp-spec] требованию «structured tool result MUST be conformant to outputSchema» и backwards-compat «also return a response in `content` field».
 - **Status vocabulary.** Uppercase canonical (`OK`/`ERROR`/`STALE`/`INVALID`/`UNSUPPORTED`/`NO_CHANGES`/`CHANGED`) per `MCP_OUTPUT_CONTRACT_GUIDE.md`. Reasons и warnings codes — lowercase snake_case.
 
@@ -2203,7 +2269,8 @@ Markdown-first knowledge bases с graph view. Покрывают **визуал�
 [turing-fair]: https://book.the-turing-way.org/reproducible-research/rdm/rdm-fair/
 [wilkinson-fair]: https://www.nature.com/articles/sdata201618
 [mcp-spec]: https://modelcontextprotocol.io/specification/2025-11-25
-[sep-1624]: https://github.com/modelcontextprotocol/modelcontextprotocol/issues/1624
+[atlassian-okr]: https://www.atlassian.com/agile/agile-at-scale/okr
+[own]: ./
 [tejpalvirk-quant]: https://github.com/tejpalvirk/quantitativeresearch
 [graphiti]: https://github.com/getzep/graphiti
 [cognee]: https://www.cognee.ai/
@@ -2231,13 +2298,13 @@ Markdown-first knowledge bases с graph view. Покрывают **визуал�
 | 4 | [Graphiti / Zep][graphiti] | provenance tracking, идея temporal facts (для будущих расширений) | Neo4j/FalkorDB зависимость, entity extraction из conversations |
 | 5 | [Cognee][cognee] | extract_evidence (легковесная версия) | heavy entity-extraction на 10K документов |
 | 6 | [MLflow nested runs][mlflow-nested] | parent/child run hierarchy в `runs[]`, run comparison паттерн (compare_arena), state-machine валидация | tracking server, UI зависимость |
-| 7 | [DVC][dvc] | data lineage + dependencies в run manifest, DAG view | DVC pipeline формат, S3-storage |
+| 7 | [DVC][dvc] | data lineage + runner provenance в run manifest, DAG view | DVC pipeline формат, S3-storage |
 | 8 | [research-hub (WenyuChiou)][research-hub] | frontmatter-as-MCP-source-of-truth, cluster поле | Zotero-specific schema, paper-only фокус |
 | 9 | Tolaria / MindForger / Obsidian | wiki-link синтаксис `[[H##]]`, position-preserving canvas, backlinks через edges | макOS-only deps, GUI-first design |
 | 10 | [JSON Canvas v1.0][json-canvas] | формат экспорта для визуального дерева | — |
 | 11 | [Strong Inference (Platt 1964)][platt-strong] | crucial experiment design (`kills_on_fail`/`validates_on_pass`), conditional inductive tree | формальный disproof через formal logic |
 | 12 | [IBIS / Argument Mapping][ibis-rittel] | разделение Position vs Argument (кандидат на будущее расширение `arguments: []`) | формальная dialogue mapping |
-| 13 | [FAIR principles][turing-fair] | id-as-PID, machine-actionable metadata, явная FAIR-compliance section | DataCite registration, ORCID integration |
+| 13 | [FAIR principles][turing-fair] | FAIR-aligned metadata section | full FAIR compliance with DataCite/ORCID/license/access-rights |
 | 14 | [Falsifiable ML (arxiv 2405.18077)][arxiv-falsifiable] | variables (independent/control/dependent), reproducibility checklist в manifest | формальные statistical-power tests |
 | 15 | [hex-graph-mcp][own] | tier-system для evidence (t1/t2/t3), confidence levels, action-line grammar, use-case-first surface, summary-first responses, `>` follow-up pointers | tree-sitter, framework overlays, LSP precise overlays |
 | 16 | [hex-common][own] | бутстрап, results.mjs (dual content+structuredContent), schema validation | parser/tree-sitter (code-specific) |
@@ -2310,7 +2377,7 @@ Markdown-first knowledge bases с graph view. Покрывают **визуал�
 | Graphiti | — | (temporal facts когда-нибудь) | Neo4j |
 | Cognee | — | B4 | heavy extraction |
 | MLflow | — | B2, state-machine | tracking server |
-| DVC | dependencies в manifest (Phase 1) | — | DVC format |
+| DVC | runner provenance в manifest (Phase 1) | — | DVC format |
 | research-hub | подтвердило markdown-first | — | Zotero-specific |
 | Obsidian / JSON Canvas | D1, D2 | — | — |
 | Strong Inference | A3 | — | — |

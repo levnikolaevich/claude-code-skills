@@ -2,15 +2,9 @@
 
 # Environment State Contract
 
-Shared project-scoped contract for `.hex-skills/environment_state.json`.
+Project-scoped runtime contract for `.hex-skills/environment_state.json`.
 
-Use this contract when a skill:
-- checks disabled agents
-- decides whether Claude or Codex should be probed
-- needs environment setup health or sync metadata
-- needs skill-root discovery health or duplicate-skill diagnostics
-- routes operations by task provider (linear/file/github)
-- selects research tool or fallback chain
+Use this only when a skill must read or write agent availability, task provider routing, research fallback, setup health, hook mode, or Codex skill-root health.
 
 ## Location
 
@@ -18,95 +12,66 @@ Use this contract when a skill:
 {project_root}/.hex-skills/environment_state.json
 ```
 
-Environment state is project-scoped. Skills must never read or write environment state outside the current project root.
-
-Schema SSOT:
-- `references/environment_state_schema.json`
-
-Related contract:
-- `references/agent_skill_roots_contract.md`
-
-## Rules
-
+Rules:
+- Never read or write environment state outside the current target project root.
 - Missing file means default-enabled environment with `task_management.provider = "file"`.
-- Malformed file is a deterministic contract error, not a soft fallback.
-- `agents.{name}.disabled=true` means the agent must not be probed or launched.
-- Codex skill-root health must follow `references/agent_skill_roots_contract.md`.
-- Codex execution-default health should capture top-level `approval_policy`, top-level `sandbox_mode`, and whether the managed default is ready.
-- Readers should use `references/scripts/coordinator-runtime/lib/environment-state.mjs`.
-- On tool error (401/403/429/500/timeout): update provider → fallback, disable tool for rest of session.
+- Malformed JSON is a deterministic contract error.
+- Schema details are writer/runtime-validator assets owned by environment setup skills; routine readers use only this contract.
 
-## Required Shape
+## Required Runtime Reads
 
-- `scanned_at`
-- `agents.claude.available`
-- `agents.codex.available`
-
-## Sections
-
-| Section | Purpose |
-|---------|---------|
-| `agents` | Agent availability, versions, alignment status (claude, codex), plus marketplace plugin, Codex skill-root discovery, and execution-default health |
-| `task_management` | Provider routing (linear/file/github), provider-specific config nested under `linear` or `github` |
-| `research` | Provider, fallback_chain |
-| `claude_md` | Instruction file metadata |
-| `assessment` | Quality score, warnings, worker run/skip history |
-| `hooks` | Hook mode (blocking/advisory), `disable_skill_shell_execution` (bool, mirrors `disableSkillShellExecution` setting from Claude Code 2.1.91), `script_caps` (number, mirrors `CLAUDE_CODE_SCRIPT_CAPS` env from Claude Code 2.1.98) |
-| `ide_extension` | Per-IDE Claude Code extension state (Cursor / VSCode): `initial_permission_mode`, `allow_dangerously_skip_permissions`, `effective_state`, and whether it conflicts with project `permissions.defaultMode`. The extension overrides project settings at session start, so this is the runtime SSOT for "what permission mode actually applies when Claude is launched from the IDE". |
-
-## task_management structure
-
-Provider-specific fields are nested under their provider key:
+Readers need only these fields:
 
 ```json
 {
-  "provider": "linear",
-  "status": "active",
-  "fallback": "file",
-  "linear": { "team_id": "..." },
-  "github": { "repository": "owner/repo", "project_number": 1 },
-  "fallback_metadata": {
-    "previous_provider": "linear",
-    "error_class": "AUTH",
-    "partial_items": [],
-    "fallback_at": "2026-05-06T10:30:00Z"
+  "agents": {
+    "claude": { "available": true, "disabled": false },
+    "codex": { "available": true, "disabled": false }
+  },
+  "task_management": {
+    "provider": "file",
+    "status": "active",
+    "fallback": "file",
+    "linear": {},
+    "github": {},
+    "fallback_metadata": {}
+  },
+  "research": {
+    "provider": "web_search",
+    "fallback_chain": []
   }
 }
 ```
 
-When the active provider fails (auth, rate limit, transport), skills set `provider="file"` + `status="active"` and capture diagnostics in `fallback_metadata` so kanban references both partial remote items and the local file-mode replacements.
+## Hard Rules
 
-Only the active provider's sub-object needs to be populated.
+- `agents.{name}.disabled=true` means the agent must not be probed or launched.
+- `task_management.provider` selects provider operations; use `references/storage_mode_detection.md` after reading it.
+- On provider auth/rate-limit/transport/tool failure, set `provider="file"`, keep `status="active"`, and record `fallback_metadata`.
+- Tool failures must not become domain findings unless there is independent domain evidence.
+- Codex skill-root health follows `references/agent_skill_roots_contract.md` only when the skill audits or repairs Codex discovery.
 
-## Codex Skill-Root Health
+## Writer Fields
 
-When present, `agents.codex` should capture:
-- `active_skill_roots` -> active Codex discovery surfaces under `~/.codex/skills`
-- `cache_roots` -> non-discoverable Codex cache roots
-- `duplicate_skill_names` -> duplicate skill directory names still visible under the Codex discovery root
-- `discovery_violation` -> `true` when cache or foreign install surfaces remain visible under `~/.codex/skills`
+Writers may populate these sections when relevant:
 
-Writers should treat `discovery_violation=true` as environment drift that requires ln-013 remediation before Codex is considered cleanly aligned.
+| Section | Purpose |
+|---|---|
+| `agents` | Claude/Codex availability, disabled state, versions, skill-root health |
+| `task_management` | active provider plus Linear/GitHub config and fallback metadata |
+| `research` | preferred research tool and fallback chain |
+| `claude_md` | instruction file metadata |
+| `assessment` | setup quality score, warnings, worker run history |
+| `hooks` | hook mode and script capability state |
+| `ide_extension` | IDE permission override diagnostics |
 
-## Codex Execution Defaults
+## Reader Pattern
 
-When present, `agents.codex` should capture:
-- `approval_policy` -> top-level Codex CLI approval mode from `~/.codex/config.toml`
-- `sandbox_mode` -> top-level Codex CLI sandbox mode from `~/.codex/config.toml`
-- `permissions_default_ready` -> `true` when the managed defaults are aligned for this environment setup flow
-
-For this setup flow, `permissions_default_ready=true` means:
-- `approval_policy = "never"`
-- `sandbox_mode = "danger-full-access"`
-
-## Phase 0 Pattern (for consumer skills)
-
-```
-1. Read .hex-skills/environment_state.json
-2. IF file missing → run ln-010 or use defaults (task_provider="file", all agents enabled)
-3. Extract: task_provider = task_management.provider (default: "file")
-4. Use task_provider to select operations (per storage_mode_detection.md)
-```
+1. Read `.hex-skills/environment_state.json`.
+2. If missing, default to `task_provider="file"` and all agents enabled.
+3. If malformed, fail with a contract error.
+4. Extract `task_provider = task_management.provider || "file"`.
+5. Use `storage_mode_detection.md` to select provider operations.
 
 **Version:** 3.1.0
 **Last Updated:** 2026-04-07

@@ -289,7 +289,7 @@ Detection policy: use two-layer detection (candidate scan, then context verifica
 
 ### 7. Default Value Blindness (Tests with default config)
 
-**What:** Tests with default config values only. **MANDATORY READ:** Load `references/risk_based_testing_guide.md` -> Anti-Pattern 9.
+**What:** Tests with default config values only. Use the non-default config rule from `references/risk_based_testing_guide.md`; load `references/risk_based_testing_methodology.md` only when examples are needed.
 
 **Detection:**
 - Grep for common defaults in test setup: `:8080`, `:3000`, `30000`, `limit: 20`, `offset: 0`

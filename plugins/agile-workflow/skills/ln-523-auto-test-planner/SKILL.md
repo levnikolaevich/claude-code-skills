@@ -95,7 +95,8 @@ Extract: `task_provider` = Task Management → Provider (`linear` | `file`).
 
 ### Phase 4: Risk-Based Test Planning (Automated)
 
-**MANDATORY READ:** Load `references/risk_based_testing_guide.md` for complete methodology.
+**MANDATORY READ:** Load `references/risk_based_testing_guide.md` for scoring and usefulness gates.
+Conditional read: load `references/risk_based_testing_methodology.md` only when planning a full test strategy or when the risk/usefulness decision is ambiguous.
 
 **E2E-First Approach:** Prioritize by business risk (Priority = Impact x Probability), not coverage metrics.
 
@@ -251,7 +252,8 @@ Delegated child worker rules:
 
 - **Environment state:** `references/environment_state_contract.md`
 - **Storage mode operations:** `references/storage_mode_detection.md`
-- **Risk-based testing methodology:** `references/risk_based_testing_guide.md`
+- **Risk-based testing contract:** `references/risk_based_testing_guide.md`
+- **Optional methodology catalog:** `references/risk_based_testing_methodology.md`
 - **Auto-discovery patterns:** `references/auto_discovery_pattern.md`
 - **Test task template:** `references/templates/test_task_template.md` (workers ln-301/ln-302 load via Template Loading)
 - **Testing examples:** `references/risk_based_testing_examples.md`

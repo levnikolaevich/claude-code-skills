@@ -20,7 +20,7 @@ Public entrypoint for VPS agent environments. This skill routes between fresh in
 ## MANDATORY READ
 
 **MANDATORY READ:** Load `references/skill_contract.md`, `references/worker_runtime_contract.md`, `references/coordinator_summary_contract.md`, `references/vps_runtime_contract.md`
-**MANDATORY READ:** Load `references/scope_layers.md`, `references/shared_user_pattern.md`, `references/troubleshooting_bootstrap.md`, `references/verification_recipes_common.md`, `references/verification_recipes_agent_runtime.md`, `references/verification_recipes_project_runtime.md`, and `references/verification_recipes_hex_relay.md`
+**MANDATORY READ:** Load `references/scope_layers.md`, `references/shared_user_pattern.md`, `references/troubleshooting_bootstrap.md`, `references/verification_recipes_common.md`, `references/verification_recipes_agent_runtime.md`, `references/verification_recipes_project_runtime.md`, and `references/verification_recipes_hex_relay_bootstrap.md`
 
 **Auth model selection** (read before deciding which user model to bootstrap):
 - `references/shared_user_pattern.md` — canonical model: one shared `agent-bot` Linux user owns every project on the VPS. Use for **fresh installs**.

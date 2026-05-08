@@ -2,31 +2,21 @@
 
 # Coordinator Runtime Contract
 
-Shared deterministic runtime model for stateful coordinators.
+Deterministic runtime contract for stateful coordinators.
 
-## Core Model
+## Runtime State
 
-Every coordinator runtime has:
-- `manifest.json` for immutable run inputs
-- `state.json` for latest mutable snapshot
-- `checkpoints.json` for latest checkpoint per phase plus history
-- `history.jsonl` for append-only execution events
-- `resume_action` for the next deterministic step
-- optional `loop_health` for retry-usefulness evidence
-- active pointer indexed by `skill + identifier`
+Every coordinator runtime keeps project-scoped, run-scoped state:
 
-All runtime state is project-scoped and run-scoped.
+| Artifact | Purpose |
+|---|---|
+| `manifest.json` | immutable run inputs |
+| `state.json` | latest mutable snapshot |
+| `checkpoints.json` | latest checkpoint per phase plus history |
+| `history.jsonl` | append-only execution events |
+| active pointer | current run indexed by `skill + identifier` |
 
-Runtime code validates:
-- manifest shape
-- state snapshot shape
-- checkpoint entry shape
-- history event shape
-- active pointer shape
-
-## Required Vocabulary
-
-Required fields:
+Required vocabulary:
 - `run_id`
 - `skill`
 - `identifier`
@@ -35,23 +25,19 @@ Required fields:
 - `paused_reason`
 - `pending_decision`
 - `final_result`
+- `resume_action`
 
-Rules:
+## Status Rules
+
 - `DONE` means orchestration completed correctly.
 - `PAUSED` means deterministic intervention is required.
-- Business failure may still end in `DONE` if follow-up actions were checkpointed correctly.
-- Lifecycle `status` or `phase` is not retry health. Use `loop_health` to decide whether another attempt is useful.
-- Artifact/checkpoint evidence proves completion. `loop_health` proves whether a repeated attempt made progress.
-- Transport, permission, auth, tool-missing, and rate-limit failures must not be converted into domain verdicts without domain evidence.
+- Business failure may end in `DONE` if follow-up actions were checkpointed.
+- Lifecycle status is not retry health; use `loop_health` only when deciding whether another attempt is useful.
+- Transport, permission, auth, tool-missing, and rate-limit failures must not become domain verdicts without domain evidence.
 
-Optional `loop_health` state follows `references/loop_health_contract.md`.
+## Pending Decision
 
-History event:
-- `LOOP_HEALTH_RECORDED` records a classified loop signal and resulting counters.
-
-## Pending Decision Contract
-
-Use one schema across coordinator families:
+Persist approvals and user choices as:
 
 ```json
 {
@@ -65,25 +51,17 @@ Use one schema across coordinator families:
 }
 ```
 
-Rules:
-- all human approvals are persisted through `PAUSED + pending_decision`
-- resume must not depend on chat memory
+Resume must be derivable from runtime state, not chat memory.
 
-## Runtime Artifacts vs Public Outputs
+## Runtime vs Public Outputs
 
-Runtime artifacts:
-- coordination-only
-- run-scoped
-- `.hex-skills/runtime-artifacts/runs/{run_id}/{summary_kind}/{identifier}.json`
+- Runtime artifacts stay under `.hex-skills/runtime-artifacts/runs/{run_id}/...`.
+- Public outputs are durable project artifacts such as docs, reports, or `.hex-skills/environment_state.json`.
+- Do not merge runtime checkpoints into public output files.
 
-Public outputs:
-- durable project artifacts such as docs, reports, or `.hex-skills/environment_state.json`
+## CLI Contract
 
-These two concerns must never be merged into one file.
-
-## CLI Shape
-
-Each runtime exposes:
+Each runtime supports the deterministic lifecycle:
 
 ```bash
 node <runtime>/cli.mjs start ...
@@ -94,59 +72,12 @@ node <runtime>/cli.mjs pause ...
 node <runtime>/cli.mjs complete ...
 ```
 
-Domain runtimes may add specialized commands such as:
-- `record-worker`
-- `record-epic`
-- `record-plan`
-- `record-group`
-- `record-cycle`
-- `record-loop-health`
+Domain runtimes may add `record-*` commands, but worker outputs must be consumed through machine-readable summaries.
 
-Status response shape:
+## Guards
 
-```json
-{
-  "ok": true,
-  "active": true,
-  "runtime": {
-    "skill": "ln-220",
-    "identifier": "epic-7",
-    "run_id": "ln-220-epic-7-...",
-    "phase": "PHASE_6_DELEGATE",
-    "complete": false
-  },
-  "manifest": {},
-  "state": {},
-  "checkpoints": {},
-  "paths": {},
-  "resume_action": "Delegate story planning workers"
-}
-```
-
-Inactive response shape:
-
-```json
-{
-  "ok": true,
-  "active": false,
-  "runtime": null
-}
-```
-
-## Guard Rules
-
-- no transition without a checkpoint for the current phase
-- malformed manifest, checkpoint payload, worker summary, or environment state must fail validation before transition
-- worker outputs are consumed through machine-readable summaries, never free-text parsing
-- `resume_action` must be derivable from state and checkpoints alone
-- concurrent runs must not share active pointers or artifact directories
-- repeated attempts after `loop_health.should_pause=true` must pause with an actionable reason instead of re-running blindly
-
-## Relationship to Skill Design
-
-Coordinator `SKILL.md` files should:
-- describe the phase map
-- describe domain-specific checkpoint payloads
-- describe domain-specific guards
-- reference this contract as runtime SSOT
-- avoid duplicating recovery prose already enforced by the runtime
+- No phase transition without a checkpoint for the current phase.
+- Malformed manifest, checkpoint payload, worker summary, or environment state fails validation before transition.
+- `resume_action` must be derivable from state and checkpoints.
+- Concurrent runs must not share active pointers or artifact directories.
+- After `loop_health.should_pause=true`, pause with an actionable reason instead of retrying blindly.

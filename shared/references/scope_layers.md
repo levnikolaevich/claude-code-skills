@@ -1,26 +1,35 @@
 <!-- SOURCE-OF-TRUTH: shared/references/scope_layers.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
 
-# Scope layers — ln-030-vps-bootstrap
+# Scope Layers
 
-Deployment shape: **one VPS = one `BOT_USER=agent-bot` (shared) = one Anthropic OAuth + one Codex login + one nvm/Node toolchain**, then **one project = one Telegram bot token = one set of systemd units = one `PROJECT_NAME`/`PROJECT_DIR`/`SERVICE_PREFIX`/`RELAY_HOOK_PORT`**. Each allowed Telegram user gets a separate project god-session target on the project's tmux socket.
+Topology and path guard for VPS agent environments.
 
-| Layer | Scope | What lives here |
+## Canonical Shape
+
+One VPS has one shared `BOT_USER=agent-bot` for Claude/Codex runtime state. Each project has its own Telegram bot token, systemd units, relay database, hooks, logs, and project working directory.
+
+| Layer | Scope | Owns |
 |---|---|---|
-| **Global per-VPS** (one install per machine) | shared by every project | apt packages: `curl`, `wget`, `git`, `jq`, `gpg`, `pipx`, `python3` (native npm build tooling only), `bubblewrap`, `unzip`, `tmux`; `gh` CLI; upstream `glab` CLI; system-wide `/usr/local/bin/agent-update`, `agent-update.service`, `agent-update.timer`, `/var/lib/agent-update/`, `/var/log/agent-update.log`. Host bootstrap and updater steps are idempotent — running them twice is a no-op/update-in-place. |
-| **Per-`${BOT_USER}=agent-bot`** (ONE shared Linux user — owns ALL projects) | scoped to the user's `$HOME` | `~/.nvm/`, Node 24, `claude` + `codex` CLIs (npm global within nvm), Claude user-scope plugins from `levnikolaevich-skills-marketplace`, `~/.claude/` (`settings.json` containing `model`/`effortLevel`/`permissions`/`statusLine`/`enabledPlugins`/`extraKnownMarketplaces` ONLY — NO `hooks` key, NO `CLAUDE.md`), `~/.claude/.credentials.json` (one Anthropic OAuth shared across all projects on this VPS), `~/.claude/statusline.sh` (shared script), `~/.claude/commands/<project-prefix>-dispatch.md` (project-named slash-commands stored at user-scope but addressable per project — names don't collide), `~/.codex/` (`config.toml` with multiple `[projects."..."]` blocks, one per project; `auth.json` shared). Sandbox binds `~/.claude/` and `~/.codex/` as writable runtime directories under project/user sandbox `$HOME`. |
-| **Per-`${PROJECT_NAME}`** (state, config, logs) | scoped to project dir name | `/etc/${PROJECT_NAME}/secrets.env`, `/etc/${PROJECT_NAME}/github-app.pem` (only when `GIT_PROVIDER=github`), `/var/lib/${PROJECT_NAME}/relay.db`, `/var/lib/${PROJECT_NAME}/users/<telegram_user_id>/god-command.json`, `/var/lib/${PROJECT_NAME}/users/<telegram_user_id>/sessions-dir.path`, `/var/lib/${PROJECT_NAME}/last-god-error.json`, `/var/log/${PROJECT_NAME}-god.log`. Provider task polling reads secrets only from hex-relay/control plane, never from sandboxed Claude/Codex work-plane sessions. |
-| **Per-`${SERVICE_PREFIX}`** (binaries, units, tmux) | scoped to systemd/binary/socket prefix | `/usr/local/bin/${SERVICE_PREFIX}-god`, `/usr/local/bin/${SERVICE_PREFIX}-mint-gh-token` (only when `GIT_PROVIDER=github`), `/opt/${SERVICE_PREFIX}-hex-relay`, systemd units `${SERVICE_PREFIX}-god@.service`, `${SERVICE_PREFIX}-dispatch.timer`, `${SERVICE_PREFIX}-dispatch.service`, `${SERVICE_PREFIX}-hex-relay.service`, tmux targets `${SERVICE_PREFIX}-god-<telegram_user_id>` on socket `${SERVICE_PREFIX}`. `agent-update.service/timer` is intentionally system-wide. |
-| **Per-`${PROJECT_DIR}`** (project repo + project-scope claude config) | scoped to working directory of the god-session | Persistent git clone from `${REPO_URL}` at `${REPO_REF}`; `${PROJECT_DIR}/.claude/CLAUDE.md` and `${PROJECT_DIR}/.claude/settings.json` rendered with this project's identity and hook port; `${PROJECT_DIR}/.agent-home/users/<telegram_user_id>/` and `.agent-cache/` hold sandbox HOME/cache outside git, while Claude/Codex runtime files are writable binds from the shared `${BOT_USER}` home. User-scope CLAUDE.md/hooks remain forbidden under shared `BOT_USER`. |
-| **Per-Telegram-bot** | one bot token per project | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`. Telegram allows only one polling session per token, so you cannot share a bot across projects. The HTTP listener at `127.0.0.1:${RELAY_HOOK_PORT}` is also per-hex-relay — if you run a second project on the same VPS, override `RELAY_HOOK_PORT` (default `9999`) for the second instance. |
-| **Per-cwd + per-Telegram-user (Claude-managed runtime)** | `/home/${BOT_USER}/.claude/projects/<encoded-cwd>/` plus per-user relay ownership in `/var/lib/${PROJECT_NAME}/users/<telegram_user_id>/` | Claude Code isolates JSONLs by cwd under the shared `.claude` runtime. ln-030 keeps Telegram ownership in relay state (`last-session.id`, `sessions-dir.path`, and DB `created_by_user_id`) and never uses `claude --continue`. |
+| Global VPS | machine-wide | apt packages, `gh`, `glab`, update service/timer |
+| Shared `BOT_USER` | one Linux user across projects | nvm/Node, Claude/Codex CLIs, user-scope plugins, shared `.claude` and `.codex` runtime auth |
+| Project name | `/etc`, `/var/lib`, `/var/log` project state | secrets, relay DB, per-operator state, logs |
+| Service prefix | systemd/binaries/tmux namespace | god services, hex-relay service, tmux socket/targets |
+| Project dir | repo checkout and project Claude config | git clone, project `.claude/CLAUDE.md`, project `.claude/settings.json`, sandbox home/cache |
+| Telegram bot | one bot token per project | Telegram polling session and relay hook port |
+| Telegram user | per-operator runtime | personal god-session target and Claude project JSONLs |
 
-**Multi-project on one VPS**: invoke `ln-030-vps-bootstrap` again with new project vars. The coordinator discovers the host first, calls `ln-031-vps-host-runtime` in `verify_or_update` mode for the shared `agent-bot` layer, then calls `ln-032-vps-project-runtime` for project-scope units, dirs, logs, `.claude/` files, and local `.env.local` dispatcher keys. If Telegram is enabled, `ln-033-hex-relay-lifecycle` deploys a new service on the selected port and renders project-scope hooks. `ln-034-vps-environment-diagnostics` verifies health/drift when requested or as final evidence.
+## Guard Rules
 
-**Auth-sharing alternative**: when an existing fleet uses **per-project bot users** (`<project>-bot`) instead of the canonical shared `agent-bot`, you can still preserve a single Claude Max device slot and a single Codex login by symlinking each bot's `~/.claude`, `~/.claude.json`, and `~/.codex` into `/var/lib/claude-shared/` (group `claude-shared`, mode `2770`+ACL). One `claude /login` from any bot then authenticates the entire fleet. See `shared_auth_state.md` for migration script and verification recipes. This pattern is empirically necessary because Anthropic binds the OAuth refresh token to a per-user `userID` server-side; copying credentials between Linux users without sharing `~/.claude.json` returns `HTTP 401 Invalid authentication credentials`.
+- `PROJECT_NAME`, `SERVICE_PREFIX`, and `RELAY_HOOK_PORT` must be unique per project on the same VPS.
+- Telegram bot tokens cannot be shared across projects because polling is single-consumer.
+- User-scope `CLAUDE.md` and hooks are forbidden under the shared `BOT_USER`; render project instructions under `${PROJECT_DIR}/.claude/`.
+- Work-plane sessions must not access `/etc/${PROJECT_NAME}`, `/var/lib/${PROJECT_NAME}`, relay source under `/opt`, sibling projects, or host systemd.
+- Shared auth across separate bot users is conditional legacy/migration mode; load `shared_auth_state.md` only when `/var/lib/claude-shared/` or per-project bot users exist.
 
-**Single-VPS-multi-project gotchas:**
+## Multi-Project Flow
 
-- HTTP port `9999` is the default for `${SERVICE_PREFIX}-hex-relay.service`. Second project must render `RELAY_HOOK_PORT=9998` (or similar) into its hex-relay unit, project-scope hooks, and dispatcher config.
-- `/etc/sudoers.d/` rules (if any added later) must be `${SERVICE_PREFIX}`-scoped, not user-scoped (since BOT_USER is now shared).
-- `StateDirectory=${PROJECT_NAME}` in `${SERVICE_PREFIX}-god@.service` creates `/var/lib/${PROJECT_NAME}` regardless of unit instance, so two projects with same `PROJECT_NAME` would collide — keep `PROJECT_NAME` unique per project.
-- Filesystem isolation between projects is kernel-enforced for the LLM work plane by `bubblewrap`: writable `${PROJECT_DIR}`, read-only `${AGENT_SKILLS_DIR}`, writable shared CLI runtime binds at sandbox `$HOME/.claude` and `$HOME/.codex`, and no direct `/etc/${PROJECT_NAME}`, `/var/lib/${PROJECT_NAME}`, real `/home/${BOT_USER}`, hex-relay code, sibling `/opt/*`, or host systemd access.
+For another project on the same VPS:
+1. Reuse global VPS and shared `BOT_USER` layers.
+2. Create unique project/service/port state.
+3. Deploy a separate hex-relay instance.
+4. Verify tmux, systemd, port, DB, hooks, and Telegram command isolation.

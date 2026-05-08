@@ -19,7 +19,7 @@ Inspects one VPS project environment and reports health, drift, logs, auth state
 ## MANDATORY READ
 
 **MANDATORY READ:** Load `references/worker_runtime_contract.md`, `references/coordinator_summary_contract.md`, and `references/vps_runtime_contract.md`
-**MANDATORY READ:** Load `references/scope_layers.md`, `references/troubleshooting_diagnostics.md`, `references/verification_recipes_common.md`, `references/verification_recipes_agent_runtime.md`, `references/verification_recipes_project_runtime.md`, and `references/verification_recipes_hex_relay.md`
+**MANDATORY READ:** Load `references/scope_layers.md`, `references/troubleshooting_diagnostics.md`, `references/verification_recipes_common.md`, `references/verification_recipes_agent_runtime.md`, `references/verification_recipes_project_runtime.md`, and `references/verification_recipes_hex_relay_diagnostics.md`
 
 **Conditional read (load when `/var/lib/claude-shared/` exists on the host)**: `../ln-030-vps-bootstrap/references/shared_auth_state.md` — Phase 2 checks include `claude-shared-auth-perms.path`, ACL masks, and per-bot read/write access for `.credentials.json`, `.claude.json`, and `.codex/auth.json`. Required when diagnosing shared-auth fleets.
 

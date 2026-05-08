@@ -2,72 +2,52 @@
 
 # Storage Mode Operations
 
-<!-- SCOPE: Compact routing table for all providers. Provider selection comes from .hex-skills/environment_state.json → task_management.provider (NOT detected here). This file defines WHAT to call at summary level. For full pseudocode, load the provider-specific file. -->
+Provider routing table for Agile task storage. Provider selection comes from `.hex-skills/environment_state.json -> task_management.provider`; this file does not detect providers.
 
 ## Mode Selection
 
-Read `.hex-skills/environment_state.json` → `task_management.provider`:
-- `linear` → load `references/provider_linear.md`
-- `file` → load `references/provider_file.md`
-- `github` → load `references/provider_github.md`
+| Provider | Load for execution | Source of truth | ID format |
+|---|---|---|---|
+| `linear` | `references/provider_linear.md` | Linear API | `PROJ-123` / UUID |
+| `file` | `references/provider_file.md` | Markdown files + `kanban_board.md` | `Epic N`, `US001`, `T001` |
+| `github` | `references/provider_github.md` | GitHub Issues + Projects v2 | issue `#N` |
 
-If environment_state.json missing → run `ln-010` or default to `file` mode.
+Rules:
+- Missing environment state defaults to `file`.
+- Unknown provider is a contract error unless the skill explicitly falls back to `file`.
+- Load only the selected `provider_{value}.md` for operation details.
 
-**Progressive disclosure:** After determining the provider, load ONLY the matching `provider_{value}.md` for full operation pseudocode.
-
-## Mode Comparison
-
-| Aspect | Linear | File | GitHub |
-|--------|--------|------|--------|
-| **Source of truth** | Linear API | Markdown files + kanban_board.md | GitHub Issues + Projects v2 |
-| **ID format** | PROJ-123 / UUID | Epic N, US001, T001 | Issue #{N} |
-| **Hierarchy** | Projects → Issues → Sub-issues | Directories → Files | Issues → Sub-issues (REST API) |
-| **Status storage** | Linear `state` field | `**Status:** {value}` in file | Projects v2 Status field |
-| **Comments** | Linear comments API | `comments/{timestamp}.md` files | Issue comments API |
-| **External deps** | Linear MCP server | None | `gh` CLI + auth |
-
-## Operation Summary
+## Operation Map
 
 | Operation | Linear | File | GitHub |
-|-----------|--------|------|--------|
-| **List Epics** | `list_projects()` | `Glob("epics/*/epic.md")` | `gh issue list --label epic` |
-| **Create Epic** | `save_project()` | `mkdir + Write epic.md` | `gh issue create --label epic` |
-| **List Stories** | `list_issues(project=...)` | `Glob("stories/*/story.md")` | `gh api .../sub_issues` |
-| **Create Story** | `save_issue(labels=["user-story"])` | `mkdir + Write story.md` | `gh issue create` + sub-issue API |
-| **List Tasks** | `list_issues(parentId=...)` | `Glob("tasks/*.md")` | `gh api .../sub_issues` |
-| **Create Task** | `save_issue(parentId=...)` | `Write T{NNN}.md` | `gh issue create` + sub-issue API |
-| **Update Status** | `save_issue(state=...)` | `Edit **Status:**` line | `gh project item-edit` |
-| **Add Comment** | `create_comment()` | `Write comments/{ts}.md` | `gh issue comment` |
-| **Cancel** | `save_issue(state: "Canceled")` | `Edit **Status:** Canceled` | `gh issue close` + set Canceled |
+|---|---|---|---|
+| list epics | list projects | glob `epics/*/epic.md` | issues labeled `epic` |
+| create epic | save project | write `epic.md` | create issue labeled `epic` |
+| list stories | list project issues | glob `stories/*/story.md` | sub-issues |
+| create story | save issue | write `story.md` | create issue/sub-issue |
+| list tasks | list child issues | glob `tasks/*.md` | sub-issues |
+| create task | save child issue | write `T{NNN}.md` | create issue/sub-issue |
+| update status | save issue state | edit `**Status:**` | edit Project v2 status |
+| add comment | Linear comment | write `comments/{ts}.md` | issue comment |
 
-## Status Values
+## Status Map
 
-| Abstract | Linear | File Mode | GitHub Projects v2 |
-|----------|--------|-----------|-------------------|
-| New | `Backlog` | `**Status:** Backlog` | `Backlog` |
-| Ready | `Todo` | `**Status:** Todo` | `Todo` |
-| Working | `In Progress` | `**Status:** In Progress` | `In Progress` |
-| Review | `To Review` | `**Status:** To Review` | `To Review` |
-| Rework | `To Rework` | `**Status:** To Rework` | `To Rework` |
-| Complete | `Done` | `**Status:** Done` | `Done` (+ close issue) |
-| Removed | `Canceled` | `**Status:** Canceled` | `Canceled` (+ close issue) |
+| Abstract | Linear/File/GitHub value |
+|---|---|
+| new | `Backlog` |
+| ready | `Todo` |
+| working | `In Progress` |
+| review | `To Review` |
+| rework | `To Rework` |
+| complete | `Done` |
+| removed | `Canceled` |
 
-## Fallback Chain
+## Fallback
 
-All providers fall back to File Mode on error:
-```
-Primary provider (linear/github) fails → update environment_state.json → switch to file mode
-File mode is always available (no external dependencies)
-```
+On Linear/GitHub auth, rate limit, timeout, tool-missing, or server failure:
+1. Preserve partial remote evidence when available.
+2. Update environment state fallback metadata.
+3. Continue in file mode.
 
-## Usage in SKILL.md
-
-```markdown
-**MANDATORY READ:** Load `references/storage_mode_detection.md`
-```
-
-After loading, the skill reads `.hex-skills/environment_state.json`, determines the provider, and loads only `provider_{value}.md` for full operation details.
-
----
 **Version:** 4.0.0
 **Last Updated:** 2026-04-05

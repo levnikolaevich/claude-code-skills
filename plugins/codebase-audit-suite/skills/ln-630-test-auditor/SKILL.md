@@ -15,6 +15,7 @@ license: MIT
 
 **MANDATORY READ:** Load `references/evaluation_coordinator_runtime_contract.md`, `references/evaluation_summary_contract.md`, `references/evaluation_research_contract.md`
 **MANDATORY READ:** Load `references/risk_based_testing_guide.md`, `references/research_tool_fallback.md`
+Conditional read: load `references/risk_based_testing_methodology.md` only when worker findings require full methodology examples or anti-pattern detail.
 
 ## Purpose
 

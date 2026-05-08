@@ -2,7 +2,7 @@
 
 # Docs Quality Contract
 
-Small hard contract for generated project documentation. `references/docs_quality_rules.json` is the optional rule catalog for exact rule IDs, path matrices, and validator implementation details.
+Small hard contract for generated project documentation. Exact rule IDs, path matrices, and validator implementation details live in the optional docs-quality rule catalog loaded only by skills that name it directly.
 
 ## Acceptance Gate
 
@@ -53,7 +53,7 @@ Forbidden in published docs unless explicitly allowlisted:
 - `Lorem ipsum`
 - template-only metadata such as `Template Last Updated:` or `Template Version:`
 
-The narrow setup allowlist remains in `docs_quality_rules.json`.
+The narrow setup allowlist remains in the optional docs-quality rule catalog.
 
 ## Repair Ownership
 

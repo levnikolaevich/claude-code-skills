@@ -14,6 +14,7 @@ export interface TmuxPaneDeps {
 const DEFAULT_RETRIES = 8;
 const DEFAULT_RETRY_DELAY_MS = 1500;
 const STEP_TIMEOUT_MS = 5000;
+const SUBMIT_AFTER_PASTE_DELAY_MS = 250;
 
 export type TmuxPane = ReturnType<typeof createTmuxPane>;
 
@@ -63,6 +64,7 @@ export function createTmuxPane(deps: TmuxPaneDeps) {
       ).catch(() => null);
       throw new Error(`paste-buffer rc=${paste.code}: ${paste.stderr.slice(0, 200)}`);
     }
+    await delay(SUBMIT_AFTER_PASTE_DELAY_MS);
     const enter = await runTmuxProcess(
       "tmux",
       tmuxArgs(["send-keys", "-t", target, "Enter"]),

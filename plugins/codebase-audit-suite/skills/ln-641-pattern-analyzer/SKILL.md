@@ -46,7 +46,7 @@ Use `hex-graph` first when implementation discovery materially improves confiden
 
 ### Phase 1: Find Implementations
 
-**MANDATORY READ:** Load `../ln-640-pattern-evolution-auditor/references/pattern_library.md` -- use "Pattern Detection (Grep)" table for detection keywords per pattern.
+**MANDATORY READ:** Load `references/pattern_library.md` -- use "Pattern Detection (Grep)" table for detection keywords per pattern.
 
 ```
 IF pattern.source == "adaptive":
@@ -70,7 +70,7 @@ FOR EACH file IN files (limit: 10 key files):
 
 ### Phase 3: Calculate 4 Scores
 
-**MANDATORY READ:** Load `../ln-640-pattern-evolution-auditor/references/scoring_rules.md` -- follow Detection column for each criterion.
+**MANDATORY READ:** Load `references/scoring_rules.md` -- follow Detection column for each criterion.
 
 | Score | Source in scoring_rules.md | Max |
 |-------|---------------------------|-----|

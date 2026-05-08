@@ -178,8 +178,7 @@ Score: 6.75/10 (C:65 K:70 Q:55 I:80) | Issues: 4 (H:2 M:1 L:1)
 ## Reference Files
 
 - Detection patterns: `references/detection_patterns.md`
-- Scoring rules: `../ln-640-pattern-evolution-auditor/references/scoring_rules.md`
-- Pattern library: `../ln-640-pattern-evolution-auditor/references/pattern_library.md`
+- Scoring rules: `references/audit_scoring.md`
 
 ---
 **Version:** 2.0.0

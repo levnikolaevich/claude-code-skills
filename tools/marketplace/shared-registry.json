@@ -364,44 +364,6 @@
     ]
   },
   {
-    "source": "shared/references/agent_review_memory.md",
-    "kind": "reference",
-    "targets": [
-      {
-        "skill": "plugins/agile-workflow/skills/ln-300-task-coordinator",
-        "path": "references/agent_review_memory.md"
-      },
-      {
-        "skill": "plugins/agile-workflow/skills/ln-310-multi-agent-validator",
-        "path": "references/agent_review_memory.md"
-      },
-      {
-        "skill": "plugins/agile-workflow/skills/ln-315-review-merge-worker",
-        "path": "references/agent_review_memory.md"
-      },
-      {
-        "skill": "plugins/agile-workflow/skills/ln-316-review-refinement-worker",
-        "path": "references/agent_review_memory.md"
-      },
-      {
-        "skill": "plugins/agile-workflow/skills/ln-510-quality-coordinator",
-        "path": "references/agent_review_memory.md"
-      },
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/agent_review_memory.md"
-      },
-      {
-        "skill": "plugins/documentation-pipeline/skills/ln-162-skill-reviewer",
-        "path": "references/agent_review_memory.md"
-      },
-      {
-        "skill": "plugins/optimization-suite/skills/ln-813-optimization-plan-validator",
-        "path": "references/agent_review_memory.md"
-      }
-    ]
-  },
-  {
     "source": "shared/references/agent_review_workflow.md",
     "kind": "reference",
     "targets": [
@@ -5162,24 +5124,6 @@
     ]
   },
   {
-    "source": "shared/references/pattern_library.md",
-    "kind": "reference",
-    "targets": [
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-640-pattern-evolution-auditor",
-        "path": "references/pattern_library.md"
-      },
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-641-pattern-analyzer",
-        "path": "references/pattern_library.md"
-      },
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-643-api-contract-auditor",
-        "path": "references/pattern_library.md"
-      }
-    ]
-  },
-  {
     "source": "shared/references/penalty_points.md",
     "kind": "reference",
     "targets": [
@@ -6338,268 +6282,6 @@
     ]
   },
   {
-    "source": "shared/references/runtime_status_catalog.md",
-    "kind": "reference",
-    "targets": [
-      {
-        "skill": "plugins/agile-workflow/skills/ln-200-scope-decomposer",
-        "path": "references/runtime_status_catalog.md"
-      },
-      {
-        "skill": "plugins/agile-workflow/skills/ln-201-opportunity-discoverer",
-        "path": "references/runtime_status_catalog.md"
-      },
-      {
-        "skill": "plugins/agile-workflow/skills/ln-210-epic-coordinator",
-        "path": "references/runtime_status_catalog.md"
-      },
-      {
-        "skill": "plugins/agile-workflow/skills/ln-220-story-coordinator",
-        "path": "references/runtime_status_catalog.md"
-      },
-      {
-        "skill": "plugins/agile-workflow/skills/ln-221-story-creator",
-        "path": "references/runtime_status_catalog.md"
-      },
-      {
-        "skill": "plugins/agile-workflow/skills/ln-222-story-replanner",
-        "path": "references/runtime_status_catalog.md"
-      },
-      {
-        "skill": "plugins/agile-workflow/skills/ln-230-story-prioritizer",
-        "path": "references/runtime_status_catalog.md"
-      },
-      {
-        "skill": "plugins/agile-workflow/skills/ln-300-task-coordinator",
-        "path": "references/runtime_status_catalog.md"
-      },
-      {
-        "skill": "plugins/agile-workflow/skills/ln-301-task-creator",
-        "path": "references/runtime_status_catalog.md"
-      },
-      {
-        "skill": "plugins/agile-workflow/skills/ln-302-task-replanner",
-        "path": "references/runtime_status_catalog.md"
-      },
-      {
-        "skill": "plugins/agile-workflow/skills/ln-310-multi-agent-validator",
-        "path": "references/runtime_status_catalog.md"
-      },
-      {
-        "skill": "plugins/agile-workflow/skills/ln-315-review-merge-worker",
-        "path": "references/runtime_status_catalog.md"
-      },
-      {
-        "skill": "plugins/agile-workflow/skills/ln-316-review-refinement-worker",
-        "path": "references/runtime_status_catalog.md"
-      },
-      {
-        "skill": "plugins/agile-workflow/skills/ln-400-story-executor",
-        "path": "references/runtime_status_catalog.md"
-      },
-      {
-        "skill": "plugins/agile-workflow/skills/ln-401-task-executor",
-        "path": "references/runtime_status_catalog.md"
-      },
-      {
-        "skill": "plugins/agile-workflow/skills/ln-402-task-reviewer",
-        "path": "references/runtime_status_catalog.md"
-      },
-      {
-        "skill": "plugins/agile-workflow/skills/ln-403-task-rework",
-        "path": "references/runtime_status_catalog.md"
-      },
-      {
-        "skill": "plugins/agile-workflow/skills/ln-404-test-executor",
-        "path": "references/runtime_status_catalog.md"
-      },
-      {
-        "skill": "plugins/agile-workflow/skills/ln-500-story-quality-gate",
-        "path": "references/runtime_status_catalog.md"
-      },
-      {
-        "skill": "plugins/agile-workflow/skills/ln-510-quality-coordinator",
-        "path": "references/runtime_status_catalog.md"
-      },
-      {
-        "skill": "plugins/agile-workflow/skills/ln-511-code-quality-checker",
-        "path": "references/runtime_status_catalog.md"
-      },
-      {
-        "skill": "plugins/agile-workflow/skills/ln-512-tech-debt-cleaner",
-        "path": "references/runtime_status_catalog.md"
-      },
-      {
-        "skill": "plugins/agile-workflow/skills/ln-513-regression-checker",
-        "path": "references/runtime_status_catalog.md"
-      },
-      {
-        "skill": "plugins/agile-workflow/skills/ln-514-test-log-analyzer",
-        "path": "references/runtime_status_catalog.md"
-      },
-      {
-        "skill": "plugins/agile-workflow/skills/ln-520-test-planner",
-        "path": "references/runtime_status_catalog.md"
-      },
-      {
-        "skill": "plugins/agile-workflow/skills/ln-521-test-researcher",
-        "path": "references/runtime_status_catalog.md"
-      },
-      {
-        "skill": "plugins/agile-workflow/skills/ln-522-manual-tester",
-        "path": "references/runtime_status_catalog.md"
-      },
-      {
-        "skill": "plugins/agile-workflow/skills/ln-523-auto-test-planner",
-        "path": "references/runtime_status_catalog.md"
-      },
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/runtime_status_catalog.md"
-      },
-      {
-        "skill": "plugins/documentation-pipeline/skills/ln-100-documents-pipeline",
-        "path": "references/runtime_status_catalog.md"
-      },
-      {
-        "skill": "plugins/documentation-pipeline/skills/ln-110-project-docs-coordinator",
-        "path": "references/runtime_status_catalog.md"
-      },
-      {
-        "skill": "plugins/documentation-pipeline/skills/ln-111-root-docs-creator",
-        "path": "references/runtime_status_catalog.md"
-      },
-      {
-        "skill": "plugins/documentation-pipeline/skills/ln-112-project-core-creator",
-        "path": "references/runtime_status_catalog.md"
-      },
-      {
-        "skill": "plugins/documentation-pipeline/skills/ln-113-backend-docs-creator",
-        "path": "references/runtime_status_catalog.md"
-      },
-      {
-        "skill": "plugins/documentation-pipeline/skills/ln-114-frontend-docs-creator",
-        "path": "references/runtime_status_catalog.md"
-      },
-      {
-        "skill": "plugins/documentation-pipeline/skills/ln-115-devops-docs-creator",
-        "path": "references/runtime_status_catalog.md"
-      },
-      {
-        "skill": "plugins/documentation-pipeline/skills/ln-120-reference-docs-creator",
-        "path": "references/runtime_status_catalog.md"
-      },
-      {
-        "skill": "plugins/documentation-pipeline/skills/ln-130-tasks-docs-creator",
-        "path": "references/runtime_status_catalog.md"
-      },
-      {
-        "skill": "plugins/documentation-pipeline/skills/ln-140-test-docs-creator",
-        "path": "references/runtime_status_catalog.md"
-      },
-      {
-        "skill": "plugins/documentation-pipeline/skills/ln-162-skill-reviewer",
-        "path": "references/runtime_status_catalog.md"
-      },
-      {
-        "skill": "plugins/optimization-suite/skills/ln-810-performance-optimizer",
-        "path": "references/runtime_status_catalog.md"
-      },
-      {
-        "skill": "plugins/optimization-suite/skills/ln-811-performance-profiler",
-        "path": "references/runtime_status_catalog.md"
-      },
-      {
-        "skill": "plugins/optimization-suite/skills/ln-812-optimization-researcher",
-        "path": "references/runtime_status_catalog.md"
-      },
-      {
-        "skill": "plugins/optimization-suite/skills/ln-813-optimization-plan-validator",
-        "path": "references/runtime_status_catalog.md"
-      },
-      {
-        "skill": "plugins/optimization-suite/skills/ln-814-optimization-executor",
-        "path": "references/runtime_status_catalog.md"
-      },
-      {
-        "skill": "plugins/optimization-suite/skills/ln-820-dependency-optimization-coordinator",
-        "path": "references/runtime_status_catalog.md"
-      },
-      {
-        "skill": "plugins/optimization-suite/skills/ln-821-npm-upgrader",
-        "path": "references/runtime_status_catalog.md"
-      },
-      {
-        "skill": "plugins/optimization-suite/skills/ln-822-nuget-upgrader",
-        "path": "references/runtime_status_catalog.md"
-      },
-      {
-        "skill": "plugins/optimization-suite/skills/ln-823-pip-upgrader",
-        "path": "references/runtime_status_catalog.md"
-      },
-      {
-        "skill": "plugins/optimization-suite/skills/ln-830-code-modernization-coordinator",
-        "path": "references/runtime_status_catalog.md"
-      },
-      {
-        "skill": "plugins/optimization-suite/skills/ln-831-oss-replacer",
-        "path": "references/runtime_status_catalog.md"
-      },
-      {
-        "skill": "plugins/optimization-suite/skills/ln-832-bundle-optimizer",
-        "path": "references/runtime_status_catalog.md"
-      },
-      {
-        "skill": "plugins/optimization-suite/skills/ln-840-benchmark-compare",
-        "path": "references/runtime_status_catalog.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-010-dev-environment-setup",
-        "path": "references/runtime_status_catalog.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-011-agent-installer",
-        "path": "references/runtime_status_catalog.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-012-mcp-configurator",
-        "path": "references/runtime_status_catalog.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-013-config-syncer",
-        "path": "references/runtime_status_catalog.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-014-agent-instructions-manager",
-        "path": "references/runtime_status_catalog.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-015-hex-line-uninstaller",
-        "path": "references/runtime_status_catalog.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-030-vps-bootstrap",
-        "path": "references/runtime_status_catalog.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-031-vps-host-runtime",
-        "path": "references/runtime_status_catalog.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-032-vps-project-runtime",
-        "path": "references/runtime_status_catalog.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-033-hex-relay-lifecycle",
-        "path": "references/runtime_status_catalog.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-034-vps-environment-diagnostics",
-        "path": "references/runtime_status_catalog.md"
-      }
-    ]
-  },
-  {
     "source": "shared/references/scope_decomposition_runtime_contract.md",
     "kind": "reference",
     "targets": [
@@ -6646,28 +6328,6 @@
       {
         "skill": "plugins/setup-environment/skills/ln-034-vps-environment-diagnostics",
         "path": "references/scope_layers.md"
-      }
-    ]
-  },
-  {
-    "source": "shared/references/scoring_rules.md",
-    "kind": "reference",
-    "targets": [
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-640-pattern-evolution-auditor",
-        "path": "references/scoring_rules.md"
-      },
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-641-pattern-analyzer",
-        "path": "references/scoring_rules.md"
-      },
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-642-layer-boundary-auditor",
-        "path": "references/scoring_rules.md"
-      },
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-643-api-contract-auditor",
-        "path": "references/scoring_rules.md"
       }
     ]
   },
@@ -7294,20 +6954,6 @@
     ]
   },
   {
-    "source": "shared/references/troubleshooting.md",
-    "kind": "reference",
-    "targets": [
-      {
-        "skill": "plugins/setup-environment/skills/ln-030-vps-bootstrap",
-        "path": "references/troubleshooting.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-034-vps-environment-diagnostics",
-        "path": "references/troubleshooting.md"
-      }
-    ]
-  },
-  {
     "source": "shared/references/two_layer_detection.md",
     "kind": "reference",
     "targets": [
@@ -7430,24 +7076,6 @@
       {
         "skill": "plugins/documentation-pipeline/skills/ln-162-skill-reviewer",
         "path": "references/two_layer_detection.md"
-      }
-    ]
-  },
-  {
-    "source": "shared/references/verification_recipes.md",
-    "kind": "reference",
-    "targets": [
-      {
-        "skill": "plugins/setup-environment/skills/ln-030-vps-bootstrap",
-        "path": "references/verification_recipes.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-033-hex-relay-lifecycle",
-        "path": "references/verification_recipes.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-034-vps-environment-diagnostics",
-        "path": "references/verification_recipes.md"
       }
     ]
   },
@@ -9398,6 +9026,70 @@
       {
         "skill": "plugins/setup-environment/skills/ln-010-dev-environment-setup",
         "path": "references/environment_state_schema.json.SOURCE.md"
+      }
+    ]
+  },
+  {
+    "source": "shared/references/verification_recipes_common.md",
+    "kind": "reference",
+    "targets": [
+      {
+        "skill": "plugins/setup-environment/skills/ln-030-vps-bootstrap",
+        "path": "references/verification_recipes_common.md"
+      },
+      {
+        "skill": "plugins/setup-environment/skills/ln-033-hex-relay-lifecycle",
+        "path": "references/verification_recipes_common.md"
+      },
+      {
+        "skill": "plugins/setup-environment/skills/ln-034-vps-environment-diagnostics",
+        "path": "references/verification_recipes_common.md"
+      }
+    ]
+  },
+  {
+    "source": "shared/references/verification_recipes_agent_runtime.md",
+    "kind": "reference",
+    "targets": [
+      {
+        "skill": "plugins/setup-environment/skills/ln-030-vps-bootstrap",
+        "path": "references/verification_recipes_agent_runtime.md"
+      },
+      {
+        "skill": "plugins/setup-environment/skills/ln-034-vps-environment-diagnostics",
+        "path": "references/verification_recipes_agent_runtime.md"
+      }
+    ]
+  },
+  {
+    "source": "shared/references/verification_recipes_project_runtime.md",
+    "kind": "reference",
+    "targets": [
+      {
+        "skill": "plugins/setup-environment/skills/ln-030-vps-bootstrap",
+        "path": "references/verification_recipes_project_runtime.md"
+      },
+      {
+        "skill": "plugins/setup-environment/skills/ln-034-vps-environment-diagnostics",
+        "path": "references/verification_recipes_project_runtime.md"
+      }
+    ]
+  },
+  {
+    "source": "shared/references/verification_recipes_hex_relay.md",
+    "kind": "reference",
+    "targets": [
+      {
+        "skill": "plugins/setup-environment/skills/ln-030-vps-bootstrap",
+        "path": "references/verification_recipes_hex_relay.md"
+      },
+      {
+        "skill": "plugins/setup-environment/skills/ln-033-hex-relay-lifecycle",
+        "path": "references/verification_recipes_hex_relay.md"
+      },
+      {
+        "skill": "plugins/setup-environment/skills/ln-034-vps-environment-diagnostics",
+        "path": "references/verification_recipes_hex_relay.md"
       }
     ]
   }

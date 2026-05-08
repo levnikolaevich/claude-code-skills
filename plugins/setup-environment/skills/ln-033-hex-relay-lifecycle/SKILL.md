@@ -28,7 +28,7 @@ hex-relay 0.4+ routes per Telegram operator between Claude and Codex god-session
 ## MANDATORY READ
 
 **MANDATORY READ:** Load `references/worker_runtime_contract.md`, `references/coordinator_summary_contract.md`, and `references/vps_runtime_contract.md`
-**MANDATORY READ:** Load `../ln-030-vps-bootstrap/references/hex_relay_deploy.md`, `../ln-030-vps-bootstrap/references/verification_recipes.md`, `../../../../agents/hex-relay/README.md`, `../../../../agents/hex-relay/docs/redeploy.md`, and `../../../../agents/hex-relay/docs/telegram-operator-runbook.md`
+**MANDATORY READ:** Load `references/hex_relay_deploy.md`, `references/verification_recipes_common.md`, `references/verification_recipes_hex_relay.md`, `../../../../agents/hex-relay/README.md`, `../../../../agents/hex-relay/docs/redeploy.md`, and `../../../../agents/hex-relay/docs/telegram-operator-runbook.md`
 
 ---
 

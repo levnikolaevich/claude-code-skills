@@ -1,5 +1,3 @@
-<!-- SOURCE-OF-TRUTH: shared/references/pattern_library.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
-
 # Architectural Pattern Library
 
 Detection patterns, best practices, and discovery heuristics for ln-640/ln-641.

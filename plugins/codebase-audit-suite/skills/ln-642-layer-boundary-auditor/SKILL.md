@@ -273,7 +273,7 @@ Score: 4.5/10 | Issues: 8 (C:1 H:3 M:4 L:0)
 ## Reference Files
 
 - Layer rules: `../ln-640-pattern-evolution-auditor/references/layer_rules.md`
-- Scoring impact: `../ln-640-pattern-evolution-auditor/references/scoring_rules.md`
+- Scoring impact: use `references/audit_scoring.md`; pattern scoring manuals are owned by `ln-641-pattern-analyzer`
 
 ---
 

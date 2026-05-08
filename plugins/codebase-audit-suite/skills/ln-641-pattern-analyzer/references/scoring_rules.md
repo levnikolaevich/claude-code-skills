@@ -1,5 +1,3 @@
-<!-- SOURCE-OF-TRUTH: shared/references/scoring_rules.md. Edit ONLY here; run `node tools/marketplace/shared.mjs sync` -->
-
 # Pattern Scoring Rules
 
 4-score model for evaluating architectural pattern implementations.

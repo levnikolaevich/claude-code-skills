@@ -98,17 +98,29 @@ export function createMessagesRepo(db: Db) {
     "SELECT COUNT(*) AS c FROM messages WHERE direction='inbound' AND status='rejected'"
   );
   const lastActivityForUserAgent = db.prepare(
-    "SELECT MAX(ts) AS ts FROM messages " +
-      "WHERE agent = ? AND (" +
+    "SELECT MAX(activity_ts) AS ts FROM (" +
+      "SELECT CASE WHEN direction = 'inbound' THEN COALESCE(delivered_at, ts) ELSE ts END AS activity_ts " +
+      "FROM messages WHERE agent = ? AND (" +
       "  (direction = 'inbound' AND from_user_id = ?) " +
       "  OR (direction = 'outbound' AND replied_to_id IN " +
       "    (SELECT id FROM messages WHERE direction = 'inbound' AND from_user_id = ?))" +
+      ") " +
+      "UNION ALL SELECT ts AS activity_ts FROM outbox WHERE agent = ? AND chat_id = ? " +
+      "UNION ALL SELECT se.ts AS activity_ts FROM session_events se " +
+      "INNER JOIN sessions s ON s.session_id = se.session_id " +
+      "WHERE s.created_by_user_id = ? AND s.agent = ?" +
       ")"
   );
   const hasActiveInboundForUserAgent = db.prepare(
     "SELECT 1 FROM messages " +
       "WHERE direction='inbound' AND from_user_id=? AND agent=? " +
       "AND status IN ('queued','delivering','transcribing') LIMIT 1"
+  );
+  const latestSessionEventForUserAgent = db.prepare(
+    "SELECT se.kind FROM session_events se " +
+      "INNER JOIN sessions s ON s.session_id = se.session_id " +
+      "WHERE s.created_by_user_id = ? AND s.agent = ? " +
+      "ORDER BY se.ts DESC, se.id DESC LIMIT 1"
   );
 
   const claimDueTxn = db.transaction((ts: number, limit: number) => {
@@ -232,13 +244,19 @@ export function createMessagesRepo(db: Db) {
       };
     },
     lastActivityForUserAgent(userId: number, agent: AgentKind): number | null {
-      const row = lastActivityForUserAgent.get(agent, userId, userId) as
+      const row = lastActivityForUserAgent.get(agent, userId, userId, agent, userId, userId, agent) as
         | { ts: number | null }
         | undefined;
       return row?.ts ?? null;
     },
     hasActiveInboundForUserAgent(userId: number, agent: AgentKind): boolean {
       return hasActiveInboundForUserAgent.get(userId, agent) !== undefined;
+    },
+    hasActiveWorkForUserAgent(userId: number, agent: AgentKind): boolean {
+      const row = latestSessionEventForUserAgent.get(userId, agent) as
+        | { kind: string | null }
+        | undefined;
+      return row?.kind === "pre_tool_use" || row?.kind === "user_prompt_submit";
     },
   };
 }

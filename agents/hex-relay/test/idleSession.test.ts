@@ -60,6 +60,7 @@ function buildFakes(opts: {
   lastActivity: Map<string, number | null>;
   inFlight: Map<string, boolean>;
   activeInbound?: Map<string, boolean>;
+  activeWork?: Map<string, boolean>;
   stopShouldThrow?: boolean;
 }): {
   godStatus: GodStatusProbe;
@@ -96,6 +97,10 @@ function buildFakes(opts: {
     hasActiveInboundForUserAgent: (userId: number, agent: AgentKind) => {
       order.push(`activeInbound:${userId}:${agent}`);
       return opts.activeInbound?.get(`${userId}:${agent}`) ?? false;
+    },
+    hasActiveWorkForUserAgent: (userId: number, agent: AgentKind) => {
+      order.push(`activeWork:${userId}:${agent}`);
+      return opts.activeWork?.get(`${userId}:${agent}`) ?? false;
     },
   } as unknown as MessagesRepo;
 
@@ -197,6 +202,20 @@ test("evaluate: skips mid-turn when active inbound is queued/delivering/transcri
   }
 });
 
+test("evaluate: skips active work even beyond idle threshold", async () => {
+  const fakes = buildFakes({
+    instances: [{ userId: 1077, agent: "claude" }],
+    lastActivity: new Map([["1077:claude", 100]]),
+    inFlight: new Map(),
+    activeWork: new Map([["1077:claude", true]]),
+  });
+  const service = createIdleSessionService(buildDeps({ ...fakes }));
+  const result = await service.evaluate();
+  assert.equal(result.skippedMidTurn, 1);
+  assert.equal(result.stopped, 0);
+  assert.equal(fakes.fake.stopped.length, 0);
+});
+
 test("evaluate: skips recently active instance", async () => {
   const fakes = buildFakes({
     instances: [{ userId: 1077, agent: "claude" }],
@@ -256,6 +275,7 @@ test("evaluate: idle decision and stop run inside controlLane", async () => {
     "control:start",
     "pending:1077:claude",
     "activeInbound:1077:claude",
+    "activeWork:1077:claude",
     "lastActivity:1077:claude",
     "stop:1077:claude",
     "control:end",

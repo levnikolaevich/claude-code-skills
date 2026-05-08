@@ -3,7 +3,7 @@ import type { FastifyInstance } from "fastify";
 
 export interface BearerAuthOptions {
   token: string;
-  protectedPrefixes: string[];
+  protectedPrefixes: readonly string[];
 }
 
 function matchesToken(actual: string, expected: string): boolean {

@@ -24,8 +24,6 @@ agent-bot (one Linux user, uid 1000, primary group agent-bot)
 │   │   │   └── <project-prefix>-dispatch.md   ← project-named slash-commands; names differ, no conflict
 │   │   ├── projects/                    ← Claude JSONLs by encoded cwd; shared runtime,
 │   │   │                                  relay DB owns Telegram-user attribution
-│   │   └── cache/
-│   │       └── usage.json               ← shared (combined across all projects)
 │   ├── .codex/
 │   │   ├── auth.json                    ← ONE Codex login
 │   │   └── config.toml                  ← shared (with [projects."..."] blocks per project)
@@ -69,8 +67,8 @@ agent-bot (one Linux user, uid 1000, primary group agent-bot)
 | nvm + Node toolchain | `.nvm/` | — |
 | Claude Code plugins / marketplaces | `~/.claude/settings.json` (`enabledPlugins`, `extraKnownMarketplaces`) | — |
 | Headless agent defaults | `~/.claude/settings.json` (`model`, `effortLevel`, `permissions`, `theme`) | — |
-| statusLine script | `~/.claude/statusline.sh` + user-scope `settings.json` `statusLine` key | — |
-| `claude-usage-report` CLI | `/usr/local/bin/claude-usage-report` (root-installed) | — |
+| statusLine script | `~/.claude/statusline.sh` + user-scope `settings.json` `statusLine` key | TUI-only status string; not a `/usage` data source |
+| `claude-usage-report` CLI | `/usr/local/bin/claude-usage-report` (root-installed) | reads shared Claude OAuth credentials and calls the live OAuth usage endpoint |
 | Per-cwd session history | `~/.claude/projects/<cwd-encoded>/` shared runtime | relay DB maps session UUIDs to Telegram users |
 | **Hooks** | NOT user-scope | `<PROJECT_DIR>/.claude/settings.json` `hooks` key |
 | **CLAUDE.md** (operator instructions) | NOT user-scope | `<PROJECT_DIR>/.claude/CLAUDE.md` |

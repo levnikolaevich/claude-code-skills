@@ -73,7 +73,7 @@ Gated on `TELEGRAM_BOT_TOKEN`. Install:
 | `claude-usage-report.sh` | `/usr/local/bin/claude-usage-report` | root:root | 755 |
 | `operator.CLAUDE.md` | `${PROJECT_DIR}/.claude/CLAUDE.md` | `${BOT_USER}`:`${BOT_USER}` | 644 |
 
-Merge `settings.statusline.fragment.json` into user-scope `~/.claude/settings.json`, but install `operator.CLAUDE.md` at project scope only. Under shared `${BOT_USER}`, user-scope `CLAUDE.md` would cross-route identity between projects.
+Merge `settings.statusline.fragment.json` into user-scope `~/.claude/settings.json`, but install `operator.CLAUDE.md` at project scope only. The statusLine command uses `$HOME/.claude/statusline.sh` so it still resolves inside the sandbox where absolute `/home/<bot>` paths are hidden. `/usage` itself must not read statusLine output or cache: `claude-usage-report` reads shared Claude OAuth credentials, refreshes the access token when needed, and calls the live Claude OAuth usage endpoint used by Claude Code's `/usage` screen. Under shared `${BOT_USER}`, user-scope `CLAUDE.md` would cross-route identity between projects.
 
 ```bash
 sudo -u ${BOT_USER} bash -lc 'jq ". + $(cat ~/.claude/.staging/settings.statusline.fragment.json)" ~/.claude/settings.json > ~/.claude/settings.json.new && mv ~/.claude/settings.json.new ~/.claude/settings.json'
@@ -82,7 +82,6 @@ sudo -u ${BOT_USER} bash -lc 'test ! -f ~/.claude/CLAUDE.md || { echo "ERROR: ~/
 
 systemctl restart ${SERVICE_PREFIX}-god@${TELEGRAM_CHAT_ID}.service
 sleep 10
-sudo -u ${BOT_USER} ls -la /home/${BOT_USER}/.claude/cache/usage.json
 sudo -u ${BOT_USER} claude-usage-report
 ```
 

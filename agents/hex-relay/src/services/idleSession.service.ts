@@ -61,10 +61,11 @@ export function createIdleSessionService(deps: IdleSessionDeps): IdleSessionServ
               inst.userId,
               inst.agent
             );
+            const activeWork = deps.messagesRepo.hasActiveWorkForUserAgent(inst.userId, inst.agent);
             const decision = decide({
               now: now(),
               lastActivity: deps.messagesRepo.lastActivityForUserAgent(inst.userId, inst.agent),
-              inFlight: pendingOpen || activeInbound,
+              inFlight: pendingOpen || activeInbound || activeWork,
               idleThresholdSec: deps.idleThresholdSec,
             });
             if (decision === "skip_recent") {
@@ -74,7 +75,7 @@ export function createIdleSessionService(deps: IdleSessionDeps): IdleSessionServ
             if (decision === "skip_mid_turn") {
               result.skippedMidTurn += 1;
               deps.log.info(
-                { userId: inst.userId, agent: inst.agent, pendingOpen, activeInbound },
+                { userId: inst.userId, agent: inst.agent, pendingOpen, activeInbound, activeWork },
                 "idle worker: skipping mid-turn instance"
               );
               return;

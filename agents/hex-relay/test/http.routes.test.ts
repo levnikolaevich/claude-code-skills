@@ -26,6 +26,7 @@ import type { BuildInfo } from "../src/config/buildInfo.js";
 import type { Logger } from "../src/lib/logger.js";
 import { closeDb, createDb } from "../src/infrastructure/db/client.js";
 import { createRepositories } from "../src/infrastructure/db/repositories/index.js";
+import { PROTECTED_HTTP_PREFIXES, PUBLIC_OPERATIONAL_ROUTES } from "../src/domain/httpSurface.js";
 
 const log = pino({ enabled: false }) as Logger;
 
@@ -135,16 +136,19 @@ test("live ready and metrics are public operational endpoints", async () => {
   const app = createApp();
   registerBearerAuth(app, {
     token: "x".repeat(32),
-    protectedPrefixes: ["/hook", "/tasks", "/dispatch", "/memory"],
+    protectedPrefixes: PROTECTED_HTTP_PREFIXES,
   });
   registerHealthRoutes(app, runtimeDeps());
 
+  for (const route of PUBLIC_OPERATIONAL_ROUTES) {
+    const response = await app.inject({ method: "GET", url: route });
+    assert.equal(response.statusCode, 200, `${route} should be public`);
+  }
+
   const live = await app.inject({ method: "GET", url: "/live" });
-  assert.equal(live.statusCode, 200);
   assert.deepEqual(live.json(), { ok: true });
 
   const ready = await app.inject({ method: "GET", url: "/ready" });
-  assert.equal(ready.statusCode, 200);
   assert.deepEqual(ready.json(), { ok: true });
 
   const metrics = await app.inject({ method: "GET", url: "/metrics" });
@@ -176,7 +180,7 @@ test("protected HTTP routes require bearer token", async () => {
   const app = createApp();
   registerBearerAuth(app, {
     token: "super-secret-token-value-32-chars",
-    protectedPrefixes: ["/hook", "/tasks", "/dispatch", "/memory"],
+    protectedPrefixes: PROTECTED_HTTP_PREFIXES,
   });
   registerDispatchRoutes(app, {
     log,

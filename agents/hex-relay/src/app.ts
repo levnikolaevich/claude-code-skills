@@ -1,5 +1,6 @@
 import Fastify from "fastify";
 import type { FastifyInstance } from "fastify";
+import type { Composer, Context } from "grammy";
 import type { Env } from "./config/env.js";
 import { loadBuildInfo } from "./config/buildInfo.js";
 import { buildPaths, buildUserRuntimePaths } from "./config/paths.js";
@@ -67,6 +68,8 @@ import { createPendingReplyGcWorker } from "./workers/pendingReplyGc.worker.js";
 import { runProcess } from "./infrastructure/process/runProcess.js";
 import { readCodexRateLimitsJson } from "./infrastructure/process/codexAppServerClient.js";
 import { unwrapOrThrowInvariant } from "./services/outcome.js";
+import { PROTECTED_HTTP_PREFIXES } from "./domain/httpSurface.js";
+import type { TelegramCommandName } from "./domain/telegramCommands.js";
 
 export interface App {
   start(): Promise<void>;
@@ -227,17 +230,6 @@ export function buildApp(env: Env, log: Logger = createLogger()): App {
   // wire telegram middleware + handlers (catch-all inbound LAST)
   const allowlistMw = buildAllowlistMiddleware({ bot, log, allowlist });
   bot.use(allowlistMw);
-  const newSessionHandler = buildNewSessionHandler({
-    log,
-    controlLane,
-    godRuntime,
-  });
-  const sessionsHandler = buildSessionsHandler({
-    log,
-    sessionService,
-    controlLane,
-    sessionLocks,
-  });
   const sessionsCallback = buildSessionsCallbackHandler({
     log,
     sessionService,
@@ -245,46 +237,59 @@ export function buildApp(env: Env, log: Logger = createLogger()): App {
     sessionLocks,
     godRuntime,
   });
-  const usersHandler = buildUsersHandler({ log, allowlist });
   const usersCallback = buildUsersCallbackHandler({ log, bot, allowlist });
-  const tasksHandler = buildTasksHandler({ log, tasks });
   const tasksCallback = buildTasksCallbackHandler({ log, tasks });
-  const setBuddyHandler = buildSetBuddyHandler({ log, userBuddy });
-  const usageHandler = buildUsageHandler({
-    log,
-    godRuntime,
-    messagesRepo: repos.messages,
-    userBuddy,
-    runClaudeUsageReport: async () => {
-      const result = await runProcess("/usr/local/bin/claude-usage-report", [], {
-        timeoutMs: 5000,
-        label: "claude-usage-report",
-      });
-      if (result.code !== 0) {
-        throw new Error(
-          `claude-usage-report exit ${result.code}: ${result.stderr.trim().slice(0, 200) || "no stderr"}`
-        );
-      }
-      return result.stdout.trim();
-    },
-    runCodexUsageReport: async () => {
-      return readCodexRateLimitsJson({ timeoutMs: 10_000 });
-    },
-  });
+  const telegramCommandHandlers = {
+    new_session: buildNewSessionHandler({
+      log,
+      controlLane,
+      godRuntime,
+    }),
+    sessions: buildSessionsHandler({
+      log,
+      sessionService,
+      controlLane,
+      sessionLocks,
+    }),
+    users: buildUsersHandler({ log, allowlist }),
+    tasks: buildTasksHandler({ log, tasks }),
+    set_buddy: buildSetBuddyHandler({ log, userBuddy }),
+    usage: buildUsageHandler({
+      log,
+      godRuntime,
+      messagesRepo: repos.messages,
+      userBuddy,
+      runClaudeUsageReport: async () => {
+        const result = await runProcess("/usr/local/bin/claude-usage-report", [], {
+          timeoutMs: 5000,
+          label: "claude-usage-report",
+        });
+        if (result.code !== 0) {
+          throw new Error(
+            `claude-usage-report exit ${result.code}: ${result.stderr.trim().slice(0, 200) || "no stderr"}`
+          );
+        }
+        return result.stdout.trim();
+      },
+      runCodexUsageReport: async () => {
+        return readCodexRateLimitsJson({ timeoutMs: 10_000 });
+      },
+    }),
+  } satisfies Record<TelegramCommandName, Composer<Context>>;
   const inboundHandler = buildInboundHandler({
     log,
     mediaStore,
     capture: telegramInboundCapture,
   });
-  bot.use(newSessionHandler);
-  bot.use(sessionsHandler);
+  bot.use(telegramCommandHandlers.new_session);
+  bot.use(telegramCommandHandlers.sessions);
   bot.use(sessionsCallback);
-  bot.use(usersHandler);
+  bot.use(telegramCommandHandlers.users);
   bot.use(usersCallback);
-  bot.use(tasksHandler);
+  bot.use(telegramCommandHandlers.tasks);
   bot.use(tasksCallback);
-  bot.use(setBuddyHandler);
-  bot.use(usageHandler);
+  bot.use(telegramCommandHandlers.set_buddy);
+  bot.use(telegramCommandHandlers.usage);
   bot.use(inboundHandler);
 
   const httpServer: FastifyInstance = Fastify({
@@ -296,7 +301,7 @@ export function buildApp(env: Env, log: Logger = createLogger()): App {
   registerErrorHandler(httpServer, log);
   registerBearerAuth(httpServer, {
     token: env.httpToken,
-    protectedPrefixes: ["/hook", "/tasks", "/dispatch", "/memory"],
+    protectedPrefixes: PROTECTED_HTTP_PREFIXES,
   });
   registerHookRoutes(httpServer, {
     hookIngestion,

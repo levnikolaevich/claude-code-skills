@@ -5,6 +5,7 @@ import type { UserBuddyService } from "../../services/userBuddy.service.js";
 import type { MessagesRepository } from "../../services/ports.js";
 import { type AgentKind, DEFAULT_AGENT } from "../../domain/message.js";
 import { buildTgPrefix } from "../../domain/tgPrefix.js";
+import { TELEGRAM_COMMANDS } from "../../domain/telegramCommands.js";
 import { userTokenFromContext } from "./userToken.js";
 
 export type RunClaudeUsageReport = () => Promise<string>;
@@ -26,19 +27,93 @@ const PROMPT_INSTRUCTION =
   "Default to English if you cannot determine the language. " +
   "Keep numbers, percentages, and reset windows verbatim; only translate labels and prose.";
 
-const CLAUDE_FAILED = "📊 Claude usage\n⚠️ claude-usage-report failed (see relay logs).";
+const CLAUDE_FAILED = "📊 Claude usage\n⚠️ live Claude usage query failed (see relay logs).";
 const CODEX_FAILED =
-  "\u{1F7E2} Codex usage\n⚠️ codex app-server account/rateLimits/read failed (see relay logs).";
+  "\u{1F7E2} Codex usage\n⚠️ live Codex account/rateLimits/read failed (see relay logs).";
 const CODEX_INACTIVE =
-  "⚪ Codex god-session: not running. Start: `@codex hi` or `/set_buddy codex`.";
+  "⚪ Codex god-session: not running. Start it with `@codex hi` or `/set_buddy codex` when you want to route work there.";
+const SECONDS_PER_HOUR = 60 * 60;
+const SECONDS_PER_DAY = 24 * SECONDS_PER_HOUR;
+
+interface CodexRateLimitWindow {
+  usedPercent?: unknown;
+  windowDurationMins?: unknown;
+  resetsAt?: unknown;
+}
+
+interface CodexRateLimitSnapshot {
+  limitId?: unknown;
+  limitName?: unknown;
+  primary?: CodexRateLimitWindow | null;
+  secondary?: CodexRateLimitWindow | null;
+}
+
+function formatReset(seconds: unknown): string {
+  if (typeof seconds !== "number" || !Number.isFinite(seconds) || seconds <= 0) return "unknown";
+  const deltaSeconds = Math.round(seconds - Date.now() / 1000);
+  if (deltaSeconds <= 0) return "now";
+  const days = Math.floor(deltaSeconds / SECONDS_PER_DAY);
+  const hours = Math.floor((deltaSeconds % SECONDS_PER_DAY) / SECONDS_PER_HOUR);
+  const minutes = Math.floor((deltaSeconds % SECONDS_PER_HOUR) / 60);
+  if (days > 0) return `${days}d ${hours}h`;
+  if (hours > 0) return `${hours}h ${minutes}m`;
+  return `${minutes}m`;
+}
+
+function formatWindowLabel(window: CodexRateLimitWindow, fallback: "session" | "week"): string {
+  if (fallback === "session") return "Current session";
+  const minutes = window.windowDurationMins;
+  if (typeof minutes !== "number" || !Number.isFinite(minutes) || minutes <= 0) {
+    return "Current week";
+  }
+  if (minutes >= 7 * 24 * 60) return "Current week";
+  if (minutes >= 24 * 60) return `${Math.round(minutes / (24 * 60))}d window`;
+  if (minutes >= 60) return `${Math.round(minutes / 60)}h window`;
+  return `${Math.round(minutes)}m window`;
+}
+
+function formatUsedPercent(value: unknown): string | null {
+  if (typeof value !== "number" || !Number.isFinite(value)) return null;
+  return `${Math.round(Math.max(0, Math.min(100, value)))}%`;
+}
+
+function formatCodexWindow(
+  window: CodexRateLimitWindow | null | undefined,
+  fallback: "session" | "week"
+): string | null {
+  if (!window) return null;
+  const used = formatUsedPercent(window.usedPercent);
+  if (!used) return null;
+  const label = formatWindowLabel(window, fallback);
+  return `${label}: ${used} used — resets in ${formatReset(window.resetsAt)}`;
+}
+
+function formatCodexUsage(raw: string): string | null {
+  let parsed: { rateLimits?: CodexRateLimitSnapshot };
+  try {
+    parsed = JSON.parse(raw) as { rateLimits?: CodexRateLimitSnapshot };
+  } catch {
+    return null;
+  }
+  const snapshot = parsed?.rateLimits;
+  if (!snapshot) return null;
+  const lines = [
+    "\u{1F7E2} Codex usage",
+    "",
+    formatCodexWindow(snapshot.primary, "session"),
+    formatCodexWindow(snapshot.secondary, "week"),
+  ].filter((line): line is string => line !== null);
+  return lines.length > 2 ? lines.join("\n") : null;
+}
 
 async function runCodexJsonReport(deps: UsageDeps): Promise<string> {
   try {
     const out = await deps.runCodexUsageReport();
     const trimmed = out.trim();
-    return trimmed.length > 0 ? trimmed : CODEX_FAILED;
+    if (trimmed.length === 0) return CODEX_FAILED;
+    return formatCodexUsage(trimmed) ?? CODEX_FAILED;
   } catch (error) {
-    deps.log.warn({ err: String(error) }, "codex-usage-report failed");
+    deps.log.warn({ err: String(error) }, "codex usage query failed");
     return CODEX_FAILED;
   }
 }
@@ -49,37 +124,39 @@ async function gatherClaudeBlock(deps: UsageDeps): Promise<string> {
     const trimmed = out.trim();
     return trimmed.length > 0 ? trimmed : CLAUDE_FAILED;
   } catch (error) {
-    deps.log.warn({ err: String(error) }, "claude-usage-report failed");
+    deps.log.warn({ err: String(error) }, "claude usage query failed");
     return CLAUDE_FAILED;
   }
 }
 
 async function gatherCodexBlock(deps: UsageDeps, userId: number): Promise<string> {
-  let isActive;
+  const usage = await runCodexJsonReport(deps);
+  let runtimeNote = "";
   try {
-    isActive = await deps.godRuntime.isActive(userId, "codex");
+    const isActive = await deps.godRuntime.isActive(userId, "codex");
+    if (!isActive.ok) {
+      deps.log.warn({ error: isActive.error }, "codex status probe failed");
+      runtimeNote = "\u{1F7E2} Codex god-session: status unavailable (systemd query failed).";
+    } else if (!isActive.value) {
+      runtimeNote = CODEX_INACTIVE;
+    }
   } catch (error) {
     deps.log.warn({ err: String(error) }, "codex status probe failed");
-    return "\u{1F7E2} Codex god-session: status unavailable (systemd query failed).";
+    runtimeNote = "\u{1F7E2} Codex god-session: status unavailable (systemd query failed).";
   }
-  if (!isActive.ok) {
-    deps.log.warn({ error: isActive.error }, "codex status probe failed");
-    return "\u{1F7E2} Codex god-session: status unavailable (systemd query failed).";
-  }
-  if (!isActive.value) return CODEX_INACTIVE;
-  return runCodexJsonReport(deps);
+  return runtimeNote.length > 0 ? `${usage}\n\n${runtimeNote}` : usage;
 }
 
 export function buildUsageHandler(deps: UsageDeps): Composer<Context> {
   const c = new Composer<Context>();
-  c.command("usage", async (ctx) => {
+  c.command(TELEGRAM_COMMANDS.usage.command, async (ctx) => {
     const userId = ctx.from?.id;
     if (userId === undefined || ctx.message === undefined) return;
 
     const claudeBlock = await gatherClaudeBlock(deps);
     const codexBlock = await gatherCodexBlock(deps, userId);
     const dataPayload =
-      `--- Claude usage ---\n${claudeBlock}\n\n` + `--- Codex status ---\n${codexBlock}`;
+      `--- Claude usage ---\n${claudeBlock}\n\n` + `--- Codex usage ---\n${codexBlock}`;
 
     const targetAgent: AgentKind = deps.userBuddy.getDefault(userId) ?? DEFAULT_AGENT;
     let targetActiveOutcome;
@@ -117,7 +194,7 @@ export function buildUsageHandler(deps: UsageDeps): Composer<Context> {
 
     deps.log.info(
       { userId, targetAgent },
-      "/usage target agent inactive, falling back to direct English reply"
+      "/usage target agent inactive, replying directly in English"
     );
     await ctx.reply(`${claudeBlock}\n\n${codexBlock}`);
   });

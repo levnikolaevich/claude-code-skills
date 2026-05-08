@@ -7,6 +7,7 @@ import { TIMING } from "../../config/paths.js";
 import { listKeyboard, type MenuScreen } from "./kb.js";
 import type { SessionListItem } from "../../domain/session.js";
 import { truncate } from "../../domain/events.js";
+import { TELEGRAM_COMMANDS } from "../../domain/telegramCommands.js";
 
 export interface SessionsDeps {
   log: Logger;
@@ -68,7 +69,7 @@ export function renderSessionsList(args: {
 
 export function buildSessionsHandler(deps: SessionsDeps): Composer<Context> {
   const c = new Composer<Context>();
-  c.command("sessions", async (ctx) => {
+  c.command(TELEGRAM_COMMANDS.sessions.command, async (ctx) => {
     const args = (ctx.match?.toString() ?? "").trim();
 
     if (args.startsWith("delete")) {

@@ -3,6 +3,8 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { PROTECTED_HTTP_PREFIXES } from "../src/domain/httpSurface.js";
+import { telegramSetMyCommandsPayload } from "../src/domain/telegramCommands.js";
 
 const repoRoot = dirname(dirname(dirname(dirname(fileURLToPath(import.meta.url)))));
 const bootstrapRefs = join(
@@ -87,6 +89,15 @@ test("Claude worktrees branch from local head for god sessions", () => {
   assert.match(refsReadme, /worktree\.baseRef.*head/);
 });
 
+test("Claude resumed god-session starts without placeholder prompt", () => {
+  const script = readFileSync(join(bootstrapRefs, "scripts/god-session.sh"), "utf8");
+
+  assert.match(script, /CLAUDE_CMD="\$CLAUDE_BASE --resume \$SID"/);
+  assert.match(script, /CLAUDE_CMD="\$CLAUDE_BASE --resume \$LAST_SID"/);
+  assert.doesNotMatch(script, /--resume \$SID \./);
+  assert.doesNotMatch(script, /--resume \$LAST_SID \./);
+});
+
 test("Codex hooks use 0.129 command hook shape and SessionStart context passthrough", () => {
   const codexHooks = readFileSync(join(bootstrapRefs, "codex_hooks_config.md"), "utf8");
   const shim = readFileSync(join(bootstrapRefs, "scripts/hex-relay-codex-hook.sh"), "utf8");
@@ -113,8 +124,26 @@ test("protected local API examples include bearer auth", () => {
   assert.match(operator, /Authorization: Bearer \${RELAY_HTTP_TOKEN}.*dispatch\/recent/s);
   assert.match(operator, /inspect `\/dispatch\/recent` using the bearer-authenticated command/);
   assert.match(verification, /Authorization: Bearer \${RELAY_HTTP_TOKEN}.*\/tasks\/poll/);
-  assert.match(refsReadme, /\/hook\/\*/, "README documents protected hook routes");
+  for (const prefix of PROTECTED_HTTP_PREFIXES) {
+    assert.match(refsReadme, new RegExp(prefix.replace("/", String.raw`\/`)));
+  }
   assert.match(refsReadme, /Authorization: Bearer \${RELAY_HTTP_TOKEN}/);
+});
+
+test("Telegram command registration consumes the compiled manifest helper", () => {
+  const registerScript = readFileSync(
+    join(bootstrapRefs, "scripts/register-telegram-commands.sh"),
+    "utf8"
+  );
+
+  assert.match(registerScript, /dist\/scripts\/telegram-commands-json\.js/);
+  assert.match(registerScript, /node_bin="\$\{NODE_BIN:-\}"/);
+  assert.match(registerScript, /commands="\$\("\$\{node_bin\}" "\$\{commands_helper\}"\)"/);
+  assert.match(registerScript, /--argjson expected "\$\{expected\}"/);
+  assert.match(registerScript, /setMyCommands/);
+  assert.match(registerScript, /getMyCommands/);
+  assert.doesNotMatch(registerScript, /"command":"[a-z_]+"/);
+  assert.ok(telegramSetMyCommandsPayload().commands.length > 0);
 });
 
 test("redeploy archive excludes local artifacts and package outputs", () => {

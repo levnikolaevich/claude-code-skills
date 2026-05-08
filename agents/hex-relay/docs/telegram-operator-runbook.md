@@ -28,13 +28,15 @@ Step 7c registers these commands with English descriptions automatically through
 
 Optional cosmetic: `setMyDescription`, `setMyShortDescription` Bot API calls.
 
-Registered commands:
+Registered commands are defined once in `agents/hex-relay/src/domain/telegramCommands.ts`.
+The registration script publishes that compiled manifest, so add or rename commands there
+first and then update the matching handler.
 
-- `/usage` — show Claude/Codex usage limits. Relay collects raw Claude rate-limit data from `claude-usage-report` plus the codex god-session active/inactive flag, then routes the bundle through the user's buddy agent so the reply lands in the user's chat language. If no buddy session is active the relay sends a direct English fallback.
-- `/new_session` — start a new Claude session for the current Telegram user.
-- `/sessions` — resume or delete the current user's sessions.
-- `/tasks` — list open provider issues; [Take] sends one selected task to the clicking user's current session.
-- `/users` — manage bot access.
+Operational notes:
+
+- `/usage` collects live Claude subscription data through `claude-usage-report` and live Codex data through `account/rateLimits/read`. Codex account data is fetched independently from whether the Codex god-session is running; the active/inactive flag is only a routing hint.
+- `/set_buddy claude|codex` changes the default agent for future messages. A one-off `@claude ...` or `@codex ...` prefix still overrides one message.
+- `/tasks` lists open provider issues; [Take] sends the selected task to the clicking user's current session.
 
 ## Multi-user onboarding
 

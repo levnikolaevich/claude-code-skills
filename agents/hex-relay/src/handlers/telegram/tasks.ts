@@ -5,6 +5,7 @@ import type { ProviderTask } from "../../domain/task.js";
 import { TIMING } from "../../config/paths.js";
 import { listKeyboard, type MenuScreen } from "./kb.js";
 import { truncate } from "../../domain/events.js";
+import { TELEGRAM_COMMANDS } from "../../domain/telegramCommands.js";
 
 export interface TasksDeps {
   log: Logger;
@@ -54,7 +55,7 @@ export function renderTasksList(args: {
 
 export function buildTasksHandler(deps: TasksDeps): Composer<Context> {
   const c = new Composer<Context>();
-  c.command("tasks", async (ctx) => {
+  c.command(TELEGRAM_COMMANDS.tasks.command, async (ctx) => {
     const outcome = await deps.tasks.fetchOpenTasks();
     if (!outcome.ok) {
       deps.log.warn({ error: outcome.error }, "fetch open tasks failed");

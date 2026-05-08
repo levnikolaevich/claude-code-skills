@@ -2,6 +2,7 @@ import { Composer, type Context } from "grammy";
 import type { Logger } from "../../lib/logger.js";
 import type { ControlLane } from "../../services/controlLane.service.js";
 import type { GodRuntimeService } from "../../services/godRuntime.service.js";
+import { TELEGRAM_COMMANDS } from "../../domain/telegramCommands.js";
 
 export interface NewSessionDeps {
   log: Logger;
@@ -11,7 +12,7 @@ export interface NewSessionDeps {
 
 export function buildNewSessionHandler(deps: NewSessionDeps): Composer<Context> {
   const c = new Composer<Context>();
-  c.command("new_session", async (ctx) => {
+  c.command(TELEGRAM_COMMANDS.new_session.command, async (ctx) => {
     const args = ctx.match?.toString() ?? "";
     if (args.trim().length > 0) {
       await ctx.reply("`/new_session` accepts no arguments.");

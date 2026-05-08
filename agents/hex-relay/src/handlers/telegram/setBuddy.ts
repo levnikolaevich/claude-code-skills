@@ -2,6 +2,7 @@ import { Composer, type Context } from "grammy";
 import type { Logger } from "../../lib/logger.js";
 import type { UserBuddyService } from "../../services/userBuddy.service.js";
 import { isAgentKind } from "../../domain/message.js";
+import { TELEGRAM_COMMANDS } from "../../domain/telegramCommands.js";
 
 export interface SetBuddyDeps {
   log: Logger;
@@ -10,7 +11,7 @@ export interface SetBuddyDeps {
 
 export function buildSetBuddyHandler(deps: SetBuddyDeps): Composer<Context> {
   const c = new Composer<Context>();
-  c.command("set_buddy", async (ctx) => {
+  c.command(TELEGRAM_COMMANDS.set_buddy.command, async (ctx) => {
     const userId = ctx.from?.id;
     if (userId === undefined) return;
     const arg = (ctx.match ?? "").toString().trim().toLowerCase();

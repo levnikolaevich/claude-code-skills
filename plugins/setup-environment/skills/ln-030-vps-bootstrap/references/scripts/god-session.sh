@@ -158,7 +158,7 @@ case "$RESOLVED" in
   resume:*)
     SID=${RESOLVED#resume:}
     log "command consumed: action=resume sid=$SID"
-    CLAUDE_CMD="$CLAUDE_BASE --resume $SID ."
+    CLAUDE_CMD="$CLAUDE_BASE --resume $SID"
     BOOT_RESUME_SID="$SID"
     RESUME_SOURCE="command"
     ;;
@@ -169,7 +169,7 @@ case "$RESOLVED" in
       if [[ "$LAST_SID" =~ ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$ ]] \
          && [[ -f "$SESSIONS_DIR/$LAST_SID.jsonl" ]]; then
         log "default: --resume $LAST_SID (from user last-session.id)"
-        CLAUDE_CMD="$CLAUDE_BASE --resume $LAST_SID ."
+        CLAUDE_CMD="$CLAUDE_BASE --resume $LAST_SID"
         CHOSE="resume_explicit"
         BOOT_RESUME_SID="$LAST_SID"
         RESUME_SOURCE="last-session"

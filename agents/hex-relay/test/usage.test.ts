@@ -15,6 +15,30 @@ import type { GodRuntimeService } from "../src/services/godRuntime.service.js";
 const log = pino({ enabled: false }) as Logger;
 void InputFile;
 
+const CODEX_USAGE_JSON = JSON.stringify({
+  rateLimits: {
+    limitId: "codex",
+    limitName: null,
+    primary: {
+      usedPercent: 37,
+      windowDurationMins: 300,
+      resetsAt: 4_102_444_800,
+    },
+    secondary: {
+      usedPercent: 26,
+      windowDurationMins: 10_080,
+      resetsAt: 4_102_790_400,
+    },
+    credits: {
+      hasCredits: false,
+      unlimited: false,
+      balance: "0",
+    },
+    planType: "prolite",
+    rateLimitReachedType: null,
+  },
+});
+
 interface FakeBotApi {
   sentReplies: { chatId: number; text: string }[];
 }
@@ -106,8 +130,7 @@ test("/usage routes through buddy agent when buddy session is active", async () 
       messagesRepo: repos.messages,
       userBuddy,
       runClaudeUsageReport: async () => "\u{1F4CA} Claude usage\nSession (5hr): 42% used",
-      runCodexUsageReport: async () =>
-        '{"type":"token_count","info":{"total_tokens":123,"rate_limits":{"hour_remaining":17}}}',
+      runCodexUsageReport: async () => CODEX_USAGE_JSON,
     });
     bot.use(handler);
     await bot.init();
@@ -129,9 +152,14 @@ test("/usage routes through buddy agent when buddy session is active", async () 
     assert.ok(row!.text.includes("📊 Claude usage"), "claude data block preserved");
     assert.ok(row!.text.includes("42% used"), "raw numbers preserved");
     assert.ok(
-      row!.text.includes("hour_remaining"),
-      "codex JSON usage block included when codex is active"
+      row!.text.includes("Current session: 37% used"),
+      "codex 5h used percentage is normalized"
     );
+    assert.ok(
+      row!.text.includes("Current week: 26% used"),
+      "codex weekly used percentage is normalized"
+    );
+    assert.ok(!row!.text.includes("remaining"), "codex usage must not be reported as remaining");
   } finally {
     closeDb(db);
   }
@@ -156,7 +184,7 @@ test("/usage honors user buddy preference (codex)", async () => {
       messagesRepo: repos.messages,
       userBuddy,
       runClaudeUsageReport: async () => "\u{1F4CA} Claude usage\nok",
-      runCodexUsageReport: async () => '{"type":"token_count","info":{}}',
+      runCodexUsageReport: async () => CODEX_USAGE_JSON,
     });
     bot.use(handler);
     await bot.init();
@@ -172,7 +200,7 @@ test("/usage honors user buddy preference (codex)", async () => {
   }
 });
 
-test("/usage falls back to direct English reply when buddy session is inactive", async () => {
+test("/usage replies directly in English when buddy session is inactive", async () => {
   const dir = await mkdtemp(join(tmpdir(), "hex-relay-usage-"));
   const db = createDb({
     dbPath: join(dir, "relay.db"),
@@ -190,7 +218,7 @@ test("/usage falls back to direct English reply when buddy session is inactive",
       messagesRepo: repos.messages,
       userBuddy,
       runClaudeUsageReport: async () => "\u{1F4CA} Claude usage\nSession (5hr): 7% used",
-      runCodexUsageReport: async () => '{"type":"token_count","info":{}}',
+      runCodexUsageReport: async () => CODEX_USAGE_JSON,
     });
     bot.use(handler);
     await bot.init();
@@ -201,21 +229,28 @@ test("/usage falls back to direct English reply when buddy session is inactive",
     const text = api.sentReplies[0]!.text;
     assert.ok(text.includes("📊 Claude usage"), "claude block preserved");
     assert.ok(text.includes("7% used"), "raw numbers preserved");
-    assert.ok(text.includes("⚪ Codex"), "codex inactive marker present");
-    assert.ok(!/[а-яА-ЯёЁ]/.test(text), "fallback text must be English (no Cyrillic)");
+    assert.ok(
+      text.includes("Current session: 37% used"),
+      "codex usage is collected even when codex session is inactive"
+    );
+    assert.ok(
+      text.includes("⚪ Codex"),
+      "codex inactive marker is included as runtime status only"
+    );
+    assert.ok(!/[а-яА-ЯёЁ]/.test(text), "direct reply text must be English (no Cyrillic)");
 
     const queued = repos.messages.selectDue(10);
     assert.equal(
       queued.find((r) => r.tgMsgId === 300),
       undefined,
-      "no inbound row enqueued in fallback path"
+      "no inbound row enqueued in direct reply path"
     );
   } finally {
     closeDb(db);
   }
 });
 
-test("/usage fallback path still renders when claude-usage-report throws", async () => {
+test("/usage direct reply still renders when live Claude usage query throws", async () => {
   const dir = await mkdtemp(join(tmpdir(), "hex-relay-usage-"));
   const db = createDb({
     dbPath: join(dir, "relay.db"),
@@ -235,7 +270,7 @@ test("/usage fallback path still renders when claude-usage-report throws", async
       runClaudeUsageReport: async () => {
         throw new Error("ENOENT");
       },
-      runCodexUsageReport: async () => '{"type":"token_count","info":{}}',
+      runCodexUsageReport: async () => CODEX_USAGE_JSON,
     });
     bot.use(handler);
     await bot.init();
@@ -244,14 +279,17 @@ test("/usage fallback path still renders when claude-usage-report throws", async
 
     assert.equal(api.sentReplies.length, 1);
     const text = api.sentReplies[0]!.text;
-    assert.ok(text.includes("claude-usage-report failed"), "claude failure block present");
-    assert.ok(text.includes("⚪ Codex"), "codex section still rendered");
+    assert.ok(text.includes("live Claude usage query failed"), "claude failure block present");
+    assert.ok(
+      text.includes("Current session: 37% used"),
+      "codex section still renders independently"
+    );
   } finally {
     closeDb(db);
   }
 });
 
-test("/usage fallback handles codex isActive throw", async () => {
+test("/usage direct reply handles codex isActive throw", async () => {
   const dir = await mkdtemp(join(tmpdir(), "hex-relay-usage-"));
   const db = createDb({
     dbPath: join(dir, "relay.db"),
@@ -269,7 +307,7 @@ test("/usage fallback handles codex isActive throw", async () => {
       messagesRepo: repos.messages,
       userBuddy,
       runClaudeUsageReport: async () => "\u{1F4CA} Claude usage\nok",
-      runCodexUsageReport: async () => '{"type":"token_count","info":{}}',
+      runCodexUsageReport: async () => CODEX_USAGE_JSON,
     });
     bot.use(handler);
     await bot.init();
@@ -279,7 +317,11 @@ test("/usage fallback handles codex isActive throw", async () => {
     assert.equal(api.sentReplies.length, 1);
     const text = api.sentReplies[0]!.text;
     assert.ok(text.includes("📊 Claude usage"), "claude block preserved");
-    assert.ok(text.includes("status unavailable"), "codex fallback rendered in English");
+    assert.ok(
+      text.includes("Current session: 37% used"),
+      "codex usage is still collected when systemd probe fails"
+    );
+    assert.ok(text.includes("status unavailable"), "codex status note rendered in English");
   } finally {
     closeDb(db);
   }

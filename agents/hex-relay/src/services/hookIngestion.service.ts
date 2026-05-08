@@ -576,6 +576,10 @@ export function createHookIngestionService(deps: HookIngestionDeps) {
 
     preToolUse(args: ToolUseHook): ServiceOutcome<void, HookIngestionError> {
       try {
+        deps.sessionService.insertEvent(args.sessionId, "pre_tool_use", {
+          tool_name: args.toolName,
+          effort_level: args.effortLevel ?? null,
+        });
         const chatId = operatorChatForSession(args.sessionId || null);
         if (args.toolName === "Skill" && deps.verbosity.allows("L2")) {
           const text = FormatService.formatSkill(args.toolInput, "🔧");
@@ -630,6 +634,11 @@ export function createHookIngestionService(deps: HookIngestionDeps) {
 
     postToolUse(args: ToolUseHook): ServiceOutcome<void, HookIngestionError> {
       try {
+        deps.sessionService.insertEvent(args.sessionId, "post_tool_use", {
+          tool_name: args.toolName,
+          duration_ms: args.durationMs ?? null,
+          effort_level: args.effortLevel ?? null,
+        });
         if (!deps.verbosity.allows("verbose_bash")) return okVoid();
         if (args.toolName !== "Skill") return okVoid();
         const text = FormatService.formatSkill(args.toolInput, "✅");

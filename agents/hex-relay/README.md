@@ -11,7 +11,7 @@ Telegram and HTTP control plane for per-project agent god-sessions.
 - Accepts Telegram text, captions, photos, image documents, and general documents.
 - Delivers accepted operator messages into the correct per-user tmux god-session.
 - Mirrors final Claude replies back to Telegram through Claude Code hooks.
-- Exposes `/new_session`, `/sessions`, `/tasks`, `/users`, and `/usage` bot commands.
+- Exposes Telegram bot commands from `src/domain/telegramCommands.ts`; the VPS registration script publishes the same manifest to Telegram.
 - Polls provider issues through control-plane credentials and lets an allowed user take one task into their current session.
 - Stores dispatch runs, memories, session events, health snapshots, allowed users, and outbound messages in SQLite.
 - Keeps outbound Telegram delivery durable through an outbox worker with retry/backoff.
@@ -60,7 +60,7 @@ Optional:
 | ------------------------------------------------------------------------ | -------------------------------------------------------------------- |
 | `RELAY_VERBOSITY`                                                        | `quiet`, `normal`, or `verbose`; defaults to `normal`.               |
 | `RELAY_INBOUND_REACTIONS`                                                | Comma-separated Telegram reaction pool for inbound acknowledgements. |
-| `RELAY_IDLE_SHUTDOWN_SEC`                                                | Idle seconds before stopping a god-session; defaults to `600`.       |
+| `RELAY_IDLE_SHUTDOWN_SEC`                                                | Idle seconds after last inbound/outbound/session activity before stopping a non-working god-session; defaults to `600`. |
 | `RELAY_IDLE_TICK_SEC`                                                    | Idle watchdog polling interval; defaults to `60`.                    |
 | `RELAY_IDLE_BOOT_GRACE_SEC`                                              | Grace window after relay boot before idle stops; defaults to `120`.  |
 | `RELAY_VOICE_TRANSCRIPTION`                                              | `off` or `local`; local uses `ffmpeg` plus `whisper.cpp`.            |

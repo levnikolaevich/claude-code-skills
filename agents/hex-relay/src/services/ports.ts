@@ -123,6 +123,7 @@ export interface MessagesRepository {
   counts(): MessageCounts;
   lastActivityForUserAgent(userId: number, agent: AgentKind): number | null;
   hasActiveInboundForUserAgent(userId: number, agent: AgentKind): boolean;
+  hasActiveWorkForUserAgent(userId: number, agent: AgentKind): boolean;
 }
 
 export interface HookMessagesRepository {

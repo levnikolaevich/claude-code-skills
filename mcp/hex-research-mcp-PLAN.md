@@ -16,7 +16,7 @@
 >   - Новое поле `tasks: []` в frontmatter — структурированные ссылки на Linear/Jira/GitHub Issues/File Mode tasks (см. §4.5)
 >   - Новое поле `sources: []` — структурированные external refs (paper/video/website/book/podcast/code/dataset/archive); deprecates opaque `related_external` strings
 >   - Новый node-kind `task` в `nodes` table + новое edge `tracked_by` (H → Task)
->   - `audit_orphans` расширен — `implementation_gap` (verdict=proceed без tasks) и `task_drift` (task done но H## still in_progress)
+>   - `audit_orphans` расширен — status-based категории v0.6: `implementation_gap` (pending_implementation без implementation task в open/in_progress; ИЛИ in_progress с refine verdict без refinement task в open/in_progress), `status_verdict_drift` (verdict записан, status не транзитнулся: validated_branch с любым verdict, in_progress без refine verdict, и т.д.), `task_drift` (status=live без done implementation task ИЛИ status=pending с все task done; status=live с open/in_progress task), `task_status_stale` (snapshot >30d)
 >   - Federation pattern: `inspect_hypothesis.follow_ups[]` содержит pointers на tracker MCPs (Linear/Jira/GitHub) когда они установлены — fresh task status по запросу
 >
 > - **v0.5 — externally-reviewed corrections:**
@@ -26,7 +26,7 @@
 >   - **MCP annotations** добавлены для всех 15 tools (`readOnlyHint`, `destructiveHint`, `idempotentHint`, `openWorldHint` — §7.6)
 >   - **Graph edges schema** — добавлена `nodes(id, kind)` table, edges FK на неё для referential integrity (§9)
 >   - **Skill path** — исправлен под repo convention `plugins/<plugin>/skills/<skill>/` (см. AGENTS.md, §12 Phase 6)
->   - Минорные: `parents` source / `children` derived; defaults для §14.2 open questions; обновлённая оценка 15-18 dev-days
+>   - Минорные: `parents` source / `children` derived; defaults для §14.2 open questions
 >
 > **Приложение C** — критический ресёрч-обзор и сравнение с прайор-артом.
 > **Приложение D** — заимствованные паттерны из изученных продуктов.
@@ -40,7 +40,7 @@
 1. **Goal-directed navigation.** В корне дерева — измеримая цель (`Goal`, `docs/goals/G##.md`) с конкретными метриками (Calmar, DD и т.п.). Каждая гипотеза явно ссылается через `goals: [G##]` field на цели которым служит. `inspect_goal G1` отвечает «насколько мы близко к цели». См. §1.5, §4.4.
 2. **Source of truth — markdown с YAML frontmatter.** Гипотезы — `docs/hypotheses/H##.md`, цели — `docs/goals/G##.md`. Коммитится в git. SQLite-индекс — rebuildable cache в `.hex-skills/researchgraph/index.db` (`.gitignored`).
 3. **Тяжёлые результаты — отдельные артефакты** в `benchmark/runs/<run_id>/` (JSON / parquet / графики). Гипотеза ссылается на них по path; индекс знает мост `hypothesis → run → metrics`.
-4. **Методология — Strong Inference (Platt 1964)** с расширениями: edges `parent_of`, `refines`, `supersedes`, `refutes`, `competes_with`, `depends_on`, `tested_by`, `implemented_in`, `runs_in`, `serves_goal`, `decomposes_goal`.
+4. **Методология — Strong Inference (Platt 1964)** с расширениями: 16 edge-types (см. §6) — H↔H (`parent_of`, `refines`, `supersedes`, `refutes`, `competes_with`, `depends_on`, `blocks`), H↔Run/Symbol/Branch/Metric/Task/Source (`tested_by`, `implemented_in`, `runs_in`, `gated_by`, `tracked_by`, `cites`), Goal (`serves_goal`, `decomposes_goal`, `achieves`).
 5. **Кросс-walk с кодом** через `workspace_qualified_name` — те же canonical selectors, что у `hex-graph-mcp`.
 6. **Pull-up в hex-common** делается по факту появления второго потребителя (store, watcher, cycles, output-contract — см. §11).
 7. **MCP — навигация и память, не автономия.** Решения «что тестировать дальше» принимает человек+Claude в conversation, используя tools для извлечения контекста. См. §14.3.
@@ -550,7 +550,7 @@ frontmatter — остальное доступно агенту через `ins
 | Runs | `runs: []` | желательно для тестированных |
 | Evidence | `evidence: []` | желательно |
 | Implementation | `implementation.symbols` | если status ∈ {validated_branch, pending_implementation, live} |
-| **Tasks (v0.6)** | `tasks: []` (см. §4.5) | ✅ требуется для `last_verdict.decision ∈ {proceed, refine}`; обязательно ≥1 task с `state ∈ {open, in_progress}` для `status: pending_implementation` |
+| **Tasks (v0.6)** | `tasks: []` (см. §4.5) | ✅ status-based invariant: ≥1 task с `state ∈ {open, in_progress}` обязательно для `status: pending_implementation`; ≥1 task с `state: done` обязательно для `status: live`; иначе `IMPLEMENTATION_GAP` / `TASK_DRIFT`. Опционально для остальных статусов. |
 | **Sources (v0.6)** | `sources: []` (см. §4.7) | желательно (FAIR-compliance, citation export); deprecates `related_external: [strings]` |
 | Lifecycle | `created_at`, `last_touched` | ✅ |
 | Bayesian | `prior_belief`, `confidence_post`, `assumptions`, `risks` | опционально |
@@ -623,9 +623,16 @@ rationale: |
   Личный R&D проект. Production-ready = можно запустить с реальными деньгами
   без stop-выключения каждые 2 недели. Calmar — risk-adjusted return.
   Max DD 25% — психологический предел оператора.
-external_refs:
-  - "docs/objective.md (исходный источник)"
-  - "Carver, Systematic Trading 2nd ed."
+sources:                            # v0.6 — унифицированный schema, тот же что у H## (см. §4.7)
+  - type: archive
+    ref: "docs/objective.md"
+    system: "internal_docs"
+    notes: "Исходный документ, конвертированный в этот goal"
+  - type: book
+    title: "Systematic Trading"
+    authors: ["Carver, Robert"]
+    edition: "2nd"
+    year: 2023
 ---
 
 # G1 — Production-ready BTC long-only strategy
@@ -645,8 +652,9 @@ external_refs:
 | `metrics_target.primary` | ✅ | без этого Goal — wishlist, не цель |
 | `priority` | желательно | для multi-goal проекта (1 ↔ N целей) |
 | `deadline` | опционально | если есть hard deadline |
-| `parents`, `children` | хотя бы пустые | для дерева целей |
-| `metrics_current` | **НЕ писать руками** | агрегируется индексом |
+| `parents` (только) | хотя бы пустой `[]` | для дерева целей; `children` — derived, **НЕ писать руками** |
+| `metrics_current` | **НЕ писать руками** | агрегируется индексом из comprehensive runs |
+| `sources: []` (v0.6) | желательно | то же поле что у H## (см. §4.7) — структурированные external refs |
 
 #### 4.4.3. Агрегация `metrics_current` — coherent snapshot, НЕ best-per-metric
 
@@ -714,7 +722,11 @@ results_path: results.json
 
 ### 4.5. Task tracker bridge (v0.6, новое)
 
-**Принцип:** «hypothesis without task = museum piece, не execution tool» — стандартное предупреждение из OKR-практики ([Atlassian OKR Guide][atlassian-okr]). Гипотеза которая прошла gate'ы (`last_verdict.decision: proceed`) должна **обязательно** породить задачу в трекере на implementation/deploy. Без этого моста дерево гипотез не интегрировано с продуктовым потоком.
+**Принцип:** «hypothesis without task = museum piece, не execution tool» — стандартное предупреждение из OKR-практики ([Atlassian OKR Guide][atlassian-okr]). Гипотеза которая прошла gate'ы и `last_verdict.decision: proceed` записан → status переходит в `pending_implementation` и **обязательно** требует ≥1 task `type: implementation` в `state ∈ {open, in_progress}`. Когда implementation task закрывается и comprehensive run проведён → status переходит в `live` и task должен быть `state: done`.
+
+**`decision: refine` НЕ переводит в `pending_implementation`** — refine означает «перезапустить sweep с другими параметрами», это не «awaiting merge/deploy». Гипотеза при refine остаётся в `in_progress` (или возвращается из `validated_branch` → `in_progress`) и требует ≥1 task `type: refinement` в `state ∈ {open, in_progress}`. Это invariant'но проверяется отдельно (см. §4.6 matrix).
+
+Без моста на трекер дерево гипотез не интегрировано с продуктовым потоком.
 
 **Поддерживаемые трекеры:** Linear, Jira, GitHub Issues, File Mode (per repo `AGENTS.md` config-driven Agile management). Любой другой через `system: other` + opaque url.
 
@@ -726,13 +738,18 @@ tasks:
     system: linear | jira | github | file | other
     url: "https://..."             # canonical link
     type: implementation | refinement | research | rollback
-    title: "Human-readable одна строка"
-    status_snapshot:                # snapshot из tracker'a в момент last index/refresh
-      state: open | in_progress | done | cancelled
-      at: 2026-05-07T14:23:11Z      # ISO timestamp
-    created_at: 2026-04-20
-    closed_at: 2026-05-06 | null
+    title: "Human-readable одна строка"     # required
+    status_snapshot:                # required block — state и at обязательны (соответствует SQL NOT NULL)
+      state: open | in_progress | done | cancelled    # required; default 'open' если автор не указал явно
+      at: 2026-05-07T14:23:11Z      # ISO timestamp; required (frontmatter-parser проставляет current time если опущен)
+    created_at: 2026-04-20          # опц.
+    closed_at: 2026-05-06           # опц., обязательно если status_snapshot.state == 'done' или 'cancelled'
 ```
+
+**Schema rationale (зачем status_snapshot обязателен):**
+- SQL `tasks` table имеет `state TEXT NOT NULL` и `state_snapshot_at TEXT NOT NULL` — это сохраняет фастовые queries `find_hypotheses task_state=open` без NULL handling
+- Frontmatter parser имеет defaults: `state: 'open'` и `at: current_time` если автор опустил block — это эквивалентно «task создан только что, статус неизвестен, считаем open»
+- Это даёт UX «можно написать минимум» (`{ id, system, type, title, url }` parser дополняет до полного), сохраняя SQL invariants
 
 **Type vocabulary:**
 - `implementation` — `decision: proceed`, нужно заmerge'ить и задеплоить (типичный случай для `pending_implementation` status)
@@ -742,15 +759,19 @@ tasks:
 
 **Status snapshot semantics:**
 
-`status_snapshot` — это **денормализованный кэш**, обновляется при ручном правке файла или через future tool `refresh_task_status` (v0.7+, требует tracker MCP установленным). НЕ считается source of truth — реальный source это сам трекер. `verify_index` репортит warning `TASK_STATUS_STALE` если `status_snapshot.at < (now - 7d)` и tracker MCP доступен.
+`status_snapshot` — это **денормализованный кэш**, обновляется при ручном правке файла или через future tool `refresh_task_status` (v0.7+, требует tracker MCP установленным). НЕ считается source of truth — реальный source это сам трекер. `verify_index` репортит warning `TASK_STATUS_STALE` если `status_snapshot.at < (now - 30d)` и tracker MCP доступен. Порог 30 дней выбран намеренно для v0.1 чтобы не шуметь — ручное обновление каждый месяц это разумный SLA. Можно переопределить через config в v0.2+.
 
 **Drift checks (через `audit_orphans`, v0.6):**
 
 | Условие | Категория |
 |---|---|
-| `last_verdict.decision ∈ {proceed, refine}` И `tasks: []` пуст | `implementation_gap` |
-| Hypothesis `status: pending_implementation` И все `tasks[].status_snapshot.state ∈ {done, cancelled}` | `task_drift` (можно promotion на `live` или `rejected`) |
-| Hypothesis `status: live` И есть `task` с `state: in_progress` | `task_drift` (live'нулись без закрытия задачи?) |
+| `status: pending_implementation` И нет ни одной `tasks[].type=implementation, state ∈ {open, in_progress}` | `implementation_gap` |
+| `status: validated_branch` И `last_verdict.decision: proceed` | `status_verdict_drift` (нужно переходить в `pending_implementation`) |
+| `status: validated_branch` И `last_verdict.decision: refine` | `status_verdict_drift` (нужно возвращаться в `in_progress` с `type: refinement` task) |
+| `status: in_progress` И `last_verdict.decision: refine` И нет ни одной `tasks[].type=refinement, state ∈ {open, in_progress}` | `implementation_gap` (refine verdict без refinement task) |
+| `status: pending_implementation` И все `tasks[].state ∈ {done, cancelled}` | `task_drift` (можно promotion на `live` или `rejected`) |
+| `status: live` И **нет ни одной `tasks[]` с `type: implementation` И `state: done`** | `task_drift` (live без завершённой implementation task — не соответствует invariant из §4.5) |
+| `status: live` И есть `tasks[]` с `state ∈ {open, in_progress}` | `task_drift` (live'нулись без закрытия задачи?) |
 | `task.status_snapshot.at < now - 30d` | `task_status_stale` |
 
 **Federation pattern для cross-MCP:**
@@ -768,51 +789,79 @@ tasks:
 
 Агент решает вызвать ли — мы **не зависим** от tracker MCP, но даём готовый pointer когда он есть. Так же как с `hex-graph-mcp` — convention over coupling.
 
-**Что обязательно vs опционально:**
+**Что обязательно vs опционально (status-based, не verdict-based):**
 
-- `tasks: []` (хотя бы пустой массив) — **required для `last_verdict.decision ∈ {proceed, refine}`**, иначе `verify_index --strict` падает с `IMPLEMENTATION_GAP`
-- Для `decision ∈ {reject, pivot, hold}` — `tasks: []` опционально (отвергнутые гипотезы обычно не порождают задач)
-- `tasks[].title` обязательно если `status_snapshot.state` отсутствует (минимальная human-readable идентификация)
+Инвариант привязан к **`status`**, не к `last_verdict.decision`, чтобы избежать промежуточных drift-состояний:
+
+- `tasks: []` ≥1 запись с `type: implementation` И `state ∈ {open, in_progress}` — **required для `status: pending_implementation`**; иначе `IMPLEMENTATION_GAP`
+- `tasks: []` ≥1 запись с `type: implementation` И `state: done` — **required для `status: live`** (implementation task должна быть завершена); И не должно быть `state ∈ {open, in_progress}` на момент `live`; иначе `TASK_DRIFT`
+- `tasks: []` ≥1 запись с `type: refinement` И `state ∈ {open, in_progress}` — **required для `status: in_progress` если `last_verdict.decision: refine`** (refine означает перезапустить sweep, требует refinement task); иначе `IMPLEMENTATION_GAP`
+- Для `status ∈ {not_started, in_progress (без refine verdict), validated_branch (без verdict), rejected, deferred}` — `tasks` опционально
+- **Status-verdict drift detection:** если verdict записан, но status не транзитнулся:
+  - `last_verdict.decision: proceed` И `status: validated_branch` → `STATUS_VERDICT_DRIFT` (нужно `pending_implementation`)
+  - `last_verdict.decision: refine` И `status: validated_branch` → `STATUS_VERDICT_DRIFT` (нужно вернуться в `in_progress` с refinement task)
+  - `last_verdict.decision: reject` И `status ∉ {rejected}` → `STATUS_VERDICT_DRIFT`
+  - `last_verdict.decision: hold` И `status ∉ {deferred}` → `STATUS_VERDICT_DRIFT`
+  - `pivot` — старая гипотеза остаётся `validated_branch` (verdict не пишется на ней; новая H## создаётся с `parents: [old]`)
+- `tasks[].title` обязательно (минимальная human-readable идентификация)
 
 ### 4.6. Status lifecycle (расширен в v0.6)
 
 ```
 not_started
     ↓ (выбран из priority_tier=1 backlog для тестирования)
-in_progress
-    ↓ (L0–L3 пройдены на feature-ветке)
-validated_branch
-    ↓ (last_verdict.decision: proceed; task создан в трекере)
-pending_implementation                        ← НОВЫЙ статус v0.6
-    ↓ (task закрыт; merge to master; comprehensive run проведён)
-live
-    ↓ (опционально, если live-гипотеза показала regress)
-deferred / rejected
+in_progress  ←─────────────────────────────────────┐
+    ↓ (L0–L3 пройдены на feature-ветке)             │
+validated_branch                                    │
+    │                                               │
+    ├── decision: proceed → pending_implementation  │
+    │                          ↓ (impl task done;   │
+    │                           merge to master;    │
+    │                           comprehensive run)  │
+    │                       live                    │
+    │                          ↓ (опционально       │
+    │                           regress detected)   │
+    │                       deferred / rejected     │
+    │                                               │
+    ├── decision: refine ─────────────────────────→─┘
+    │   (вернуться в in_progress, создать refinement task,
+    │    перезапустить sweep с другими параметрами)
+    │
+    ├── decision: reject → rejected
+    ├── decision: hold → deferred
+    └── decision: pivot → старая остаётся validated_branch (verdict не пишется),
+                          новая H## создаётся отдельно с parents: [old]
 ```
 
 Альтернативные пути:
 - `validated_branch` → `mixed` (часть symbols pass, часть fail; см. H26 в btc-trader)
-- `validated_branch` → `rejected` (`decision: reject`, не идём дальше)
-- `in_progress` → `deferred` (паузим, вернёмся позже)
-- любой → `superseded_by: [H_new]` (заменена другой гипотезой)
+- любой → `superseded_by: [H_new]` (заменена другой гипотезой через `supersedes` edge)
 
 **Status × Tasks matrix (инвариант):**
 
 | status | `tasks: []` ожидание |
 |---|---|
 | `not_started` | пусто (ничего не делаем) |
-| `in_progress` | пусто или 1 research-task |
-| `validated_branch` | пусто (либо 1 implementation если уже создан) |
-| `pending_implementation` | **минимум 1 task с `state ∈ {open, in_progress}`** |
-| `live` | implementation task должен быть `state: done` |
+| `in_progress` (без verdict) | пусто или 1 research-task |
+| `in_progress` (с `verdict: refine`) | **минимум 1 task с `type: refinement` И `state ∈ {open, in_progress}`** |
+| `validated_branch` (без verdict) | пусто; verdict не записан, status переходный |
+| `validated_branch` (с verdict) | drift — должен был транзитнуться (см. status_verdict_drift в drift table) |
+| `pending_implementation` | **минимум 1 task с `type: implementation` И `state ∈ {open, in_progress}`** |
+| `live` | ≥1 task с `type: implementation` И `state: done`; нет open/in_progress |
 | `mixed` | task'и могут быть в разных состояниях (per-symbol decisions) |
 | `rejected` / `deferred` | пусто или task с `state: cancelled` |
 
 `audit_orphans` репортит нарушения этой матрицы.
 
-### 4.7. External sources (структурированный schema, v0.6)
+### 4.7. External sources (унифицированный schema для H## и G##, v0.6)
 
-Заменяет opaque `related_external: [strings]` на типизированный список. Это входы (inputs) которые мотивировали гипотезу — отличаются от `evidence: []` (outputs/proofs о ней самой).
+Поле `sources: []` применяется к **обоим** node-kind: hypothesis (`H##.md`) и goal (`G##.md`). Это входы (inputs) которые мотивировали узел дерева — отличаются от `evidence: []` (outputs/proofs о hypothesis testing).
+
+Заменяет opaque legacy fields:
+- `related_external: [strings]` (был у hypothesis в v0.3-v0.5) → migrated к `sources: [{type: archive, ref: ...}]`
+- `external_refs: [strings]` (был у goal в v0.4-v0.5) → migrated к тому же `sources: [...]`
+
+Один schema для обоих kind упрощает агентскую работу: `inspect_hypothesis` и `inspect_goal` возвращают `sources` в одном формате; `find_hypotheses cited_source_type=paper` работает одинаково.
 
 **Type vocabulary:**
 
@@ -879,12 +928,33 @@ sources:
 
 **Зачем структурированно:**
 
-- Агент может фильтровать (`find_sources type=paper since=2024`) — невозможно с opaque strings
+- Агент может фильтровать через extension existing tool: `find_hypotheses cited_source_type=paper cited_source_year_min=2024` — невозможно с opaque strings (отдельный `find_sources` tool НЕ вводим, удерживаем 15-tool surface; sources discoverable через filter parameters в `find_hypotheses`)
 - FAIR-compliance: `accessed_at` + url/doi/isbn делают source воспроизводимым
-- Citation export — потенциально BibTeX/RIS из одного запроса (v1.0+)
+- Citation export — потенциально BibTeX/RIS из одного запроса (v1.0+, через extension `inspect_hypothesis verbosity=full export_citations=true`)
 - Audit «hypothesis claim says X, но ни один source не упоминает X» — будущий quality check
 
 **Backward compat:** старое поле `related_external: ["v2.1::R-04", ...]` парсится как `sources: [{type: archive, ref: "v2.1::R-04"}]`; `verify_index` рекомендует миграцию через warning, не падает.
+
+**Source identity и dedup (важно для §9 SQL):**
+
+`sources.id` в SQL — это **canonical content hash построенный ТОЛЬКО по identity-полям** (что делает source уникальным), не по всему YAML object'у. Per-source `notes` (которое описывает «зачем именно эта гипотеза цитирует этот source») хранится в **`node_sources.notes`** как per-node поле, а не в `sources` table.
+
+Identity-поля для hash по типу:
+
+| `type` | Identity-поля (включаются в hash) | Per-node поля (только в `node_sources`) |
+|---|---|---|
+| `paper` | `type` + (приоритетно: `doi` ИЛИ `arxiv_id` ИЛИ `url` ИЛИ `title+authors+year`) | `notes`, `accessed_at` (cite-specific) |
+| `video` | `type` + `url` | `timestamp` (per-cite), `notes`, `accessed_at` |
+| `website` | `type` + `url` | `notes`, `accessed_at` |
+| `book` | `type` + (приоритетно: `isbn` ИЛИ `title+authors+edition`) | `pages` (per-cite), `notes`, `accessed_at` |
+| `podcast` | `type` + `url` | `timestamp` (per-cite), `notes`, `accessed_at` |
+| `code` | `type` + `repo` + (опц. `commit`) | `notes`, `accessed_at` |
+| `dataset` | `type` + (`url` или `name+source`) + `snapshot_date` | `notes`, `accessed_at` |
+| `archive` | `type` + `ref` + `system` | `notes` |
+
+Это даёт правильный dedup: если 5 гипотез цитируют один paper (Hirsa 2024), но каждая с разной заметкой («motivates 7-day window» vs «contradicts our hypothesis on ETH») — будет **1 row в `sources`** + 5 rows в `node_sources` с разными `notes`. Без этой нормализации hash включал бы notes и было бы 5 дубликатов одного paper'а.
+
+`accessed_at` тоже per-cite (один paper мог быть прочитан в разное время разными гипотезами), поэтому он в `node_sources`, не в `sources`.
 
 ---
 
@@ -947,7 +1017,7 @@ Index-time проверка: оба направления должны совп
 | `depends_on` | H_a → H_b | H_a нельзя тестировать пока H_b не валидирована | `blocker_kind` |
 | `blocks` | H_a → H_b | обратное к `depends_on` | — |
 
-### 6.2. Hypothesis ↔ Run / Symbol / Branch / Task edges
+### 6.2. Hypothesis ↔ Run / Symbol / Branch / Metric / Task / Source edges
 
 | Edge | Domain → Range | Семантика | Edge properties |
 |---|---|---|---|
@@ -986,13 +1056,13 @@ Index-time проверка: оба направления должны совп
 | Tool | Use case | Аналог в hex-graph-mcp |
 |---|---|---|
 | `index_hypotheses` | Build / refresh research graph index (включая goals) | `index_project` |
-| `find_hypotheses` | Discover hypotheses by name/category/status/goal | `find_symbols` |
+| `find_hypotheses` | Discover hypotheses by name/category/status/goal/task_state/cited_source_type (v0.6) | `find_symbols` |
 | `inspect_hypothesis` | Full hypothesis card | `inspect_symbol` |
 | `find_evidence` | All evidence (commit, paper, agent_review, run) for a hypothesis | `find_references` |
 | `find_runs` | All runs matching filter (type, metric threshold, date) | (новый) |
 | `trace_lineage` | Path from root to hypothesis OR descendants of hypothesis | `trace_paths` |
 | `analyze_topology` | Categories, coupling, cycles, orphans summary | `analyze_architecture` |
-| `audit_orphans` | Stale, orphan, dead-branch, missing-evidence hypotheses | `audit_workspace` |
+| `audit_orphans` | 8 категорий: orphan, stale, dead-branch, missing-evidence, **implementation_gap (v0.6)**, **status_verdict_drift (v0.6)**, **task_drift (v0.6)**, **task_status_stale (v0.6)** | `audit_workspace` |
 | `analyze_progress` | Status delta between two git refs | `analyze_changes` |
 | `analyze_proposed` | What does adding H## affect / who will be its parents | `analyze_edit_region` |
 | `verify_index` | Drift check: files vs DB vs run-manifests | (новый) |
@@ -1002,7 +1072,7 @@ Index-time проверка: оба направления должны совп
 
 | Tool | Use case | Что возвращает |
 |---|---|---|
-| `inspect_goal` | Full goal card with `metrics_current` from latest comprehensive run (§4.4.3) | sections: `metrics_target`, `metrics_current`, `hypotheses` (linked counts by status), `achievement` (verdict), `provenance` (run_id + git_commit), `follow_ups` на contributing H## |
+| `inspect_goal` | Full goal card with `metrics_current` from latest comprehensive run (§4.4.3) | sections: `metrics_target`, `metrics_current`, `hypotheses` (linked counts by status), `achievement` (verdict), `provenance` (run_id + git_commit), **`sources`** (структурированные external refs §4.7), `follow_ups` на contributing H## |
 | `trace_goal_tree` | Дерево гипотез служащих цели (filtered `trace_lineage` по `goals` field) | `.G1->H02->H04 depth=3 contribution_calmar=+0.18` rows; group by category |
 | `audit_goal_alignment` | Гипотезы без `goals:` (orphan) или с потерянной целью (parent.goals не пересекается) | `.orphan_hypothesis H17 reason=no_goals` / `.misaligned H29 expected=[G1] actual=[]` |
 
@@ -1133,21 +1203,37 @@ return {
   // ... domain-specific sections
   quality?: { coverage: number, tier: "t1"|"t2"|"t3", freshness_days: number },
   provenance?: { source: "frontmatter"|"run_manifest"|"git"|"derived", ref?: string }[],
-  warnings?: { code: string, message: string }[],
+  warnings?: { code: string, message: string }[],   // code: lowercase snake_case
   follow_ups?: { tool: string, args: Record<string, any> }[]   // executable pointers
 }
 ```
 
+**Casing convention (важно для schemas/tests):**
+- `status` — UPPERCASE (canonical 7 values)
+- `reason` — **lowercase snake_case** (e.g. `hypothesis_not_found`, `implementation_gap`, `task_drift`, `status_verdict_drift`, `task_status_stale`, `no_comprehensive_run_for_goal`)
+- `warnings[].code` — **lowercase snake_case** (тот же vocabulary что и `reason`)
+- `next_action` — verb-first snake_case (см. ниже)
+- В tests / schema validation **используется только lowercase**. UPPERCASE-формы в прозе плана (`IMPLEMENTATION_GAP`, `STATUS_VERDICT_DRIFT`, `TASK_DRIFT`, `NO_COMPREHENSIVE_RUN_FOR_GOAL`, и т.д.) — это **mnemonic для удобства чтения**, не часть wire format. Парсер/Zod-схемы принимают только lowercase.
+
 **Status mapping для нашего домена:**
-- `OK` — успешный результат (в т.ч. `inspect_*` нашёл узел)
+- `OK` — успешный результат:
+  - **selector lookup hit** — `inspect_hypothesis id=H04` нашёл узел
+  - **search hit** — `find_hypotheses status=live` вернул ≥1 результат
+  - **search no matches** — `find_hypotheses claim_substring="quantum"` legitimately ничего не нашёл (это валидный нулевой результат). В payload `result: []` + `reason: "no_matches"` для трассируемости. Это НЕ ошибка — search legitimately возвращает empty set.
 - `NO_CHANGES` — `analyze_progress` нашёл что между двумя git refs ничего не изменилось
 - `CHANGED` — `analyze_progress` нашёл изменения
 - `STALE` — `verify_index` обнаружил drift (файлы новее DB)
 - `INVALID` — frontmatter validation failed (для `index_hypotheses`/`verify_index`)
 - `UNSUPPORTED` — попытка вызвать tool на unindexed project и т.п.
-- `ERROR` — все остальные failure modes (path not found, ambiguous, missing field, и т.д.)
+- `ERROR` — failure modes:
+  - **selector lookup miss** — `inspect_hypothesis id=H99` где H99 не существует → `status: "ERROR"` + `reason: "hypothesis_not_found"`. Это ошибка потому что caller передал конкретный ID и ожидал найти.
+  - path not found, ambiguous selector, missing required field, cycle detected, и т.д.
 
-Не используется: `partial`, `not_found` (вместо них `OK` с пустым result + `reason`), `success`, `done`. См. guide §3 правила.
+Различение **«selector lookup miss» vs «search no matches»** — критическое:
+- `inspect_hypothesis id=X` / `inspect_goal id=X` / `find_evidence id=X` — caller делает **point lookup** по конкретному ID; не найдено → `ERROR` с reason
+- `find_hypotheses status=Y` / `find_runs type=Z` — caller делает **search/filter**; пустой результат — валидный → `OK` с `result: []` + `reason: "no_matches"`
+
+Не используется: `partial`, `not_found` (см. mapping выше), `success`, `done`. См. guide §3 правила.
 
 `next_action` ∈ verb-first snake_case labels:
 - inspect-class: `inspect_hypothesis`, `inspect_goal`
@@ -1199,7 +1285,11 @@ return {
 ```ts
 {
   status: "ERROR",
-  reason: "path_not_found" | "hypothesis_not_found" | "goal_not_found" | "ambiguous_hypothesis" | "ambiguous_goal" | "wrong_node_kind" | "missing_required_field" | "run_manifest_not_found" | "run_hypothesis_drift" | "goal_hypothesis_drift" | "cycle_detected" | "edge_kind_mismatch" | "no_comprehensive_run_for_goal" | "run_id_reused",
+  reason: "path_not_found" | "hypothesis_not_found" | "goal_not_found" | "task_not_found" | "source_not_found" | "ambiguous_hypothesis" | "ambiguous_goal" | "wrong_node_kind" | "missing_required_field" | "run_manifest_not_found" | "run_hypothesis_drift" | "goal_hypothesis_drift" | "cycle_detected" | "edge_kind_mismatch" | "no_comprehensive_run_for_goal" | "run_id_reused" | "implementation_gap" | "status_verdict_drift" | "task_drift" | "task_status_stale" | "derived_field_in_source" | "not_implemented",
+  // Также используются в status: "OK" / "STALE" / "INVALID" / "UNSUPPORTED" контекстах (не ERROR):
+  //   "no_matches" — search вернул empty set (status: "OK", result: [])
+  //   "index_built_at_<ts>" — для STALE responses
+  //   "frontmatter_validation_failed" — для INVALID
   next_action: "fix_path" | "widen_query" | "index_project" | "rename_run" | ...,
   message: string,
   details?: Record<string, any>
@@ -1272,7 +1362,7 @@ CREATE INDEX nodes_kind ON nodes(kind);
 -- - kind='metric_snapshot': из gate.results entries (для achieves/gated_by edges)
 -- - kind='branch_or_commit': из run manifest's git_commit / branch (для runs_in edges)
 -- - kind='task' (v0.6): из hypothesis.tasks[] (мост на Linear/Jira/GitHub MCPs)
--- - kind='source' (v0.6): из hypothesis.sources[] (структурированные external refs)
+-- - kind='source' (v0.6): из hypothesis.sources[] И goal.sources[] (unified §4.7, dedup по canonical identity hash)
 -- index_hypotheses() upsert'ит эти synthetic nodes ПЕРЕД insert'ом edges,
 -- иначе FK constraint fails. См. Phase 1 deliverables (§12).
 
@@ -1357,30 +1447,40 @@ CREATE INDEX ht_task ON hypothesis_tasks(task_id);
 CREATE INDEX ht_hypothesis ON hypothesis_tasks(hypothesis_id);
 
 -- Sources table (v0.6) — structured external references (§4.7)
+-- ВАЖНО: id = canonical content hash построенный ТОЛЬКО по identity-полям
+-- (type + doi/arxiv_id/isbn/url/ref/repo/...). Per-cite поля (notes, accessed_at,
+-- per-cite timestamp/pages) — в node_sources, не здесь.
+-- Это даёт правильный dedup: 1 paper цитируемый 5 H## = 1 row в sources + 5 в node_sources.
+-- См. §4.7 "Source identity и dedup" для полной таблицы identity-полей по типу.
 CREATE TABLE sources (
   id TEXT PRIMARY KEY REFERENCES nodes(id) ON DELETE CASCADE,
-  -- id auto-generated as content hash for dedup: same paper referenced by 5 hypotheses → 1 source row
   type TEXT NOT NULL CHECK (type IN ('paper','video','website','book','podcast','code','dataset','archive')),
-  title TEXT,
-  url TEXT,
-  identifier TEXT,                    -- DOI / arxiv_id / isbn / repo / archive_ref (per-type primary identifier)
-  accessed_at TEXT,
-  raw_payload TEXT NOT NULL           -- full JSON of the source object для verbosity=full
+  title TEXT,                         -- canonical (одинаков для всех cites)
+  url TEXT,                           -- canonical
+  identifier TEXT,                    -- DOI / arxiv_id / isbn / repo+commit / archive_ref / dataset_url+snapshot_date
+  raw_payload TEXT NOT NULL           -- full JSON canonical-полей для verbosity=full (БЕЗ per-cite полей)
 );
 
 CREATE INDEX sources_type ON sources(type);
 CREATE INDEX sources_identifier ON sources(identifier);
 
--- Hypothesis ↔ Source mapping (denormalized; cites edge также в edges table)
-CREATE TABLE hypothesis_sources (
-  hypothesis_id TEXT NOT NULL REFERENCES hypotheses(id) ON DELETE CASCADE,
+-- Node ↔ Source mapping (v0.6) — unified для hypotheses И goals (см. §4.7)
+-- Source может цитироваться обоими kind узлов с разными per-cite атрибутами;
+-- cites edge также в общей edges table.
+CREATE TABLE node_sources (
+  node_id TEXT NOT NULL REFERENCES nodes(id) ON DELETE CASCADE,
+  node_kind TEXT NOT NULL CHECK (node_kind IN ('hypothesis','goal')),
   source_id TEXT NOT NULL REFERENCES sources(id) ON DELETE CASCADE,
-  notes TEXT,                         -- per-hypothesis notes о том как используется source
-  PRIMARY KEY (hypothesis_id, source_id)
+  -- Per-cite поля (разные для каждой H/G→Source связи):
+  notes TEXT,                         -- зачем именно эта гипотеза/цель цитирует этот source
+  accessed_at TEXT,                   -- когда автор смотрел source в контексте этой H/G
+  cite_extra TEXT,                    -- JSON: per-cite extras (timestamp для video/podcast, pages для book, ...)
+  PRIMARY KEY (node_id, source_id)
 );
 
-CREATE INDEX hs_source ON hypothesis_sources(source_id);
-CREATE INDEX hs_hypothesis ON hypothesis_sources(hypothesis_id);
+CREATE INDEX ns_source ON node_sources(source_id);
+CREATE INDEX ns_node ON node_sources(node_id);
+CREATE INDEX ns_kind ON node_sources(node_kind);
 
 -- Edges с FK на nodes (объявлено выше) для CASCADE и referential integrity
 CREATE TABLE edges (
@@ -1392,7 +1492,7 @@ CREATE TABLE edges (
   kind TEXT NOT NULL CHECK (kind IN (
     -- H↔H (§6.1)
     'parent_of', 'refines', 'supersedes', 'refutes', 'competes_with', 'depends_on', 'blocks',
-    -- H↔Run/Symbol/Branch/Task/Source (§6.2)
+    -- H↔Run/Symbol/Branch/Metric/Task/Source (§6.2)
     'tested_by', 'implemented_in', 'runs_in', 'gated_by', 'tracked_by', 'cites',
     -- G↔H, G↔G, G↔MetricSnapshot (§6.3)
     'serves_goal', 'decomposes_goal', 'achieves'
@@ -1415,6 +1515,8 @@ CREATE INDEX edges_kind_src_dst ON edges(kind, src_kind, dst_kind);
 -- - runs_in: src='run', dst='branch_or_commit'
 -- - gated_by: src='hypothesis', dst='metric_snapshot'
 -- - achieves: src='goal', dst='metric_snapshot'
+-- - tracked_by (v0.6): src='hypothesis', dst='task'
+-- - cites (v0.6): src ∈ {'hypothesis','goal'}, dst='source' (sources применимы к обоим kind, см. §4.7)
 -- index_hypotheses() валидирует эти инварианты, репортит EDGE_KIND_MISMATCH
 
 CREATE TABLE runs (
@@ -1557,11 +1659,11 @@ Generic enough, чтобы оба MCP их использовали без adapt
 
 ## 12. Roadmap реализации
 
-### Phase 0 — каркас (день 1)
+### Phase 0 — каркас
 
 - [ ] `mcp/hex-research-mcp/package.json` (workspace member, deps на hex-common)
 - [ ] `server.mjs` через `hex-common/runtime/mcp-bootstrap`
-- [ ] **15 stub tool-handlers** (12 hypothesis + 3 goal — возвращают `error not_implemented`)
+- [ ] **15 stub tool-handlers** (12 hypothesis + 3 goal) — возвращают через `hex-common/result()` payload `{ status: "ERROR", reason: "not_implemented", next_action: "none", message: "Tool <name> is registered but not yet implemented" }` (соответствует §8 contract: `isError: true` ↔ `status === "ERROR"`)
 - [ ] Регистрация `inputSchema` И `outputSchema` для каждого tool (MCP SDK 1.29+ принимает Zod schemas напрямую через Standard Schema interop — **отдельная зависимость `zod-to-json-schema` НЕ нужна**, см. [TypeScript SDK server docs](https://github.com/modelcontextprotocol/typescript-sdk/blob/main/docs/server.md))
 - [ ] Регистрация `annotations` для каждого tool (см. §7.5: `readOnlyHint`/`destructiveHint`/`idempotentHint`/`openWorldHint`)
 - [ ] Все input-схемы — `.strict()`
@@ -1569,48 +1671,49 @@ Generic enough, чтобы оба MCP их использовали без adapt
 - [ ] `README.md` — в стиле hex-graph-mcp
 - [ ] `test/smoke.mjs` — server starts, listTools returns 15
 
-### Phase 1 — index pipeline (день 2-3)
+### Phase 1 — index pipeline
 
 - [ ] `lib/store.mjs` (копия hex-graph + research schema из §9 включая `goals`/`hypothesis_goals` таблицы)
 - [ ] `lib/watcher.mjs` (копия hex-graph) — watch'ит `docs/hypotheses/` И `docs/goals/`
 - [ ] `lib/frontmatter-parser.mjs` + Zod schemas (`hypothesis.mjs`, **`goal.mjs`**, `evidence.mjs`, `run.mjs`)
 - [ ] В Zod schema run manifest — опциональные `dependencies`, `data_snapshot`, `random_seed`
 - [ ] `tools/index_hypotheses.mjs` — full reindex + incremental по hash:
-  - **(1) Upsert synthetic nodes ДО edges**: для каждого symbol из `hypothesis.implementation.symbols[]` создать `nodes(id=qualified_name, kind='symbol')`; для каждого `git_commit`/`branch` из run manifests — `nodes(id=sha, kind='branch_or_commit')`; для каждого `gate.results.<level>` snapshot — `nodes(id=<H##>:<level>, kind='metric_snapshot')`. Без этого FK constraints на edges (`implemented_in`, `runs_in`, `gated_by`, `achieves`) сломаются.
-  - **(2) Upsert hypothesis/goal/run nodes** в общей таблице `nodes`, потом в domain tables.
-  - **(3) Insert edges** — теперь все FK targets существуют.
+  - **(1) Upsert synthetic nodes ДО edges**: для каждого symbol из `hypothesis.implementation.symbols[]` создать `nodes(id=qualified_name, kind='symbol')`; для каждого `git_commit`/`branch` из run manifests — `nodes(id=sha, kind='branch_or_commit')`; для каждого `gate.results.<level>` snapshot — `nodes(id=<H##>:<level>, kind='metric_snapshot')`; **для каждого task из `hypothesis.tasks[]` — `nodes(id=<system>:<tracker_id>, kind='task')`** (v0.6); **для каждого source из `hypothesis.sources[]` И `goal.sources[]` (unified, см. §4.7) — `nodes(id=<canonical_identity_hash>, kind='source')` с dedup по identity-полям из таблицы §4.7** (v0.6). Без этого FK constraints на edges (`implemented_in`, `runs_in`, `gated_by`, `achieves`, `tracked_by`, `cites`) сломаются.
+  - **(2) Upsert hypothesis/goal/run nodes** в общей таблице `nodes`, потом в domain tables (`hypotheses`, `goals`, `runs`, `tasks`, `sources`, `hypothesis_goals`, `hypothesis_tasks`, **`node_sources` для cite'ов из обоих H##.sources[] и G##.sources[]** с per-cite полями `notes`/`accessed_at`/`cite_extra`).
+  - **(3) Insert edges** — теперь все FK targets существуют. Для каждого `node_sources` row создать `cites` edge с `src_kind ∈ {'hypothesis','goal'}` (см. §6.2 SQL invariants).
   - **(4) Aggregate `metrics_current` для каждой цели**: найти latest comprehensive run где `included_hypotheses ⊇ live_serving_goal`, его results.json metrics → `goals.metrics_current`. Если нет — `null` + warning `NO_COMPREHENSIVE_RUN_FOR_GOAL`.
+  - **(5) Validate Status × Tasks invariant matrix** (§4.6): репортить warnings (mnemonic upper-case в плане, но в wire format `warnings[].code` — lowercase snake_case, см. §8.2): `implementation_gap` (pending_implementation без implementation task в open/in_progress; ИЛИ in_progress с refine verdict без refinement task), **`status_verdict_drift`** (verdict записан, status не транзитнулся: validated_branch с любым verdict; in_progress с не-refine verdict; reject/hold не транзитнулись), `task_drift` (pending без open, live без done implementation, live с open/in_progress), `task_status_stale` (>30d).
 - [ ] `tools/verify_index.mjs` — drift check (включая `GOAL_HYPOTHESIS_DRIFT` и `metrics_current` в source)
 - [ ] Test fixtures: 3 валидные H##.md + 1 невалидная + 1 run manifest + **2 G##.md (G1 root + G1.1 sub-goal)**
 
-### Phase 2 — discovery & inspection (день 4-5)
+### Phase 2 — discovery & inspection
 
-- [ ] `tools/find_hypotheses.mjs` — FTS5 + filter по category/status/**goal**
-- [ ] `tools/inspect_hypothesis.mjs` — карточка с #tree, #variables, #gate, #verdict, #runs, #evidence, #implementation
+- [ ] `tools/find_hypotheses.mjs` — FTS5 + filter по category/status/**goal**/`task_state`/`cited_source_type`/`cited_source_year_min` (v0.6)
+- [ ] `tools/inspect_hypothesis.mjs` — карточка с tree, variables, gate, verdict, runs, evidence, implementation, **tasks (v0.6)**, **sources (v0.6)**; в `follow_ups[]` cross-MCP pointers на установленные tracker MCPs (Linear/Jira/GitHub) для каждого task'a
 - [ ] `tools/find_evidence.mjs`
-- [ ] `tools/find_runs.mjs` — filter по type/metric thresholds
-- [ ] Semantic test fixtures (как `hex-graph-mcp/test/fixtures/`)
+- [ ] `tools/find_runs.mjs` — filter по type/metric thresholds; **+filter по `comprehensive: bool`** (v0.5)
+- [ ] Semantic test fixtures (как `hex-graph-mcp/test/fixtures/`) — включая 1 H## с tasks разных state, 1 H## с sources разных types
 
-### Phase 3 — graph traversal (день 6-7)
+### Phase 3 — graph traversal
 
 - [ ] `lib/cycles.mjs` (копия hex-graph) — детектит циклы в `parent_of`/`depends_on`/**`decomposes_goal`**
 - [ ] `tools/trace_lineage.mjs` — BFS/DFS по edges
 - [ ] `tools/analyze_topology.mjs` — categories + cycles + coupling
-- [ ] `tools/audit_orphans.mjs` — orphan / stale / dead_branch / missing_evidence
+- [ ] `tools/audit_orphans.mjs` — категории: `orphan`, `stale`, `dead_branch`, `missing_evidence`, **`implementation_gap`** (v0.6: pending_implementation без implementation task в open/in_progress; ИЛИ in_progress с refine verdict без refinement task в open/in_progress), **`status_verdict_drift`** (v0.6: verdict записан, status не транзитнулся — validated_branch с любым verdict; in_progress с не-refine verdict; reject/hold не транзитнулись в rejected/deferred), **`task_drift`** (v0.6 unified: status=pending_implementation с все done/cancelled; ИЛИ status=live без implementation task в state=done; ИЛИ status=live с open/in_progress task), **`task_status_stale`** (v0.6: snapshot >30d)
 
-### Phase 3bis — goal navigation (день 7.5, добавлено в v0.4)
+### Phase 3bis — goal navigation (добавлено в v0.4)
 
-- [ ] `tools/inspect_goal.mjs` — карточка цели с #metrics_target, #metrics_current, #achievement, #hypotheses
+- [ ] `tools/inspect_goal.mjs` — карточка цели с metrics_target, metrics_current, achievement, hypotheses (linked counts by status), provenance (comprehensive run_id + git_commit), **sources** (структурированные external refs)
 - [ ] `tools/trace_goal_tree.mjs` — `serves_goal` filtered traversal
 - [ ] `tools/audit_goal_alignment.mjs` — orphan hypotheses (без `goals:`), misaligned (parent.goals не пересекается с child.goals)
 - [ ] Test fixtures: цель + 4 H## с разными `goals: []` конфигурациями (1 нормальная, 1 orphan, 1 misaligned, 1 sub-goal)
 
-### Phase 4 — change & proposal (день 8)
+### Phase 4 — change & proposal
 
 - [ ] `tools/analyze_progress.mjs` — diff между двумя git-refs; включая дельту `metrics_current` целей
 - [ ] `tools/analyze_proposed.mjs` — что задевает H## (включая «какие цели затронет»)
 
-### Phase 5 — render & export (день 9)
+### Phase 5 — render & export
 
 - [ ] `lib/render/canvas.mjs` — JSON Canvas (узлы двух kinds: hypotheses + **goals**, разные цвета)
 - [ ] **D.D1: position-preserving rendering** — `export_canvas` читает существующий `.canvas` и сохраняет координаты (x/y/width/height) для known nodes; добавляет только новые узлы, не перерисовывает раскладку
@@ -1619,7 +1722,7 @@ Generic enough, чтобы оба MCP их использовали без adapt
 - [ ] Скрипт автогенерации `docs/research-map.md` из индекса (опционально для btc-trader)
 - [ ] **D.D2: wiki-link синтаксис** — frontmatter-parser принимает `parents: [[H02]]` и `goals: [[G1]]` как альтернативу `[H02]`/`[G1]` (Obsidian-совместимость)
 
-### Phase 6 — quality & publish (день 10-11)
+### Phase 6 — quality & publish
 
 - [ ] `evals/index.mjs` — capability matrix (15 tools)
 - [ ] `benchmark/index.mjs` — workflow token-savings (4-5 типичных сценариев, **включая goal-driven «что взять следующим для G1»**)
@@ -1632,7 +1735,7 @@ Generic enough, чтобы оба MCP их использовали без adapt
 - [ ] **D.C4: pre-commit hook** — пример в README: `hex-research-mcp verify_index --strict` падает если frontmatter invalid, `runs[].artifact` указывает на несуществующий path, или гипотеза без `goals:` field. CI-friendly exit code.
 - [ ] `npm publish` (после тестов на btc-trader)
 
-### Phase 7 — pull-up в hex-common (день 11-12, отдельная PR)
+### Phase 7 — pull-up в hex-common (отдельная PR после v0.1)
 
 - [ ] Migrate `store.mjs` → `hex-common/graph/sqlite-store.mjs`
 - [ ] Migrate `watcher.mjs` → `hex-common/fs/watcher.mjs`
@@ -1657,12 +1760,10 @@ Generic enough, чтобы оба MCP их использовали без adapt
    - `metrics_target.secondary` — desirable но не обязательные
    - `claim` — одна строка
    - `rationale` — параграф из objective.md как обоснование
-   - `external_refs: ["docs/objective.md (исходный документ)"]`
+   - `sources: [{type: archive, ref: "docs/objective.md", system: "internal_docs", notes: "Исходный документ"}]` (структурированный schema по §4.7, не legacy `external_refs`)
 3. **Не удалять `objective.md`** сразу — пусть полежит для контекста; позже можно сделать stub с pointer на `docs/goals/G1.md`
 
-Оценка: 30-45 минут (одна цель — небольшая работа).
-
-Если в `btc-trader` цель сразу декомпозируется (например, отдельные блоки про signal-quality vs sizing), создать sub-goals `G1.1_signal.md`, `G1.2_sizing.md` и в `G1.md` указать `children: [G1.1_signal, G1.2_sizing]`.
+Если в `btc-trader` цель сразу декомпозируется (например, отдельные блоки про signal-quality vs sizing), создать sub-goals `G1.1_signal.md` и `G1.2_sizing.md` с `parents: [G1]` в каждом. **`G1.children` не писать руками** — это derived field, агрегируется индексом из `G##.parents` других целей (см. §4.4.3).
 
 ### 13.1. Скрипт `scripts/migrate-research-map.mjs`
 
@@ -1678,7 +1779,7 @@ btc-trader/docs/hypotheses/H33.md
 Парсит блоки между `H##  <claim>` и следующим `H##` или `###`. Извлекает:
 
 - `Mechanism`, `Test`, `Gate`, `Status`, `Subsystem`, `Source` → frontmatter
-- ASCII dependency-граф из секции "Dependency graph" → `parents:` / `children:` для каждой гипотезы
+- ASCII dependency-граф из секции "Dependency graph" → **только `parents:`** для каждой гипотезы (`children` — derived field, агрегируется индексом из `parents` других H##; миграционный скрипт его НЕ пишет, см. §4.4.3)
 - "Testing-priority backlog" → `priority_tier:`
 - **По умолчанию проставляет `goals: [G1]`** для всех мигрированных гипотез (т.к. в `btc-trader` все 33 служат единственной цели)
 
@@ -1693,7 +1794,7 @@ btc-trader/docs/hypotheses/H33.md
 - **Уточнение `goals:`** — для гипотез которые служат конкретной sub-goal (e.g. H01-H03 — regime detection — в `goals: [G1, G1.1_signal]`), переключить с дефолтного `[G1]`
 - **Заполнение `goal_contribution`** для `status: live` гипотез (опц. но полезно для ranking)
 
-Оценка: 33 × ~12 мин = ~6.5 часов работы (увеличено с ~5 часов из-за goal-полей). Можно делегировать Claude в Cowork-режиме.
+Объём: 33 файла × проход по списку полей. Можно делегировать Claude в Cowork-режиме.
 
 ### 13.3. Старый research-map.md
 
@@ -1728,7 +1829,7 @@ btc-trader/docs/hypotheses/H33.md
 | Versioning гипотезы | Только через git log; YAML `history: []` НЕ вводим | Дублирование с git, drift-источник |
 | Comments / discussion | В прозе ниже frontmatter (markdown body); YAML `discussion: []` НЕ вводим | YAML для structured query-able fields, проза для свободного текста |
 | Multi-project | One project per index (как hex-graph). Multi-project через несколько `claude mcp add` инстансов | KISS; rebuild каждого индекса дешёв |
-| External references | `related_external: ["v2.1::R-04", "https://...", ...]` — opaque strings, НЕ индексируются в FTS | FTS только для канонического корпуса (claim/mechanism/tags) |
+| External references | **Унифицированное поле `sources: []`** (v0.6, §4.7) для **обоих** H## и G## — типизированный schema (paper/video/website/book/podcast/code/dataset/archive). Legacy `related_external` / `external_refs` парсится как `sources: [{type: archive, ...}]` с warning при `verify_index --strict` (миграция рекомендуется, не enforced) | Структура заменяет opaque strings; FTS индекс по `source.title`/`source.identifier` опционально в v0.7+ |
 | Run rerun с тем же id | Запрещено — `verify_index --strict` падает с `RUN_ID_REUSED`; для re-run выдать новый id (e.g. `2026-05-07_funding_l4_v2`) | Идемпотентность артефактов, защита от silent overwrite |
 | Comprehensive run frequency | После каждого live-promotion (см. §4.4.3 workflow); не привязано к расписанию | Trigger-based, не time-based |
 
@@ -1748,23 +1849,27 @@ btc-trader/docs/hypotheses/H33.md
 `hex-research-mcp@0.1.0` считается готовым когда:
 
 1. Установлено через `npm i -g @levnikolaevich/hex-research-mcp` (после publish) или подключено локально через `claude mcp add`.
-2. На `btc-trader/` (после миграции 33 гипотез + конвертации objective.md → G1.md):
-   - `index_hypotheses` строит граф за <2с (включая агрегацию `metrics_current` для G1)
-   - `find_hypotheses status=live` возвращает все live-гипотезы за <100мс
+2. На `btc-trader/` (после миграции 33 гипотез + конвертации objective.md → G1.md, с проставленными tasks для live/pending H##s):
+   - `index_hypotheses` строит граф (включая агрегацию `metrics_current` для G1, upsert task/source synthetic nodes)
+   - `find_hypotheses status=live` возвращает все live-гипотезы
    - `find_hypotheses goal=G1 status=not_started priority_tier=1` возвращает ranked backlog
-   - `inspect_hypothesis id=H04` возвращает полную карточку (frontmatter + tree + variables + verdict + runs + evidence + implementation)
-   - `inspect_goal id=G1` возвращает карточку с `metrics_current` **из latest comprehensive run** покрывающего live-гипотезы цели (см. §4.4.3, НЕ best-per-metric агрегация), achievement verdict, и counts связанных гипотез по статусам
+   - `find_hypotheses status=pending_implementation` (v0.6) возвращает гипотезы ожидающие merge/deploy
+   - `find_hypotheses task_state=open` (v0.6) возвращает все гипотезы с открытыми задачами
+   - `find_hypotheses cited_source_type=paper` (v0.6) возвращает гипотезы со ссылками на статьи
+   - `inspect_hypothesis id=H04` возвращает полную карточку (frontmatter + tree + variables + verdict + runs + evidence + implementation + **tasks** + **sources**); в `follow_ups[]` присутствуют cross-MCP pointers на linear/jira/github MCP (если установлены)
+   - `inspect_goal id=G1` возвращает карточку с `metrics_current` из latest comprehensive run, achievement verdict, counts по статусам, **sources**
    - `trace_lineage from=H04` возвращает H02→H04→H28 + H08 (competes_with)
    - `trace_goal_tree from=G1` возвращает все гипотезы с `goals: [G1]` сгруппированные по category и status
-   - `audit_orphans` находит зависшие in_progress > 30d, гипотезы без parent кроме корней, dead branches
-   - `audit_goal_alignment` возвращает 0 orphans на здоровом btc-trader (все гипотезы имеют `goals: [G1]`)
-   - `verify_index` репортит 0 drift (включая `GOAL_HYPOTHESIS_DRIFT`)
+   - `audit_orphans` находит все категории (v0.6): orphan, stale, dead_branch, missing_evidence, **implementation_gap**, **status_verdict_drift**, **task_drift**, **task_status_stale**
+   - `audit_goal_alignment` возвращает 0 orphans на здоровом btc-trader
+   - `verify_index` репортит 0 drift (включая `GOAL_HYPOTHESIS_DRIFT`, edges с инвариантами `tracked_by`/`cites`)
+   - Все edge-types валидируются: `tracked_by` (H→Task) и `cites` (H/G→Source) корректно создаются и FK работают
    - Pointer на `hex-graph-mcp.inspect_symbol` корректно срабатывает в Claude Code
-3. Test suite: ≥35 semantic-fixture тестов passing (увеличено с 30 за счёт goal-tools)
+3. Test suite: semantic-fixture тестов passing — покрывают все 8 категорий `audit_orphans`, status × tasks invariant matrix (§4.6), все **16 edge-types** из §6 (7 H↔H + 6 H↔Run/Symbol/Branch/Metric/Task/Source + 3 Goal)
 4. Eval matrix: все **15 tools** `verified`
-5. Workflow benchmark: ≥5 сценариев с замером token-savings vs «прочитать research-map.md + objective.md полностью» (включая goal-driven «что делать дальше для G1»)
-6. README — generated quality snapshot встроен через `npm run docs:quality`; включает goal-directed workflow example
-7. PROTOCOL.md — полная грамматика research-extension с goal-секциями
+5. Workflow benchmark: ≥5 сценариев с замером token-savings vs «прочитать research-map.md + objective.md полностью» (включая goal-driven «что делать дальше для G1» и task-driven «что в pending_implementation»)
+6. README — generated quality snapshot встроен через `npm run docs:quality`; включает goal-directed workflow example + task tracker bridge example
+7. PROTOCOL.md — полная грамматика research-extension с goal-секциями, task references, structured sources
 8. Pull-up план задокументирован, но НЕ выполнен (это Phase 7, отдельная PR)
 
 Целевая метрика workflow-savings: **≥85%** относительно baseline «Read full research-map.md + objective.md» (по аналогии с 91% у hex-graph).
@@ -1838,6 +1943,22 @@ implementation:
   branch: master
   symbols:
     - "src/signals/regime.py:classify_regime"
+tasks:                            # v0.6 — required для status: live (см. §4.5)
+  - id: LIN-0042
+    system: linear
+    url: "https://linear.app/btc-trader/issue/LIN-0042"
+    type: implementation
+    title: "Implement 4-state regime classifier (H01)"
+    status_snapshot:
+      state: done
+      at: 2026-01-15T09:00:00Z
+    created_at: 2025-12-15
+    closed_at: 2026-01-15
+sources:                          # v0.6 — структурированные external refs
+  - type: archive
+    ref: "dev-strategy.md §3.1.4"
+    system: "internal_docs"
+    notes: "cascade specification"
 created_at: 2025-12-01
 last_touched: 2026-01-15
 priority_tier: 1
@@ -1874,9 +1995,16 @@ rationale: |
   Личный R&D проект. Production-ready = можно запустить с реальными деньгами
   без stop-выключения каждые 2 недели. Calmar — risk-adjusted return.
   Max DD 25% — психологический предел оператора.
-external_refs:
-  - "docs/objective.md (исходный документ)"
-  - "Carver, Systematic Trading 2nd ed."
+sources:                          # v0.6 — унифицированный schema (§4.7), тот же что у H##
+  - type: archive
+    ref: "docs/objective.md"
+    system: "internal_docs"
+    notes: "Исходный документ, конвертированный в G1"
+  - type: book
+    title: "Systematic Trading"
+    authors: ["Carver, Robert"]
+    edition: "2nd"
+    year: 2023
 ---
 
 # G1 — Production-ready BTC long-only strategy
@@ -1892,67 +2020,53 @@ external_refs:
 
 ## Приложение B — пример output для inspect_hypothesis
 
-(Обновлено для v0.3 — показывает новые секции `#verdict`, `#variables`)
+> **ВАЖНО (v0.5+):** Wire format — это `JSON.stringify(structuredContent)` через `hex-common/result()`, см. §8.1-8.3. Пример ниже — это **human-readable rendering** (CLI/UI representation того же payload'a), **НЕ wire format**. Клиент рендерит line-grammar из structured payload для удобочитаемости; на проводе всегда JSON.
 
-```
-ok find_runs total=1 conf=exact
-#hypothesis H04 status=live category=signal
-.claim Funding rate ENTRY filter — skip ENTRY when 7d mean of 8h funding > 0.0004
-#tree parents=1 children=1 competes_with=1
-.parent H02 kind=parent_of
-.child H28 kind=parent_of
-.competitor H08 kind=competes_with arena=l4_multi_entry
-#variables independent=1 control=3 dependent=3
-.var_independent funding_threshold
-.var_control regime_classifier,step_size,period
-.var_dependent calmar,drawdown,single_path_return
-#gate metric=calmar_advantage,single_path_return,plateau pass=1
-.threshold l4_pass_rate=>=70%
-.threshold l5_n12_pass_rate=>=70%
-.result l4=28/30=0.93 tier=t1
-.result l5_n12=9/12=0.75 tier=t1
-.result single_path_return=+154.3
-.result drawdown=-23.4
-.validates_on_pass H02
-#verdict decision=proceed date=2026-05-07
-.rationale "Все три гейта прошли с margin; plateau подтверждён; live cross-check в 1.6pp."
-.next_hypothesis H28
-#runs total=3
-.run 2026-05-07_funding_l4 type=l4_multi_entry pass=28 total=30 ratio=0.93
-.run 2026-05-07_funding_l5_n12 type=l5_walk_forward pass=9 total=12 ratio=0.75
-.run 2026-05-07_funding_live_xcheck type=l3_live_xcheck delta_pp=1.6
-#evidence total=3
-.evidence type=commit ref=5eba9d6 date=2026-05-07
-.evidence type=agent_review ref=ln-500 issues=4 severity=high resolved=1
-.evidence type=paper ref=v2.1::R-04
-#implementation branch=master flag=null symbols=3
-.symbol_link src/data/funding.py:BinanceFundingFetcher kind=class conf=exact
-.symbol_link src/db/repo.py:FundingRatesRepo kind=class conf=exact
-.symbol_link src/pipeline.py:_classify_macro_regime kind=function conf=exact
-#quality coverage=1.0 tier=t1 freshness=1d
->mcp__hex-research__find_runs path=/btc-trader id=H04 type=l4_multi_entry
->mcp__hex-research__trace_lineage path=/btc-trader from=H04 direction=descendants
->mcp__hex-graph__inspect_symbol path=/btc-trader workspace_qualified_name=src/data/funding.py:BinanceFundingFetcher
+### B.1. Wire format (что реально летит в MCP envelope)
+
+```json
+{
+  "content": [{ "type": "text", "text": "{\"status\":\"OK\",\"next_action\":\"find_runs\",\"hypothesis\":{\"id\":\"H04\",\"claim\":\"Funding rate ENTRY filter — skip ENTRY when 7d mean of 8h funding > 0.0004\",\"category\":\"signal\",\"status\":\"live\",\"goals\":[\"G1\",\"G1.1_signal\"],\"tree\":{\"parents\":[\"H02\"],\"children\":[\"H28\"],\"competes_with\":[\"H08\"]},\"variables\":{...},\"gate\":{...},\"last_verdict\":{...},\"runs\":[...],\"evidence\":[...],\"implementation\":{...},\"tasks\":[...],\"sources\":[...]},\"quality\":{\"coverage\":1.0,\"tier\":\"t1\",\"freshness_days\":1},\"follow_ups\":[...]}" }],
+  "structuredContent": {
+    "status": "OK",
+    "next_action": "find_runs",
+    "hypothesis": { "id": "H04", "claim": "...", ... },
+    "quality": { "coverage": 1.0, "tier": "t1", "freshness_days": 1 },
+    "follow_ups": [
+      { "tool": "mcp__hex-research__find_runs", "args": { "path": "/btc-trader", "id": "H04", "type": "l4_multi_entry" } },
+      { "tool": "mcp__hex-graph__inspect_symbol", "args": { "path": "/btc-trader", "workspace_qualified_name": "src/data/funding.py:BinanceFundingFetcher" } }
+    ]
+  }
+}
 ```
 
-Соответственно §8.2 расширяется секциями `#variables` и `#verdict`, §8.3 — entries `.var_independent`/`.var_control`/`.var_dependent`/`.validates_on_pass`/`.rationale`/`.next_hypothesis`. Конкретный набор закрепляется в PROTOCOL.md при реализации Phase 0.
+### B.2. Human-readable rendering (как клиент может отобразить тот же payload)
+
+Это **не часть протокола** — это пример того как Claude CLI / Cursor / любой UI клиент может отрендерить structuredContent для пользователя. Конкретный формат рендеринга — на стороне клиента, не у MCP сервера.
+
+```
+OK find_runs  H04  status=live category=signal
+  claim: Funding rate ENTRY filter — skip ENTRY when 7d mean of 8h funding > 0.0004
+  goals: G1, G1.1_signal
+  tree: parents=[H02] children=[H28] competes=[H08]
+  variables: indep=funding_threshold, control=[regime_classifier,step_size,period], dep=[calmar,drawdown,single_path_return]
+  gate: l4 28/30 (t1)  l5_n12 9/12 (t1)  l5_n20 16/20 (t1)  single_path=+154.3  drawdown=-23.4
+  verdict: proceed (2026-05-07) → next: H28
+  runs: 3 (incl. 1 comprehensive)   evidence: 3   symbols: 3
+  tasks: LIN-1234 (linear, implementation, done)
+  sources: 3 (1 paper, 1 archive, 1 website)
+  quality: coverage=100% tier=t1 freshness=1d
+  → mcp__hex-research__find_runs id=H04 type=l4_multi_entry
+  → mcp__hex-graph__inspect_symbol src/data/funding.py:BinanceFundingFetcher
+```
+
+Это **рендерится клиентом из B.1 structuredContent**, а не приходит в `content[0].text`. На проводе — JSON (B.1).
 
 ---
 
-**Сроки реализации (v0.5, реалистичная оценка).** v0.1 включая goal-tools, output schema contract tests, MCP annotations, fixtures, миграцию btc-trader, docs и publish: **15-18 focused dev-days** при one-developer focus, или ~4-5 недель при part-time. Прежняя оценка 11 дней была оптимистичной — не учитывала contract tests для всех 15 outputSchemas, validation на реальном btc-trader, написание HEX_RESEARCH_AGENTS.md и quality benchmarks.
+**Объём реализации.** v0.1 покрывает Phase 0-6 deliverables (каркас + 15 outputSchemas + annotations; index pipeline + nodes/edges/goals/runs/tasks/sources schema + comprehensive flag handling; discovery & inspection; graph traversal; goal navigation; change & proposal; render & export; quality, evals, benchmark, README, skill, AGENTS.md, publish). Pull-up в hex-common — отдельная PR после v0.1 (Phase 7).
 
-Разбивка:
-- Phase 0 (каркас + 15 outputSchemas + annotations): 1.5-2 дня
-- Phase 1 (index pipeline + nodes/edges/goals/runs schema + comprehensive flag handling): 3 дня
-- Phase 2 (discovery & inspection — 4 tools с full output schemas): 2.5 дня
-- Phase 3 (graph traversal — 4 tools, cycles): 2 дня
-- Phase 3bis (goal navigation — 3 tools, comprehensive aggregation logic): 2 дня
-- Phase 4 (change & proposal — 2 tools): 1 день
-- Phase 5 (render & export — JSON Canvas + Mermaid + position-preserving): 1.5 дня
-- Phase 6 (quality, evals, benchmark, README, skill, AGENTS.md, publish): 2-3 дня
-- Pull-up (Phase 7): +1-2 дня после v0.1
-
-Goal-расширение и output-schema contract validation — основные source of variance. С опытом и хорошими fixtures можно идти к нижней границе 15 дней.
+Сроки сознательно не фиксируются в плане — зависят от рабочего темпа, доступности fixtures и параллельных задач. Phase 0 и Phase 1 — самые большие по объёму (output contract + index pipeline). Phase 6 — самый по разбросу (quality/benchmarks/docs зависят от внешних факторов).
 
 **Приложения C и D ниже** — критическая оценка плана и каталог заимствованных паттернов. Это справочные материалы, не требуются для реализации, но фиксируют рассуждения «почему не reinvent the wheel» и «какие конкретные паттерны применены откуда».
 
@@ -1994,31 +2108,11 @@ Goal-расширение и output-schema contract validation — основн�
 
 ### C.2. Что нужно скорректировать
 
-#### C.2.1. КРИТИЧНО — PROTOCOL должен эмитить и `content`, и `structuredContent`
+#### C.2.1. PROTOCOL — superseded by §8 v0.5
 
-**Находка:** [MCP спек 2025-11-25][mcp-spec] явно рекомендует **дополняющий** дизайн `content` + `structuredContent`, не их взаимоисключение:
-
-> Tool developers should design outputs where `content` and `structuredContent` serve **complementary** roles: `content` provides a human/model-oriented representation... while `structuredContent` provides a machine-oriented representation with strict schema validation via `outputSchema`.
-
-[SEP-1624][sep-1624] подтверждает: «For backwards compatibility, a tool that returns structured content SHOULD also return a response in `content`».
-
-Решение `hex-graph-mcp` дропать `structuredContent` (см. `hex-graph-mcp/PROTOCOL.md` строка «NO `structuredContent` field. NO `outputSchema` declaration») было обоснованным trade-off в момент написания, но **не оптимально для нового пакета в 2026**.
-
-При этом важно: твой `hex-common/runtime/results.mjs` уже эмитит **оба поля одновременно**:
-```js
-return {
-    content: [{ type: "text", text }],
-    structuredContent: structured,
-};
-```
-То есть `hex-common` уже на правильной стороне спека, а `hex-graph-mcp` дропнул `structuredContent` на уровне tool registration (через `outputSchema` declaration), не на уровне `result()`-обёртки.
-
-**Корректировка:** Применена в §8 inline. Каждый tool в `hex-research-mcp`:
-- регистрирует `outputSchema` через `zodToJsonSchema(schema)` в MCP SDK
-- использует `hex-common/runtime/results.result(structured, opts)` для эмита обоих полей
-- сохраняет text grammar как primary representation для conversational/agent mode
-
-Это даёт programmatic mode (валидация типов, code generation, scripting на стороне клиента) бесплатно, не теряя token-efficiency text mode.
+> **Superseded.** Эта правка фиксировала переход на «text grammar + structuredContent одновременно» с объявлением `outputSchema` через `zodToJsonSchema`. После v0.5 принято другое решение — **structured-first** через `hex-common/result()` без отдельного `zod-to-json-schema` (MCP SDK 1.29+ принимает Zod через Standard Schema). Wire format — `JSON.stringify(structured)` в `content[0].text`. Line grammar — только human-readable rendering на стороне клиента, не часть протокола.
+>
+> Актуальная версия: §8 v0.5 (Wire format, структура structured payload, registerTool API). Эта секция оставлена как след решения.
 
 #### C.2.2. ВАЖНО — Прайор-арт: явно сравнить и обосновать собственный пакет
 
@@ -2159,7 +2253,7 @@ MCP-спек рекомендует strict JSON Schema with `additionalPropertie
 - FAIR-compliance check встроить в `verify_index` (warnings если frontmatter не FAIR-complete)
 - README — добавить «Landscape comparison» секцию (см. C.2.2)
 
-**Стоимость корректировок:** ~1 рабочий день. Не меняет общую архитектуру и не отменяет ни одного решения v0.1.
+Эти корректировки — небольшие правки. Не меняют общую архитектуру и не отменяют ни одного решения v0.1.
 
 ### C.5. Вердикт
 
@@ -2236,7 +2330,7 @@ MCP-спек рекомендует strict JSON Schema with `additionalPropertie
 | **D2** | wiki-link синтаксис `[[H##]]` / `[[G##]]` accepted | Phase 5 deliverable | Obsidian convention |
 | **D4** | `HEX_RESEARCH_AGENTS.md` в корне пакета | Phase 6 deliverable | ARClaw RESEARCHCLAW_AGENTS.md паттерн |
 
-**Стоимость в Phase 0-6:** ~+2 дня суммарно (A1-A4 — schema добавки, A5 — goal subsystem +1 день, C1/C4/D1/D2/D4 — небольшие deliverables).
+**Объём в Phase 0-6:** A1-A4 — schema добавки, A5 — goal subsystem (новые tools + миграция), C1/C4/D1/D2/D4 — небольшие deliverables.
 
 **Польза:** покрытие reproducibility-checklist, Strong-Inference-as-code, **goal-directed navigation** (главное усиление v0.4), Obsidian-совместимость, ACP-агент onboarding из коробки.
 
@@ -2308,9 +2402,11 @@ MCP-спек рекомендует strict JSON Schema with `additionalPropertie
 
 Плагин не reinvent the wheel и не raids чужие архитектуры — он **синтезирует** проверенные паттерны (Strong Inference + reproducibility checklist + MLflow state machine + ARClaw skills + Obsidian conventions + Goal-directed navigation) под узкий use case (long-running algorithmic research с git-committable markdown SoT).
 
-**Plan v0.5 после двух раундов external review — ready to execute.** Phase 0 включает schema-валидацию для всех новых полей (включая Goal), MCP annotations, outputSchemas через `server.registerTool()` API; Phase 3bis — три goal-tools с coherent aggregation через comprehensive runs; Phase 5-6 — дополнительные deliverables.
+**Plan v0.6 после трёх раундов external review — ready to execute.** Phase 0 включает schema-валидацию для всех новых полей (Goal, Task, Source), MCP annotations, outputSchemas через `server.registerTool()` API; Phase 3bis — три goal-tools с coherent aggregation через comprehensive runs; Phase 5-6 — render/export, quality, publish.
 
-Учтены замечания второго external review:
+**Учтены замечания трёх раундов external review:**
+
+Round 1 (v0.2-v0.3):
 - Statuses uppercase canonical (`OK`/`ERROR`/`STALE`/...) per `MCP_OUTPUT_CONTRACT_GUIDE.md`
 - `isError: true` ↔ `status === "ERROR"` (tool execution error, не protocol error)
 - `server.registerTool()` API (как в hex-line-mcp/hex-graph-mcp/hex-ssh-mcp)
@@ -2320,6 +2416,23 @@ MCP-спек рекомендует strict JSON Schema with `additionalPropertie
 - §9: nodes table перемещена ВЫШЕ domain tables (FK clarity); Phase 1 явно описывает synthetic nodes upsert
 - §7.5: `export_canvas` имеет `mode: merge | overwrite` + `dry_run` контракт; default merge → `destructiveHint: false`
 
-Реалистичная оценка стоимости v0.5: 15-18 focused dev-days.
+Round 2 (v0.5 финальный):
+- Selector lookup miss vs search no matches явно разведены (§8.2)
+- Stub handlers под новый contract (`status: "ERROR"`, `reason: "not_implemented"`)
+- Appendix B разделён на B.1 (wire format JSON) и B.2 (human-readable rendering)
+- C.2.1 заменён на superseded note
+- Сроки полностью убраны из плана
+
+Round 3 (v0.6 final):
+- **Tasks invariant** перепривязан к **status** (не verdict): required для `pending_implementation` И `live`; добавлен `status_verdict_drift` detector
+- **Tasks в Appendix A H01** добавлены (live-status example теперь имеет implementation task)
+- **`find_sources` tool reference удалён** — заменён на extension `find_hypotheses cited_source_type=...` (15 tools держим)
+- **SQL invariants** дополнены `tracked_by` и `cites` (с `cites` поддерживает src ∈ {hypothesis, goal})
+- **Migration** не пишет `children` (только `parents`, остальное derived)
+- **Sources унифицированы** для H## И G## — `external_refs`/`related_external` deprecated, `node_sources` mapping table вместо `hypothesis_sources`
+- **`status_snapshot` обязателен** в YAML и SQL — parser имеет defaults (`state: 'open'`, `at: now`)
+- **Phase 2/3/DoD расширены** под task/source/audit categories v0.6 + все 16 edge-types (§6: 7 H↔H + 6 H↔Run/Symbol/Branch/Metric/Task/Source + 3 Goal)
+
+Plan покрывает Phase 0-6 deliverables; конкретные сроки зависят от темпа реализации и не фиксируются в плане.
 
 [own]: # "Внутренние пакеты Lev — hex-graph-mcp и hex-common"

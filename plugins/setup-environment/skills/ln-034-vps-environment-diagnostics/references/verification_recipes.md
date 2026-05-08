@@ -175,6 +175,7 @@ test -x /opt/${SERVICE_PREFIX}-hex-relay/node_modules/.bin/tsc
 curl -fsS "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getMyCommands" | jq '.result'
 # Expected English descriptions:
 # [{"command":"usage","description":"Show Claude/Codex usage limits"},
+#  {"command":"set_buddy","description":"Switch default agent"},
 #  {"command":"new_session","description":"Start a new Claude session"},
 #  {"command":"sessions","description":"Resume or delete Claude sessions"},
 #  {"command":"tasks","description":"List open tasks"},
@@ -184,7 +185,7 @@ curl -fsS "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getMyCommands" | jq
 # The command menu must also be registered for all private chats; Telegram keeps scopes separately.
 curl -fsS -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getMyCommands" \
   -d 'scope={"type":"all_private_chats"}' | jq '.result'
-# Expected: same five commands and descriptions as the default scope.
+# Expected: same six commands and descriptions as the default scope.
 
 # Bot hardening (DM-only, no group reads)
 curl -fsS "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getMe" \

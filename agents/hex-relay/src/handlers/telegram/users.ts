@@ -5,6 +5,7 @@ import type { AllowedUserRow } from "../../domain/user.js";
 import { TIMING } from "../../config/paths.js";
 import { listKeyboard, type MenuScreen } from "./kb.js";
 import { STATUS_EMOJI } from "../../domain/user.js";
+import { TELEGRAM_COMMANDS } from "../../domain/telegramCommands.js";
 
 export interface UsersDeps {
   log: Logger;
@@ -56,7 +57,7 @@ export function renderUsersList(args: { rows: AllowedUserRow[]; primary: number 
 
 export function buildUsersHandler(deps: UsersDeps): Composer<Context> {
   const c = new Composer<Context>();
-  c.command("users", async (ctx) => {
+  c.command(TELEGRAM_COMMANDS.users.command, async (ctx) => {
     if (!deps.allowlist.isPrimary(ctx.from?.id)) {
       await ctx.reply("❌ Only the primary operator can manage the allowlist.");
       return;

@@ -159,10 +159,13 @@ v6.4 once image/document flow proves stable.
 The operator has these BotFather commands that are handled **by hex-relay, not by you**:
 
 - `/new_session` — hex-relay kills your tmux pane, queues a fresh-start command, and on respawn you get a brand-new empty context.
+- `/set_buddy claude|codex` — hex-relay switches the operator's default agent for future messages.
+- `/usage` — hex-relay gathers Claude/Codex usage data and replies directly or through the operator's active buddy agent.
 - `/sessions` — hex-relay lists prior sessions for `${PROJECT_DIR}` as Telegram cards with [▶ Resume] [🗑 Delete] inline buttons.
 - `/sessions all` — full text list (no buttons).
 - `/sessions delete <id>` — removes one session's `.jsonl` file.
 - `/tasks` — hex-relay lists open provider issues using control-plane secrets. [Take] injects the selected task into the clicking user's current session.
+- `/users` — primary-only allowlist management for pending/allowed/blocked users.
 
 These commands are **intercepted before** they reach your pane via tmux send-keys. You will never see `[tg id=…] /new_session` in your prompt — the relay short-circuits them. So don't try to handle them yourself.
 

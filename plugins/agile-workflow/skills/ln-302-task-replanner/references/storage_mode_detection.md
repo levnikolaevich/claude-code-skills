@@ -6,16 +6,16 @@ Provider routing table for Agile task storage. Provider selection comes from `.h
 
 ## Mode Selection
 
-| Provider | Load for execution | Source of truth | ID format |
-|---|---|---|---|
-| `linear` | `references/provider_linear.md` | Linear API | `PROJ-123` / UUID |
-| `file` | `references/provider_file.md` | Markdown files + `kanban_board.md` | `Epic N`, `US001`, `T001` |
-| `github` | `references/provider_github.md` | GitHub Issues + Projects v2 | issue `#N` |
+| Provider | Source of truth | ID format |
+|---|---|---|
+| `linear` | Linear API | `PROJ-123` / UUID |
+| `file` | Markdown files + `kanban_board.md` | `Epic N`, `US001`, `T001` |
+| `github` | GitHub Issues + Projects v2 | issue `#N` |
 
 Rules:
 - Missing environment state defaults to `file`.
 - Unknown provider is a contract error unless the skill explicitly falls back to `file`.
-- Load only the selected `provider_{value}.md` for operation details.
+- Load only the selected provider transport reference for operation details; do not preload all provider docs.
 
 ## Operation Map
 

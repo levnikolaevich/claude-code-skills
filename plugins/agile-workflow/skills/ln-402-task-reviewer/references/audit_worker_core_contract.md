@@ -28,7 +28,7 @@ Workers receive only the fields they use:
 
 ## Required Runtime Shape
 
-**MANDATORY READ:** Load `references/evaluation_worker_runtime_contract.md`, `references/evaluation_summary_contract.md`, `references/audit_summary_contract.md`, `references/audit_scoring.md`, and `references/templates/audit_worker_report_template.md`.
+**MANDATORY READ:** Load `references/audit_summary_contract.md`, `references/audit_scoring.md`, and `references/templates/audit_worker_report_template.md`. Use the evaluation-worker JSON envelope described below; do not load separate evaluation runtime refs unless the worker invokes that runtime directly.
 
 Workers must:
 - report only unless the skill explicitly allows fixes

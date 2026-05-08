@@ -35,11 +35,11 @@ license: MIT
 
 **MANDATORY READ:** Load `references/environment_state_contract.md`, `references/storage_mode_detection.md`, and `references/input_resolution_pattern.md`
 
-Extract: `task_provider` = Task Management → Provider (`linear` | `github` | `file`). Operations stay provider-agnostic in this skill — see `references/tracker_provider_contract.md` for the canonical operation set and `provider_*.md` for transport binding.
+Extract: `task_provider` = Task Management -> Provider (`linear` | `github` | `file`). Operations stay provider-agnostic; load the selected provider transport reference only when performing tracker I/O.
 
 ## Task Storage Mode
 
-Tracker operations used by this skill: `getTask`, `getStory`, `updateStatus` (Done | To Rework), `addComment`, `createTask` (for [BUG] side-effect tasks). Transport per provider lives in `references/provider_file.md, references/provider_github.md, references/provider_linear.md`.
+Tracker operations used by this skill: `getTask`, `getStory`, `updateStatus` (Done | To Rework), `addComment`, `createTask` (for [BUG] side-effect tasks).
 
 ## Mode Detection
 
@@ -56,7 +56,7 @@ Detect operating mode at startup:
 
 ## Plan Mode Support
 
-**MANDATORY READ:** Load `references/plan_mode_pattern.md` Workflow A (Preview-Only) for plan mode behavior.
+Conditional read: load `references/plan_mode_pattern.md` Workflow A only when Plan Mode is active.
 Tool policy: follow host AGENTS.md MCP preferences; load `references/mcp_tool_preferences.md` and `references/mcp_integration_patterns.md` only when host policy is absent or MCP behavior is unclear.
 
 **CRITICAL: In Plan Mode, plan file = REVIEW PLAN (what will be checked). NEVER write review findings or verdicts to plan file.**
@@ -154,7 +154,7 @@ Use `hex-graph` first when semantic diff, clone groups, references, or review bl
 2) **Load task:** Load full task and parent Story independently. Detect type (label "tests" -> test task, else implementation/refactor).
 3) **Read context:** Full task + parent Story; load affected components/docs; review diffs if available.
    **Hex MCP acceleration:** Prefer `analyze_changes(path=project_root, base_ref="HEAD~1")` for semantic risk snapshot when graph is indexed; use `changes(path="src/", compare_against="HEAD~1")` for AST-level diff review of structural changes.
-3b) **Goal gate:** **MANDATORY READ:** Load `references/goal_articulation_gate.md` — Before reviewing, state: (1) REAL GOAL: what specific quality question must this review answer for THIS task? (2) DONE: what evidence proves quality is sufficient? (3) NOT THE GOAL: what would a surface-level rubber-stamp look like? (4) INVARIANTS: what non-obvious constraint exists (side-effects on other modules, implicit AC)?
+3b) **Goal gate:** Before reviewing, state: (1) REAL GOAL: what quality question must this review answer? (2) DONE: what evidence proves quality is sufficient? (3) NOT THE GOAL: what would a surface-level rubber-stamp look like? (4) INVARIANTS: what non-obvious constraint exists? Load `references/goal_articulation_gate.md` only when this gate is ambiguous or disputed.
 4) **Review checks:**
    > **Spec-first gate:** Quick AC pre-check: scan task AC against implementation. If any AC is clearly unmet (BLOCKER-level) → immediate To Rework, skip remaining quality checks. Full AC validation still runs in Step 5.
    **MANDATORY READ:** Load `references/clean_code_checklist.md`, `references/destructive_operation_safety.md`
@@ -176,9 +176,9 @@ Use `hex-graph` first when semantic diff, clone groups, references, or review bl
    - Method Signature: no boolean flag parameters in public methods (use enum/options object); no more than 5 parameters without DTO. (NIT) <!-- Defense-in-depth: also checked by ln-511 MNT-SIG- -->
    - **Algorithm correctness (loops, collections, boundaries):** Does `break`/`continue`/`return` inside loops handle ALL matching items, not just the first? Do dict/set comprehensions handle duplicate keys correctly (last-wins may lose data)? Any `list(query.all())` or unbounded loop on user-controlled data without LIMIT? Any mutable shared state (connection pool GUCs, session globals) that leaks across requests? (BLOCKER if data loss/corruption, CONCERN otherwise) <!-- Prefix: ALGO- -->
    - **Event channel consistency (task-scoped):** When task diff touches event-related code (NOTIFY/LISTEN/emit/subscribe/publish/on), verify: (1) channel name string in publisher matches channel name string in subscriber; (2) if channel name is a new string literal, Grep `src/` for matching listener/publisher counterpart. Mismatch → CONCERN: `ARCH-EVENT-MISMATCH: publisher '{pub_name}' has no matching subscriber`. Orphan → CONCERN: `ARCH-EVENT-ORPHAN: subscriber '{sub_name}' has no matching publisher`. <!-- Defense-in-depth: also checked by ln-652 Rule 6, ln-511 ARCH-EVENT- -->
-   - **Simplicity criterion (task-scoped):** **MANDATORY READ:** Load `references/simplicity_criterion.md` — Check MNT-KISS-SCOPE (effort-S task with 3+ new abstractions) and MNT-YAGNI-SCOPE (refactoring added new dependencies or created 2x more files than modified). Advisory CONCERNs only. <!-- Defense-in-depth: also checked by ln-511 KISS/YAGNI -->
-   - **Code efficiency (task-scoped):** Spot-check 2-3 key functions from diff for unnecessary intermediates, verbose patterns where idioms exist, or boilerplate framework handles. If found → CONCERN: `MNT-EFF-SCOPE: {pattern} in {file}`. Advisory only. (`references/code_efficiency_criterion.md`) <!-- Defense-in-depth: executor self-checks via same reference -->
-   - **Frontend review (conditional):** IF reviewed files include `.tsx/.vue/.svelte/.html/.css`: **MANDATORY READ:** Load `references/frontend_design_guide.md`. (a) WCAG 2.1 AA: contrast ratios, keyboard nav, ARIA labels, focus management → BLOCKER: `A11Y-{ID}`. (b) Composition: single-purpose sections, no dashboard card mosaics → CONCERN: `UI-COMP-{ID}`. (c) Typography restraint: max 2 typefaces, 1 accent → CONCERN: `UI-TYPE`. (d) Copy quality: product language, no placeholder text → NIT: `UI-COPY`. (e) Motion justification: each animation serves hierarchy/atmosphere → NIT: `UI-MOTION`. (f) Design system adherence: if project has design_guidelines.md, verify tokens match → CONCERN: `UI-SYSTEM`.
+   - **Simplicity criterion (task-scoped):** Check MNT-KISS-SCOPE and MNT-YAGNI-SCOPE inline; load `references/simplicity_criterion.md` only when reporting one of those advisory CONCERNs.
+   - **Code efficiency (task-scoped):** Spot-check 2-3 key functions from diff for unnecessary intermediates, verbose patterns where idioms exist, or boilerplate framework handles. If found -> CONCERN: `MNT-EFF-SCOPE: {pattern} in {file}`. Load `references/code_efficiency_criterion.md` only when the project context is unclear.
+   - **Frontend review (conditional):** IF reviewed files include `.tsx/.vue/.svelte/.html/.css`, load `references/frontend_design_guide.md` and check accessibility, composition, typography, copy, motion, and design-system adherence.
    - Docs: if public API changed → API docs updated. If new env var → .env.example updated. If new concept → README/architecture doc updated.
    - Tests updated/run: for impl/refactor ensure affected tests adjusted; for test tasks verify risk-based limits and priority (≤15) per planner template.
 5) **AC Validation (MANDATORY for implementation tasks):**
@@ -198,7 +198,7 @@ Use `hex-graph` first when semantic diff, clone groups, references, or review bl
 
    **For each side-effect bug found:**
    - Create new task in same Story:
-     - Use the configured tracker provider's `createTask` operation (transport per `provider_*.md`). Pass `parentId = Story.id`, labels `["bug", "discovered-in-review"]`, status `Backlog`, and severity-derived priority.
+     - Use the configured tracker provider's `createTask` operation. Pass `parentId = Story.id`, labels `["bug", "discovered-in-review"]`, status `Backlog`, and severity-derived priority.
    - Title: `[BUG] {Short description}`
    - Description: Location, issue, suggested fix
    - Label: `bug`, `discovered-in-review`

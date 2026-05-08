@@ -13,9 +13,9 @@ license: MIT
 
 ## Mandatory Read
 
-**MANDATORY READ:** Load `references/evaluation_worker_runtime_contract.md`, `references/evaluation_summary_contract.md`, `references/cleanup_evidence_contract.md`
+**MANDATORY READ:** Load `references/evaluation_worker_runtime_contract.md`, `references/evaluation_summary_contract.md`
 **MANDATORY READ:** Load `../ln-310-multi-agent-validator/references/plan_review_pipeline.md`, `../ln-310-multi-agent-validator/references/penalty_points.md`
-**MANDATORY READ:** Load `../ln-310-multi-agent-validator/references/structural_validation.md`, `../ln-310-multi-agent-validator/references/standards_validation.md`, `../ln-310-multi-agent-validator/references/solution_validation.md`, `../ln-310-multi-agent-validator/references/workflow_validation.md`, `../ln-310-multi-agent-validator/references/quality_validation.md`, `../ln-310-multi-agent-validator/references/dependency_validation.md`, `../ln-310-multi-agent-validator/references/cross_reference_validation.md`, `../ln-310-multi-agent-validator/references/risk_validation.md`, `../ln-310-multi-agent-validator/references/premortem_validation.md`, `../ln-310-multi-agent-validator/references/traceability_validation.md`
+Conditional read: in `mode=story`, load only the validation checklist files for groups present in accepted findings before applying those group repairs. Load `references/cleanup_evidence_contract.md` only if background tools or processes are launched.
 
 ## Purpose
 
@@ -30,7 +30,7 @@ license: MIT
 
 ## 11-Group Validation Structure (mode=story)
 
-The checklists below are mandatory inputs loaded above. Use the table only as the routing map for applying them.
+The table below is a routing map. Load a checklist only when accepted findings include that group; do not preload unrelated validation catalogs.
 
 | # | Group | Criteria | Checklist |
 |---|-------|----------|-----------|

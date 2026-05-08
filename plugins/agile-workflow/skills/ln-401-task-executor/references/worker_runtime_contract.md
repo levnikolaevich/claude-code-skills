@@ -79,7 +79,7 @@ Worker runtimes are family-specific thin layers over the shared runtime engine, 
 ## Family Contracts
 
 - environment setup workers: `references/environment_worker_runtime_contract.md`
-- audits: `references/evaluation_worker_runtime_contract.md` plus `references/audit_worker_core_contract.md`
+- audits: evaluation-worker runtime envelope plus `references/audit_worker_core_contract.md`
 - task execution: `references/task_worker_runtime_contract.md`
 - quality: `references/quality_worker_runtime_contract.md`
 - test planning: `references/test_planning_worker_runtime_contract.md`

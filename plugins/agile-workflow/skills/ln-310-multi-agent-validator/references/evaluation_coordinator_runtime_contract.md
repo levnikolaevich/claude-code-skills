@@ -12,166 +12,55 @@ Use this contract for:
 
 Evaluation coordinators must use `evaluation-runtime` semantics only.
 
-## Goals
+## Runtime Envelope
 
-Every evaluation coordinator must:
-- run with deterministic state and resumable phases
-- perform mandatory research on every run
-- support parallel read-only evidence lanes
-- keep mutation, merge, refinement, and approval sequential
-- record machine-readable summaries and cleanup evidence
+Evaluation coordinators own deterministic state, worker orchestration, artifact aggregation, cleanup evidence, and final decision recording. Use this contract when a skill actually runs an evaluation loop. Routing-only skills should not mandatory-load it.
 
-## Required Coordinator State
+Hard requirements:
+- state is resumable and records phase checkpoints before transitions
+- every planned worker has an explicit lane, dependency set, and expected summary artifact
+- read-only evidence lanes may run in parallel; mutation, repair, merge, approval, and status changes stay sequential
+- worker summaries are recorded before aggregation
+- final output includes a machine-readable coordinator summary and a human report path
 
-The runtime state must include:
-- `phase_order`
-- `phase_data`
-- `worker_plan`
-- `worker_results`
-- `child_runs`
-- `inflight_workers`
-- `agents`
-- `background_agent_cleanup`
-- `refinement_cleanup`
-- `cleanup_verified`
-- `aggregation_summary`
-- `report_written`
-- `results_log_appended`
-- `self_check_passed`
-- `summary_recorded`
-- `final_result`
-- optional `loop_health` for advisor and worker attempt usefulness
+## State Fields
 
-## Required Commands
+Minimum coordinator state:
+- `phase_order`, `phase_data`, `worker_plan`, `worker_results`, `child_runs`
+- `inflight_workers`, `agents`, `aggregation_summary`
+- `report_written`, `results_log_appended`, `self_check_passed`, `summary_recorded`, `final_result`
+- `background_agent_cleanup`, `refinement_cleanup`, `cleanup_verified` when background or refinement processes run
+- optional `loop_health` when repeated attempts or advisor usefulness must be judged
 
-`references/scripts/evaluation-runtime/cli.mjs` must provide:
-- `start`
-- `status`
-- `checkpoint`
-- `record-worker-result`
-- `record-summary`
-- `register-agent`
-- `sync-agent`
-- `record-loop-health`
-- `advance`
-- `pause`
-- `set-decision`
-- `complete`
+## Runtime CLI
 
-## Manifest Contract
+The evaluation runtime CLI must support start/status/checkpoint, worker-result recording, summary recording, agent registration/sync, loop-health recording, phase advance/pause, decision setting, and completion. A `SKILL.md` that invokes the CLI must reference the script path directly; this contract intentionally does not distribute executable assets by itself.
 
-Required manifest fields:
-- `skill`
-- `identifier`
-- `project_root`
-- `phase_order`
-- `report_path`
-- `created_at`
+## Manifest
 
-Optional manifest fields:
-- `mode`
-- `results_log_path`
-- `phase_policy`
-- `expected_agents`
-- `required_research`
-- `research_freshness_hours`
+Required manifest fields: `skill`, `identifier`, `project_root`, `phase_order`, `report_path`, `created_at`.
 
-`phase_policy` may define:
-- `delegate_phases`
-- `aggregate_phase`
-- `report_phase`
-- `results_log_phase`
-- `cleanup_phase`
-- `self_check_phase`
-- `agent_resolve_before`
+Optional manifest fields: `mode`, `results_log_path`, `phase_policy`, `expected_agents`, `required_research`, `research_freshness_hours`.
 
-## Worker Plan Contract
+`phase_policy` may define delegate, aggregate, report, results-log, cleanup, self-check, and agent-resolve barrier phases.
 
-`worker_plan` entries must be objects with:
-- `worker`
-- `identifier`
-- `lane`
-- `join_group`
-- `depends_on`
-- `mode`
+## Worker Plan
 
-Rules:
-- only read-only workers may share a parallel lane
-- workers that mutate files must declare non-empty `depends_on`
-- later phases may not assume completion without a recorded worker summary
+Each `worker_plan` entry must include `worker`, `identifier`, `lane`, `join_group`, `depends_on`, and `mode`. Parallel lanes are read-only only. Mutating workers require non-empty `depends_on`. Later phases must not assume worker completion without recorded summaries.
 
-## Mandatory Research Rule
+## Research And Transitions
 
-Every evaluation run must record completed research evidence.
+Evaluation runs record completed research evidence. Do not skip research entirely; for trivial stacks, record a minimal source-backed research set. Load the detailed research contract only when the skill performs research planning or evidence freshness checks.
 
-Minimum required sources per run:
-1. official documentation or standards
-2. MCP Ref
-3. Context7 when a library/framework is involved
-4. web research for current best practices
+Block transition when the current phase lacks a checkpoint, planned workers lack summaries, workers are still inflight at aggregation, required agents are unresolved across a barrier, cleanup is incomplete, self-check fails, or the coordinator summary is missing.
 
-No evaluator or auditor may skip research entirely.
+Agent/tool failures are transport evidence, not validation findings by themselves. Classify permission, auth, missing-tool, rate-limit, timeout, question, agent error, and unknown outcomes separately from domain verdicts. Repeated identical failures without new evidence require loop-health handling.
 
-If the stack is trivial, record a minimal completed research set instead of `skipped`.
+## Output
 
-## Transition Guards
+Coordinators emit an `evaluation-coordinator` summary with status, final result, report path, worker count, issue totals, severity counts, warnings, and cleanup verification. Workers emit `evaluation-worker` or a family-specific evaluation summary.
 
-The runtime must block transitions when:
-- the current phase has no checkpoint
-- a delegate phase has planned workers but no recorded worker summaries
-- the aggregate phase is entered while planned workers are still inflight
-- a configured agent-resolve barrier is crossed while required agents are unresolved
-- cleanup is incomplete
-- self-check has not passed
-- coordinator summary is missing
-- a phase listed in `required_phases_when_advisor_available` is checkpointed as SKIPPED while a corresponding advisor was marked available in the health check
-
-Agent and transport failures:
-- classify advisor/agent failures as `permission_denial`, `tool_missing`, `auth_missing`, `rate_limited`, `timeout_idle`, `timeout_productive`, `asked_question`, `agent_error`, or `unknown`
-- permission, auth, missing-tool, rate-limit, timeout, or agent-question outcomes are transport evidence, not validation findings
-- do not emit `NO-GO`, quality `FAIL`, or audit findings from transport failure alone
-- productive timeouts may feed partial-progress review only when output, log, session, artifact, git, or status evidence changed
-- repeated identical failures without new evidence record Loop Health and pause per `references/loop_health_contract.md`
-
-## Cleanup Evidence
-
-Cleanup is evidence-based, never boolean-only.
-
-`background_agent_cleanup` and `refinement_cleanup` entries must include:
-- `subject`
-- `pid`
-- `source_phase`
-- `verify_attempts`
-- `final_status`
-- `verified_at`
-
-`cleanup_verified` is derived from those records and must be true before `DONE`.
-
-## Summary Contract
-
-Coordinators emit `evaluation-coordinator` summaries.
-
-Workers emit `evaluation-worker` summaries or more specific evaluation sub-kinds when the family requires them.
-
-Use `references/evaluation_summary_contract.md`.
-
-## Parallelism Policy
-
-Use `references/evaluation_parallelism_policy.md`.
-
-Short version:
-- `agents + research + local findings` may overlap
-- docs, repair, merge, refinement, approval, and status mutation stay sequential
-
-## Related Contracts
-
-- `references/evaluation_worker_runtime_contract.md`
-- `references/evaluation_summary_contract.md`
-- `references/evaluation_research_contract.md`
-- `references/refinement_trace_contract.md`
-- `references/cleanup_evidence_contract.md`
-- `references/evaluation_parallelism_policy.md`
-- `references/loop_health_contract.md`
+Detailed parallelism, research, refinement trace, cleanup evidence, and loop-health refs are conditional: load only when that behavior is active in the current run.
 
 **Version:** 1.0.0
 **Last Updated:** 2026-04-10

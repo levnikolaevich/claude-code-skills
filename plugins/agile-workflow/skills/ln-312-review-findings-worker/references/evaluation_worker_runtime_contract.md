@@ -12,80 +12,28 @@ Use this contract for:
 - refinement workers
 - audit workers migrated onto the evaluation platform
 
-## Goals
+## Runtime Envelope
 
-Workers must:
-- remain standalone-invocable
-- run under deterministic phase control
-- emit a machine-readable summary before completion
-- avoid parent-specific contract wording
+Evaluation workers are standalone-invocable units that may also run under a coordinator-managed evaluation loop. They must accept deterministic input, write the requested summary artifact, and keep public output concise.
 
-## Required Commands
+Hard requirements:
+- no parent/coordinator ownership wording in the public contract
+- managed invocation receives exact `runId` and `summaryArtifactPath`
+- standalone invocation creates its own run id and writes to the family standalone path
+- completion requires required checkpoints, `summary_recorded=true`, and `self_check_passed=true`
+- summary kind defaults to `evaluation-worker` unless the family requires a more specific kind
 
-`references/scripts/evaluation-worker-runtime/cli.mjs` must provide:
-- `start`
-- `status`
-- `checkpoint`
-- `record-summary`
-- `advance`
-- `pause`
-- `complete`
+## Runtime CLI
 
-## Required Worker State
+Worker runtime commands must cover start/status/checkpoint, summary recording, phase advance/pause, and completion. A `SKILL.md` that invokes a local CLI must reference the script path directly; this contract does not distribute executable assets by itself.
 
-The runtime state must include:
-- `self_check_passed`
-- `summary_recorded`
-- `summary_artifact_path`
-- `summary`
-- `final_result`
+## Output
 
-## Managed Invocation
+The summary artifact uses the evaluation summary envelope and includes `worker`, `status`, `operation`, `warnings`, and any domain-specific findings/metrics/artifact paths. Coordinators consume the JSON summary, so large reports belong in separate artifacts.
 
-Managed workers always receive:
-- deterministic `runId`
-- exact `summaryArtifactPath`
+## Conditional Behavior
 
-Managed workers must:
-- write their summary JSON to that exact path
-- keep public output concise because coordinators consume the JSON summary
-
-## Standalone Invocation
-
-Standalone workers:
-- generate their own `run_id`
-- write to the family-specific standalone path
-- still emit the same summary envelope
-
-## Summary Kind
-
-Default worker summary kind:
-- `evaluation-worker`
-
-Use `references/evaluation_summary_contract.md` for payload rules.
-
-## Self-Check Rule
-
-No worker may complete unless:
-- required phases are checkpointed
-- `summary_recorded=true`
-- `self_check_passed=true`
-
-## Cleanup Rule
-
-Workers that launch background processes must record cleanup evidence using:
-- `references/cleanup_evidence_contract.md`
-
-Workers that run iterative refinement must record:
-- `refinement_trace`
-- cleanup evidence for each refinement process
-
-## Related Contracts
-
-- `references/evaluation_coordinator_runtime_contract.md`
-- `references/evaluation_summary_contract.md`
-- `references/refinement_trace_contract.md`
-- `references/cleanup_evidence_contract.md`
+Load cleanup evidence rules only when the worker starts background processes. Load refinement trace rules only when the worker runs iterative refinement. Load detailed research rules only when the worker performs source-backed research.
 
 **Version:** 1.0.0
 **Last Updated:** 2026-04-10

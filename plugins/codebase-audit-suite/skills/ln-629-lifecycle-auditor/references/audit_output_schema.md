@@ -15,7 +15,7 @@ Workers write markdown reports to `.hex-skills/runtime-artifacts/runs/{run_id}/a
 **Contracts:**
 - JSON transport: `references/audit_summary_contract.md`
 - markdown evidence template: `references/templates/audit_worker_report_template.md`
-- runtime orchestration: `references/evaluation_coordinator_runtime_contract.md` and `references/evaluation_worker_runtime_contract.md`
+- runtime orchestration: evaluation coordinator/worker runtime envelope when the calling skill actually runs the evaluation platform
 
 ### Worker Return (Fallback)
 

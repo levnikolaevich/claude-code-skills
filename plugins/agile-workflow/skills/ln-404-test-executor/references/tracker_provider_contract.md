@@ -3,17 +3,17 @@
 # Tracker Provider Contract
 
 <!-- SCOPE: Provider-agnostic task tracker operations for skills that support Linear, GitHub Issues, and File Mode. -->
-<!-- DO NOT add here: provider transport details -> provider_linear.md, provider_github.md, provider_file.md; environment selection flow -> environment_state_contract.md. -->
+<!-- DO NOT add provider transport details here; environment selection flow lives in environment state/storage contracts. -->
 
 Skills must express tracker work through semantic operations first, then bind those operations to the configured provider.
 
 ## Provider Set
 
-| Provider | Use When | Binding |
-|----------|----------|---------|
-| `linear` | Linear MCP/API is configured for task management | `references/provider_linear.md` |
-| `github` | GitHub Issues is configured for task management | `references/provider_github.md` |
-| `file` | Project uses local markdown files as the tracker | `references/provider_file.md` |
+| Provider | Use When |
+|----------|----------|
+| `linear` | Linear MCP/API is configured for task management |
+| `github` | GitHub Issues is configured for task management |
+| `file` | Project uses local markdown files as the tracker |
 
 Provider selection comes from Environment State: `task_management.provider`.
 

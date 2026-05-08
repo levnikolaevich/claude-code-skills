@@ -6,100 +6,37 @@ Machine-readable summary rules for the evaluation platform.
 
 ## Envelope
 
-Every summary uses the shared envelope:
+Every summary uses this JSON envelope:
 
 ```json
 {
   "schema_version": "1.0.0",
   "summary_kind": "evaluation-worker",
-  "run_id": "run-ln-310-20260410-abc123",
-  "identifier": "story-42",
-  "producer_skill": "ln-311",
+  "run_id": "run-id",
+  "identifier": "story-or-task-id",
+  "producer_skill": "ln-xxx",
   "produced_at": "2026-04-10T10:00:00Z",
   "payload": {}
 }
 ```
 
-## Allowed Summary Kinds
+Allowed coordinator kind: `evaluation-coordinator`. Allowed worker kinds: `evaluation-worker`, `review-research`, `review-findings`, `review-docs`, `review-repair`, `review-merge`, `review-refinement`.
 
-Coordinator:
-- `evaluation-coordinator`
+## Worker Payload
 
-Workers:
-- `evaluation-worker`
-- `review-research`
-- `review-findings`
-- `review-docs`
-- `review-repair`
-- `review-merge`
-- `review-refinement`
+Required: `worker`, `status`, `operation`, `warnings`. Optional: `verdict`, `metrics`, `decisions`, `findings`, `artifact_path`, `report_path`, `metadata`, `evidence_basis_counts`.
 
-## Evaluation Worker Payload
+Findings should be normalized structured objects. Large human-readable reports live in separate artifacts. Research-oriented workers point to source-backed evidence through metrics, findings, or artifact paths instead of duplicating long evidence text.
 
-Required fields:
-- `worker`
-- `status`
-- `operation`
-- `warnings`
+## Coordinator Payload
 
-Optional fields:
-- `verdict`
-- `metrics`
-- `decisions`
-- `findings`
-- `artifact_path`
-- `report_path`
-- `metadata`
-- `evidence_basis_counts`
+Required: `status`, `final_result`, `report_path`, `worker_count`, `issues_total`, `severity_counts`, `warnings`, `cleanup_verified`. Optional: `results_log_path`, `overall_score`, `artifact_path`, `metadata`.
 
-Rules:
-- prefer compact structured objects over free-text prose
-- `findings` entries should be normalized, not narrative paragraphs
-- large human-readable reports live in separate artifacts
+## Paths And Freshness
 
-## Evaluation Coordinator Payload
+Managed worker summaries are written under `.hex-skills/runtime-artifacts/runs/{parent_run_id}/evaluation-worker/`. Coordinator summaries are written under `.hex-skills/runtime-artifacts/runs/{run_id}/evaluation-coordinator/`.
 
-Required fields:
-- `status`
-- `final_result`
-- `report_path`
-- `worker_count`
-- `issues_total`
-- `severity_counts`
-- `warnings`
-- `cleanup_verified`
-
-Optional fields:
-- `results_log_path`
-- `overall_score`
-- `artifact_path`
-- `metadata`
-
-## Paths
-
-Managed workers:
-- `.hex-skills/runtime-artifacts/runs/{parent_run_id}/evaluation-worker/{producer_skill}--{identifier}.json`
-
-Coordinators:
-- `.hex-skills/runtime-artifacts/runs/{run_id}/evaluation-coordinator/{identifier}.json`
-
-## Research Evidence Rule
-
-Research-oriented workers must place source-backed evidence in:
-- `payload.metrics.research_sources`
-- `payload.findings`
-- referenced runtime artifacts
-
-Summaries should point to evidence, not duplicate full evidence text.
-
-### Freshness (pause-resume safety net)
-
-Worker summaries carry `produced_at` in the envelope. At merge time, the merge worker must:
-1. Compare each research summary `produced_at` against current time.
-2. If older than `research_freshness_hours` (default: 1h), mark as `stale` and add warning: `"research_stale: ln-311 evidence is {N}h old; consider re-running research lane"`.
-3. Stale research does not auto-invalidate — it adds a warning for human review.
-
-This primarily covers paused/resumed evaluations. Single-run pipelines complete research and merge within minutes.
+At merge time, compare research summary `produced_at` values against `research_freshness_hours` when configured. Stale research adds a warning; it does not auto-invalidate the run.
 
 **Version:** 1.0.0
 **Last Updated:** 2026-04-10

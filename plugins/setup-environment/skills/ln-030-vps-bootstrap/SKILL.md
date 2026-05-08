@@ -7,7 +7,7 @@ allowed-tools: Bash, Read, mcp__hex-ssh__remote-ssh, mcp__hex-ssh__ssh-read-line
 
 <!-- markdownlint-disable MD012 MD022 MD032 MD040 MD041 MD060 -->
 
-> **Paths:** File paths (`references/`, `../ln-*`, `references/agents/hex-relay/`) are relative to this skill directory.
+> **Paths:** File paths (`references/`, `../ln-*`) are relative to this skill directory.
 
 # ln-030-vps-bootstrap
 
@@ -26,8 +26,7 @@ Public entrypoint for VPS agent environments. This skill routes between fresh in
 - `references/shared_user_pattern.md` — canonical model: one shared `agent-bot` Linux user owns every project on the VPS. Use for **fresh installs**.
 - `references/shared_auth_state.md` — alternative for fleets that already use **per-project bot users** (`<project>-bot`): keeps Linux/systemd isolation per project but symlinks `~/.claude`, `~/.claude.json`, `~/.codex` from each bot home to a shared `/var/lib/claude-shared/` dir (group `claude-shared` + ACL). One Claude Max device slot, one Codex login, N bot users. Use when migrating to shared auth without restructuring existing per-project Linux user layout.
 
-Reference inventory owned by this coordinator family but loaded by the worker that needs it:
-`README.md`, `vps_base_install.md`, `agent_runtime_install.md`, `god_session_install.md`, `project_repo_bootstrap.md`, `hex_relay_deploy.md`, `operator_dispatcher_install.md`, `provider_credentials.md`, `fleet_registry.md`, `fleet_plan_apply.md`, `shared_auth_state.md`, `substitution_rules.md`, `codex_hooks_config.md`, `agent-sandbox.sh`, `agent-update.sh`, `agent-update.service`, `agent-update.timer`, `claude-shared-auth-perms.sh`, `claude-shared-auth-perms.service`, `claude-shared-auth-perms.path`, `claude-usage-report.sh`, `codex-config.toml.template`, `codex-notify.sh`, `dispatch.md`, `dispatch.service`, `dispatch.timer`, `dispatcher.md.template`, `god-session.service`, `god-session.sh`, `god-session-codex.sh`, `hex-relay-codex-hook.sh`, `hex-relay.service`, `mint-gh-token.sh`, `operator.CLAUDE.md`, `register-telegram-commands.sh`, `secrets.env.template`, `settings.agent-config.fragment.json`, `settings.hooks.fragment.json`, `settings.statusline.fragment.json`, `statusline.sh`.
+Reference inventory is maintained in `references/README.md`. Workers load only the files named in their own `MANDATORY READ` block or required by the selected phase.
 
 **Supported agents:** Both Claude Code and Codex CLI run as long-running god-sessions per Telegram operator. Each project installs two systemd templates: `${SERVICE_PREFIX}-god@.service` (Claude, launches `god-session.sh`) and `${SERVICE_PREFIX}-god-codex@.service` (Codex, launches `god-session-codex.sh`). hex-relay routes Telegram traffic to the correct agent via the per-user buddy column (`/set_buddy claude|codex` and `@claude`/`@codex` prefixes).
 
@@ -83,6 +82,7 @@ Discovery checks:
 - `~${BOT_USER}/.claude/`, `~${BOT_USER}/.codex/`
 - `${AGENT_SKILLS_DIR}` and marketplace manifests
 - `agent-update.timer`
+- agent CLI freshness and LevNikolaevich skills/plugin cache consistency when the operation includes deploy, redeploy, host update, or fleet sync
 - existing `${SERVICE_PREFIX}` units and port collisions
 
 Decision:
@@ -108,6 +108,8 @@ Skip with explicit `N/A:` reason when `TELEGRAM_BOT_TOKEN` is empty and no relay
 ### Phase 5: Diagnostics And Fleet
 
 Call `ln-034-vps-environment-diagnostics` after install/redeploy when final health evidence is needed, or directly for `mode=diagnose`.
+
+After any `fresh_install`, `add_project`, `relay_redeploy`, or `fleet_apply` that touches relay, agents, skills, or Telegram integration, final diagnostics must include the post-deploy gate from `references/hex_relay_deploy.md`: CLI latest versions, `${AGENT_SKILLS_DIR}` validation, Claude/Codex plugin cache and metadata consistency, Telegram commands in both scopes, project hook auth smoke, and shared-auth repair health when applicable.
 
 Fleet rules:
 - `fleet_plan` loads and validates the live VPS registry from `/etc/agent-fleet/environments/*.yaml` by default, checks live state, and writes a plan artifact under `.hex-skills/runtime-artifacts/runs/{run_id}/vps-fleet-plan/`.
@@ -199,6 +201,7 @@ Risk Checklist:
 - [ ] Fresh/add-project flow called host runtime before project runtime.
 - [ ] Existing-host flow used `verify_or_update`, not a blind skip.
 - [ ] `hex-relay` work was delegated only when Telegram/relay scope required it.
+- [ ] Post-deploy gate verified agent CLI versions, skills/plugin caches, Telegram commands, hook settings/auth smoke, and shared-auth repair state when the operation touched those surfaces.
 - [ ] Fleet plan/apply used the live VPS registry path and wrote or consumed a run-scoped artifact with registry evidence.
 - [ ] Final coordinator summary lists applied changes, skipped gates, blockers, warnings, and verification evidence.
 - [ ] Meta-analysis completed using `references/meta_analysis_protocol.md`.

@@ -49,7 +49,7 @@ sudo -u ${BOT_USER} bash -lc 'claude mcp add --transport http -s user context7 h
 sudo -u ${BOT_USER} bash -lc 'claude mcp list'
 ```
 
-Codex config is shared across projects under `${BOT_USER}`. Render `codex-config.toml.template` only on first install, then append this project's trust block if absent:
+Codex config is shared across projects under `${BOT_USER}`. In shared-auth fleets, each bot user's `~/.codex` symlink points at the same shared store, but the rendered config still uses the active `${BOT_USER}` path for this install pass. Render `codex-config.toml.template` only on first install, then append this project's trust block if absent:
 
 ```bash
 if [ ! -f /home/${BOT_USER}/.codex/config.toml ]; then
@@ -105,3 +105,22 @@ sudo -i -u ${BOT_USER} bash -lc 'cd ${AGENT_SKILLS_DIR} && git status --short &&
 sudo -i -u ${BOT_USER} bash -lc '. /home/${BOT_USER}/.nvm/nvm.sh && claude plugin list --json | jq .'
 sudo -u ${BOT_USER} grep -E 'levnikolaevich-skills-marketplace|agile-workflow' /home/${BOT_USER}/.codex/config.toml
 ```
+
+### Post-update consistency gate
+
+Run this gate after installing/updating CLIs, after replacing `${AGENT_SKILLS_DIR}`, and after any `hex-relay` deploy/redeploy that restarts god sessions.
+
+Key points:
+- `claude update` and `npm i -g @openai/codex@latest` prove CLI freshness only; skills may still be stale in agent-specific caches.
+- Claude active marketplace, Claude plugin cache, Codex plugin cache, and their metadata must all match the intended `${AGENT_SKILLS_DIR}` snapshot.
+- If the intended deploy artifact is a local working tree ahead of public GitHub, a GitHub-backed Claude marketplace refresh can overwrite local files during plugin update or first start. Resync from `${AGENT_SKILLS_DIR}` after that update and compare checksums.
+
+Record evidence:
+- `npm view @anthropic-ai/claude-code version` equals `claude --version`.
+- `npm view @openai/codex version` equals `codex --version`.
+- `/usr/local/bin/agent-update` includes every per-project bot user in its rendered `RUNTIME_USERS` list when those users have separate nvm runtimes.
+- `node tools/marketplace/shared.mjs validate && node tools/marketplace/validate.mjs` passes in `${AGENT_SKILLS_DIR}`.
+- `claude plugin list` shows every selected LevNikolaevich plugin enabled and every `installPath` exists.
+- When `/var/lib/claude-shared/` is in use, `~/.claude/plugins/known_marketplaces.json` and `installed_plugins.json` point at `/var/lib/claude-shared/.claude/plugins/...`; no selected plugin points at stale `/home/agent-bot/...`.
+- `~/.codex/plugins/cache/levnikolaevich-skills-marketplace/<plugin>/1.0.0` exists for every selected Codex plugin.
+- After backup cleanup, each agent has one current LevNikolaevich cache snapshot per selected plugin.

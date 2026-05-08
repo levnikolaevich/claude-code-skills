@@ -178,7 +178,7 @@ If god services were already running BEFORE the migration, they captured stale s
 After completing the one-time `claude /login` and `codex login --device-auth` against the shared dir, **restart every running god service** so each picks up shared state on disk and re-mounts the bind through the symlink:
 
 ```bash
-for unit in $(systemctl list-units --type=service '*-god@*.service' --state=active --no-legend | awk '{print $1}'); do
+for unit in $(systemctl list-units --type=service '*-god@*.service' '*-god-codex@*.service' --state=active --no-legend | awk '{print $1}'); do
   systemctl restart "$unit"
 done
 ```

@@ -66,6 +66,23 @@ Claude hooks may include `effort.level`; hex-relay records it as telemetry in se
 
 After source changes, use `agents/hex-relay/docs/redeploy.md`. Upload source, rebuild on VPS, restart `${SERVICE_PREFIX}-hex-relay.service`, and recheck `/health`. Do not hand-edit VPS `dist/`.
 
+## Post-deploy gate
+
+Run this gate after every initial deploy, redeploy, or fleet sync. Do not stop at "service is active": the relay may be healthy while the agents still use stale CLI binaries, plugin caches, Telegram command scopes, or hook settings.
+
+| Surface | Required evidence |
+|---|---|
+| Agent CLI versions | `claude --version` and `codex --version` match `npm view @anthropic-ai/claude-code version` and `npm view @openai/codex version` under the bot user's nvm PATH |
+| Skills source | `${AGENT_SKILLS_DIR}` contains the intended deploy snapshot and `node tools/marketplace/shared.mjs validate && node tools/marketplace/validate.mjs` passes |
+| Claude skills | `~/.claude/plugins/marketplaces/levnikolaevich-skills-marketplace`, `~/.claude/plugins/cache/...`, `known_marketplaces.json`, and `installed_plugins.json` all point at current shared paths; no active metadata path points at a stale `/home/agent-bot/...` after per-project-user migration |
+| Codex skills | `~/.codex/plugins/cache/levnikolaevich-skills-marketplace/<plugin>/1.0.0` is refreshed from `${AGENT_SKILLS_DIR}/plugins/<plugin>`; stale `.tmp/marketplaces` clones are not treated as active runtime |
+| Cache hygiene | Keep one current LevNikolaevich cache snapshot per plugin after backup; old commit-named snapshots are rollback artifacts, not active runtime |
+| Telegram commands | `/usr/local/bin/${SERVICE_PREFIX}-register-telegram-commands /etc/${PROJECT_NAME}/secrets.env` succeeds and verifies both default and `all_private_chats` scopes |
+| Hook settings | `${PROJECT_DIR}/.claude/settings.json` has every expected hook, uses the project `RELAY_HOOK_PORT`, includes `Authorization: Bearer ...`, and contains no unresolved `${...}` placeholders |
+| Hook auth smoke | unauthenticated `POST /hook/stop` returns `401`; authenticated valid `POST /hook/session-start` returns `200` |
+
+If deploying a local working tree that is ahead of the public GitHub marketplace, refresh Claude marketplace/cache **after** any Claude CLI/plugin update or god-session restart. Claude can refresh a GitHub-backed marketplace and reintroduce older files. Verify with a checksum from `${AGENT_SKILLS_DIR}` against the active marketplace and both plugin caches.
+
 ## Verify
 
 ```bash

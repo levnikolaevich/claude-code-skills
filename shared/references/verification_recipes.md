@@ -58,6 +58,47 @@ sudo -u ${BOT_USER} grep -Ec '^\[marketplaces\.levnikolaevich-skills-marketplace
 sudo -u ${BOT_USER} grep -E '^\[plugins\."(agile-workflow|[^"]+)@levnikolaevich-skills-marketplace"\]$' ~/.codex/config.toml
 ```
 
+## Agent freshness and plugin cache consistency (`ln-031` / post-deploy)
+
+Run after host update, `hex-relay` deploy/redeploy, or any manual replacement of `${AGENT_SKILLS_DIR}`. This is a separate gate from "service is active": a relay can be healthy while Claude/Codex still read stale plugin cache snapshots.
+
+```bash
+# CLI latest check. Use explicit nvm PATH in non-interactive SSH shells.
+NODE_BIN=$(find /home/${BOT_USER}/.nvm/versions/node -path '*/bin/node' -type f | sort | tail -1)
+NODE_DIR=$(dirname "$NODE_BIN")
+sudo -u ${BOT_USER} env PATH="$NODE_DIR:/usr/bin:/bin" npm view @anthropic-ai/claude-code version
+sudo -u ${BOT_USER} env PATH="$NODE_DIR:/usr/bin:/bin" claude --version
+sudo -u ${BOT_USER} env PATH="$NODE_DIR:/usr/bin:/bin" npm view @openai/codex version
+sudo -u ${BOT_USER} env PATH="$NODE_DIR:/usr/bin:/bin" codex --version
+# Expected: installed versions match npm view outputs.
+
+# Current skills source validates.
+sudo -u ${BOT_USER} env PATH="$NODE_DIR:/usr/bin:/bin" bash -lc \
+  'cd ${AGENT_SKILLS_DIR} && node tools/marketplace/shared.mjs validate && node tools/marketplace/validate.mjs'
+
+# Claude active marketplace, Claude plugin cache, and Codex plugin cache all contain the same current skill files.
+sha256sum \
+  ${AGENT_SKILLS_DIR}/plugins/setup-environment/skills/ln-030-vps-bootstrap/SKILL.md \
+  ~/.claude/plugins/marketplaces/levnikolaevich-skills-marketplace/plugins/setup-environment/skills/ln-030-vps-bootstrap/SKILL.md \
+  ~/.claude/plugins/cache/levnikolaevich-skills-marketplace/setup-environment/*/plugins/setup-environment/skills/ln-030-vps-bootstrap/SKILL.md \
+  ~/.codex/plugins/cache/levnikolaevich-skills-marketplace/setup-environment/1.0.0/skills/ln-030-vps-bootstrap/SKILL.md
+# Expected: all hashes for the checked file match.
+
+# Claude metadata points to the shared active locations, not stale /home/agent-bot paths.
+jq -e '.["levnikolaevich-skills-marketplace"].installLocation
+  | startswith("/var/lib/claude-shared/.claude/plugins/marketplaces/")
+' ~/.claude/plugins/known_marketplaces.json
+jq -r '.plugins | to_entries[] | select(.key|contains("@levnikolaevich-skills-marketplace")) | .value[].installPath' \
+  ~/.claude/plugins/installed_plugins.json \
+  | while read -r path; do test -d "$path" || echo "MISSING plugin cache path: $path"; done
+# Expected: no MISSING lines.
+
+# Cache hygiene: one LevNikolaevich snapshot per plugin for Claude and Codex after cleanup.
+find ~/.claude/plugins/cache/levnikolaevich-skills-marketplace -mindepth 2 -maxdepth 2 -type d | wc -l
+find ~/.codex/plugins/cache/levnikolaevich-skills-marketplace -mindepth 2 -maxdepth 2 -type d | wc -l
+# Expected: equals the number of installed LevNikolaevich plugins in that runtime.
+```
+
 ## Shared auth repair (`ln-031` / `ln-034`, conditional)
 
 Run this section only when `/var/lib/claude-shared/` exists. It verifies the durable repair automation and read/write access for every bot in the `claude-shared` group without printing auth file contents.
@@ -86,7 +127,7 @@ getfacl /var/lib/claude-shared/.claude/.credentials.json /var/lib/claude-shared/
 systemctl list-timers agent-update.timer --no-pager
 # Expected: one active timer with next fire around 03:37 local time (+ randomized delay)
 
-# Manual smoke: updates CLIs + skills/plugins, verifies, then restarts every enabled *-god@*.service.
+# Manual smoke: updates CLIs + skills/plugins, verifies, then restarts every active Claude/Codex god service.
 systemctl start agent-update.service
 journalctl -u agent-update.service -n 120 --no-pager
 # Expected: claude update succeeds, Codex npm install succeeds, skills repo fast-forwards,
@@ -116,12 +157,12 @@ Expected: repo URL/ref match configuration, status is clean except intentional p
 ```bash
 # Relay listening + DB ready
 curl -fsS http://127.0.0.1:${RELAY_HOOK_PORT}/health | jq .
-# Expected fields: ok=true, version="v6", god_session_ready, inbound_queued,
-#                  inbound_failed, inbound_rejected, outbox_unknown,
-#                  control_busy, control_pending
+# Expected fields: ok=true, version="v6.3", relay_schema_version="v6.3",
+#                  god_session_ready, inbound_queued, inbound_failed,
+#                  inbound_rejected, outbox_unknown, control_busy, control_pending
 
 # DB schema
-sqlite3 /var/lib/${PROJECT_NAME}/relay.db '.tables'
+sudo -u ${BOT_USER} sqlite3 /var/lib/${PROJECT_NAME}/relay.db '.tables'
 # Expected: core tables are present — messages, pending_reply, outbox, sessions,
 #           session_events, dispatch_runs, dispatch_phases, memories,
 #           health_snapshots, auth_rejects, allowed_users, todo_state
@@ -133,12 +174,17 @@ test -x /opt/${SERVICE_PREFIX}-hex-relay/node_modules/.bin/tsc
 # Telegram Bot API menu commands registered
 curl -fsS "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getMyCommands" | jq '.result'
 # Expected English descriptions:
-# [{"command":"usage","description":"Show Claude usage limits"},
+# [{"command":"usage","description":"Show Claude/Codex usage limits"},
 #  {"command":"new_session","description":"Start a new Claude session"},
 #  {"command":"sessions","description":"Resume or delete Claude sessions"},
 #  {"command":"tasks","description":"List open tasks"},
 #  {"command":"users","description":"Manage bot access"}]
 # If missing, rerun `ln-033-hex-relay-lifecycle` or /usr/local/bin/${SERVICE_PREFIX}-register-telegram-commands
+
+# The command menu must also be registered for all private chats; Telegram keeps scopes separately.
+curl -fsS -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getMyCommands" \
+  -d 'scope={"type":"all_private_chats"}' | jq '.result'
+# Expected: same five commands and descriptions as the default scope.
 
 # Bot hardening (DM-only, no group reads)
 curl -fsS "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getMe" \
@@ -146,11 +192,11 @@ curl -fsS "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getMe" \
 # Expected: {"can_join_groups": false, "can_read_all_group_messages": false}
 
 # Allowlist audit table populated on unauthorized DM
-sqlite3 /var/lib/${PROJECT_NAME}/relay.db ".schema auth_rejects"
-sqlite3 /var/lib/${PROJECT_NAME}/relay.db "SELECT * FROM auth_rejects ORDER BY ts DESC LIMIT 5"
+sudo -u ${BOT_USER} sqlite3 /var/lib/${PROJECT_NAME}/relay.db ".schema auth_rejects"
+sudo -u ${BOT_USER} sqlite3 /var/lib/${PROJECT_NAME}/relay.db "SELECT * FROM auth_rejects ORDER BY ts DESC LIMIT 5"
 
 # Allowlist primary present
-sqlite3 /var/lib/${PROJECT_NAME}/relay.db "SELECT user_id, status FROM allowed_users"
+sudo -u ${BOT_USER} sqlite3 /var/lib/${PROJECT_NAME}/relay.db "SELECT user_id, status FROM allowed_users"
 # Expected: primary operator with status='allowed'
 
 # Task polling endpoint: non-empty queues notify primary only once per 24 hours; empty queues log only.
@@ -181,9 +227,9 @@ sudo -u ${BOT_USER} bash -lc 'tmux -L ${SERVICE_PREFIX} set-buffer -b smoke -- "
   && echo "smoke: paste-buffer succeeded"'
 
 # Per-user session ownership and inbound routing columns exist
-sqlite3 /var/lib/${PROJECT_NAME}/relay.db "PRAGMA table_info(sessions)"
+sudo -u ${BOT_USER} sqlite3 /var/lib/${PROJECT_NAME}/relay.db "PRAGMA table_info(sessions)"
 # Expected: created_by_user_id column present
-sqlite3 /var/lib/${PROJECT_NAME}/relay.db "PRAGMA table_info(messages)"
+sudo -u ${BOT_USER} sqlite3 /var/lib/${PROJECT_NAME}/relay.db "PRAGMA table_info(messages)"
 # Expected: from_user_id column present
 test -f /var/lib/${PROJECT_NAME}/users/${TELEGRAM_CHAT_ID}/last-session.id
 test -f /var/lib/${PROJECT_NAME}/users/${TELEGRAM_CHAT_ID}/sessions-dir.path
@@ -208,13 +254,31 @@ grep -F "/home/${BOT_USER}/.claude/projects/" \
 
 ```bash
 # Outbox event_type column exists
-sqlite3 /var/lib/${PROJECT_NAME}/relay.db "PRAGMA table_info(outbox)" | grep event_type
-sqlite3 /var/lib/${PROJECT_NAME}/relay.db ".schema todo_state"
+sudo -u ${BOT_USER} sqlite3 /var/lib/${PROJECT_NAME}/relay.db "PRAGMA table_info(outbox)" | grep event_type
+sudo -u ${BOT_USER} sqlite3 /var/lib/${PROJECT_NAME}/relay.db ".schema todo_state"
 
 # Hooks registered
 sudo -u ${BOT_USER} jq '.hooks | keys' ${PROJECT_DIR}/.claude/settings.json
 # Expected: includes PreToolUse, PostToolUse (plus UserPromptSubmit, Stop,
 #           StopFailure, SessionStart, PostCompact, SubagentStop)
+
+# Hooks carry per-project Bearer auth and the correct relay port.
+sudo -u ${BOT_USER} jq -e --arg port ":${RELAY_HOOK_PORT}" '
+  (.hooks | has("UserPromptSubmit") and has("Stop") and has("StopFailure") and has("SessionStart") and has("PostCompact") and has("SubagentStop") and has("PreToolUse") and has("PostToolUse")) and
+  ([.hooks[][]?.hooks[]? | (.type == "http" and (.url | contains($port)) and (.url | contains("${") | not) and (.headers.Authorization | startswith("Bearer ")))] | all) and
+  ([.hooks.PreToolUse[]?.matcher] | sort == ["Agent","Skill","TodoWrite"]) and
+  ([.hooks.PostToolUse[]?.matcher] == ["Skill"])
+' ${PROJECT_DIR}/.claude/settings.json
+
+# HTTP auth behavior smoke. Do not print RELAY_HTTP_TOKEN.
+test -n "${RELAY_HTTP_TOKEN}"
+test "$(curl -sS -o /tmp/${SERVICE_PREFIX}-hook-unauth.out -w '%{http_code}' \
+  -X POST http://127.0.0.1:${RELAY_HOOK_PORT}/hook/stop \
+  -H 'Content-Type: application/json' -d '{}')" = 401
+test "$(curl -sS -o /tmp/${SERVICE_PREFIX}-hook-valid.out -w '%{http_code}' \
+  -X POST http://127.0.0.1:${RELAY_HOOK_PORT}/hook/session-start \
+  -H 'Content-Type: application/json' -H "Authorization: Bearer ${RELAY_HTTP_TOKEN}" \
+  -d "{\"session_id\":\"hook-smoke-${SERVICE_PREFIX}-$(date +%s)\",\"source\":\"startup\",\"agent\":\"claude\"}")" = 200
 ```
 
 ### Layer smoke (per `references/README.md` — Communication policy)
@@ -227,7 +291,7 @@ sudo -u ${BOT_USER} jq '.hooks | keys' ${PROJECT_DIR}/.claude/settings.json
 
 ```bash
 # Token bucket: trigger 10 Skills in 30s → first 5 reach Telegram, rest dropped silently
-sqlite3 /var/lib/${PROJECT_NAME}/relay.db \
+sudo -u ${BOT_USER} sqlite3 /var/lib/${PROJECT_NAME}/relay.db \
   "SELECT count(*) FROM outbox WHERE event_type='status_skill' AND ts > strftime('%s','now','-1 minute')"
 # Expected: ≤ 5
 

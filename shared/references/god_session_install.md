@@ -107,7 +107,7 @@ systemctl start claude-shared-auth-perms.service
 
 ## System-wide updater
 
-One updater per VPS refreshes shared CLIs, `${AGENT_SKILLS_DIR}`, and selected plugins, then restarts active `*-god@*.service` instances only after verification succeeds.
+One updater per VPS refreshes shared CLIs, `${AGENT_SKILLS_DIR}`, and selected plugins, then restarts active `*-god@*.service` and `*-god-codex@*.service` instances only after verification succeeds. For shared-auth fleets with per-project bot users, render optional `RUNTIME_USERS` as a comma-separated list of every bot user that owns an nvm runtime; otherwise it defaults to `${BOT_USER}`.
 
 | Template | Target | Owner | Mode |
 |---|---|---|---|

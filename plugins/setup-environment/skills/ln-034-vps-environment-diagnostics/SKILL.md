@@ -56,10 +56,10 @@ Resolve target environment and set mutation guard:
 Inspect:
 - required binaries
 - `${BOT_USER}`
-- Node/Claude/Codex versions
+- Node/Claude/Codex versions, including installed-vs-`npm view ... latest` comparison when network is available
 - auth health indicators without printing tokens (per bot: `claude --print` smoke + `codex login status`)
 - `${AGENT_SKILLS_DIR}` git state
-- marketplace/plugin health
+- marketplace/plugin health across `${AGENT_SKILLS_DIR}`, Claude active marketplace, Claude plugin cache, Codex plugin cache, `known_marketplaces.json`, and `installed_plugins.json`
 - `agent-update.timer` schedule, `agent-update.service` `is-failed` state, `/usr/local/bin/agent-update` exec bit (`[[ -x ... ]]`) and `bash -n` syntax
 - when `/var/lib/claude-shared/` exists: `claude-shared` group membership for every bot user, `claude-shared-auth-perms.path` active, ACL mask on `/var/lib/claude-shared/.claude/.credentials.json`, `/var/lib/claude-shared/.claude.json`, and `/var/lib/claude-shared/.codex/auth.json` (mask must be `rw-`, not `---`), and each bot user can read/write all three files through its home symlinks
 
@@ -80,18 +80,27 @@ Named drift checks (block-level findings; map to safe repairs in Phase 5):
 - **missing .agent-home/users**: `${PROJECT_DIR}/.agent-home/users` absent or wrong owner — relay will fail with `status=226/NAMESPACE` on next restart
 - **shared-auth-repair-missing**: `/var/lib/claude-shared/` exists but `claude-shared-auth-perms.path` is missing or inactive
 - **shared-auth-acl-drift**: repair automation exists but one or more shared auth files has `mask::---` or fails per-bot read/write checks
+- **stale-agent-cli**: `claude --version` or `codex --version` differs from the package registry latest version after a requested update
+- **stale-skills-cache**: `${AGENT_SKILLS_DIR}` is current but Claude/Codex plugin cache hashes differ, selected plugins are disabled, or plugin metadata points at stale `/home/agent-bot/...`
+- **excess-plugin-cache**: multiple old LevNikolaevich cache snapshots remain per plugin after backup cleanup
 
 ### Phase 4: Relay Runtime
 
 When Telegram/relay is enabled, inspect:
 - `${SERVICE_PREFIX}-hex-relay.service`
 - `/opt/${SERVICE_PREFIX}-hex-relay`
-- HTTP `/health`
+- HTTP `/health`, `/ready`, and `/live`
 - relay DB presence/schema
 - old `relay-bot` service/path drift
 - `RELAY_HOOK_PORT` listener collisions
+- project `.claude/settings.json` hook keys, per-project port, Bearer auth header, and absence of unresolved placeholders
+- unauthenticated hook smoke (`401`) and authenticated valid `SessionStart` smoke (`200`)
+- Telegram Bot API commands in both default and `all_private_chats` scopes
 
-Named drift checks from `/health` JSON:
+Named drift checks from `/health` JSON and relay integration probes:
+- **idle-session-normal**: `god_session_ready:false` with `/ready` 200, no pending inbound, and idle-shutdown journal evidence is informational, not a failed deploy
+- **hook-auth-misconfigured**: project hook JSON lacks Bearer auth, uses the wrong port, or authenticated `SessionStart` smoke does not return 200
+- **telegram-command-drift**: command list differs between default and `all_private_chats` scopes or misses `/usage`, `/new_session`, `/sessions`, `/tasks`, `/users`
 - **inbound-failure backlog**: `inbound_failed > 0` or `outbox_abandoned > 0` — emit a finding with the offending message ids from the journal (`grep -oE '"id":[0-9]+,"terminal":"failed"'`) so the operator can ack or replay
 - **send-keys regression**: `journalctl -u ${SERVICE_PREFIX}-hex-relay.service --since '24h ago'` contains any `send-keys -l rc=1: command send-keys: invalid flag` — marker that the relay binary predates the buffer-paste fix
 - **stop-failure unknowns**: more than 3 `"error_type":"unknown"` entries in 24h with `"kind":"stop_failure"` — relay binary predates the typed-classifier fix; aggregate by `kind` to surface the underlying cause
@@ -106,7 +115,9 @@ Allowed safe repairs only:
 - report, but do not rewrite, missing auth or secrets
 - `chmod +x /usr/local/bin/agent-update` when the file is a non-executable bash script (validated by `file` and `bash -n`); follow with `systemctl reset-failed agent-update.service`
 - `systemctl start claude-shared-auth-perms.service` when shared-auth ACL drift is detected and the unit exists; manual `chmod 0660` on `/var/lib/claude-shared/.claude/.credentials.json`, `/var/lib/claude-shared/.claude.json`, or `/var/lib/claude-shared/.codex/auth.json` is immediate recovery only when the repair unit is missing
-- append a missing bot user to `RUNTIME_USERS=(...)` in `/usr/local/bin/agent-update` when that bot has its own `~/.nvm/nvm.sh` and is otherwise healthy
+- add a missing bot user to the rendered `RUNTIME_USERS` list in `/usr/local/bin/agent-update` when that bot has its own `~/.nvm/nvm.sh` and is otherwise healthy, then run `bash -n /usr/local/bin/agent-update` before starting the service
+- rerun `/usr/local/bin/${SERVICE_PREFIX}-register-telegram-commands /etc/${PROJECT_NAME}/secrets.env` when only Telegram command scope drift is detected
+- after backup, resync LevNikolaevich Claude/Codex plugin caches from `${AGENT_SKILLS_DIR}` and remove stale cache snapshots when `stale-skills-cache` or `excess-plugin-cache` is detected; do not modify auth/session state
 - **timer enabled-inactive**: `systemctl daemon-reload && systemctl start ${SERVICE_PREFIX}-dispatch.timer` followed by `systemctl list-timers ${SERVICE_PREFIX}-dispatch.timer --all` to confirm `NEXT` is populated
 - **god/tmux parity**: `systemctl restart ${SERVICE_PREFIX}-god@<id>.service` and re-verify `tmux -L ${SERVICE_PREFIX} has-session -t "=${SERVICE_PREFIX}-god-<id>"` exits 0; do NOT rename or kill the orphaned tmux session of a different user
 - **missing .agent-home/users**: `install -d -o ${BOT_USER} -g ${BOT_USER} -m 0700 ${PROJECT_DIR}/.agent-home/users ${PROJECT_DIR}/.agent-cache` then `systemctl restart ${SERVICE_PREFIX}-hex-relay.service`
@@ -118,6 +129,7 @@ Forbidden repairs:
 - changing Git remotes/branches
 - changing shared auth
 - broad package upgrades
+- printing or editing Telegram/Claude/Codex token values while checking hooks and command scopes
 
 ### Phase 6: Summary
 
@@ -141,8 +153,9 @@ Write a `vps-environment-diagnostics` summary artifact with:
 
 - [ ] Target environment and mutation guard resolved.
 - [ ] Host/shared runtime health inspected.
+- [ ] Agent CLI freshness, skills/plugin cache consistency, and stale metadata paths inspected.
 - [ ] Project runtime health inspected.
-- [ ] Relay runtime health inspected or gated `N/A:`.
+- [ ] Relay runtime, hook auth smoke, and Telegram command scopes inspected or gated `N/A:`.
 - [ ] Drift and blockers reported with concrete evidence.
 - [ ] Safe repair actions were explicit, bounded, and recorded.
 - [ ] Forbidden repair categories were not performed.

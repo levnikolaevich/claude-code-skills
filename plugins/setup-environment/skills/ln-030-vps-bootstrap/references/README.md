@@ -31,7 +31,7 @@ Template files and runbooks used by `ln-030` and its VPS runtime workers. Most t
 | `agent-sandbox.sh` | `/usr/local/bin/${SERVICE_PREFIX}-agent-sandbox` | root:root | 755 | `PROJECT_NAME`, `SERVICE_PREFIX`, `PROJECT_DIR`, `BOT_USER`, `AGENT_SKILLS_DIR` | — |
 | `dispatch.timer` | `/etc/systemd/system/${SERVICE_PREFIX}-dispatch.timer` | root:root | 644 | `SERVICE_PREFIX`, `DISPATCH_COMMAND_NAME` | — (always installs) |
 | `dispatch.service` | `/etc/systemd/system/${SERVICE_PREFIX}-dispatch.service` | root:root | 644 | `SERVICE_PREFIX`, `BOT_USER`, `DISPATCH_COMMAND_NAME` | — (always installs) |
-| `agent-update.sh` | `/usr/local/bin/agent-update` | root:root | 755 | `BOT_USER`, `AGENT_SKILLS_REPO_URL`, `AGENT_SKILLS_REF`, `AGENT_SKILLS_DIR`, `AGENT_SKILLS_PLUGINS` | — (system-wide; always installs) |
+| `agent-update.sh` | `/usr/local/bin/agent-update` | root:root | 755 | `BOT_USER`, optional `RUNTIME_USERS`, `AGENT_SKILLS_REPO_URL`, `AGENT_SKILLS_REF`, `AGENT_SKILLS_DIR`, `AGENT_SKILLS_PLUGINS` | — (system-wide; always installs) |
 | `agent-update.service` | `/etc/systemd/system/agent-update.service` | root:root | 644 | — | — (system-wide; always installs) |
 | `agent-update.timer` | `/etc/systemd/system/agent-update.timer` | root:root | 644 | — | — (system-wide; always installs) |
 | `claude-shared-auth-perms.sh` | `/usr/local/bin/claude-shared-auth-perms` | root:root | 755 | — | shared `/var/lib/claude-shared/` auth only |
@@ -112,7 +112,7 @@ Components:
 
 External `${SERVICE_PREFIX}-dispatch.timer` replaces the in-session `/loop` (which was fragile across tmux/claude respawn). Every 15 minutes, it calls hex-relay `POST /tasks/poll`. hex-relay lists open provider issues with control-plane secrets; empty queues only log, non-empty queues notify the primary operator to use `/tasks` at most once per 24 hours.
 
-External `agent-update.timer` performs system-wide nightly host maintenance. It updates CLIs and plugins, verifies versions/config, then restarts active `*-god@*.service` user instances. Failed updates do not restart running god-sessions.
+External `agent-update.timer` performs system-wide nightly host maintenance. It updates CLIs and plugins, verifies versions/config, then restarts active `*-god@*.service` and `*-god-codex@*.service` user instances. In shared-auth fleets with multiple bot users, render `RUNTIME_USERS` so every user with its own nvm runtime is checked and updated. Failed updates do not restart running god-sessions.
 
 `agent-sandbox.sh` is the work-plane boundary. Each god instance runs with `HOME=${PROJECT_DIR}/.agent-home/users/<telegram_user_id>`. The shared VPS CLI runtime remains single: the sandbox bind-mounts `/home/${BOT_USER}/.claude` and `/home/${BOT_USER}/.codex` as writable directories under sandbox `$HOME` so Claude/Codex can rotate auth tokens and update their runtime state atomically, while the real `/home/${BOT_USER}` path stays hidden.
 

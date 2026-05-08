@@ -87,6 +87,21 @@ test("Claude worktrees branch from local head for god sessions", () => {
   assert.match(refsReadme, /worktree\.baseRef.*head/);
 });
 
+test("Codex hooks use 0.129 command hook shape and SessionStart context passthrough", () => {
+  const codexHooks = readFileSync(join(bootstrapRefs, "codex_hooks_config.md"), "utf8");
+  const shim = readFileSync(join(bootstrapRefs, "scripts/hex-relay-codex-hook.sh"), "utf8");
+
+  assert.match(codexHooks, /\[\[hooks\.SessionStart\.hooks\]\]/);
+  assert.match(codexHooks, /type = "command"/);
+  assert.match(codexHooks, /command = "\/usr\/local\/bin\/hex-relay-codex-hook\.sh SessionStart"/);
+  assert.match(codexHooks, /timeout = 30/);
+  assert.doesNotMatch(codexHooks, /timeout_ms/);
+  assert.doesNotMatch(codexHooks, /\[\[hooks\.PermissionRequest\]\]/);
+  assert.match(codexHooks, /SessionStart.*additionalContext/s);
+  assert.match(shim, /\[\[ "\$EVENT_NAME" == "SessionStart" \]\]/);
+  assert.match(shim, /--data "\$PAYLOAD" "\$URL";/);
+});
+
 test("protected local API examples include bearer auth", () => {
   const operator = readFileSync(join(bootstrapRefs, "operator.CLAUDE.md"), "utf8");
   const verification = readFileSync(join(bootstrapRefs, "verification_recipes.md"), "utf8");

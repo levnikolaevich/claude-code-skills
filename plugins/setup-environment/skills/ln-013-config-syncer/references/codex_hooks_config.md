@@ -4,7 +4,8 @@
 
 > **SCOPE:** Reference for codex hook integration. Loaded only when ln-013-config-syncer aligns codex hooks.
 
-Codex CLI 0.120+ supports a hook system that mirrors Claude Code's. We use it to deliver
+Codex CLI 0.129+ supports the stable hook system documented at
+`https://developers.openai.com/codex/hooks`. We use it to deliver
 the same observability events (UserPromptSubmit, Stop, SessionStart, Pre/PostToolUse) into
 the hex-relay listener so a Codex-driven god-session shows the same Telegram surface as a
 Claude-driven one.
@@ -32,40 +33,49 @@ The block below must be inserted between markers managed by `ln-013-config-synce
 codex_hooks = true
 
 [[hooks.UserPromptSubmit]]
-command = ["/usr/local/bin/hex-relay-codex-hook.sh", "UserPromptSubmit"]
-timeout_ms = 30000
+[[hooks.UserPromptSubmit.hooks]]
+type = "command"
+command = "/usr/local/bin/hex-relay-codex-hook.sh UserPromptSubmit"
+timeout = 30
 
 [[hooks.Stop]]
-command = ["/usr/local/bin/hex-relay-codex-hook.sh", "Stop"]
-timeout_ms = 30000
+[[hooks.Stop.hooks]]
+type = "command"
+command = "/usr/local/bin/hex-relay-codex-hook.sh Stop"
+timeout = 30
 
 [[hooks.SessionStart]]
-command = ["/usr/local/bin/hex-relay-codex-hook.sh", "SessionStart"]
-timeout_ms = 30000
+[[hooks.SessionStart.hooks]]
+type = "command"
+command = "/usr/local/bin/hex-relay-codex-hook.sh SessionStart"
+timeout = 30
 
 [[hooks.PreToolUse]]
-command = ["/usr/local/bin/hex-relay-codex-hook.sh", "PreToolUse"]
-timeout_ms = 30000
+[[hooks.PreToolUse.hooks]]
+type = "command"
+command = "/usr/local/bin/hex-relay-codex-hook.sh PreToolUse"
+timeout = 30
 
 [[hooks.PostToolUse]]
-command = ["/usr/local/bin/hex-relay-codex-hook.sh", "PostToolUse"]
-timeout_ms = 30000
-
-[[hooks.PermissionRequest]]
-command = ["/usr/local/bin/hex-relay-codex-hook.sh", "PermissionRequest"]
-timeout_ms = 30000
+[[hooks.PostToolUse.hooks]]
+type = "command"
+command = "/usr/local/bin/hex-relay-codex-hook.sh PostToolUse"
+timeout = 30
 # END ln-013 managed codex hooks
 ```
 
 Notes:
 
 - Codex does not emit `StopFailure` or `SubagentStop`. Those routes stay Claude-only.
-- `timeout_ms` is set to 30s to align with Codex's default upper bound. The shim itself
+- Do not configure `PermissionRequest` for hex-relay until the relay has a dedicated
+  route for it. Posting it to `/hook/permission-request` only creates swallowed 404s.
+- `timeout` is set to 30s. The shim itself
   uses a 5s curl timeout and always exits 0; the larger Codex-side budget tolerates slow
   relay startup without breaking turns.
-- `PermissionRequest` is included because the relay's hook routes treat unknown event
-  types soft-validated (`z.passthrough()`); future relay support can consume them without
-  another config rewrite.
+- Codex 0.129 added `/hooks` browsing/toggling. Use it for diagnosis, but keep this
+  user-scope block as the source of truth installed by setup skills.
+- Codex 0.129 also added compact lifecycle hooks. Do not wire `PreCompact` or
+  `PostCompact` to hex-relay yet; the relay has no stable behavior for those events.
 
 ## 3. Trust requirement for project-scope configs
 
@@ -108,3 +118,8 @@ Expected:
 If the shim is missing or `/usr/local/bin/hex-relay-codex-hook.sh` is not executable,
 Codex will print `hook command not found` once at startup and skip the hook. The TUI
 itself stays usable — hex-relay simply degrades to claude-only observability.
+
+`SessionStart` is the only event where the shim returns relay stdout to Codex. This lets
+hex-relay's existing SessionStart `additionalContext` response inject memories and dispatch
+history into Codex sessions. Other events stay silent so status/outbox telemetry cannot
+pollute the Codex turn.

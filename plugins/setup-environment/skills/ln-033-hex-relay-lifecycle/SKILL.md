@@ -7,7 +7,7 @@ allowed-tools: Bash, Read, mcp__hex-ssh__remote-ssh, mcp__hex-ssh__ssh-read-line
 
 <!-- markdownlint-disable MD012 MD022 MD032 MD040 MD041 MD060 -->
 
-> **Paths:** File paths (`references/agents/hex-relay/`, `../ln-030-vps-bootstrap/references/`) are relative to this skill directory.
+> **Paths:** File paths are relative to this skill directory. Shared ln-030 references use `../ln-030-vps-bootstrap/references/`; product docs use explicit repo-relative hops like `../../../../agents/hex-relay/README.md`.
 
 # ln-033-hex-relay-lifecycle
 
@@ -28,7 +28,7 @@ hex-relay 0.4+ routes per Telegram operator between Claude and Codex god-session
 ## MANDATORY READ
 
 **MANDATORY READ:** Load `references/worker_runtime_contract.md`, `references/coordinator_summary_contract.md`, and `references/vps_runtime_contract.md`
-**MANDATORY READ:** Load `../ln-030-vps-bootstrap/references/hex_relay_deploy.md`, `../ln-030-vps-bootstrap/references/verification_recipes.md`, `agents/hex-relay/README.md`, `agents/hex-relay/docs/redeploy.md`, and `agents/hex-relay/docs/telegram-operator-runbook.md`
+**MANDATORY READ:** Load `../ln-030-vps-bootstrap/references/hex_relay_deploy.md`, `../ln-030-vps-bootstrap/references/verification_recipes.md`, `../../../../agents/hex-relay/README.md`, `../../../../agents/hex-relay/docs/redeploy.md`, and `../../../../agents/hex-relay/docs/telegram-operator-runbook.md`
 
 ---
 
@@ -84,6 +84,7 @@ For `redeploy`, follow `agents/hex-relay/docs/redeploy.md`:
 - upload source
 - rebuild with `npm ci && npm run build`
 - restart service
+- run the post-deploy gate in `hex_relay_deploy.md`, including agent CLI/version freshness and skills/plugin cache consistency if god sessions were restarted
 
 ### Phase 4: Users And Telegram
 
@@ -99,8 +100,12 @@ Verify:
 
 Verify:
 - `${SERVICE_PREFIX}-hex-relay.service` (`is-active` + `NRestarts == 0` + `MainPID` listening on `${RELAY_HOOK_PORT}`)
-- `GET /health` returns `ok:true`, `god_session_ready:true`, `inbound_failed:0`, `outbox_abandoned:0`, and exposes `pending_fanout_acks_total` (non-negative integer; advances when fan-out delivery to multiple agents acks pending replies)
-- DB schema migration ran on this restart: `user_buddy.agent` column exists (`PRAGMA table_info(user_buddy)`), `messages.agent` and `pending_replies.agent` columns exist. Migrations auto-run during relay startup; an empty schema check in the journal at boot is the only required evidence.
+- `GET /health` returns `ok:true`, `inbound_failed:0`, `outbox_abandoned:0`, and exposes `pending_fanout_acks_total` (non-negative integer; advances when fan-out delivery to multiple agents acks pending replies). `god_session_ready:true` is required when an active god session is expected.
+- if mandatory idle shutdown has stopped an idle god session, `god_session_ready:false` is acceptable only when `/ready` is 200, no inbound turn is pending, and journals show no auth/permission/session crash; record this as `idle_stopped`, not a failure
+- project `.claude/settings.json` includes every expected hook, project `RELAY_HOOK_PORT`, Bearer auth headers, and no unresolved placeholders; unauthenticated hook smoke returns 401 and authenticated valid `SessionStart` returns 200
+- Telegram commands are registered and verified in both default and `all_private_chats` scopes with the current command list
+- agent runtime freshness is still valid after redeploy: Claude/Codex CLI versions current, selected LevNikolaevich plugins enabled, and Claude/Codex plugin caches/metadata match `${AGENT_SKILLS_DIR}`
+- DB schema migration ran on this restart: `user_buddy.agent` column exists (`PRAGMA table_info(user_buddy)`), `messages.agent` and `pending_reply.agent` columns exist. Migrations auto-run during relay startup; an empty schema check in the journal at boot is the only required evidence.
 - `relay.db` schema (sessions has `created_by_user_id`, messages has `from_user_id`, outbox has `event_type`)
 - outbox/dispatch/todo state smoke
 - `${SERVICE_PREFIX}-dispatch.timer` is `active` (not just enabled) and `LastTriggerUSec` is populated; `journalctl -u ${SERVICE_PREFIX}-dispatch.service --since '24h ago'` shows at least one Started/Finished pair after the most recent install or redeploy
@@ -130,10 +135,12 @@ Write a `vps-hex-relay-lifecycle` summary artifact with deploy/redeploy/user-syn
 - [ ] `${SERVICE_PREFIX}-hex-relay.service` active or planned.
 - [ ] Product was built with `npm ci && npm run build` for deploy/redeploy.
 - [ ] `/health` returns expected service and god-session fields, including `inbound_failed:0` / `outbox_abandoned:0`.
+- [ ] Hook settings and hook auth smoke verified after deploy/redeploy.
 - [ ] `${SERVICE_PREFIX}-dispatch.timer` is `active` (not only `enabled`); next-fire timestamp present.
 - [ ] god/tmux parity verified for every active `${SERVICE_PREFIX}-god@<id>.service`.
 - [ ] Multi-line `-`-prefixed smoke payload delivered with `attempts=0` after deploy/redeploy.
-- [ ] Telegram commands and declared users are verified or explicitly gated.
+- [ ] Telegram commands are verified in default and `all_private_chats` scopes; declared users are verified or explicitly gated.
+- [ ] Agent CLI freshness and LevNikolaevich skills/plugin cache consistency verified after redeploy or reported as host-runtime drift.
 - [ ] `dry_run=true` / `verify_only` performed no mutation.
 - [ ] Structured `vps-hex-relay-lifecycle` summary artifact written.
 

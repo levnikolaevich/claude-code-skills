@@ -6,6 +6,7 @@
 #   1. Read stdin JSON
 #   2. Inject "agent": "codex" so the relay's agent-aware schemas accept the payload
 #   3. POST to http://127.0.0.1:${RELAY_HOOK_PORT}/hook/<kebab-cased-event>
+#   4. For SessionStart only, preserve relay stdout so Codex receives additionalContext
 #
 # Arguments:
 #   $1 — Codex event name in CamelCase (UserPromptSubmit, Stop, SessionStart,
@@ -60,10 +61,18 @@ fi
 
 URL="http://127.0.0.1:${PORT}/hook/${KEBAB}"
 
-if ! curl -sS --max-time 5 -X POST -H 'Content-Type: application/json' \
-     -H "Authorization: Bearer ${RELAY_HTTP_TOKEN}" \
-     --data "$PAYLOAD" "$URL" >/dev/null 2>&1; then
-  warn "POST $URL failed (event=$EVENT_NAME); soft-failing"
+if [[ "$EVENT_NAME" == "SessionStart" ]]; then
+  if ! curl -sS --max-time 5 -X POST -H 'Content-Type: application/json' \
+       -H "Authorization: Bearer ${RELAY_HTTP_TOKEN}" \
+       --data "$PAYLOAD" "$URL"; then
+    warn "POST $URL failed (event=$EVENT_NAME); soft-failing"
+  fi
+else
+  if ! curl -sS --max-time 5 -X POST -H 'Content-Type: application/json' \
+       -H "Authorization: Bearer ${RELAY_HTTP_TOKEN}" \
+       --data "$PAYLOAD" "$URL" >/dev/null 2>&1; then
+    warn "POST $URL failed (event=$EVENT_NAME); soft-failing"
+  fi
 fi
 
 exit 0

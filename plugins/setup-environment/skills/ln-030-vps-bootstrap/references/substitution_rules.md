@@ -13,7 +13,7 @@ All files in `references/` **except** `dispatcher.md.template` use `${VAR}` plac
 `envsubst` without an explicit allow-list will substitute **every** `${...}` it sees, including bash variables that should remain literal (e.g. `${SESSIONS_DIR}`, `${SID}` in `god-session.sh`, `${VPS_*}` in operator-side files). Always use the allow-list form:
 
 ```bash
-envsubst '$PROJECT_NAME $PROJECT_DIR $SERVICE_PREFIX $BOT_USER $RELAY_HOOK_PORT $RELAY_HTTP_TOKEN $DISPATCH_COMMAND_NAME $TELEGRAM_CHAT_ID $GIT_PROVIDER $REPO_SLUG $REPO_URL $REPO_REF $AGENT_SKILLS_REPO_URL $AGENT_SKILLS_REF $AGENT_SKILLS_DIR $AGENT_SKILLS_PLUGINS' \
+envsubst '$PROJECT_NAME $PROJECT_DIR $SERVICE_PREFIX $BOT_USER $RUNTIME_USERS $RELAY_HOOK_PORT $RELAY_HTTP_TOKEN $DISPATCH_COMMAND_NAME $TELEGRAM_CHAT_ID $GIT_PROVIDER $REPO_SLUG $REPO_URL $REPO_REF $AGENT_SKILLS_REPO_URL $AGENT_SKILLS_REF $AGENT_SKILLS_DIR $AGENT_SKILLS_PLUGINS' \
   < references/X > /tmp/X
 ```
 
@@ -26,6 +26,8 @@ Always include it in the envsubst allow-list (default value `${SERVICE_PREFIX}-d
 ### Why `$AGENT_SKILLS_*` matters
 
 `agent-update.sh` and `codex-config.toml.template` render the LevNikolaevich marketplace source, ref, install directory, and selected plugin list. Forgetting these variables leaves literal placeholders in the nightly update script or Codex config, so the VPS either fails fast or loads no usable marketplace plugins.
+
+`RUNTIME_USERS` is optional for `agent-update.sh`. Leave it unset for the single `${BOT_USER}` model; set it to a comma-separated list such as `btc-bot,prompsit-bot,civic-bot` for shared-auth fleets where multiple bot users need fresh Claude/Codex CLIs and Codex marketplace config.
 
 ## Operator-side template (runtime resolution)
 

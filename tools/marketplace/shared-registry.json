@@ -404,20 +404,6 @@
     ]
   },
   {
-    "source": "shared/references/agent_runtime_install.md",
-    "kind": "reference",
-    "targets": [
-      {
-        "skill": "plugins/setup-environment/skills/ln-030-vps-bootstrap",
-        "path": "references/agent_runtime_install.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-031-vps-host-runtime",
-        "path": "references/agent_runtime_install.md"
-      }
-    ]
-  },
-  {
     "source": "shared/references/agent_skill_roots_contract.md",
     "kind": "reference",
     "targets": [
@@ -790,26 +776,6 @@
       {
         "skill": "plugins/setup-environment/skills/ln-015-hex-line-uninstaller",
         "path": "references/audit_scoring.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-030-vps-bootstrap",
-        "path": "references/audit_scoring.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-031-vps-host-runtime",
-        "path": "references/audit_scoring.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-032-vps-project-runtime",
-        "path": "references/audit_scoring.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-033-hex-relay-lifecycle",
-        "path": "references/audit_scoring.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-034-vps-environment-diagnostics",
-        "path": "references/audit_scoring.md"
       }
     ]
   },
@@ -980,26 +946,6 @@
       {
         "skill": "plugins/setup-environment/skills/ln-015-hex-line-uninstaller",
         "path": "references/audit_summary_contract.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-030-vps-bootstrap",
-        "path": "references/audit_summary_contract.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-031-vps-host-runtime",
-        "path": "references/audit_summary_contract.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-032-vps-project-runtime",
-        "path": "references/audit_summary_contract.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-033-hex-relay-lifecycle",
-        "path": "references/audit_summary_contract.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-034-vps-environment-diagnostics",
-        "path": "references/audit_summary_contract.md"
       }
     ]
   },
@@ -1165,26 +1111,6 @@
       },
       {
         "skill": "plugins/setup-environment/skills/ln-015-hex-line-uninstaller",
-        "path": "references/audit_worker_core_contract.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-030-vps-bootstrap",
-        "path": "references/audit_worker_core_contract.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-031-vps-host-runtime",
-        "path": "references/audit_worker_core_contract.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-032-vps-project-runtime",
-        "path": "references/audit_worker_core_contract.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-033-hex-relay-lifecycle",
-        "path": "references/audit_worker_core_contract.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-034-vps-environment-diagnostics",
         "path": "references/audit_worker_core_contract.md"
       }
     ]
@@ -1782,26 +1708,6 @@
       {
         "skill": "plugins/setup-environment/skills/ln-015-hex-line-uninstaller",
         "path": "references/coordinator_summary_contract.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-030-vps-bootstrap",
-        "path": "references/coordinator_summary_contract.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-031-vps-host-runtime",
-        "path": "references/coordinator_summary_contract.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-032-vps-project-runtime",
-        "path": "references/coordinator_summary_contract.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-033-hex-relay-lifecycle",
-        "path": "references/coordinator_summary_contract.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-034-vps-environment-diagnostics",
-        "path": "references/coordinator_summary_contract.md"
       }
     ]
   },
@@ -2326,26 +2232,6 @@
       {
         "skill": "plugins/setup-environment/skills/ln-015-hex-line-uninstaller",
         "path": "references/environment_worker_runtime_contract.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-030-vps-bootstrap",
-        "path": "references/environment_worker_runtime_contract.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-031-vps-host-runtime",
-        "path": "references/environment_worker_runtime_contract.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-032-vps-project-runtime",
-        "path": "references/environment_worker_runtime_contract.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-033-hex-relay-lifecycle",
-        "path": "references/environment_worker_runtime_contract.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-034-vps-environment-diagnostics",
-        "path": "references/environment_worker_runtime_contract.md"
       }
     ]
   },
@@ -2758,34 +2644,6 @@
       {
         "skill": "plugins/documentation-pipeline/skills/ln-162-skill-reviewer",
         "path": "references/goal_articulation_gate.md"
-      }
-    ]
-  },
-  {
-    "source": "shared/references/god_session_install.md",
-    "kind": "reference",
-    "targets": [
-      {
-        "skill": "plugins/setup-environment/skills/ln-030-vps-bootstrap",
-        "path": "references/god_session_install.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-032-vps-project-runtime",
-        "path": "references/god_session_install.md"
-      }
-    ]
-  },
-  {
-    "source": "shared/references/hex_relay_deploy.md",
-    "kind": "reference",
-    "targets": [
-      {
-        "skill": "plugins/setup-environment/skills/ln-030-vps-bootstrap",
-        "path": "references/hex_relay_deploy.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-033-hex-relay-lifecycle",
-        "path": "references/hex_relay_deploy.md"
       }
     ]
   },
@@ -3204,10 +3062,6 @@
       {
         "skill": "plugins/documentation-pipeline/skills/ln-162-skill-reviewer",
         "path": "references/mcp_applicability_matrix.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-030-vps-bootstrap",
-        "path": "references/mcp_applicability_matrix.md"
       }
     ]
   },
@@ -3345,10 +3199,6 @@
       },
       {
         "skill": "plugins/setup-environment/skills/ln-020-codegraph",
-        "path": "references/mcp_integration_patterns.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-030-vps-bootstrap",
         "path": "references/mcp_integration_patterns.md"
       }
     ]
@@ -3503,10 +3353,6 @@
       },
       {
         "skill": "plugins/setup-environment/skills/ln-020-codegraph",
-        "path": "references/mcp_tool_preferences.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-030-vps-bootstrap",
         "path": "references/mcp_tool_preferences.md"
       }
     ]
@@ -3670,10 +3516,6 @@
       {
         "skill": "plugins/setup-environment/skills/ln-010-dev-environment-setup",
         "path": "references/meta_analysis_protocol.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-030-vps-bootstrap",
-        "path": "references/meta_analysis_protocol.md"
       }
     ]
   },
@@ -3744,20 +3586,6 @@
       {
         "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
         "path": "references/numbering_conventions.md"
-      }
-    ]
-  },
-  {
-    "source": "shared/references/operator_dispatcher_install.md",
-    "kind": "reference",
-    "targets": [
-      {
-        "skill": "plugins/setup-environment/skills/ln-030-vps-bootstrap",
-        "path": "references/operator_dispatcher_install.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-032-vps-project-runtime",
-        "path": "references/operator_dispatcher_install.md"
       }
     ]
   },
@@ -3934,26 +3762,6 @@
       {
         "skill": "plugins/setup-environment/skills/ln-015-hex-line-uninstaller",
         "path": "references/planning_worker_runtime_contract.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-030-vps-bootstrap",
-        "path": "references/planning_worker_runtime_contract.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-031-vps-host-runtime",
-        "path": "references/planning_worker_runtime_contract.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-032-vps-project-runtime",
-        "path": "references/planning_worker_runtime_contract.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-033-hex-relay-lifecycle",
-        "path": "references/planning_worker_runtime_contract.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-034-vps-environment-diagnostics",
-        "path": "references/planning_worker_runtime_contract.md"
       }
     ]
   },
@@ -4052,38 +3860,6 @@
       {
         "skill": "plugins/documentation-pipeline/skills/ln-162-skill-reviewer",
         "path": "references/procedural_skill_sop_guide.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-030-vps-bootstrap",
-        "path": "references/procedural_skill_sop_guide.md"
-      }
-    ]
-  },
-  {
-    "source": "shared/references/project_repo_bootstrap.md",
-    "kind": "reference",
-    "targets": [
-      {
-        "skill": "plugins/setup-environment/skills/ln-030-vps-bootstrap",
-        "path": "references/project_repo_bootstrap.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-032-vps-project-runtime",
-        "path": "references/project_repo_bootstrap.md"
-      }
-    ]
-  },
-  {
-    "source": "shared/references/provider_credentials.md",
-    "kind": "reference",
-    "targets": [
-      {
-        "skill": "plugins/setup-environment/skills/ln-030-vps-bootstrap",
-        "path": "references/provider_credentials.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-032-vps-project-runtime",
-        "path": "references/provider_credentials.md"
       }
     ]
   },
@@ -4275,26 +4051,6 @@
       },
       {
         "skill": "plugins/setup-environment/skills/ln-015-hex-line-uninstaller",
-        "path": "references/quality_worker_runtime_contract.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-030-vps-bootstrap",
-        "path": "references/quality_worker_runtime_contract.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-031-vps-host-runtime",
-        "path": "references/quality_worker_runtime_contract.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-032-vps-project-runtime",
-        "path": "references/quality_worker_runtime_contract.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-033-hex-relay-lifecycle",
-        "path": "references/quality_worker_runtime_contract.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-034-vps-environment-diagnostics",
         "path": "references/quality_worker_runtime_contract.md"
       }
     ]
@@ -4582,50 +4338,6 @@
     ]
   },
   {
-    "source": "shared/references/scope_layers.md",
-    "kind": "reference",
-    "targets": [
-      {
-        "skill": "plugins/setup-environment/skills/ln-030-vps-bootstrap",
-        "path": "references/scope_layers.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-031-vps-host-runtime",
-        "path": "references/scope_layers.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-032-vps-project-runtime",
-        "path": "references/scope_layers.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-034-vps-environment-diagnostics",
-        "path": "references/scope_layers.md"
-      }
-    ]
-  },
-  {
-    "source": "shared/references/shared_auth_state.md",
-    "kind": "reference",
-    "targets": [
-      {
-        "skill": "plugins/setup-environment/skills/ln-030-vps-bootstrap",
-        "path": "references/shared_auth_state.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-031-vps-host-runtime",
-        "path": "references/shared_auth_state.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-032-vps-project-runtime",
-        "path": "references/shared_auth_state.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-034-vps-environment-diagnostics",
-        "path": "references/shared_auth_state.md"
-      }
-    ]
-  },
-  {
     "source": "shared/references/skill_contract.md",
     "kind": "reference",
     "targets": [
@@ -4635,10 +4347,6 @@
       },
       {
         "skill": "plugins/documentation-pipeline/skills/ln-162-skill-reviewer",
-        "path": "references/skill_contract.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-030-vps-bootstrap",
         "path": "references/skill_contract.md"
       }
     ]
@@ -4828,20 +4536,6 @@
     ]
   },
   {
-    "source": "shared/references/substitution_rules.md",
-    "kind": "reference",
-    "targets": [
-      {
-        "skill": "plugins/setup-environment/skills/ln-030-vps-bootstrap",
-        "path": "references/substitution_rules.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-031-vps-host-runtime",
-        "path": "references/substitution_rules.md"
-      }
-    ]
-  },
-  {
     "source": "shared/references/task_delegation_pattern.md",
     "kind": "reference",
     "targets": [
@@ -4918,26 +4612,6 @@
       {
         "skill": "plugins/setup-environment/skills/ln-015-hex-line-uninstaller",
         "path": "references/task_plan_worker_runtime_contract.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-030-vps-bootstrap",
-        "path": "references/task_plan_worker_runtime_contract.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-031-vps-host-runtime",
-        "path": "references/task_plan_worker_runtime_contract.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-032-vps-project-runtime",
-        "path": "references/task_plan_worker_runtime_contract.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-033-hex-relay-lifecycle",
-        "path": "references/task_plan_worker_runtime_contract.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-034-vps-environment-diagnostics",
-        "path": "references/task_plan_worker_runtime_contract.md"
       }
     ]
   },
@@ -4997,26 +4671,6 @@
       },
       {
         "skill": "plugins/setup-environment/skills/ln-015-hex-line-uninstaller",
-        "path": "references/task_worker_runtime_contract.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-030-vps-bootstrap",
-        "path": "references/task_worker_runtime_contract.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-031-vps-host-runtime",
-        "path": "references/task_worker_runtime_contract.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-032-vps-project-runtime",
-        "path": "references/task_worker_runtime_contract.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-033-hex-relay-lifecycle",
-        "path": "references/task_worker_runtime_contract.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-034-vps-environment-diagnostics",
         "path": "references/task_worker_runtime_contract.md"
       }
     ]
@@ -5145,26 +4799,6 @@
       },
       {
         "skill": "plugins/setup-environment/skills/ln-015-hex-line-uninstaller",
-        "path": "references/test_planning_worker_runtime_contract.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-030-vps-bootstrap",
-        "path": "references/test_planning_worker_runtime_contract.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-031-vps-host-runtime",
-        "path": "references/test_planning_worker_runtime_contract.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-032-vps-project-runtime",
-        "path": "references/test_planning_worker_runtime_contract.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-033-hex-relay-lifecycle",
-        "path": "references/test_planning_worker_runtime_contract.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-034-vps-environment-diagnostics",
         "path": "references/test_planning_worker_runtime_contract.md"
       }
     ]
@@ -5352,96 +4986,6 @@
     ]
   },
   {
-    "source": "shared/references/verification_recipes_agent_runtime.md",
-    "kind": "reference",
-    "targets": [
-      {
-        "skill": "plugins/setup-environment/skills/ln-030-vps-bootstrap",
-        "path": "references/verification_recipes_agent_runtime.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-034-vps-environment-diagnostics",
-        "path": "references/verification_recipes_agent_runtime.md"
-      }
-    ]
-  },
-  {
-    "source": "shared/references/verification_recipes_common.md",
-    "kind": "reference",
-    "targets": [
-      {
-        "skill": "plugins/setup-environment/skills/ln-030-vps-bootstrap",
-        "path": "references/verification_recipes_common.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-033-hex-relay-lifecycle",
-        "path": "references/verification_recipes_common.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-034-vps-environment-diagnostics",
-        "path": "references/verification_recipes_common.md"
-      }
-    ]
-  },
-  {
-    "source": "shared/references/verification_recipes_project_runtime.md",
-    "kind": "reference",
-    "targets": [
-      {
-        "skill": "plugins/setup-environment/skills/ln-030-vps-bootstrap",
-        "path": "references/verification_recipes_project_runtime.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-034-vps-environment-diagnostics",
-        "path": "references/verification_recipes_project_runtime.md"
-      }
-    ]
-  },
-  {
-    "source": "shared/references/vps_base_install.md",
-    "kind": "reference",
-    "targets": [
-      {
-        "skill": "plugins/setup-environment/skills/ln-030-vps-bootstrap",
-        "path": "references/vps_base_install.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-031-vps-host-runtime",
-        "path": "references/vps_base_install.md"
-      }
-    ]
-  },
-  {
-    "source": "shared/references/vps_runtime_contract.md",
-    "kind": "reference",
-    "targets": [
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/vps_runtime_contract.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-030-vps-bootstrap",
-        "path": "references/vps_runtime_contract.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-031-vps-host-runtime",
-        "path": "references/vps_runtime_contract.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-032-vps-project-runtime",
-        "path": "references/vps_runtime_contract.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-033-hex-relay-lifecycle",
-        "path": "references/vps_runtime_contract.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-034-vps-environment-diagnostics",
-        "path": "references/vps_runtime_contract.md"
-      }
-    ]
-  },
-  {
     "source": "shared/references/worker_runtime_contract.md",
     "kind": "reference",
     "targets": [
@@ -5483,26 +5027,6 @@
       },
       {
         "skill": "plugins/setup-environment/skills/ln-015-hex-line-uninstaller",
-        "path": "references/worker_runtime_contract.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-030-vps-bootstrap",
-        "path": "references/worker_runtime_contract.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-031-vps-host-runtime",
-        "path": "references/worker_runtime_contract.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-032-vps-project-runtime",
-        "path": "references/worker_runtime_contract.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-033-hex-relay-lifecycle",
-        "path": "references/worker_runtime_contract.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-034-vps-environment-diagnostics",
         "path": "references/worker_runtime_contract.md"
       }
     ]
@@ -6114,26 +5638,6 @@
       {
         "skill": "plugins/setup-environment/skills/ln-015-hex-line-uninstaller",
         "path": "references/scripts/planning-worker-runtime/cli.mjs"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-030-vps-bootstrap",
-        "path": "references/scripts/planning-worker-runtime/cli.mjs"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-031-vps-host-runtime",
-        "path": "references/scripts/planning-worker-runtime/cli.mjs"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-032-vps-project-runtime",
-        "path": "references/scripts/planning-worker-runtime/cli.mjs"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-033-hex-relay-lifecycle",
-        "path": "references/scripts/planning-worker-runtime/cli.mjs"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-034-vps-environment-diagnostics",
-        "path": "references/scripts/planning-worker-runtime/cli.mjs"
       }
     ]
   },
@@ -6386,26 +5890,6 @@
       {
         "skill": "plugins/setup-environment/skills/ln-015-hex-line-uninstaller",
         "path": "references/scripts/task-plan-worker-runtime/cli.mjs"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-030-vps-bootstrap",
-        "path": "references/scripts/task-plan-worker-runtime/cli.mjs"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-031-vps-host-runtime",
-        "path": "references/scripts/task-plan-worker-runtime/cli.mjs"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-032-vps-project-runtime",
-        "path": "references/scripts/task-plan-worker-runtime/cli.mjs"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-033-hex-relay-lifecycle",
-        "path": "references/scripts/task-plan-worker-runtime/cli.mjs"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-034-vps-environment-diagnostics",
-        "path": "references/scripts/task-plan-worker-runtime/cli.mjs"
       }
     ]
   },
@@ -6524,26 +6008,6 @@
       {
         "skill": "plugins/setup-environment/skills/ln-015-hex-line-uninstaller",
         "path": "references/scripts/task-worker-runtime/cli.mjs"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-030-vps-bootstrap",
-        "path": "references/scripts/task-worker-runtime/cli.mjs"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-031-vps-host-runtime",
-        "path": "references/scripts/task-worker-runtime/cli.mjs"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-032-vps-project-runtime",
-        "path": "references/scripts/task-worker-runtime/cli.mjs"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-033-hex-relay-lifecycle",
-        "path": "references/scripts/task-worker-runtime/cli.mjs"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-034-vps-environment-diagnostics",
-        "path": "references/scripts/task-worker-runtime/cli.mjs"
       }
     ]
   },
@@ -6631,26 +6095,6 @@
       },
       {
         "skill": "plugins/setup-environment/skills/ln-015-hex-line-uninstaller",
-        "path": "references/scripts/test-planning-worker-runtime/cli.mjs"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-030-vps-bootstrap",
-        "path": "references/scripts/test-planning-worker-runtime/cli.mjs"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-031-vps-host-runtime",
-        "path": "references/scripts/test-planning-worker-runtime/cli.mjs"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-032-vps-project-runtime",
-        "path": "references/scripts/test-planning-worker-runtime/cli.mjs"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-033-hex-relay-lifecycle",
-        "path": "references/scripts/test-planning-worker-runtime/cli.mjs"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-034-vps-environment-diagnostics",
         "path": "references/scripts/test-planning-worker-runtime/cli.mjs"
       }
     ]
@@ -6879,26 +6323,6 @@
       },
       {
         "skill": "plugins/setup-environment/skills/ln-015-hex-line-uninstaller",
-        "path": "references/templates/audit_worker_report_template.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-030-vps-bootstrap",
-        "path": "references/templates/audit_worker_report_template.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-031-vps-host-runtime",
-        "path": "references/templates/audit_worker_report_template.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-032-vps-project-runtime",
-        "path": "references/templates/audit_worker_report_template.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-033-hex-relay-lifecycle",
-        "path": "references/templates/audit_worker_report_template.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-034-vps-environment-diagnostics",
         "path": "references/templates/audit_worker_report_template.md"
       }
     ]

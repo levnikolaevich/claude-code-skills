@@ -121,29 +121,11 @@ Coordinators keep lifecycle status separate from Loop Health: `status` says wher
 
 ## VPS Agent
 
-`ln-030-vps-bootstrap` is the VPS agent coordinator. It turns a Linux VPS into an always-on Claude Code + Codex operator environment by routing the work through four standalone runtime workers: shared host setup, project runtime setup, `hex-relay` lifecycle, and environment diagnostics.
+The former VPS Agent package (`ln-030-vps-bootstrap`, workers `ln-031` through `ln-034`, and `agents/hex-relay`) has moved to the standalone [`hex-bridge`](https://github.com/levnikolaevich/hex-bridge) repository.
 
-`hex-relay` is the Telegram and HTTP control plane deployed by `ln-030`. It runs as a standalone TypeScript product under [`agents/hex-relay/`](agents/hex-relay/), with SQLite-backed state, Telegram ingress, Claude hook ingestion, `/tasks` handoff, memory, dispatch audit, per-user sessions, and durable outbound replies.
+This skills marketplace now keeps only general local setup skills. Use `hex-bridge` for Telegram/HTTP relay runtime, VPS bootstrap, project runtime provisioning, worker orchestration, diagnostics, and the planned Telegram workspace architecture.
 
-The important design point: one VPS can share a single agent user and shared Claude/Codex auth while keeping project and Telegram-user runtime state isolated. Each allowed Telegram user gets their own `${SERVICE_PREFIX}-god-<telegram_user_id>` tmux target, sandbox HOME under `${PROJECT_DIR}/.agent-home/users/<id>/`, session cache, resume state, and access-controlled `/sessions` view. The work-plane cannot read provider tokens, Telegram tokens, relay DB files, sibling project dirs, or host systemd; `hex-relay` owns that control-plane boundary.
-
-Operator-facing features:
-- `/tasks` lists provider issues using control-plane credentials and injects exactly one selected task into the clicking user's current session.
-- `/new_session` and `/sessions` manage per-user Claude sessions without mixing user histories.
-- `/users` supports pending/allowed/blocked access management from Telegram.
-- Claude final replies, progress status, dispatch audit, and persistent memory flow through SQLite-backed queues instead of ad hoc chat scraping.
-
-Use this path when you want one VPS to host autonomous project work that can be supervised from Telegram. The same entrypoint handles a fresh VPS, a second project on an existing VPS, `hex-relay` redeploys, diagnostics, and declarative fleet `plan/apply` from the VPS-local `/etc/agent-fleet/environments/*.yaml` registry.
-
-```bash
-ln-030-vps-bootstrap  # coordinator: host runtime + project runtime + optional hex-relay + diagnostics
-```
-
-Key docs:
-- [ln-030 SKILL.md](plugins/setup-environment/skills/ln-030-vps-bootstrap/SKILL.md) — coordinator workflow, worker invocation, fleet modes, and Definition of Done.
-- [Fleet registry contract](plugins/setup-environment/skills/ln-030-vps-bootstrap/references/fleet_registry.md) — declarative environment registry for VPS reuse and fleet `plan/apply`.
-- [hex-relay README](agents/hex-relay/README.md) — product architecture, environment, runtime behavior, API, database, and deployment.
-- [hex-relay Telegram runbook](agents/hex-relay/docs/telegram-operator-runbook.md) — BotFather hardening, menu commands, and multi-user onboarding.
+The preserved VPS environment template is kept at [`docs/examples/hex_bridge_vps.env.example`](docs/examples/hex_bridge_vps.env.example) for reference; active runtime configuration lives in the standalone `hex-bridge` repository.
 
 ---
 
@@ -658,17 +640,10 @@ claude-code-skills/                      # MARKETPLACE
 |   |-- ln-014-agent-instructions-manager/ # Single owner of CLAUDE.md/AGENTS.md creation and audit
 |   |-- ln-015-hex-line-uninstaller/   # Standalone cleanup for Claude-side hex-line integration
 |-- ln-020-codegraph/                  # Code knowledge graph for dependency analysis & impact checking
-|-- ln-030-vps-bootstrap/              # L2: VPS agent coordinator and fleet plan/apply entrypoint
-|   |-- ln-031-vps-host-runtime/       # Shared VPS host runtime: users, packages, CLIs, MCP, plugins
-|   |-- ln-032-vps-project-runtime/    # Per-project VPS runtime, god-session, provider creds, dispatcher
-|   |-- ln-033-hex-relay-lifecycle/    # hex-relay deploy, redeploy, migration, health, Telegram users
-|   |-- ln-034-vps-environment-diagnostics/ # One environment health, drift, and bounded safe repair
 |
 |  └──────────────────────────────────────────────┘
 |
 |
-|-- agents/
-|   |-- hex-relay/                       # Telegram/HTTP control plane deployed by ln-030
 |-- docs/
 |   |-- architecture/                  # Skill patterns & delegation runtime
 |   |-- best-practice/                 # Claude Code usage tips & component selection

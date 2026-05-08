@@ -2,11 +2,11 @@
 
 # Research Tool Fallback
 
-<!-- SCOPE: Runtime fallback chain for documentation/standards research. Read provider from `.hex-skills/environment_state.json` -> `research`, execute in priority order, and mark provenance per `references/epistemic_protocol.md`. -->
+<!-- SCOPE: Runtime fallback chain for documentation/standards research. -->
 
 ## Fallback Chain
 
-Execute in order and stop at the first successful result:
+Read `.hex-skills/environment_state.json` -> `research`, execute configured tools in priority order, and stop at the first successful result:
 
 | Priority | Tool | Condition | Trust |
 |----------|------|-----------|-------|
@@ -20,10 +20,9 @@ Execute in order and stop at the first successful result:
 
 ## Runtime Rules
 
-1. Read `.hex-skills/environment_state.json` -> `research.provider` and fallback chain.
-2. Try configured tools in priority order.
-3. On tool error, warn once, mark that tool unavailable for the session, and continue.
-4. If every tool fails, use built-in knowledge only with an explicit freshness disclaimer.
+1. Try configured tools in priority order.
+2. On tool error, warn once, mark that tool unavailable for the session, and continue.
+3. If every tool fails, use built-in knowledge only with an explicit freshness disclaimer.
 
 ---
 **Version:** 2.0.0

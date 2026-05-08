@@ -2,13 +2,11 @@
 
 # Audit Summary Contract
 
-Audit payload rules for 6XX workers running on the evaluation-worker summary envelope.
-
-Audit coordinators consume evaluation-worker JSON summaries first and read markdown worker reports only for detailed evidence.
+Audit payload rules for 6XX workers using the evaluation-worker summary envelope. Coordinators consume JSON summaries first and read markdown reports only for detailed evidence.
 
 ## Envelope
 
-Audit workers use the shared evaluation-worker envelope:
+Audit workers emit the shared evaluation-worker envelope:
 
 ```json
 {
@@ -29,17 +27,10 @@ Audit workers use the shared evaluation-worker envelope:
 ```
 
 Rules:
-- `summary_kind` for 6XX workers is `evaluation-worker`.
-- `run_id` is mandatory for every audit summary envelope.
-- If the caller does not pass `runId`, the worker generates a standalone `run_id` before emitting the summary.
-- `identifier` must be stable inside the run.
-- Use the domain or target only. Worker disambiguation belongs in the artifact filename, not the envelope identifier.
-- Audit-specific fields live under `payload.audit`; the top-level payload keeps the required evaluation-worker fields.
-
-Examples:
-- `docs-readme`
-- `users`
-- `job-processing`
+- `summary_kind` is `evaluation-worker`.
+- `run_id` is mandatory; generate a standalone `run_id` when the caller does not pass one.
+- `identifier` is stable inside the run and names the domain/target only.
+- audit-specific fields live under `payload.audit`.
 
 ## Payload
 
@@ -60,42 +51,18 @@ Required `payload.audit` fields:
 }
 ```
 
-Allowed `payload.status` values:
-- `completed` - worker finished normally and produced a usable report
-- `skipped` - worker was intentionally skipped for scope or applicability reasons
-- `error` - worker could not finish normally; report may contain partial evidence
+Allowed `payload.status`: `completed`, `skipped`, `error`. `complete` is invalid.
 
-`complete` is invalid. Use `completed`.
+Optional audit fields: `diagnostic_scores`, `domain_name`, `scan_scope`, `metadata`.
 
-Optional payload fields:
-- `diagnostic_scores`
-- `domain_name`
-- `scan_scope`
-- `metadata`
+## Paths
 
-## `summaryArtifactPath`
+When `summaryArtifactPath` is passed, write the JSON summary to that exact path and managed filename, normally `{worker}--{identifier}.json`.
 
-When the coordinator passes `summaryArtifactPath`:
-- write the JSON summary to that exact path
-- use the exact managed filename, normally `{worker}--{identifier}.json`
+When absent, write to the standalone run-scoped path and optionally echo the same summary in structured output.
 
-When `summaryArtifactPath` is absent:
-- write the JSON summary to the standalone run-scoped path
-- optionally echo the same summary in structured output for the caller
-
-## Relationship to Worker Markdown Reports
-
-Every audit worker still writes its markdown report.
-
-The JSON summary is not a replacement for the report. It is the transport contract for:
-- scores
-- severity totals
-- category labels
-- report location
-
-The markdown report remains the evidence artifact for findings tables and extended data blocks.
-
-## Canonical Paths
-
+Canonical paths:
 - managed: `.hex-skills/runtime-artifacts/runs/{parent_run_id}/evaluation-worker/{worker}--{identifier}.json`
 - standalone: `.hex-skills/runtime-artifacts/runs/{run_id}/evaluation-worker/{worker}--{identifier}.json`
+
+The JSON summary is the transport contract for scores, severity totals, category labels, and report location. The markdown report remains the evidence artifact for findings tables and extended data.

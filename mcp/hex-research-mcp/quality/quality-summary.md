@@ -4,10 +4,10 @@ Release readiness: Server MVP verified on deterministic fixtures with npm packag
 
 | Metric | Value |
 |---|---:|
-| MCP tools covered | 15/15 |
-| Eval scenarios | 15 |
+| MCP tools covered | 16/16 |
+| Eval scenarios | 16 |
 | Benchmark workflows | 5 |
-| Avg estimated benchmark savings | 79.8% |
+| Avg estimated benchmark savings | 78.2% |
 
 Methodology: evals call every registered tool against test/fixtures/project with deterministic assertions and structuredContent/text mirror checks. Benchmark token counts are rough ceil(chars / 4) estimates, not production tokenizer measurements.
 
@@ -28,3 +28,4 @@ Methodology: evals call every registered tool against test/fixtures/project with
 | trace_goal_tree | medium | verified | test/tools.mjs |
 | audit_goal_alignment | medium | verified | test/audit.mjs |
 | export_canvas | high | verified | test/export.mjs |
+| export_research_map | high | verified | test/export.mjs |

@@ -17,7 +17,9 @@ Do not use it for code symbol identity, references, architecture, or edit blast 
 - Run `index_hypotheses({ path })` only when the index is missing, stale, explicitly requested, or current graph state is required.
 - Treat `STALE` as graph debt, not tool failure.
 - Treat `INVALID` from `verify_index` as diagnostic state; `INVALID` from `index_hypotheses` means rebuild failed.
-- Run `export_canvas` with `dry_run: true` before writing.
+- Goal `metrics_current` is derived from explicit comprehensive run manifests; manual `metrics_current` in goal frontmatter is drift.
+- Source quality is derived from `sources`, optional `docs/sources/lib.yaml`, source type inference, and weighted `evidence_depth`.
+- Run `export_canvas` and `export_research_map` with `dry_run: true` before writing.
 - If MCP is unavailable, read split markdown/manifests manually and mark confidence degraded.
 
 ## Intent Routing
@@ -31,7 +33,10 @@ Do not use it for code symbol identity, references, architecture, or edit blast 
 | evidence, citations, benchmark runs | `find_evidence`, `find_runs` |
 | lineage, graph shape, goal tree | `trace_lineage`, `analyze_topology`, `trace_goal_tree` |
 | gaps, drift, readiness | `audit_orphans`, `audit_goal_alignment`, `analyze_progress`, `analyze_proposed` |
-| visual map | `export_canvas` |
+| goal metric drift / missing comprehensive metrics | `inspect_goal`, `audit_goal_alignment` |
+| source quality / evidence depth | `inspect_hypothesis`, `find_evidence`, `analyze_proposed` |
+| field-level diff | `analyze_progress` |
+| visual map / generated research-map.md | `export_canvas`, `export_research_map` |
 
 ## Integration Rules
 

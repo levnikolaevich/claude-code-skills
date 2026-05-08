@@ -15,6 +15,7 @@ export const NEXT_ACTIONS = [
     "trace_goal_tree",
     "review_warnings",
     "merge_canvas",
+    "export_research_map",
     "widen_query",
 ];
 
@@ -49,5 +50,5 @@ export const TOOL_NAMES = [
     "trace_goal_tree",
     "audit_goal_alignment",
     "export_canvas",
+    "export_research_map",
 ];
-

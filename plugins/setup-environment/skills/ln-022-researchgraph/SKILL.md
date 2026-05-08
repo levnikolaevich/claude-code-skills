@@ -1,8 +1,8 @@
 ---
 name: ln-022-researchgraph
-description: "Indexes and queries project research graphs backed by hex-research MCP. Use for hypotheses, goals, benchmark runs, evidence, lineage, and graph audits."
+description: "Indexes and queries project research graphs backed by hex-research MCP. Use for hypotheses, goals, benchmark runs, evidence depth, derived goal metrics, lineage, generated research maps, and graph audits."
 license: MIT
-allowed-tools: Read, Grep, Glob, Bash, mcp__hex-research__verify_index, mcp__hex-research__index_hypotheses, mcp__hex-research__find_hypotheses, mcp__hex-research__inspect_hypothesis, mcp__hex-research__find_evidence, mcp__hex-research__find_runs, mcp__hex-research__trace_lineage, mcp__hex-research__analyze_topology, mcp__hex-research__audit_orphans, mcp__hex-research__inspect_goal, mcp__hex-research__trace_goal_tree, mcp__hex-research__audit_goal_alignment, mcp__hex-research__analyze_progress, mcp__hex-research__analyze_proposed, mcp__hex-research__export_canvas
+allowed-tools: Read, Grep, Glob, Bash, mcp__hex-research__verify_index, mcp__hex-research__index_hypotheses, mcp__hex-research__find_hypotheses, mcp__hex-research__inspect_hypothesis, mcp__hex-research__find_evidence, mcp__hex-research__find_runs, mcp__hex-research__trace_lineage, mcp__hex-research__analyze_topology, mcp__hex-research__audit_orphans, mcp__hex-research__inspect_goal, mcp__hex-research__trace_goal_tree, mcp__hex-research__audit_goal_alignment, mcp__hex-research__analyze_progress, mcp__hex-research__analyze_proposed, mcp__hex-research__export_canvas, mcp__hex-research__export_research_map
 ---
 
 > **Paths:** File paths are relative to this skill directory.
@@ -12,7 +12,7 @@ allowed-tools: Read, Grep, Glob, Bash, mcp__hex-research__verify_index, mcp__hex
 **Type:** Standalone Utility
 **Category:** 0XX Dev Environment
 
-Indexes and queries canonical project research files through `hex-research-mcp`: hypotheses, goals, tasks, sources, benchmark run manifests, evidence links, lineage, and audit gaps.
+Indexes and queries canonical project research files through `hex-research-mcp`: hypotheses, goals, tasks, sources, source library entries, benchmark run manifests, evidence links, derived goal metrics, lineage, generated research maps, and audit gaps.
 
 ## Mandatory Read
 
@@ -32,7 +32,7 @@ Use this skill when the project has any of:
 - `docs/goals/*.md`
 - `benchmark/runs/*/manifest.yaml`
 
-Use it when the user asks about research status, live or pending hypotheses, goal readiness, benchmark evidence, proposal readiness, implementation gaps, drift, or a visual research map.
+Use it when the user asks about research status, live or pending hypotheses, goal readiness, benchmark evidence, source quality, evidence depth, proposal readiness, implementation gaps, drift, field-level changes, or a visual/generated research map.
 
 Do not use this skill for code symbol ownership, call graphs, references, or edit blast radius. Use `ln-021-codegraph` or host `hex-graph` policy for semantic code questions.
 
@@ -80,10 +80,12 @@ The local index is stored under `.hex-skills/researchgraph/` in the target proje
 | graph hubs, disconnected nodes, shape | `analyze_topology` |
 | missing goals, sources, task gaps, drift | `audit_orphans` |
 | goal tree | `trace_goal_tree` |
-| goal readiness and metric coverage | `audit_goal_alignment` |
-| changed research files in current diff | `analyze_progress` |
+| goal readiness, derived metrics, and metric coverage | `inspect_goal`, `audit_goal_alignment` |
+| source quality or evidence depth | `inspect_hypothesis`, `find_evidence`, `analyze_proposed` |
+| changed research files and field-level deltas in current diff | `analyze_progress` |
 | readiness of proposed next hypotheses | `analyze_proposed` |
 | JSON Canvas export | `export_canvas` |
+| generated `docs/research-map.md` export | `export_research_map` |
 
 ### Phase 4: Present Results
 
@@ -93,7 +95,7 @@ Report:
 3. actionable graph debt separately from tool failures
 4. follow-up tool calls when the graph points to a narrower next question
 
-For `export_canvas`, run dry-run first. Write only after dry-run output is useful and the user requested the file.
+For `export_canvas` and `export_research_map`, run dry-run first. Write only after dry-run output is useful and the user requested the file. Treat split files as canonical; generated `research-map.md` is not a second manual source of truth.
 
 ## Manual Fallback
 

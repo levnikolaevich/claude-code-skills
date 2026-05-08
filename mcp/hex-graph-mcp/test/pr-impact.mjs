@@ -13,11 +13,18 @@ function git(cwd, args) {
     return execFileSync("git", args, { cwd, encoding: "utf8" }).replace(/\r\n/g, "\n");
 }
 
+function configureGitLf(cwd) {
+    git(cwd, ["config", "core.autocrlf", "false"]);
+    git(cwd, ["config", "core.eol", "lf"]);
+    git(cwd, ["config", "core.safecrlf", "false"]);
+}
+
 describe("analyze_changes substrate", () => {
     it("summarizes changed symbols from git refs and preserves deleted symbol warnings", async () => {
         const dir = mkdtempSync(join(tmpdir(), "hex-pr-impact-"));
         try {
             git(dir, ["init"]);
+            configureGitLf(dir);
             git(dir, ["config", "user.name", "hex-graph"]);
             git(dir, ["config", "user.email", "hex-graph@example.com"]);
 

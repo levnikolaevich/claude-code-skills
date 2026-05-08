@@ -16,67 +16,68 @@
       "docs/hypotheses/H04.md",
       "docs/hypotheses/H05.md",
       "docs/hypotheses/H06.md",
-      "docs/hypotheses/H90.md"
+      "docs/hypotheses/H90.md",
+      "docs/sources/lib.yaml"
     ],
-    "file_count": 14,
-    "chars": 6952,
-    "estimated_tokens": 1738,
+    "file_count": 15,
+    "chars": 7115,
+    "estimated_tokens": 1779,
     "method": "All Markdown, YAML, and JSON fixture research files; token estimate is ceil(chars / 4)."
   },
   "workflows": [
     {
       "id": "find_live_hypotheses",
       "label": "Find live hypotheses",
-      "baseline_tokens": 1738,
+      "baseline_tokens": 1779,
       "output": {
-        "chars": 416,
-        "estimated_tokens": 104
+        "chars": 607,
+        "estimated_tokens": 152
       },
-      "estimated_savings_percent": 94
+      "estimated_savings_percent": 91.5
     },
     {
       "id": "find_pending_implementation",
       "label": "Find pending implementation",
-      "baseline_tokens": 1738,
+      "baseline_tokens": 1779,
       "output": {
-        "chars": 438,
-        "estimated_tokens": 110
+        "chars": 620,
+        "estimated_tokens": 155
       },
-      "estimated_savings_percent": 93.7
+      "estimated_savings_percent": 91.3
     },
     {
       "id": "inspect_goal",
       "label": "Inspect goal",
-      "baseline_tokens": 1738,
+      "baseline_tokens": 1779,
       "output": {
-        "chars": 2422,
-        "estimated_tokens": 606
+        "chars": 2999,
+        "estimated_tokens": 750
       },
-      "estimated_savings_percent": 65.1
+      "estimated_savings_percent": 57.8
     },
     {
       "id": "trace_lineage",
       "label": "Trace lineage",
-      "baseline_tokens": 1738,
+      "baseline_tokens": 1779,
       "output": {
         "chars": 2207,
         "estimated_tokens": 552
       },
-      "estimated_savings_percent": 68.2
+      "estimated_savings_percent": 69
     },
     {
       "id": "audit_drift_refine_gaps",
       "label": "Audit drift/refine gaps",
-      "baseline_tokens": 1738,
+      "baseline_tokens": 1779,
       "output": {
-        "chars": 1535,
-        "estimated_tokens": 384
+        "chars": 1337,
+        "estimated_tokens": 335
       },
-      "estimated_savings_percent": 77.9
+      "estimated_savings_percent": 81.2
     }
   ],
   "summary": {
     "workflow_count": 5,
-    "average_estimated_savings_percent": 79.8
+    "average_estimated_savings_percent": 78.2
   }
 }

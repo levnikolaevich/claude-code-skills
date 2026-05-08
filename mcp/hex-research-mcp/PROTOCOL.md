@@ -40,6 +40,11 @@ Common warning codes:
 - `task_status_stale`
 - `missing_goal`
 - `no_comprehensive_run_for_goal`
+- `duplicate_yaml_key`
+- `missing_source_definition`
+- `source_type_inferred`
+- `source_type_overridden`
+- `source_type_ambiguous`
 
 ## Selectors
 
@@ -87,7 +92,22 @@ results_path: results.json
 
 `runner_environment` is stored as opaque manifest metadata. The MCP runtime does not depend on a benchmark runner or Python.
 
+Goal `metrics_current` is derived only from explicit comprehensive runs. A targeted or multi-symbol-looking run may appear in `audit_goal_alignment.coverage_candidates`, but it does not satisfy goal metrics until its manifest is explicitly marked comprehensive.
+
+## Source Library and Evidence Depth
+
+Projects may define shared citations in `docs/sources/lib.yaml` under a top-level `sources` map. Hypothesis and goal frontmatter can cite a source by id and add local cite details such as `pages`, `notes`, or `accessed_at`.
+
+Inline source objects remain valid. Library-backed sources use stable ids of the form `source:{id}`. Unknown library ids report `missing_source_definition`.
+
+The indexer infers source type from high-confidence fields and domains such as `doi`, `arxiv_id`, `isbn`, `arxiv.org`, `nber.org`, `sciencedirect.com`, `jstor.org`, `wiley.com`, and `oreilly.com`. Generic `archive` or `website` values may be overridden in storage while preserving `declared_type` in raw payload.
+
+`evidence_depth` is a weighted source-quality summary. Duplicate sources count once per hypothesis or goal.
+
+## Generated Research Map
+
+`export_research_map` generates Markdown from canonical split files. It defaults to `dry_run: true`, includes a `HEX_RESEARCH_GENERATED` marker when written, and refuses to overwrite an unmarked legacy `docs/research-map.md` unless `force: true`.
+
 ## Human Rendering
 
 Clients can render `summary` first, then show bounded arrays such as `hypotheses`, `issues`, `runs`, or `edges`. Heavy tools provide `follow_ups` instead of dumping the full graph.
-

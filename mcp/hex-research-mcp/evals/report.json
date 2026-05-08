@@ -1,7 +1,7 @@
 {
   "generated_at": "fixture-deterministic",
-  "tool_count": 15,
-  "scenario_count": 15,
+  "tool_count": 16,
+  "scenario_count": 16,
   "status": "verified",
   "results": [
     {
@@ -76,6 +76,7 @@
       "output_status": "OK",
       "key_fields": [
         "evidence",
+        "evidence_depth",
         "reason",
         "sources",
         "status",
@@ -148,6 +149,7 @@
       "output_status": "OK",
       "key_fields": [
         "changed_files",
+        "field_deltas",
         "next_action",
         "reason",
         "status",
@@ -162,6 +164,7 @@
       "status": "verified",
       "output_status": "OK",
       "key_fields": [
+        "evidence_depth",
         "follow_ups",
         "issues",
         "proposal",
@@ -212,6 +215,7 @@
       "status": "verified",
       "output_status": "STALE",
       "key_fields": [
+        "coverage_candidates",
         "issues",
         "reason",
         "status",
@@ -227,6 +231,20 @@
       "output_status": "OK",
       "key_fields": [
         "canvas",
+        "reason",
+        "status",
+        "summary"
+      ],
+      "bounded": true,
+      "structured_mirror": true
+    },
+    {
+      "tool": "export_research_map",
+      "description": "exports generated research-map markdown in dry-run mode",
+      "status": "verified",
+      "output_status": "OK",
+      "key_fields": [
+        "markdown",
         "reason",
         "status",
         "summary"

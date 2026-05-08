@@ -7,12 +7,12 @@
     "url": "https://github.com/levnikolaevich/claude-code-skills",
     "source": "github"
   },
-  "version": "1.8.0",
+  "version": "1.8.1",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "@levnikolaevich/hex-ssh-mcp",
-      "version": "1.8.0",
+      "version": "1.8.1",
       "transport": {
         "type": "stdio"
       }

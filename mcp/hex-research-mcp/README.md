@@ -26,6 +26,7 @@ The server indexes a target project root with this layout:
 ```text
 docs/hypotheses/*.md
 docs/goals/*.md
+docs/sources/lib.yaml
 benchmark/runs/*/manifest.yaml
 ```
 
@@ -42,16 +43,59 @@ The SQLite index is written to:
 - `find_hypotheses`: search hypotheses by status, goal, task state, source, priority, or claim.
 - `inspect_hypothesis`: inspect one hypothesis and its linked graph data.
 - `find_evidence`: search evidence entries and cited sources.
-- `find_runs`: search targeted and comprehensive benchmark runs.
+- `find_runs`: search targeted and explicit comprehensive benchmark runs.
 - `trace_lineage`: trace hypothesis lineage and dependency edges.
 - `analyze_topology`: summarize node/edge counts and hubs.
 - `audit_orphans`: report orphan, stale, evidence, source, task, and goal-run gaps.
 - `inspect_goal`: inspect one goal and linked hypotheses.
 - `trace_goal_tree`: trace goal decomposition.
-- `audit_goal_alignment`: audit hypothesis-goal coverage and comprehensive-run metrics.
-- `analyze_progress`: inspect changed research files from git diff.
+- `audit_goal_alignment`: audit hypothesis-goal coverage, explicit comprehensive-run metrics, and coverage candidates.
+- `analyze_progress`: inspect changed research files and field-level frontmatter deltas from git diff.
 - `analyze_proposed`: check readiness gaps for one hypothesis.
 - `export_canvas`: export a JSON Canvas graph.
+- `export_research_map`: generate `docs/research-map.md` from canonical split files.
+
+## Validation and Sources
+
+Goal `metrics_current` is derived during indexing from explicit comprehensive run manifests. Do not write `metrics_current`, `children`, or `achievement_status` in goal frontmatter; `verify_index` reports those as source drift.
+
+Projects may deduplicate citations in `docs/sources/lib.yaml`:
+
+```yaml
+sources:
+  carver-2015-systematic-trading:
+    type: book
+    title: Systematic Trading
+    isbn: "9780857194459"
+    year: 2015
+```
+
+Hypotheses and goals can then cite by id:
+
+```yaml
+sources:
+  - id: carver-2015-systematic-trading
+    pages: "12-14"
+```
+
+Use the validator in Git hooks or CI:
+
+```powershell
+npx -y --package @levnikolaevich/hex-research-mcp hex-research-validate --strict --path .
+```
+
+Example `.pre-commit-config.yaml`:
+
+```yaml
+repos:
+  - repo: local
+    hooks:
+      - id: hex-research-validate
+        name: hex research graph validation
+        entry: npx -y --package @levnikolaevich/hex-research-mcp hex-research-validate --strict --path .
+        language: system
+        pass_filenames: false
+```
 
 ## Fixture Example
 
@@ -71,10 +115,10 @@ Release readiness: Server MVP verified on deterministic fixtures with npm packag
 
 | Metric | Value |
 |---|---:|
-| MCP tools covered | 15/15 |
-| Eval scenarios | 15 |
+| MCP tools covered | 16/16 |
+| Eval scenarios | 16 |
 | Benchmark workflows | 5 |
-| Avg estimated benchmark savings | 79.8% |
+| Avg estimated benchmark savings | 78.2% |
 
 Methodology: evals call every registered tool against test/fixtures/project with deterministic assertions and structuredContent/text mirror checks. Benchmark token counts are rough ceil(chars / 4) estimates, not production tokenizer measurements.
 
@@ -95,6 +139,7 @@ Methodology: evals call every registered tool against test/fixtures/project with
 | trace_goal_tree | medium | verified | test/tools.mjs |
 | audit_goal_alignment | medium | verified | test/audit.mjs |
 | export_canvas | high | verified | test/export.mjs |
+| export_research_map | high | verified | test/export.mjs |
 <!-- HEX_RESEARCH_QUALITY_END -->
 
 ## Goal-Directed Workflow
@@ -103,4 +148,5 @@ Methodology: evals call every registered tool against test/fixtures/project with
 2. Run `index_hypotheses` after edits.
 3. Use `audit_goal_alignment` to find active goals without live hypotheses or comprehensive metrics.
 4. Use `find_hypotheses` and `inspect_hypothesis` for scoped execution.
-5. Use `export_canvas` with `dry_run: true` before writing a graph canvas.
+5. Use `analyze_progress` for field-level frontmatter deltas in current git diff.
+6. Use `export_canvas` or `export_research_map` with `dry_run: true` before writing generated graph artifacts.

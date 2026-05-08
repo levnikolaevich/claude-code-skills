@@ -2,8 +2,11 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { execFileSync } from "node:child_process";
 import { boundedLimit } from "@levnikolaevich/hex-common/runtime/schema";
+import matter from "gray-matter";
 import { auditTaskInvariants, indexProject, verifyProject } from "./indexer.mjs";
 import { dbPathFor, getStore } from "./store.mjs";
+import { parseYamlLite } from "./frontmatter-parser.mjs";
+import { scoreEvidenceDepth } from "./source-utils.mjs";
 
 function projectPath(path) {
     return resolve(path || process.cwd());
@@ -49,6 +52,17 @@ function rowHypothesis(row) {
     };
 }
 
+function sourceRowsForNode(store, nodeId, nodeKind = "hypothesis") {
+    return store.query(`SELECT s.* FROM sources s JOIN node_sources ns ON ns.source_id = s.id
+        WHERE ns.node_id = ? AND ns.node_kind = ? ORDER BY s.type, s.title`, [nodeId, nodeKind])
+        .map(s => ({ ...s, raw_payload: parseJson(s.raw_payload, {}) }));
+}
+
+function hypothesisWithDepth(store, row) {
+    const sources = sourceRowsForNode(store, row.id, "hypothesis");
+    return { ...rowHypothesis(row), evidence_depth: scoreEvidenceDepth(sources) };
+}
+
 function rowGoal(row) {
     return {
         id: row.id,
@@ -79,6 +93,19 @@ function rowRun(row) {
         git_commit: row.git_commit,
         metrics: parseJson(row.metrics, {}),
         raw_manifest: parseJson(row.raw_manifest, {}),
+    };
+}
+
+function metricsCurrentWithProvenance(row) {
+    const current = parseJson(row.metrics_current, null);
+    if (!current) return null;
+    return {
+        ...current,
+        provenance: {
+            source: current.source || "comprehensive_run",
+            run_id: current.run_id || null,
+            git_commit: current.git_commit || null,
+        },
     };
 }
 
@@ -144,7 +171,7 @@ export function findHypotheses(params = {}) {
     const sql = `SELECT h.* FROM hypotheses h ${where.length ? `WHERE ${where.join(" AND ")}` : ""}
         ORDER BY h.priority_tier IS NULL, h.priority_tier ASC, h.last_touched DESC, h.id ASC LIMIT ?`;
     args.push(limit(params.limit));
-    const hypotheses = store.query(sql, args).map(rowHypothesis);
+    const hypotheses = store.query(sql, args).map(row => hypothesisWithDepth(store, row));
     return {
         status: "OK",
         reason: "matched",
@@ -168,16 +195,14 @@ export function inspectHypothesis(params = {}) {
     const tasks = store.query("SELECT t.* FROM tasks t JOIN hypothesis_tasks ht ON ht.task_id = t.id WHERE ht.hypothesis_id = ? ORDER BY t.state, t.id", [row.id]);
     const evidence = store.query("SELECT * FROM evidence WHERE hypothesis_id = ? ORDER BY date DESC, id DESC", [row.id]);
     const runs = store.query("SELECT * FROM runs WHERE hypothesis_id = ? ORDER BY created_at DESC", [row.id]).map(rowRun);
-    const sources = store.query(`SELECT s.* FROM sources s JOIN node_sources ns ON ns.source_id = s.id
-        WHERE ns.node_id = ? AND ns.node_kind = 'hypothesis' ORDER BY s.type, s.title`, [row.id])
-        .map(s => ({ ...s, raw_payload: parseJson(s.raw_payload, {}) }));
+    const sources = sourceRowsForNode(store, row.id, "hypothesis");
     const edges = store.query("SELECT src, dst, src_kind, dst_kind, kind, origin, properties FROM edges WHERE src = ? OR dst = ? ORDER BY kind, src, dst", [row.id, row.id])
         .map(e => ({ ...e, properties: parseJson(e.properties, {}) }));
     return {
         status: "OK",
         reason: "inspected",
         summary: { id: row.id, goals: goals.length, tasks: tasks.length, evidence: evidence.length, runs: runs.length, sources: sources.length },
-        hypothesis: rowHypothesis(row),
+        hypothesis: { ...rowHypothesis(row), evidence_depth: scoreEvidenceDepth(sources) },
         frontmatter: parseJson(row.raw_frontmatter, {}),
         goals,
         tasks,
@@ -209,7 +234,7 @@ export function findEvidence(params = {}) {
         ${sourceWhere.length ? `WHERE ${sourceWhere.join(" AND ")}` : ""}
         ORDER BY s.type, s.title LIMIT ?`, [...sourceArgs, max])
         .map(s => ({ ...s, raw_payload: parseJson(s.raw_payload, {}) }));
-    return { status: "OK", reason: "matched", summary: { evidence: evidence.length, sources: sources.length }, evidence, sources };
+    return { status: "OK", reason: "matched", summary: { evidence: evidence.length, sources: sources.length }, evidence_depth: scoreEvidenceDepth(sources), evidence, sources };
 }
 
 export function findRuns(params = {}) {
@@ -326,14 +351,14 @@ export function inspectGoal(params = {}) {
         ? store.one("SELECT * FROM goals WHERE id = ?", [params.id])
         : store.one("SELECT * FROM goals WHERE lower(claim) LIKE lower(?) ORDER BY last_touched DESC LIMIT 1", [`%${params.claim_substring || ""}%`]);
     if (!row) return { status: "INVALID", reason: "goal_not_found", summary: "No matching goal", warnings: [] };
-    const hypotheses = store.query("SELECT h.* FROM hypotheses h JOIN hypothesis_goals hg ON hg.hypothesis_id = h.id WHERE hg.goal_id = ? ORDER BY h.status, h.id", [row.id]).map(rowHypothesis);
+    const hypotheses = store.query("SELECT h.* FROM hypotheses h JOIN hypothesis_goals hg ON hg.hypothesis_id = h.id WHERE hg.goal_id = ? ORDER BY h.status, h.id", [row.id]).map(h => hypothesisWithDepth(store, h));
     const children = store.query("SELECT g.* FROM goals g JOIN edges e ON e.dst = g.id WHERE e.src = ? AND e.kind = 'decomposes_goal'", [row.id]).map(rowGoal);
     const parents = store.query("SELECT g.* FROM goals g JOIN edges e ON e.src = g.id WHERE e.dst = ? AND e.kind = 'decomposes_goal'", [row.id]).map(rowGoal);
     return {
         status: "OK",
         reason: "inspected",
         summary: { id: row.id, hypotheses: hypotheses.length, children: children.length, parents: parents.length },
-        goal: rowGoal(row),
+        goal: { ...rowGoal(row), metrics_current: metricsCurrentWithProvenance(row), metrics_missing_reason: row.metrics_current ? null : "no_explicit_comprehensive_run_covers_goal" },
         frontmatter: parseJson(row.raw_frontmatter, {}),
         hypotheses,
         children,
@@ -383,6 +408,7 @@ export function auditGoalAlignment(params = {}) {
         if (goal.status === "active" && !live.length) issues.push({ category: "active_goal_without_live_hypothesis", id: goal.id, message: `${goal.id} has no live hypothesis` });
         if (!goal.metrics_current) issues.push({ category: "goal_without_comprehensive_run", id: goal.id, message: `${goal.id} has no derived metrics_current` });
     }
+    const coverageCandidates = goalCoverageCandidates(store);
     for (const h of store.query("SELECT * FROM hypotheses")) {
         const raw = parseJson(h.raw_frontmatter, {});
         const goals = new Set(store.query("SELECT goal_id FROM hypothesis_goals WHERE hypothesis_id = ?", [h.id]).map(r => r.goal_id));
@@ -396,7 +422,66 @@ export function auditGoalAlignment(params = {}) {
         reason: issues.length ? "alignment_findings" : "aligned",
         summary: { issues: issues.length, categories: [...new Set(issues.map(i => i.category))].sort() },
         issues: issues.slice(0, limit(params.limit, 100, 500)),
+        coverage_candidates: coverageCandidates.slice(0, limit(params.limit, 100, 500)),
     };
+}
+
+function goalCoverageCandidates(store) {
+    const candidates = [];
+    for (const goal of store.query("SELECT * FROM goals")) {
+        if (goal.metrics_current) continue;
+        const runs = store.query("SELECT * FROM runs WHERE comprehensive = 0 ORDER BY created_at DESC");
+        for (const run of runs) {
+            const goals = parseJson(run.goal_ids, []);
+            const included = parseJson(run.included_hypotheses, []);
+            const metrics = parseJson(run.metrics, {});
+            const looksMultiSymbol = included.length > 1 || Array.isArray(metrics.symbols) || metrics.multi_symbol_pass_rate !== undefined || metrics.pass_rate !== undefined;
+            if (goals.includes(goal.id) && looksMultiSymbol) {
+                candidates.push({
+                    goal_id: goal.id,
+                    run_id: run.id,
+                    manifest_file: run.manifest_file,
+                    reason: "targeted_or_non_comprehensive_run_has_goal_and_multisymbol_shape",
+                    suggested_manifest_fix: "Set comprehensive: true, hypothesis: null, and included_hypotheses to the cohort if this run is intended to satisfy goal metrics.",
+                });
+            }
+        }
+    }
+    return candidates;
+}
+
+function parseResearchFileText(file, text) {
+    if (!text) return {};
+    if (file.endsWith(".md")) return matter(text).data || {};
+    if (/manifest\.ya?ml$/i.test(file)) return parseYamlLite(text);
+    return {};
+}
+
+function summarizeValue(value) {
+    if (value === undefined) return null;
+    if (value === null || typeof value !== "object") return value;
+    if (Array.isArray(value)) return { count: value.length, sample: value.slice(0, 3) };
+    return { keys: Object.keys(value).sort().slice(0, 12) };
+}
+
+const DIFF_FIELDS = [
+    "status",
+    "priority",
+    "priority_tier",
+    "last_verdict",
+    "gate.results",
+    "sources",
+    "git_commit",
+    "metrics",
+    "results_path",
+];
+
+function getPathValue(obj, path) {
+    return path.split(".").reduce((value, key) => value && typeof value === "object" ? value[key] : undefined, obj);
+}
+
+function entityIdFrom(file, parsed) {
+    return parsed.id || parsed.hypothesis || parsed.goal || file.replace(/^.*\/([^/]+)\.[^.]+$/, "$1");
 }
 
 export function analyzeProgress(params = {}) {
@@ -409,11 +494,29 @@ export function analyzeProgress(params = {}) {
         return { status: "UNSUPPORTED", reason: "git_diff_unavailable", summary: "Could not read git diff for progress analysis", warnings: [] };
     }
     const relevant = changed.filter(p => p.startsWith("docs/hypotheses/") || p.startsWith("docs/goals/") || p.startsWith("benchmark/runs/"));
+    const fieldDeltas = [];
+    for (const file of relevant) {
+        let oldText = "";
+        let newText = "";
+        try { oldText = execFileSync("git", ["-C", root, "show", `${params.compare_against || "HEAD"}:${file}`], { encoding: "utf8" }); } catch { oldText = ""; }
+        try { newText = readFileSync(join(root, file), "utf8"); } catch { newText = ""; }
+        const oldParsed = parseResearchFileText(file, oldText);
+        const newParsed = parseResearchFileText(file, newText);
+        const entityId = entityIdFrom(file, newParsed) || entityIdFrom(file, oldParsed);
+        for (const field of DIFF_FIELDS) {
+            const oldValue = getPathValue(oldParsed, field);
+            const newValue = getPathValue(newParsed, field);
+            if (JSON.stringify(oldValue) !== JSON.stringify(newValue)) {
+                fieldDeltas.push({ file, id: entityId, field, old: summarizeValue(oldValue), new: summarizeValue(newValue) });
+            }
+        }
+    }
     return {
         status: "OK",
         reason: "analyzed",
-        summary: { changed_files: changed.length, relevant_files: relevant.length },
+        summary: { changed_files: changed.length, relevant_files: relevant.length, field_deltas: fieldDeltas.length },
         changed_files: relevant,
+        field_deltas: fieldDeltas,
         next_action: relevant.length ? "run_verify_index_then_index_hypotheses" : "no_researchgraph_changes_detected",
     };
 }
@@ -427,11 +530,13 @@ export function analyzeProposed(params = {}) {
     if (!inspected.sources.length) issues.push("missing_source");
     if (!inspected.tasks.length && ["pending_implementation", "live", "in_progress"].includes(h.status)) issues.push("missing_task");
     if (!inspected.evidence.length && ["live", "validated_branch"].includes(h.status)) issues.push("missing_evidence");
+    const evidenceDepth = inspected.hypothesis.evidence_depth || scoreEvidenceDepth(inspected.sources);
     return {
         status: issues.length ? "STALE" : "OK",
         reason: issues.length ? "proposal_gaps" : "proposal_ready",
-        summary: { id: h.id, issues: issues.length },
+        summary: { id: h.id, issues: issues.length, evidence_depth: evidenceDepth.score },
         proposal: h,
+        evidence_depth: evidenceDepth,
         issues,
         follow_ups: [{ tool: "inspect_hypothesis", args: { id: h.id } }],
     };
@@ -485,6 +590,80 @@ export function exportCanvas(params = {}) {
     };
 }
 
+function groupBy(items, keyFn) {
+    const groups = new Map();
+    for (const item of items) {
+        const key = keyFn(item);
+        if (!groups.has(key)) groups.set(key, []);
+        groups.get(key).push(item);
+    }
+    return groups;
+}
+
+function renderResearchMap(store, audit) {
+    const lines = [
+        "<!-- HEX_RESEARCH_GENERATED: source=hex-research-mcp; edit docs/hypotheses, docs/goals, and benchmark/runs instead. -->",
+        "# Research Map",
+        "",
+        "Generated from canonical split researchgraph files.",
+        "",
+        "## Goals",
+        "",
+    ];
+    for (const goal of store.query("SELECT * FROM goals ORDER BY id").map(rowGoal)) {
+        const metric = goal.metrics_current ? "metrics: current" : "metrics: missing";
+        lines.push(`- **${goal.id}** (${goal.status}, ${goal.priority || "no priority"}) - ${goal.claim} _${metric}_`);
+    }
+    lines.push("", "## Hypotheses", "");
+    const hypotheses = store.query("SELECT * FROM hypotheses ORDER BY status, priority_tier IS NULL, priority_tier, id").map(h => hypothesisWithDepth(store, h));
+    for (const [status, rows] of groupBy(hypotheses, h => h.status)) {
+        lines.push(`### ${status}`, "");
+        for (const h of rows) {
+            lines.push(`- **${h.id}** (tier ${h.priority_tier ?? "n/a"}, evidence ${h.evidence_depth.score}) - ${h.claim}`);
+        }
+        lines.push("");
+    }
+    lines.push("## Latest Runs", "");
+    for (const run of store.query("SELECT * FROM runs ORDER BY created_at DESC, id DESC LIMIT 10").map(rowRun)) {
+        const scope = run.comprehensive ? `comprehensive ${run.goal_ids.join(",")}` : `targeted ${run.hypothesis_id || "n/a"}`;
+        lines.push(`- **${run.id}** (${scope}) - ${run.created_at || "unknown date"}`);
+    }
+    lines.push("", "## Audit Summary", "");
+    lines.push(`- Issues: ${audit.summary.issues}`);
+    for (const category of audit.summary.categories || []) lines.push(`- ${category}`);
+    lines.push("");
+    return `${lines.join("\n")}\n`;
+}
+
+export function exportResearchMap(params = {}) {
+    const opened = ensureIndexed(params.path);
+    if (!opened.ok) return opened.payload;
+    const { root, store } = opened;
+    const outputPath = resolve(root, params.output_path || "docs/research-map.md");
+    const dryRun = params.dry_run !== false;
+    const existing = existsSync(outputPath) ? readFileSync(outputPath, "utf8") : "";
+    if (!dryRun && existing && !existing.includes("HEX_RESEARCH_GENERATED") && !params.force) {
+        return {
+            status: "UNSUPPORTED",
+            reason: "unmarked_research_map_exists",
+            summary: "Refusing to overwrite unmarked legacy research-map.md without force: true",
+            warnings: [{ code: "unmarked_research_map_exists", message: "Run dry_run first or pass force: true to replace the legacy file." }],
+        };
+    }
+    const audit = auditOrphans({ path: root, limit: 250 });
+    const markdown = renderResearchMap(store, audit);
+    if (!dryRun) {
+        mkdirSync(dirname(outputPath), { recursive: true });
+        writeFileSync(outputPath, markdown, "utf8");
+    }
+    return {
+        status: dryRun ? "OK" : "CHANGED",
+        reason: dryRun ? "dry_run" : "research_map_exported",
+        summary: { output_path: outputPath, dry_run: dryRun, bytes: markdown.length },
+        markdown: dryRun ? markdown : undefined,
+    };
+}
+
 export function normalizeToolError(error) {
     return {
         status: "ERROR",
@@ -494,4 +673,3 @@ export function normalizeToolError(error) {
         warnings: [{ code: "tool_failed", message: error?.message || String(error) }],
     };
 }
-

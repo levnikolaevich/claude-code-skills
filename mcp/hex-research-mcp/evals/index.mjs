@@ -155,6 +155,16 @@ const scenarios = [
             assert.ok(result.structuredContent.canvas.nodes.length >= 1);
         },
     },
+    {
+        tool: "export_research_map",
+        description: "exports generated research-map markdown in dry-run mode",
+        params: root => ({ path: root, dry_run: true }),
+        expect(result) {
+            assert.equal(result.structuredContent.status, "OK");
+            assert.equal(result.structuredContent.summary.dry_run, true);
+            assert.match(result.structuredContent.markdown, /HEX_RESEARCH_GENERATED/);
+        },
+    },
 ];
 
 function runScenario(scenario) {

@@ -19,6 +19,7 @@ import {
     auditGoalAlignment,
     auditOrphans,
     exportCanvas,
+    exportResearchMap,
     findEvidence,
     findHypotheses,
     findRuns,
@@ -62,6 +63,7 @@ export const TOOL_HANDLERS = {
     trace_goal_tree: traceGoalTree,
     audit_goal_alignment: auditGoalAlignment,
     export_canvas: exportCanvas,
+    export_research_map: exportResearchMap,
 };
 
 export function ensureDirs() {
@@ -105,6 +107,8 @@ export function setupGitRepo(root) {
     execFileSync("git", ["config", "user.email", "hex-research@example.invalid"], { cwd: root });
     execFileSync("git", ["config", "user.name", "Hex Research Eval"], { cwd: root });
     execFileSync("git", ["config", "core.autocrlf", "false"], { cwd: root });
+    execFileSync("git", ["config", "core.eol", "lf"], { cwd: root });
+    execFileSync("git", ["config", "core.safecrlf", "false"], { cwd: root });
     execFileSync("git", ["add", "."], { cwd: root });
     execFileSync("git", ["commit", "-m", "fixture baseline"], { cwd: root, stdio: "ignore" });
     const changedFile = join(root, "docs", "hypotheses", "H01.md");

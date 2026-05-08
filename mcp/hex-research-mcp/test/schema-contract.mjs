@@ -1,6 +1,8 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { copyFixture, copyInvalidFixture, cleanup } from "./helpers.mjs";
+import { spawnSync } from "node:child_process";
+import { join } from "node:path";
+import { copyFixture, copyInvalidFixture, cleanup, PACKAGE_ROOT } from "./helpers.mjs";
 import { indexHypotheses, verifyIndex } from "../lib/tools.mjs";
 import { researchResult } from "../lib/result.mjs";
 
@@ -41,5 +43,19 @@ describe("schema and result contract", () => {
             cleanup(dir);
         }
     });
-});
 
+    it("strict validation CLI exits non-zero for invalid graph inputs", () => {
+        const dir = copyInvalidFixture("invalid-cli");
+        try {
+            const result = spawnSync(process.execPath, [join("bin", "hex-research-validate.mjs"), "--strict", "--path", dir, "--json"], {
+                cwd: PACKAGE_ROOT,
+                encoding: "utf8",
+            });
+            assert.notEqual(result.status, 0);
+            const payload = JSON.parse(result.stdout);
+            assert.equal(payload.status, "INVALID");
+        } finally {
+            cleanup(dir);
+        }
+    });
+});

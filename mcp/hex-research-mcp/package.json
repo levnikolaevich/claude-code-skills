@@ -1,12 +1,13 @@
 {
   "name": "@levnikolaevich/hex-research-mcp",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "mcpName": "io.github.levnikolaevich/hex-research-mcp",
   "type": "module",
   "description": "Markdown-first research hypothesis graph MCP server for goals, hypotheses, run manifests, task links, sources, and coherent goal metrics.",
   "main": "dist/server.mjs",
   "bin": {
-    "hex-research-mcp": "dist/server.mjs"
+    "hex-research-mcp": "dist/server.mjs",
+    "hex-research-validate": "dist/bin/hex-research-validate.mjs"
   },
   "files": [
     "dist/",
@@ -20,7 +21,7 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "test": "node --test test/*.mjs",
-    "check": "node --check server.mjs && node --check scripts/quality-lib.mjs && node --check scripts/generate-quality-report.mjs && node --check scripts/sync-quality-docs.mjs && node --check evals/index.mjs && node --check benchmark/index.mjs",
+    "check": "node --check server.mjs && node --check bin/hex-research-validate.mjs && node --check scripts/quality-lib.mjs && node --check scripts/generate-quality-report.mjs && node --check scripts/sync-quality-docs.mjs && node --check evals/index.mjs && node --check benchmark/index.mjs",
     "evals": "node evals/index.mjs",
     "benchmark": "node benchmark/index.mjs",
     "docs:quality": "node scripts/generate-quality-report.mjs && node scripts/sync-quality-docs.mjs",

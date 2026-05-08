@@ -4,6 +4,7 @@ import matter from "gray-matter";
 import { createHash } from "node:crypto";
 import { discoverResearchFiles } from "./discovery.mjs";
 import { GOAL_STATUSES, HYPOTHESIS_STATUSES, TASK_STATES, TASK_TYPES } from "./constants.mjs";
+import { inferSourceType } from "./source-utils.mjs";
 
 function hashText(text) {
     return createHash("sha256").update(text).digest("hex");
@@ -82,6 +83,50 @@ export function parseYamlLite(text) {
     return root;
 }
 
+function duplicateYamlKeys(text, file) {
+    const warnings = [];
+    const stack = [{ indent: -1, keys: new Set() }];
+    const lines = String(text).split(/\r?\n/);
+    const recordKey = (scope, key, lineNumber) => {
+        if (scope.keys.has(key)) {
+            warnings.push(warning("duplicate_yaml_key", `${file}: duplicate YAML key '${key}'`, file, { key, line: lineNumber }));
+        }
+        scope.keys.add(key);
+    };
+    for (let i = 0; i < lines.length; i += 1) {
+        const raw = lines[i];
+        if (!raw.trim() || raw.trimStart().startsWith("#")) continue;
+        const indent = raw.match(/^\s*/)[0].length;
+        const line = raw.trim();
+        while (stack.length > 1 && indent <= stack.at(-1).indent) stack.pop();
+        if (line.startsWith("- ")) {
+            const itemScope = { indent, keys: new Set() };
+            stack.push(itemScope);
+            const body = line.slice(2).trim();
+            const itemMatch = /^([^:]+):/.exec(body);
+            if (!itemMatch) continue;
+            const key = itemMatch[1].trim();
+            recordKey(itemScope, key, i + 1);
+            const valueText = body.slice(itemMatch[0].length).trim();
+            if (!valueText) stack.push({ indent: indent + 2, keys: new Set() });
+            continue;
+        }
+        const match = /^([^:]+):/.exec(line);
+        if (!match) continue;
+        const parent = stack.at(-1);
+        const key = match[1].trim();
+        recordKey(parent, key, i + 1);
+        const valueText = line.slice(match[0].length).trim();
+        if (!valueText) stack.push({ indent, keys: new Set() });
+    }
+    return warnings;
+}
+
+function frontmatterText(text) {
+    const match = /^---\r?\n([\s\S]*?)\r?\n---/.exec(text);
+    return match ? match[1] : "";
+}
+
 export function normalizeId(value) {
     if (typeof value !== "string") return value;
     const trimmed = value.trim();
@@ -157,29 +202,56 @@ function sourceIdentity(source) {
     return `source:${hashText(JSON.stringify(payload))}`;
 }
 
-function normalizeSources(rawSources = []) {
-    return asArray(rawSources).filter(v => v && typeof v === "object").map(source => ({
-        id: sourceIdentity(source),
-        type: source.type || "website",
-        title: source.title || source.name || source.ref || null,
-        url: source.url || null,
-        identifier: source.doi || source.arxiv_id || source.isbn || source.ref || source.repo || source.url || source.name || null,
-        raw_payload: source,
-        notes: source.notes || null,
-        accessed_at: source.accessed_at || null,
-        cite_extra: {
-            timestamp: source.timestamp,
-            pages: source.pages,
-        },
-    }));
+function normalizeSources(rawSources = [], sourceLibrary = {}, file, warnings) {
+    return asArray(rawSources).filter(v => v && typeof v === "object").map(source => {
+        const sourceKey = source.id || source.source_id;
+        const librarySource = sourceKey ? sourceLibrary[sourceKey] : null;
+        if (sourceKey && !librarySource && Object.keys(source).every(key => ["id", "source_id", "pages", "notes", "accessed_at", "timestamp"].includes(key))) {
+            warnings.push(warning("missing_source_definition", `${file}: source id '${sourceKey}' is not defined in docs/sources/lib.yaml`, file, { source_id: sourceKey }));
+        }
+        const merged = librarySource ? { ...librarySource, ...source, id: sourceKey } : source;
+        const declaredType = merged.type || null;
+        const inferred = inferSourceType(merged);
+        let type = declaredType || inferred.type || "website";
+        if ((!declaredType || ["archive", "website"].includes(declaredType)) && inferred.confidence === "high") {
+            if (declaredType && declaredType !== inferred.type) {
+                warnings.push(warning("source_type_overridden", `${file}: source '${sourceKey || merged.title || merged.ref}' type ${declaredType} inferred as ${inferred.type}`, file, { source_id: sourceKey, declared_type: declaredType, inferred_type: inferred.type, reason: inferred.reason }));
+            } else if (!declaredType) {
+                warnings.push(warning("source_type_inferred", `${file}: source '${sourceKey || merged.title || merged.ref}' inferred as ${inferred.type}`, file, { source_id: sourceKey, inferred_type: inferred.type, reason: inferred.reason }));
+            }
+            type = inferred.type;
+        } else if (!declaredType && inferred.confidence !== "high") {
+            warnings.push(warning("source_type_ambiguous", `${file}: source '${sourceKey || merged.title || merged.ref}' has no high-confidence type`, file, { source_id: sourceKey, inferred_type: inferred.type, reason: inferred.reason }));
+        }
+        const rawPayload = {
+            ...merged,
+            declared_type: declaredType,
+            inferred_type: inferred.type,
+            source_library_id: sourceKey || null,
+        };
+        return {
+            id: sourceKey ? `source:${sourceKey}` : sourceIdentity(merged),
+            type,
+            title: merged.title || merged.name || merged.ref || sourceKey || null,
+            url: merged.url || null,
+            identifier: merged.doi || merged.arxiv_id || merged.isbn || merged.ref || merged.repo || merged.url || merged.name || sourceKey || null,
+            raw_payload: rawPayload,
+            notes: source.notes || merged.notes || null,
+            accessed_at: source.accessed_at || merged.accessed_at || null,
+            cite_extra: {
+                timestamp: source.timestamp ?? merged.timestamp,
+                pages: source.pages ?? merged.pages,
+            },
+        };
+    });
 }
 
-function parseHypothesis(projectPath, file) {
+function parseHypothesis(projectPath, file, sourceLibrary) {
     const abs = join(projectPath, file);
     const text = readFileSync(abs, "utf8");
     const parsed = matter(text);
     const data = parsed.data || {};
-    const warnings = [];
+    const warnings = duplicateYamlKeys(frontmatterText(text), file);
     required(data, ["id", "claim", "category", "status", "goals", "mechanism", "created_at", "last_touched"], file, warnings);
     for (const field of ["parents", "supersedes", "competes_with", "refutes", "blocked_by"]) {
         if (data[field] === undefined) warnings.push(warning("missing_required_field", `${file}: field '${field}' is required`, file, { field }));
@@ -204,18 +276,18 @@ function parseHypothesis(projectPath, file) {
             runs: asArray(data.runs),
             evidence: asArray(data.evidence),
             tasks: asArray(data.tasks).filter(v => v && typeof v === "object").map(task => normalizeTask(task, file, warnings)),
-            sources: normalizeSources(data.sources),
+            sources: normalizeSources(data.sources, sourceLibrary, file, warnings),
         },
         warnings,
     };
 }
 
-function parseGoal(projectPath, file) {
+function parseGoal(projectPath, file, sourceLibrary) {
     const abs = join(projectPath, file);
     const text = readFileSync(abs, "utf8");
     const parsed = matter(text);
     const data = parsed.data || {};
-    const warnings = [];
+    const warnings = duplicateYamlKeys(frontmatterText(text), file);
     required(data, ["id", "claim", "status", "metrics_target", "created_at", "last_touched"], file, warnings);
     if (data.metrics_current !== undefined || data.children !== undefined || data.achievement_status !== undefined) {
         warnings.push(warning("derived_field_in_source", `${file}: derived goal fields must not be written manually`, file));
@@ -232,7 +304,7 @@ function parseGoal(projectPath, file) {
             ...data,
             id: normalizeId(data.id),
             parents: asArray(data.parents),
-            sources: normalizeSources(data.sources),
+            sources: normalizeSources(data.sources, sourceLibrary, file, warnings),
         },
         warnings,
     };
@@ -242,7 +314,7 @@ function parseRun(projectPath, file) {
     const abs = join(projectPath, file);
     const text = readFileSync(abs, "utf8");
     const data = parseYamlLite(text);
-    const warnings = [];
+    const warnings = duplicateYamlKeys(text, file);
     required(data, ["id", "type", "created_at", "results_path"], file, warnings);
     const comprehensive = !!data.comprehensive;
     if (comprehensive) {
@@ -274,12 +346,28 @@ function parseRun(projectPath, file) {
     };
 }
 
+function parseSourceLibrary(projectPath) {
+    const file = "docs/sources/lib.yaml";
+    const abs = join(projectPath, file);
+    if (!existsSync(abs)) return { sources: {}, warnings: [] };
+    const text = readFileSync(abs, "utf8");
+    const warnings = duplicateYamlKeys(text, file);
+    try {
+        const parsed = parseYamlLite(text);
+        const sources = parsed.sources && typeof parsed.sources === "object" && !Array.isArray(parsed.sources) ? parsed.sources : {};
+        return { sources, warnings };
+    } catch (error) {
+        return { sources: {}, warnings: [warning("frontmatter_validation_failed", `${file}: ${error.message}`, file)] };
+    }
+}
+
 export function parseProject(projectPath) {
     const discovered = discoverResearchFiles(projectPath);
-    const parsed = { hypotheses: [], goals: [], runs: [], warnings: [] };
+    const library = parseSourceLibrary(projectPath);
+    const parsed = { hypotheses: [], goals: [], runs: [], warnings: [...library.warnings], sourceLibrary: library.sources };
     for (const file of discovered.hypotheses) {
         try {
-            const item = parseHypothesis(projectPath, file);
+            const item = parseHypothesis(projectPath, file, library.sources);
             parsed.hypotheses.push(item);
             parsed.warnings.push(...item.warnings);
         } catch (error) {
@@ -288,7 +376,7 @@ export function parseProject(projectPath) {
     }
     for (const file of discovered.goals) {
         try {
-            const item = parseGoal(projectPath, file);
+            const item = parseGoal(projectPath, file, library.sources);
             parsed.goals.push(item);
             parsed.warnings.push(...item.warnings);
         } catch (error) {

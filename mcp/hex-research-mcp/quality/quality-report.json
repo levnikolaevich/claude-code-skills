@@ -3,11 +3,11 @@
   "release_readiness": "Release readiness: Server MVP verified on deterministic fixtures with npm packaging enabled. btc-trader migration, Phase 7 pull-up, and skill packaging remain out of scope for this snapshot.",
   "methodology": "evals call every registered tool against test/fixtures/project with deterministic assertions and structuredContent/text mirror checks. Benchmark token counts are rough ceil(chars / 4) estimates, not production tokenizer measurements.",
   "summary": {
-    "tools_total": 15,
-    "tools_verified": 15,
-    "eval_scenarios": 15,
+    "tools_total": 16,
+    "tools_verified": 16,
+    "eval_scenarios": 16,
     "benchmark_workflows": 5,
-    "average_estimated_savings_percent": 79.8
+    "average_estimated_savings_percent": 78.2
   },
   "tools": [
     {
@@ -134,7 +134,8 @@
       "name": "analyze_progress",
       "risk": "low",
       "scenarios": [
-        "git diff research-file detection"
+        "git diff research-file detection",
+        "field-level frontmatter delta"
       ],
       "test_source": "evals/index.mjs",
       "eval_status": "verified",
@@ -161,7 +162,8 @@
       "scenarios": [
         "goal detail",
         "linked hypotheses",
-        "goal children/parents"
+        "goal children/parents",
+        "metrics_current provenance"
       ],
       "test_source": "test/tools.mjs",
       "eval_status": "verified",
@@ -187,7 +189,8 @@
       "risk": "medium",
       "scenarios": [
         "active goal alignment",
-        "comprehensive-run metric gaps"
+        "comprehensive-run metric gaps",
+        "coverage candidates"
       ],
       "test_source": "test/audit.mjs",
       "eval_status": "verified",
@@ -203,6 +206,20 @@
         "merge mode",
         "overwrite mode",
         "position preservation"
+      ],
+      "test_source": "test/export.mjs",
+      "eval_status": "verified",
+      "output_status": "OK",
+      "bounded": true,
+      "structured_mirror": true
+    },
+    {
+      "name": "export_research_map",
+      "risk": "high",
+      "scenarios": [
+        "dry-run markdown",
+        "legacy overwrite guard",
+        "force generated overwrite"
       ],
       "test_source": "test/export.mjs",
       "eval_status": "verified",

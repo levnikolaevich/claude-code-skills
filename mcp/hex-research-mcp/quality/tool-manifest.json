@@ -68,7 +68,7 @@
     {
       "name": "analyze_progress",
       "risk": "low",
-      "scenarios": ["git diff research-file detection"],
+      "scenarios": ["git diff research-file detection", "field-level frontmatter delta"],
       "test_source": "evals/index.mjs",
       "eval_status": "verified"
     },
@@ -82,7 +82,7 @@
     {
       "name": "inspect_goal",
       "risk": "low",
-      "scenarios": ["goal detail", "linked hypotheses", "goal children/parents"],
+      "scenarios": ["goal detail", "linked hypotheses", "goal children/parents", "metrics_current provenance"],
       "test_source": "test/tools.mjs",
       "eval_status": "verified"
     },
@@ -96,7 +96,7 @@
     {
       "name": "audit_goal_alignment",
       "risk": "medium",
-      "scenarios": ["active goal alignment", "comprehensive-run metric gaps"],
+      "scenarios": ["active goal alignment", "comprehensive-run metric gaps", "coverage candidates"],
       "test_source": "test/audit.mjs",
       "eval_status": "verified"
     },
@@ -104,6 +104,13 @@
       "name": "export_canvas",
       "risk": "high",
       "scenarios": ["dry-run canvas", "merge mode", "overwrite mode", "position preservation"],
+      "test_source": "test/export.mjs",
+      "eval_status": "verified"
+    },
+    {
+      "name": "export_research_map",
+      "risk": "high",
+      "scenarios": ["dry-run markdown", "legacy overwrite guard", "force generated overwrite"],
       "test_source": "test/export.mjs",
       "eval_status": "verified"
     }

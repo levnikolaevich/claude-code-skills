@@ -11,10 +11,17 @@ function git(cwd, args) {
     return execFileSync("git", args, { cwd, encoding: "utf8" }).replace(/\r\n/g, "\n");
 }
 
+function configureGitLf(cwd) {
+    git(cwd, ["config", "core.autocrlf", "false"]);
+    git(cwd, ["config", "core.eol", "lf"]);
+    git(cwd, ["config", "core.safecrlf", "false"]);
+}
+
 test("semanticGitDiff reports added, removed, modified, renamed, and unsupported files", async () => {
     const dir = mkdtempSync(join(tmpdir(), "hex-common-semantic-diff-"));
     try {
         git(dir, ["init"]);
+        configureGitLf(dir);
         git(dir, ["config", "user.name", "hex-common"]);
         git(dir, ["config", "user.email", "hex-common@example.com"]);
 

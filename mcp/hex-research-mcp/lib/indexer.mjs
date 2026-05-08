@@ -25,6 +25,20 @@ function addWarning(warnings, code, message, extra = {}) {
     warnings.push({ code, message, ...extra });
 }
 
+export const STRICT_INVALID_CODES = new Set([
+    "missing_required_field",
+    "invalid_field",
+    "frontmatter_validation_failed",
+    "duplicate_yaml_key",
+    "missing_source_definition",
+]);
+
+export const STRICT_FAILURE_CODES = new Set([
+    ...STRICT_INVALID_CODES,
+    "missing_goal",
+    "missing_hypothesis",
+]);
+
 function validEdgeKind(kind, srcKind, dstKind) {
     const expected = EDGE_KINDS.get(kind);
     if (!expected) return false;
@@ -243,7 +257,7 @@ export function indexProject(projectPath) {
     });
     transaction();
     warnings.push(...auditTaskInvariants(store), ...auditGraphInvariants(store));
-    const invalid = warnings.filter(w => ["missing_required_field", "invalid_field", "frontmatter_validation_failed"].includes(w.code));
+    const invalid = warnings.filter(w => STRICT_INVALID_CODES.has(w.code));
     return {
         status: invalid.length ? "INVALID" : "OK",
         reason: invalid.length ? "frontmatter_validation_failed" : "indexed",
@@ -261,7 +275,30 @@ export function indexProject(projectPath) {
 export function verifyProject(projectPath) {
     const parsed = parseProject(projectPath);
     const warnings = [...parsed.warnings];
-    const invalid = warnings.filter(w => ["missing_required_field", "invalid_field", "frontmatter_validation_failed"].includes(w.code));
+    const goalIds = new Set(parsed.goals.map(g => g.data.id));
+    const hypothesisIds = new Set(parsed.hypotheses.map(h => h.data.id));
+    for (const h of parsed.hypotheses) {
+        for (const goal of h.data.goals || []) {
+            if (!goalIds.has(goal)) addWarning(warnings, "missing_goal", `${h.data.id}: referenced goal ${goal} does not exist`, { id: h.data.id, details: { goal_id: goal } });
+        }
+        for (const field of ["parents", "supersedes", "competes_with", "refutes", "blocked_by"]) {
+            for (const target of h.data[field] || []) {
+                if (!hypothesisIds.has(target)) addWarning(warnings, "missing_hypothesis", `${h.data.id}: referenced hypothesis ${target} does not exist`, { id: h.data.id, details: { field, hypothesis_id: target } });
+            }
+        }
+    }
+    for (const run of parsed.runs) {
+        if (run.data.hypothesis && !hypothesisIds.has(run.data.hypothesis)) {
+            addWarning(warnings, "missing_hypothesis", `${run.data.id}: referenced hypothesis ${run.data.hypothesis} does not exist`, { id: run.data.id, details: { hypothesis_id: run.data.hypothesis } });
+        }
+        for (const goal of run.data.goals || []) {
+            if (!goalIds.has(goal)) addWarning(warnings, "missing_goal", `${run.data.id}: referenced goal ${goal} does not exist`, { id: run.data.id, details: { goal_id: goal } });
+        }
+        for (const hypothesis of run.data.included_hypotheses || []) {
+            if (!hypothesisIds.has(hypothesis)) addWarning(warnings, "missing_hypothesis", `${run.data.id}: included hypothesis ${hypothesis} does not exist`, { id: run.data.id, details: { hypothesis_id: hypothesis } });
+        }
+    }
+    const invalid = warnings.filter(w => STRICT_INVALID_CODES.has(w.code));
     return {
         status: invalid.length ? "INVALID" : "OK",
         reason: invalid.length ? "frontmatter_validation_failed" : "verified",

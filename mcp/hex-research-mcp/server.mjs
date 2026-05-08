@@ -22,6 +22,7 @@ import {
     auditGoalAlignment,
     auditOrphans,
     exportCanvas,
+    exportResearchMap,
     findEvidence,
     findHypotheses,
     findRuns,
@@ -115,7 +116,7 @@ tool("find_evidence", {
 
 tool("find_runs", {
     title: "Find Runs",
-    description: "Find targeted or comprehensive benchmark runs by run id, hypothesis id, type, and comprehensive flag.",
+    description: "Find targeted or explicit comprehensive benchmark runs by run id, hypothesis id, type, and comprehensive flag; goal metrics derive only from explicit comprehensive runs.",
     inputSchema: z.object({
         path: z.string().optional().describe("Indexed project root"),
         id: z.string().optional().describe("Run id"),
@@ -162,7 +163,7 @@ tool("audit_orphans", {
 
 tool("inspect_goal", {
     title: "Inspect Goal",
-    description: "Return a bounded structured view of one goal, including parent/child goals and linked hypotheses.",
+    description: "Return a bounded structured view of one goal, including parent/child goals, linked hypotheses, and derived metrics_current provenance or missing-metrics reason.",
     inputSchema: SelectorSchema,
     annotations: ReadOnly,
 }, inspectGoal);
@@ -180,7 +181,7 @@ tool("trace_goal_tree", {
 
 tool("audit_goal_alignment", {
     title: "Audit Goal Alignment",
-    description: "Audit hypothesis-goal links, active goals without live hypotheses, and goals missing comprehensive-run metrics.",
+    description: "Audit hypothesis-goal links, active goals without live hypotheses, goals missing explicit comprehensive-run metrics, and coverage candidates.",
     inputSchema: z.object({
         path: z.string().optional().describe("Indexed project root"),
         limit: Limit.describe("Maximum issues to return"),
@@ -190,7 +191,7 @@ tool("audit_goal_alignment", {
 
 tool("analyze_progress", {
     title: "Analyze Progress",
-    description: "Use git diff to identify changed research graph files that should be verified or reindexed.",
+    description: "Use git diff to identify changed research graph files and field-level frontmatter deltas that should be verified or reindexed.",
     inputSchema: z.object({
         path: z.string().optional().describe("Project root"),
         compare_against: z.string().optional().describe('Git ref to compare against, default "HEAD"'),
@@ -216,6 +217,18 @@ tool("export_canvas", {
     }).strict(),
     annotations: DESTRUCTIVE_NON_IDEMPOTENT_ANNOTATIONS,
 }, exportCanvas);
+
+tool("export_research_map", {
+    title: "Export Research Map Markdown",
+    description: "Generate docs/research-map.md from canonical split researchgraph files. Dry-run by default; refuses unmarked legacy overwrite unless force is true.",
+    inputSchema: z.object({
+        path: z.string().optional().describe("Indexed project root"),
+        output_path: z.string().optional().describe('Markdown path relative to project root, default "docs/research-map.md"'),
+        dry_run: z.boolean().optional().describe("Preview generated markdown without writing; default true"),
+        force: z.boolean().optional().describe("Allow replacing an unmarked legacy research-map.md after dry-run review"),
+    }).strict(),
+    annotations: DESTRUCTIVE_NON_IDEMPOTENT_ANNOTATIONS,
+}, exportResearchMap, { errorStatuses: ["UNSUPPORTED", "ERROR"] });
 
 const transport = new StdioServerTransport();
 await server.connect(transport);

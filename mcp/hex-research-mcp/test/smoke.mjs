@@ -22,7 +22,7 @@ async function withClient(run) {
 }
 
 describe("server smoke", () => {
-    it("starts and exposes exactly 15 annotated tools", async () => {
+    it("starts and exposes exactly the registered annotated tools", async () => {
         await withClient(async (client) => {
             const listed = await client.listTools();
             const names = listed.tools.map(t => t.name).sort();
@@ -52,4 +52,3 @@ describe("server smoke", () => {
         }
     });
 });
-

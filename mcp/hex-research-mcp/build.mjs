@@ -8,7 +8,7 @@ const external = Object.keys(pkg.dependencies || {})
   .filter(d => d !== "@levnikolaevich/hex-common");
 
 await build({
-  entryPoints: ["server.mjs"],
+  entryPoints: ["server.mjs", "bin/hex-research-validate.mjs"],
   bundle: true,
   platform: "node",
   format: "esm",
@@ -18,5 +18,4 @@ await build({
   define: { __HEX_VERSION__: JSON.stringify(pkg.version) },
 });
 
-console.log("Built dist/server.mjs");
-
+console.log("Built dist/server.mjs and dist/bin/hex-research-validate.mjs");

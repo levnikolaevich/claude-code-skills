@@ -14,7 +14,9 @@ license: MIT
 ## Mandatory Read
 
 **MANDATORY READ:** Load `references/evaluation_coordinator_runtime_contract.md`, `references/evaluation_summary_contract.md`, `references/evaluation_research_contract.md`
+**MANDATORY READ:** Load `references/audit_final_report_contract.md`
 **MANDATORY READ:** Load `references/research_tool_fallback.md`
+Conditional read: load `references/epistemic_protocol.md` only when source confidence or claim uncertainty affects issue validation.
 
 ## Purpose
 
@@ -61,7 +63,7 @@ TodoWrite format (mandatory):
 - `Run best-practice research`
 - `Delegate to domain audit workers`
 - `Aggregate worker findings`
-- `Generate audit report`
+- `Generate final audit report and remediation plan`
 - `Verify cleanup and self-check`
 
 Representative invocations:
@@ -99,11 +101,11 @@ Child workers must use `evaluation-worker-runtime` and emit evaluation-compatibl
 
 ### Phase 4: Aggregate
 
-Merge worker findings into one documentation audit result.
+Merge worker summaries into one documentation audit result. Read every worker `report_path`, normalize findings, deduplicate repeated issues, and validate each actionable problem against the research source order in `references/evaluation_research_contract.md`.
 
 ### Phase 5: Report
 
-Write final documentation audit output and coordinator summary.
+Write `.hex-skills/runtime-artifacts/runs/{run_id}/audit-report/ln-610--final-report.md` per `references/audit_final_report_contract.md`. Include the remediation plan, source-backed validation for each confirmed issue, and cleanup note. Remove temporary worker markdown reports after consolidation. The `evaluation-coordinator` summary `report_path` must point to the final report only.
 
 ### Phase 6: Self-Check
 
@@ -111,6 +113,8 @@ Required checks:
 - [ ] mandatory research completed
 - [ ] all worker summaries recorded
 - [ ] aggregate summary exists
+- [ ] final remediation report written
+- [ ] temporary worker markdown reports removed
 - [ ] cleanup verified
 - [ ] coordinator summary recorded
 
@@ -124,7 +128,8 @@ Write `summary_kind=evaluation-coordinator`.
 - [ ] Research completed
 - [ ] All documentation audit workers completed
 - [ ] Aggregation completed
-- [ ] Final report written
+- [ ] Final report and remediation plan written
+- [ ] Temporary worker markdown reports removed
 - [ ] `evaluation-coordinator` summary written
 - [ ] Runtime completed
 

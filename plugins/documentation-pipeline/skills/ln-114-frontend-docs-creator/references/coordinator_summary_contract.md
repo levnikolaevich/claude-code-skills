@@ -7,7 +7,7 @@ Runtime summary envelope for cross-skill routing. Domain fields live in the acti
 ## Hard Rules
 
 - Write summaries only under the active run output directory or the explicit caller-provided summary path.
-- Never write outside `.hex-skills/runtime-artifacts/` unless the active skill contract names another path.
+- Never write outside `.hex-skills/runtime-artifacts/runs/{run_id}/` unless the active skill contract names another path.
 - Resolve the target path before writing and reject absolute or traversal paths from user input.
 - Include this envelope; add only active-family fields.
 

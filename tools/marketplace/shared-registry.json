@@ -110,48 +110,6 @@
     ]
   },
   {
-    "source": "shared/agents/prompt_templates/modes/code.md",
-    "kind": "agent",
-    "targets": [
-      {
-        "skill": "plugins/agile-workflow/skills/ln-500-story-quality-gate",
-        "path": "references/agents/prompt_templates/modes/code.md"
-      },
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/agents/prompt_templates/modes/code.md"
-      }
-    ]
-  },
-  {
-    "source": "shared/agents/prompt_templates/modes/context.md",
-    "kind": "agent",
-    "targets": [
-      {
-        "skill": "plugins/agile-workflow/skills/ln-310-multi-agent-validator",
-        "path": "references/agents/prompt_templates/modes/context.md"
-      },
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/agents/prompt_templates/modes/context.md"
-      }
-    ]
-  },
-  {
-    "source": "shared/agents/prompt_templates/modes/story.md",
-    "kind": "agent",
-    "targets": [
-      {
-        "skill": "plugins/agile-workflow/skills/ln-310-multi-agent-validator",
-        "path": "references/agents/prompt_templates/modes/story.md"
-      },
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/agents/prompt_templates/modes/story.md"
-      }
-    ]
-  },
-  {
     "source": "shared/agents/prompt_templates/refinement_perspectives.md",
     "kind": "agent",
     "targets": [
@@ -338,10 +296,6 @@
         "path": "references/agent_skill_roots_contract.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/agent_skill_roots_contract.md"
-      },
-      {
         "skill": "plugins/documentation-pipeline/skills/ln-111-root-docs-creator",
         "path": "references/agent_skill_roots_contract.md"
       },
@@ -360,11 +314,7 @@
     "kind": "reference",
     "targets": [
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-624-code-quality-auditor",
-        "path": "references/ai_ready_architecture.md"
-      },
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-642-layer-boundary-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-642-layer-ownership-boundary-auditor",
         "path": "references/ai_ready_architecture.md"
       },
       {
@@ -372,7 +322,7 @@
         "path": "references/ai_ready_architecture.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-topology-auditor",
         "path": "references/ai_ready_architecture.md"
       }
     ]
@@ -394,35 +344,35 @@
         "path": "references/audit_output_schema.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-621-security-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-621-security-boundary-auditor",
         "path": "references/audit_output_schema.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-622-build-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-622-build-delivery-gate-auditor",
         "path": "references/audit_output_schema.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-624-code-quality-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-624-code-maintainability-hotspot-auditor",
         "path": "references/audit_output_schema.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-625-dependencies-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-625-dependency-reuse-auditor",
         "path": "references/audit_output_schema.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-626-dead-code-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-626-dead-code-pruning-auditor",
         "path": "references/audit_output_schema.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-627-observability-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-627-diagnosability-auditor",
         "path": "references/audit_output_schema.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-628-concurrency-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-628-concurrency-correctness-auditor",
         "path": "references/audit_output_schema.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-629-lifecycle-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-629-runtime-lifecycle-config-auditor",
         "path": "references/audit_output_schema.md"
       },
       {
@@ -446,7 +396,7 @@
         "path": "references/audit_output_schema.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-647-env-config-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-647-configuration-boundary-auditor",
         "path": "references/audit_output_schema.md"
       },
       {
@@ -464,6 +414,32 @@
       {
         "skill": "plugins/codebase-audit-suite/skills/ln-654-resource-lifecycle-auditor",
         "path": "references/audit_output_schema.md"
+      }
+    ]
+  },
+  {
+    "source": "shared/references/audit_final_report_contract.md",
+    "kind": "reference",
+    "targets": [
+      {
+        "skill": "plugins/codebase-audit-suite/skills/ln-610-docs-auditor",
+        "path": "references/audit_final_report_contract.md"
+      },
+      {
+        "skill": "plugins/codebase-audit-suite/skills/ln-620-codebase-auditor",
+        "path": "references/audit_final_report_contract.md"
+      },
+      {
+        "skill": "plugins/codebase-audit-suite/skills/ln-630-test-auditor",
+        "path": "references/audit_final_report_contract.md"
+      },
+      {
+        "skill": "plugins/codebase-audit-suite/skills/ln-640-pattern-evolution-auditor",
+        "path": "references/audit_final_report_contract.md"
+      },
+      {
+        "skill": "plugins/codebase-audit-suite/skills/ln-650-persistence-performance-auditor",
+        "path": "references/audit_final_report_contract.md"
       }
     ]
   },
@@ -504,39 +480,39 @@
         "path": "references/audit_scoring.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-621-security-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-621-security-boundary-auditor",
         "path": "references/audit_scoring.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-622-build-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-622-build-delivery-gate-auditor",
         "path": "references/audit_scoring.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-623-code-principles-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-623-duplication-overabstraction-auditor",
         "path": "references/audit_scoring.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-624-code-quality-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-624-code-maintainability-hotspot-auditor",
         "path": "references/audit_scoring.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-625-dependencies-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-625-dependency-reuse-auditor",
         "path": "references/audit_scoring.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-626-dead-code-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-626-dead-code-pruning-auditor",
         "path": "references/audit_scoring.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-627-observability-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-627-diagnosability-auditor",
         "path": "references/audit_scoring.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-628-concurrency-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-628-concurrency-correctness-auditor",
         "path": "references/audit_scoring.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-629-lifecycle-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-629-runtime-lifecycle-config-auditor",
         "path": "references/audit_scoring.md"
       },
       {
@@ -568,11 +544,15 @@
         "path": "references/audit_scoring.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-641-pattern-analyzer",
+        "skill": "plugins/codebase-audit-suite/skills/ln-638-test-oracle-effectiveness-auditor",
         "path": "references/audit_scoring.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-642-layer-boundary-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-641-pattern-fitness-auditor",
+        "path": "references/audit_scoring.md"
+      },
+      {
+        "skill": "plugins/codebase-audit-suite/skills/ln-642-layer-ownership-boundary-auditor",
         "path": "references/audit_scoring.md"
       },
       {
@@ -580,11 +560,11 @@
         "path": "references/audit_scoring.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-topology-auditor",
         "path": "references/audit_scoring.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-645-open-source-replacer",
+        "skill": "plugins/codebase-audit-suite/skills/ln-645-architecture-modernization-auditor",
         "path": "references/audit_scoring.md"
       },
       {
@@ -592,7 +572,7 @@
         "path": "references/audit_scoring.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-647-env-config-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-647-configuration-boundary-auditor",
         "path": "references/audit_scoring.md"
       },
       {
@@ -674,39 +654,39 @@
         "path": "references/audit_summary_contract.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-621-security-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-621-security-boundary-auditor",
         "path": "references/audit_summary_contract.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-622-build-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-622-build-delivery-gate-auditor",
         "path": "references/audit_summary_contract.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-623-code-principles-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-623-duplication-overabstraction-auditor",
         "path": "references/audit_summary_contract.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-624-code-quality-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-624-code-maintainability-hotspot-auditor",
         "path": "references/audit_summary_contract.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-625-dependencies-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-625-dependency-reuse-auditor",
         "path": "references/audit_summary_contract.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-626-dead-code-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-626-dead-code-pruning-auditor",
         "path": "references/audit_summary_contract.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-627-observability-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-627-diagnosability-auditor",
         "path": "references/audit_summary_contract.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-628-concurrency-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-628-concurrency-correctness-auditor",
         "path": "references/audit_summary_contract.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-629-lifecycle-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-629-runtime-lifecycle-config-auditor",
         "path": "references/audit_summary_contract.md"
       },
       {
@@ -738,11 +718,15 @@
         "path": "references/audit_summary_contract.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-641-pattern-analyzer",
+        "skill": "plugins/codebase-audit-suite/skills/ln-638-test-oracle-effectiveness-auditor",
         "path": "references/audit_summary_contract.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-642-layer-boundary-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-641-pattern-fitness-auditor",
+        "path": "references/audit_summary_contract.md"
+      },
+      {
+        "skill": "plugins/codebase-audit-suite/skills/ln-642-layer-ownership-boundary-auditor",
         "path": "references/audit_summary_contract.md"
       },
       {
@@ -750,11 +734,11 @@
         "path": "references/audit_summary_contract.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-topology-auditor",
         "path": "references/audit_summary_contract.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-645-open-source-replacer",
+        "skill": "plugins/codebase-audit-suite/skills/ln-645-architecture-modernization-auditor",
         "path": "references/audit_summary_contract.md"
       },
       {
@@ -762,7 +746,7 @@
         "path": "references/audit_summary_contract.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-647-env-config-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-647-configuration-boundary-auditor",
         "path": "references/audit_summary_contract.md"
       },
       {
@@ -840,39 +824,39 @@
         "path": "references/audit_worker_core_contract.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-621-security-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-621-security-boundary-auditor",
         "path": "references/audit_worker_core_contract.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-622-build-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-622-build-delivery-gate-auditor",
         "path": "references/audit_worker_core_contract.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-623-code-principles-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-623-duplication-overabstraction-auditor",
         "path": "references/audit_worker_core_contract.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-624-code-quality-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-624-code-maintainability-hotspot-auditor",
         "path": "references/audit_worker_core_contract.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-625-dependencies-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-625-dependency-reuse-auditor",
         "path": "references/audit_worker_core_contract.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-626-dead-code-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-626-dead-code-pruning-auditor",
         "path": "references/audit_worker_core_contract.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-627-observability-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-627-diagnosability-auditor",
         "path": "references/audit_worker_core_contract.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-628-concurrency-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-628-concurrency-correctness-auditor",
         "path": "references/audit_worker_core_contract.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-629-lifecycle-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-629-runtime-lifecycle-config-auditor",
         "path": "references/audit_worker_core_contract.md"
       },
       {
@@ -904,11 +888,15 @@
         "path": "references/audit_worker_core_contract.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-641-pattern-analyzer",
+        "skill": "plugins/codebase-audit-suite/skills/ln-638-test-oracle-effectiveness-auditor",
         "path": "references/audit_worker_core_contract.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-642-layer-boundary-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-641-pattern-fitness-auditor",
+        "path": "references/audit_worker_core_contract.md"
+      },
+      {
+        "skill": "plugins/codebase-audit-suite/skills/ln-642-layer-ownership-boundary-auditor",
         "path": "references/audit_worker_core_contract.md"
       },
       {
@@ -916,11 +904,11 @@
         "path": "references/audit_worker_core_contract.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-topology-auditor",
         "path": "references/audit_worker_core_contract.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-645-open-source-replacer",
+        "skill": "plugins/codebase-audit-suite/skills/ln-645-architecture-modernization-auditor",
         "path": "references/audit_worker_core_contract.md"
       },
       {
@@ -928,7 +916,7 @@
         "path": "references/audit_worker_core_contract.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-647-env-config-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-647-configuration-boundary-auditor",
         "path": "references/audit_worker_core_contract.md"
       },
       {
@@ -988,34 +976,6 @@
     ]
   },
   {
-    "source": "shared/references/benchmark_generation.md",
-    "kind": "reference",
-    "targets": [
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/benchmark_generation.md"
-      },
-      {
-        "skill": "plugins/optimization-suite/skills/ln-811-performance-profiler",
-        "path": "references/benchmark_generation.md"
-      }
-    ]
-  },
-  {
-    "source": "shared/references/benchmark_worker_runtime_contract.md",
-    "kind": "reference",
-    "targets": [
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/benchmark_worker_runtime_contract.md"
-      },
-      {
-        "skill": "plugins/optimization-suite/skills/ln-840-benchmark-compare",
-        "path": "references/benchmark_worker_runtime_contract.md"
-      }
-    ]
-  },
-  {
     "source": "plugins/optimization-suite/shared/references/breaking_changes_patterns.md",
     "kind": "reference",
     "targets": [
@@ -1062,11 +1022,7 @@
         "path": "references/ci_tool_detection.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-622-build-auditor",
-        "path": "references/ci_tool_detection.md"
-      },
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-622-build-delivery-gate-auditor",
         "path": "references/ci_tool_detection.md"
       },
       {
@@ -1136,11 +1092,7 @@
         "path": "references/clean_code_checklist.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-626-dead-code-auditor",
-        "path": "references/clean_code_checklist.md"
-      },
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-626-dead-code-pruning-auditor",
         "path": "references/clean_code_checklist.md"
       },
       {
@@ -1256,20 +1208,6 @@
       {
         "skill": "plugins/community-engagement/skills/ln-914-community-responder",
         "path": "references/community_strategy_template.md"
-      }
-    ]
-  },
-  {
-    "source": "shared/references/context_validation.md",
-    "kind": "reference",
-    "targets": [
-      {
-        "skill": "plugins/agile-workflow/skills/ln-512-tech-debt-cleaner",
-        "path": "references/context_validation.md"
-      },
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/context_validation.md"
       }
     ]
   },
@@ -1432,10 +1370,6 @@
         "path": "references/coordinator_summary_contract.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/coordinator_summary_contract.md"
-      },
-      {
         "skill": "plugins/documentation-pipeline/skills/ln-100-documents-pipeline",
         "path": "references/coordinator_summary_contract.md"
       },
@@ -1566,10 +1500,6 @@
         "path": "references/creation_quality_checklist.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/creation_quality_checklist.md"
-      },
-      {
         "skill": "plugins/documentation-pipeline/skills/ln-162-skill-reviewer",
         "path": "references/creation_quality_checklist.md"
       }
@@ -1590,20 +1520,6 @@
       {
         "skill": "plugins/agile-workflow/skills/ln-314-review-repair-worker",
         "path": "references/cross_reference_validation.md"
-      }
-    ]
-  },
-  {
-    "source": "shared/references/dependency_runtime_contract.md",
-    "kind": "reference",
-    "targets": [
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/dependency_runtime_contract.md"
-      },
-      {
-        "skill": "plugins/optimization-suite/skills/ln-820-dependency-optimization-coordinator",
-        "path": "references/dependency_runtime_contract.md"
       }
     ]
   },
@@ -1647,10 +1563,6 @@
       },
       {
         "skill": "plugins/agile-workflow/skills/ln-511-code-quality-checker",
-        "path": "references/destructive_operation_safety.md"
-      },
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
         "path": "references/destructive_operation_safety.md"
       }
     ]
@@ -1698,20 +1610,6 @@
       {
         "skill": "plugins/documentation-pipeline/skills/ln-140-test-docs-creator",
         "path": "references/docs_generation_summary_contract.md"
-      }
-    ]
-  },
-  {
-    "source": "shared/references/docs_pipeline_runtime_contract.md",
-    "kind": "reference",
-    "targets": [
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/docs_pipeline_runtime_contract.md"
-      },
-      {
-        "skill": "plugins/documentation-pipeline/skills/ln-100-documents-pipeline",
-        "path": "references/docs_pipeline_runtime_contract.md"
       }
     ]
   },
@@ -1874,20 +1772,6 @@
     ]
   },
   {
-    "source": "shared/references/docs_runtime_contract.md",
-    "kind": "reference",
-    "targets": [
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/docs_runtime_contract.md"
-      },
-      {
-        "skill": "plugins/documentation-pipeline/skills/ln-110-project-docs-coordinator",
-        "path": "references/docs_runtime_contract.md"
-      }
-    ]
-  },
-  {
     "source": "shared/references/documentation_creation.md",
     "kind": "reference",
     "targets": [
@@ -1912,20 +1796,6 @@
       {
         "skill": "plugins/agile-workflow/skills/ln-313-review-docs-worker",
         "path": "references/domain_patterns.md"
-      }
-    ]
-  },
-  {
-    "source": "shared/references/environment_setup_runtime_contract.md",
-    "kind": "reference",
-    "targets": [
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/environment_setup_runtime_contract.md"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-010-dev-environment-setup",
-        "path": "references/environment_setup_runtime_contract.md"
       }
     ]
   },
@@ -2002,10 +1872,6 @@
         "path": "references/environment_state_contract.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/environment_state_contract.md"
-      },
-      {
         "skill": "plugins/documentation-pipeline/skills/ln-111-root-docs-creator",
         "path": "references/environment_state_contract.md"
       },
@@ -2056,20 +1922,6 @@
       {
         "skill": "plugins/agile-workflow/skills/ln-210-epic-coordinator",
         "path": "references/epic_plan_summary_contract.md"
-      }
-    ]
-  },
-  {
-    "source": "shared/references/epic_planning_runtime_contract.md",
-    "kind": "reference",
-    "targets": [
-      {
-        "skill": "plugins/agile-workflow/skills/ln-210-epic-coordinator",
-        "path": "references/epic_planning_runtime_contract.md"
-      },
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/epic_planning_runtime_contract.md"
       }
     ]
   },
@@ -2127,18 +1979,6 @@
       },
       {
         "skill": "plugins/codebase-audit-suite/skills/ln-640-pattern-evolution-auditor",
-        "path": "references/epistemic_protocol.md"
-      },
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-641-pattern-analyzer",
-        "path": "references/epistemic_protocol.md"
-      },
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/epistemic_protocol.md"
-      },
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-645-open-source-replacer",
         "path": "references/epistemic_protocol.md"
       },
       {
@@ -2380,10 +2220,6 @@
         "path": "references/git_scope_detection.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/git_scope_detection.md"
-      },
-      {
         "skill": "plugins/optimization-suite/skills/ln-814-optimization-executor",
         "path": "references/git_scope_detection.md"
       },
@@ -2433,10 +2269,6 @@
       },
       {
         "skill": "plugins/agile-workflow/skills/ln-404-test-executor",
-        "path": "references/goal_articulation_gate.md"
-      },
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
         "path": "references/goal_articulation_gate.md"
       },
       {
@@ -2534,20 +2366,6 @@
     ]
   },
   {
-    "source": "shared/references/issue_creation_workflow.md",
-    "kind": "reference",
-    "targets": [
-      {
-        "skill": "plugins/agile-workflow/skills/ln-210-epic-coordinator",
-        "path": "references/issue_creation_workflow.md"
-      },
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/issue_creation_workflow.md"
-      }
-    ]
-  },
-  {
     "source": "plugins/codebase-audit-suite/shared/references/layer_rules.md",
     "kind": "reference",
     "targets": [
@@ -2556,7 +2374,7 @@
         "path": "references/layer_rules.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-642-layer-boundary-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-642-layer-ownership-boundary-auditor",
         "path": "references/layer_rules.md"
       }
     ]
@@ -2646,20 +2464,6 @@
     ]
   },
   {
-    "source": "shared/references/mcp_applicability_matrix.md",
-    "kind": "reference",
-    "targets": [
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/mcp_applicability_matrix.md"
-      },
-      {
-        "skill": "plugins/documentation-pipeline/skills/ln-162-skill-reviewer",
-        "path": "references/mcp_applicability_matrix.md"
-      }
-    ]
-  },
-  {
     "source": "shared/references/mcp_integration_patterns.md",
     "kind": "reference",
     "targets": [
@@ -2696,35 +2500,35 @@
         "path": "references/mcp_integration_patterns.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-621-security-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-621-security-boundary-auditor",
         "path": "references/mcp_integration_patterns.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-623-code-principles-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-623-duplication-overabstraction-auditor",
         "path": "references/mcp_integration_patterns.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-624-code-quality-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-624-code-maintainability-hotspot-auditor",
         "path": "references/mcp_integration_patterns.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-625-dependencies-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-625-dependency-reuse-auditor",
         "path": "references/mcp_integration_patterns.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-626-dead-code-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-626-dead-code-pruning-auditor",
         "path": "references/mcp_integration_patterns.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-627-observability-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-627-diagnosability-auditor",
         "path": "references/mcp_integration_patterns.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-628-concurrency-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-628-concurrency-correctness-auditor",
         "path": "references/mcp_integration_patterns.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-629-lifecycle-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-629-runtime-lifecycle-config-auditor",
         "path": "references/mcp_integration_patterns.md"
       },
       {
@@ -2732,11 +2536,11 @@
         "path": "references/mcp_integration_patterns.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-641-pattern-analyzer",
+        "skill": "plugins/codebase-audit-suite/skills/ln-641-pattern-fitness-auditor",
         "path": "references/mcp_integration_patterns.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-642-layer-boundary-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-642-layer-ownership-boundary-auditor",
         "path": "references/mcp_integration_patterns.md"
       },
       {
@@ -2744,11 +2548,11 @@
         "path": "references/mcp_integration_patterns.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-topology-auditor",
         "path": "references/mcp_integration_patterns.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-645-open-source-replacer",
+        "skill": "plugins/codebase-audit-suite/skills/ln-645-architecture-modernization-auditor",
         "path": "references/mcp_integration_patterns.md"
       },
       {
@@ -2756,7 +2560,7 @@
         "path": "references/mcp_integration_patterns.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-647-env-config-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-647-configuration-boundary-auditor",
         "path": "references/mcp_integration_patterns.md"
       },
       {
@@ -2846,35 +2650,35 @@
         "path": "references/mcp_tool_preferences.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-621-security-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-621-security-boundary-auditor",
         "path": "references/mcp_tool_preferences.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-623-code-principles-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-623-duplication-overabstraction-auditor",
         "path": "references/mcp_tool_preferences.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-624-code-quality-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-624-code-maintainability-hotspot-auditor",
         "path": "references/mcp_tool_preferences.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-625-dependencies-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-625-dependency-reuse-auditor",
         "path": "references/mcp_tool_preferences.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-626-dead-code-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-626-dead-code-pruning-auditor",
         "path": "references/mcp_tool_preferences.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-627-observability-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-627-diagnosability-auditor",
         "path": "references/mcp_tool_preferences.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-628-concurrency-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-628-concurrency-correctness-auditor",
         "path": "references/mcp_tool_preferences.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-629-lifecycle-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-629-runtime-lifecycle-config-auditor",
         "path": "references/mcp_tool_preferences.md"
       },
       {
@@ -2882,11 +2686,11 @@
         "path": "references/mcp_tool_preferences.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-641-pattern-analyzer",
+        "skill": "plugins/codebase-audit-suite/skills/ln-641-pattern-fitness-auditor",
         "path": "references/mcp_tool_preferences.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-642-layer-boundary-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-642-layer-ownership-boundary-auditor",
         "path": "references/mcp_tool_preferences.md"
       },
       {
@@ -2894,11 +2698,11 @@
         "path": "references/mcp_tool_preferences.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-topology-auditor",
         "path": "references/mcp_tool_preferences.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-645-open-source-replacer",
+        "skill": "plugins/codebase-audit-suite/skills/ln-645-architecture-modernization-auditor",
         "path": "references/mcp_tool_preferences.md"
       },
       {
@@ -2906,7 +2710,7 @@
         "path": "references/mcp_tool_preferences.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-647-env-config-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-647-configuration-boundary-auditor",
         "path": "references/mcp_tool_preferences.md"
       },
       {
@@ -3054,10 +2858,6 @@
         "path": "references/meta_analysis_protocol.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/meta_analysis_protocol.md"
-      },
-      {
         "skill": "plugins/codebase-audit-suite/skills/ln-650-persistence-performance-auditor",
         "path": "references/meta_analysis_protocol.md"
       },
@@ -3140,20 +2940,6 @@
     ]
   },
   {
-    "source": "shared/references/modernization_runtime_contract.md",
-    "kind": "reference",
-    "targets": [
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/modernization_runtime_contract.md"
-      },
-      {
-        "skill": "plugins/optimization-suite/skills/ln-830-code-modernization-coordinator",
-        "path": "references/modernization_runtime_contract.md"
-      }
-    ]
-  },
-  {
     "source": "shared/references/monitor_integration_pattern.md",
     "kind": "reference",
     "targets": [
@@ -3212,34 +2998,6 @@
       {
         "skill": "plugins/optimization-suite/skills/ln-832-bundle-optimizer",
         "path": "references/optimization_categories.md"
-      }
-    ]
-  },
-  {
-    "source": "shared/references/optimization_runtime_contract.md",
-    "kind": "reference",
-    "targets": [
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/optimization_runtime_contract.md"
-      },
-      {
-        "skill": "plugins/optimization-suite/skills/ln-810-performance-optimizer",
-        "path": "references/optimization_runtime_contract.md"
-      }
-    ]
-  },
-  {
-    "source": "shared/references/orchestrator_pattern.md",
-    "kind": "reference",
-    "targets": [
-      {
-        "skill": "plugins/agile-workflow/skills/ln-210-epic-coordinator",
-        "path": "references/orchestrator_pattern.md"
-      },
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/orchestrator_pattern.md"
       }
     ]
   },
@@ -3334,20 +3092,6 @@
     ]
   },
   {
-    "source": "shared/references/platform_artifacts.md",
-    "kind": "reference",
-    "targets": [
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-646-project-structure-auditor",
-        "path": "references/platform_artifacts.md"
-      },
-      {
-        "skill": "plugins/project-bootstrap/skills/ln-724-artifact-cleaner",
-        "path": "references/platform_artifacts.md"
-      }
-    ]
-  },
-  {
     "source": "plugins/agile-workflow/shared/references/premortem_validation.md",
     "kind": "reference",
     "targets": [
@@ -3388,10 +3132,6 @@
       {
         "skill": "plugins/agile-workflow/skills/ln-403-task-rework",
         "path": "references/problem_solving.md"
-      },
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/problem_solving.md"
       }
     ]
   },
@@ -3413,10 +3153,6 @@
     "source": "shared/references/procedural_skill_sop_guide.md",
     "kind": "reference",
     "targets": [
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/procedural_skill_sop_guide.md"
-      },
       {
         "skill": "plugins/documentation-pipeline/skills/ln-161-skill-creator",
         "path": "references/procedural_skill_sop_guide.md"
@@ -3584,10 +3320,6 @@
       {
         "skill": "plugins/agile-workflow/skills/ln-302-task-replanner",
         "path": "references/replan_algorithm_stories.md"
-      },
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/replan_algorithm_stories.md"
       }
     ]
   },
@@ -3606,10 +3338,6 @@
       {
         "skill": "plugins/agile-workflow/skills/ln-302-task-replanner",
         "path": "references/replan_algorithm_common.md"
-      },
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/replan_algorithm.md"
       }
     ]
   },
@@ -3627,10 +3355,6 @@
       },
       {
         "skill": "plugins/agile-workflow/skills/ln-302-task-replanner",
-        "path": "references/replan_workflow.md"
-      },
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
         "path": "references/replan_workflow.md"
       }
     ]
@@ -3699,18 +3423,6 @@
       },
       {
         "skill": "plugins/codebase-audit-suite/skills/ln-640-pattern-evolution-auditor",
-        "path": "references/research_tool_fallback.md"
-      },
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-641-pattern-analyzer",
-        "path": "references/research_tool_fallback.md"
-      },
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/research_tool_fallback.md"
-      },
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-645-open-source-replacer",
         "path": "references/research_tool_fallback.md"
       },
       {
@@ -3798,48 +3510,6 @@
       {
         "skill": "plugins/agile-workflow/skills/ln-314-review-repair-worker",
         "path": "references/risk_validation.md"
-      }
-    ]
-  },
-  {
-    "source": "shared/references/scope_decomposition_runtime_contract.md",
-    "kind": "reference",
-    "targets": [
-      {
-        "skill": "plugins/agile-workflow/skills/ln-200-scope-decomposer",
-        "path": "references/scope_decomposition_runtime_contract.md"
-      },
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/scope_decomposition_runtime_contract.md"
-      }
-    ]
-  },
-  {
-    "source": "shared/references/scope_decomposition_summary_contract.md",
-    "kind": "reference",
-    "targets": [
-      {
-        "skill": "plugins/agile-workflow/skills/ln-200-scope-decomposer",
-        "path": "references/scope_decomposition_summary_contract.md"
-      },
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/scope_decomposition_summary_contract.md"
-      }
-    ]
-  },
-  {
-    "source": "shared/references/skill_contract.md",
-    "kind": "reference",
-    "targets": [
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/skill_contract.md"
-      },
-      {
-        "skill": "plugins/documentation-pipeline/skills/ln-162-skill-reviewer",
-        "path": "references/skill_contract.md"
       }
     ]
   },
@@ -3962,54 +3632,8 @@
         "path": "references/storage_mode_detection.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/storage_mode_detection.md"
-      },
-      {
         "skill": "plugins/documentation-pipeline/skills/ln-130-tasks-docs-creator",
         "path": "references/storage_mode_detection.md"
-      }
-    ]
-  },
-  {
-    "source": "shared/references/story_execution_runtime_contract.md",
-    "kind": "reference",
-    "targets": [
-      {
-        "skill": "plugins/agile-workflow/skills/ln-400-story-executor",
-        "path": "references/story_execution_runtime_contract.md"
-      },
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/story_execution_runtime_contract.md"
-      }
-    ]
-  },
-  {
-    "source": "shared/references/story_gate_runtime_contract.md",
-    "kind": "reference",
-    "targets": [
-      {
-        "skill": "plugins/agile-workflow/skills/ln-500-story-quality-gate",
-        "path": "references/story_gate_runtime_contract.md"
-      },
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/story_gate_runtime_contract.md"
-      }
-    ]
-  },
-  {
-    "source": "shared/references/story_planning_runtime_contract.md",
-    "kind": "reference",
-    "targets": [
-      {
-        "skill": "plugins/agile-workflow/skills/ln-220-story-coordinator",
-        "path": "references/story_planning_runtime_contract.md"
-      },
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/story_planning_runtime_contract.md"
       }
     ]
   },
@@ -4024,20 +3648,6 @@
       {
         "skill": "plugins/agile-workflow/skills/ln-314-review-repair-worker",
         "path": "references/structural_validation.md"
-      }
-    ]
-  },
-  {
-    "source": "shared/references/task_delegation_pattern.md",
-    "kind": "reference",
-    "targets": [
-      {
-        "skill": "plugins/agile-workflow/skills/ln-210-epic-coordinator",
-        "path": "references/task_delegation_pattern.md"
-      },
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/task_delegation_pattern.md"
       }
     ]
   },
@@ -4064,20 +3674,6 @@
       {
         "skill": "plugins/agile-workflow/skills/ln-523-auto-test-planner",
         "path": "references/task_plan_worker_runtime_contract.md"
-      }
-    ]
-  },
-  {
-    "source": "shared/references/task_planning_runtime_contract.md",
-    "kind": "reference",
-    "targets": [
-      {
-        "skill": "plugins/agile-workflow/skills/ln-300-task-coordinator",
-        "path": "references/task_planning_runtime_contract.md"
-      },
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/task_planning_runtime_contract.md"
       }
     ]
   },
@@ -4122,20 +3718,6 @@
       {
         "skill": "plugins/agile-workflow/skills/ln-302-task-replanner",
         "path": "references/template_loading_pattern.md"
-      }
-    ]
-  },
-  {
-    "source": "shared/references/test_planning_runtime_contract.md",
-    "kind": "reference",
-    "targets": [
-      {
-        "skill": "plugins/agile-workflow/skills/ln-520-test-planner",
-        "path": "references/test_planning_runtime_contract.md"
-      },
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/test_planning_runtime_contract.md"
       }
     ]
   },
@@ -4244,39 +3826,39 @@
         "path": "references/two_layer_detection.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-621-security-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-621-security-boundary-auditor",
         "path": "references/two_layer_detection.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-622-build-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-622-build-delivery-gate-auditor",
         "path": "references/two_layer_detection.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-623-code-principles-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-623-duplication-overabstraction-auditor",
         "path": "references/two_layer_detection.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-624-code-quality-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-624-code-maintainability-hotspot-auditor",
         "path": "references/two_layer_detection.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-625-dependencies-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-625-dependency-reuse-auditor",
         "path": "references/two_layer_detection.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-626-dead-code-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-626-dead-code-pruning-auditor",
         "path": "references/two_layer_detection.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-627-observability-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-627-diagnosability-auditor",
         "path": "references/two_layer_detection.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-628-concurrency-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-628-concurrency-correctness-auditor",
         "path": "references/two_layer_detection.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-629-lifecycle-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-629-runtime-lifecycle-config-auditor",
         "path": "references/two_layer_detection.md"
       },
       {
@@ -4308,11 +3890,15 @@
         "path": "references/two_layer_detection.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-641-pattern-analyzer",
+        "skill": "plugins/codebase-audit-suite/skills/ln-638-test-oracle-effectiveness-auditor",
         "path": "references/two_layer_detection.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-642-layer-boundary-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-641-pattern-fitness-auditor",
+        "path": "references/two_layer_detection.md"
+      },
+      {
+        "skill": "plugins/codebase-audit-suite/skills/ln-642-layer-ownership-boundary-auditor",
         "path": "references/two_layer_detection.md"
       },
       {
@@ -4320,11 +3906,11 @@
         "path": "references/two_layer_detection.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-topology-auditor",
         "path": "references/two_layer_detection.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-645-open-source-replacer",
+        "skill": "plugins/codebase-audit-suite/skills/ln-645-architecture-modernization-auditor",
         "path": "references/two_layer_detection.md"
       },
       {
@@ -4332,7 +3918,7 @@
         "path": "references/two_layer_detection.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-647-env-config-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-647-configuration-boundary-auditor",
         "path": "references/two_layer_detection.md"
       },
       {
@@ -4378,10 +3964,6 @@
         "path": "references/worker_runtime_contract.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/worker_runtime_contract.md"
-      },
-      {
         "skill": "plugins/setup-environment/skills/ln-011-agent-installer",
         "path": "references/worker_runtime_contract.md"
       },
@@ -4418,209 +4000,9 @@
     ]
   },
   {
-    "source": "shared/scripts/benchmark-worker-runtime/cli.mjs",
-    "kind": "script",
-    "targets": [
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/scripts/benchmark-worker-runtime/cli.mjs"
-      },
-      {
-        "skill": "plugins/optimization-suite/skills/ln-840-benchmark-compare",
-        "path": "references/scripts/benchmark-worker-runtime/cli.mjs"
-      }
-    ]
-  },
-  {
-    "source": "shared/scripts/coordinator-runtime/lib/cli-helpers.mjs",
-    "kind": "script",
-    "targets": [
-      {
-        "skill": "plugins/agile-workflow/skills/ln-1000-pipeline-orchestrator",
-        "path": "references/scripts/coordinator-runtime/lib/cli-helpers.mjs"
-      },
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/scripts/coordinator-runtime/lib/cli-helpers.mjs"
-      }
-    ]
-  },
-  {
-    "source": "shared/scripts/coordinator-runtime/lib/core.mjs",
-    "kind": "script",
-    "targets": [
-      {
-        "skill": "plugins/agile-workflow/skills/ln-1000-pipeline-orchestrator",
-        "path": "references/scripts/coordinator-runtime/lib/core.mjs"
-      },
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/scripts/coordinator-runtime/lib/core.mjs"
-      }
-    ]
-  },
-  {
-    "source": "shared/scripts/coordinator-runtime/lib/loop-health.mjs",
-    "kind": "script",
-    "targets": [
-      {
-        "skill": "plugins/agile-workflow/skills/ln-1000-pipeline-orchestrator",
-        "path": "references/scripts/coordinator-runtime/lib/loop-health.mjs"
-      },
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/scripts/coordinator-runtime/lib/loop-health.mjs"
-      }
-    ]
-  },
-  {
-    "source": "shared/scripts/coordinator-runtime/lib/runtime-constants.mjs",
-    "kind": "script",
-    "targets": [
-      {
-        "skill": "plugins/agile-workflow/skills/ln-1000-pipeline-orchestrator",
-        "path": "references/scripts/coordinator-runtime/lib/runtime-constants.mjs"
-      },
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/scripts/coordinator-runtime/lib/runtime-constants.mjs"
-      }
-    ]
-  },
-  {
-    "source": "shared/scripts/coordinator-runtime/lib/schemas.mjs",
-    "kind": "script",
-    "targets": [
-      {
-        "skill": "plugins/agile-workflow/skills/ln-1000-pipeline-orchestrator",
-        "path": "references/scripts/coordinator-runtime/lib/schemas.mjs"
-      },
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/scripts/coordinator-runtime/lib/schemas.mjs"
-      }
-    ]
-  },
-  {
-    "source": "shared/scripts/coordinator-runtime/lib/validate.mjs",
-    "kind": "script",
-    "targets": [
-      {
-        "skill": "plugins/agile-workflow/skills/ln-1000-pipeline-orchestrator",
-        "path": "references/scripts/coordinator-runtime/lib/validate.mjs"
-      },
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/scripts/coordinator-runtime/lib/validate.mjs"
-      }
-    ]
-  },
-  {
-    "source": "shared/scripts/coordinator-runtime/test/cli-test-helpers.mjs",
-    "kind": "script",
-    "targets": [
-      {
-        "skill": "plugins/agile-workflow/skills/ln-1000-pipeline-orchestrator",
-        "path": "references/scripts/coordinator-runtime/test/cli-test-helpers.mjs"
-      },
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/scripts/coordinator-runtime/test/cli-test-helpers.mjs"
-      }
-    ]
-  },
-  {
-    "source": "shared/scripts/coordinator-runtime/test/consistency-scan.mjs",
-    "kind": "script",
-    "targets": [
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/scripts/coordinator-runtime/test/consistency-scan.mjs"
-      },
-      {
-        "skill": "plugins/documentation-pipeline/skills/ln-162-skill-reviewer",
-        "path": "references/scripts/coordinator-runtime/test/consistency-scan.mjs"
-      }
-    ]
-  },
-  {
-    "source": "shared/scripts/coordinator-runtime/test/loop-health.mjs",
-    "kind": "script",
-    "targets": [
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/scripts/coordinator-runtime/test/loop-health.mjs"
-      },
-      {
-        "skill": "plugins/documentation-pipeline/skills/ln-162-skill-reviewer",
-        "path": "references/scripts/coordinator-runtime/test/loop-health.mjs"
-      }
-    ]
-  },
-  {
-    "source": "shared/scripts/coordinator-runtime/test/platform-regression.mjs",
-    "kind": "script",
-    "targets": [
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/scripts/coordinator-runtime/test/platform-regression.mjs"
-      },
-      {
-        "skill": "plugins/documentation-pipeline/skills/ln-162-skill-reviewer",
-        "path": "references/scripts/coordinator-runtime/test/platform-regression.mjs"
-      }
-    ]
-  },
-  {
-    "source": "shared/scripts/dependency-runtime/cli.mjs",
-    "kind": "script",
-    "targets": [
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/scripts/dependency-runtime/cli.mjs"
-      },
-      {
-        "skill": "plugins/optimization-suite/skills/ln-820-dependency-optimization-coordinator",
-        "path": "references/scripts/dependency-runtime/cli.mjs"
-      }
-    ]
-  },
-  {
-    "source": "shared/scripts/docs-pipeline-runtime/lib/store.mjs",
-    "kind": "script",
-    "targets": [
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/scripts/docs-pipeline-runtime/lib/store.mjs"
-      },
-      {
-        "skill": "plugins/documentation-pipeline/skills/ln-162-skill-reviewer",
-        "path": "references/scripts/docs-pipeline-runtime/lib/store.mjs"
-      }
-    ]
-  },
-  {
-    "source": "shared/scripts/docs-quality/cli.mjs",
-    "kind": "script",
-    "targets": [
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/scripts/docs-quality/cli.mjs"
-      },
-      {
-        "skill": "plugins/documentation-pipeline/skills/ln-100-documents-pipeline",
-        "path": "references/scripts/docs-quality/cli.mjs"
-      }
-    ]
-  },
-  {
     "source": "shared/scripts/environment-setup-runtime/cli.mjs",
     "kind": "script",
     "targets": [
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/scripts/environment-setup-runtime/cli.mjs"
-      },
       {
         "skill": "plugins/documentation-pipeline/skills/ln-162-skill-reviewer",
         "path": "references/scripts/environment-setup-runtime/cli.mjs"
@@ -4636,10 +4018,6 @@
     "kind": "script",
     "targets": [
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/scripts/environment-setup-runtime/lib/guards.mjs"
-      },
-      {
         "skill": "plugins/documentation-pipeline/skills/ln-162-skill-reviewer",
         "path": "references/scripts/environment-setup-runtime/lib/guards.mjs"
       },
@@ -4653,10 +4031,6 @@
     "source": "shared/scripts/environment-setup-runtime/lib/phases.mjs",
     "kind": "script",
     "targets": [
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/scripts/environment-setup-runtime/lib/phases.mjs"
-      },
       {
         "skill": "plugins/documentation-pipeline/skills/ln-162-skill-reviewer",
         "path": "references/scripts/environment-setup-runtime/lib/phases.mjs"
@@ -4672,58 +4046,12 @@
     "kind": "script",
     "targets": [
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/scripts/environment-setup-runtime/lib/store.mjs"
-      },
-      {
         "skill": "plugins/documentation-pipeline/skills/ln-162-skill-reviewer",
         "path": "references/scripts/environment-setup-runtime/lib/store.mjs"
       },
       {
         "skill": "plugins/setup-environment/skills/ln-010-dev-environment-setup",
         "path": "references/scripts/environment-setup-runtime/lib/store.mjs"
-      }
-    ]
-  },
-  {
-    "source": "shared/scripts/environment-setup-runtime/test/guards.mjs",
-    "kind": "script",
-    "targets": [
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/scripts/environment-setup-runtime/test/guards.mjs"
-      },
-      {
-        "skill": "plugins/documentation-pipeline/skills/ln-162-skill-reviewer",
-        "path": "references/scripts/environment-setup-runtime/test/guards.mjs"
-      }
-    ]
-  },
-  {
-    "source": "shared/scripts/environment-setup-runtime/test/smoke.mjs",
-    "kind": "script",
-    "targets": [
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/scripts/environment-setup-runtime/test/smoke.mjs"
-      },
-      {
-        "skill": "plugins/documentation-pipeline/skills/ln-162-skill-reviewer",
-        "path": "references/scripts/environment-setup-runtime/test/smoke.mjs"
-      }
-    ]
-  },
-  {
-    "source": "shared/scripts/environment-worker-runtime/cli.mjs",
-    "kind": "script",
-    "targets": [
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/scripts/environment-worker-runtime/cli.mjs"
-      },
-      {
-        "skill": "plugins/setup-environment/skills/ln-010-dev-environment-setup",
-        "path": "references/scripts/environment-worker-runtime/cli.mjs"
       }
     ]
   },
@@ -4740,26 +4068,8 @@
         "path": "references/scripts/epic-planning-runtime/cli.mjs"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/scripts/epic-planning-runtime/cli.mjs"
-      },
-      {
         "skill": "plugins/documentation-pipeline/skills/ln-162-skill-reviewer",
         "path": "references/scripts/epic-planning-runtime/cli.mjs"
-      }
-    ]
-  },
-  {
-    "source": "shared/scripts/epic-planning-runtime/lib/store.mjs",
-    "kind": "script",
-    "targets": [
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/scripts/epic-planning-runtime/lib/store.mjs"
-      },
-      {
-        "skill": "plugins/documentation-pipeline/skills/ln-162-skill-reviewer",
-        "path": "references/scripts/epic-planning-runtime/lib/store.mjs"
       }
     ]
   },
@@ -4774,20 +4084,46 @@
       {
         "skill": "plugins/agile-workflow/skills/ln-310-multi-agent-validator",
         "path": "references/scripts/evaluation-runtime/cli.mjs"
+      },
+      {
+        "skill": "plugins/documentation-pipeline/skills/ln-162-skill-reviewer",
+        "path": "references/scripts/evaluation-runtime/cli.mjs"
       }
     ]
   },
   {
-    "source": "shared/scripts/modernization-runtime/cli.mjs",
+    "source": "shared/scripts/evaluation-runtime/lib/guards.mjs",
     "kind": "script",
     "targets": [
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/scripts/modernization-runtime/cli.mjs"
+        "skill": "plugins/agile-workflow/skills/ln-1000-pipeline-orchestrator",
+        "path": "references/scripts/evaluation-runtime/lib/guards.mjs"
       },
       {
-        "skill": "plugins/optimization-suite/skills/ln-830-code-modernization-coordinator",
-        "path": "references/scripts/modernization-runtime/cli.mjs"
+        "skill": "plugins/agile-workflow/skills/ln-310-multi-agent-validator",
+        "path": "references/scripts/evaluation-runtime/lib/guards.mjs"
+      },
+      {
+        "skill": "plugins/documentation-pipeline/skills/ln-162-skill-reviewer",
+        "path": "references/scripts/evaluation-runtime/lib/guards.mjs"
+      }
+    ]
+  },
+  {
+    "source": "shared/scripts/evaluation-runtime/lib/store.mjs",
+    "kind": "script",
+    "targets": [
+      {
+        "skill": "plugins/agile-workflow/skills/ln-1000-pipeline-orchestrator",
+        "path": "references/scripts/evaluation-runtime/lib/store.mjs"
+      },
+      {
+        "skill": "plugins/agile-workflow/skills/ln-310-multi-agent-validator",
+        "path": "references/scripts/evaluation-runtime/lib/store.mjs"
+      },
+      {
+        "skill": "plugins/documentation-pipeline/skills/ln-162-skill-reviewer",
+        "path": "references/scripts/evaluation-runtime/lib/store.mjs"
       }
     ]
   },
@@ -4795,10 +4131,6 @@
     "source": "shared/scripts/optimization-runtime/cli.mjs",
     "kind": "script",
     "targets": [
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/scripts/optimization-runtime/cli.mjs"
-      },
       {
         "skill": "plugins/documentation-pipeline/skills/ln-162-skill-reviewer",
         "path": "references/scripts/optimization-runtime/cli.mjs"
@@ -4886,40 +4218,8 @@
         "path": "references/scripts/quality-runtime/cli.mjs"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/scripts/quality-runtime/cli.mjs"
-      },
-      {
         "skill": "plugins/documentation-pipeline/skills/ln-162-skill-reviewer",
         "path": "references/scripts/quality-runtime/cli.mjs"
-      }
-    ]
-  },
-  {
-    "source": "shared/scripts/scope-decomposition-runtime/cli.mjs",
-    "kind": "script",
-    "targets": [
-      {
-        "skill": "plugins/agile-workflow/skills/ln-200-scope-decomposer",
-        "path": "references/scripts/scope-decomposition-runtime/cli.mjs"
-      },
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/scripts/scope-decomposition-runtime/cli.mjs"
-      }
-    ]
-  },
-  {
-    "source": "shared/scripts/scope-decomposition-runtime/lib/store.mjs",
-    "kind": "script",
-    "targets": [
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/scripts/scope-decomposition-runtime/lib/store.mjs"
-      },
-      {
-        "skill": "plugins/documentation-pipeline/skills/ln-162-skill-reviewer",
-        "path": "references/scripts/scope-decomposition-runtime/lib/store.mjs"
       }
     ]
   },
@@ -4936,40 +4236,8 @@
         "path": "references/scripts/story-execution-runtime/cli.mjs"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/scripts/story-execution-runtime/cli.mjs"
-      },
-      {
         "skill": "plugins/documentation-pipeline/skills/ln-162-skill-reviewer",
         "path": "references/scripts/story-execution-runtime/cli.mjs"
-      }
-    ]
-  },
-  {
-    "source": "shared/scripts/story-execution-runtime/lib/phases.mjs",
-    "kind": "script",
-    "targets": [
-      {
-        "skill": "plugins/agile-workflow/skills/ln-1000-pipeline-orchestrator",
-        "path": "references/scripts/story-execution-runtime/lib/phases.mjs"
-      },
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/scripts/story-execution-runtime/lib/phases.mjs"
-      }
-    ]
-  },
-  {
-    "source": "shared/scripts/story-execution-runtime/test/loop-health.mjs",
-    "kind": "script",
-    "targets": [
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/scripts/story-execution-runtime/test/loop-health.mjs"
-      },
-      {
-        "skill": "plugins/documentation-pipeline/skills/ln-162-skill-reviewer",
-        "path": "references/scripts/story-execution-runtime/test/loop-health.mjs"
       }
     ]
   },
@@ -4986,26 +4254,8 @@
         "path": "references/scripts/story-gate-runtime/cli.mjs"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/scripts/story-gate-runtime/cli.mjs"
-      },
-      {
         "skill": "plugins/documentation-pipeline/skills/ln-162-skill-reviewer",
         "path": "references/scripts/story-gate-runtime/cli.mjs"
-      }
-    ]
-  },
-  {
-    "source": "shared/scripts/story-gate-runtime/lib/phases.mjs",
-    "kind": "script",
-    "targets": [
-      {
-        "skill": "plugins/agile-workflow/skills/ln-1000-pipeline-orchestrator",
-        "path": "references/scripts/story-gate-runtime/lib/phases.mjs"
-      },
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/scripts/story-gate-runtime/lib/phases.mjs"
       }
     ]
   },
@@ -5022,40 +4272,8 @@
         "path": "references/scripts/story-planning-runtime/cli.mjs"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/scripts/story-planning-runtime/cli.mjs"
-      },
-      {
         "skill": "plugins/documentation-pipeline/skills/ln-162-skill-reviewer",
         "path": "references/scripts/story-planning-runtime/cli.mjs"
-      }
-    ]
-  },
-  {
-    "source": "shared/scripts/story-planning-runtime/lib/store.mjs",
-    "kind": "script",
-    "targets": [
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/scripts/story-planning-runtime/lib/store.mjs"
-      },
-      {
-        "skill": "plugins/documentation-pipeline/skills/ln-162-skill-reviewer",
-        "path": "references/scripts/story-planning-runtime/lib/store.mjs"
-      }
-    ]
-  },
-  {
-    "source": "shared/scripts/story-planning-runtime/test/smoke.mjs",
-    "kind": "script",
-    "targets": [
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/scripts/story-planning-runtime/test/smoke.mjs"
-      },
-      {
-        "skill": "plugins/documentation-pipeline/skills/ln-162-skill-reviewer",
-        "path": "references/scripts/story-planning-runtime/test/smoke.mjs"
       }
     ]
   },
@@ -5114,54 +4332,8 @@
         "path": "references/scripts/task-planning-runtime/cli.mjs"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/scripts/task-planning-runtime/cli.mjs"
-      },
-      {
         "skill": "plugins/documentation-pipeline/skills/ln-162-skill-reviewer",
         "path": "references/scripts/task-planning-runtime/cli.mjs"
-      }
-    ]
-  },
-  {
-    "source": "shared/scripts/task-planning-runtime/lib/phases.mjs",
-    "kind": "script",
-    "targets": [
-      {
-        "skill": "plugins/agile-workflow/skills/ln-1000-pipeline-orchestrator",
-        "path": "references/scripts/task-planning-runtime/lib/phases.mjs"
-      },
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/scripts/task-planning-runtime/lib/phases.mjs"
-      }
-    ]
-  },
-  {
-    "source": "shared/scripts/task-planning-runtime/lib/store.mjs",
-    "kind": "script",
-    "targets": [
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/scripts/task-planning-runtime/lib/store.mjs"
-      },
-      {
-        "skill": "plugins/documentation-pipeline/skills/ln-162-skill-reviewer",
-        "path": "references/scripts/task-planning-runtime/lib/store.mjs"
-      }
-    ]
-  },
-  {
-    "source": "shared/scripts/task-planning-runtime/test/smoke.mjs",
-    "kind": "script",
-    "targets": [
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/scripts/task-planning-runtime/test/smoke.mjs"
-      },
-      {
-        "skill": "plugins/documentation-pipeline/skills/ln-162-skill-reviewer",
-        "path": "references/scripts/task-planning-runtime/test/smoke.mjs"
       }
     ]
   },
@@ -5201,10 +4373,6 @@
       },
       {
         "skill": "plugins/agile-workflow/skills/ln-520-test-planner",
-        "path": "references/scripts/test-planning-runtime/cli.mjs"
-      },
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
         "path": "references/scripts/test-planning-runtime/cli.mjs"
       },
       {
@@ -5342,39 +4510,39 @@
         "path": "references/templates/audit_worker_report_template.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-621-security-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-621-security-boundary-auditor",
         "path": "references/templates/audit_worker_report_template.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-622-build-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-622-build-delivery-gate-auditor",
         "path": "references/templates/audit_worker_report_template.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-623-code-principles-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-623-duplication-overabstraction-auditor",
         "path": "references/templates/audit_worker_report_template.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-624-code-quality-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-624-code-maintainability-hotspot-auditor",
         "path": "references/templates/audit_worker_report_template.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-625-dependencies-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-625-dependency-reuse-auditor",
         "path": "references/templates/audit_worker_report_template.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-626-dead-code-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-626-dead-code-pruning-auditor",
         "path": "references/templates/audit_worker_report_template.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-627-observability-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-627-diagnosability-auditor",
         "path": "references/templates/audit_worker_report_template.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-628-concurrency-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-628-concurrency-correctness-auditor",
         "path": "references/templates/audit_worker_report_template.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-629-lifecycle-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-629-runtime-lifecycle-config-auditor",
         "path": "references/templates/audit_worker_report_template.md"
       },
       {
@@ -5406,11 +4574,15 @@
         "path": "references/templates/audit_worker_report_template.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-641-pattern-analyzer",
+        "skill": "plugins/codebase-audit-suite/skills/ln-638-test-oracle-effectiveness-auditor",
         "path": "references/templates/audit_worker_report_template.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-642-layer-boundary-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-641-pattern-fitness-auditor",
+        "path": "references/templates/audit_worker_report_template.md"
+      },
+      {
+        "skill": "plugins/codebase-audit-suite/skills/ln-642-layer-ownership-boundary-auditor",
         "path": "references/templates/audit_worker_report_template.md"
       },
       {
@@ -5418,11 +4590,11 @@
         "path": "references/templates/audit_worker_report_template.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-topology-auditor",
         "path": "references/templates/audit_worker_report_template.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-645-open-source-replacer",
+        "skill": "plugins/codebase-audit-suite/skills/ln-645-architecture-modernization-auditor",
         "path": "references/templates/audit_worker_report_template.md"
       },
       {
@@ -5430,7 +4602,7 @@
         "path": "references/templates/audit_worker_report_template.md"
       },
       {
-        "skill": "plugins/codebase-audit-suite/skills/ln-647-env-config-auditor",
+        "skill": "plugins/codebase-audit-suite/skills/ln-647-configuration-boundary-auditor",
         "path": "references/templates/audit_worker_report_template.md"
       },
       {
@@ -5566,10 +4738,6 @@
       {
         "skill": "plugins/agile-workflow/skills/ln-511-code-quality-checker",
         "path": "references/templates/task_template_implementation.md"
-      },
-      {
-        "skill": "plugins/codebase-audit-suite/skills/ln-644-dependency-graph-auditor",
-        "path": "references/templates/task_template_implementation.md"
       }
     ]
   },
@@ -5584,6 +4752,556 @@
       {
         "skill": "plugins/agile-workflow/skills/ln-523-auto-test-planner",
         "path": "references/templates/test_task_template.md"
+      }
+    ]
+  },
+  {
+    "source": "shared/agents/prompt_templates/modes/code.md",
+    "kind": "agent",
+    "targets": [
+      {
+        "skill": "plugins/agile-workflow/skills/ln-500-story-quality-gate",
+        "path": "references/agents/prompt_templates/modes/code.md"
+      }
+    ]
+  },
+  {
+    "source": "shared/agents/prompt_templates/modes/context.md",
+    "kind": "agent",
+    "targets": [
+      {
+        "skill": "plugins/agile-workflow/skills/ln-310-multi-agent-validator",
+        "path": "references/agents/prompt_templates/modes/context.md"
+      }
+    ]
+  },
+  {
+    "source": "shared/agents/prompt_templates/modes/story.md",
+    "kind": "agent",
+    "targets": [
+      {
+        "skill": "plugins/agile-workflow/skills/ln-310-multi-agent-validator",
+        "path": "references/agents/prompt_templates/modes/story.md"
+      }
+    ]
+  },
+  {
+    "source": "shared/references/benchmark_generation.md",
+    "kind": "reference",
+    "targets": [
+      {
+        "skill": "plugins/optimization-suite/skills/ln-811-performance-profiler",
+        "path": "references/benchmark_generation.md"
+      }
+    ]
+  },
+  {
+    "source": "shared/references/benchmark_worker_runtime_contract.md",
+    "kind": "reference",
+    "targets": [
+      {
+        "skill": "plugins/optimization-suite/skills/ln-840-benchmark-compare",
+        "path": "references/benchmark_worker_runtime_contract.md"
+      }
+    ]
+  },
+  {
+    "source": "shared/references/context_validation.md",
+    "kind": "reference",
+    "targets": [
+      {
+        "skill": "plugins/agile-workflow/skills/ln-512-tech-debt-cleaner",
+        "path": "references/context_validation.md"
+      }
+    ]
+  },
+  {
+    "source": "shared/references/dependency_runtime_contract.md",
+    "kind": "reference",
+    "targets": [
+      {
+        "skill": "plugins/optimization-suite/skills/ln-820-dependency-optimization-coordinator",
+        "path": "references/dependency_runtime_contract.md"
+      }
+    ]
+  },
+  {
+    "source": "shared/references/docs_pipeline_runtime_contract.md",
+    "kind": "reference",
+    "targets": [
+      {
+        "skill": "plugins/documentation-pipeline/skills/ln-100-documents-pipeline",
+        "path": "references/docs_pipeline_runtime_contract.md"
+      }
+    ]
+  },
+  {
+    "source": "shared/references/docs_runtime_contract.md",
+    "kind": "reference",
+    "targets": [
+      {
+        "skill": "plugins/documentation-pipeline/skills/ln-110-project-docs-coordinator",
+        "path": "references/docs_runtime_contract.md"
+      }
+    ]
+  },
+  {
+    "source": "shared/references/environment_setup_runtime_contract.md",
+    "kind": "reference",
+    "targets": [
+      {
+        "skill": "plugins/setup-environment/skills/ln-010-dev-environment-setup",
+        "path": "references/environment_setup_runtime_contract.md"
+      }
+    ]
+  },
+  {
+    "source": "shared/references/epic_planning_runtime_contract.md",
+    "kind": "reference",
+    "targets": [
+      {
+        "skill": "plugins/agile-workflow/skills/ln-210-epic-coordinator",
+        "path": "references/epic_planning_runtime_contract.md"
+      }
+    ]
+  },
+  {
+    "source": "shared/references/issue_creation_workflow.md",
+    "kind": "reference",
+    "targets": [
+      {
+        "skill": "plugins/agile-workflow/skills/ln-210-epic-coordinator",
+        "path": "references/issue_creation_workflow.md"
+      }
+    ]
+  },
+  {
+    "source": "shared/references/mcp_applicability_matrix.md",
+    "kind": "reference",
+    "targets": [
+      {
+        "skill": "plugins/documentation-pipeline/skills/ln-162-skill-reviewer",
+        "path": "references/mcp_applicability_matrix.md"
+      }
+    ]
+  },
+  {
+    "source": "shared/references/modernization_runtime_contract.md",
+    "kind": "reference",
+    "targets": [
+      {
+        "skill": "plugins/optimization-suite/skills/ln-830-code-modernization-coordinator",
+        "path": "references/modernization_runtime_contract.md"
+      }
+    ]
+  },
+  {
+    "source": "shared/references/optimization_runtime_contract.md",
+    "kind": "reference",
+    "targets": [
+      {
+        "skill": "plugins/optimization-suite/skills/ln-810-performance-optimizer",
+        "path": "references/optimization_runtime_contract.md"
+      }
+    ]
+  },
+  {
+    "source": "shared/references/orchestrator_pattern.md",
+    "kind": "reference",
+    "targets": [
+      {
+        "skill": "plugins/agile-workflow/skills/ln-210-epic-coordinator",
+        "path": "references/orchestrator_pattern.md"
+      }
+    ]
+  },
+  {
+    "source": "shared/references/platform_artifacts.md",
+    "kind": "reference",
+    "targets": [
+      {
+        "skill": "plugins/project-bootstrap/skills/ln-724-artifact-cleaner",
+        "path": "references/platform_artifacts.md"
+      }
+    ]
+  },
+  {
+    "source": "shared/references/scope_decomposition_runtime_contract.md",
+    "kind": "reference",
+    "targets": [
+      {
+        "skill": "plugins/agile-workflow/skills/ln-200-scope-decomposer",
+        "path": "references/scope_decomposition_runtime_contract.md"
+      }
+    ]
+  },
+  {
+    "source": "shared/references/scope_decomposition_summary_contract.md",
+    "kind": "reference",
+    "targets": [
+      {
+        "skill": "plugins/agile-workflow/skills/ln-200-scope-decomposer",
+        "path": "references/scope_decomposition_summary_contract.md"
+      }
+    ]
+  },
+  {
+    "source": "shared/references/skill_contract.md",
+    "kind": "reference",
+    "targets": [
+      {
+        "skill": "plugins/documentation-pipeline/skills/ln-162-skill-reviewer",
+        "path": "references/skill_contract.md"
+      }
+    ]
+  },
+  {
+    "source": "shared/references/story_execution_runtime_contract.md",
+    "kind": "reference",
+    "targets": [
+      {
+        "skill": "plugins/agile-workflow/skills/ln-400-story-executor",
+        "path": "references/story_execution_runtime_contract.md"
+      }
+    ]
+  },
+  {
+    "source": "shared/references/story_gate_runtime_contract.md",
+    "kind": "reference",
+    "targets": [
+      {
+        "skill": "plugins/agile-workflow/skills/ln-500-story-quality-gate",
+        "path": "references/story_gate_runtime_contract.md"
+      }
+    ]
+  },
+  {
+    "source": "shared/references/story_planning_runtime_contract.md",
+    "kind": "reference",
+    "targets": [
+      {
+        "skill": "plugins/agile-workflow/skills/ln-220-story-coordinator",
+        "path": "references/story_planning_runtime_contract.md"
+      }
+    ]
+  },
+  {
+    "source": "shared/references/task_delegation_pattern.md",
+    "kind": "reference",
+    "targets": [
+      {
+        "skill": "plugins/agile-workflow/skills/ln-210-epic-coordinator",
+        "path": "references/task_delegation_pattern.md"
+      }
+    ]
+  },
+  {
+    "source": "shared/references/task_planning_runtime_contract.md",
+    "kind": "reference",
+    "targets": [
+      {
+        "skill": "plugins/agile-workflow/skills/ln-300-task-coordinator",
+        "path": "references/task_planning_runtime_contract.md"
+      }
+    ]
+  },
+  {
+    "source": "shared/references/test_planning_runtime_contract.md",
+    "kind": "reference",
+    "targets": [
+      {
+        "skill": "plugins/agile-workflow/skills/ln-520-test-planner",
+        "path": "references/test_planning_runtime_contract.md"
+      }
+    ]
+  },
+  {
+    "source": "shared/scripts/benchmark-worker-runtime/cli.mjs",
+    "kind": "script",
+    "targets": [
+      {
+        "skill": "plugins/optimization-suite/skills/ln-840-benchmark-compare",
+        "path": "references/scripts/benchmark-worker-runtime/cli.mjs"
+      }
+    ]
+  },
+  {
+    "source": "shared/scripts/coordinator-runtime/lib/cli-helpers.mjs",
+    "kind": "script",
+    "targets": [
+      {
+        "skill": "plugins/agile-workflow/skills/ln-1000-pipeline-orchestrator",
+        "path": "references/scripts/coordinator-runtime/lib/cli-helpers.mjs"
+      }
+    ]
+  },
+  {
+    "source": "shared/scripts/coordinator-runtime/lib/core.mjs",
+    "kind": "script",
+    "targets": [
+      {
+        "skill": "plugins/agile-workflow/skills/ln-1000-pipeline-orchestrator",
+        "path": "references/scripts/coordinator-runtime/lib/core.mjs"
+      }
+    ]
+  },
+  {
+    "source": "shared/scripts/coordinator-runtime/lib/loop-health.mjs",
+    "kind": "script",
+    "targets": [
+      {
+        "skill": "plugins/agile-workflow/skills/ln-1000-pipeline-orchestrator",
+        "path": "references/scripts/coordinator-runtime/lib/loop-health.mjs"
+      }
+    ]
+  },
+  {
+    "source": "shared/scripts/coordinator-runtime/lib/runtime-constants.mjs",
+    "kind": "script",
+    "targets": [
+      {
+        "skill": "plugins/agile-workflow/skills/ln-1000-pipeline-orchestrator",
+        "path": "references/scripts/coordinator-runtime/lib/runtime-constants.mjs"
+      }
+    ]
+  },
+  {
+    "source": "shared/scripts/coordinator-runtime/lib/schemas.mjs",
+    "kind": "script",
+    "targets": [
+      {
+        "skill": "plugins/agile-workflow/skills/ln-1000-pipeline-orchestrator",
+        "path": "references/scripts/coordinator-runtime/lib/schemas.mjs"
+      }
+    ]
+  },
+  {
+    "source": "shared/scripts/coordinator-runtime/lib/validate.mjs",
+    "kind": "script",
+    "targets": [
+      {
+        "skill": "plugins/agile-workflow/skills/ln-1000-pipeline-orchestrator",
+        "path": "references/scripts/coordinator-runtime/lib/validate.mjs"
+      }
+    ]
+  },
+  {
+    "source": "shared/scripts/coordinator-runtime/test/cli-test-helpers.mjs",
+    "kind": "script",
+    "targets": [
+      {
+        "skill": "plugins/agile-workflow/skills/ln-1000-pipeline-orchestrator",
+        "path": "references/scripts/coordinator-runtime/test/cli-test-helpers.mjs"
+      }
+    ]
+  },
+  {
+    "source": "shared/scripts/coordinator-runtime/test/consistency-scan.mjs",
+    "kind": "script",
+    "targets": [
+      {
+        "skill": "plugins/documentation-pipeline/skills/ln-162-skill-reviewer",
+        "path": "references/scripts/coordinator-runtime/test/consistency-scan.mjs"
+      }
+    ]
+  },
+  {
+    "source": "shared/scripts/coordinator-runtime/test/loop-health.mjs",
+    "kind": "script",
+    "targets": [
+      {
+        "skill": "plugins/documentation-pipeline/skills/ln-162-skill-reviewer",
+        "path": "references/scripts/coordinator-runtime/test/loop-health.mjs"
+      }
+    ]
+  },
+  {
+    "source": "shared/scripts/coordinator-runtime/test/platform-regression.mjs",
+    "kind": "script",
+    "targets": [
+      {
+        "skill": "plugins/documentation-pipeline/skills/ln-162-skill-reviewer",
+        "path": "references/scripts/coordinator-runtime/test/platform-regression.mjs"
+      }
+    ]
+  },
+  {
+    "source": "shared/scripts/dependency-runtime/cli.mjs",
+    "kind": "script",
+    "targets": [
+      {
+        "skill": "plugins/optimization-suite/skills/ln-820-dependency-optimization-coordinator",
+        "path": "references/scripts/dependency-runtime/cli.mjs"
+      }
+    ]
+  },
+  {
+    "source": "shared/scripts/docs-pipeline-runtime/lib/store.mjs",
+    "kind": "script",
+    "targets": [
+      {
+        "skill": "plugins/documentation-pipeline/skills/ln-162-skill-reviewer",
+        "path": "references/scripts/docs-pipeline-runtime/lib/store.mjs"
+      }
+    ]
+  },
+  {
+    "source": "shared/scripts/docs-quality/cli.mjs",
+    "kind": "script",
+    "targets": [
+      {
+        "skill": "plugins/documentation-pipeline/skills/ln-100-documents-pipeline",
+        "path": "references/scripts/docs-quality/cli.mjs"
+      }
+    ]
+  },
+  {
+    "source": "shared/scripts/environment-setup-runtime/test/guards.mjs",
+    "kind": "script",
+    "targets": [
+      {
+        "skill": "plugins/documentation-pipeline/skills/ln-162-skill-reviewer",
+        "path": "references/scripts/environment-setup-runtime/test/guards.mjs"
+      }
+    ]
+  },
+  {
+    "source": "shared/scripts/environment-setup-runtime/test/smoke.mjs",
+    "kind": "script",
+    "targets": [
+      {
+        "skill": "plugins/documentation-pipeline/skills/ln-162-skill-reviewer",
+        "path": "references/scripts/environment-setup-runtime/test/smoke.mjs"
+      }
+    ]
+  },
+  {
+    "source": "shared/scripts/environment-worker-runtime/cli.mjs",
+    "kind": "script",
+    "targets": [
+      {
+        "skill": "plugins/setup-environment/skills/ln-010-dev-environment-setup",
+        "path": "references/scripts/environment-worker-runtime/cli.mjs"
+      }
+    ]
+  },
+  {
+    "source": "shared/scripts/epic-planning-runtime/lib/store.mjs",
+    "kind": "script",
+    "targets": [
+      {
+        "skill": "plugins/documentation-pipeline/skills/ln-162-skill-reviewer",
+        "path": "references/scripts/epic-planning-runtime/lib/store.mjs"
+      }
+    ]
+  },
+  {
+    "source": "shared/scripts/modernization-runtime/cli.mjs",
+    "kind": "script",
+    "targets": [
+      {
+        "skill": "plugins/optimization-suite/skills/ln-830-code-modernization-coordinator",
+        "path": "references/scripts/modernization-runtime/cli.mjs"
+      }
+    ]
+  },
+  {
+    "source": "shared/scripts/scope-decomposition-runtime/cli.mjs",
+    "kind": "script",
+    "targets": [
+      {
+        "skill": "plugins/agile-workflow/skills/ln-200-scope-decomposer",
+        "path": "references/scripts/scope-decomposition-runtime/cli.mjs"
+      }
+    ]
+  },
+  {
+    "source": "shared/scripts/scope-decomposition-runtime/lib/store.mjs",
+    "kind": "script",
+    "targets": [
+      {
+        "skill": "plugins/documentation-pipeline/skills/ln-162-skill-reviewer",
+        "path": "references/scripts/scope-decomposition-runtime/lib/store.mjs"
+      }
+    ]
+  },
+  {
+    "source": "shared/scripts/story-execution-runtime/lib/phases.mjs",
+    "kind": "script",
+    "targets": [
+      {
+        "skill": "plugins/agile-workflow/skills/ln-1000-pipeline-orchestrator",
+        "path": "references/scripts/story-execution-runtime/lib/phases.mjs"
+      }
+    ]
+  },
+  {
+    "source": "shared/scripts/story-execution-runtime/test/loop-health.mjs",
+    "kind": "script",
+    "targets": [
+      {
+        "skill": "plugins/documentation-pipeline/skills/ln-162-skill-reviewer",
+        "path": "references/scripts/story-execution-runtime/test/loop-health.mjs"
+      }
+    ]
+  },
+  {
+    "source": "shared/scripts/story-gate-runtime/lib/phases.mjs",
+    "kind": "script",
+    "targets": [
+      {
+        "skill": "plugins/agile-workflow/skills/ln-1000-pipeline-orchestrator",
+        "path": "references/scripts/story-gate-runtime/lib/phases.mjs"
+      }
+    ]
+  },
+  {
+    "source": "shared/scripts/story-planning-runtime/lib/store.mjs",
+    "kind": "script",
+    "targets": [
+      {
+        "skill": "plugins/documentation-pipeline/skills/ln-162-skill-reviewer",
+        "path": "references/scripts/story-planning-runtime/lib/store.mjs"
+      }
+    ]
+  },
+  {
+    "source": "shared/scripts/story-planning-runtime/test/smoke.mjs",
+    "kind": "script",
+    "targets": [
+      {
+        "skill": "plugins/documentation-pipeline/skills/ln-162-skill-reviewer",
+        "path": "references/scripts/story-planning-runtime/test/smoke.mjs"
+      }
+    ]
+  },
+  {
+    "source": "shared/scripts/task-planning-runtime/lib/phases.mjs",
+    "kind": "script",
+    "targets": [
+      {
+        "skill": "plugins/agile-workflow/skills/ln-1000-pipeline-orchestrator",
+        "path": "references/scripts/task-planning-runtime/lib/phases.mjs"
+      }
+    ]
+  },
+  {
+    "source": "shared/scripts/task-planning-runtime/lib/store.mjs",
+    "kind": "script",
+    "targets": [
+      {
+        "skill": "plugins/documentation-pipeline/skills/ln-162-skill-reviewer",
+        "path": "references/scripts/task-planning-runtime/lib/store.mjs"
+      }
+    ]
+  },
+  {
+    "source": "shared/scripts/task-planning-runtime/test/smoke.mjs",
+    "kind": "script",
+    "targets": [
+      {
+        "skill": "plugins/documentation-pipeline/skills/ln-162-skill-reviewer",
+        "path": "references/scripts/task-planning-runtime/test/smoke.mjs"
       }
     ]
   }

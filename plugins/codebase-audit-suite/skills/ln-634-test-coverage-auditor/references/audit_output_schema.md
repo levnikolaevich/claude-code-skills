@@ -5,43 +5,42 @@
 Standard output format for all L3 audit workers in the stateful 6XX runtime.
 
 Delivery is split between:
-- JSON summary transport for coordinators
-- markdown evidence reports for detailed findings
+- JSON summary transport for optional aggregation
+- temporary markdown evidence reports for detailed findings
 
 ## Runtime Output Layout
 
-Workers write markdown reports to `.hex-skills/runtime-artifacts/runs/{run_id}/audit-report/` and JSON summaries to `.hex-skills/runtime-artifacts/runs/{run_id}/evaluation-worker/`.
+Workers write markdown reports to `.hex-skills/runtime-artifacts/runs/{run_id}/audit-report/` and JSON summaries to `.hex-skills/runtime-artifacts/runs/{run_id}/evaluation-worker/`. If the caller requested aggregation, worker markdown reports are temporary evidence inputs. In standalone worker runs, the worker markdown report remains the user-facing small report.
 
 **Contracts:**
 - JSON transport: `references/audit_summary_contract.md`
 - markdown evidence template: `references/templates/audit_worker_report_template.md`
-- runtime orchestration: evaluation coordinator/worker runtime envelope when the calling skill actually runs the evaluation platform
+- runtime envelope: evaluation worker runtime contract when the calling skill runs the evaluation platform
 
 ### Worker Return (Fallback)
 
 When structured output cannot be preserved in-context, worker may return a compact fallback:
 
 ```
-Report written: .hex-skills/runtime-artifacts/runs/{run_id}/audit-report/ln-621--global.md
+Report written: .hex-skills/runtime-artifacts/runs/{run_id}/audit-report/{worker}--global.md
 Score: 7.5/10 | Issues: 5 (C:0 H:2 M:2 L:1)
 ```
 
-Extended workers (ln-641, ln-643) include diagnostic sub-scores:
+Some specialized workers include diagnostic sub-scores:
 
 ```
-Report written: .hex-skills/runtime-artifacts/runs/{run_id}/audit-report/ln-641--job-processing.md
+Report written: .hex-skills/runtime-artifacts/runs/{run_id}/audit-report/{worker}--{identifier}.md
 Score: 6.0/10 (C:72 K:85 Q:68 I:90) | Issues: 3 (H:1 M:2 L:0)
 ```
 
-### All Coordinators Use Run-Scoped Runtime Artifacts
+### Run-Scoped Runtime Artifacts
 
-| Coordinator | Workers | Report Dir | Summary Dir |
-|-------------|---------|------------|-------------|
-| ln-610 (4 workers) | ln-611..ln-614 | `.hex-skills/runtime-artifacts/runs/{run_id}/audit-report/` | `.hex-skills/runtime-artifacts/runs/{run_id}/evaluation-worker/` |
-| ln-620 (9 workers) | ln-621..ln-629 | `.hex-skills/runtime-artifacts/runs/{run_id}/audit-report/` | `.hex-skills/runtime-artifacts/runs/{run_id}/evaluation-worker/` |
-| ln-630 (7 workers) | ln-631..ln-637 | `.hex-skills/runtime-artifacts/runs/{run_id}/audit-report/` | `.hex-skills/runtime-artifacts/runs/{run_id}/evaluation-worker/` |
-| ln-640 (7 workers) | ln-641..ln-647 | `.hex-skills/runtime-artifacts/runs/{run_id}/audit-report/` | `.hex-skills/runtime-artifacts/runs/{run_id}/evaluation-worker/` |
-| ln-650 (4 workers) | ln-651..ln-654 | `.hex-skills/runtime-artifacts/runs/{run_id}/audit-report/` | `.hex-skills/runtime-artifacts/runs/{run_id}/evaluation-worker/` |
+All managed audit runs use the same run-scoped layout:
+
+| Artifact | Path |
+|----------|------|
+| markdown evidence | `.hex-skills/runtime-artifacts/runs/{run_id}/audit-report/{worker}--{identifier}.md` |
+| JSON summary | `.hex-skills/runtime-artifacts/runs/{run_id}/evaluation-worker/{worker}--{identifier}.json` |
 
 Public history is preserved in consolidated outputs such as `docs/project/.audit/results_log.md`, not in dated worker staging folders.
 
@@ -57,11 +56,11 @@ Key payload fields:
 |-------|------|-------------|
 | `status` | string | `completed`, `skipped`, or `error` |
 | `category` | string | Audit category name (for example `Security`, `Build Health`) |
-| `report_path` | string | Markdown evidence report path |
+| `report_path` | string | Worker markdown report path; temporary when the caller requested aggregation, durable in standalone worker runs |
 | `score` | number | 0-10 scale, calculated per `audit_scoring.md` |
 | `issues_total` | integer | Sum of all severity counts |
 | `severity_counts` | object | Issue counts by severity |
-| `warnings` | array | Transport-safe warnings for coordinator aggregation |
+| `warnings` | array | Transport-safe warnings for managed aggregation |
 
 ### Checks Array
 
@@ -93,7 +92,7 @@ For workers that scan per-domain, keep domain metadata both in the report and in
 {
   "status": "completed",
   "category": "Architecture & Design",
-  "report_path": ".hex-skills/runtime-artifacts/runs/demo/audit-report/ln-623--users.md",
+  "report_path": ".hex-skills/runtime-artifacts/runs/demo/audit-report/{worker}--users.md",
   "score": 6,
   "issues_total": 4,
   "severity_counts": {

@@ -33,21 +33,21 @@ Run comprehensive audits on any existing codebase. Five coordinator skills launc
 | Skill | Description |
 |-------|-------------|
 | ln-620-codebase-auditor | Coordinate 9 parallel audit workers |
-| ln-621-security-auditor | Secrets, injection, XSS, insecure deps, validation |
-| ln-622-build-auditor | Compiler errors, deprecations, type errors, build config |
-| ln-623-code-principles-auditor | DRY (10 types), KISS/YAGNI, error handling, DI |
-| ln-624-code-quality-auditor | Complexity, nesting, god classes, O(n^2), N+1 |
-| ln-625-dependencies-auditor | Outdated, unused, reinvented wheels, CVE scan |
-| ln-626-dead-code-auditor | Unreachable code, unused imports/vars/functions |
-| ln-627-observability-auditor | Structured logging, health checks, metrics, tracing |
-| ln-628-concurrency-auditor | Async races, thread safety, TOCTOU, deadlocks |
-| ln-629-lifecycle-auditor | Bootstrap order, graceful shutdown, signal handling |
+| ln-621-security-boundary-auditor | Secrets, injection, XSS, validation, sensitive defaults |
+| ln-622-build-delivery-gate-auditor | Build, lint, type, test, and CI gate failures |
+| ln-623-duplication-overabstraction-auditor | DRY/KISS/YAGNI with evidence |
+| ln-624-code-maintainability-hotspot-auditor | Complexity, long methods, signatures, constants |
+| ln-625-dependency-reuse-auditor | Dependency health and generic utility/integration reuse |
+| ln-626-dead-code-pruning-auditor | Unreachable, unused, obsolete, commented-out code |
+| ln-627-diagnosability-auditor | Structured logs, metrics, traces, correlation IDs |
+| ln-628-concurrency-correctness-auditor | Async races, thread safety, TOCTOU, deadlocks |
+| ln-629-runtime-lifecycle-config-auditor | Bootstrap, shutdown, probes, fail-fast config validation |
 
-### Test Suites (8)
+### Test Suites (9)
 
 | Skill | Description |
 |-------|-------------|
-| ln-630-test-auditor | Coordinate 7 test audit workers |
+| ln-630-test-auditor | Coordinate 8 test audit workers |
 | ln-631-test-business-logic-auditor | Detect tests validating framework, not your code |
 | ln-632-test-e2e-priority-auditor | Validate E2E coverage for critical paths |
 | ln-633-test-value-auditor | Calculate test Usefulness Score (Impact x Probability) |
@@ -55,19 +55,20 @@ Run comprehensive audits on any existing codebase. Five coordinator skills launc
 | ln-635-test-isolation-auditor | Check isolation, determinism, anti-patterns |
 | ln-636-manual-test-auditor | Audit manual test scripts for quality |
 | ln-637-test-structure-auditor | Audit test file organization and naming |
+| ln-638-test-oracle-effectiveness-auditor | Assertion strength and test oracles that prove real defects |
 
 ### Architecture (8)
 
 | Skill | Description |
 |-------|-------------|
 | ln-640-pattern-evolution-auditor | Audit architectural patterns against best practices |
-| ln-641-pattern-analyzer | Analyze single pattern, calculate 4 scores |
-| ln-642-layer-boundary-auditor | Check layer violations, transaction boundaries |
+| ln-641-pattern-fitness-auditor | Analyze one implemented architectural pattern |
+| ln-642-layer-ownership-boundary-auditor | Check layer, resource ownership, orchestration boundaries |
 | ln-643-api-contract-auditor | Check layer leakage, missing DTOs, error contracts |
-| ln-644-dependency-graph-auditor | Build dep graph, detect cycles, coupling metrics |
-| ln-645-open-source-replacer | Find OSS alternatives for custom modules |
-| ln-646-project-structure-auditor | File hygiene, conventions, naming, organization |
-| ln-647-env-config-auditor | Env var sync, defaults, naming, startup validation |
+| ln-644-dependency-topology-auditor | Build dependency topology, detect cycles, coupling metrics |
+| ln-645-architecture-modernization-auditor | Simplify obsolete custom architectural mechanisms |
+| ln-646-project-structure-auditor | Modules, domains, layer layout, junk drawers |
+| ln-647-configuration-boundary-auditor | Typed settings boundary and scattered config access |
 
 ### Persistence (5)
 

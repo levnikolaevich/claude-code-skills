@@ -1,7 +1,7 @@
 # Claude Code Skills
 
 ![Version](https://img.shields.io/badge/version-2026.05.06-blue)
-![Skills](https://img.shields.io/badge/skills-140-green)
+![Skills](https://img.shields.io/badge/skills-137-green)
 ![License](https://img.shields.io/badge/license-MIT-green)
 [![GitHub stars](https://img.shields.io/github/stars/levnikolaevich/claude-code-skills?style=social)](https://github.com/levnikolaevich/claude-code-skills)
 
@@ -382,21 +382,21 @@ No — it augments human review. Claude/Codex cross-checking catches issues befo
 <details>
 <summary><b>Can it catch technical debt from AI-generated code?</b></summary>
 
-Yes. Audit skills specifically target AI-induced tech debt: `ln-623` checks DRY/KISS/YAGNI violations, `ln-626` finds dead code and unused imports, `ln-640` audits architectural pattern evolution, `ln-644` detects dependency cycles and coupling metrics, `ln-645` finds custom code that can be replaced by battle-tested open-source packages, and `ln-646` validates project structure against framework-specific conventions. Run `ln-620-codebase-auditor` to scan all 9 categories in parallel.
+Yes. Audit skills specifically target AI-induced tech debt: `ln-623` checks DRY/KISS/YAGNI violations, `ln-626` finds dead code and unused imports, `ln-640` audits architectural pattern evolution, `ln-644` detects dependency cycles and coupling metrics, `ln-645` finds obsolete custom architecture mechanisms, and `ln-646` validates physical project structure. Run `ln-620-codebase-auditor` to scan all 9 categories in parallel.
 
 </details>
 
 <details>
 <summary><b>What can the audit skills detect?</b></summary>
 
-Audit skills in 5 groups: documentation quality (structure, semantics, fact-checking, inline code documentation), codebase health (security, build, DRY/KISS/YAGNI, complexity, dependencies, dead code, observability, concurrency, lifecycle), test suites (business logic, E2E coverage, value scoring, coverage gaps, isolation, manual test quality, test structure), architecture (patterns, layer boundaries, API contracts, dependency graphs, OSS replacements, project structure, env configuration), and persistence performance (query efficiency, transactions, runtime, resource lifecycle).
+Audit skills in 5 groups: documentation quality (structure, semantics, fact-checking, inline code documentation), codebase health (security boundaries, delivery gates, DRY/KISS/YAGNI, maintainability hotspots, dependency/reuse risk, dead code, diagnosability, concurrency, lifecycle/config), test suites (business logic, E2E coverage, value scoring, coverage gaps, isolation, manual test quality, test structure), architecture (patterns, layer ownership, API contracts, dependency topology, modernization, project structure, configuration boundaries), and persistence performance (query efficiency, transactions, runtime, resource lifecycle).
 
 </details>
 
 <details>
 <summary><b>How does it handle multi-stack or polyglot projects?</b></summary>
 
-Bootstrap skills (`ln-7XX`) support React, .NET, and Python project structures. Audit skills are language-aware — `ln-622-build-auditor` checks compiler/type errors across stacks, `ln-625-dependencies-auditor` scans npm, NuGet, and pip packages, and `ln-651-query-efficiency-auditor` catches N+1 queries regardless of ORM.
+Bootstrap skills (`ln-7XX`) support React, .NET, and Python project structures. Audit skills are language-aware — `ln-622-build-delivery-gate-auditor` checks compiler/type errors across stacks, `ln-625-dependency-reuse-auditor` scans npm, NuGet, and pip packages, and `ln-651-query-efficiency-auditor` catches N+1 queries regardless of ORM.
 
 </details>
 
@@ -529,15 +529,15 @@ claude-code-skills/                      # MARKETPLACE
 |   |   |-- ln-613-code-comments-auditor/   # WHY-not-WHAT, density, docstrings
 |   |   |-- ln-614-docs-fact-checker/       # Claims extraction, cross-doc verification
 |   |-- ln-620-codebase-auditor/       # 9 parallel auditors:
-|   |   |-- ln-621-security-auditor/      # Secrets, SQL injection, XSS
-|   |   |-- ln-622-build-auditor/         # Compiler/type errors
-|   |   |-- ln-623-code-principles-auditor/# DRY/KISS/YAGNI, TODOs, DI
-|   |   |-- ln-624-code-quality-auditor/  # Complexity, magic numbers
-|   |   |-- ln-625-dependencies-auditor/  # Outdated packages + CVE vulnerabilities
-|   |   |-- ln-626-dead-code-auditor/     # Unused code
-|   |   |-- ln-627-observability-auditor/ # Logging, metrics
-|   |   |-- ln-628-concurrency-auditor/   # Race conditions
-|   |   |-- ln-629-lifecycle-auditor/     # Bootstrap, shutdown
+|   |   |-- ln-621-security-boundary-auditor/      # Security boundaries
+|   |   |-- ln-622-build-delivery-gate-auditor/         # Build/delivery gates
+|   |   |-- ln-623-duplication-overabstraction-auditor/# Duplication, over-abstraction
+|   |   |-- ln-624-code-maintainability-hotspot-auditor/  # Maintainability hotspots
+|   |   |-- ln-625-dependency-reuse-auditor/  # Dependency and reuse risk
+|   |   |-- ln-626-dead-code-pruning-auditor/     # Dead code pruning
+|   |   |-- ln-627-diagnosability-auditor/ # Diagnosability
+|   |   |-- ln-628-concurrency-correctness-auditor/   # Concurrency correctness
+|   |   |-- ln-629-runtime-lifecycle-config-auditor/     # Runtime lifecycle and config
 |   |-- ln-630-test-auditor/           # 7 test auditors:
 |   |   |-- ln-631-test-business-logic-auditor/ # Framework vs business logic tests
 |   |   |-- ln-632-test-e2e-priority-auditor/   # E2E coverage for critical paths
@@ -547,13 +547,13 @@ claude-code-skills/                      # MARKETPLACE
 |   |   |-- ln-636-manual-test-auditor/        # Manual test quality (harness, golden files, fail-fast)
 |   |   |-- ln-637-test-structure-auditor/      # Test file organization + directory layout
 |   |-- ln-640-pattern-evolution-auditor/ # Architectural pattern analysis + 4-score model
-|   |   |-- ln-641-pattern-analyzer/      # Pattern scoring worker
-|   |   |-- ln-642-layer-boundary-auditor/# Layer violations, I/O isolation
+|   |   |-- ln-641-pattern-fitness-auditor/      # Pattern fitness worker
+|   |   |-- ln-642-layer-ownership-boundary-auditor/# Layer and ownership boundaries
 |   |   |-- ln-643-api-contract-auditor/  # Layer leakage, missing DTOs
-|   |   |-- ln-644-dependency-graph-auditor/ # Cycles, coupling metrics (Ca/Ce/I)
-|   |   |-- ln-645-open-source-replacer/ # Goal-based OSS replacement audit + migration plan
-|   |   |-- ln-646-project-structure-auditor/ # Physical structure audit with framework-specific rules
-|   |   |-- ln-647-env-config-auditor/ # Env var config, sync, naming, startup validation
+|   |   |-- ln-644-dependency-topology-auditor/ # Topology cycles, coupling metrics (Ca/Ce/I)
+|   |   |-- ln-645-architecture-modernization-auditor/ # Architecture modernization
+|   |   |-- ln-646-project-structure-auditor/ # Physical architecture structure
+|   |   |-- ln-647-configuration-boundary-auditor/ # Configuration boundary architecture
 |   |-- ln-650-persistence-performance-auditor/ # DB performance coordinator:
 |   |   |-- ln-651-query-efficiency-auditor/    # N+1, over-fetching, missing bulk ops
 |   |   |-- ln-652-transaction-correctness-auditor/ # Scope, rollback, long-held txns

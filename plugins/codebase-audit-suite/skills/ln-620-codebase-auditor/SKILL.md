@@ -14,12 +14,15 @@ license: MIT
 ## Mandatory Read
 
 **MANDATORY READ:** Load `references/evaluation_coordinator_runtime_contract.md`, `references/evaluation_summary_contract.md`, `references/evaluation_research_contract.md`
+**MANDATORY READ:** Load `references/audit_final_report_contract.md`
+**MANDATORY READ:** Load `references/codebase_audit_worker_boundaries.md`
 **MANDATORY READ:** Load `references/research_tool_fallback.md`
+Conditional read: load `references/epistemic_protocol.md` only when source confidence or claim uncertainty affects issue validation.
 
 ## Purpose
 
-- audit security, build health, code quality, dependencies, observability, concurrency, lifecycle, and structure
-- coordinate `ln-621` through `ln-629`
+- audit runtime/codebase risks: security, delivery gates, dependency/reuse health, maintainability, dead code, diagnosability, concurrency, lifecycle, and config validation
+- coordinate exactly `ln-621` through `ln-629`
 - require stack-aware research before scoring
 
 ## Runtime Contract
@@ -41,15 +44,15 @@ Phase order:
 
 ## Worker Set
 
-- `ln-621-security-auditor`
-- `ln-622-build-auditor`
-- `ln-623-code-principles-auditor`
-- `ln-624-code-quality-auditor`
-- `ln-625-dependencies-auditor`
-- `ln-626-dead-code-auditor`
-- `ln-627-observability-auditor`
-- `ln-628-concurrency-auditor`
-- `ln-629-lifecycle-auditor`
+- `ln-621-security-boundary-auditor`
+- `ln-622-build-delivery-gate-auditor`
+- `ln-623-duplication-overabstraction-auditor`
+- `ln-624-code-maintainability-hotspot-auditor`
+- `ln-625-dependency-reuse-auditor`
+- `ln-626-dead-code-pruning-auditor`
+- `ln-627-diagnosability-auditor`
+- `ln-628-concurrency-correctness-auditor`
+- `ln-629-runtime-lifecycle-config-auditor`
 
 ## Worker Invocation (MANDATORY)
 
@@ -66,21 +69,21 @@ TodoWrite format (mandatory):
 - `Run best-practice research`
 - `Delegate to domain audit workers`
 - `Aggregate worker findings`
-- `Generate audit report`
+- `Generate final audit report and remediation plan`
 - `Verify cleanup and self-check`
 
 Representative invocations:
 
 ```text
-Skill(skill: "ln-621-security-auditor", args: "{scope}")
-Skill(skill: "ln-622-build-auditor", args: "{scope}")
-Skill(skill: "ln-623-code-principles-auditor", args: "{scope}")
-Skill(skill: "ln-624-code-quality-auditor", args: "{scope}")
-Skill(skill: "ln-625-dependencies-auditor", args: "{scope}")
-Skill(skill: "ln-626-dead-code-auditor", args: "{scope}")
-Skill(skill: "ln-627-observability-auditor", args: "{scope}")
-Skill(skill: "ln-628-concurrency-auditor", args: "{scope}")
-Skill(skill: "ln-629-lifecycle-auditor", args: "{scope}")
+Skill(skill: "ln-621-security-boundary-auditor", args: "{scope}")
+Skill(skill: "ln-622-build-delivery-gate-auditor", args: "{scope}")
+Skill(skill: "ln-623-duplication-overabstraction-auditor", args: "{scope}")
+Skill(skill: "ln-624-code-maintainability-hotspot-auditor", args: "{scope}")
+Skill(skill: "ln-625-dependency-reuse-auditor", args: "{scope}")
+Skill(skill: "ln-626-dead-code-pruning-auditor", args: "{scope}")
+Skill(skill: "ln-627-diagnosability-auditor", args: "{scope}")
+Skill(skill: "ln-628-concurrency-correctness-auditor", args: "{scope}")
+Skill(skill: "ln-629-runtime-lifecycle-config-auditor", args: "{scope}")
 ```
 
 ## Workflow
@@ -107,19 +110,22 @@ Delegate applicable audit workers. Child workers must use `evaluation-worker-run
 
 ### Phase 4: Aggregate
 
-Merge security, correctness, architecture, and maintainability findings.
+Merge runtime/codebase risk findings using `references/codebase_audit_worker_boundaries.md`. Read every worker `report_path`, normalize actions, deduplicate repeated issues, resolve worker conflicts, and validate each actionable problem against the research source order in `references/evaluation_research_contract.md`.
 
 ### Phase 5: Report
 
-Write final codebase audit output and coordinator summary.
+Write `.hex-skills/runtime-artifacts/runs/{run_id}/audit-report/ln-620--final-report.md` per `references/audit_final_report_contract.md`. Include the remediation plan, source-backed validation for each confirmed issue, and cleanup note. Remove temporary worker markdown reports after consolidation. The `evaluation-coordinator` summary `report_path` must point to the final report only.
 
 ### Phase 6: Self-Check
 
 Required checks:
 - [ ] research completed
 - [ ] all applicable worker summaries recorded
+- [ ] worker conflicts resolved with `codebase_audit_worker_boundaries.md`
 - [ ] aggregation completed
+- [ ] final remediation report written
 - [ ] cleanup verified
+- [ ] temporary worker markdown reports removed
 - [ ] coordinator summary recorded
 
 ## Summary Contract
@@ -132,7 +138,10 @@ Write `summary_kind=evaluation-coordinator`.
 - [ ] Applicable workers selected
 - [ ] Research completed
 - [ ] All applicable worker summaries recorded
-- [ ] Final report written
+- [ ] Worker set remained exactly `ln-621` through `ln-629`
+- [ ] Worker conflicts resolved with `codebase_audit_worker_boundaries.md`
+- [ ] Final report and remediation plan written
+- [ ] Temporary worker markdown reports removed
 - [ ] `evaluation-coordinator` summary written
 - [ ] Runtime completed
 
@@ -144,7 +153,7 @@ When requested after the coordinator run, analyze the session per protocol secti
 
 ## References
 
-- Workers: `../ln-621-security-auditor/SKILL.md`, `../ln-622-build-auditor/SKILL.md`, `../ln-623-code-principles-auditor/SKILL.md`, `../ln-624-code-quality-auditor/SKILL.md`, `../ln-625-dependencies-auditor/SKILL.md`, `../ln-626-dead-code-auditor/SKILL.md`, `../ln-627-observability-auditor/SKILL.md`, `../ln-628-concurrency-auditor/SKILL.md`, `../ln-629-lifecycle-auditor/SKILL.md`
+- Workers: `../ln-621-security-boundary-auditor/SKILL.md`, `../ln-622-build-delivery-gate-auditor/SKILL.md`, `../ln-623-duplication-overabstraction-auditor/SKILL.md`, `../ln-624-code-maintainability-hotspot-auditor/SKILL.md`, `../ln-625-dependency-reuse-auditor/SKILL.md`, `../ln-626-dead-code-pruning-auditor/SKILL.md`, `../ln-627-diagnosability-auditor/SKILL.md`, `../ln-628-concurrency-correctness-auditor/SKILL.md`, `../ln-629-runtime-lifecycle-config-auditor/SKILL.md`
 
 ---
 **Version:** 5.0.0

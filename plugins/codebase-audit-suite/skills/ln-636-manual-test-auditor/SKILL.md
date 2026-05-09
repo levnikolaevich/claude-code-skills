@@ -1,22 +1,23 @@
 ---
 name: ln-636-manual-test-auditor
-description: "Checks manual test scripts for harness adoption, golden files, fail-fast, config sourcing, idempotency. Use when auditing manual test quality."
+description: "Audits manual test evidence quality: reproducibility, fail-fast behavior, expected evidence/golden files, idempotency, and documentation. Use when auditing manual tests."
 allowed-tools: Read, Grep, Glob, Bash
 license: MIT
 ---
 
 > **Paths:** File paths (`references/`, `../ln-*`) are relative to this skill directory.
 
-# Manual Test Quality Auditor (L3 Worker)
+# Manual Evidence Auditor (L3 Worker)
 
 **Type:** L3 Worker
 
-Specialized worker auditing manual test scripts for quality and best-practice compliance.
+Specialized worker auditing whether manual test scripts produce reproducible, useful evidence.
 
 ## Purpose & Scope
 
-- Audit **Manual Test Quality** (Category 7: Medium Priority)
+- Audit **Manual Evidence** (Category 7: Medium Priority)
 - Evaluate bash test scripts in `tests/manual/` against quality dimensions
+- Emit `REWRITE_MANUAL_EVIDENCE` or `KEEP_MANUAL_EVIDENCE`
 - Calculate compliance score (X/10)
 
 ## Inputs
@@ -43,7 +44,7 @@ Detection policy: use two-layer detection (candidate scan, then context verifica
    - Is this a setup/utility script (e.g., `00-setup/*.sh`, `tools/*.sh`)? Setup scripts have different requirements -- skip harness/golden checks
    - Is this a master runner (`test-all.sh`)? Master runners orchestrate, not test -- skip all checks except fail-fast
    - Does the project not use a shared harness at all? If no `test_harness.sh` exists, harness adoption check is N/A
-4) **Collect Findings:** Record violations with severity, location (file:line), effort, recommendation
+4) **Collect Findings:** Record violations with severity, location (file:line), effort, action, recommendation
 5) **Calculate Score:** Count violations by severity, calculate compliance score (X/10)
 6) **Write Report:** Build full markdown report in memory per `references/templates/audit_worker_report_template.md`, write to `{output_dir}/ln-636--global.md` in single Write call
 7) **Return Summary:** Return minimal summary to coordinator (see Output Format)
@@ -62,6 +63,7 @@ Detection policy: use two-layer detection (candidate scan, then context verifica
 **Severity:** **HIGH** (custom logic = maintenance burden, inconsistent reporting)
 
 **Recommendation:** Refactor to use shared `run_test` from test_harness.sh
+**Action:** `REWRITE_MANUAL_EVIDENCE`
 
 **Effort:** M
 
@@ -79,6 +81,7 @@ Detection policy: use two-layer detection (candidate scan, then context verifica
 **Severity:** **HIGH** (no golden files = no regression detection for output correctness)
 
 **Recommendation:** Add expected/ directory with reference output files
+**Action:** `REWRITE_MANUAL_EVIDENCE`
 
 **Effort:** M
 
@@ -95,6 +98,7 @@ Detection policy: use two-layer detection (candidate scan, then context verifica
 **Severity:** **MEDIUM**
 
 **Recommendation:** Add `source "$THIS_DIR/../config.sh"` for shared configuration
+**Action:** `REWRITE_MANUAL_EVIDENCE`
 
 **Effort:** S
 
@@ -109,6 +113,7 @@ Detection policy: use two-layer detection (candidate scan, then context verifica
 **Severity:** **HIGH** (silent failures mask broken tests)
 
 **Recommendation:** Add `set -e` at script start, ensure test failures propagate
+**Action:** `REWRITE_MANUAL_EVIDENCE`
 
 **Effort:** S
 
@@ -128,6 +133,7 @@ Detection policy: use two-layer detection (candidate scan, then context verifica
 **Severity:** **MEDIUM**
 
 **Recommendation:** Align script structure with project TEMPLATE files
+**Action:** `REWRITE_MANUAL_EVIDENCE`
 
 **Effort:** M
 
@@ -145,6 +151,7 @@ Detection policy: use two-layer detection (candidate scan, then context verifica
 **Severity:** **MEDIUM**
 
 **Recommendation:** Add cleanup trap or use unique identifiers per run
+**Action:** `REWRITE_MANUAL_EVIDENCE`
 
 **Effort:** S-M
 
@@ -161,6 +168,7 @@ Detection policy: use two-layer detection (candidate scan, then context verifica
 **Severity:** **LOW**
 
 **Recommendation:** Add README.md with test purpose, prerequisites, usage
+**Action:** `REWRITE_MANUAL_EVIDENCE`
 
 **Effort:** S
 
@@ -179,7 +187,7 @@ Detection policy: use two-layer detection (candidate scan, then context verifica
 
 Write JSON summary per `references/audit_summary_contract.md`. In managed mode the caller passes both `runId` and `summaryArtifactPath`; in standalone mode the worker generates its own run-scoped artifact path per shared contract.
 
-Write report to `{output_dir}/ln-636--global.md` with `category: "Manual Test Quality"` and checks: harness_adoption, golden_file_completeness, config_sourcing, fail_fast_compliance, template_compliance, idempotency, documentation.
+Write report to `{output_dir}/ln-636--global.md` with `category: "Manual Evidence"` and checks: harness_adoption, golden_file_completeness, config_sourcing, fail_fast_compliance, template_compliance, idempotency, documentation.
 
 Return summary per `references/audit_summary_contract.md`.
 
@@ -198,6 +206,8 @@ Apply the already-loaded `references/audit_worker_core_contract.md`.
 - **Skip when empty:** If no `tests/manual/` directory exists, return score 10/10 with zero findings
 - **Exclude non-test files:** Skip `config.sh`, `test_harness.sh`, `test-all.sh`, `regenerate-golden.sh`, `TEMPLATE-*.sh`, files in `tools/`, `results/`, `test-runs/`
 - **Context-aware:** Setup scripts (`00-setup/`) have relaxed requirements (no golden files, no harness needed)
+- **Unique angle:** Audit only manual test evidence. Do not judge automated test value, E2E priority, product behavior, missing coverage, trustworthiness, oracle strength, or structure.
+- **Action required:** Use `REWRITE_MANUAL_EVIDENCE` for findings. Summarize compliant scripts as `KEEP_MANUAL_EVIDENCE` in the report summary, not as findings.
 
 ## Definition of Done
 
@@ -207,7 +217,7 @@ Apply the already-loaded `references/audit_worker_core_contract.md`.
 - [ ] Manual test infrastructure discovered (config.sh, harness, templates)
 - [ ] All 7 checks completed per test script
 - [ ] Layer 2 context analysis applied (setup/utility exclusions)
-- [ ] Findings collected with severity, location, effort, recommendation
+- [ ] Findings collected with severity, location, effort, action, recommendation
 - [ ] Score calculated using penalty algorithm
 - [ ] Report written to `{output_dir}/ln-636--global.md` (atomic single Write call)
 - [ ] Summary written per contract

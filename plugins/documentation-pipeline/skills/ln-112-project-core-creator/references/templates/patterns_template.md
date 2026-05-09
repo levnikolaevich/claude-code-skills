@@ -70,7 +70,7 @@ Patterns found via Phase 1b heuristic discovery, not in baseline library.
 
 ## Layer Boundary Status
 
-Audit results from ln-642-layer-boundary-auditor.
+Audit results from ln-642-layer-ownership-boundary-auditor.
 
 | Metric | Value | Threshold | Status |
 |--------|-------|-----------|--------|
@@ -178,7 +178,7 @@ Formula: `avg(N pattern scores + layer_score + api_contract_score) * 10`
 ## Maintenance
 
 **Updated by:** ln-640-pattern-evolution-auditor
-**Layer audit by:** ln-642-layer-boundary-auditor
+**Layer audit by:** ln-642-layer-ownership-boundary-auditor
 **API contract audit by:** ln-643-api-contract-auditor
 **Last Updated:** {{DATE}}
 

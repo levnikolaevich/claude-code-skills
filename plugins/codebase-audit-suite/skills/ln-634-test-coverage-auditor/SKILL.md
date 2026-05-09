@@ -1,6 +1,6 @@
 ---
 name: ln-634-test-coverage-auditor
-description: "Identifies missing tests for critical paths (money, security, data integrity, core flows). Use when auditing test coverage gaps."
+description: "Identifies missing tests for unique critical local logic: money, auth, permissions, data integrity, algorithms, and domain rules. Use when auditing critical logic coverage gaps."
 allowed-tools: Read, Grep, Glob, Bash, mcp__hex-graph__audit_workspace, mcp__hex-line__read_file, mcp__hex-line__grep_search, mcp__hex-line__outline
 license: MIT
 model: claude-haiku-4-5
@@ -8,17 +8,19 @@ model: claude-haiku-4-5
 
 > **Paths:** File paths (`references/`, `../ln-*`) are relative to this skill directory.
 
-# Coverage Gaps Auditor (L3 Worker)
+# Critical Logic Coverage Auditor (L3 Worker)
 
 **Type:** L3 Worker
 
-Specialized worker identifying missing tests for critical business logic.
+Specialized worker identifying missing tests for unique critical local logic.
 
 ## Purpose & Scope
 
-- Audit **Coverage Gaps** (Category 4: High Priority)
-- Identify untested critical paths
-- Classify by category (Money, Security, Data, Core Flows)
+- Audit **Critical Logic Coverage** (Category 4: High Priority)
+- Identify untested unique local logic only
+- Classify by category (Money, Auth/Permissions, Data Integrity, Algorithms, Domain Rules)
+- Emit `ADD_MISSING` findings for missing high-value tests
+- Do not recommend tests just to increase coverage percentage
 - Calculate compliance score (X/10)
 
 ## Inputs
@@ -42,8 +44,8 @@ Detection policy: use two-layer detection (candidate scan, then context verifica
        domain_name = null
      ```
 
-2) **Identify critical paths in scan_path** (not entire codebase)
-   - Scan production code in `scan_path` for money/security/data keywords
+2) **Identify critical local logic in scan_path** (not entire codebase)
+   - Scan production code in `scan_path` for money/auth/permission/data/algorithm/domain-rule keywords
    - All Grep/Glob patterns use `scan_path` (not codebase_root)
    - Example: `Grep(pattern="payment|refund|discount", path=scan_path)`
 
@@ -57,6 +59,7 @@ Detection policy: use two-layer detection (candidate scan, then context verifica
 
 4) **Collect missing tests**
    - Tag each finding with `domain: domain_name` (if domain-aware)
+   - Set `action: "ADD_MISSING"` for every confirmed finding
 
 5) **Calculate Score:** Count violations by severity, calculate compliance score (X/10)
 
@@ -64,7 +67,7 @@ Detection policy: use two-layer detection (candidate scan, then context verifica
 
 7) **Return Summary:** Return minimal summary to coordinator (see Output Format)
 
-## Critical Paths Classification
+## Critical Local Logic Classification
 
 ### 1. Money Flows (Priority 20+)
 
@@ -82,16 +85,16 @@ Detection policy: use two-layer detection (candidate scan, then context verifica
 
 **Why Critical:** Money loss, fraud, legal compliance
 
-### 2. Security Flows (Priority 20+)
+### 2. Auth & Permissions (Priority 20+)
 
-**What:** Authentication, authorization, encryption
+**What:** Local authentication, authorization, permission, and security decisions
 
 **Examples:**
 - Login/logout (`/login`, `authenticate()`)
 - Token refresh (`/refresh-token`, `refreshAccessToken()`)
 - Password reset (`/forgot-password`, `resetPassword()`)
 - Permissions/RBAC (`checkPermission()`, `hasRole()`)
-- Encryption/hashing (custom crypto logic, NOT bcrypt/argon2)
+- Encryption/hashing (custom crypto orchestration or policy, NOT library behavior such as bcrypt/argon2)
 - API key validation (`validateApiKey()`)
 
 **Min Priority:** 20
@@ -113,29 +116,31 @@ Detection policy: use two-layer detection (candidate scan, then context verifica
 
 **Why Critical:** Data corruption, lost data, inconsistent state
 
-### 4. Core User Journeys (Priority 15+)
+### 4. Algorithms & Domain Rules (Priority 15+)
 
-**What:** Multi-step flows critical to business
+**What:** Local calculations, branching rules, state transitions, and algorithms that encode project-specific behavior
 
 **Examples:**
-- Registration -> Email verification -> Onboarding
-- Search -> Product details -> Add to cart -> Checkout
-- Upload file -> Process -> Download result
-- Submit form -> Approval workflow -> Notification
+- Ranking/scoring algorithms
+- Eligibility rules
+- Domain state transitions
+- Custom validation rules beyond framework defaults
+- Import/export transformations
 
 **Min Priority:** 15
 
-**Why Critical:** Broken user flow = lost customers
+**Why Critical:** Wrong product behavior, bad decisions, corrupted business state
 
 ## Audit Rules
 
-### 1. Identify Critical Paths
+### 1. Identify Critical Local Logic
 
 **Process:**
 - Scan codebase for money-related keywords: `payment`, `refund`, `discount`, `tax`, `price`, `currency`
-- Scan for security keywords: `auth`, `login`, `password`, `token`, `permission`, `encrypt`
+- Scan for auth/permission keywords: `auth`, `login`, `password`, `token`, `permission`, `role`, `policy`
 - Scan for data keywords: `transaction`, `validation`, `migration`, `constraint`
-- Scan for user journeys: multi-step flows in routes/controllers
+- Scan for algorithms/domain rules: `score`, `rank`, `eligibility`, `state`, `workflow`, `rule`
+- Exclude framework defaults, generated behavior, and library primitives; `ln-631` owns product-vs-platform test focus for existing tests
 
 ### 2. Check Test Coverage
 
@@ -157,6 +162,7 @@ Detection policy: use two-layer detection (candidate scan, then context verifica
 **For each missing test:**
 - Explain WHY it's critical (money loss, security breach, etc.)
 - Suggest test type (E2E, Integration, Unit)
+- Set action to `ADD_MISSING`
 - Estimate effort (S/M/L)
 
 ## Scoring Algorithm
@@ -175,7 +181,7 @@ Detection policy: use two-layer detection (candidate scan, then context verifica
 
 Write JSON summary per `references/audit_summary_contract.md`. In managed mode the caller passes both `runId` and `summaryArtifactPath`; in standalone mode the worker generates its own run-scoped artifact path per shared contract.
 
-Write report to `{output_dir}/ln-634--{identifier}.md` (global) or `{output_dir}/ln-634--{identifier}.md` (domain-aware) with `category: "Coverage Gaps"` and checks: money_flow_coverage, security_flow_coverage, data_integrity_coverage, core_journey_coverage.
+Write report to `{output_dir}/ln-634--{identifier}.md` (global) or `{output_dir}/ln-634--{identifier}.md` (domain-aware) with `category: "Critical Logic Coverage"` and checks: money_logic_coverage, auth_permission_coverage, data_integrity_coverage, algorithm_domain_rule_coverage.
 
 Return summary per `references/audit_summary_contract.md`.
 
@@ -193,6 +199,10 @@ Apply the already-loaded `references/audit_worker_core_contract.md`.
 - **Tag findings:** Include `domain` field in each finding when domain-aware
 - **Test search scope:** Search ALL test files for coverage (tests may be in different location than production code)
 - **Match by name:** Use function name, module name, or test description to match tests to production code
+- **Do not auto-fix:** Report only
+- **Unique angle:** Only find missing tests for unique local critical logic. Do not evaluate existing low-value tests, E2E journey priority, trustworthiness, oracle strength, manual evidence, or structure.
+- **No coverage-percent work:** Do not recommend tests merely to improve line/branch coverage metrics.
+- **Action required:** Every finding uses `action: "ADD_MISSING"`.
 
 ## Definition of Done
 
@@ -200,9 +210,9 @@ Apply the already-loaded `references/audit_worker_core_contract.md`.
 
 - [ ] contextStore parsed successfully (including output_dir, domain_mode, current_domain)
 - [ ] scan_path determined (domain path or codebase root)
-- [ ] Critical paths identified in scan_path (Money, Security, Data, Core Flows)
-- [ ] Test coverage checked for each critical path
-- [ ] Missing tests collected with severity, priority, justification, domain
+- [ ] Critical local logic identified in scan_path (Money, Auth/Permissions, Data Integrity, Algorithms, Domain Rules)
+- [ ] Test coverage checked for each critical local logic path
+- [ ] Missing tests collected with severity, priority, justification, domain, and `ADD_MISSING` action
 - [ ] Score calculated using penalty algorithm
 - [ ] Report written to `{output_dir}/ln-634--{identifier}.md` or `ln-634--{identifier}.md` (atomic single Write call)
 - [ ] Summary written per contract

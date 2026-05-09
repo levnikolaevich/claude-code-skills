@@ -14,6 +14,7 @@ Hard requirements:
 - run read-only evidence lanes in parallel only; mutation, repair, merge, approval, and status changes stay sequential
 - record worker summaries before aggregation
 - emit a machine-readable coordinator summary and a human report path
+- for audit coordinators, keep only the final coordinator markdown report after cleanup; worker markdown reports are temporary evidence inputs
 
 ## State And Manifest
 
@@ -40,6 +41,8 @@ Agent/tool failures are transport evidence, not validation findings. Classify pe
 ## Output
 
 Coordinators emit an `evaluation-coordinator` summary with status, final result, report path, worker count, issue totals, severity counts, warnings, and cleanup verification. Workers emit `evaluation-worker` or a family-specific evaluation summary.
+
+For audit coordinators, `report_path` is the durable final audit report. Worker `report_path` values are temporary markdown evidence paths used during aggregation and remediation planning; cleanup verification must confirm those markdown files were removed after the final report was written.
 
 Detailed parallelism, research, refinement trace, cleanup evidence, and loop-health refs are conditional: load only when that behavior is active.
 

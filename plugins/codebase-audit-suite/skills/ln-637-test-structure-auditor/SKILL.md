@@ -1,6 +1,6 @@
 ---
 name: ln-637-test-structure-auditor
-description: "Checks test file organization, directory layout, test-to-source mapping, domain grouping, co-location. Use when auditing test structure."
+description: "Audits test maintainability and structure: layout drift, orphan tests, fragmented duplicates, test-to-source mapping, and domain grouping. Use when auditing test suite organization."
 allowed-tools: Read, Grep, Glob, Bash
 license: MIT
 model: claude-sonnet-4-6
@@ -8,18 +8,19 @@ model: claude-sonnet-4-6
 
 > **Paths:** File paths (`references/`, `../ln-*`) are relative to this skill directory.
 
-# Test Structure Auditor (L3 Worker)
+# Maintainability/Structure Auditor (L3 Worker)
 
 **Type:** L3 Worker
 
-Specialized worker auditing test file organization and directory structure for maintainability as the test suite grows.
+Specialized worker auditing test file organization, orphan tests, fragmented duplicates, and layout drift for maintainability as the test suite grows.
 
 ## Purpose & Scope
 
-- Audit **Test Structure** (Category 8: Medium Priority)
+- Audit **Test Maintainability/Structure** (Category 8: Medium Priority)
 - Detect layout pattern (flat / mirrored / co-located / hybrid)
 - Flag flat directories exceeding growth thresholds with domain grouping recommendations
-- Verify test-to-source mapping consistency and orphaned tests
+- Verify test-to-source mapping consistency, orphaned tests, and fragmented duplicates
+- Emit `MOVE`, `MERGE`, or `DELETE_ORPHAN`
 - Calculate compliance score (X/10)
 
 ## Inputs
@@ -37,9 +38,9 @@ Detection policy: use two-layer detection (candidate scan, then context verifica
 1) **Parse Context:** Extract test file list, output_dir, codebase_root, domain info from contextStore
 2) **Map Source Structure:** Glob source directories (`src/`, `app/`, `lib/`) to build source domain/module tree
 3) **Map Test Structure:** Group test files by parent directory, count files per directory, classify locations
-4) **Scan Checks (Layer 1):** Run 5 audit checks (see Audit Rules) using Glob/Grep patterns
+4) **Scan Checks (Layer 1):** Run 6 audit checks (see Audit Rules) using Glob/Grep patterns
 5) **Context Analysis (Layer 2 -- MANDATORY):** For each candidate finding, apply Layer 2 filters (see each check)
-6) **Collect Findings:** Record violations with severity, location, effort, recommendation
+6) **Collect Findings:** Record violations with severity, location, effort, action, recommendation
 7) **Calculate Score:** Count violations by severity, calculate compliance score (X/10)
 8) **Write Report:** Build full markdown report in memory per `references/templates/audit_worker_report_template.md`, write to `{output_dir}/ln-637--global.md` in single Write call
 9) **Return Summary:** Return minimal summary to coordinator (see Output Format)
@@ -67,6 +68,7 @@ Detection policy: use two-layer detection (candidate scan, then context verifica
 **Severity:** **MEDIUM** if hybrid without clear type-based rule (>30% of same-type tests deviate from dominant pattern)
 
 **Recommendation:** Standardize test placement -- choose one pattern per test type and document in testing guidelines
+**Action:** `MOVE`
 
 **Effort:** L
 
@@ -90,6 +92,7 @@ Detection policy: use two-layer detection (candidate scan, then context verifica
 **Severity:** **MEDIUM** for orphaned tests (dead code), **LOW** for path mismatches
 
 **Recommendation:** Delete orphaned tests or update to match current source structure
+**Action:** `DELETE_ORPHAN` when the source behavior no longer exists; otherwise `MOVE`
 
 **Effort:** S
 
@@ -123,6 +126,7 @@ tests/auth/test_login.py, tests/auth/test_tokens.py, tests/users/test_crud.py, .
 ```
 
 **Effort:** M
+**Action:** `MOVE`
 
 ### 4. Domain Grouping Alignment
 
@@ -145,6 +149,7 @@ tests/auth/test_login.py, tests/auth/test_tokens.py, tests/users/test_crud.py, .
 **Recommendation:** Create test directory/group for domain to maintain structural alignment
 
 **Effort:** M
+**Action:** `MOVE`
 
 ### 5. Co-location Consistency
 
@@ -169,13 +174,35 @@ tests/auth/test_login.py, tests/auth/test_tokens.py, tests/users/test_crud.py, .
 **Recommendation:** Consolidate test placement -- move deviating tests to follow the project's dominant pattern
 
 **Effort:** M-L
+**Action:** `MOVE`
+
+### 6. Fragmented Duplicates
+
+**What:** Detect duplicate or near-duplicate tests scattered across files where one canonical test would be easier to maintain
+
+**Detection:**
+- Group tests by imported source module and test description keywords
+- Look for repeated setup blocks, repeated assertions, and duplicate scenario names across files
+- Compare test files with overlapping source imports and similar arrange/assert text
+
+**Layer 2:**
+- Skip intentional matrix tests where each file covers a distinct environment, adapter, provider, or browser
+- Skip duplicated names when assertions cover different product behavior
+- Skip duplication already reported as E2E waste by `ln-632`; this worker only owns structural fragmentation
+
+**Severity:** **MEDIUM** when duplicate structure increases maintenance cost, **LOW** for small localized duplication
+
+**Recommendation:** Merge duplicate tests into one canonical location or shared helper when it preserves product signal
+
+**Effort:** S-M
+**Action:** `MERGE`
 
 ## Scoring Algorithm
 
 **MANDATORY READ:** Load `references/audit_scoring.md`.
 
 **Severity mapping:**
-- Orphaned tests, Excessive flat directory (>20), Inconsistent layout, Inconsistent co-location -> MEDIUM
+- Orphaned tests, Excessive flat directory (>20), Inconsistent layout, Inconsistent co-location, Fragmented duplicates -> MEDIUM
 - Approaching flat directory limit (15-20), Missing domain test group (small domain), Path mismatch -> LOW
 
 ## Output Format
@@ -184,7 +211,7 @@ tests/auth/test_login.py, tests/auth/test_tokens.py, tests/users/test_crud.py, .
 
 Write JSON summary per `references/audit_summary_contract.md`. In managed mode the caller passes both `runId` and `summaryArtifactPath`; in standalone mode the worker generates its own run-scoped artifact path per shared contract.
 
-Write report to `{output_dir}/ln-637--global.md` with `category: "Test Structure"` and checks: layout_pattern, test_source_mapping, flat_dir_growth, domain_grouping, colocation_consistency.
+Write report to `{output_dir}/ln-637--global.md` with `category: "Test Maintainability"` and checks: layout_pattern, test_source_mapping, flat_dir_growth, domain_grouping, colocation_consistency, fragmented_duplicates.
 
 Return summary per `references/audit_summary_contract.md`.
 
@@ -204,6 +231,8 @@ Apply the already-loaded `references/audit_worker_core_contract.md`.
 - **No naming check:** Test naming consistency (`.test.` vs `.spec.`) is out of scope -- do not duplicate
 - **Both types:** Analyze both automated and manual test file locations for complete layout picture
 - **Concrete suggestions:** For flat directory growth findings, always suggest specific subdirectory grouping based on file name prefix analysis
+- **Unique angle:** Audit only maintainability and structure. Do not evaluate product behavior, E2E journey value, portfolio value, missing coverage, trustworthiness, oracle strength, or manual evidence quality.
+- **Action required:** Every finding uses one of `MOVE`, `MERGE`, or `DELETE_ORPHAN`.
 
 ## Definition of Done
 
@@ -212,11 +241,11 @@ Apply the already-loaded `references/audit_worker_core_contract.md`.
 - [ ] contextStore parsed successfully (including output_dir, domain info)
 - [ ] Source structure mapped (domain/module tree)
 - [ ] Test structure mapped (files grouped by directory, counts calculated)
-- [ ] All 5 checks completed
+- [ ] All 6 checks completed
 - [ ] Layer 2 context analysis applied (type-based hybrid, small project exclusions)
 - [ ] Layout pattern detected and documented in report
 - [ ] Flat directory growth signals identified with specific grouping suggestions
-- [ ] Findings collected with severity, location, effort, recommendation
+- [ ] Findings collected with severity, location, effort, action, recommendation
 - [ ] Score calculated using penalty algorithm
 - [ ] Report written to `{output_dir}/ln-637--global.md` (atomic single Write call)
 - [ ] Summary written per contract

@@ -1,22 +1,23 @@
 ---
 name: ln-631-test-business-logic-auditor
-description: "Detects tests validating framework/library behavior instead of project code. Use when auditing test business logic focus."
+description: "Detects tests proving platform behavior instead of local product behavior. Use when auditing product-behavior focus."
 allowed-tools: Read, Grep, Glob, Bash
 license: MIT
 ---
 
 > **Paths:** File paths (`references/`, `../ln-*`) are relative to this skill directory.
 
-# Business Logic Focus Auditor (L3 Worker)
+# Product Behavior Auditor (L3 Worker)
 
 **Type:** L3 Worker
 
-Specialized worker auditing tests for Business Logic Focus (Category 1).
+Specialized worker auditing whether tests prove product behavior instead of platform behavior.
 
 ## Purpose & Scope
 
-- Audit **Business Logic Focus** (Category 1: High Priority)
-- Detect tests validating framework/library behavior (NOT our code)
+- Audit **Product Behavior Focus** (Category 1: High Priority)
+- Detect tests validating language, framework, library, generated, or default platform behavior instead of local product logic
+- Emit `DELETE_NON_PRODUCT_TEST` or `REWRITE_TO_PRODUCT_BEHAVIOR`
 - Calculate compliance score (X/10)
 
 ## Inputs
@@ -33,7 +34,8 @@ Detection policy: use two-layer detection (candidate scan, then context verifica
 2) **Scan Codebase (Layer 1):** Scan test files for framework/library tests (see Audit Rules below)
 2b) **Context Analysis (Layer 2 -- MANDATORY):** For each candidate, read test code and ask:
    - Does this test custom code that *wraps* a framework primitive (e.g., custom hook using useState)? -> **KEEP** (testing integration, not framework)
-   - Does this test ONLY call framework API with no custom logic? -> flag for removal
+   - Does this test ONLY call language/framework/library API with no custom product logic? -> `DELETE_NON_PRODUCT_TEST`
+   - Can the test be rewritten to assert local rules, mappings, policies, or error behavior? -> `REWRITE_TO_PRODUCT_BEHAVIOR`
    - Is this a test helper/utility that imports libraries for mocking setup? -> **skip** (not a test of framework behavior)
 3) **Collect Findings:** Record each violation with severity, location (file:line), effort estimate (S/M/L), recommendation
 4) **Calculate Score:** Count violations by severity, calculate compliance score (X/10)
@@ -52,7 +54,7 @@ Detection policy: use two-layer detection (candidate scan, then context verifica
 
 **Severity:** **MEDIUM**
 
-**Recommendation:** Consider removing IF test only validates framework behavior. If testing integration of custom code with framework -> KEEP
+**Recommendation:** `DELETE_NON_PRODUCT_TEST` when the test only validates framework behavior. Use `REWRITE_TO_PRODUCT_BEHAVIOR` when a focused assertion can prove local integration logic.
 
 **Effort:** S (delete test file or test block)
 
@@ -66,7 +68,7 @@ Detection policy: use two-layer detection (candidate scan, then context verifica
 
 **Severity:** **MEDIUM**
 
-**Recommendation:** Consider removing IF test only validates ORM behavior. If testing custom query logic or repository patterns -> KEEP
+**Recommendation:** `DELETE_NON_PRODUCT_TEST` when the test only validates ORM behavior. Use `REWRITE_TO_PRODUCT_BEHAVIOR` for repository policies, query composition, error mapping, or transaction rules.
 
 **Effort:** S
 
@@ -80,7 +82,7 @@ Detection policy: use two-layer detection (candidate scan, then context verifica
 
 **Severity:** **MEDIUM**
 
-**Recommendation:** Consider removing IF test only validates library behavior. If testing custom password policy or hashing wrapper -> KEEP
+**Recommendation:** `DELETE_NON_PRODUCT_TEST` when the test only validates library behavior. Use `REWRITE_TO_PRODUCT_BEHAVIOR` for password policy, credential lifecycle, or wrapper error handling.
 
 **Effort:** S
 
@@ -94,7 +96,7 @@ Detection policy: use two-layer detection (candidate scan, then context verifica
 
 **Severity:** **MEDIUM**
 
-**Recommendation:** Consider removing IF test only validates JWT library. If testing custom token payload, claims logic, or auth flow -> KEEP
+**Recommendation:** `DELETE_NON_PRODUCT_TEST` when the test only validates JWT library behavior. Use `REWRITE_TO_PRODUCT_BEHAVIOR` for token claims, expiry policy, roles, or auth flow.
 
 **Effort:** S
 
@@ -108,7 +110,7 @@ Detection policy: use two-layer detection (candidate scan, then context verifica
 
 **Severity:** **MEDIUM**
 
-**Recommendation:** Consider removing IF test only validates HTTP client behavior. If testing custom API wrapper, retry logic, or error mapping -> KEEP
+**Recommendation:** `DELETE_NON_PRODUCT_TEST` when the test only validates HTTP client behavior. Use `REWRITE_TO_PRODUCT_BEHAVIOR` for retry policy, timeout policy, request shaping, or error mapping.
 
 **Effort:** S
 
@@ -122,7 +124,7 @@ Detection policy: use two-layer detection (candidate scan, then context verifica
 
 **Severity:** **LOW** (acceptable if testing OUR custom hook logic)
 
-**Recommendation:** REVIEW -- if testing framework behavior -> DELETE; if testing custom hook -> KEEP
+**Recommendation:** `DELETE_NON_PRODUCT_TEST` if testing framework behavior. Use `REWRITE_TO_PRODUCT_BEHAVIOR` if a custom hook or component policy can be asserted through product-visible behavior.
 
 **Effort:** S-M
 
@@ -136,7 +138,7 @@ Detection policy: use two-layer detection (candidate scan, then context verifica
 
 Write JSON summary per `references/audit_summary_contract.md`. In managed mode the caller passes both `runId` and `summaryArtifactPath`; in standalone mode the worker generates its own run-scoped artifact path per shared contract.
 
-Write report to `{output_dir}/ln-631--global.md` with `category: "Business Logic Focus"` and checks: framework_tests, orm_tests, crypto_tests, jwt_tests, http_client_tests, react_hooks_tests.
+Write report to `{output_dir}/ln-631--global.md` with `category: "Product Behavior Focus"` and checks: framework_tests, orm_tests, crypto_tests, jwt_tests, http_client_tests, react_hooks_tests. Findings must include `action` as `DELETE_NON_PRODUCT_TEST` or `REWRITE_TO_PRODUCT_BEHAVIOR`.
 
 Return summary per `references/audit_summary_contract.md`.
 
@@ -151,6 +153,7 @@ Score: X.X/10 | Issues: N (C:N H:N M:N L:N)
 Apply the already-loaded `references/audit_worker_core_contract.md`.
 
 - **Do not auto-fix:** Report only
+- **Unique angle:** Only decide whether the test proves local product behavior. Do not score portfolio value, E2E coverage, isolation, oracle strength, or structure.
 - **Framework-specific patterns:** Match detection patterns to project's actual tech stack
 - **Effort realism:** S = <1h, M = 1-4h, L = >4h
 - **Context-aware:** Custom wrappers around libraries (e.g., custom hook using useState) are OUR code -- do not flag
@@ -162,7 +165,7 @@ Apply the already-loaded `references/audit_worker_core_contract.md`.
 
 - [ ] contextStore parsed successfully (including output_dir)
 - [ ] All 6 checks completed (framework, ORM, crypto, JWT, HTTP client, React hooks)
-- [ ] Findings collected with severity, location, effort, recommendation
+- [ ] Findings collected with severity, location, effort, recommendation, and action
 - [ ] Score calculated using penalty algorithm
 - [ ] Report written to `{output_dir}/ln-631--global.md` (atomic single Write call)
 - [ ] Summary written per contract

@@ -110,7 +110,7 @@ license: MIT
 | Worker | Parallel | Purpose |
 |--------|----------|---------|
 | ln-761-secret-scanner | Yes | Hardcoded secret detection |
-| ln-625-dependencies-auditor | Yes | Vulnerability scanning (mode=vulnerabilities_only) |
+| ln-625-dependency-reuse-auditor | Yes | Vulnerability scanning (mode=vulnerabilities_only) |
 
 **Prompt template:**
 ```
@@ -128,7 +128,7 @@ Agent(description: "Dependency vulnerability scan via ln-625",
      prompt: "Execute vulnerability scanner.
 
 Step 1: Invoke worker:
-  Skill(skill: \"ln-625-dependencies-auditor\")
+  Skill(skill: \"ln-625-dependency-reuse-auditor\")
 
 CONTEXT:
 Project: {projectPath}

@@ -12,7 +12,7 @@ license: MIT
 **Type:** L3 Worker
 **Category:** 8XX Optimization
 
-Executes OSS replacement plans from `ln-645-open-source-replacer`. For each custom module with a viable OSS alternative: install package, rewrite imports, run verification, then keep or discard atomically.
+Executes OSS replacement plans from `ln-645-architecture-modernization-auditor`. For each custom module with a viable OSS alternative: install package, rewrite imports, run verification, then keep or discard atomically.
 
 ---
 
@@ -22,7 +22,7 @@ Executes OSS replacement plans from `ln-645-open-source-replacer`. For each cust
 |--------|---------|
 | **Input** | Migration plan from audit output or a target module |
 | **Output** | Replaced modules plus a machine-readable modernization summary |
-| **Companion** | `ln-645-open-source-replacer` identifies candidates, `ln-831` executes them |
+| **Companion** | `ln-645-architecture-modernization-auditor` identifies candidates, `ln-831` executes them |
 
 ---
 
@@ -169,9 +169,10 @@ Options:
 
 ## References
 
-- `../ln-645-open-source-replacer/SKILL.md`
+- `../ln-645-architecture-modernization-auditor/SKILL.md`
 - `references/ci_tool_detection.md`
 - `references/research_tool_fallback.md`
+- `references/epistemic_protocol.md`
 
 ---
 

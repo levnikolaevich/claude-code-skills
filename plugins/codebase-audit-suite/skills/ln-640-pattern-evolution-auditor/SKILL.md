@@ -14,12 +14,15 @@ license: MIT
 ## Mandatory Read
 
 **MANDATORY READ:** Load `references/evaluation_coordinator_runtime_contract.md`, `references/evaluation_summary_contract.md`, `references/evaluation_research_contract.md`
+**MANDATORY READ:** Load `references/audit_final_report_contract.md`
+**MANDATORY READ:** Load `references/architecture_audit_worker_boundaries.md`
 **MANDATORY READ:** Load `references/research_tool_fallback.md`
+Conditional read: load `references/epistemic_protocol.md` only when source confidence or claim uncertainty affects issue validation.
 
 ## Purpose
 
-- audit implemented architectural patterns against current best practices
-- coordinate `ln-641` through `ln-647`
+- audit architecture/design evolution: pattern fitness, layer ownership, service/API contracts, dependency topology, modernization, physical structure, and configuration boundaries
+- coordinate exactly `ln-641` through `ln-647`
 - require research before pattern scoring
 
 ## Runtime Contract
@@ -42,13 +45,13 @@ Phase order:
 
 ## Worker Set
 
-- `ln-641-pattern-analyzer`
-- `ln-642-layer-boundary-auditor`
+- `ln-641-pattern-fitness-auditor`
+- `ln-642-layer-ownership-boundary-auditor`
 - `ln-643-api-contract-auditor`
-- `ln-644-dependency-graph-auditor`
-- `ln-645-open-source-replacer`
+- `ln-644-dependency-topology-auditor`
+- `ln-645-architecture-modernization-auditor`
 - `ln-646-project-structure-auditor`
-- `ln-647-env-config-auditor`
+- `ln-647-configuration-boundary-auditor`
 
 ## Worker Invocation (MANDATORY)
 
@@ -66,19 +69,19 @@ TodoWrite format (mandatory):
 - `Run boundary and contract audits`
 - `Analyze pattern compliance and gaps`
 - `Aggregate worker findings`
-- `Generate audit report`
+- `Generate final audit report and remediation plan`
 - `Verify cleanup and self-check`
 
 Representative invocations:
 
 ```text
-Skill(skill: "ln-641-pattern-analyzer", args: "{scope}")
-Skill(skill: "ln-642-layer-boundary-auditor", args: "{scope}")
+Skill(skill: "ln-641-pattern-fitness-auditor", args: "{scope}")
+Skill(skill: "ln-642-layer-ownership-boundary-auditor", args: "{scope}")
 Skill(skill: "ln-643-api-contract-auditor", args: "{scope}")
-Skill(skill: "ln-644-dependency-graph-auditor", args: "{scope}")
-Skill(skill: "ln-645-open-source-replacer", args: "{scope}")
+Skill(skill: "ln-644-dependency-topology-auditor", args: "{scope}")
+Skill(skill: "ln-645-architecture-modernization-auditor", args: "{scope}")
 Skill(skill: "ln-646-project-structure-auditor", args: "{scope}")
-Skill(skill: "ln-647-env-config-auditor", args: "{scope}")
+Skill(skill: "ln-647-configuration-boundary-auditor", args: "{scope}")
 ```
 
 ## Workflow
@@ -92,7 +95,10 @@ Skill(skill: "ln-647-env-config-auditor", args: "{scope}")
    - current web best-practice research
 4. Run boundary audits before pattern scoring.
 5. Run pattern analysis only after boundary results and research exist.
-6. Aggregate scores and produce the final pattern report.
+6. Aggregate scores and worker findings by reading every worker `report_path`, normalizing actions from `references/architecture_audit_worker_boundaries.md`, deduplicating issues, resolving worker conflicts, and validating actionable problems against `references/evaluation_research_contract.md`.
+7. Write `.hex-skills/runtime-artifacts/runs/{run_id}/audit-report/ln-640--final-report.md` with remediation plan per `references/audit_final_report_contract.md`.
+8. Remove temporary worker markdown reports and record cleanup evidence.
+9. Write the `evaluation-coordinator` summary with `report_path` set to the final report.
 
 ## Definition of Done
 
@@ -101,7 +107,10 @@ Skill(skill: "ln-647-env-config-auditor", args: "{scope}")
 - [ ] Best-practice research completed
 - [ ] Boundary audit summaries recorded
 - [ ] Pattern analysis summaries recorded
-- [ ] Final report written
+- [ ] Worker set remained exactly `ln-641` through `ln-647`
+- [ ] Worker conflicts resolved with `architecture_audit_worker_boundaries.md`
+- [ ] Final report and remediation plan written
+- [ ] Temporary worker markdown reports removed
 - [ ] `evaluation-coordinator` summary written
 - [ ] Runtime completed
 
@@ -113,8 +122,8 @@ When requested after the coordinator run, analyze the session per protocol secti
 
 ## References
 
-- Workers: `../ln-641-pattern-analyzer/SKILL.md`, `../ln-642-layer-boundary-auditor/SKILL.md`, `../ln-643-api-contract-auditor/SKILL.md`, `../ln-644-dependency-graph-auditor/SKILL.md`, `../ln-645-open-source-replacer/SKILL.md`, `../ln-646-project-structure-auditor/SKILL.md`, `../ln-647-env-config-auditor/SKILL.md`
-- Shared pattern refs: `references/layer_rules.md`; pattern and scoring manuals are local to `../ln-641-pattern-analyzer/references/`
+- Workers: `../ln-641-pattern-fitness-auditor/SKILL.md`, `../ln-642-layer-ownership-boundary-auditor/SKILL.md`, `../ln-643-api-contract-auditor/SKILL.md`, `../ln-644-dependency-topology-auditor/SKILL.md`, `../ln-645-architecture-modernization-auditor/SKILL.md`, `../ln-646-project-structure-auditor/SKILL.md`, `../ln-647-configuration-boundary-auditor/SKILL.md`
+- Shared pattern refs: `references/layer_rules.md`; pattern and scoring manuals are local to `../ln-641-pattern-fitness-auditor/references/`
 
 ---
 **Version:** 2.0.0

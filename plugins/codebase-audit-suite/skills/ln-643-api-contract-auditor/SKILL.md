@@ -19,7 +19,7 @@ Specialized worker auditing API contracts, method signatures at service boundari
 - Check layer leakage, DTO patterns, error contract consistency
 - Return structured analysis with 4 scores (compliance, completeness, quality, implementation)
 
-**Out of Scope** (owned by ln-623-code-principles-auditor):
+**Out of Scope:**
 - Code duplication (same DTO shape repeated, same mapping logic, same validation)
 - Report only ARCHITECTURE BOUNDARY findings (wrong layer, missing contract)
 
@@ -32,7 +32,7 @@ Specialized worker auditing API contracts, method signatures at service boundari
 - bestPractices: object        # Best practices from MCP Ref/Context7
 - output_dir: string           # e.g., ".hex-skills/runtime-artifacts/runs/{run_id}/audit-report"
 
-# Domain-aware (optional, from coordinator)
+# Domain-aware (optional)
 - domain_mode: "global" | "domain-aware"   # Default: "global"
 - current_domain: string                   # e.g., "users", "billing" (only if domain-aware)
 - scan_path: string                        # e.g., "src/users/" (only if domain-aware)
@@ -61,7 +61,7 @@ scan_root = scan_path IF domain_mode == "domain-aware" ELSE codebase_root
 
 ### Phase 2: Analyze Contracts (5 Rules)
 
-**MANDATORY READ:** Load `plugins/codebase-audit-suite/skills/ln-643-api-contract-auditor/references/detection_patterns.md` for language-specific Grep patterns per rule.
+**MANDATORY READ:** Load `references/detection_patterns.md` for language-specific Grep patterns per rule.
 
 | # | Rule | Severity | What to Check |
 |---|------|----------|---------------|
@@ -72,7 +72,7 @@ scan_root = scan_path IF domain_mode == "domain-aware" ELSE codebase_root
 | 5 | Redundant Overloads | LOW/MEDIUM | Method pairs with `_with_`/`_and_` suffix differing by 1-2 params |
 | 6 | Architectural Honesty | HIGH/MEDIUM | Read-named function (get_/find_/check_/validate_/is_/has_) body contains write side-effects. Exclusions per `references/ai_ready_architecture.md` |
 
-**Scope boundary:** SKIP DUPLICATION findings (owned by ln-623), REPORT only ARCHITECTURE BOUNDARY findings.
+**Scope boundary:** SKIP duplication findings. REPORT only ARCHITECTURE BOUNDARY findings.
 
 ### Phase 3: Calculate 4 Scores
 
@@ -158,9 +158,11 @@ Apply the already-loaded `references/audit_worker_core_contract.md`.
 
 - **Architecture-level only:** Focus on service boundaries, not internal implementation
 - **Read before score:** Never score without reading actual service code
-- **Scope boundary:** SKIP duplication findings (owned by ln-623)
+- **Scope boundary:** SKIP duplication findings
 - **Detection patterns:** Use language-specific Grep from detection_patterns.md
 - **Domain-aware:** When domain_mode="domain-aware", scan only scan_path, tag findings with domain
+- **Unique angle:** Audit service/API boundary contracts only. Do not audit code duplication, package health, dependency topology, or runtime operations.
+- **Action required:** Every finding uses `ADD_DTO`, `STOP_ENTITY_LEAK`, or `STANDARDIZE_ERROR_CONTRACT`.
 
 ## Definition of Done
 
@@ -169,7 +171,7 @@ Apply the already-loaded `references/audit_worker_core_contract.md`.
 - [ ] Service boundaries discovered (API, service, domain layers)
 - [ ] Method signatures extracted and analyzed
 - [ ] All 5 rules checked using detection_patterns.md
-- [ ] Scope boundary applied (no duplication with ln-623)
+- [ ] Scope boundary applied (no duplication findings)
 - [ ] 4 scores calculated with justification
 - [ ] Issues identified with severity, location, suggestion, effort
 - [ ] If domain-aware: findings tagged with domain field

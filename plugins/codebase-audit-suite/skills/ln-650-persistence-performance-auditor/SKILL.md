@@ -14,7 +14,9 @@ license: MIT
 ## Mandatory Read
 
 **MANDATORY READ:** Load `references/evaluation_coordinator_runtime_contract.md`, `references/evaluation_summary_contract.md`, `references/evaluation_research_contract.md`
+**MANDATORY READ:** Load `references/audit_final_report_contract.md`
 **MANDATORY READ:** Load `references/research_tool_fallback.md`
+Conditional read: load `references/epistemic_protocol.md` only when source confidence or claim uncertainty affects issue validation.
 
 ## Purpose
 
@@ -61,7 +63,7 @@ TodoWrite format (mandatory):
 - `Run best-practice research`
 - `Delegate to domain audit workers`
 - `Aggregate worker findings`
-- `Generate audit report`
+- `Generate final audit report and remediation plan`
 - `Verify cleanup and self-check`
 
 Representative invocations:
@@ -79,8 +81,10 @@ Skill(skill: "ln-654-resource-lifecycle-auditor", args: "{scope}")
 2. Discover database, ORM, transaction, and runtime context.
 3. Perform mandatory research.
 4. Delegate specialized workers.
-5. Aggregate findings into one persistence-performance audit.
-6. Write final report and `evaluation-coordinator` summary.
+5. Aggregate findings into one persistence-performance audit by reading every worker `report_path`, normalizing and deduplicating issues, and validating actionable problems against `references/evaluation_research_contract.md`.
+6. Write `.hex-skills/runtime-artifacts/runs/{run_id}/audit-report/ln-650--final-report.md` with remediation plan per `references/audit_final_report_contract.md`.
+7. Remove temporary worker markdown reports and record cleanup evidence.
+8. Write the `evaluation-coordinator` summary with `report_path` set to the final report.
 
 ## Definition of Done
 
@@ -88,7 +92,8 @@ Skill(skill: "ln-654-resource-lifecycle-auditor", args: "{scope}")
 - [ ] Persistence context discovered
 - [ ] Mandatory research completed
 - [ ] All planned worker summaries recorded
-- [ ] Aggregate report written
+- [ ] Final report and remediation plan written
+- [ ] Temporary worker markdown reports removed
 - [ ] `evaluation-coordinator` summary written
 - [ ] Runtime completed
 

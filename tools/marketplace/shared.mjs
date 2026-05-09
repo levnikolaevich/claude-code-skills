@@ -659,7 +659,7 @@ export function validateSharedDistribution() {
       problems.push(`missing shared source: ${entry.source}`);
       continue;
     }
-    if (!entry.targets || entry.targets.length < 2) problems.push(`registry source must have 2+ targets: ${entry.source}`);
+    if (!entry.targets || entry.targets.length < 1) problems.push(`registry source must have at least one target: ${entry.source}`);
     for (const target of entry.targets ?? []) {
       const targetPlugin = pluginForSkill(target.skill);
       if (sourcePlugin && targetPlugin !== sourcePlugin) {

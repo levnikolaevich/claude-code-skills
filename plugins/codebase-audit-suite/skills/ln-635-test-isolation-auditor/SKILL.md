@@ -1,6 +1,6 @@
 ---
 name: ln-635-test-isolation-auditor
-description: "Checks test isolation (API/DB/FS/Time/Network), determinism, flaky tests, order-dependency, anti-patterns. Use when auditing test isolation."
+description: "Audits whether test results can be trusted: flakiness, isolation, real external dependencies, time/random/order dependency, and shared state. Use when auditing test trustworthiness."
 allowed-tools: Read, Grep, Glob, Bash
 license: MIT
 model: claude-haiku-4-5
@@ -8,17 +8,18 @@ model: claude-haiku-4-5
 
 > **Paths:** File paths (`references/`, `../ln-*`) are relative to this skill directory.
 
-# Test Isolation & Anti-Patterns Auditor (L3 Worker)
+# Trustworthiness Auditor (L3 Worker)
 
 **Type:** L3 Worker
 
-Specialized worker auditing test isolation and detecting anti-patterns.
+Specialized worker auditing whether automated test results are deterministic, isolated, and trustworthy.
 
 ## Purpose & Scope
 
-- Audit **Test Isolation** (Category 5: Medium Priority)
-- Audit **Anti-Patterns** (Category 6: Medium Priority)
-- Check determinism (no flaky tests)
+- Audit **Test Trustworthiness** (Category 5: Medium Priority)
+- Check determinism, isolation, and dependency control
+- Detect flaky tests, time/random/order dependency, shared state, and real external dependencies
+- Emit `REWRITE_FOR_DETERMINISM` or `DELETE_IF_LOW_VALUE`
 - Calculate compliance score (X/10)
 
 ## Inputs
@@ -31,15 +32,15 @@ Receives `contextStore` with: `tech_stack`, `testFilesMetadata`, `codebase_root`
 
 Detection policy: use two-layer detection (candidate scan, then context verification); load `references/two_layer_detection.md` only when the verification method is ambiguous.
 
-1) **Parse Context:** Extract tech stack, isolation checklist, anti-patterns catalog, test file list, output_dir from contextStore
+1) **Parse Context:** Extract tech stack, trustworthiness checklist, test file list, output_dir from contextStore
 2) **Check Isolation (Layer 1):** Check isolation for 6 categories (APIs, DB, FS, Time, Random, Network)
 2b) **Context Analysis (Layer 2 -- MANDATORY):** For each isolation violation, ask:
    - Is this an **integration test**? (real dependencies are intentional) -> **do NOT flag**. Only flag isolation issues in **unit tests**
    - Is in-memory DB configured via test config (not visible in grep)? -> **skip**
    - Is this a test helper that sets up mocks for other tests? -> **skip**
 3) **Check Determinism:** Check for flaky tests, time-dependent assertions, order-dependent tests, shared mutable state
-4) **Detect Anti-Patterns:** Detect 6 anti-patterns (Liar, Giant, Slow Poke, Conjoined Twins, Happy Path, Framework Tester)
-5) **Collect Findings:** Record each violation with severity, location (file:line), effort estimate (S/M/L), recommendation
+4) **Evaluate trust action:** Use `REWRITE_FOR_DETERMINISM` by default; use `DELETE_IF_LOW_VALUE` only when the test is both untrustworthy and low-value according to obvious local evidence
+5) **Collect Findings:** Record each violation with severity, location (file:line), effort estimate (S/M/L), action, recommendation
 6) **Calculate Score:** Count violations by severity, calculate compliance score (X/10)
 7) **Write Report:** Build full markdown report in memory per `references/templates/audit_worker_report_template.md`, write to `{output_dir}/ln-635--global.md` in single Write call
 8) **Return Summary:** Return minimal summary to coordinator (see Output Format)
@@ -192,27 +193,9 @@ Detection policy: use two-layer detection (candidate scan, then context verifica
 
 **Effort:** S-M
 
-## Audit Rules: Anti-Patterns
+## Audit Rules: Trustworthiness Drag
 
-### 1. The Liar (Always Passes)
-
-**What:** Test with no assertions or trivial assertion (`expect().toBeTruthy()`)
-
-**Detection:**
-- Count assertions per test
-- If 0 assertions or only `toBeTruthy()` -> Liar
-
-**Severity:** **HIGH**
-
-**Recommendation:** Add specific assertions or delete test
-
-**Effort:** S
-
-**Example:**
-- **BAD (Liar):** Test calls `createUser()` but has NO assertions -- always passes even if function breaks
-- **GOOD:** Test calls `createUser()` and asserts `user.name` equals 'Alice', `user.id` is defined
-
-### 2. The Giant (>100 lines)
+### 1. Overlarge Test With Shared Setup (>100 lines)
 
 **What:** Test with >100 lines, testing too many scenarios
 
@@ -226,7 +209,7 @@ Detection policy: use two-layer detection (candidate scan, then context verifica
 
 **Effort:** S-M
 
-### 3. Slow Poke (>5 seconds)
+### 2. Slow Poke (>5 seconds)
 
 **What:** Test taking >5 seconds to run
 
@@ -236,11 +219,11 @@ Detection policy: use two-layer detection (candidate scan, then context verifica
 
 **Severity:** **MEDIUM**
 
-**Recommendation:** Mock external deps, use in-memory DB, parallelize
+**Recommendation:** Control external deps with test doubles or in-memory services selected from the project stack; parallelize only after isolation is verified
 
 **Effort:** M
 
-### 4. Conjoined Twins (Unit test without mocks = Integration)
+### 3. Conjoined Twins (Unit test without controlled dependencies)
 
 **What:** Test labeled "Unit" but not mocking dependencies
 
@@ -255,39 +238,7 @@ Detection policy: use two-layer detection (candidate scan, then context verifica
 
 **Effort:** S
 
-### 5. Happy Path Only (No error scenarios)
-
-**What:** Only testing success cases, ignoring errors
-
-**Detection:**
-- For each function, check if test covers error cases
-- If only positive scenarios -> Happy Path Only
-
-**Severity:** **MEDIUM**
-
-**Recommendation:** Add negative tests (error handling, edge cases)
-
-**Effort:** M
-
-**Example:**
-- **BAD (Happy Path Only):** Test only checks `login()` with valid credentials, ignores error scenarios
-- **GOOD:** Add negative test that verifies `login()` with invalid credentials throws 'Invalid credentials' error
-
-### 6. Framework Tester (Tests framework behavior)
-
-**What:** Tests validating Express/Prisma/bcrypt (NOT our code)
-
-**Detection:**
-- Tests that ONLY call framework API with no custom logic (same patterns as Business Logic Focus category)
-- Skip if this finding is already reported under Category 1 (coordinator deduplicates)
-
-**Severity:** **MEDIUM**
-
-**Recommendation:** Delete framework tests
-
-**Effort:** S
-
-### 7. Default Value Blindness (Tests with default config)
+### 4. Default Value Blindness (Tests with default config)
 
 **What:** Tests with default config values only. Use the non-default config rule from `references/risk_based_testing_guide.md`; load `references/risk_based_testing_methodology.md` only when examples are needed.
 
@@ -305,8 +256,8 @@ Detection policy: use two-layer detection (candidate scan, then context verifica
 **MANDATORY READ:** Load `references/audit_scoring.md`.
 
 **Severity mapping:**
-- Flaky tests, External API not mocked, The Liar, Default Value Blindness -> HIGH
-- Real database, File system, Time/Date, Network, The Giant, Happy Path Only -> MEDIUM
+- Flaky tests, External API not controlled, Default Value Blindness -> HIGH
+- Real database, File system, Time/Date, Network, Overlarge shared setup, Slow Poke -> MEDIUM
 - Random without seed, Order-dependent, Conjoined Twins -> LOW
 
 ## Output Format
@@ -315,7 +266,7 @@ Detection policy: use two-layer detection (candidate scan, then context verifica
 
 Write JSON summary per `references/audit_summary_contract.md`. In managed mode the caller passes both `runId` and `summaryArtifactPath`; in standalone mode the worker generates its own run-scoped artifact path per shared contract.
 
-Write report to `{output_dir}/ln-635--global.md` with `category: "Isolation & Anti-Patterns"` and checks: api_isolation, db_isolation, fs_isolation, time_isolation, random_isolation, network_isolation, flaky_tests, anti_patterns, default_value_blindness.
+Write report to `{output_dir}/ln-635--global.md` with `category: "Test Trustworthiness"` and checks: api_isolation, db_isolation, fs_isolation, time_isolation, random_isolation, network_isolation, flaky_tests, order_dependency, shared_state, default_value_blindness.
 
 Return summary per `references/audit_summary_contract.md`.
 
@@ -325,7 +276,7 @@ Report written: .hex-skills/runtime-artifacts/runs/{run_id}/audit-report/ln-635-
 Score: X.X/10 | Issues: N (C:N H:N M:N L:N)
 ```
 
-**Note:** Findings are flattened into single array. Use `principle` field prefix (Test Isolation / Determinism / Anti-Patterns) to identify issue category.
+**Note:** Findings are flattened into single array. Use `principle` field prefix (Isolation / Determinism / Dependency Control) to identify issue category. Each finding includes `action: "REWRITE_FOR_DETERMINISM"` or `action: "DELETE_IF_LOW_VALUE"`.
 
 ## Critical Rules
 
@@ -333,9 +284,10 @@ Apply the already-loaded `references/audit_worker_core_contract.md`.
 
 - **Do not auto-fix:** Report only
 - **Effort realism:** S = <1h, M = 1-4h, L = >4h
-- **Flat findings:** Merge isolation + determinism + anti-patterns into single findings array, use `principle` prefix to distinguish
-- **Framework Tester dedup:** Category 1 (Business Logic Focus) covers framework tests separately -- coordinator deduplicates overlapping findings
+- **Flat findings:** Merge isolation + determinism + dependency-control findings into single findings array, use `principle` prefix to distinguish
 - **Context-aware:** Supertest with real Express app is acceptable for integration tests
+- **Unique angle:** Only audit whether test results can be trusted. Do not evaluate product behavior, E2E journey value, portfolio value, missing coverage, oracle strength, manual evidence, or structure.
+- **Action required:** Every finding uses `REWRITE_FOR_DETERMINISM` unless evidence shows the test is also low-value enough to use `DELETE_IF_LOW_VALUE`.
 
 **Monitor (2.1.98+):** For repeated test runs expected >30s each, use `Monitor`. Fallback: `Bash(run_in_background=true)`.
 
@@ -347,8 +299,8 @@ Apply the already-loaded `references/audit_worker_core_contract.md`.
 - [ ] All 3 audit groups completed:
   - Isolation (6 categories: APIs, DB, FS, Time, Random, Network)
   - Determinism (4 checks: flaky, time-dependent, order-dependent, shared state)
-  - Anti-patterns (7 checks: Liar, Giant, Slow Poke, Conjoined Twins, Happy Path, Framework Tester, Default Value Blindness)
-- [ ] Findings collected with severity, location, effort, recommendation
+  - Dependency control (overlarge shared setup, slow tests, conjoined dependencies, default-value blindness)
+- [ ] Findings collected with severity, location, effort, action, recommendation
 - [ ] Score calculated using penalty algorithm
 - [ ] Report written to `{output_dir}/ln-635--global.md` (atomic single Write call)
 - [ ] Summary written per contract

@@ -1,24 +1,25 @@
 ---
 name: ln-632-test-e2e-priority-auditor
-description: "Validates E2E coverage for critical paths (money, security, data integrity). Risk-based prioritization. Use when auditing E2E test coverage."
+description: "Audits E2E coverage for critical user-visible journeys and wasteful E2E tests. Use when reviewing E2E journey value."
 allowed-tools: Read, Grep, Glob, Bash
 license: MIT
 ---
 
 > **Paths:** File paths (`references/`, `../ln-*`) are relative to this skill directory.
 
-# E2E Critical Coverage Auditor (L3 Worker)
+# E2E Journey Auditor (L3 Worker)
 
 **Type:** L3 Worker
 
-Specialized worker auditing E2E test coverage for critical paths (risk-based).
+Specialized worker auditing whether E2E tests prove critical user-visible journeys.
 
 ## Purpose & Scope
 
-- Audit **E2E Critical Coverage** (Category 2: High Priority)
+- Audit **E2E Journey Coverage** (Category 2: High Priority)
 - Validate E2E coverage for critical paths (Money/Security/Data Priority >=20)
 - Validate E2E coverage for core user journeys (Priority 15-19)
 - Identify wasteful E2E tests (Usefulness Score <15)
+- Emit `ADD_MISSING_E2E`, `DELETE_LOW_VALUE_E2E`, or `DOWNGRADE_E2E`
 - Calculate compliance score (X/10)
 
 ## Inputs
@@ -68,7 +69,7 @@ Detection policy: use two-layer detection (candidate scan, then context verifica
 - **HIGH:** No E2E for Priority 20 (Data Export)
 - **Downgrade when:** Function is helper called from already-E2E-tested path -> MEDIUM. Already covered by integration test -> LOW
 
-**Recommendation:** Add E2E tests for critical paths immediately
+**Recommendation:** `ADD_MISSING_E2E` for user-visible critical paths that lack end-to-end coverage
 
 **Effort:** M
 
@@ -90,7 +91,7 @@ Detection policy: use two-layer detection (candidate scan, then context verifica
 - **HIGH:** Missing E2E for core user journey (Priority >=15)
 - **MEDIUM:** Incomplete journey coverage (only partial steps tested)
 
-**Recommendation:** Add end-to-end journey tests
+**Recommendation:** `ADD_MISSING_E2E` for missing critical user journeys
 
 **Effort:** M-L
 
@@ -101,7 +102,7 @@ Detection policy: use two-layer detection (candidate scan, then context verifica
 **Check:**
 For each E2E test, calculate Usefulness Score = Impact x Probability
 - If Score <15 -> Flag as "Potentially wasteful E2E"
-- Recommendation: Convert to Integration or Unit test (cheaper)
+- Recommendation: `DOWNGRADE_E2E` when lower-level tests prove the same behavior with less cost, or `DELETE_LOW_VALUE_E2E` when the journey has no product risk
 
 **Example:**
 - E2E test for "API returns 200 OK" -> Impact 2, Probability 1 -> Score 2 -> **WASTEFUL**
@@ -111,7 +112,7 @@ For each E2E test, calculate Usefulness Score = Impact x Probability
 - **MEDIUM:** E2E test with Usefulness Score <15
 - **LOW:** E2E test with Score 10-14 (review needed)
 
-**Recommendation:** Convert low-value E2E to Integration/Unit or remove
+**Recommendation:** `DOWNGRADE_E2E` to integration/unit or `DELETE_LOW_VALUE_E2E`
 
 **Effort:** S
 
@@ -132,7 +133,7 @@ For each E2E test, calculate Usefulness Score = Impact x Probability
 
 Write JSON summary per `references/audit_summary_contract.md`. In managed mode the caller passes both `runId` and `summaryArtifactPath`; in standalone mode the worker generates its own run-scoped artifact path per shared contract.
 
-Write report to `{output_dir}/ln-632--global.md` with `category: "E2E Critical Coverage"` and checks: critical_path_coverage, user_journey_coverage, e2e_usefulness_validation.
+Write report to `{output_dir}/ln-632--global.md` with `category: "E2E Journey Coverage"` and checks: critical_path_coverage, user_journey_coverage, e2e_usefulness_validation. Findings must include `action` as `ADD_MISSING_E2E`, `DELETE_LOW_VALUE_E2E`, or `DOWNGRADE_E2E`.
 
 Return summary per `references/audit_summary_contract.md`.
 
@@ -147,6 +148,7 @@ Score: X.X/10 | Issues: N (C:N H:N M:N L:N)
 Apply the already-loaded `references/audit_worker_core_contract.md`.
 
 - **Do not auto-fix:** Report only
+- **Unique angle:** Only evaluate end-to-end user-visible journey value. Do not inspect unit-test product behavior, oracle strength, structure, or manual scripts.
 - **Risk-based only:** Prioritize by business impact (Money > Security > Data), not by code coverage percentage
 - **Effort realism:** S = <1h, M = 1-4h, L = >4h
 - **Usefulness Score threshold:** Only flag E2E tests with Score <15 as wasteful
@@ -159,7 +161,7 @@ Apply the already-loaded `references/audit_worker_core_contract.md`.
 - [ ] contextStore parsed successfully (including output_dir)
 - [ ] Critical paths identified (Money, Security, Data) with Priority scores
 - [ ] All 3 checks completed (critical path coverage, user journey coverage, E2E usefulness validation)
-- [ ] Findings collected with severity, location, effort, recommendation
+- [ ] Findings collected with severity, location, effort, recommendation, and action
 - [ ] Score calculated using penalty algorithm
 - [ ] Report written to `{output_dir}/ln-632--global.md` (atomic single Write call)
 - [ ] Summary written per contract

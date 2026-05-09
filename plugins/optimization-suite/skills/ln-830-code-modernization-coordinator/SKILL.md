@@ -245,7 +245,7 @@ Fatal:
 
 - `../ln-831-oss-replacer/SKILL.md`
 - `../ln-832-bundle-optimizer/SKILL.md`
-- `../ln-645-open-source-replacer/SKILL.md`
+- `../ln-645-architecture-modernization-auditor/SKILL.md`
 - `references/ci_tool_detection.md`
 
 ---

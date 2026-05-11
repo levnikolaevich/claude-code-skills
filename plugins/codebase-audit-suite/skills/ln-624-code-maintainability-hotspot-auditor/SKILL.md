@@ -1,6 +1,6 @@
 ---
 name: ln-624-code-maintainability-hotspot-auditor
-description: "Checks local maintainability hotspots: complexity, long methods, god modules, signatures, algorithms, and constants. Use when auditing code hotspots."
+description: "Checks local maintainability hotspots: complexity, long methods, god modules, signatures, algorithms, and constants. Also flags identifier drift across API/DTO/DB layers. Use when auditing code hotspots."
 allowed-tools: Read, Grep, Glob, Bash, mcp__hex-graph__audit_workspace, mcp__hex-graph__analyze_architecture, mcp__hex-line__read_file, mcp__hex-line__grep_search, mcp__hex-line__outline
 license: MIT
 ---
@@ -15,9 +15,9 @@ Specialized worker auditing local code hotspots that are hard to read, change, o
 
 ## Purpose & Scope
 
-- Audit **code maintainability hotspots** (Categories 5+6+NEW: Medium Priority)
-- Check complexity metrics, method signature quality, local algorithmic efficiency, constants management
-- Emit `REFACTOR_HOTSPOT`, `SIMPLIFY_SIGNATURE`, or `EXTRACT_CONSTANT`
+- Audit **code maintainability hotspots** (priority: medium)
+- Check complexity metrics, method signature quality, local algorithmic efficiency, constants management, identifier consistency across layers
+- Emit `REFACTOR_HOTSPOT`, `SIMPLIFY_SIGNATURE`, `EXTRACT_CONSTANT`, or `UNIFY_IDENTIFIER`
 - Return structured findings with severity, location, effort, recommendations
 - Calculate compliance score (X/10) for Code Quality category
 
@@ -29,8 +29,6 @@ Tool policy: follow host AGENTS.md MCP preferences; load `references/mcp_tool_pr
 Receives `contextStore` with: `tech_stack`, `best_practices`, `principles`, `codebase_root`, `output_dir`.
 
 **Domain-aware:** Supports `domain_mode` + `current_domain` (see `audit_output_schema.md#domain-aware-worker-output`).
-
-Use `hex-graph` first when hotspots, architecture coupling, or semantic relationships materially improve the audit. Use `hex-line` first for local code reads when available. If MCP is unavailable, unsupported, or not indexed, continue with built-in `Read/Grep/Glob/Bash` and state the fallback in the report.
 
 ## Workflow
 
@@ -50,6 +48,7 @@ Detection policy: use two-layer detection (candidate scan, then context verifica
    - Cyclomatic complexity: is complexity from switch/case on enum (valid) or deeply nested conditions (bad)? Enum dispatch -> downgrade to LOW or skip
    - O(n^2): read context -- what's n? If bounded (n < 100), downgrade severity
    - God class: is it a config/schema/builder class? -> downgrade
+   - Identifier drift: is the rename mediated by an explicit serializer alias (`@JsonProperty`, `alias_generator`, `@SerializedName`) or an ORM column mapping (`@Column(name=...)`)? If yes -> downgrade or skip
 4) **Collect findings with severity, location, effort, recommendation**
    - Tag each finding with `domain: domain_name` (if domain-aware)
 5) **Calculate score using penalty algorithm**
@@ -211,6 +210,34 @@ Detection policy: use two-layer detection (candidate scan, then context verifica
 
 **Effort:** S-M (refactor signatures + callers)
 
+### 9. Identifier Consistency Across Layers
+**What:** Same concept uses different identifiers across API contracts, DTOs, services, repositories, DB columns, or internal modules
+
+**Detection:**
+
+| Issue | Pattern | Example |
+|-------|---------|---------|
+| External contract drift | API/OpenAPI/external-schema field name differs from DTO/service/repo/DB column | `user_id` in OpenAPI but `uid` in DTO, `userId` in service, `user` column in DB |
+| Synonym drift (internal) | Same entity referenced by competing names across modules | `customer` vs `client` vs `account` vs `user` for one concept |
+| Unmediated casing/translation | snake/camel/kebab swap without an explicit serializer alias | `created_at` API field assigned to `creationTime` with no alias declared |
+| Abbreviation drift | Full and abbreviated forms coexist for one concept | `organization` vs `org` vs `orgId` vs `organizationId` |
+
+**Severity:**
+- **HIGH:** External-contract field renamed inside code without an explicit serializer alias -- silent breakage risk when the upstream contract changes
+- **MEDIUM:** Synonym drift for one entity across 3+ modules (`customer` / `client` / `account`)
+- **MEDIUM:** Casing translation without an explicit alias mapping
+- **LOW:** Two-variant drift in one bounded module; abbreviation drift in internal-only code
+- **Downgrade when:** ORM-mediated mapping with explicit column alias, framework-required transforms (e.g. GraphQL camelCase via codegen), generated DTOs from contract, language-keyword collision forcing rename -> downgrade or skip
+
+**Layer 2 requirement:** Synonym drift detection relies on a curated project glossary or on reading usage context. Grep alone is insufficient -- always confirm the two identifiers refer to the same concept before reporting.
+
+**Recommendation:**
+- **External-contract case:** carry the external API name as-is through DTO / service / repository / DB column. If casing or language conventions conflict, configure a serializer alias once at the boundary (`@JsonProperty`, `alias_generator`, `@SerializedName`) rather than renaming the field inside the code
+- **Internal-only case:** pick the most semantically precise variant, apply find/replace across the modules, record the canonical term in a shared glossary or shared constants/enum module. Add a lint rule or codegen step where possible to prevent reintroduction
+- For verb naming within a single module, see Rule #8 (Method Signature Quality)
+
+**Effort:** S-M (rename + serializer config). L when a DB column rename plus migration is required
+
 ## Scoring Algorithm
 
 **MANDATORY READ:** Load `references/audit_scoring.md`.
@@ -221,9 +248,7 @@ Detection policy: use two-layer detection (candidate scan, then context verifica
 
 Write JSON summary per `references/audit_summary_contract.md`. In managed mode the caller passes both `runId` and `summaryArtifactPath`; in standalone mode the worker generates its own run-scoped artifact path per shared contract.
 
-Write report to `{output_dir}/ln-624--{domain}.md` (or `624-quality.md` in global mode) with `category: "Code Maintainability Hotspots"` and checks: cyclomatic_complexity, deep_nesting, long_methods, god_classes, too_many_params, quadratic_algorithms, magic_numbers, method_signatures.
-
-Return summary per `references/audit_summary_contract.md`.
+Write report to `{output_dir}/ln-624--{domain}.md` (or `624-quality.md` in global mode) with `category: "Code Maintainability Hotspots"` and checks: cyclomatic_complexity, deep_nesting, long_methods, god_classes, too_many_params, quadratic_algorithms, magic_numbers, method_signatures, identifier_consistency.
 
 When `summaryArtifactPath` is absent, write the standalone runtime summary under `.hex-skills/runtime-artifacts/runs/{run_id}/evaluation-worker/{worker}--{identifier}.json` and optionally echo the same summary in structured output.
 ```
@@ -238,11 +263,9 @@ Apply the already-loaded `references/audit_worker_core_contract.md`.
 - **Do not auto-fix:** Report only
 - **Domain-aware scanning:** If `domain_mode="domain-aware"`, scan ONLY `scan_path` (not entire codebase)
 - **Tag findings:** Include `domain` field in each finding when domain-aware
-- **Context-aware:** Small functions (n < 100) with O(n^2) may be acceptable
-- **Constants detection:** Exclude test files, configs, examples
 - **Metrics tools:** Use existing tools when available (ESLint complexity plugin, radon, gocyclo)
-- **Unique angle:** Audit local maintainability hotspots only. Do not audit duplication, package health, architecture boundaries, N+1 persistence behavior, or orchestration ownership.
-- **Action required:** Every finding uses `REFACTOR_HOTSPOT`, `SIMPLIFY_SIGNATURE`, or `EXTRACT_CONSTANT`.
+- **Unique angle:** Audit local maintainability hotspots only. Do not audit duplication, package health, architecture boundaries, N+1 persistence behavior, or orchestration ownership. Identifier-consistency findings cover naming continuity of one concept across layers; this is distinct from ln-623 (code duplication) and ln-643 (DTO presence / layer leakage in signatures).
+- **Action required:** Every finding uses `REFACTOR_HOTSPOT`, `SIMPLIFY_SIGNATURE`, `EXTRACT_CONSTANT`, or `UNIFY_IDENTIFIER`.
 
 ## Definition of Done
 
@@ -250,8 +273,8 @@ Apply the already-loaded `references/audit_worker_core_contract.md`.
 
 - [ ] contextStore parsed (including domain_mode, current_domain, output_dir)
 - [ ] scan_path determined (domain path or codebase root)
-- [ ] All 10 checks completed (scoped to scan_path):
-  - complexity, nesting, length, god classes, parameters, O(n^2), N+1, constants, method signatures, cascade depth
+- [ ] All 9 checks completed (scoped to scan_path):
+  - complexity, nesting, length, god classes, parameters, O(n^2), constants, method signatures, identifier consistency
 - [ ] Findings collected with severity, location, effort, recommendation, domain
 - [ ] Score calculated
 - [ ] Report written to `{output_dir}/ln-624--{domain}.md` (atomic single Write call)

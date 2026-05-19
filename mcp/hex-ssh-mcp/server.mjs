@@ -2,8 +2,8 @@
 /**
  * hex-ssh-mcp -- Token-efficient SSH MCP server with hash-verified file ops.
  *
- * 8 tools: remote-ssh, ssh-read-lines, ssh-edit-block, ssh-search-code,
- *          ssh-write-chunk, ssh-upload, ssh-download, ssh-verify
+ * 14 tools: remote file ops, SFTP transfer, checksum verification,
+ *           capabilities, and persistent tmux session workflow.
  *
  * FNV-1a hash annotations on reads, checksum verification on edits.
  * Security: ALLOWED_HOSTS, ALLOWED_DIRS env vars.
@@ -23,7 +23,7 @@ import { checkForUpdates } from "@levnikolaevich/hex-common/runtime/update-check
 import { fnv1a, lineTag, rangeChecksum, parseChecksum, parseRef } from "@levnikolaevich/hex-common/text-protocol/hash";
 import { deduplicateLines, normalizeOutput } from "@levnikolaevich/hex-common/output/normalize";
 
-// SSH output schema — shared by all 8 tools (all interact with external servers)
+// SSH output schema — shared by all tools (all interact with external servers)
 const SSH_OUTPUT_SCHEMA = z.object({
     status: z.string(),
     code: z.string().optional(),
@@ -46,18 +46,53 @@ const SSH_OUTPUT_SCHEMA = z.object({
     revision: z.string().optional(),
     checksum: z.string().optional(),
     verify: z.any().optional(),
+    sid: z.string().optional(),
+    session: z.string().optional(),
+    tmux_name: z.string().optional(),
+    next_commands: z.record(z.string(), z.any()).optional(),
+    capabilities: z.record(z.string(), z.any()).optional(),
+    rc: z.number().optional(),
+    seq: z.number().optional(),
+    stdout_lines: z.number().optional(),
+    stderr_lines: z.number().optional(),
+    stream: z.string().optional(),
+    offset: z.number().optional(),
+    limit: z.number().optional(),
+    total_lines: z.number().optional(),
+    has_more: z.boolean().optional(),
+    deleted: z.array(z.string()).optional(),
     error: z.object({ code: z.string(), message: z.string(), recovery: z.string() }).optional(),
 });
 
 // LLM clients may send booleans as strings ("true"/"false").
 // z.coerce.boolean() is unsafe: Boolean("false") === true.
 import { diffLines } from "diff";
-import { executeCommand, validateRemotePath } from "./lib/ssh-client.mjs";
+import { DEFAULT_EXEC_TIMEOUT_MS, executeCommand, validateRemotePath } from "./lib/ssh-client.mjs";
 import { shellQuote, assertSafeArg } from "./lib/shell-escape.mjs";
 import { validateCommand } from "./lib/command-policy.mjs";
 import { validateEditArgs } from "./lib/edit-validation.mjs";
 import { resolveHost } from "./lib/config-resolver.mjs";
 import { downloadFile, formatTransferSummary, getMaxTransferBytes, uploadFile } from "./lib/transfer.mjs";
+import {
+    DEFAULT_SESSION_TTL_SECONDS,
+    DEFAULT_SESSION_WAIT_SECONDS,
+    buildSessionMetadata,
+    capabilitiesCommand,
+    closeSessionCommand,
+    execSessionCommand,
+    gcSessionsCommand,
+    newSessionId,
+    nextSessionSeqCommand,
+    openSessionCommand,
+    parseCapabilitiesOutput,
+    parseGcOutput,
+    parseNextSeqOutput,
+    parseSessionExecOutput,
+    parseSessionReadOutput,
+    readSessionCommand,
+    assertSafeSessionCommand,
+    sanitizePositiveInt,
+} from "./lib/session.mjs";
 
 const { server, StdioServerTransport } = await createServerRuntime({
     name: "hex-ssh-mcp",
@@ -83,6 +118,11 @@ const execTimeoutProps = {
 const transferTimeoutProps = {
     transferTimeoutMs: flexNum().describe("SFTP inactivity timeout in ms (default: 120000; env TRANSFER_TIMEOUT_MS overrides default). Used by ssh-upload/ssh-download."),
 };
+
+const requiredFlexNum = (description) => z.preprocess(
+    v => typeof v === "string" ? Number(v) : v,
+    z.number().describe(description)
+);
 
 function connSchema(extraShape, timeoutProps = {}) {
     return z.object({
@@ -130,6 +170,42 @@ async function sshExec(args, command) {
     });
 }
 
+function sessionExecArgs(args, waitSeconds) {
+    const requested = sanitizeTimeoutMs(args.execTimeoutMs);
+    const minimumMs = (waitSeconds + 2) * 1000;
+    if (requested !== undefined) {
+        if (requested < minimumMs) {
+            throw new Error(`INVALID_INPUT: execTimeoutMs must be at least ${minimumMs}ms for waitSeconds=${waitSeconds}`);
+        }
+        return args;
+    }
+    return { ...args, execTimeoutMs: Math.max(DEFAULT_EXEC_TIMEOUT_MS, (waitSeconds + 5) * 1000) };
+}
+
+function sessionConnectionArgs(args) {
+    return Object.fromEntries(Object.entries({
+        host: args.host,
+        user: args.user,
+        port: args.port,
+        privateKeyPath: args.privateKeyPath,
+        connectTimeoutMs: args.connectTimeoutMs,
+        keepaliveIntervalMs: args.keepaliveIntervalMs,
+        execTimeoutMs: args.execTimeoutMs,
+    }).filter(([, value]) => value !== undefined && value !== null && value !== ""));
+}
+
+function sessionNextExecArgs(args, sid) {
+    const base = sessionConnectionArgs(args);
+    const requested = sanitizeTimeoutMs(base.execTimeoutMs);
+    let waitSeconds = DEFAULT_SESSION_WAIT_SECONDS;
+    if (requested !== undefined) {
+        const maxWait = Math.floor(requested / 1000) - 2;
+        if (maxWait >= 1) waitSeconds = Math.min(waitSeconds, maxWait);
+        else { waitSeconds = 1; base.execTimeoutMs = 3000; }
+    }
+    return { ...base, sid, command: "pwd", waitSeconds };
+}
+
 /**
  * Standard error response.
  */
@@ -152,6 +228,17 @@ const SSH_RECOVERY_BY_CODE = {
     WRITE_FAILED: "Check permissions and disk space",
     STALE_CHECKSUM: "Re-read with ssh-read-lines",
     INVALID_CHECKSUM: "Pass checksums as a non-empty JSON array of checksum strings from ssh-read-lines",
+    TMUX_MISSING: "Install tmux on the remote host or use non-session tools",
+    SESSION_EXISTS: "Open a different session id or close the existing tmux session",
+    SESSION_NOT_FOUND: "Open a new session with ssh-session-open",
+    INVALID_SESSION: "Pass a sid returned by ssh-session-open",
+    INVALID_STREAM: "Use stream=stdout or stream=stderr",
+    INVALID_PAGINATION: "Use offset >= 0 and limit >= 1",
+    OUTPUT_NOT_FOUND: "Check the command seq and stream, or run ssh-session-exec first",
+    METADATA_VALIDATION_FAILED: "Use only sessions created by hex-ssh-mcp, or reopen the session",
+    BAD_SESSION_STATE: "Close and reopen the session, then retry",
+    TMUX_SEND_FAILED: "Check the tmux session state and reopen if needed",
+    SESSION_BUSY: "Retry after the current session sequence allocation finishes, or reopen the session",
 };
 
 function splitErrorMessage(message) {
@@ -216,6 +303,22 @@ function transferError(code, message) {
     return errResult(message, code);
 }
 
+function sessionErrorFromResult(result, fallbackCode = "SSH_ERROR") {
+    const text = [result.output, result.error].filter(Boolean).join("\n").trim();
+    const codePatterns = [
+        "TMUX_MISSING",
+        "SESSION_EXISTS",
+        "SESSION_NOT_FOUND",
+        "METADATA_VALIDATION_FAILED",
+        "OUTPUT_NOT_FOUND",
+        "BAD_SESSION_STATE",
+        "TMUX_SEND_FAILED",
+        "SESSION_BUSY",
+    ];
+    const code = codePatterns.find((candidate) => text.includes(candidate)) || fallbackCode;
+    return sshError(code, text || "session command failed", SSH_RECOVERY_BY_CODE[code] || "Check SSH session state");
+}
+
 function requirePosixRemotePath(args, filePath, label = "filePath") {
     const { platform } = validateRemotePath(filePath, args.remotePlatform);
     if (platform !== "posix") {
@@ -226,6 +329,221 @@ function requirePosixRemotePath(args, filePath, label = "filePath") {
     }
 }
 
+
+// ==================== ssh-capabilities ====================
+
+server.registerTool("ssh-capabilities", {
+    title: "SSH Capabilities",
+    description:
+        "Inspect POSIX remote session support, tmux availability, package managers, and basic shell tools.",
+    inputSchema: connSchema({}, execTimeoutProps),
+    outputSchema: SSH_OUTPUT_SCHEMA,
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true },
+}, async (rawArgs) => {
+    const args = rawArgs ?? {};
+    try {
+        if (!args.host) return errResult("Required: host");
+        const result = await sshExec(args, capabilitiesCommand());
+        if (result.exitCode !== 0) return sessionErrorFromResult(result, "SSH_CONNECTION_FAILED");
+        const capabilities = parseCapabilitiesOutput(result.output);
+        return okResult({
+            host: args.host,
+            capabilities,
+            content: [
+                `os=${capabilities.os}`,
+                `session_backend=${capabilities.session_backend}`,
+                `tmux_installed=${capabilities.tmux_installed}`,
+                `package_managers=${capabilities.package_managers.join(",") || "none"}`,
+            ].join("\n"),
+        });
+    } catch (e) {
+        return errResult(e.message);
+    }
+});
+
+// ==================== ssh-session-open ====================
+
+server.registerTool("ssh-session-open", {
+    title: "SSH Session Open",
+    description:
+        "Open a trusted persistent remote tmux session. Preserves cwd and environment across ssh-session-exec calls.",
+    inputSchema: connSchema({
+        name: z.string().optional().describe("Optional session label. Default: empty"),
+        ttlSeconds: flexNum().describe("Session TTL in seconds. Default: 43200 (12h)"),
+    }, execTimeoutProps),
+    outputSchema: SSH_OUTPUT_SCHEMA,
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
+}, async (rawArgs) => {
+    const args = rawArgs ?? {};
+    try {
+        if (!args.host) return errResult("Required: host");
+        const sid = newSessionId();
+        const ttlSeconds = sanitizePositiveInt(args.ttlSeconds, DEFAULT_SESSION_TTL_SECONDS, "ttlSeconds");
+        const metadata = buildSessionMetadata({ sid, name: args.name || "", ttlSeconds });
+        const result = await sshExec(args, openSessionCommand(metadata));
+        if (result.exitCode !== 0) return sessionErrorFromResult(result, "SSH_CONNECTION_FAILED");
+        return okResult({
+            host: args.host,
+            sid,
+            session: metadata.name,
+            tmux_name: metadata.tmux_name,
+            next_commands: {
+                exec: { tool: "ssh-session-exec", arguments: sessionNextExecArgs(args, sid) },
+                read: { tool: "ssh-session-read", arguments: { ...sessionConnectionArgs(args), sid, seq: 1, limit: 50 } },
+                close: { tool: "ssh-session-close", arguments: { ...sessionConnectionArgs(args), sid } },
+            },
+            content: `Opened session ${sid} (${metadata.tmux_name})`,
+        });
+    } catch (e) {
+        return errResult(e.message);
+    }
+});
+
+// ==================== ssh-session-exec ====================
+
+server.registerTool("ssh-session-exec", {
+    title: "SSH Session Exec",
+    description:
+        "Run a command inside a persistent tmux session. Returns metadata first; read output with ssh-session-read.",
+    inputSchema: connSchema({
+        sid: z.string().describe("Session id returned by ssh-session-open"),
+        command: z.string().describe("Shell command to execute in the persistent session"),
+        waitSeconds: flexNum().describe("Seconds to wait for command completion. Default: 300"),
+    }, execTimeoutProps),
+    outputSchema: SSH_OUTPUT_SCHEMA,
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
+}, async (rawArgs) => {
+    const args = rawArgs ?? {};
+    try {
+        if (!args.host || !args.sid || !args.command) return errResult("Required: host, sid, command");
+        assertSafeSessionCommand(args.command);
+        const blocked = validateCommand(args.command);
+        if (blocked) return errResult(blocked);
+        const waitSeconds = sanitizePositiveInt(args.waitSeconds, DEFAULT_SESSION_WAIT_SECONDS, "waitSeconds");
+        const sessionArgs = sessionExecArgs(args, waitSeconds);
+        const seqResult = await sshExec(sessionArgs, nextSessionSeqCommand(args.sid));
+        if (seqResult.exitCode !== 0) return sessionErrorFromResult(seqResult, "SESSION_NOT_FOUND");
+        const seq = parseNextSeqOutput(seqResult.output);
+        const execResult = await sshExec(sessionArgs, execSessionCommand({
+            sid: args.sid,
+            seq,
+            command: args.command,
+            waitSeconds,
+        }));
+        if (execResult.exitCode !== 0) return sessionErrorFromResult(execResult, execResult.exitCode === 124 ? "SSH_EXEC_TIMEOUT" : "SSH_ERROR");
+        const parsed = parseSessionExecOutput(execResult.output);
+        return okResult({
+            host: args.host,
+            sid: args.sid,
+            seq,
+            rc: parsed.rc,
+            stdout_lines: parsed.stdout_lines,
+            stderr_lines: parsed.stderr_lines,
+            content: `seq=${seq} rc=${parsed.rc} stdout_lines=${parsed.stdout_lines} stderr_lines=${parsed.stderr_lines}`,
+        });
+    } catch (e) {
+        return errResult(e.message);
+    }
+});
+
+// ==================== ssh-session-read ====================
+
+server.registerTool("ssh-session-read", {
+    title: "SSH Session Read",
+    description:
+        "Read a paginated stdout/stderr window from a persistent session command.",
+    inputSchema: connSchema({
+        sid: z.string().describe("Session id returned by ssh-session-open"),
+        seq: requiredFlexNum("Command sequence returned by ssh-session-exec"),
+        stream: z.enum(["stdout", "stderr"]).optional().describe("Output stream: stdout or stderr. Default: stdout"),
+        offset: flexNum().describe("Zero-based line offset. Default: 0"),
+        limit: flexNum().describe("Line limit. Default: 50"),
+        raw: flexBool().describe("When true, return only the output content field"),
+    }, execTimeoutProps),
+    outputSchema: SSH_OUTPUT_SCHEMA,
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true },
+}, async (rawArgs) => {
+    const args = rawArgs ?? {};
+    try {
+        if (!args.host || !args.sid || args.seq === undefined || args.seq === null || args.seq === "") return errResult("Required: host, sid, seq");
+        const seq = sanitizePositiveInt(args.seq, undefined, "seq");
+        const offset = args.offset === undefined || args.offset === null || args.offset === "" ? 0 : Number(args.offset);
+        const limit = sanitizePositiveInt(args.limit, 50, "limit");
+        const stream = args.stream || "stdout";
+        const command = readSessionCommand({ sid: args.sid, seq, stream, offset, limit });
+        const result = await sshExec(args, command);
+        if (result.exitCode !== 0) return sessionErrorFromResult(result, "SESSION_NOT_FOUND");
+        const parsed = parseSessionReadOutput(result.output);
+        const hasMore = offset + limit < parsed.total_lines;
+        if (args.raw) {
+            return okResult({ content: parsed.content });
+        }
+        return okResult({
+            host: args.host,
+            sid: args.sid,
+            seq,
+            stream,
+            offset,
+            limit,
+            total_lines: parsed.total_lines,
+            has_more: hasMore,
+            content: parsed.content,
+        });
+    } catch (e) {
+        return errResult(e.message);
+    }
+});
+
+// ==================== ssh-session-close ====================
+
+server.registerTool("ssh-session-close", {
+    title: "SSH Session Close",
+    description:
+        "Close a trusted persistent tmux session and remove its remote session directory.",
+    inputSchema: connSchema({
+        sid: z.string().describe("Session id returned by ssh-session-open"),
+    }, execTimeoutProps),
+    outputSchema: SSH_OUTPUT_SCHEMA,
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true },
+}, async (rawArgs) => {
+    const args = rawArgs ?? {};
+    try {
+        if (!args.host || !args.sid) return errResult("Required: host, sid");
+        const result = await sshExec(args, closeSessionCommand(args.sid));
+        if (result.exitCode !== 0) return sessionErrorFromResult(result, "SESSION_NOT_FOUND");
+        return okResult({ host: args.host, sid: args.sid, content: `Closed session ${args.sid}` });
+    } catch (e) {
+        return errResult(e.message);
+    }
+});
+
+// ==================== ssh-session-gc ====================
+
+server.registerTool("ssh-session-gc", {
+    title: "SSH Session GC",
+    description:
+        "Remove expired trusted hex-ssh tmux sessions. Only sessions with valid hex-ssh metadata are touched.",
+    inputSchema: connSchema({
+        olderThanSeconds: flexNum().describe("Delete trusted sessions older than this many seconds. Default: delete expired sessions only"),
+    }, execTimeoutProps),
+    outputSchema: SSH_OUTPUT_SCHEMA,
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true },
+}, async (rawArgs) => {
+    const args = rawArgs ?? {};
+    try {
+        if (!args.host) return errResult("Required: host");
+        const result = await sshExec(args, gcSessionsCommand({ olderThanSeconds: args.olderThanSeconds }));
+        if (result.exitCode !== 0) return sessionErrorFromResult(result, "SSH_ERROR");
+        const deleted = parseGcOutput(result.output);
+        return okResult({
+            host: args.host,
+            deleted,
+            content: deleted.length ? `Deleted sessions: ${deleted.join(", ")}` : "No expired trusted sessions found",
+        });
+    } catch (e) {
+        return errResult(e.message);
+    }
+});
 
 // ==================== remote-ssh ====================
 

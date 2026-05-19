@@ -1,17 +1,17 @@
 # hex-ssh-mcp
 
-Token-efficient SSH MCP server with hash-verified remote file editing.
+Token-efficient SSH MCP server with hash-verified remote file editing and persistent tmux sessions.
 
 [![npm](https://img.shields.io/npm/v/@levnikolaevich/hex-ssh-mcp)](https://www.npmjs.com/package/@levnikolaevich/hex-ssh-mcp)
 [![downloads](https://img.shields.io/npm/dm/@levnikolaevich/hex-ssh-mcp)](https://www.npmjs.com/package/@levnikolaevich/hex-ssh-mcp)
 [![license](https://img.shields.io/npm/l/@levnikolaevich/hex-ssh-mcp)](./LICENSE)
 ![node](https://img.shields.io/node/v/@levnikolaevich/hex-ssh-mcp)
 
-Every remote file read returns FNV-1a hash-annotated lines and range checksums. Edits verify those checksums before applying changes -- preventing stale-context corruption across SSH boundaries. Command output is normalized and deduplicated for minimal token usage. The MCP server itself runs on Windows, macOS, and Linux.
+Every remote file read returns FNV-1a hash-annotated lines and range checksums. Edits verify those checksums before applying changes -- preventing stale-context corruption across SSH boundaries. Command output is normalized and deduplicated for minimal token usage. Persistent session tools keep remote cwd/env in tmux and expose paginated stdout/stderr reads for large logs. The MCP server itself runs on Windows, macOS, and Linux.
 
 ## Features
 
-### 8 MCP Tools
+### 14 MCP Tools
 
 | Tool | Description | Key Feature |
 |------|-------------|-------------|
@@ -23,6 +23,12 @@ Every remote file read returns FNV-1a hash-annotated lines and range checksums. 
 | `ssh-upload` | Upload a local file to a remote server via SFTP | Binary-safe transfer + durable remote finalize |
 | `ssh-download` | Download a remote file to the local machine via SFTP | Binary-safe transfer + verified local finalize |
 | `ssh-verify` | Check if held checksums are still valid | Single-line response avoids full re-read |
+| `ssh-capabilities` | Inspect remote POSIX session support | Reports tmux, package managers, and shell tools |
+| `ssh-session-open` | Open a trusted persistent tmux session | Preserves cwd/env between commands |
+| `ssh-session-exec` | Run a command inside a persistent session | Returns metadata first, not large output |
+| `ssh-session-read` | Read session stdout/stderr windows | Paginated output with `offset`/`limit` |
+| `ssh-session-close` | Close a trusted tmux session | Validates hex-ssh metadata before cleanup |
+| `ssh-session-gc` | Remove expired trusted sessions | Touches only valid hex-ssh metadata |
 
 ### Output Normalization
 
@@ -356,6 +362,54 @@ Download a remote file to the local machine over SFTP. Supports text and binary 
 
 Success output includes `bytes=`, `durationMs=`, `verify=`, and `durabilityPath=`. Existing destinations are rejected unless `overwrite=true`. When `ALLOWED_LOCAL_DIRS` is set, the destination must resolve inside that allowlist.
 
+### ssh-capabilities
+
+Inspect whether a POSIX remote can support persistent sessions. Reports OS, shell, `tmux` availability, package managers, and required shell tools. This tool does not install packages.
+
+### ssh-session-open
+
+Open a trusted persistent `tmux` session on the remote host. Session metadata is stored under `~/.hex-ssh/sessions/<sid>/meta.json`; cleanup tools validate that metadata before touching a session.
+
+Additional parameters:
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `name` | string | no | Optional session label |
+| `ttlSeconds` | number | no | Session TTL in seconds (default: 43200) |
+
+Returns `sid`, `tmux_name`, and `next_commands` for `ssh-session-exec`, `ssh-session-read`, and `ssh-session-close`.
+
+### ssh-session-exec
+
+Run a command inside a persistent session. Uses the same `REMOTE_SSH_MODE` policy as `remote-ssh`; command execution is disabled by default. The response includes `seq`, `rc`, `stdout_lines`, and `stderr_lines`; use `ssh-session-read` for output. If `waitSeconds` expires, hex-ssh kills the tmux session and returns `SSH_EXEC_TIMEOUT`; reopen the session before continuing. Explicit `execTimeoutMs` is treated as a hard caller maximum and must be large enough to cover `waitSeconds` plus wrapper overhead.
+
+Additional parameters:
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `sid` | string | yes | Session id returned by `ssh-session-open` |
+| `command` | string | yes | Shell command to execute |
+| `waitSeconds` | number | no | Seconds to wait for command completion (default: 300) |
+
+### ssh-session-read
+
+Read a paginated output window from a session command.
+
+Additional parameters:
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `sid` | string | yes | Session id returned by `ssh-session-open` |
+| `seq` | number | yes | Command sequence returned by `ssh-session-exec` |
+| `stream` | `stdout` \| `stderr` | no | Output stream (default: `stdout`) |
+| `offset` | number | no | Zero-based line offset (default: 0) |
+| `limit` | number | no | Line limit (default: 50) |
+| `raw` | boolean | no | Return only content in the result payload |
+
+### ssh-session-close / ssh-session-gc
+
+`ssh-session-close` closes one trusted session by `sid`. `ssh-session-gc` removes expired trusted sessions, or sessions older than `olderThanSeconds` when that optional parameter is supplied. Both validate `created_by`, `sid`, and `tmux_name` metadata before cleanup.
+
 ### ssh-verify
 
 Verify range checksums from prior `ssh-read-lines` calls without re-reading full content.
@@ -437,11 +491,12 @@ Output exceeding 60 lines (40 head + 20 tail) is truncated with a gap indicator 
 
 ```
 hex-ssh-mcp/
-  server.mjs          MCP server (stdio transport, 8 tools)
+  server.mjs          MCP server (stdio transport, 14 tools)
   package.json
   lib/
     ssh-client.mjs    SSH connection, host/path validation, key resolution
     transfer.mjs      Local path validation and SFTP upload/download helpers
+    session.mjs       Persistent tmux session command generation/parsing
     config-resolver.mjs SSH config parsing and host resolution
     command-policy.mjs Remote command safety policy
 

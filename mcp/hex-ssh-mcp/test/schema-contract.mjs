@@ -35,6 +35,10 @@ function propNames(tool) {
     return Object.keys(tool.inputSchema.properties || {});
 }
 
+function requiredProps(tool) {
+    return tool.inputSchema.required || [];
+}
+
 describe("schema descriptions", () => {
     it("listTools preserves SSH property descriptions under Zod 4", async () => {
         await withMcpClient(async (client) => {
@@ -51,6 +55,12 @@ describe("schema descriptions", () => {
         await withMcpClient(async (client) => {
             const result = await client.listTools();
             const execTools = [
+                "ssh-capabilities",
+                "ssh-session-open",
+                "ssh-session-exec",
+                "ssh-session-read",
+                "ssh-session-close",
+                "ssh-session-gc",
                 "remote-ssh",
                 "ssh-read-lines",
                 "ssh-edit-block",
@@ -107,6 +117,74 @@ describe("error output contract", () => {
             assert.equal(payload.failure_class, "permission_denial");
             assert.match(payload.error.recovery, /REMOTE_SSH_MODE=safe/);
         }, { REMOTE_SSH_MODE: "" });
+    });
+
+    it("ssh-session-exec uses the same disabled command policy as remote-ssh", async () => {
+        await withMcpClient(async (client) => {
+            const result = await client.callTool({
+                name: "ssh-session-exec",
+                arguments: { host: "example.com", user: "deploy", sid: "abcdef12", command: "pwd" },
+            });
+            const payload = result.structuredContent || JSON.parse(result.content[0].text);
+            assert.equal(payload.status, "ERROR");
+            assert.equal(payload.code, "REMOTE_SSH_DISABLED");
+            assert.equal(payload.next_action, "fix_permissions");
+            assert.equal(payload.failure_class, "permission_denial");
+        }, { REMOTE_SSH_MODE: "" });
+    });
+
+    it("ssh-session-exec rejects impossible explicit exec timeout instead of widening it", async () => {
+        await withMcpClient(async (client) => {
+            const result = await client.callTool({
+                name: "ssh-session-exec",
+                arguments: {
+                    host: "example.com",
+                    user: "deploy",
+                    sid: "abcdef12",
+                    command: "pwd",
+                    waitSeconds: 10,
+                    execTimeoutMs: 1000,
+                },
+            });
+            const payload = result.structuredContent || JSON.parse(result.content[0].text);
+            assert.equal(payload.status, "ERROR");
+            assert.equal(payload.code, "INVALID_INPUT");
+            assert.match(payload.summary, /execTimeoutMs must be at least/);
+        }, { REMOTE_SSH_MODE: "safe" });
+    });
+
+    it("ssh-session-read validates seq=0 as invalid input, not as missing", async () => {
+        await withMcpClient(async (client) => {
+            const result = await client.callTool({
+                name: "ssh-session-read",
+                arguments: { host: "example.com", user: "deploy", sid: "abcdef12", seq: 0 },
+            });
+            const payload = result.structuredContent || JSON.parse(result.content[0].text);
+            assert.equal(payload.status, "ERROR");
+            assert.equal(payload.code, "INVALID_INPUT");
+            assert.match(payload.summary, /seq must be a positive integer/);
+        });
+    });
+
+    it("session tools expose the expected public input fields", async () => {
+        await withMcpClient(async (client) => {
+            const result = await client.listTools();
+            assert.deepEqual(
+                ["name", "ttlSeconds"].filter((name) => propNames(toolByName(result.tools, "ssh-session-open")).includes(name)),
+                ["name", "ttlSeconds"]
+            );
+            assert.deepEqual(
+                ["sid", "command", "waitSeconds"].filter((name) => propNames(toolByName(result.tools, "ssh-session-exec")).includes(name)),
+                ["sid", "command", "waitSeconds"]
+            );
+            assert.deepEqual(
+                ["sid", "seq", "stream", "offset", "limit", "raw"].filter((name) => propNames(toolByName(result.tools, "ssh-session-read")).includes(name)),
+                ["sid", "seq", "stream", "offset", "limit", "raw"]
+            );
+            assert.deepEqual(requiredProps(toolByName(result.tools, "ssh-session-read")).sort(), ["host", "seq", "sid"].sort());
+            assert.deepEqual(requiredProps(toolByName(result.tools, "ssh-session-exec")).sort(), ["command", "host", "sid"].sort());
+            assert.deepEqual(requiredProps(toolByName(result.tools, "ssh-session-close")).sort(), ["host", "sid"].sort());
+        });
     });
 
     it("missing SSH user returns typed auth_missing", async () => {

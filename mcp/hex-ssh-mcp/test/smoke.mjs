@@ -408,6 +408,81 @@ describe("command policy", () => {
 });
 
 
+// ==================== persistent sessions ====================
+
+describe("persistent session helpers", () => {
+    let session;
+    before(async () => {
+        session = await import("../lib/session.mjs");
+    });
+
+    it("generates safe session ids and tmux names", () => {
+        const sid = session.newSessionId();
+        assert.match(sid, /^[a-f0-9]{8}$/);
+        assert.equal(session.tmuxNameForSid("abcdef12"), "hex_ssh_abcdef12");
+        assert.throws(() => session.tmuxNameForSid("bad/session"), /INVALID_SESSION/);
+    });
+
+    it("builds trusted metadata and cleanup guards", () => {
+        const metadata = session.buildSessionMetadata({
+            sid: "abcdef12",
+            name: "deploy",
+            ttlSeconds: 60,
+            now: new Date("2026-05-19T00:00:00Z"),
+        });
+        assert.equal(metadata.created_by, "hex-ssh-mcp");
+        assert.equal(metadata.tmux_name, "hex_ssh_abcdef12");
+        assert.equal(metadata.expires_at_epoch, metadata.created_at_epoch + 60);
+
+        const closeCommand = session.closeSessionCommand("abcdef12");
+        assert.match(closeCommand, /created_by/);
+        assert.match(closeCommand, /grep -Fq/);
+        assert.match(closeCommand, /METADATA_VALIDATION_FAILED/);
+        assert.match(closeCommand, /tmux kill-session/);
+        assert.throws(() => session.closeSessionCommand("../bad"), /INVALID_SESSION/);
+    });
+
+    it("generates guarded session exec and sequence commands", () => {
+        const openCommand = session.openSessionCommand(session.buildSessionMetadata({ sid: "abcdef12" }));
+        assert.match(openCommand, /tmux new-session/);
+
+        const execCommand = session.execSessionCommand({ sid: "abcdef12", seq: 1, command: "pwd", waitSeconds: 1 });
+        assert.match(execCommand, /__hex_ssh_session_dir/);
+        assert.doesNotMatch(execCommand, /HEX_SSH_SESSION_DIR:-/);
+        assert.match(execCommand, /unalias -a/);
+        assert.match(execCommand, /send-keys -l/);
+        assert.match(execCommand, /tmux kill-session/);
+        assert.match(execCommand, /__HEX_SSH_TIMEOUT__/);
+
+        const seqCommand = session.nextSessionSeqCommand("abcdef12");
+        assert.match(seqCommand, /seq\.lock/);
+        assert.match(seqCommand, /SESSION_BUSY/);
+    });
+
+    it("parses session exec metadata and read pagination", () => {
+        const exec = session.parseSessionExecOutput("__HEX_SSH_RC__=7\n__HEX_SSH_STDOUT_LINES__=2\n__HEX_SSH_STDERR_LINES__=1\n");
+        assert.deepEqual(exec, { rc: 7, stdout_lines: 2, stderr_lines: 1 });
+        assert.throws(() => session.parseSessionExecOutput("no markers"), /BAD_SESSION_STATE/);
+
+        const page = session.parseSessionReadOutput("a\nb\n__HEX_SSH_TOTAL_LINES__=5\n");
+        assert.deepEqual(page, { content: "a\nb", total_lines: 5 });
+        assert.throws(() => session.parseSessionReadOutput("__HEX_SSH_NOT_FOUND__\n"), /OUTPUT_NOT_FOUND/);
+    });
+
+    it("validates session read arguments and parses gc output", () => {
+        assert.throws(() => session.readSessionCommand({ sid: "abcdef12", seq: 1, stream: "bad", offset: 0, limit: 1 }), /INVALID_STREAM/);
+        assert.throws(() => session.readSessionCommand({ sid: "abcdef12", seq: 1, stream: "stdout", offset: -1, limit: 1 }), /INVALID_PAGINATION/);
+        assert.deepEqual(session.parseGcOutput("abcdef12\n\nabcdef13\n"), ["abcdef12", "abcdef13"]);
+    });
+
+    it("rejects terminal control characters in session commands", () => {
+        assert.doesNotThrow(() => session.assertSafeSessionCommand("printf 'ok'"));
+        assert.throws(() => session.assertSafeSessionCommand("\u0015echo owned"), /terminal control characters/);
+        assert.throws(() => session.execSessionCommand({ sid: "abcdef12", seq: 1, command: "echo\u0003owned", waitSeconds: 1 }), /terminal control characters/);
+    });
+});
+
+
 // ==================== SSH config resolution ====================
 
 describe("SSH config resolution", () => {

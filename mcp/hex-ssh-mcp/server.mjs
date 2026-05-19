@@ -119,10 +119,7 @@ const transferTimeoutProps = {
     transferTimeoutMs: flexNum().describe("SFTP inactivity timeout in ms (default: 120000; env TRANSFER_TIMEOUT_MS overrides default). Used by ssh-upload/ssh-download."),
 };
 
-const requiredFlexNum = (description) => z.preprocess(
-    v => typeof v === "string" ? Number(v) : v,
-    z.number().describe(description)
-);
+const requiredFlexNum = (description) => z.union([z.number(), z.string()]).describe(description);
 
 function connSchema(extraShape, timeoutProps = {}) {
     return z.object({

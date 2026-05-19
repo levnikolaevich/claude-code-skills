@@ -1,8 +1,8 @@
 {
   "name": "@levnikolaevich/hex-ssh-mcp",
-  "version": "1.9.0",
+  "version": "1.9.1",
   "mcpName": "io.github.levnikolaevich/hex-ssh-mcp",
-  "description": "Token-efficient SSH MCP server with hash-verified file operations and persistent tmux sessions. 14 tools.",
+  "description": "Token-efficient SSH MCP with hash-verified files and persistent tmux sessions. 14 tools.",
   "type": "module",
   "main": "dist/server.mjs",
   "bin": {

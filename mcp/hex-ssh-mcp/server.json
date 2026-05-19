@@ -2,17 +2,17 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.levnikolaevich/hex-ssh-mcp",
   "title": "Hex SSH",
-  "description": "Token-efficient SSH MCP server with hash-verified remote file operations and persistent tmux sessions. 14 tools.",
+  "description": "Token-efficient SSH MCP with hash-verified files and persistent tmux sessions. 14 tools.",
   "repository": {
     "url": "https://github.com/levnikolaevich/claude-code-skills",
     "source": "github"
   },
-  "version": "1.9.0",
+  "version": "1.9.1",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "@levnikolaevich/hex-ssh-mcp",
-      "version": "1.9.0",
+      "version": "1.9.1",
       "transport": {
         "type": "stdio"
       }

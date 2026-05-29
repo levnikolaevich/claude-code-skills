@@ -33,6 +33,12 @@ function requireOptionalString(value, path) {
     }
 }
 
+function requireChecksumField(value, path) {
+    if (typeof value !== "string") {
+        throw badInput(`${path} must be a string: either "<start>-<end>:<hex>" copied from a fresh read, or "auto" to compute it for the current anchor range`);
+    }
+}
+
 function validateEditShape(edit) {
     requirePlainObject(edit, "edit");
     const kinds = ["set_line", "replace_lines", "insert_after", "replace_between"].filter((kind) => edit[kind] !== undefined);
@@ -63,7 +69,7 @@ function validateEditShape(edit) {
         requirePlainObject(edit.replace_lines, "replace_lines");
         requireString(edit.replace_lines.start_anchor, "replace_lines.start_anchor");
         requireString(edit.replace_lines.end_anchor, "replace_lines.end_anchor");
-        requireString(edit.replace_lines.range_checksum, "replace_lines.range_checksum");
+        requireChecksumField(edit.replace_lines.range_checksum, "replace_lines.range_checksum");
         requireString(edit.replace_lines.new_text, "replace_lines.new_text");
         return;
     }

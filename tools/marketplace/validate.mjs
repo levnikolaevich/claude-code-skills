@@ -10,6 +10,8 @@ const ROOT = path.resolve(__dirname, "../..");
 const CLAUDE_MARKETPLACE = path.join(ROOT, ".claude-plugin", "marketplace.json");
 const CODEX_MARKETPLACE = path.join(ROOT, ".agents", "plugins", "marketplace.json");
 const PLUGINS_ROOT = path.join(ROOT, "plugins");
+const MCP_ROOT = path.join(ROOT, "mcp");
+const MCP_REGISTRY_DESCRIPTION_MAX = 100;
 const CODEX_INSTALLATION_POLICIES = new Set(["NOT_AVAILABLE", "AVAILABLE", "INSTALLED_BY_DEFAULT"]);
 const CODEX_AUTH_POLICIES = new Set(["ON_INSTALL", "ON_USE"]);
 
@@ -204,14 +206,50 @@ function validateNoPluginLegacyText() {
   }
 }
 
+function validateMcpServerMetadata() {
+  const packageDirs = fs
+    .readdirSync(MCP_ROOT, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => path.join(MCP_ROOT, entry.name))
+    .filter((dir) => fs.existsSync(path.join(dir, "server.json")));
+
+  for (const packageDir of packageDirs) {
+    const relDir = path.relative(ROOT, packageDir);
+    const serverPath = path.join(packageDir, "server.json");
+    const packagePath = path.join(packageDir, "package.json");
+    const server = readJson(serverPath);
+    const pkg = readJson(packagePath);
+    const npmPackage = server.packages?.[0];
+
+    if (typeof server.description !== "string" || server.description.length === 0) {
+      throw new Error(`MCP server description is required: ${path.relative(ROOT, serverPath)}`);
+    }
+    if (server.description.length > MCP_REGISTRY_DESCRIPTION_MAX) {
+      throw new Error(`MCP server description exceeds ${MCP_REGISTRY_DESCRIPTION_MAX} chars (${server.description.length}): ${path.relative(ROOT, serverPath)}`);
+    }
+    if (server.version !== pkg.version) {
+      throw new Error(`MCP version mismatch in ${relDir}: server.json ${server.version} != package.json ${pkg.version}`);
+    }
+    if (npmPackage?.version !== pkg.version) {
+      throw new Error(`MCP package version mismatch in ${relDir}: server.json packages[0].version ${npmPackage?.version} != package.json ${pkg.version}`);
+    }
+    if (npmPackage?.identifier !== pkg.name) {
+      throw new Error(`MCP package identifier mismatch in ${relDir}: ${npmPackage?.identifier} != ${pkg.name}`);
+    }
+  }
+
+  return packageDirs.length;
+}
+
 function main() {
   const { claude, codex } = validateRootMarketplaces();
   validateNoLegacySkillCatalog();
   validateNoPluginLegacyText();
+  const mcpCount = validateMcpServerMetadata();
   const codexPlugins = new Map(codex.plugins.map((plugin) => [plugin.name, plugin]));
   const skillCount = claude.plugins.reduce((sum, plugin) => sum + validatePlugin(plugin, codexPlugins.get(plugin.name)), 0);
   const sharedCount = validateSharedDistribution();
-  console.log(`OK: ${claude.plugins.length} plugins, ${skillCount} skills, shared registry distributes ${sharedCount} sources`);
+  console.log(`OK: ${claude.plugins.length} plugins, ${skillCount} skills, ${mcpCount} MCP servers, shared registry distributes ${sharedCount} sources`);
 }
 
 main();

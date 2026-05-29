@@ -78,6 +78,15 @@ function safeRead(filePath) {
     try { return readFileSync(filePath, "utf-8"); } catch { return null; }
 }
 
+// Opt-out: `.hex-skills/environment_state.json` -> hooks.auto_sync === false skips all
+// startup syncing (hook copy, output-style, settings.json mutation). Same config
+// surface the hook uses for hooks.mode. Default (absent/true): sync as usual.
+function isAutoSyncDisabled() {
+    const stateFile = resolve(process.cwd(), ".hex-skills/environment_state.json");
+    const config = readJson(stateFile);
+    return config?.hooks?.auto_sync === false;
+}
+
 // ---- Core: write hooks to settings file ----
 
 function writeHooksToFile(settingsPath) {
@@ -172,6 +181,7 @@ function syncOutputStyle() {
 export function autoSync() {
     const hookSource = existsSync(DIST_HOOK) ? DIST_HOOK : existsSync(BUILT_HOOK) ? BUILT_HOOK : null;
     if (!hookSource) return;
+    if (isAutoSyncDisabled()) return;
 
     const changes = [];
 

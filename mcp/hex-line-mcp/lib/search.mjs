@@ -118,18 +118,25 @@ function applyListModeTotalLimit(lines, totalLimit) {
     return visible.join("\n");
 }
 
+// Flags shared by every output mode. Mode-specific flags (-l, -c, -n, -C/-B/-A, -m)
+// are appended by each caller around this.
+function appendCommonRgFlags(args, opts) {
+    if (opts.caseInsensitive) args.push("-i");
+    else if (opts.smartCase) args.push("-S");
+    if (opts.literal) args.push("-F");
+    if (opts.multiline) args.push("-U", "--multiline-dotall");
+    if (opts.glob) args.push("--glob", opts.glob);
+    if (opts.type) args.push("--type", opts.type);
+    return args;
+}
+
 /**
  * files mode: rg -l — just file paths.
  */
 async function filesMode(pattern, target, opts, totalLimit) {
     // -l + shared flags (without -n/heading/-m since -l ignores them)
     const realArgs = ["-l"];
-    if (opts.caseInsensitive) realArgs.push("-i");
-    else if (opts.smartCase) realArgs.push("-S");
-    if (opts.literal) realArgs.push("-F");
-    if (opts.multiline) realArgs.push("-U", "--multiline-dotall");
-    if (opts.glob) realArgs.push("--glob", opts.glob);
-    if (opts.type) realArgs.push("--type", opts.type);
+    appendCommonRgFlags(realArgs, opts);
     realArgs.push("--", pattern, target);
 
     const { stdout, code, stderr, killed } = await spawnRg(realArgs);
@@ -147,12 +154,7 @@ async function filesMode(pattern, target, opts, totalLimit) {
  */
 async function countMode(pattern, target, opts, totalLimit) {
     const realArgs = ["-c"];
-    if (opts.caseInsensitive) realArgs.push("-i");
-    else if (opts.smartCase) realArgs.push("-S");
-    if (opts.literal) realArgs.push("-F");
-    if (opts.multiline) realArgs.push("-U", "--multiline-dotall");
-    if (opts.glob) realArgs.push("--glob", opts.glob);
-    if (opts.type) realArgs.push("--type", opts.type);
+    appendCommonRgFlags(realArgs, opts);
     realArgs.push("--", pattern, target);
 
     const { stdout, code, stderr, killed } = await spawnRg(realArgs);
@@ -167,12 +169,7 @@ async function countMode(pattern, target, opts, totalLimit) {
 
 async function summaryMode(pattern, target, opts, totalLimit) {
     const realArgs = ["-n", "-H", "--no-heading", "--color", "never"];
-    if (opts.caseInsensitive) realArgs.push("-i");
-    else if (opts.smartCase) realArgs.push("-S");
-    if (opts.literal) realArgs.push("-F");
-    if (opts.multiline) realArgs.push("-U", "--multiline-dotall");
-    if (opts.glob) realArgs.push("--glob", opts.glob);
-    if (opts.type) realArgs.push("--type", opts.type);
+    appendCommonRgFlags(realArgs, opts);
 
     const limit = (opts.limit && opts.limit > 0) ? opts.limit : 20;
     realArgs.push("-m", String(limit));
@@ -235,12 +232,7 @@ async function contentMode(pattern, target, opts, plain, editReady, totalLimit, 
     const shouldUseGraph = editReady && !plain;
     const contentBlockLimit = allowLargeOutput ? Number.POSITIVE_INFINITY : DEFAULT_CONTENT_BLOCK_LIMIT;
     const outputCharBudget = allowLargeOutput ? MAX_SEARCH_OUTPUT_CHARS : DEFAULT_CONTENT_OUTPUT_CHARS;
-    if (opts.caseInsensitive) realArgs.push("-i");
-    else if (opts.smartCase) realArgs.push("-S");
-    if (opts.literal) realArgs.push("-F");
-    if (opts.multiline) realArgs.push("-U", "--multiline-dotall");
-    if (opts.glob) realArgs.push("--glob", opts.glob);
-    if (opts.type) realArgs.push("--type", opts.type);
+    appendCommonRgFlags(realArgs, opts);
     if (opts.context && opts.context > 0) realArgs.push("-C", String(opts.context));
     if (opts.contextBefore && opts.contextBefore > 0) realArgs.push("-B", String(opts.contextBefore));
     if (opts.contextAfter && opts.contextAfter > 0) realArgs.push("-A", String(opts.contextAfter));

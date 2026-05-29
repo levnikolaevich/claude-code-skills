@@ -43,15 +43,15 @@ Prefer `hex-line` for text files you may inspect or modify. Hash-annotated reads
 
 ## Edit Discipline
 
-- Never invent `range_checksum`. Copy it from a fresh `read_file` or `grep_search(output_mode:"content", edit_ready=true)` block.
+- Prefer a real `range_checksum` copied from a fresh `read_file` or `grep_search(output_mode:"content", edit_ready=true)` block. If you don't have one for the exact range, pass `"auto"` and the server computes it for the current anchor range.
 - First mutation in a file: use `grep_search(output_mode="summary")` for narrow targets, or `outline -> read_file(ranges)` for structural edits. Escalate to `grep_search(output_mode="content", edit_ready=true)` only when the next edit needs canonical hunks.
 - Preserve file conventions mentally: `hex-line` hashes normalized logical text, but `edit_file` preserves the file's existing line endings and trailing-newline shape on write.
 - Prefer `set_line` or `insert_after` for small local changes. Prefer `replace_between` for larger bounded block rewrites.
 - When either anchor of `replace_between` is a lone delimiter (`}`, `)`, `]`, `});`), switch to `replace_lines` with `range_checksum`, or pass `range_checksum` to `replace_between` directly. `replace_between` anchors use short line-content hashes and may fuzzy-match a sibling closing delimiter.
 - For inclusive `replace_between`: enumerate every `{`, `(`, `[` opened inside the replaced range and ensure `new_text` closes them all. If the range crosses a method/class/namespace boundary, prefer `set_line` + `insert_after` for each hunk.
 - After `replace_between` on C#/Java/Go/C++/Rust files, run the language build or type-check once before proceeding. Brace drift is invisible at edit time.
-- Use `replace_lines` only when you already hold the exact inclusive range checksum for that block.
-- Avoid large first-pass edit batches. Start with 1-2 hunks, then continue from the returned `revision` as `base_revision`.
+- Use `replace_lines` for bounded block replacement; supply its inclusive `range_checksum`, or pass `"auto"` to have the server compute it.
+- Batch ALL hunks for the same file into ONE `edit_file` call (the `edits` array). Separate sequential edits on one file go stale and conflict — this is the single most common edit failure. Use `base_revision` only for a genuinely later follow-up after the file already changed.
 - Before a delayed follow-up edit, a formatter pass, or any mixed-tool workflow on the same file, run `verify` with the last checksums and `base_revision`.
 - If `edit_file` returns `retry_edit`, `retry_edits`, or `retry_plan`, reuse those directly instead of rebuilding anchors/checksums by hand.
 - Reuse `retry_checksum` when it is returned for the exact same target range.

@@ -75,9 +75,15 @@ export const DANGEROUS_PATTERNS = [
     { regex: /git\s+push\s+(-f|--force)/, reason: "force push can overwrite remote history" },
     { regex: /git\s+reset\s+--hard/, reason: "hard reset discards uncommitted changes" },
     { regex: /DROP\s+(TABLE|DATABASE)/i, reason: "DROP destroys data permanently" },
-    { regex: /chmod\s+777/, reason: "chmod 777 removes all access restrictions" },
+    { regex: /chmod\s+(-[a-zA-Z]+\s+)*(777|a\+rwx)\b/i, reason: "chmod 777 / a+rwx removes all access restrictions" },
     { regex: /mkfs/, reason: "filesystem format destroys all data" },
     { regex: /dd\s+if=\/dev\/zero/, reason: "direct disk write destroys data" },
+    { regex: /git\s+branch\s+-D\b/, reason: "git branch -D force-deletes branches" },
+    { regex: /git\s+clean\s+(-[a-z]*f|--force)/i, reason: "git clean -f deletes untracked files permanently" },
+    { regex: /git\s+rebase\s+(-i|--interactive)\b/, reason: "interactive rebase rewrites history and blocks on an editor" },
+    { regex: /\btruncate\s+-s/i, reason: "truncate -s can zero out file contents" },
+    { regex: /docker\s+(system|volume|image|container|network)\s+prune\b/i, reason: "docker prune destroys unused data permanently" },
+    { regex: /docker\s+rmi\s+(-f|--force)/i, reason: "docker rmi -f force-removes images" },
 ];
 
 export const COMPOUND_OPERATORS = /[|]|>>?|&&|\|\||;/;

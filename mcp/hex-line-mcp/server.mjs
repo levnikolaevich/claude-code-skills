@@ -245,7 +245,7 @@ server.registerTool("read_file", {
 
 server.registerTool("edit_file", {
     title: "Edit File",
-    description: "Apply hash-verified partial edits to one file. Carry base_revision on same-file follow-ups. Preserves existing line endings and trailing-newline shape; conservative conflicts return retry helpers. boundary_mode=inclusive deletes the anchor lines themselves; new_text must close any delimiter whose opening falls inside the replaced range.",
+    description: "Apply hash-verified partial edits to one file. Batch ALL hunks for the same file into ONE call via the `edits` array -- separate sequential edit_file calls on one file go stale and conflict (the most common edit failure). Carry base_revision only for a genuinely later follow-up after the file changed. Anchors accept tag.N, a bare line number, or unique line content (auto-resolved); range_checksum accepts \"auto\" to compute it for the current range. Preserves existing line endings and trailing-newline shape; conservative conflicts return retry helpers. boundary_mode=inclusive deletes the anchor lines themselves; new_text must close any delimiter whose opening falls inside the replaced range.",
     inputSchema: z.object({
         file_path: z.string().describe("File to edit"),
         edits: z.union([z.string(), z.array(z.any())]).describe(
@@ -254,7 +254,7 @@ server.registerTool("edit_file", {
             '[{"replace_lines":{"start_anchor":"ab.10","end_anchor":"cd.15","new_text":"x","range_checksum":"10-15:a1b2"}}]\n' +
             '[{"insert_after":{"anchor":"ab.20","text":"x"}}]\n' +
             '[{"replace_between":{"start_anchor":"ab.10","end_anchor":"cd.40","new_text":"x","boundary_mode":"inclusive","range_checksum":"10-40:a1b2"}}]\n' +
-            'Prefer replace_lines with range_checksum when either anchor is a lone delimiter (}, ), ]) — replace_between anchors use short line-content hashes and may fuzzy-match a sibling delimiter.',
+            'Prefer replace_lines with range_checksum when either anchor is a lone delimiter (}, ), ]) — replace_between anchors use short line-content hashes and may fuzzy-match a sibling delimiter. Anchors also accept a bare line number or exact line content (auto-resolved to tag.N); range_checksum accepts "auto" to compute it for the current anchor range.',
         ),
         dry_run: flexBool().describe("Preview changes without writing"),
         restore_indent: flexBool().describe("Auto-fix indentation to match anchor (default: false)"),

@@ -2334,6 +2334,26 @@ describe("hook — regressions", () => {
         const r = await runHook("PreToolUse", "Bash", { command: "rm -rf /" });
         assert.notEqual(r.code, 0);
     });
+    it("blocks git branch -D (force delete)", async () => {
+        const r = await runHook("PreToolUse", "Bash", { command: "git branch -D feature" });
+        assert.notEqual(r.code, 0);
+    });
+    it("blocks git clean -fd (deletes untracked)", async () => {
+        const r = await runHook("PreToolUse", "Bash", { command: "git clean -fd" });
+        assert.notEqual(r.code, 0);
+    });
+    it("blocks docker system prune", async () => {
+        const r = await runHook("PreToolUse", "Bash", { command: "docker system prune -af" });
+        assert.notEqual(r.code, 0);
+    });
+    it("blocks chmod -R 777", async () => {
+        const r = await runHook("PreToolUse", "Bash", { command: "chmod -R 777 ." });
+        assert.notEqual(r.code, 0);
+    });
+    it("blocks git push --force-with-lease (covered by --force substring)", async () => {
+        const r = await runHook("PreToolUse", "Bash", { command: "git push --force-with-lease origin main" });
+        assert.notEqual(r.code, 0);
+    });
     it("allows # hex-confirmed bypass", async () => {
         const r = await runHook("PreToolUse", "Bash", { command: "rm -rf / # hex-confirmed" });
         assert.equal(r.code, 0);
@@ -2413,6 +2433,28 @@ describe("hook — advisory mode", () => {
             assert.notEqual(r.code, 0);
         } finally {
             fs.rmSync(repo, { recursive: true, force: true });
+        }
+    });
+    it("does not treat a project-internal symlink resolving outside the root as project-scoped", async () => {
+        const repo = makeTempRepo("hex-hook-symlink-", {
+            ".hex-skills/environment_state.json": JSON.stringify({ hooks: { mode: "advisory" } }, null, 2),
+            "src/index.ts": "const value = 1;\n",
+        });
+        const external = TMP(`hex-external-${process.pid}.ts`);
+        fs.writeFileSync(external, "const outside = 1;\n");
+        const link = join(repo, "link.ts");
+        let symlinked = true;
+        try { fs.symlinkSync(external, link); } catch { symlinked = false; }
+        try {
+            if (!symlinked) return; // platform/user without symlink permission (e.g. Windows non-admin)
+            const r = await runHook("PreToolUse", "Edit", { file_path: "link.ts" }, {}, { cwd: repo });
+            assert.equal(r.code, 0);
+            assert.ok(!r.stdout.includes("edit_file"), "symlink resolving outside project must not be redirected to hex-line");
+            const r2 = await runHook("PreToolUse", "Edit", { file_path: "src/index.ts" }, {}, { cwd: repo });
+            assert.ok(r2.stdout.includes("edit_file"), "internal file must still be redirected to hex-line");
+        } finally {
+            fs.rmSync(repo, { recursive: true, force: true });
+            try { fs.unlinkSync(external); } catch { /* best-effort */ }
         }
     });
 });
@@ -3271,6 +3313,127 @@ describe("v1.25.1 regression guards", () => {
             assert.ok(!result.includes("skip.js"), ".js must not match **/*.ts");
         } finally {
             fs.rmSync(dir, { recursive: true, force: true });
+        }
+    });
+});
+
+describe("Phase 0: forgiving anchor + auto checksum reconciliation", () => {
+    it("resolves a bare line-number anchor to canonical tag.N", async () => {
+        const { editFile } = await import("../lib/edit.mjs");
+        const tmp = TMP("hex-recon-barenum.js");
+        fs.writeFileSync(tmp, "const x = 1;\nconst y = 2;\n");
+        try {
+            const out = editFile(tmp, [{ set_line: { anchor: "1", new_text: "const x = 99;" } }]);
+            assert.ok(out.startsWith("status: OK"), `expected OK, got: ${out.slice(0, 80)}`);
+            assert.equal(fs.readFileSync(tmp, "utf-8"), "const x = 99;\nconst y = 2;\n");
+        } finally {
+            fs.unlinkSync(tmp);
+        }
+    });
+
+    it("resolves an exact-line-content anchor to canonical tag.N", async () => {
+        const { editFile } = await import("../lib/edit.mjs");
+        const tmp = TMP("hex-recon-content.js");
+        fs.writeFileSync(tmp, "const x = 1;\nconst y = 2;\n");
+        try {
+            const out = editFile(tmp, [{ set_line: { anchor: "const y = 2;", new_text: "const y = 3;" } }]);
+            assert.ok(out.startsWith("status: OK"), `expected OK, got: ${out.slice(0, 80)}`);
+            assert.equal(fs.readFileSync(tmp, "utf-8"), "const x = 1;\nconst y = 3;\n");
+        } finally {
+            fs.unlinkSync(tmp);
+        }
+    });
+
+    it("resolves a content-with-trailing-.N anchor (agent appended the line number)", async () => {
+        const { editFile } = await import("../lib/edit.mjs");
+        const tmp = TMP("hex-recon-contentdotn.js");
+        fs.writeFileSync(tmp, "alpha\nbeta\ngamma\n");
+        try {
+            const out = editFile(tmp, [{ set_line: { anchor: "beta.2", new_text: "BETA" } }]);
+            assert.ok(out.startsWith("status: OK"), `expected OK, got: ${out.slice(0, 80)}`);
+            assert.equal(fs.readFileSync(tmp, "utf-8"), "alpha\nBETA\ngamma\n");
+        } finally {
+            fs.unlinkSync(tmp);
+        }
+    });
+
+    it("computes range_checksum from the \"auto\" sentinel for replace_lines", async () => {
+        const { editFile } = await import("../lib/edit.mjs");
+        const { fnv1a, lineTag } = await import("@levnikolaevich/hex-common/text-protocol/hash");
+        const tmp = TMP("hex-recon-auto.js");
+        const content = "function foo() {\n    const x = 1;\n    return x;\n}\n";
+        fs.writeFileSync(tmp, content);
+        try {
+            const lines = content.split("\n");
+            const startTag = lineTag(fnv1a(lines[1]));
+            const endTag = lineTag(fnv1a(lines[2]));
+            const out = editFile(tmp, [{
+                replace_lines: {
+                    start_anchor: `${startTag}.2`,
+                    end_anchor: `${endTag}.3`,
+                    new_text: "    const x = 2;\n    return x * 2;",
+                    range_checksum: "auto",
+                },
+            }]);
+            assert.ok(out.startsWith("status: OK"), `expected OK, got: ${out.slice(0, 80)}`);
+            const written = fs.readFileSync(tmp, "utf-8");
+            assert.ok(written.includes("const x = 2;"), "new content applied");
+            assert.ok(written.includes("return x * 2;"), "new content applied");
+        } finally {
+            fs.unlinkSync(tmp);
+        }
+    });
+
+    it("accepts the \"<start>-<end>:auto\" checksum sentinel form", async () => {
+        const { editFile } = await import("../lib/edit.mjs");
+        const { fnv1a, lineTag } = await import("@levnikolaevich/hex-common/text-protocol/hash");
+        const tmp = TMP("hex-recon-auto2.js");
+        const content = "a\nb\nc\nd\n";
+        fs.writeFileSync(tmp, content);
+        try {
+            const lines = content.split("\n");
+            const out = editFile(tmp, [{
+                replace_lines: {
+                    start_anchor: `${lineTag(fnv1a(lines[1]))}.2`,
+                    end_anchor: `${lineTag(fnv1a(lines[2]))}.3`,
+                    new_text: "B\nC",
+                    range_checksum: "2-3:auto",
+                },
+            }]);
+            assert.ok(out.startsWith("status: OK"), `expected OK, got: ${out.slice(0, 80)}`);
+            assert.equal(fs.readFileSync(tmp, "utf-8"), "a\nB\nC\nd\n");
+        } finally {
+            fs.unlinkSync(tmp);
+        }
+    });
+
+    it("still rejects an ambiguous content anchor (duplicate lines) with Bad ref", async () => {
+        const { editFile } = await import("../lib/edit.mjs");
+        const tmp = TMP("hex-recon-ambig.js");
+        fs.writeFileSync(tmp, "dup\ndup\nother\n");
+        try {
+            assert.throws(
+                () => editFile(tmp, [{ set_line: { anchor: "dup", new_text: "x" } }]),
+                /Bad ref/,
+            );
+        } finally {
+            fs.unlinkSync(tmp);
+        }
+    });
+
+    it("applies all hunks from a single batched edit_file call", async () => {
+        const { editFile } = await import("../lib/edit.mjs");
+        const tmp = TMP("hex-recon-batch.js");
+        fs.writeFileSync(tmp, "one\ntwo\nthree\n");
+        try {
+            const out = editFile(tmp, [
+                { set_line: { anchor: "one", new_text: "ONE" } },
+                { set_line: { anchor: "three", new_text: "THREE" } },
+            ]);
+            assert.ok(out.startsWith("status: OK"), `expected OK, got: ${out.slice(0, 80)}`);
+            assert.equal(fs.readFileSync(tmp, "utf-8"), "ONE\ntwo\nTHREE\n");
+        } finally {
+            fs.unlinkSync(tmp);
         }
     });
 });

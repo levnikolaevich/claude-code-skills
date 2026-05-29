@@ -1144,6 +1144,116 @@ function applyReplaceBetweenEdit(edit, ctx) {
     return null;
 }
 
+const CANONICAL_REF_RE = /^[a-z2-7]{2}\.\d+$/;
+const CANONICAL_CHECKSUM_RE = /^\d+-\d+:[0-9a-f]{8}$/;
+
+function uniqueLineIndex(lines, pred) {
+    let found = -1;
+    for (let i = 0; i < lines.length; i++) {
+        if (!pred(lines[i])) continue;
+        if (found >= 0) return -1; // ambiguous: more than one match
+        found = i;
+    }
+    return found;
+}
+
+function refLineOrNull(anchor) {
+    const m = typeof anchor === "string" ? anchor.trim().match(/^[a-z2-7]{2}\.(\d+)$/) : null;
+    return m ? parseInt(m[1], 10) : null;
+}
+
+function lineContentMatches(line, candidate) {
+    if (line === candidate) return true;
+    const c = candidate.trim();
+    return c.length > 0 && line.replace(/\s+/g, "") === candidate.replace(/\s+/g, "");
+}
+
+/**
+ * Reconcile a forgiving anchor against the current snapshot, returning canonical
+ * "tag.N" when it resolves unambiguously. Agents frequently pass the line content,
+ * a bare line number, or "<content>.<N>" instead of tag.N -- the dominant real-world
+ * edit failure. Resolving here keeps the strict parseRef contract downstream while
+ * cutting that failure class. Returns the original value when already canonical,
+ * unresolvable, or ambiguous, so the strict layer still rejects with guidance.
+ */
+function reconcileAnchorRef(rawAnchor, lines) {
+    if (typeof rawAnchor !== "string") return rawAnchor;
+    const s = rawAnchor.trim();
+    if (!s || CANONICAL_REF_RE.test(s)) return rawAnchor;
+    const tagAt = n => `${lineTag(fnv1a(lines[n - 1]))}.${n}`;
+    if (/^\d+$/.test(s)) {
+        const n = parseInt(s, 10);
+        return n >= 1 && n <= lines.length ? tagAt(n) : rawAnchor;
+    }
+    const dotN = s.match(/^([\s\S]*)\.(\d+)$/);
+    if (dotN) {
+        const n = parseInt(dotN[2], 10);
+        if (n >= 1 && n <= lines.length && lineContentMatches(lines[n - 1], dotN[1])) return tagAt(n);
+    }
+    const exact = uniqueLineIndex(lines, l => l === s);
+    if (exact >= 0) return tagAt(exact + 1);
+    const compact = s.replace(/\s+/g, "");
+    if (compact) {
+        const stripped = uniqueLineIndex(lines, l => l.replace(/\s+/g, "") === compact);
+        if (stripped >= 0) return tagAt(stripped + 1);
+    }
+    return rawAnchor;
+}
+
+/**
+ * Reconcile a forgiving range_checksum: accept the "auto" sentinel (agents pass it
+ * verbatim, e.g. "45-46:auto" or "auto") and compute the real checksum for the
+ * resolved start..end range. Canonical checksums pass through untouched so a genuinely
+ * stale checksum still raises a conflict with a retry helper.
+ */
+function reconcileRangeChecksum(rawChecksum, startLine, endLine, snapshot) {
+    if (rawChecksum === undefined) return rawChecksum;
+    const s = String(rawChecksum).trim();
+    if (CANONICAL_CHECKSUM_RE.test(s)) return rawChecksum;
+    if (s === "" || /^(?:\d+-\d+:)?auto$/i.test(s)) {
+        return buildRangeChecksum(snapshot, startLine, endLine) || rawChecksum;
+    }
+    return rawChecksum;
+}
+
+/**
+ * Pre-pass: rewrite forgiving anchors/checksums to canonical form against the current
+ * snapshot before the strict parse/validate/apply pipeline runs. Pure -- returns new
+ * edit objects and records anchor corrections (raw -> canonical) for transparent echo.
+ */
+function reconcileEdits(edits, snapshot, corrections) {
+    if (!Array.isArray(edits)) return edits;
+    const lines = snapshot.lines;
+    const note = (from, to) => { if (to !== from && typeof from === "string" && from.trim() !== to) corrections.push({ from: from.trim(), to }); };
+    return edits.map(edit => {
+        if (!edit || typeof edit !== "object" || Array.isArray(edit)) return edit;
+        const out = { ...edit };
+        for (const kind of ["set_line", "insert_after"]) {
+            const blk = out[kind];
+            if (!blk || typeof blk !== "object" || Array.isArray(blk)) continue;
+            const anchor = reconcileAnchorRef(blk.anchor, lines);
+            note(blk.anchor, anchor);
+            out[kind] = { ...blk, anchor };
+        }
+        for (const kind of ["replace_lines", "replace_between"]) {
+            const blk = out[kind];
+            if (!blk || typeof blk !== "object" || Array.isArray(blk)) continue;
+            const start_anchor = reconcileAnchorRef(blk.start_anchor, lines);
+            const end_anchor = reconcileAnchorRef(blk.end_anchor, lines);
+            note(blk.start_anchor, start_anchor);
+            note(blk.end_anchor, end_anchor);
+            const next = { ...blk, start_anchor, end_anchor };
+            const sLine = refLineOrNull(start_anchor);
+            const eLine = refLineOrNull(end_anchor);
+            if (sLine && eLine && (kind === "replace_lines" || blk.range_checksum !== undefined)) {
+                next.range_checksum = reconcileRangeChecksum(blk.range_checksum, sLine, eLine, snapshot);
+            }
+            out[kind] = next;
+        }
+        return out;
+    });
+}
+
 /**
  * Apply edits to a file.
  *
@@ -1174,7 +1284,16 @@ export function editFile(filePath, edits, opts = {}) {
     const remaps = [];
     const remapKeys = new Set();
 
-    const anchored = normalizeAnchoredEdits(edits);
+    const reconcileCorrections = [];
+    const reconciledEdits = reconcileEdits(edits, currentSnapshot, reconcileCorrections);
+    for (const c of reconcileCorrections) {
+        const key = `${c.from}->${c.to}`;
+        if (remapKeys.has(key)) continue;
+        remapKeys.add(key);
+        remaps.push(c);
+    }
+
+    const anchored = normalizeAnchoredEdits(reconciledEdits);
     assertNonOverlappingTargets(collectEditTargets(anchored));
     const sorted = sortEditsForApply(anchored);
 

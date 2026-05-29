@@ -1430,19 +1430,22 @@ describe("precise overlay contracts", () => {
             writeFileSync(join(dir, "pkg", "__init__.py"), "from .helpers import helper\n");
             writeFileSync(join(dir, "pkg", "helpers.py"), "def helper():\n    return 1\n");
 
-            cleanDb(dir);
-            await indexProject(dir);
+            const missingProvider = "__hex_graph_missing_basedpyright__";
+            await withProviderCommand("python", [missingProvider], async () => {
+                cleanDb(dir);
+                await indexProject(dir);
 
-            const symbol = getSymbol({ name: "helper", file: "pkg/helpers.py" }, { path: dir });
-            assert.equal(symbol.result.provider_status.status, "unavailable");
-            assert.equal(symbol.result.provider_status.provider, "precise_py");
-            assert.match(symbol.result.provider_status.message, /Python precise analysis is unavailable because basedpyright-langserver is not installed/);
-            assert.equal(symbol.result.provider_status.install_hint, "basedpyright");
+                const symbol = getSymbol({ name: "helper", file: "pkg/helpers.py" }, { path: dir });
+                assert.equal(symbol.result.provider_status.status, "unavailable");
+                assert.equal(symbol.result.provider_status.provider, "precise_py");
+                assert.match(symbol.result.provider_status.message, new RegExp(`${missingProvider} is not installed`));
+                assert.equal(symbol.result.provider_status.install_hint, "basedpyright");
 
-            const explained = explainResolution({ name: "helper", file: "pkg/helpers.py" }, { path: dir });
-            assert.equal(explained.result.precise_provider_status.status, "unavailable");
-            assert.equal(explained.result.precise_provider_status.provider, "precise_py");
-            assert.match(explained.result.precise_provider_status.message, /Ask a human to install basedpyright and rerun index_project/);
+                const explained = explainResolution({ name: "helper", file: "pkg/helpers.py" }, { path: dir });
+                assert.equal(explained.result.precise_provider_status.status, "unavailable");
+                assert.equal(explained.result.precise_provider_status.provider, "precise_py");
+                assert.match(explained.result.precise_provider_status.message, /Ask a human to install basedpyright and rerun index_project/);
+            });
         } finally {
             try { rmSync(dir, { recursive: true, force: true }); } catch { /* Windows WAL lock */ }
         }

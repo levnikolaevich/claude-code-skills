@@ -16,10 +16,14 @@
     "build": "npm --workspaces --if-present run build",
     "check": "node check-output-contracts.mjs && npm --workspaces --if-present run check",
     "test": "node check-output-contracts.mjs && npm --workspace @levnikolaevich/hex-common test && npm --workspace @levnikolaevich/hex-line-mcp test && npm --workspace @levnikolaevich/hex-graph-mcp run test:unit && npm --workspace @levnikolaevich/hex-ssh-mcp test && npm --workspace @levnikolaevich/hex-research-mcp test",
-    "test:full": "npm run test && npm --workspace @levnikolaevich/hex-graph-mcp test"
+    "test:full": "npm run test && npm --workspace @levnikolaevich/hex-graph-mcp test",
+    "ci:runtime": "node scripts/ci.mjs runtime",
+    "ci:interop": "node scripts/ci.mjs interop",
+    "ci:local": "node scripts/ci.mjs local"
   },
   "overrides": {
     "@modelcontextprotocol/sdk": "^1.29.0",
+    "qs": "^6.15.2",
     "@hono/node-server": "^1.19.13",
     "brace-expansion": "^5.0.5",
     "hono": "^4.12.12",

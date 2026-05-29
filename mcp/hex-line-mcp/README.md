@@ -32,8 +32,8 @@ Advanced / occasional:
 
 | Tool | Description | Key Feature |
 |------|-------------|-------------|
-| `read_file` | Read file with progressive disclosure, optional edit-ready metadata, and automatic graph hints when available | Minimal plain discovery by default, explicit `edit_ready` for verified edits |
-| `edit_file` | Revision-aware anchor edits (`set_line`, `replace_lines`, `insert_after`, `replace_between`) | Batched same-file edits + conservative auto-rebase |
+| `read_file` | Read file with progressive disclosure, optional edit-ready metadata, and automatic graph hints when available | Minimal plain discovery by default (no hash overhead); per-line hashes are added only under `edit_ready`/`verbosity=full` for verified edits |
+| `edit_file` | Revision-aware anchor edits (`set_line`, `replace_lines`, `insert_after`, `replace_between`) | Batch all hunks for one file in a single call (avoids stale-conflict churn); forgiving anchors (`tag.N`, a bare line number, or unique line content) and `range_checksum: "auto"` |
 | `write_file` | Create new file or overwrite, auto-creates parent dirs | Path validation, no hash overhead |
 | `grep_search` | Search with ripgrep, summary-first discovery, and optional edit-ready hunks | `summary` by default, capped `content` mode with explicit `allow_large_output` escape hatch |
 | `outline` | AST-based structural overview with hash anchors via tree-sitter WASM. Supports JavaScript/TypeScript, Python, C#, PHP, and fence-aware markdown headings | 95% token reduction, direct edit anchors |
@@ -47,7 +47,7 @@ Advanced / occasional:
 | Event | Trigger | Action |
 |-------|---------|--------|
 | **PreToolUse** | Read/Edit/Write/Grep/Glob on project text scope | Advises hex-line by default for project-scoped text files and file discovery; explicit `hooks.mode: "blocking"` hard redirects. Built-in tools stay available for binary/media, plan files in Plan Mode, and text paths outside the current project root |
-| **PreToolUse** | Bash with dangerous commands | Blocks `rm -rf /`, `git push --force`, etc. Agent must confirm with user |
+| **PreToolUse** | Bash with dangerous commands | Blocks `rm -rf /`, `git push --force`, `git clean -f`, `git branch -D`, `git rebase -i`, `truncate -s`, `docker prune`, `docker rmi -f`, `chmod 777`, `DROP TABLE`, `mkfs`, `dd if=/dev/zero`, etc. Agent must confirm with user |
 | **PostToolUse** | Bash with 50+ lines output | RTK: deduplicates, truncates, shows filtered summary to Claude as feedback |
 | **SessionStart** | Session begins | Injects a short bootstrap hint; defers to the active output style when `hex-line` style is enabled |
 
@@ -70,11 +70,13 @@ Requires Node.js >= 20.19.0.
 
 ### Hooks
 
-Hooks and output style are auto-synced on every MCP server startup. The server compares installed files with bundled versions and updates only when content differs. First run after `npm i -g` triggers full install automatically.
+Hooks and output style are auto-synced on every MCP server startup (unless disabled — see below). The server compares installed files with bundled versions and updates only when content differs. First run after `npm i -g` triggers full install automatically.
 
 Hooks are written to global `~/.claude/settings.json` with absolute path to `hook.mjs`. Output style is installed to `~/.claude/output-styles/hex-line.md` and activated if no other style is set. To activate manually: `/config` > Output style > hex-line.
 
 No extra manual setup is required after install. The startup sync uses the current Node runtime and a stable hook path under `~/.claude/hex-line`, so the hook command survives spaces in the home directory on Windows, macOS, and Linux.
+
+To opt out of startup syncing entirely (hook copy, output-style install/activation, and `~/.claude/settings.json` writes), set `hooks.auto_sync: false` in the project's `.hex-skills/environment_state.json`. The output style is only auto-activated when no other style is set; it never overrides a style you chose.
 
 ## Validation
 

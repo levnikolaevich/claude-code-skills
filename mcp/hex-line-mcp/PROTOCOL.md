@@ -129,7 +129,7 @@ Graph hints follow [Graph freshness policy](#graph-freshness-policy). No `includ
 ## Editing model
 
 All edits go through one resolution pipeline:
-1. parse request
+1. parse request (reconcile forgiving anchors and `range_checksum: "auto"` to canonical form against the current snapshot before strict validation; ambiguous input is left for the strict layer to reject)
 2. bind against snapshot
 3. validate anchors
 4. validate checksum coverage

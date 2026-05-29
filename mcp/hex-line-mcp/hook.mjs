@@ -48,8 +48,8 @@
  */
 
 import { normalizeOutput } from "@levnikolaevich/hex-common/output/normalize";
-import { readFileSync, writeSync } from "node:fs";
-import { resolve } from "node:path";
+import { readFileSync, writeSync, realpathSync, existsSync } from "node:fs";
+import { resolve, dirname, basename, join } from "node:path";
 import { homedir } from "node:os";
 import {
     BASH_REDIRECTS,
@@ -76,10 +76,10 @@ const HEX_LINE_MUTATING = new Set([
 ]);
 
 // Folders whose contents are runtime/config artifacts, not project files.
-// Plan-mode write tools are allowed when the target path contains any of these.
+// Plan-mode write tools are allowed when any path component matches one of these.
 const PLAN_SAFE_FOLDERS = [
-    ".hex-skills/",
-    ".claude/",
+    ".hex-skills",
+    ".claude",
 ];
 
 // ---- Helpers ----
@@ -193,8 +193,32 @@ function resolveCandidatePaths(pathTokens) {
         .map(normalizePolicyPath);
 }
 
+// Canonicalize a path for scope comparison, resolving symlinks so a project-internal
+// symlink that points outside the root is not misclassified as project-scoped (aligns
+// the advisory hook with the edit-layer validatePath, which already uses realpathSync).
+// Best-effort: a path that does not exist yet (e.g. a Write target) falls back to
+// canonicalizing the nearest existing ancestor and re-appending the unresolved tail.
+function canonicalizeForScope(absPath) {
+    try {
+        return realpathSync(absPath);
+    } catch {
+        try {
+            let dir = absPath;
+            const tail = [];
+            while (dir && dir !== dirname(dir) && !existsSync(dir)) {
+                tail.unshift(basename(dir));
+                dir = dirname(dir);
+            }
+            if (existsSync(dir)) return tail.length ? join(realpathSync(dir), ...tail) : realpathSync(dir);
+        } catch { /* fall through to logical path */ }
+        return absPath;
+    }
+}
+
 function isProjectScopedPath(filePath) {
-    return !!filePath && isWithinDir(resolveToolPath(filePath), process.cwd());
+    if (!filePath) return false;
+    const resolved = canonicalizeForScope(resolveToolPath(filePath));
+    return isWithinDir(resolved, canonicalizeForScope(process.cwd()));
 }
 
 function getBashPathCandidates(spec, tokens, isFirstSegment) {
@@ -414,7 +438,8 @@ function handlePreToolUse(data) {
     // Exception: .hex-skills/ and .claude/ are runtime/config artifacts, not project files
     if (data.permission_mode === "plan" && HEX_LINE_MUTATING.has(toolName)) {
         const targetPath = getMutatingTargetPath(toolInput).replace(/\\/g, "/");
-        const isPlanSafe = PLAN_SAFE_FOLDERS.some((folder) => targetPath.includes(folder));
+        const planParts = targetPath.split("/").filter(Boolean);
+        const isPlanSafe = PLAN_SAFE_FOLDERS.some((folder) => planParts.includes(folder));
         if (!isPlanSafe) {
             block(
                 "PLAN_MODE: You are in planning mode. Write your plan to the plan file, then call ExitPlanMode to get approval before making changes.",

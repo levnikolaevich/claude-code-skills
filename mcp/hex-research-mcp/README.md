@@ -118,7 +118,7 @@ Release readiness: Server MVP verified on deterministic fixtures with npm packag
 | MCP tools covered | 16/16 |
 | Eval scenarios | 16 |
 | Benchmark workflows | 5 |
-| Avg estimated benchmark savings | 78.2% |
+| Avg estimated benchmark savings | 76.2% |
 
 Methodology: evals call every registered tool against test/fixtures/project with deterministic assertions and structuredContent/text mirror checks. Benchmark token counts are rough ceil(chars / 4) estimates, not production tokenizer measurements.
 

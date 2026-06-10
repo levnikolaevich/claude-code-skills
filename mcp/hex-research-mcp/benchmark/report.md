@@ -10,5 +10,5 @@ Baseline: 15 files, 7115 chars, 1779 estimated tokens.
 | Find pending implementation | 620 | 155 | 91.3% |
 | Inspect goal | 2999 | 750 | 57.8% |
 | Trace lineage | 2207 | 552 | 69.0% |
-| Audit drift/refine gaps | 1337 | 335 | 81.2% |
+| Audit drift/refine gaps | 2022 | 506 | 71.6% |
 

@@ -70,14 +70,14 @@
       "label": "Audit drift/refine gaps",
       "baseline_tokens": 1779,
       "output": {
-        "chars": 1337,
-        "estimated_tokens": 335
+        "chars": 2022,
+        "estimated_tokens": 506
       },
-      "estimated_savings_percent": 81.2
+      "estimated_savings_percent": 71.6
     }
   ],
   "summary": {
     "workflow_count": 5,
-    "average_estimated_savings_percent": 78.2
+    "average_estimated_savings_percent": 76.2
   }
 }

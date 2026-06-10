@@ -2,7 +2,7 @@
 name: ln-021-codegraph
 description: "Builds and queries code knowledge graph for dependency analysis, references, implementations, and architecture overview. Use when starting work on unfamiliar codebase or before refactoring."
 license: MIT
-allowed-tools: Read, Grep, Glob, Bash, mcp__hex-graph__index_project, mcp__hex-graph__find_symbols, mcp__hex-graph__inspect_symbol, mcp__hex-graph__trace_paths, mcp__hex-graph__find_references, mcp__hex-graph__find_implementations, mcp__hex-graph__trace_dataflow, mcp__hex-graph__analyze_changes, mcp__hex-graph__analyze_edit_region, mcp__hex-graph__analyze_architecture, mcp__hex-graph__audit_workspace, mcp__hex-line__grep_search, mcp__hex-line__read_file
+allowed-tools: Read, Grep, Glob, Bash, mcp__hex-graph__index_project, mcp__hex-graph__find_symbols, mcp__hex-graph__inspect_symbol, mcp__hex-graph__trace_paths, mcp__hex-graph__find_references, mcp__hex-graph__find_implementations, mcp__hex-graph__trace_dataflow, mcp__hex-graph__api_impact, mcp__hex-graph__diagnose_graph, mcp__hex-graph__analyze_changes, mcp__hex-graph__analyze_edit_region, mcp__hex-graph__analyze_architecture, mcp__hex-graph__audit_workspace, mcp__hex-line__grep_search, mcp__hex-line__read_file
 ---
 
 > **Paths:** File paths are relative to skills repo root.
@@ -12,7 +12,7 @@ allowed-tools: Read, Grep, Glob, Bash, mcp__hex-graph__index_project, mcp__hex-g
 **Type:** Standalone Utility
 **Category:** 0XX Dev Environment
 
-Indexes codebase into a layered graph (tree-sitter AST → SQLite) and provides dependency analysis, path tracing, references, implementations, and architecture overview via MCP tools.
+Indexes codebase into a layered graph (tree-sitter AST → SQLite) and provides dependency analysis, path tracing, API impact, references, implementations, diagnostics, and architecture overview via MCP tools.
 
 ## Inputs
 
@@ -69,6 +69,8 @@ Route based on user intent:
 | "Circular dependencies / module coupling" | `analyze_architecture` | `{ path: "{project_path}", verbosity: "full" }` |
 | "Implementations / overrides" | `find_implementations` | `{ name: "X", file: "...", path: "{project_path}" }` |
 | "Dataflow / propagation" | `trace_dataflow` | `{ source: { symbol: { name: "X", file: "..." }, anchor: { kind: "param", name: "input" } }, sink?: { symbol: { name: "X", file: "..." }, anchor: { kind: "return" } }, path: "{project_path}" }` |
+| "API route / response contract impact" | `api_impact` | `{ path: "{project_path}", route: "/api/users", limit: 10 }` |
+| "Graph health / missing overlay facts" | `diagnose_graph` | `{ path: "{project_path}" }` |
 | "Review a diff / worktree" | `analyze_changes` | `{ path: "{project_path}", base_ref: "origin/main" }` |
 | "Check what editing this range affects" | `analyze_edit_region` | `{ path: "{project_path}", file: "src/file.ts", line_start: 10, line_end: 40 }` |
 
@@ -104,6 +106,7 @@ Route based on user intent:
    - After `inspect_symbol` → suggest `trace_paths` if refactoring
    - After `trace_paths` → suggest `find_references` or `find_implementations` depending on symbol kind
    - After empty `trace_paths` from a broad or module-level selector → suggest `inspect_symbol` or `analyze_architecture` instead of assuming there are no dependencies
+   - After `api_impact` returns no routes or missing overlay facts → suggest `diagnose_graph`
 
 ## Supported Languages
 

@@ -146,9 +146,11 @@ Rules:
 | `find_implementations` | Expand implementation/override list |
 | `trace_paths` | Expand dependency or blast-radius paths |
 | `trace_dataflow` | Expand flow facts |
+| `api_impact` | Inspect route/API contract impact |
 | `analyze_changes` | Review semantic diff risk |
 | `audit_workspace` | Review unused/hotspot/clone maintenance signals |
 | `analyze_edit_region` | Inspect semantic edit impact for a file range |
+| `diagnose_graph` | Check graph health and overlay coverage |
 | `index_project` | Build or refresh graph index |
 | `widen_query` | Broaden the search selector |
 | `widen_range` | Broaden the inspected line range |

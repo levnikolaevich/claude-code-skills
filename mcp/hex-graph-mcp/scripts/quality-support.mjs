@@ -42,6 +42,12 @@ export function countRegisteredTools(serverPath = paths.serverFile) {
     return (readFileSync(serverPath, "utf8").match(/server\.registerTool\(/g) || []).length;
 }
 
+export function registeredToolNames(serverPath = paths.serverFile) {
+    return [...readFileSync(serverPath, "utf8").matchAll(/server\.registerTool\("([^"]+)"/g)]
+        .map(match => match[1])
+        .sort();
+}
+
 export function countTestCases(root = paths.testDir) {
     let count = 0;
     const stack = [root];
@@ -102,17 +108,9 @@ export function isCorpusMaterialized(corpus, cacheRoot = getDefaultCorpusCacheDi
 function summarizeFrameworkCoverage(family) {
     const frameworks = Object.values(family.frameworks || {});
     if (!frameworks.length) return "n/a";
-    const counts = frameworks.reduce((acc, entry) => {
-        acc[entry.tier] = (acc[entry.tier] || 0) + 1;
-        return acc;
-    }, {});
-    return Object.entries(counts)
-        .map(([tier, count]) => `${count} ${tier}`)
-        .join(", ");
-}
-
-function pctFromRatio(value) {
-    return `${Math.round((value || 0) * 100)}%`;
+    return [...new Set(frameworks.map(entry => entry.tier).filter(Boolean))]
+        .sort()
+        .join(" + ") || "tracked";
 }
 
 function formatLaneStatus(value) {
@@ -137,7 +135,6 @@ export function buildQualityReport({
     testCount = countTestCases(paths.testDir),
     skippedTestCount = countAlwaysSkippedTestCases(paths.testDir),
 } = {}) {
-    const passedTestCount = Math.max(0, testCount - skippedTestCount);
     const external = corporaManifest.external || [];
     const knownGaps = [
         "Latency bands are targets today; artifact-backed trend history will land in follow-up eval runs.",
@@ -151,11 +148,11 @@ export function buildQualityReport({
         summary: {
             semantic_suite: {
                 runner: "node --test test/*.mjs",
-                passed: passedTestCount,
-                skipped: skippedTestCount,
+                declared: testCount,
+                always_skipped: skippedTestCount,
                 total: testCount,
-                failed: 0,
-                status: "pass",
+                status: "declared",
+                note: "Static declaration count only; npm test is the execution authority.",
             },
             curated_corpora: {
                 count: (corporaManifest.curated || []).length,
@@ -189,7 +186,7 @@ export function buildQualityReport({
 }
 
 export function renderPackageQualityBlock(inputs) {
-    const { benchmarkWorkflowSummary, capabilities, corporaManifest, qualityReport, qualityTargets, toolCount } = inputs;
+    const { benchmarkWorkflowSummary, capabilities, qualityReport } = inputs;
     const trackedFamilies = [
         { publicName: "find_references", capability: "find_references" },
         { publicName: "trace_paths", capability: "trace_paths" },
@@ -201,14 +198,13 @@ export function renderPackageQualityBlock(inputs) {
         return `| \`${publicName}\` | ${family.languages?.javascript?.tier || "n/a"} | ${family.languages?.typescript?.tier || "n/a"} | ${family.languages?.python?.tier || "n/a"} | ${family.languages?.php?.tier || "n/a"} | ${family.languages?.csharp?.tier || "n/a"} | ${summarizeFrameworkCoverage(family)} |`;
     }).join("\n");
     const workflowRows = benchmarkWorkflowSummary.rows.map((row) => (
-        `| ${row.id} | ${row.workflow} | ${row.built_in_chars.toLocaleString("en-US")} chars | ${row.hex_graph_chars.toLocaleString("en-US")} chars | ${pctFromRatio(row.savings_ratio)} | ${row.ops_before}->${row.ops_after} | ${row.steps_before}->${row.steps_after} |`
+        `| ${row.id} | ${row.workflow} | tracked |`
     )).join("\n");
     return [
         "### Generated Snapshot",
         "",
-        `- MCP tools registered in server contract: \`${toolCount}\``,
-        `- Semantic suite: \`${qualityReport.summary.semantic_suite.passed}/${qualityReport.summary.semantic_suite.total || qualityReport.summary.semantic_suite.passed}\` passing`,
-        `- Corpora: \`${corporaManifest.curated.length}\` curated, \`${corporaManifest.external.length}\` pinned external`,
+        "- Semantic suite: tracked by the Node test runner; execution is verified by `npm test`.",
+        "- Corpora: curated and external manifests are tracked in package artifacts.",
         `- Lanes: parser-first \`${formatLaneStatus(qualityReport.lanes.parser_first.status)}\`, precise overlay \`${formatLaneStatus(qualityReport.lanes.precise_overlay.status)}\``,
         "",
         "| Query Family | JS | TS | PY | PHP | C# | Framework overlays |",
@@ -216,30 +212,30 @@ export function renderPackageQualityBlock(inputs) {
         familyRows,
         "",
         "Public targets:",
-        `- Parser-first semantic fixtures: \`${pctFromRatio(qualityTargets.lanes.parser_first.correctness.semantic_fixture_pass_rate.target)}\``,
-        `- Parser-first steady-state query p50: \`<=${qualityTargets.lanes.parser_first.latency.steady_state_query_ms_p50.target_lte}ms\``,
-        `- Precise-overlay incremental reindex p50: \`<=${qualityTargets.lanes.precise_overlay.latency.incremental_reindex_seconds_p50.target_lte}s\``,
-        `- Workflow token savings target: \`>=${pctFromRatio(qualityTargets.lanes.workflow_benchmark.token_savings_ratio.target_gte)}\``,
-        `- Summary-first default preview: \`<=${qualityTargets.lanes.summary_first_contract.preview_rows_default_lte.target_lte} rows\``,
-        `- Resolution/provenance surface coverage: \`${pctFromRatio(qualityTargets.lanes.summary_first_contract.resolution_surface_rate.target)} / ${pctFromRatio(qualityTargets.lanes.summary_first_contract.provenance_surface_rate.target)}\``,
+        "- Parser-first semantic fixtures target is tracked in `evals/artifacts/quality-targets.json`.",
+        "- Parser-first steady-state query latency target is tracked in `evals/artifacts/quality-targets.json`.",
+        "- Precise-overlay incremental reindex latency target is tracked in `evals/artifacts/quality-targets.json`.",
+        "- Workflow token savings target is tracked in `evals/artifacts/quality-targets.json`.",
+        "- Summary-first default preview target is tracked in `evals/artifacts/quality-targets.json`.",
+        "- Resolution/provenance surface coverage target is tracked in `evals/artifacts/quality-targets.json`.",
         "",
         "Workflow baseline (`benchmark/workflow-summary.json`):",
         "",
-        "| ID | Workflow | Built-in | hex-graph | Savings | Ops | Steps |",
-        "|----|----------|---------:|----------:|--------:|----:|------:|",
+        "| ID | Workflow | Artifact status |",
+        "|----|----------|-----------------|",
         workflowRows,
         "",
-        `Workflow summary: \`${pctFromRatio(benchmarkWorkflowSummary.summary.average_token_savings_ratio)}\` average token savings, \`${benchmarkWorkflowSummary.summary.operations_before}->${benchmarkWorkflowSummary.summary.operations_after}\` ops, \`${benchmarkWorkflowSummary.summary.steps_before}->${benchmarkWorkflowSummary.summary.steps_after}\` steps.`,
+        "Workflow summary metrics are stored in the benchmark artifact instead of duplicated in README.",
     ].join("\n");
 }
 
 export function renderRootStatusBlock(inputs) {
-    const { corporaManifest, qualityReport } = inputs;
-    return `\`hex-graph-mcp\` quality snapshot: \`${qualityReport.summary.semantic_suite.passed}/${qualityReport.summary.semantic_suite.total || qualityReport.summary.semantic_suite.passed}\` tests passing, \`${corporaManifest.curated.length}\` curated corpus, \`${corporaManifest.external.length}\` pinned external corpora, parser-first \`${qualityReport.lanes.parser_first.status}\`.`;
+    const { qualityReport } = inputs;
+    return `\`hex-graph-mcp\` quality snapshot: semantic suite, corpus manifests, provider lanes, and parser-first \`${qualityReport.lanes.parser_first.status}\` status are tracked in package artifacts.`;
 }
 
-export function renderRootHexGraphRow(inputs) {
-    return `| **[hex-graph-mcp](mcp/hex-graph-mcp/)** | Indexes codebases into a deterministic SQLite graph with framework-aware overlays, capability-first quality tooling, optional SCIP interop, and architecture/reference analysis. | ${inputs.toolCount} | [README](mcp/hex-graph-mcp/README.md) · [npm](https://www.npmjs.com/package/@levnikolaevich/hex-graph-mcp) |`;
+export function renderRootHexGraphRow() {
+    return "| **[hex-graph-mcp](mcp/hex-graph-mcp/)** | Indexes codebases into a deterministic SQLite graph with framework-aware overlays, capability-first quality tooling, optional SCIP interop, and architecture/reference analysis. | see README | [README](mcp/hex-graph-mcp/README.md) · [npm](https://www.npmjs.com/package/@levnikolaevich/hex-graph-mcp) |";
 }
 
 export function validateLn012Consistency() {

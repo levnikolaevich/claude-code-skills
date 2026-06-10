@@ -2215,7 +2215,7 @@ class Store {
     indexedLanguages() {
         return this.db.prepare(`
             SELECT DISTINCT language
-            FROM files
+            FROM nodes
             WHERE language IS NOT NULL AND language != ''
             ORDER BY language
         `).all().map(row => row.language);
@@ -2845,6 +2845,8 @@ export function tracePaths(selector, {
                         : new Set([
                             "calls", "ref_read", "ref_type", "imports", "reexports", "extends", "implements", "overrides",
                             "route_to_handler", "injects", "registers", "renders", "middleware_for",
+                            "route_returns_key", "consumes_route", "consumer_uses_key", "consumer_uses_unknown_key",
+                            "process_entry", "process_step",
                         ]);
 
     const getNeighbors = (nodeId) => {

@@ -2,6 +2,10 @@
 
 <!-- SCOPE: User-facing changes only. Max 5 bullets per entry. Focus: new capabilities, workflow changes, breaking changes. -->
 
+## 2026-06-10
+
+- **hex-graph v0.21.1** — API/process impact overlay with `api_impact` and `diagnose_graph`, route-scoped client consumer inference, bounded MCP output sections, content-only business errors, stronger text-grammar contract tests, and quality docs that avoid synthetic pass counts
+
 ## 2026-05-06
 
 - **VPS Agent: hex-relay** — Telegram control-plane extracted from ln-030 references into standalone `agents/hex-relay/` package; Fastify+Zod typed routes, runProcess utility, `/health` build/runtime metadata, structured god-session error classification with deduped admin alerts

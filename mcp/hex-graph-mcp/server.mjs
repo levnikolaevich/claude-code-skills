@@ -23,7 +23,9 @@ import {
     runAnalyzeArchitectureUseCase,
     runAnalyzeChangesUseCase,
     runAnalyzeEditRegionUseCase,
+    runApiImpactUseCase,
     runAuditWorkspaceUseCase,
+    runDiagnoseGraphUseCase,
     runFindSymbolsUseCase,
     runFindImplementationsUseCase,
     runFindReferencesUseCase,
@@ -46,12 +48,6 @@ function textResult(text, { large = false } = {}) {
     return response;
 }
 
-function textErrorResult(text, { large = false } = {}) {
-    const response = textResult(text, { large });
-    response.isError = true;
-    return response;
-}
-
 // Grammar body renderer — text-only MCP response per PROTOCOL.md.
 // Produces: <status> <next_action> [kv...]  then #section / .row / >pointer / !code / ?debug lines.
 function escapeValue(value) {
@@ -66,6 +62,18 @@ function kvString(kvs) {
         if (v === null || v === undefined || v === "") continue;
         parts.push(`${k}=${escapeValue(v)}`);
     }
+    return parts.join(" ");
+}
+
+function tokenValue(value) {
+    const text = escapeValue(value || "?").trim();
+    return text ? text.replace(/\s+/g, "_") : "?";
+}
+
+function sectionSummary(label, total, returned, truncated) {
+    const parts = [`#${label}`, `total=${total ?? returned ?? 0}`];
+    if (returned != null) parts.push(`returned=${returned}`);
+    if (truncated) parts.push("truncated=1");
     return parts.join(" ");
 }
 
@@ -129,7 +137,7 @@ function buildActionLine(payload, toolName) {
     const sym = payload?.result?.symbol?.name || payload?.result?.symbol?.display_name;
     if (sym && toolName === "inspect_symbol") kv.push(["sym", sym]);
     const qpath = payload?.query?.path;
-    if (qpath && (toolName === "audit_workspace" || toolName === "analyze_architecture" || toolName === "analyze_edit_region" || toolName === "index_project")) {
+    if (qpath && (toolName === "audit_workspace" || toolName === "analyze_architecture" || toolName === "analyze_edit_region" || toolName === "api_impact" || toolName === "diagnose_graph" || toolName === "index_project")) {
         kv.push(["path", qpath]);
     }
     const pattern = payload?.query?.query;
@@ -190,7 +198,15 @@ function renderInspectSymbol(payload, lines) {
         if (counts.outgoing != null) parts.push(`out=${counts.outgoing}`);
         if (counts.siblings != null) parts.push(`siblings=${counts.siblings}`);
         if (counts.implementations != null) parts.push(`impls=${counts.implementations}`);
+        if (counts.processes != null) parts.push(`processes=${counts.processes}`);
         lines.push(`#flow ${parts.join(" ")}`);
+    }
+    const processes = result.processes_summary || {};
+    if (processes.total) {
+        lines.push(`#processes total=${processes.total}`);
+        for (const process of processes.preview || []) {
+            lines.push(renderProcessRow(process));
+        }
     }
     const prov = result.provenance_summary;
     if (prov && Array.isArray(prov.tiers) && prov.tiers.length) {
@@ -249,6 +265,13 @@ function renderTracePaths(payload, lines) {
     const result = payload?.result || {};
     const rows = result.expanded?.paths || result.path_previews || [];
     for (const path of rows) lines.push(renderPathRow(path, null));
+    const processes = result.processes_summary || {};
+    if (processes.total) {
+        lines.push(`#processes total=${processes.total}`);
+        for (const process of processes.preview || []) {
+            lines.push(renderProcessRow(process));
+        }
+    }
     const prov = result.provenance_summary;
     if (prov && Array.isArray(prov.tiers) && prov.tiers.length) {
         lines.push(`#provenance ${tierKv(prov.tiers)}`);
@@ -296,7 +319,9 @@ function renderAnalyzeChanges(payload, lines) {
     const changedSymbols = result.changed_symbols || [];
     for (const sym of changedSymbols) {
         const risk = sym.risk_level || "?";
-        lines.push(`.impact symbol=${sym.symbol || "?"} file=${sym.file || "?"} risk=${risk}`);
+        const processes = sym.impact_summary?.processes;
+        const processKv = processes != null ? ` processes=${processes}` : "";
+        lines.push(`.impact symbol=${sym.symbol || "?"} file=${sym.file || "?"} risk=${risk}${processKv}`);
     }
     if (summary.changed_file_count != null || summary.changed_symbol_count != null) {
         const parts = [];
@@ -322,12 +347,75 @@ function renderAnalyzeEditRegion(payload, lines) {
     if (impact.external_callers != null) parts.push(`callers=${impact.external_callers}`);
     if (impact.downstream_flows != null) parts.push(`flows=${impact.downstream_flows}`);
     if (impact.clone_siblings != null) parts.push(`clones=${impact.clone_siblings}`);
+    if (impact.processes != null) parts.push(`processes=${impact.processes}`);
     if (parts.length) lines.push(`#impact ${parts.join(" ")}`);
     const edited = result.edited_symbols || [];
     for (const sym of edited) {
-        const file = sym.file || "?";
-        const line = sym.line_start ?? sym.line ?? "?";
-        lines.push(`.edited ${file}:${line} name=${sym.display_name || sym.name || "?"} kind=${sym.kind || "?"}`);
+        const entry = sym.symbol || sym;
+        const file = entry.file || "?";
+        const line = entry.line_start ?? entry.line ?? "?";
+        lines.push(`.edited ${file}:${line} name=${entry.display_name || entry.name || "?"} kind=${entry.kind || "?"}`);
+    }
+    for (const process of result.processes || []) {
+        lines.push(renderProcessRow(process));
+    }
+}
+
+function renderProcessRow(process) {
+    const matched = process.matched_step_count != null ? ` matched=${process.matched_step_count}` : "";
+    return `.process ${process.file || "?"}:${process.line_start ?? "?"} name=${tokenValue(process.name)} steps=${process.step_count ?? "?"}${matched}`;
+}
+
+function renderApiImpact(payload, lines) {
+    const result = payload?.result || {};
+    const totals = result.detail_totals || {};
+    const truncated = result.truncated || {};
+    for (const route of result.routes || []) {
+        lines.push(`.route id=${route.route_id ?? "?"} method=${route.method || "?"} path=${route.path || "?"} framework=${route.framework || "?"} handler=${route.handler?.name || "?"} shapes=${route.shape_count ?? route.shape_keys?.length ?? 0} consumers=${route.consumer_count ?? 0} mismatches=${route.mismatch_count ?? 0} middleware=${route.middleware_count ?? 0} processes=${route.process_count ?? 0}`);
+    }
+    if (result.response_shapes?.length) {
+        lines.push(sectionSummary("shapes", totals.response_shapes, result.response_shapes.length, truncated.response_shapes));
+        for (const shape of result.response_shapes) {
+            lines.push(`.shape route=${shape.route_id ?? "?"} key=${shape.key || "?"} file=${shape.file || "?"}:${shape.line ?? "?"} conf=${shape.confidence || "?"}`);
+        }
+    }
+    if (result.consumers?.length) {
+        lines.push(sectionSummary("consumers", totals.consumers, result.consumers.length, truncated.consumers));
+        for (const consumer of result.consumers) {
+            lines.push(`.consumer route=${consumer.route_id ?? "?"} key=${consumer.key || "?"} file=${consumer.file || "?"}:${consumer.line ?? "?"} conf=${consumer.confidence || "?"}`);
+        }
+    }
+    if (result.mismatches?.length) {
+        lines.push(sectionSummary("mismatches", totals.mismatches, result.mismatches.length, truncated.mismatches));
+        for (const mismatch of result.mismatches) {
+            lines.push(`.mismatch route=${mismatch.route_id ?? "?"} key=${mismatch.key || "?"} file=${mismatch.file || "?"}:${mismatch.line ?? "?"} conf=${mismatch.confidence || "?"}`);
+        }
+    }
+    if (result.middleware?.length) {
+        lines.push(sectionSummary("middleware", totals.middleware, result.middleware.length, truncated.middleware));
+        for (const item of result.middleware) {
+            lines.push(`.middleware route=${item.route_id ?? "?"} name=${tokenValue(item.middleware?.name)} file=${item.file || item.middleware?.file || "?"}:${item.line ?? item.middleware?.line_start ?? "?"} conf=${item.confidence || "?"}`);
+        }
+    }
+    if (result.processes?.length) {
+        lines.push(sectionSummary("processes", totals.processes, result.processes.length, truncated.processes));
+        for (const process of result.processes) {
+            lines.push(renderProcessRow(process));
+        }
+    }
+}
+
+function renderDiagnoseGraph(payload, lines) {
+    const result = payload?.result || {};
+    const stats = result.stats || {};
+    const counts = result.counts || {};
+    lines.push(`#graph files=${stats.files ?? "?"} symbols=${stats.nodes ?? "?"} edges=${stats.edges ?? "?"}`);
+    lines.push(`#overlays routes=${counts.routes ?? 0} api_shapes=${counts.api_shapes ?? 0} api_consumers=${counts.api_consumers ?? 0} processes=${counts.processes ?? 0} precise_edges=${counts.precise_edges ?? 0}`);
+    for (const check of result.checks || []) {
+        lines.push(`.check name=${check.name || "?"} status=${check.status || "?"} count=${check.count ?? "?"}`);
+    }
+    for (const provider of result.providers || []) {
+        lines.push(`.provider language=${provider.language || "?"} status=${provider.status || "?"} provider=${provider.provider || "?"}`);
     }
 }
 
@@ -402,7 +490,11 @@ function renderIndexProject(payload, lines) {
     const rev = status.rev || status.revision || "?";
     const files = status.files ?? status.file_count ?? "?";
     const symbols = status.symbols ?? status.node_count ?? "?";
-    lines.push(`#index rev=${rev} files=${files} symbols=${symbols}`);
+    const edges = status.edges ?? "?";
+    lines.push(`#index rev=${rev} files=${files} symbols=${symbols} edges=${edges}`);
+    for (const phase of status.phases || []) {
+        lines.push(`.phase name=${phase.name || "?"} status=${phase.status || "?"} ms=${phase.elapsed_ms ?? "?"}`);
+    }
 }
 
 function renderQuality(payload, lines) {
@@ -428,6 +520,8 @@ const TOOL_RENDERERS = {
     analyze_architecture: renderAnalyzeArchitecture,
     analyze_changes: renderAnalyzeChanges,
     analyze_edit_region: renderAnalyzeEditRegion,
+    api_impact: renderApiImpact,
+    diagnose_graph: renderDiagnoseGraph,
     audit_workspace: renderAuditWorkspace,
     export_scip: renderExportScip,
     import_scip_overlay: renderImportScipOverlay,
@@ -482,6 +576,12 @@ const REFERENCE_KINDS = [
     "registers",
     "renders",
     "middleware_for",
+    "route_returns_key",
+    "consumes_route",
+    "consumer_uses_key",
+    "consumer_uses_unknown_key",
+    "process_entry",
+    "process_step",
     "all",
 ];
 
@@ -555,7 +655,7 @@ function graphError(codeOrError, message, recovery) {
         error: { code: error.code, message: error.message, recovery: error.recovery },
     }) || { status: STATUS.ERROR };
     const text = renderGrammar(payload, null);
-    return textErrorResult(text);
+    return textResult(text);
 }
 
 function selectorSchema() {
@@ -666,6 +766,7 @@ function isNotFoundPayload(payload, toolName) {
     if (toolName === "find_references" || toolName === "find_implementations") return result.total === 0;
     if (toolName === "trace_paths" || toolName === "trace_dataflow") return result.path_count === 0;
     if (toolName === "analyze_edit_region") return Array.isArray(result.edited_symbols) && result.edited_symbols.length === 0;
+    if (toolName === "api_impact") return result.total === 0;
     return false;
 }
 
@@ -682,7 +783,7 @@ function selectNextAction(payload, toolName) {
     const status = deriveStatus(payload, toolName);
     if (status === STATUS.PARTIAL) return "expand";
     if (status === STATUS.NOT_FOUND) {
-        return actions.find(action => [ACTION.WIDEN_QUERY, ACTION.ADJUST_QUERY, ACTION.INDEX_PROJECT, ACTION.WIDEN_RANGE].includes(action))
+        return actions.find(action => [ACTION.DIAGNOSE_GRAPH, ACTION.WIDEN_QUERY, ACTION.ADJUST_QUERY, ACTION.INDEX_PROJECT, ACTION.WIDEN_RANGE].includes(action))
             || ACTION.WIDEN_QUERY;
     }
     if (actions.length) return actions[0];
@@ -805,9 +906,10 @@ server.registerTool("index_project", {
     try {
         const { indexProject } = await import("./lib/indexer.mjs");
         const result = await indexProject(projectPath, { languages });
+        const status = typeof result === "string" ? { message: result } : result.status;
         return wrapResult({
             query: { path: projectPath, languages: languages || null },
-            result: { status: result },
+            result: { status, message: typeof result === "string" ? result : result.message },
             confidence: "exact",
             reason: "index_project_completed",
             evidence: {},
@@ -1183,6 +1285,71 @@ server.registerTool("analyze_edit_region", {
         return graphError(result.error);
     }
     return wrapResult(withQuality(result, editRegionQuality(result)), "analyze_edit_region", verbosity ?? "compact");
+});
+
+server.registerTool("api_impact", {
+    title: "API Impact",
+    description: "Inspect indexed API routes, inferred response-shape keys, client consumers, middleware, and route-level process facts before changing a handler or contract.",
+    inputSchema: z.object({
+        path: z.string().describe("Indexed project root"),
+        route: z.string().optional().describe("Optional route path or method+path filter, for example `/api/users` or `GET /api/users`."),
+        file: z.string().optional().describe("Optional route or handler file path inside the indexed project."),
+        symbol_id: flexNum().describe("Optional handler symbol id"),
+        workspace_qualified_name: z.string().optional().describe("Optional handler workspace-qualified symbol name"),
+        qualified_name: z.string().optional().describe("Optional handler qualified symbol name"),
+        name: z.string().optional().describe("Optional handler symbol name, paired with symbol_file"),
+        symbol_file: z.string().optional().describe("File path used with name to disambiguate the handler symbol"),
+        limit: flexNum().describe("Max routes and process rows to surface (default: 10, capped at 25)"),
+        verbosity: verbositySchema(),
+    }),
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+}, async (rawParams) => {
+    const {
+        path,
+        route,
+        file,
+        symbol_id,
+        workspace_qualified_name,
+        qualified_name,
+        name,
+        symbol_file,
+        limit,
+        verbosity,
+    } = rawParams;
+    const result = runApiImpactUseCase({
+        path,
+        route: route || null,
+        file: file || null,
+        selector: {
+            symbol_id,
+            workspace_qualified_name,
+            qualified_name,
+            name,
+            file: symbol_file,
+        },
+        limit: limit ?? 10,
+        verbosity: verbosity ?? "compact",
+    });
+    if (result?.error) {
+        return graphError(result.error);
+    }
+    return wrapResult(result, "api_impact", verbosity ?? "compact");
+});
+
+server.registerTool("diagnose_graph", {
+    title: "Diagnose Graph",
+    description: "Check indexed graph health: files, symbols, providers, framework routes, API-shape facts, and process facts.",
+    inputSchema: z.object({
+        path: z.string().describe("Indexed project root"),
+    }),
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+}, async (rawParams) => {
+    const { path } = rawParams;
+    const result = runDiagnoseGraphUseCase({ path });
+    if (result?.error) {
+        return graphError(result.error);
+    }
+    return wrapResult(result, "diagnose_graph", "compact");
 });
 
 server.registerTool("analyze_architecture", {

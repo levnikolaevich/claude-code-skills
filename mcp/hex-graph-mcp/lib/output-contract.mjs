@@ -12,6 +12,8 @@ export const ACTION = {
     FIND_IMPLEMENTATIONS: "find_implementations",
     TRACE_PATHS: "trace_paths",
     TRACE_DATAFLOW: "trace_dataflow",
+    API_IMPACT: "api_impact",
+    DIAGNOSE_GRAPH: "diagnose_graph",
     ANALYZE_CHANGES: "analyze_changes",
     AUDIT_WORKSPACE: "audit_workspace",
     ANALYZE_EDIT_REGION: "analyze_edit_region",

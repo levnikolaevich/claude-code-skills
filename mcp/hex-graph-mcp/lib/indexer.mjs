@@ -20,6 +20,7 @@ import { discoverWorkspace, persistWorkspace } from "./workspace.mjs";
 import { runPreciseOverlay } from "./precise/index.mjs";
 import { extractParamNames, normalizeAnchor } from "./flow.mjs";
 import { listProjectFiles } from "./file-discovery.mjs";
+import { createPhaseRecorder } from "./phase-runner.mjs";
 
 const MAX_FILE_SIZE = 500_000; // 500KB
 
@@ -51,11 +52,12 @@ function referenceEdgeEvidence(ref) {
  * @param {string} projectPath
  * @param {object} [options]
  * @param {string[]} [options.languages] - filter by language names
- * @returns {Promise<string>} summary message
+ * @returns {Promise<{message: string, status: object}>} summary and structured index status
  */
 export async function indexProject(projectPath, { languages } = {}) {
     const absPath = resolve(projectPath);
     const t0 = Date.now();
+    const phases = createPhaseRecorder();
     let store;
     const shouldCloseStore = !hasOpenStore(absPath, { mode: "write" });
 
@@ -78,7 +80,7 @@ export async function indexProject(projectPath, { languages } = {}) {
     try {
         store = getStore(absPath);
 
-    // Filter extensions by language if specified
+    const scanPhase = phases.start("scan");
     const allowedExts = languages
         ? supportedExtensions().filter(ext => languages.includes(languageFor(ext)))
         : supportedExtensions();
@@ -88,17 +90,30 @@ export async function indexProject(projectPath, { languages } = {}) {
     const allSourceFiles = languages
         ? discoverableSourceFiles.filter(file => allowedSet.has(extname(file.relPath).toLowerCase()))
         : discoverableSourceFiles;
+    scanPhase.end({
+        discovered_files: discoverableSourceFiles.length,
+        selected_files: allSourceFiles.length,
+        language_filter_count: languages?.length || 0,
+    });
 
     // Pass 0: RESET. Full indexing is a deterministic rebuild, not an
     // accumulation pass, so old ignored packages/modules cannot leak forward.
+    const resetPhase = phases.start("reset");
     store.resetProjectGraph();
+    resetPhase.end();
 
     // Pass 1: SCAN
+    const workspacePhase = phases.start("workspace");
     const filesToIndex = allSourceFiles;
     const workspace = persistWorkspace(store, discoverWorkspace(absPath, allSourceFiles));
     const projectLanguages = [...new Set(allSourceFiles.map(file => file.language).filter(Boolean))];
+    workspacePhase.end({
+        files: filesToIndex.length,
+        languages: projectLanguages.length,
+    });
 
     // Pass 2: PARSE
+    const parsePhase = phases.start("parse");
     let parsed = 0;
     const fileNodeMap = new Map(); // relPath -> { definitions, imports, calls, language }
 
@@ -146,8 +161,14 @@ export async function indexProject(projectPath, { languages } = {}) {
         });
         parsed++;
     }
+    parsePhase.end({
+        parsed_files: parsed,
+        skipped_files: filesToIndex.length - parsed,
+        symbol_files: fileNodeMap.size,
+    });
 
     // Pass 3: RESOLVE — build edges (import, call, reexport)
+    const resolvePhase = phases.start("resolve");
     let edgeCount = 0;
     for (const [filePath, data] of fileNodeMap) {
         const {
@@ -160,22 +181,38 @@ export async function indexProject(projectPath, { languages } = {}) {
         });
     }
     store.rebuildAllModuleLayerEdges();
+    resolvePhase.end({ symbol_edges: edgeCount });
+
+    const precisePhase = phases.start("precise_overlay");
     const precise = await runPreciseOverlay({
         projectPath: absPath,
         store,
         languages: projectLanguages,
         sourceFiles: allSourceFiles.map(file => file.relPath),
     });
+    precisePhase.end({
+        precise_edges: precise.precise_edges || 0,
+        providers: precise.providers?.length || 0,
+    });
+
+    const frameworkPhase = phases.start("framework_overlay");
     const framework = runFrameworkOverlay({
         projectPath: absPath,
         store,
         sourceFiles: allSourceFiles.map(file => file.relPath),
     });
+    frameworkPhase.end({
+        framework_edges: framework.edge_count || 0,
+        framework_nodes: framework.node_count || 0,
+        route_count: framework.detail?.route_count || 0,
+        api_shape_count: framework.detail?.api_shape_count || 0,
+        process_count: framework.detail?.process_count || 0,
+    });
 
     const elapsed = Date.now() - t0;
     const stats = store.stats();
 
-        return [
+        const message = [
             `Indexed ${stats.files} files, ${stats.nodes} symbols, ${stats.edges} edges in ${elapsed}ms`,
             "Rebuilt graph DB from current source inventory",
             `Parsed ${parsed} files (${filesToIndex.length - parsed} read/parse skipped)`,
@@ -187,6 +224,31 @@ export async function indexProject(projectPath, { languages } = {}) {
                 .map(provider => provider.message)
                 .filter(Boolean),
         ].filter(Boolean).join("\n");
+        return {
+            message,
+            status: {
+                revision: `idx-${t0}`,
+                files: stats.files,
+                symbols: stats.nodes,
+                edges: stats.edges,
+                parsed_files: parsed,
+                skipped_files: filesToIndex.length - parsed,
+                elapsed_ms: elapsed,
+                phases: phases.results(),
+                overlays: {
+                    precise_edges: precise.precise_edges || 0,
+                    framework_edges: framework.edge_count || 0,
+                    framework_nodes: framework.node_count || 0,
+                    route_count: framework.detail?.route_count || 0,
+                    api_shape_count: framework.detail?.api_shape_count || 0,
+                    api_consumer_count: framework.detail?.api_consumer_count || 0,
+                    process_count: framework.detail?.process_count || 0,
+                },
+            },
+        };
+    } catch (error) {
+        phases.fail(error);
+        throw error;
     } finally {
         if (store && shouldCloseStore) {
             try { store.checkpoint(); } catch { /* best-effort WAL flush */ }

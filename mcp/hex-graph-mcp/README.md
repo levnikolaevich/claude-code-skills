@@ -7,7 +7,7 @@ Deterministic layered code graph MCP server. Indexes codebases into a SQLite gra
 [![license](https://img.shields.io/npm/l/@levnikolaevich/hex-graph-mcp)](./LICENSE)
 ![node](https://img.shields.io/node/v/@levnikolaevich/hex-graph-mcp)
 
-### 14 MCP Tools
+### MCP Tools
 
 `hex-graph-mcp` now exposes a use-case-first contract instead of every internal primitive. The public surface is split into setup, symbol navigation, review/edit analysis, architecture/maintenance, and interop.
 
@@ -23,7 +23,9 @@ Deterministic layered code graph MCP server. Indexes codebases into a SQLite gra
 | Flow | `trace_dataflow` | Follow deterministic source-to-sink propagation |
 | Review | `analyze_changes` | Review PR / commit / worktree semantic risk |
 | Review | `analyze_edit_region` | Evaluate what a concrete file range change affects |
+| API | `api_impact` | Inspect route handlers, response-shape keys, consumers, middleware, and processes |
 | Architecture | `analyze_architecture` | Summarize modules, cycles, coupling, and framework surfaces |
+| Diagnostics | `diagnose_graph` | Check graph health and overlay coverage |
 | Maintenance | `audit_workspace` | Find unused exports, hotspots, and clone groups |
 | Interop | `export_scip` | Export the graph to a `.scip` artifact |
 | Interop | `import_scip_overlay` | Import a `.scip` artifact as overlay evidence |
@@ -107,6 +109,8 @@ Example `audit_workspace` (clone members are flat rows, not an indent tree):
 - `analyze_changes`
 - `audit_workspace`
 - `analyze_edit_region`
+- `api_impact`
+- `diagnose_graph`
 - `index_project`
 - `widen_query`
 - `widen_range`
@@ -143,12 +147,14 @@ Errors use the same grammar, not a JSON error envelope:
 |------|----------|---------------------|
 | `analyze_changes` | PR / commit / worktree review | `#summary`, `.changed_symbol`, `.deleted_api`, `#quality`, `>` review pointers |
 | `analyze_edit_region` | What a file range edit affects | `#summary`, `.edited_symbol`, `.caller`, `.flow`, `.clone`, `.similar`, `!warning` risk details |
+| `api_impact` | Route/API contract changes | `.route`, `.shape`, `.consumer`, `.mismatch`, `.process` rows |
 
 ### Architecture and Maintenance
 
 | Tool | Best for | Key result sections |
 |------|----------|---------------------|
 | `analyze_architecture` | Workspace overview | `#summary`, `.module`, `.cycle`, `.coupling`, `.framework`, `.risk` |
+| `diagnose_graph` | Graph health and overlay coverage | `#graph`, `#overlays`, `.check`, `.provider` rows |
 | `audit_workspace` | Cleanup / maintainability review | `#summary`, bounded `.unused`, `.hotspot`, `.clone_group`, `.clone_member`, `.clone_members_more`, `!warning` suppressed/uncertain items |
 
 ### Interop
@@ -230,7 +236,9 @@ hex-graph-mcp/
 | Follow source-to-sink propagation | `trace_dataflow` | `path: "/project", source: { symbol: ..., anchor: ... }` |
 | Review a PR or worktree diff | `analyze_changes` | `base_ref: "origin/main"` |
 | Evaluate a planned edit in one file range | `analyze_edit_region` | `file: "src/auth.ts", line_start: 40, line_end: 78` |
+| Inspect API contract blast radius | `api_impact` | `route: "/api/users"` |
 | Inspect architecture and coupling | `analyze_architecture` | First high-level call after `index_project` |
+| Check graph health | `diagnose_graph` | `path: "/project"` |
 | Audit cleanup and duplicate risk | `audit_workspace` | `scope: "src/"` |
 | Repair graph environment before indexing/export | `install_graph_providers` | `path: "/project", mode: "check"` |
 
@@ -256,36 +264,35 @@ Inline `quality` metadata is currently surfaced by:
 <!-- GENERATED:HEX_GRAPH_MCP_QUALITY:START -->
 ### Generated Snapshot
 
-- MCP tools registered in server contract: `14`
-- Semantic suite: `106/106` passing
-- Corpora: `1` curated, `1` pinned external
+- Semantic suite: tracked by the Node test runner; execution is verified by `npm test`.
+- Corpora: curated and external manifests are tracked in package artifacts.
 - Lanes: parser-first `green`, precise overlay `provider_conditional`
 
 | Query Family | JS | TS | PY | PHP | C# | Framework overlays |
 |--------------|----|----|----|-----|----|--------------------|
-| `find_references` | verified | verified | verified | verified | verified | 9 supported |
+| `find_references` | verified | verified | verified | verified | verified | supported |
 | `trace_paths` | verified | verified | supported | supported | supported | n/a |
 | `audit_workspace` | verified | verified | verified | supported | supported | n/a |
 | `analyze_architecture` | verified | verified | supported | supported | supported | n/a |
 
 Public targets:
-- Parser-first semantic fixtures: `100%`
-- Parser-first steady-state query p50: `<=200ms`
-- Precise-overlay incremental reindex p50: `<=2s`
-- Workflow token savings target: `>=50%`
-- Summary-first default preview: `<=5 rows`
-- Resolution/provenance surface coverage: `100% / 100%`
+- Parser-first semantic fixtures target is tracked in `evals/artifacts/quality-targets.json`.
+- Parser-first steady-state query latency target is tracked in `evals/artifacts/quality-targets.json`.
+- Precise-overlay incremental reindex latency target is tracked in `evals/artifacts/quality-targets.json`.
+- Workflow token savings target is tracked in `evals/artifacts/quality-targets.json`.
+- Summary-first default preview target is tracked in `evals/artifacts/quality-targets.json`.
+- Resolution/provenance surface coverage target is tracked in `evals/artifacts/quality-targets.json`.
 
 Workflow baseline (`benchmark/workflow-summary.json`):
 
-| ID | Workflow | Built-in | hex-graph | Savings | Ops | Steps |
-|----|----------|---------:|----------:|--------:|----:|------:|
-| W1 | Explore unfamiliar MCP before refactor | 153,580 chars | 609 chars | 100% | 12->3 | 12->3 |
-| W2 | Estimate blast radius before refactor | 166,672 chars | 609 chars | 100% | 7->3 | 5->3 |
-| W3 | Audit cycles, dead exports, hotspots | 175,063 chars | 7,196 chars | 96% | 22->4 | 22->4 |
-| W4 | Review PR semantic risk snapshot | 72,053 chars | 23,504 chars | 67% | 4->1 | 4->1 |
+| ID | Workflow | Artifact status |
+|----|----------|-----------------|
+| W1 | Explore unfamiliar MCP before refactor | tracked |
+| W2 | Estimate blast radius before refactor | tracked |
+| W3 | Audit cycles, dead exports, hotspots | tracked |
+| W4 | Review PR semantic risk snapshot | tracked |
 
-Workflow summary: `91%` average token savings, `45->11` ops, `43->11` steps.
+Workflow summary metrics are stored in the benchmark artifact instead of duplicated in README.
 <!-- GENERATED:HEX_GRAPH_MCP_QUALITY:END -->
 
 Run the artifact snapshot locally:

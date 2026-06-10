@@ -39,7 +39,7 @@ Spec compliance: per MCP 2025-11-25 / SEP-1624, emitting only `content` is valid
 
 ## Response grammar
 
-All 14 tools share one grammar.
+All tools share one grammar.
 
 ### Header (action-line)
 
@@ -59,7 +59,7 @@ After the action-line, each body line starts with one of:
 
 | Prefix | Semantics |
 |--------|-----------|
-| `#` | section header / block label (one line): `#evidence`, `#provenance`, `#location`, `#refs`, `#callers`, `#flow`, `#paths`, `#clones`, `#summary`, `#quality` |
+| `#` | section header / block label (one line): `#evidence`, `#provenance`, `#location`, `#refs`, `#callers`, `#flow`, `#paths`, `#clones`, `#summary`, `#shapes`, `#consumers`, `#mismatches`, `#processes`, `#graph`, `#overlays`, `#quality` |
 | `.` | primary entry: symbol, reference, path, edge, clone group, unused export, hotspot |
 | `>` | pointer - literal follow-up tool call with `path` and selector when symbol-scoped: `>mcp__hex-graph__find_references path=/repo symbol_id=42 expand=references` |
 | `!` | warning / error / stale detail: `!code=DB_LOCK`, `!reason=no_matches`, `!index_built=<ts>` |
@@ -108,7 +108,7 @@ Historical JSON envelope fields map to the following grammar locations. New code
 
 ## Per-tool grammar
 
-All 14 tools share the universal header + prefix body. Per-tool body differences are purely in `#section` labels and `.row` kv fields.
+All tools share the universal header + prefix body. Per-tool body differences are purely in `#section` labels and `.row` kv fields.
 
 | Tool | Body shape | Primary `#section`s |
 |------|------------|---------------------|
@@ -122,6 +122,8 @@ All 14 tools share the universal header + prefix body. Per-tool body differences
 | `analyze_architecture` | `.module` rows + `#cycles` | `#hotspots` optional |
 | `analyze_changes` | `.change`, `.impact` rows | `#summary` |
 | `analyze_edit_region` | `.region kind=...` rows | `#impact` |
+| `api_impact` | `.route`, `.shape`, `.consumer`, `.mismatch`, `.process` rows | `#shapes`, `#consumers`, `#mismatches`, `#processes` |
+| `diagnose_graph` | `.check`, `.provider` rows | `#graph`, `#overlays` |
 | `audit_workspace` | `.unused`, `.hotspot`, `.clone_group`, `.clone_member` rows | `#summary` |
 | `export_scip` | status-only: path to artifact | `#scip rev=... path=...` |
 | `import_scip_overlay` | status-only: overlay applied count | `#overlay applied=N` |

@@ -24,7 +24,7 @@ function sync(checkOnly = false) {
         "",
     );
     const nextPackageReadme = replaceGeneratedBlock(
-        replaceSingleLine(packageReadmeWithoutLegacyBenchmark, /### \d+ MCP Tools/, `### ${inputs.toolCount} MCP Tools`, "package README tool count heading"),
+        replaceSingleLine(packageReadmeWithoutLegacyBenchmark, /### (?:\d+ )?MCP Tools/, "### MCP Tools", "package README tool heading"),
         "HEX_GRAPH_MCP_QUALITY",
         renderPackageQualityBlock(inputs),
     );

@@ -2489,8 +2489,10 @@ describe("quality artifacts", () => {
         const totalTests = countTestCases(resolve(__dirname));
         const skippedTests = countAlwaysSkippedTestCases(resolve(__dirname));
         assert.equal(report.summary.semantic_suite.total, totalTests, "quality report keeps semantic suite total");
-        assert.equal(report.summary.semantic_suite.skipped, skippedTests, "quality report keeps semantic suite skipped count");
-        assert.equal(report.summary.semantic_suite.passed, totalTests - skippedTests, "quality report keeps semantic suite passed count");
+        assert.equal(report.summary.semantic_suite.declared, totalTests, "quality report keeps declared semantic suite count");
+        assert.equal(report.summary.semantic_suite.always_skipped, skippedTests, "quality report keeps always-skipped declaration count");
+        assert.equal(report.summary.semantic_suite.passed, undefined, "quality report must not fake executed pass count");
+        assert.equal(report.summary.semantic_suite.failed, undefined, "quality report must not fake executed failure count");
         assert.equal(corpora.curated[0].path, "test/smoke.mjs");
         assert.equal(listQualityCorpora("curated").length, 1, "curated corpus list is exposed");
         assert.ok(listQualityCorpora("external").length >= 1, "external corpus list is exposed");

@@ -1,13 +1,13 @@
 {
-  "generated_at": "2026-05-08",
+  "generated_at": "2026-06-10",
   "summary": {
     "semantic_suite": {
       "runner": "node --test test/*.mjs",
-      "passed": 106,
-      "skipped": 0,
-      "total": 106,
-      "failed": 0,
-      "status": "pass"
+      "declared": 110,
+      "always_skipped": 0,
+      "total": 110,
+      "status": "declared",
+      "note": "Static declaration count only; npm test is the execution authority."
     },
     "curated_corpora": {
       "count": 1,

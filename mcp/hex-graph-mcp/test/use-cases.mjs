@@ -9,7 +9,9 @@ import { resolveStore } from "../lib/store.mjs";
 import {
     runAnalyzeArchitectureUseCase,
     runAnalyzeEditRegionUseCase,
+    runApiImpactUseCase,
     runAuditWorkspaceUseCase,
+    runDiagnoseGraphUseCase,
     runFindSymbolsUseCase,
     runFindImplementationsUseCase,
     runFindReferencesUseCase,
@@ -392,6 +394,167 @@ describe("use-case wrappers", () => {
             assert.ok(Array.isArray(dataflow.result.path_previews));
             assert.ok(Array.isArray(dataflow.result.expansion_hints));
             assert.ok("provenance_summary" in dataflow.result);
+        } finally {
+            resolveStore(dir)?.close();
+            rmSync(dir, { recursive: true, force: true });
+        }
+    });
+
+    it("surfaces API response shapes, consumer mismatches, and route processes", async () => {
+        const dir = makeTempDir();
+        try {
+            mkdirSync(join(dir, "src"), { recursive: true });
+            writeFileSync(join(dir, "src", "server.ts"), [
+                "import express from \"express\";",
+                "const app = express();",
+                "",
+                "export function normalizeUser(user) {",
+                "  return { id: user.id, name: user.name };",
+                "}",
+                "",
+                "export function listUsers(req, res) {",
+                "  const rows = [normalizeUser({ id: 1, name: \"Ada\" })];",
+                "  return res.json({ users: rows, total: rows.length });",
+                "}",
+                "",
+                "app.get(\"/api/users\", listUsers);",
+                "",
+            ].join("\n"), "utf8");
+            writeFileSync(join(dir, "src", "client.ts"), [
+                "export async function loadUsers() {",
+                "  const res = await fetch(\"/api/users\");",
+                "  const data = await res.json();",
+                "  return data.users.length + data.missing;",
+                "}",
+                "",
+            ].join("\n"), "utf8");
+
+            const indexResult = await indexProject(dir);
+            assert.ok(indexResult.status.phases.some(phase => phase.name === "framework_overlay"));
+            assert.ok(indexResult.status.overlays.route_count >= 1);
+            assert.ok(indexResult.status.overlays.api_shape_count >= 2);
+            assert.ok(indexResult.status.overlays.api_consumer_count >= 2);
+            assert.ok(indexResult.status.overlays.process_count >= 1);
+
+            const api = runApiImpactUseCase({ path: dir, route: "/api/users", limit: 10 });
+            assert.equal(api.result.routes.length, 1);
+            const usersShape = api.result.response_shapes.find(shape => shape.key === "users");
+            const totalShape = api.result.response_shapes.find(shape => shape.key === "total");
+            assert.ok(usersShape);
+            assert.ok(totalShape);
+            assert.equal(usersShape.line, 10);
+            assert.equal(totalShape.line, 10);
+            assert.ok(api.result.consumers.some(consumer => consumer.key === "users"));
+            assert.ok(api.result.mismatches.some(mismatch => mismatch.key === "missing"));
+            assert.ok(api.result.processes.length >= 1);
+            assert.ok(api.result.processes.some(process => process.step_count > process.matched_step_count));
+            assert.ok(api.next_actions.includes("inspect_symbol"));
+
+            const symbol = runFindSymbolsUseCase("listUsers", { path: dir }).result.candidates
+                .find(candidate => candidate.kind === "function");
+            assert.ok(symbol, "handler symbol indexed");
+            const inspect = runInspectSymbolUseCase({ symbol_id: symbol.symbol_id }, { path: dir, verbosity: "compact" });
+            assert.ok(inspect.result.processes_summary.total >= 1);
+            assert.ok(inspect.next_actions.includes("api_impact"));
+
+            const editRegion = runAnalyzeEditRegionUseCase({
+                path: dir,
+                file: "src/server.ts",
+                lineStart: 8,
+                lineEnd: 11,
+                detailLevel: "compact",
+            });
+            assert.ok(editRegion.result.impact_summary.processes >= 1);
+            assert.ok(editRegion.next_actions.includes("api_impact"));
+
+            const diagnostics = runDiagnoseGraphUseCase({ path: dir });
+            assert.ok(diagnostics.result.counts.routes >= 1);
+            assert.ok(diagnostics.result.counts.api_shapes >= 2);
+            assert.ok(diagnostics.result.counts.processes >= 1);
+        } finally {
+            resolveStore(dir)?.close();
+            rmSync(dir, { recursive: true, force: true });
+        }
+    });
+
+    it("keeps API consumers route-scoped in multi-route client files", async () => {
+        const dir = makeTempDir();
+        try {
+            mkdirSync(join(dir, "src"), { recursive: true });
+            writeFileSync(join(dir, "src", "server.ts"), [
+                "import express from \"express\";",
+                "const app = express();",
+                "",
+                "export function listUsers(req, res) {",
+                "  return res.json({ users: [] });",
+                "}",
+                "",
+                "export function listOrders(req, res) {",
+                "  return res.json({ orders: [] });",
+                "}",
+                "",
+                "app.get(\"/api/users\", listUsers);",
+                "app.get(\"/api/orders\", listOrders);",
+                "",
+            ].join("\n"), "utf8");
+            writeFileSync(join(dir, "src", "client.ts"), [
+                "export async function loadBoth() {",
+                "  const usersRes = await fetch(\"/api/users\");",
+                "  const usersData = await usersRes.json();",
+                "  const usersTotal = usersData.users.length;",
+                "  const ordersRes = await fetch(\"/api/orders\");",
+                "  const ordersData = await ordersRes.json();",
+                "  return usersTotal + ordersData.orders.length;",
+                "}",
+                "",
+            ].join("\n"), "utf8");
+            await indexProject(dir);
+
+            const users = runApiImpactUseCase({ path: dir, route: "/api/users", limit: 10 });
+            assert.ok(users.result.consumers.some(consumer => consumer.key === "users"));
+            assert.equal(users.result.consumers.some(consumer => consumer.key === "orders"), false);
+            assert.equal(users.result.mismatches.some(mismatch => mismatch.key === "orders"), false);
+
+            const orders = runApiImpactUseCase({ path: dir, route: "/api/orders", limit: 10 });
+            assert.ok(orders.result.consumers.some(consumer => consumer.key === "orders"));
+            assert.equal(orders.result.consumers.some(consumer => consumer.key === "users"), false);
+        } finally {
+            resolveStore(dir)?.close();
+            rmSync(dir, { recursive: true, force: true });
+        }
+    });
+
+    it("does not report consumer mismatches when response shape is unknown", async () => {
+        const dir = makeTempDir();
+        try {
+            mkdirSync(join(dir, "src"), { recursive: true });
+            writeFileSync(join(dir, "src", "server.ts"), [
+                "import express from \"express\";",
+                "const app = express();",
+                "",
+                "export function getProfile(req, res) {",
+                "  const profile = { name: \"Ada\" };",
+                "  return res.json(profile);",
+                "}",
+                "",
+                "app.get(\"/api/profile\", getProfile);",
+                "",
+            ].join("\n"), "utf8");
+            writeFileSync(join(dir, "src", "client.ts"), [
+                "export async function loadProfile() {",
+                "  const res = await fetch(\"/api/profile\");",
+                "  const data = await res.json();",
+                "  return data.name;",
+                "}",
+                "",
+            ].join("\n"), "utf8");
+            await indexProject(dir);
+
+            const api = runApiImpactUseCase({ path: dir, route: "/api/profile", limit: 10 });
+            assert.equal(api.result.response_shapes.length, 0);
+            assert.ok(api.result.consumers.some(consumer => consumer.key === "name"));
+            assert.equal(api.result.mismatches.length, 0);
+            assert.equal(api.warnings.some(warning => warning.includes("not found in inferred response shapes")), false);
         } finally {
             resolveStore(dir)?.close();
             rmSync(dir, { recursive: true, force: true });

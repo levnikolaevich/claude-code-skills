@@ -64,6 +64,15 @@ describe("schema descriptions", () => {
             assert.equal(auditProps.limit?.description, "Max unused, hotspot, and clone group rows to surface (default: 5, capped at 25)");
             assert.equal(auditProps.clone_member_limit?.description, "Max clone members per group to surface (default: 3, or 10 with verbosity=full, capped at 25)");
 
+            const apiImpact = toolByName(result.tools, "api_impact");
+            const apiProps = apiImpact.inputSchema.properties || {};
+            assert.equal(apiProps.route?.description, "Optional route path or method+path filter, for example `/api/users` or `GET /api/users`.");
+            assert.equal(apiProps.symbol_file?.description, "File path used with name to disambiguate the handler symbol");
+
+            const diagnose = toolByName(result.tools, "diagnose_graph");
+            const diagnoseProps = diagnose.inputSchema.properties || {};
+            assert.equal(diagnoseProps.path?.description, "Indexed project root");
+
             const inspect = toolByName(result.tools, "inspect_symbol");
             const inspectProps = inspect.inputSchema.properties || {};
             assert.equal(inspectProps.verbosity?.description, "Response budget. `minimal` returns the shortest actionable answer, `compact` keeps key reasoning visible, and `full` includes supporting detail.");
@@ -84,6 +93,7 @@ describe("schema descriptions", () => {
 
             for (const tool of result.tools) {
                 assert.equal(tool.inputSchema.properties?.format, undefined, `${tool.name} must not expose legacy format switching`);
+                assert.equal(tool.outputSchema, undefined, `${tool.name} must not declare outputSchema for text-only grammar responses`);
             }
         });
     });
@@ -117,6 +127,7 @@ describe("output envelope validation", () => {
                 name: "analyze_edit_region",
                 arguments: { path: CWD, file: resolve(CWD, "..", "outside.ts") },
             });
+            assert.notEqual(result.isError, true, "business-level graph errors are grammar errors, not MCP protocol errors");
             assert.equal(result.structuredContent, undefined);
             const text = result.content[0].text;
             assert.match(text.split("\n", 1)[0], /^error\s+[a-z_]+/);
@@ -131,6 +142,7 @@ describe("output envelope validation", () => {
                 name: "install_graph_providers",
                 arguments: { path: "Z:/definitely/missing", mode: "check" },
             });
+            assert.notEqual(result.isError, true, "provider setup failures are reported in the grammar body");
             const text = result.content[0].text;
             assert.match(text.split("\n", 1)[0], /^error\s+check_provider_setup/);
             assert.match(text, /!code=GRAPH_PROVIDER_SETUP_FAILED/);
@@ -199,6 +211,23 @@ describe("grammar body contract", () => {
             "import { computeTotal } from \"./util\";",
             "export const a = computeTotal(1);",
             "export const b = computeTotal(2);",
+            "",
+        ].join("\n"), "utf8");
+        writeFileSync(join(corpus, "src", "server.ts"), [
+            "import express from \"express\";",
+            "const app = express();",
+            "export function listUsers(req, res) {",
+            "  return res.json({ users: [], total: 0 });",
+            "}",
+            "app.get(\"/api/users\", listUsers);",
+            "",
+        ].join("\n"), "utf8");
+        writeFileSync(join(corpus, "src", "client.ts"), [
+            "export async function loadUsers() {",
+            "  const res = await fetch(\"/api/users\");",
+            "  const data = await res.json();",
+            "  return data.users.length + data.missing;",
+            "}",
             "",
         ].join("\n"), "utf8");
         await indexProject(corpus);
@@ -290,6 +319,31 @@ describe("grammar body contract", () => {
         });
     });
 
+    it("api_impact and diagnose_graph emit text grammar rows", async () => {
+        await withMcpClient(async (client) => {
+            const api = await client.callTool({
+                name: "api_impact",
+                arguments: { path: corpus, route: "/api/users" },
+            });
+            assert.equal(api.structuredContent, undefined);
+            const apiText = api.content[0].text;
+            assert.match(apiText.split("\n", 1)[0], ACTION_LINE_RE);
+            assert.ok(apiText.split("\n").some(line => line.startsWith(".route ")), "api_impact emits .route rows");
+            assert.ok(apiText.split("\n").some(line => line.startsWith(".mismatch ")), "api_impact emits mismatch rows");
+            assert.ok(apiText.split("\n").filter(line => line.startsWith(".process ")).every(line => /\sname=\S+/.test(line)), "process names stay token-safe");
+
+            const diagnose = await client.callTool({
+                name: "diagnose_graph",
+                arguments: { path: corpus },
+            });
+            assert.equal(diagnose.structuredContent, undefined);
+            const diagnoseText = diagnose.content[0].text;
+            assert.match(diagnoseText.split("\n", 1)[0], ACTION_LINE_RE);
+            assert.ok(diagnoseText.split("\n").some(line => line.startsWith("#graph ")), "diagnose_graph emits #graph");
+            assert.ok(diagnoseText.split("\n").some(line => line.startsWith(".check ")), "diagnose_graph emits .check rows");
+        });
+    });
+
     it("audit_workspace emits flat .clone_member rows (no indent tree)", async () => {
         await withMcpClient(async (client) => {
             const result = await client.callTool({
@@ -335,6 +389,8 @@ describe("grammar body contract", () => {
                 { name: "find_symbols", arguments: { query: "computeTotal", path: corpus } },
                 { name: "find_references", arguments: { name: "computeTotal", file: "src/util.ts", path: corpus } },
                 { name: "inspect_symbol", arguments: { name: "computeTotal", file: "src/util.ts", path: corpus } },
+                { name: "api_impact", arguments: { path: corpus, route: "/api/users" } },
+                { name: "diagnose_graph", arguments: { path: corpus } },
                 { name: "audit_workspace", arguments: { path: corpus } },
             ];
             for (const call of calls) {

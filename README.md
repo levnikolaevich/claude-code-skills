@@ -129,14 +129,14 @@ Bundled MCP servers extend agent capabilities — hash-verified editing, code in
 | Server | What it does | Tools | Docs |
 |--------|-------------|-------|------|
 | **[hex-line-mcp](mcp/hex-line-mcp/)** | Every line carries a content hash — edits prove the agent sees current content. Prevents stale-context corruption. Includes validation hooks. | 9 | [README](mcp/hex-line-mcp/README.md) · [npm](https://www.npmjs.com/package/@levnikolaevich/hex-line-mcp) |
-| **[hex-graph-mcp](mcp/hex-graph-mcp/)** | Indexes codebases into a deterministic SQLite graph with framework-aware overlays, capability-first quality tooling, optional SCIP interop, and architecture/reference analysis. | 14 | [README](mcp/hex-graph-mcp/README.md) · [npm](https://www.npmjs.com/package/@levnikolaevich/hex-graph-mcp) |
+| **[hex-graph-mcp](mcp/hex-graph-mcp/)** | Indexes codebases into a deterministic SQLite graph with framework-aware overlays, capability-first quality tooling, optional SCIP interop, and architecture/reference analysis. | see README | [README](mcp/hex-graph-mcp/README.md) · [npm](https://www.npmjs.com/package/@levnikolaevich/hex-graph-mcp) |
 | **[hex-ssh-mcp](mcp/hex-ssh-mcp/)** | Hash-verified remote file editing and SFTP transfer over SSH. Normalized output for minimal token usage. | 8 | [README](mcp/hex-ssh-mcp/README.md) · [npm](https://www.npmjs.com/package/@levnikolaevich/hex-ssh-mcp) |
 | **[hex-research-mcp](mcp/hex-research-mcp/)** | Indexes markdown hypotheses, goals, tasks, sources, and benchmark manifests into a local SQLite research graph. | 15 | [README](mcp/hex-research-mcp/README.md) · [npm](https://www.npmjs.com/package/@levnikolaevich/hex-research-mcp) |
 
 Deterministic scope rule: `hex-line`, `hex-graph`, and `hex-research` keep `path` as the project anchor. In normal use the agent fills it automatically from the active file or project root, so users usually do not need to type it manually. `hex-research` writes its local index under `.hex-skills/researchgraph/`. `hex-ssh` runs on Windows/macOS/Linux hosts; remote shell tools stay POSIX-oriented, while SFTP transfers support platform-aware remote paths.
 
 <!-- GENERATED:HEX_GRAPH_MCP_STATUS:START -->
-`hex-graph-mcp` quality snapshot: `106/106` tests passing, `1` curated corpus, `1` pinned external corpora, parser-first `green`.
+`hex-graph-mcp` quality snapshot: semantic suite, corpus manifests, provider lanes, and parser-first `green` status are tracked in package artifacts.
 <!-- GENERATED:HEX_GRAPH_MCP_STATUS:END -->
 
 ### External servers

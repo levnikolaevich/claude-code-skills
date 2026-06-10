@@ -1,7 +1,17 @@
 import { readFileSync } from "node:fs";
 import { basename, extname, resolve } from "node:path";
 
-const FRAMEWORK_NODE_KINDS = ["framework_route", "framework_middleware", "framework_registration"];
+const FRAMEWORK_PROCESS_KIND = "framework_process";
+const FRAMEWORK_NODE_KINDS = [
+    "framework_route",
+    "framework_middleware",
+    "framework_registration",
+    "api_response_shape",
+    "api_consumer",
+    FRAMEWORK_PROCESS_KIND,
+    // Clear legacy synthetic process nodes created before the kind was namespaced.
+    "process",
+];
 const HTTP_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"];
 const ASPNET_HTTP_ATTRS = new Map([
     ["HttpGet", "GET"],
@@ -15,6 +25,8 @@ const ASPNET_HTTP_ATTRS = new Map([
 
 export function runFrameworkOverlay({ projectPath, store, sourceFiles }) {
     store.clearEdgesByLayer("framework");
+    store.clearEdgesByLayer("api");
+    store.clearEdgesByLayer("process");
     store.clearNodesByKinds(FRAMEWORK_NODE_KINDS);
 
     const contexts = buildContexts(projectPath, store, sourceFiles || []);
@@ -72,7 +84,21 @@ export function runFrameworkOverlay({ projectPath, store, sourceFiles }) {
         }
     }
 
-    return { status: "available", edge_count, node_count, detail: { route_count: routeRecords.length } };
+    const derived = buildDerivedApiAndProcessFacts(contexts, routeRecords);
+    edge_count += derived.edge_count;
+    node_count += derived.node_count;
+
+    return {
+        status: "available",
+        edge_count,
+        node_count,
+        detail: {
+            route_count: routeRecords.length,
+            api_shape_count: derived.api_shape_count,
+            api_consumer_count: derived.api_consumer_count,
+            process_count: derived.process_count,
+        },
+    };
 }
 
 function buildContexts(projectPath, store, sourceFiles) {
@@ -200,20 +226,275 @@ function createFrameworkNode(context, kind, name, stableKey, line, extra = {}) {
     return { node: context.store.getNodeById(id), created: true };
 }
 
-function insertFrameworkEdge(store, sourceId, targetId, kind, origin, file, line, evidence) {
+function insertFrameworkEdge(store, sourceId, targetId, kind, origin, file, line, evidence, options = {}) {
     if (!sourceId || !targetId || sourceId === targetId) return 0;
     store.insertEdge({
         source_id: sourceId,
         target_id: targetId,
-        layer: "framework",
+        layer: options.layer || "framework",
         kind,
-        confidence: "exact",
+        confidence: options.confidence || "exact",
         origin,
         file,
         line,
         evidence_json: JSON.stringify(evidence),
     });
     return 1;
+}
+
+function buildDerivedApiAndProcessFacts(contexts, routeRecords) {
+    let edge_count = 0;
+    let node_count = 0;
+    let api_shape_count = 0;
+    let api_consumer_count = 0;
+    let process_count = 0;
+    const shapeNodesByRouteKey = new Map();
+    const shapeCountByRoute = new Map();
+
+    for (const record of routeRecords) {
+        const handlerContext = contexts.get(record.handler?.file) || contexts.get(record.node?.file);
+        if (!handlerContext) continue;
+
+        const handlerSource = extractSymbolSource(handlerContext, record.handler);
+        const responseKeys = extractResponseKeys(handlerSource.source, handlerContext.language, handlerSource.startLine);
+        for (const item of responseKeys) {
+            const stableKey = `shape:${record.framework}:${record.method}:${record.path}:${item.key}`;
+            const shapeNode = createFrameworkNode(
+                handlerContext,
+                "api_response_shape",
+                item.key,
+                stableKey,
+                item.line || record.handler?.line_start || 1,
+                { signature: `${record.method} ${record.path}.${item.key}` },
+            );
+            node_count += shapeNode.created ? 1 : 0;
+            api_shape_count += shapeNode.created ? 1 : 0;
+            edge_count += insertFrameworkEdge(handlerContext.store, record.node.id, shapeNode.node.id, "route_returns_key", "api:response-shape", handlerContext.file, item.line || record.handler?.line_start || 1, {
+                framework: record.framework,
+                method: record.method,
+                route_path: record.path,
+                key: item.key,
+            }, { layer: "api", confidence: "inferred" });
+            shapeNodesByRouteKey.set(`${record.node.id}:${item.key}`, shapeNode.node);
+            shapeCountByRoute.set(record.node.id, (shapeCountByRoute.get(record.node.id) || 0) + 1);
+        }
+
+        const processNode = createFrameworkNode(
+            handlerContext,
+            FRAMEWORK_PROCESS_KIND,
+            `${record.method} ${record.path}`,
+            `process:${record.framework}:${record.method}:${record.path}:${record.handler?.id || record.node.id}`,
+            record.handler?.line_start || record.node?.line_start || 1,
+            { signature: `${record.framework} ${record.method} ${record.path}` },
+        );
+        node_count += processNode.created ? 1 : 0;
+        process_count += processNode.created ? 1 : 0;
+        edge_count += insertFrameworkEdge(handlerContext.store, processNode.node.id, record.node.id, "process_entry", "process:framework-route", handlerContext.file, record.handler?.line_start || record.node?.line_start || 1, {
+            framework: record.framework,
+            method: record.method,
+            route_path: record.path,
+        }, { layer: "process", confidence: "inferred" });
+        if (record.handler?.id) {
+            edge_count += insertFrameworkEdge(handlerContext.store, processNode.node.id, record.handler.id, "process_step", "process:handler", handlerContext.file, record.handler.line_start || 1, {
+                framework: record.framework,
+                method: record.method,
+                route_path: record.path,
+                step: "handler",
+            }, { layer: "process", confidence: "inferred" });
+            const calls = handlerContext.store.edgesFrom(record.handler.id)
+                .filter(edge => edge.kind === "calls")
+                .slice(0, 8);
+            for (const call of calls) {
+                edge_count += insertFrameworkEdge(handlerContext.store, processNode.node.id, call.target_id, "process_step", "process:handler-call", call.file || handlerContext.file, call.line || record.handler.line_start || 1, {
+                    framework: record.framework,
+                    method: record.method,
+                    route_path: record.path,
+                    step: "call",
+                    callee: call.target_name,
+                }, { layer: "process", confidence: call.confidence === "precise" ? "precise" : "inferred" });
+            }
+        }
+    }
+
+    for (const context of contexts.values()) {
+        const consumers = extractApiConsumers(context, routeRecords);
+        for (const consumer of consumers) {
+            const consumerNode = createFrameworkNode(
+                context,
+                "api_consumer",
+                `${consumer.route.method} ${consumer.route.path}.${consumer.key}`,
+                `consumer:${context.file}:${consumer.route.node.id}:${consumer.key}:${consumer.line}`,
+                consumer.line,
+                { signature: `${consumer.route.path}.${consumer.key}` },
+            );
+            node_count += consumerNode.created ? 1 : 0;
+            api_consumer_count += consumerNode.created ? 1 : 0;
+            edge_count += insertFrameworkEdge(context.store, consumerNode.node.id, consumer.route.node.id, "consumes_route", "api:client-route-use", context.file, consumer.line, {
+                framework: consumer.route.framework,
+                method: consumer.route.method,
+                route_path: consumer.route.path,
+                key: consumer.key,
+            }, { layer: "api", confidence: "inferred" });
+            const shapeNode = shapeNodesByRouteKey.get(`${consumer.route.node.id}:${consumer.key}`);
+            if (shapeNode) {
+                edge_count += insertFrameworkEdge(context.store, consumerNode.node.id, shapeNode.id, "consumer_uses_key", "api:client-shape-use", context.file, consumer.line, {
+                    route_path: consumer.route.path,
+                    key: consumer.key,
+                }, { layer: "api", confidence: "inferred" });
+            } else if ((shapeCountByRoute.get(consumer.route.node.id) || 0) > 0) {
+                edge_count += insertFrameworkEdge(context.store, consumerNode.node.id, consumer.route.node.id, "consumer_uses_unknown_key", "api:client-shape-mismatch", context.file, consumer.line, {
+                    route_path: consumer.route.path,
+                    key: consumer.key,
+                }, { layer: "api", confidence: "low" });
+            }
+        }
+    }
+
+    return { edge_count, node_count, api_shape_count, api_consumer_count, process_count };
+}
+
+function extractSymbolSource(context, node) {
+    if (!node) return { source: "", startLine: 1 };
+    const start = Math.max(0, (node.line_start || 1) - 1);
+    const end = Math.max(start + 1, Math.min(context.lines.length, node.line_end || node.line_start || start + 40));
+    return { source: context.lines.slice(start, end).join("\n"), startLine: start + 1 };
+}
+
+function extractResponseKeys(source, language, startLine = 1) {
+    const blocks = [];
+    const patterns = [
+        /(?:Response\.)?json\s*\(\s*\{([\s\S]*?)\}\s*\)/g,
+        /\b(?:res|response|reply)\.json\s*\(\s*\{([\s\S]*?)\}\s*\)/g,
+        /\bjsonify\s*\(\s*\{([\s\S]*?)\}\s*\)/g,
+        /\breturn\s+\{([\s\S]*?)\}/g,
+        /\breturn\s+(?:Ok|Results\.Json)\s*\(\s*new\s*\{([\s\S]*?)\}\s*\)/g,
+        /response\s*\(\s*\)\s*->\s*json\s*\(\s*\[([\s\S]*?)\]\s*\)/g,
+    ];
+    for (const pattern of patterns) {
+        for (const match of source.matchAll(pattern)) {
+            blocks.push({
+                text: match[1],
+                line: startLine + lineForIndex(source, match.index || 0) - 1,
+            });
+        }
+    }
+    const seen = new Set();
+    const keys = [];
+    for (const block of blocks) {
+        for (const key of extractObjectKeys(block.text, language)) {
+            if (seen.has(key)) continue;
+            seen.add(key);
+            keys.push({ key, line: block.line });
+            if (keys.length >= 25) return keys;
+        }
+    }
+    return keys;
+}
+
+function extractObjectKeys(source, language) {
+    const keys = [];
+    const push = (value) => {
+        const key = String(value || "").trim();
+        if (/^[A-Za-z_$][\w$]*$/.test(key) && !["return", "new", "await"].includes(key)) keys.push(key);
+    };
+    for (const match of source.matchAll(/['"]([A-Za-z_$][\w$]*)['"]\s*(?::|=>)/g)) push(match[1]);
+    for (const match of source.matchAll(/\b([A-Za-z_$][\w$]*)\s*:/g)) push(match[1]);
+    if (language === "c_sharp") {
+        for (const match of source.matchAll(/\b([A-Za-z_][A-Za-z0-9_]*)\s*=/g)) push(match[1]);
+    }
+    return [...new Set(keys)];
+}
+
+function extractApiConsumers(context, routeRecords) {
+    if (![ "javascript", "typescript", "tsx" ].includes(context.language)) return [];
+    const consumers = [];
+    const routeUses = extractRouteUses(context.source, routeRecords);
+    const seen = new Set();
+    for (let idx = 0; idx < routeUses.length; idx++) {
+        const use = routeUses[idx];
+        const nextUse = routeUses[idx + 1];
+        const segmentEnd = nextUse ? nextUse.index : Math.min(context.source.length, use.index + 4000);
+        const segment = context.source.slice(use.index, segmentEnd);
+        const jsonVars = extractJsonVariablesForRoute(segment, use.responseVar, use.directJsonVar);
+        for (const variable of jsonVars) {
+            const pattern = new RegExp(`\\b${escapeRegex(variable)}\\.([A-Za-z_$][\\w$]*)`, "g");
+            for (const match of segment.matchAll(pattern)) {
+                const key = match[1];
+                const absoluteIndex = use.index + (match.index || 0);
+                for (const route of use.routes) {
+                    const stable = `${route.node.id}:${context.file}:${variable}:${key}:${absoluteIndex}`;
+                    if (seen.has(stable)) continue;
+                    seen.add(stable);
+                    consumers.push({
+                        route,
+                        key,
+                        line: lineForIndex(context.source, absoluteIndex),
+                    });
+                    if (consumers.length >= 100) return consumers;
+                }
+            }
+        }
+    }
+    return consumers;
+}
+
+function extractRouteUses(source, routeRecords) {
+    const routesByPath = new Map();
+    for (const route of routeRecords) {
+        const list = routesByPath.get(route.path) || [];
+        list.push(route);
+        routesByPath.set(route.path, list);
+    }
+    const uses = [];
+    const routeCall = /\b(?:fetch|(?:axios|client|api|http)\.(?:get|post|put|patch|delete|head|options))\s*\(\s*(['"`])([^'"`]+)\1/g;
+    for (const match of source.matchAll(routeCall)) {
+        const literalPath = String(match[2] || "").split(/[?#]/, 1)[0];
+        const routes = routesByPath.get(literalPath);
+        if (!routes?.length) continue;
+        uses.push({
+            index: match.index || 0,
+            routes,
+            responseVar: extractAssignedVariableBefore(source, match.index || 0),
+            directJsonVar: extractDirectJsonVariable(source, match.index || 0),
+        });
+    }
+    return uses.sort((a, b) => a.index - b.index);
+}
+
+function extractAssignedVariableBefore(source, index) {
+    const lineStart = source.lastIndexOf("\n", index) + 1;
+    const prefix = source.slice(lineStart, index);
+    return /(?:^|[;\s])(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*(?:await\s+)?$/.exec(prefix)?.[1] || null;
+}
+
+function extractDirectJsonVariable(source, index) {
+    const lineStart = source.lastIndexOf("\n", index) + 1;
+    const lineEnd = source.indexOf("\n", index);
+    const line = source.slice(lineStart, lineEnd === -1 ? source.length : lineEnd);
+    if (!/\.json\s*\(|\.data\b/.test(line)) return null;
+    return /\b(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=/.exec(line)?.[1] || null;
+}
+
+function extractJsonVariablesForRoute(source, responseVar, directJsonVar) {
+    const variables = new Set();
+    if (directJsonVar) variables.add(directJsonVar);
+    if (responseVar) {
+        const escaped = escapeRegex(responseVar);
+        const jsonPattern = new RegExp(`\\b(?:const|let|var)\\s+([A-Za-z_$][\\w$]*)\\s*=\\s*await\\s+${escaped}\\.json\\s*\\(\\s*\\)`, "g");
+        for (const match of source.matchAll(jsonPattern)) variables.add(match[1]);
+        const dataPattern = new RegExp(`\\b(?:const|let|var)\\s+([A-Za-z_$][\\w$]*)\\s*=\\s*${escaped}\\.data\\b`, "g");
+        for (const match of source.matchAll(dataPattern)) variables.add(match[1]);
+        return variables;
+    }
+    const genericJson = /\b(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*await\s+[A-Za-z_$][\w$]*\.json\s*\(\s*\)/g;
+    for (const match of source.matchAll(genericJson)) {
+        variables.add(match[1]);
+    }
+    return variables;
+}
+
+function escapeRegex(value) {
+    return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 function lineForIndex(source, index) {

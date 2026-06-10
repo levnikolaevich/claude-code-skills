@@ -19,6 +19,12 @@ import {
 import { findUnusedExports } from "./unused.mjs";
 import { ACTION, nextActions } from "./output-contract.mjs";
 import { normalizeConfidence } from "./confidence.mjs";
+import {
+    collectApiImpact,
+    collectProcessesForSymbols,
+    diagnoseGraph,
+    resolveSymbolIdForSelector,
+} from "./graph-insights.mjs";
 
 const QUERY_PATH_RECOVERY = "Run index_project on the project root first; symbol/query tools then accept that root or a file/subdirectory inside it as path";
 
@@ -45,6 +51,30 @@ function compactNode(node) {
         module_name: node.module_name || null,
         package_key: node.package_key || null,
         package_name: node.package_name || null,
+    };
+}
+
+function compactProcess(process) {
+    if (!process) return null;
+    return {
+        process_id: process.process_id,
+        name: process.name,
+        file: process.file,
+        line_start: process.line_start,
+        step_count: process.step_count,
+        matched_step_count: process.matched_step_count,
+        matched_steps: (process.matched_steps || []).slice(0, 4).map(step => ({
+            kind: step.kind,
+            file: step.file,
+            line: step.line,
+            target: step.target ? {
+                symbol_id: step.target.symbol_id,
+                name: step.target.name,
+                kind: step.target.kind,
+                file: step.target.file,
+                line_start: step.target.line_start,
+            } : null,
+        })),
     };
 }
 
@@ -83,6 +113,7 @@ function summarizeEditedSymbol(symbol) {
         symbol: symbol.symbol,
         impact_counts: symbol.impact_counts,
         framework_origins: symbol.framework_origins,
+        processes_summary: symbol.processes_summary,
         duplicate_risk: symbol.duplicate_risk,
         public_api_risk: symbol.public_api_risk,
         framework_entrypoint_risk: symbol.framework_entrypoint_risk,
@@ -484,6 +515,7 @@ export function runInspectSymbolUseCase(selector, {
             .map(reference => reference.origin)
             .filter(origin => origin?.startsWith("framework:")),
     )];
+    const processes = withResolvedStore(path, (store) => collectProcessesForSymbols(store, [symbol.symbol_id], { limit: detailLimit })) || [];
     return {
         query: {
             ...symbolResult.query,
@@ -504,6 +536,7 @@ export function runInspectSymbolUseCase(selector, {
                 outgoing: outgoing.length,
                 references: totalReferences,
                 implementations: totalImplementations,
+                processes: processes.length,
             },
             references_summary: {
                 total: totalReferences,
@@ -519,6 +552,10 @@ export function runInspectSymbolUseCase(selector, {
                 ...implementationsResult.result.implementations,
             ]),
             framework_roles: frameworkOrigins,
+            processes_summary: {
+                total: processes.length,
+                preview: processes.slice(0, previewLimit).map(compactProcess),
+            },
             expansion_hints: [
                 buildExpansionHint({ toolName: "inspect_symbol", expansion: "siblings", total: siblings.length, returnedByDefault: 0, expandLimit: detailLimit, includeEvidence }),
                 buildExpansionHint({ toolName: "inspect_symbol", expansion: "incoming", total: incoming.length, returnedByDefault: 0, expandLimit: detailLimit, includeEvidence }),
@@ -537,6 +574,7 @@ export function runInspectSymbolUseCase(selector, {
         next_actions: nextActions([
             referencesResult.result.total ? ACTION.FIND_REFERENCES : null,
             implementationsResult.result.implementations.length ? ACTION.FIND_IMPLEMENTATIONS : null,
+            processes.length ? ACTION.API_IMPACT : null,
             ACTION.TRACE_PATHS,
         ]),
         confidence: symbolResult.confidence,
@@ -545,6 +583,7 @@ export function runInspectSymbolUseCase(selector, {
             ...symbolResult.evidence,
             reference_count: totalReferences,
             implementation_count: totalImplementations,
+            process_count: processes.length,
         },
         limits_applied: {
             reference_limit: referenceFetchLimit,
@@ -701,6 +740,10 @@ export function runTracePathsUseCase(selector, {
     if (base?.error) return base;
     const pathRows = base.result || [];
     const pathPreviews = pathRows.slice(0, previewLimit).map(buildPathPreview);
+    const processes = withResolvedStore(path, (store) => {
+        const symbolId = resolveSymbolIdForSelector(store, selector);
+        return symbolId ? collectProcessesForSymbols(store, [symbolId], { limit: detailLimit }) : [];
+    }) || [];
     const expanded = expansions.includes("paths")
         ? {
             paths: pathRows.slice(0, detailLimit).map(pathRow => compactTracePath(pathRow, includeEvidence)),
@@ -712,6 +755,10 @@ export function runTracePathsUseCase(selector, {
             path_count: pathRows.length,
             target_found: target ? pathRows.length > 0 : null,
             path_previews: pathPreviews,
+            processes_summary: {
+                total: processes.length,
+                preview: processes.slice(0, previewLimit).map(compactProcess),
+            },
             provenance_summary: buildProvenanceSummary(traceRowsForProvenance(pathRows)),
             expansion_hints: [
                 buildExpansionHint({
@@ -735,6 +782,7 @@ export function runTracePathsUseCase(selector, {
             pathRows.length >= fetchLimit ? ["Returned path count hit the current limit. Increase limit or depth to continue the search."] : [],
         ),
         next_actions: nextActions([
+            processes.length ? ACTION.API_IMPACT : null,
             ACTION.INSPECT_SYMBOL,
             pathRows.length ? null : ACTION.ADJUST_QUERY,
         ]),
@@ -829,6 +877,24 @@ export async function runAnalyzeChangesUseCase({
     if (base?.error) return base;
     const summary = base.result.summary;
     const highRiskItems = (base.result.symbols || []).filter(symbol => symbol.risk_level === "high");
+    const processesBySymbol = withResolvedStore(path, (store) => {
+        const entries = new Map();
+        for (const symbol of base.result.symbols || []) {
+            if (!symbol.symbol_id) continue;
+            entries.set(symbol.symbol_id, collectProcessesForSymbols(store, [symbol.symbol_id], { limit: 5 }));
+        }
+        return entries;
+    }) || new Map();
+    const impactSummary = (symbol) => {
+        const processes = processesBySymbol.get(symbol.symbol_id) || [];
+        return {
+            callers: symbol.caller_count || 0,
+            references: symbol.reference_count || 0,
+            cross_file_files: symbol.cross_file_file_count || 0,
+            framework_origins: symbol.framework_origins?.length || 0,
+            processes: processes.length,
+        };
+    };
     return {
         query: { ...base.query, path },
         summary: [
@@ -843,15 +909,15 @@ export async function runAnalyzeChangesUseCase({
                 status: file.status,
             })),
             changed_symbols: (base.result.symbols || []).map((symbol) => ({
-                symbol: symbol.symbol,
+                symbol: symbol.symbol || symbol.name,
                 risk_level: symbol.risk_level,
-                impact_summary: symbol.impact_summary,
+                impact_summary: impactSummary(symbol),
                 file: symbol.file,
             })),
             high_risk_items: highRiskItems.map((symbol) => ({
-                symbol: symbol.symbol,
+                symbol: symbol.symbol || symbol.name,
                 risk_level: symbol.risk_level,
-                impact_summary: symbol.impact_summary,
+                impact_summary: impactSummary(symbol),
                 file: symbol.file,
             })),
             deleted_api_warnings: (base.result.deleted_symbols || []).map((symbol) => ({
@@ -866,6 +932,7 @@ export async function runAnalyzeChangesUseCase({
             ? [`${summarizeCount(base.result.unresolved_symbols.length, "changed symbol")} could not be mapped back to the current index.`]
             : [],
         next_actions: nextActions([
+            [...processesBySymbol.values()].some(rows => rows.length) ? ACTION.API_IMPACT : null,
             highRiskItems.length ? ACTION.TRACE_PATHS : null,
             base.result.deleted_symbols.length ? ACTION.REVIEW_DELETED_API : null,
         ]),
@@ -1160,6 +1227,7 @@ export function runAnalyzeEditRegionUseCase({
             store.frameworkIncomingEdges(row.symbol_node_id) || [],
             entry => `${entry.origin}|${entry.file}|${entry.line ?? ""}`,
         );
+        const processRows = collectProcessesForSymbols(store, [row.symbol_node_id], { limit: 10 });
         const externalCallers = facts.filter(fact => fact.fact_kind === "external_caller");
         const downstreamFlow = facts.filter(fact => fact.fact_kind !== "external_caller" && fact.fact_kind !== "clone_sibling");
         const cloneSiblings = facts.filter(fact => fact.fact_kind === "clone_sibling");
@@ -1213,6 +1281,11 @@ export function runAnalyzeEditRegionUseCase({
             clone_siblings: trimForDetail(cloneSiblings, responseVerbosity, 10),
             similar_symbols: trimForDetail(similarSymbols, responseVerbosity, 10),
             framework_origins: frameworkRows.map(entry => entry.origin).filter(Boolean),
+            processes: trimForDetail(processRows.map(compactProcess), responseVerbosity, 10),
+            processes_summary: {
+                total: processRows.length,
+                preview: processRows.slice(0, 3).map(compactProcess),
+            },
             duplicate_risk: {
                 level: riskLevel(duplicateRank),
                 reasons: duplicateReasons,
@@ -1243,6 +1316,10 @@ export function runAnalyzeEditRegionUseCase({
     const aggregateSimilar = dedupeRows(
         editedSymbols.flatMap(symbol => symbol.similar_symbols || []),
         candidate => `${candidate.file}:${candidate.line_start}:${candidate.name}`,
+    );
+    const aggregateProcesses = dedupeRows(
+        editedSymbols.flatMap(symbol => symbol.processes || []),
+        process => `${process.process_id}`,
     );
     const publicApiSymbols = editedSymbols
         .filter(symbol => symbol.public_api_risk.level !== "low")
@@ -1281,10 +1358,12 @@ export function runAnalyzeEditRegionUseCase({
                 external_callers: aggregateExternalCallers.length,
                 downstream_flows: aggregateFlows.length,
                 clone_siblings: aggregateClones.length,
+                processes: aggregateProcesses.length,
             },
             external_callers: trimForDetail(aggregateExternalCallers, responseVerbosity, 12),
             downstream_flow: trimForDetail(aggregateFlows, responseVerbosity, 12),
             clone_siblings: trimForDetail(aggregateClones, responseVerbosity, 10),
+            processes: trimForDetail(aggregateProcesses, responseVerbosity, 10),
             similar_symbols: trimForDetail(aggregateSimilar, responseVerbosity, 10),
             duplicate_risk: {
                 level: duplicateLevel,
@@ -1302,8 +1381,10 @@ export function runAnalyzeEditRegionUseCase({
         warnings: nextActions([
             publicApiSymbols.length ? `${summarizeCount(publicApiSymbols.length, "edited symbol")} is part of the public surface or has external callers.` : null,
             frameworkSymbols.length ? `${summarizeCount(frameworkSymbols.length, "edited symbol")} participates in framework wiring.` : null,
+            aggregateProcesses.length ? `${summarizeCount(aggregateProcesses.length, "process")} includes the edited symbol.` : null,
         ]),
         next_actions: nextActions([
+            aggregateProcesses.length ? ACTION.API_IMPACT : null,
             aggregateExternalCallers.length ? ACTION.FIND_REFERENCES : null,
             aggregateFlows.length ? ACTION.TRACE_DATAFLOW : null,
             duplicateLevel !== "low" ? ACTION.REVIEW_DUPLICATES : null,
@@ -1314,8 +1395,112 @@ export function runAnalyzeEditRegionUseCase({
             edited_symbol_count: editedSymbols.length,
             external_caller_count: aggregateExternalCallers.length,
             downstream_flow_count: aggregateFlows.length,
+            process_count: aggregateProcesses.length,
         },
         limits_applied: { verbosity: responseVerbosity },
+        };
+    });
+}
+
+export function runApiImpactUseCase({
+    path,
+    route = null,
+    file = null,
+    selector = {},
+    limit = 10,
+    verbosity = "compact",
+} = {}) {
+    return withResolvedStore(path, (store) => {
+        if (!store) {
+            return { error: { code: "NOT_INDEXED", message: "No project indexed", recovery: QUERY_PATH_RECOVERY } };
+        }
+        const detailLimit = clampLimit(limit, 10, 25);
+        const normalizedFile = file ? normalizeProjectFile(path, file) : null;
+        if (normalizedFile?.error) return normalizedFile;
+        const hasSelector = ["symbol_id", "workspace_qualified_name", "qualified_name", "name", "file"]
+            .some(key => selector?.[key] !== undefined && selector?.[key] !== null);
+        const symbolId = hasSelector ? resolveSymbolIdForSelector(store, selector) : null;
+        if (hasSelector && !symbolId) {
+            return {
+                error: {
+                    code: "SYMBOL_NOT_FOUND",
+                    message: "API impact selector did not resolve to an indexed symbol",
+                    recovery: "Run find_symbols first, then call api_impact with symbol_id or name+file.",
+                },
+            };
+        }
+        const impact = collectApiImpact(store, {
+            route,
+            file: normalizedFile,
+            symbolId,
+            limit: detailLimit,
+        });
+        const detailTruncated = Object.values(impact.truncated || {}).some(Boolean);
+        const truncated = impact.total > impact.routes.length || detailTruncated;
+        return {
+            query: {
+                path,
+                route,
+                file: normalizedFile,
+                selector: hasSelector ? selector : null,
+                limit: detailLimit,
+                verbosity,
+            },
+            result: {
+                ...impact,
+                route_count: impact.routes.length,
+                truncated,
+            },
+            warnings: mergeWarnings(
+                impact.routes.length ? [] : ["No indexed API route matched the requested route, file, or symbol selector."],
+                impact.mismatches.length ? [`${summarizeCount(impact.mismatches.length, "consumer key")} was not found in inferred response shapes.`] : [],
+                detailTruncated ? ["Some API impact detail sections were truncated; increase limit or narrow the selector."] : [],
+            ),
+            next_actions: nextActions([
+                impact.mismatches.length ? ACTION.INSPECT_SYMBOL : null,
+                impact.processes.length ? ACTION.TRACE_PATHS : null,
+                impact.routes.length ? ACTION.ANALYZE_EDIT_REGION : null,
+                impact.routes.length ? null : ACTION.DIAGNOSE_GRAPH,
+            ]),
+            confidence: "inferred",
+            reason: "api_impact",
+            evidence: {
+                route_count: impact.routes.length,
+                response_shape_count: impact.response_shapes.length,
+                consumer_count: impact.consumers.length,
+                mismatch_count: impact.mismatches.length,
+                process_count: impact.processes.length,
+            },
+            limits_applied: {
+                limit: detailLimit,
+                truncated,
+                detail_truncated: impact.truncated,
+            },
+        };
+    });
+}
+
+export function runDiagnoseGraphUseCase({ path } = {}) {
+    return withResolvedStore(path, (store) => {
+        if (!store) {
+            return { error: { code: "NOT_INDEXED", message: "No project indexed", recovery: QUERY_PATH_RECOVERY } };
+        }
+        const diagnostics = diagnoseGraph(store);
+        return {
+            query: { path },
+            result: {
+                ...diagnostics,
+                total: diagnostics.checks.length,
+            },
+            warnings: diagnostics.warnings,
+            next_actions: nextActions([
+                diagnostics.stats.files ? null : ACTION.INDEX_PROJECT,
+                diagnostics.counts.routes ? ACTION.API_IMPACT : null,
+            ]),
+            confidence: "exact",
+            reason: "graph_diagnostics",
+            evidence: diagnostics.counts,
+            limits_applied: {},
         };
     });
 }

@@ -109,6 +109,7 @@ Managed artifact path pattern:
 6. Execute provider-specific updates.
 7. Update kanban.
 8. Return structured summary.
+9. Run the self-check (`PHASE_8_SELF_CHECK`): re-verify every Story body still contains all 9 required sections after the apply step, and fail the run if any are missing.
 
 ## Critical Rules
 

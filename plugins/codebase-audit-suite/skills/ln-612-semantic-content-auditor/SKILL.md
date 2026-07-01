@@ -43,8 +43,8 @@ Called ONLY for project documents (not reference/tasks):
 
 ## Inputs
 
-**MANDATORY READ:** Load `references/audit_worker_core_contract.md`, `references/docs_quality_contract.md`, and `references/markdown_read_protocol.md`.
-Tool policy: follow host AGENTS.md MCP preferences; load `references/mcp_tool_preferences.md` and `references/mcp_integration_patterns.md` only when host policy is absent or MCP behavior is unclear.
+**MANDATORY READ:** Load `references/audit_worker_core_contract.md`, `references/docs_quality_contract.md`, `references/markdown_read_protocol.md`, and `references/mcp_tool_preferences.md`.
+Tool policy: You may run as an isolated subagent where host `AGENTS.md` is not in scope, so default to hex-line MCP first for file reads, search, and edits. Load `references/mcp_integration_patterns.md` only when MCP behavior is unclear.
 
 Receives from coordinator per invocation:
 

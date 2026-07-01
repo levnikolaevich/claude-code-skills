@@ -40,8 +40,10 @@ L3 Worker that analyzes a single architectural pattern against best practices an
 
 ## Workflow
 
+**MANDATORY READ:** Load `references/mcp_tool_preferences.md`.
+
 Detection policy: use two-layer detection (candidate scan, then context verification); load `references/two_layer_detection.md` only when the verification method is ambiguous.
-Tool policy: follow host AGENTS.md MCP preferences; load `references/mcp_tool_preferences.md` and `references/mcp_integration_patterns.md` only when host policy is absent or MCP behavior is unclear.
+Tool policy: You may run as an isolated subagent where host `AGENTS.md` is not in scope, so default to hex-line MCP first for file reads, search, and edits. Load `references/mcp_integration_patterns.md` only when MCP behavior is unclear.
 
 Use `hex-graph` first when implementation discovery materially improves confidence. Use `hex-line` first for local code reads when available. If MCP is unavailable, unsupported, or not indexed, continue with built-in `Read/Grep/Glob/Bash` and state the fallback in the report.
 

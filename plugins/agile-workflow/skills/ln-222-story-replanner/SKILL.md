@@ -108,7 +108,8 @@ Managed artifact path pattern:
 5. Show operations summary unless `autoApprove=true`.
 6. Execute provider-specific updates.
 7. Update kanban.
-8. Return structured summary.
+8. Write `story-plan-worker` summary.
+9. Run self-check and return the verified structured summary.
 
 ## Critical Rules
 
@@ -127,6 +128,7 @@ Managed artifact path pattern:
 - [ ] kanban updated
 - [ ] Structured summary returned
 - [ ] Summary artifact written when `summaryArtifactPath` is provided
+- [ ] Self-check passed before terminal outcome
 
 ---
 

@@ -111,10 +111,20 @@ grep -oE 'hook_progress|blocking error|PreToolUse|PostToolUse|hex-confirmed|Obli
 
 echo "=== SKILL/COMMAND INVOCATIONS ==="
 grep -oE '"display":\s*"/[a-z-]+' "$F" 2>/dev/null | sed 's/"display":\s*"//' | sort | uniq -c | sort -rn
+
+echo "=== SKILL TOOL CALLS (explicit Skill invocations) ==="
+grep -oE '"name"\s*:\s*"Skill"' "$F" 2>/dev/null | wc -l
+grep -oE '"skill"\s*:\s*"[^"]*"' "$F" 2>/dev/null | sed 's/.*"skill"\s*:\s*"//;s/"//' | sort | uniq -c | sort -rn | head -20
+
+echo "=== AUDIT/OPTIMIZATION RUN MARKERS (Agent fan-out, NOT the skills catalog) ==="
+grep -oE '"description"\s*:\s*"[^"]*(audit|ln-6[0-9][0-9]|ln-8[0-9][0-9])[^"]*"' "$F" 2>/dev/null | head -20
+grep -oE 'docs/reviews/[A-Za-z0-9._-]+\.md' "$F" 2>/dev/null | sort | uniq -c | sort -rn
+grep -oE '"severity"\s*:\s*"(CRITICAL|HIGH|MEDIUM|LOW)"' "$F" 2>/dev/null | sort | uniq -c | sort -rn
+grep -oE '"summary_kind"\s*:\s*"[a-z-]+"' "$F" 2>/dev/null | sort | uniq -c | sort -rn
 ```
 
 Treat keyword-based error counts as heuristic only.
-Confirm that reported matches come from actual tool failure/result events, not from prompts, templates, or referenced docs that contain the same strings.
+Confirm that reported matches come from actual tool failure/result events, not from prompts, templates, or referenced docs that contain the same strings. Audit/optimization skill ids (ln-6xx/ln-8xx) in the skills catalog are NOT runs — count a run only when Agent fan-out, severity-tagged findings, a written `docs/reviews/*.md` report, or a `summary_kind` artifact is present.
 
 ### Extract token statistics from Claude JSONL
 

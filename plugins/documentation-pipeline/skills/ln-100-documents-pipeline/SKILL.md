@@ -319,7 +319,7 @@ Mark each as in_progress when starting, completed when worker returns success.
 Create one normalized manifest from worker outputs before any cleanup:
 
 1. Collect `created_files`, `skipped_files`, and `quality_inputs` from ln-110, ln-120, ln-130, and ln-140
-2. Merge `quality_inputs.doc_paths` and `quality_inputs.owners`, deduplicate paths, and fail fast if any worker omitted the normalized return contract
+2. Merge `quality_inputs.doc_paths` and `quality_inputs.owners`, deduplicate paths, and fail fast if any worker omitted the normalized return contract or returned `validation_status=failed`
 3. Write the explicit manifest with the shared verifier:
    ```bash
    node {skills_repo_root}/references/scripts/docs-quality/cli.mjs manifest \
@@ -616,7 +616,7 @@ These standards are enforced by L3 workers (ln-111-115), ln-120/130/140, and the
 
 ## Error Handling
 
-If any invoked skill fails:
+If any invoked skill fails or returns `validation_status=failed`:
 1. Notify user which skill failed
 2. Show error message from failed skill
 3. Recommend manual invocation for debugging
@@ -705,6 +705,7 @@ Before completing work, verify ALL checkpoints:
 - [ ] ln-140-test-docs-creator invoked (if enabled) -> Output verified: `tests/README.md`
 - [ ] Each component validated its own output (SCOPE, metadata markers, top sections, Maintenance, POSIX compliance)
 - [ ] Each worker returned normalized `created_files`, `skipped_files`, `quality_inputs`, and `validation_status`
+- [ ] No worker returned `validation_status=failed`
 
 **File Verification Complete:**
 - [ ] All expected files exist (Glob tool used to verify structure)

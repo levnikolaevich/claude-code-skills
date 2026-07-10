@@ -1,7 +1,7 @@
 ---
 name: ln-622-build-delivery-gate-auditor
 description: "Checks build, lint, type, test, and CI delivery gate failures. Use when auditing whether the project can reliably ship."
-allowed-tools: Read, Grep, Glob, Bash
+allowed-tools: Read, Grep, Glob, Bash, mcp__hex-line__read_file, mcp__hex-line__grep_search, mcp__hex-line__outline
 license: MIT
 model: claude-sonnet-4-6
 ---
@@ -25,7 +25,8 @@ Specialized worker auditing executable delivery gates and CI/build feedback.
 
 ## Inputs
 
-**MANDATORY READ:** Load `references/audit_worker_core_contract.md`.
+**MANDATORY READ:** Load `references/audit_worker_core_contract.md` and `references/mcp_tool_preferences.md`.
+Tool policy: You may run as an isolated subagent where host `AGENTS.md` is not in scope, so default to hex-line MCP (`read_file`, `grep_search`, `outline`) over built-in Read/Grep when inspecting source. Load `references/mcp_integration_patterns.md` only when MCP behavior is unclear.
 
 Receives `contextStore` with: `tech_stack` (including build_tool, test_framework), `best_practices`, `principles`, `codebase_root`, `output_dir`.
 

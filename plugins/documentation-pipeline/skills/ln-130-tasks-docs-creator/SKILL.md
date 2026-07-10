@@ -290,7 +290,9 @@ If NO placeholders present → Validation Mode
 
    Fix manually or re-run skill to replace with correct values.
    ```
-   - Mark as invalid but continue (don't block)
+   - Mark as invalid and return `validation_status: failed`
+   - Add a blocking warning naming each invalid field
+   - Do not report `passed_with_fixes`; Validation Mode did not repair the values
 
 4. **If validation passes**:
    ```
@@ -397,7 +399,7 @@ docs/
 ## Critical Rules
 
 - **Idempotent:** Checks file existence before creation; preserves existing files; safe to re-run
-- **Linear UUID validation:** Team UUID must match `/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/`; Team Key must match `/^[A-Z]{2,4}$/`
+- **Linear UUID validation:** Team UUID must match `/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/`; Team Key must match `/^[A-Z]{2,4}$/`; existing invalid values in Validation Mode are blocking and return `validation_status: failed`
 - **Shared docs-quality contract:** Follow `references/docs_quality_contract.md` and `references/docs_quality_rules.json` for placeholder policy, SCOPE/Maintenance requirements, and allowed setup exceptions
 - **Placeholder detection:** If `[TEAM_NAME]`, `[TEAM_UUID]`, or `[TEAM_KEY]` found in kanban_board.md, enter interactive setup mode and prompt user; do not leave unresolved markers outside the allowlisted task docs
 - **Shared opening contract required:** Both README.md and kanban_board.md must include `SCOPE`, metadata markers, `Quick Navigation`, `Agent Entry`, and `Maintenance`
@@ -424,7 +426,7 @@ Return a normalized summary so `ln-100` can run a centralized docs-quality gate 
       "docs/tasks/kanban_board.md": "ln-130-tasks-docs-creator"
     }
   },
-  "validation_status": "passed|passed_with_fixes|skipped"
+  "validation_status": "passed|passed_with_fixes|skipped|failed"
 }
 ```
 
@@ -446,13 +448,15 @@ Required payload semantics:
 - `validation_status`
 - `warnings`
 
+If existing Linear configuration fails UUID or Team Key regex validation in Validation Mode, emit `validation_status="failed"` and include the invalid fields in `warnings`.
+
 Write the summary to the provided artifact path or return the same envelope in structured output.
 
 ## Definition of Done
 
 - [ ] Phase 1: tasks/README.md created from template (or preserved if exists); setup placeholders contained only within allowlisted task docs
 - [ ] Phase 2: Structure valid — SCOPE tags, required sections, Maintenance, POSIX endings (auto-fixed if needed)
-- [ ] Phase 3: Content valid — heuristics pass per questions.md, Tracker Configuration set up (if placeholders found)
+- [ ] Phase 3: Content valid — heuristics pass per questions.md, Tracker Configuration set up (if placeholders found) OR invalid existing configuration returned `validation_status=failed`
 - [ ] Return contract emitted with `created_files`, `skipped_files`, `quality_inputs`, and `validation_status`
 - [ ] Summary message displayed with auto-fix count and Tracker Configuration status
 

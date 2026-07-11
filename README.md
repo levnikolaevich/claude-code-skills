@@ -1,696 +1,125 @@
-# Claude Code Skills
+# Lev Nikolaevich Skills
 
-![Version](https://img.shields.io/badge/version-2026.05.06-blue)
-![Skills](https://img.shields.io/badge/skills-137-green)
-![License](https://img.shields.io/badge/license-MIT-green)
-[![GitHub stars](https://img.shields.io/github/stars/levnikolaevich/claude-code-skills?style=social)](https://github.com/levnikolaevich/claude-code-skills)
+A compact marketplace of standalone engineering skills for Claude Code and Codex.
 
-> [!WARNING]
-> **Marketplace layout changed in the 2026-05-06 refactor.** Skills now live only inside self-contained plugin bundles under `plugins/<plugin>/skills/<skill>/`. The root `shared/` directory is maintainer-only source material for files reused by 2+ skills; runtime installs use the copied skill-local `references/` files.
+[Browse the Skills v2 catalog](https://levnikolaevich.github.io/claude-code-skills/) or install only the plugins you need below.
 
-> **7 plugins. Two native marketplaces.** Install only what you need and automate your full delivery workflow —
-> from project bootstrap to code audit to production quality gates.
-> Works standalone or as a complete Agile pipeline.
-
-> [!TIP]
-> **Two-Agent AI Review** — Claude and Codex can review each other’s work through host-aware external advisor routing.
-
-[Plugins](#plugins) · [Installation](#installation) · [Quick Start](#quick-start) · [Workflow](#workflow) · [MCP](#mcp-servers-optional) · [AI Review](#ai-review-models-optional) · [FAQ](#faq) · [Full Skill Tree](#whats-inside) · [Links](#links)
-
----
+The repository intentionally contains only the skills, minimal plugin manifests, two host-specific marketplace catalogs, documentation, and a static catalog site. It has no MCP servers, orchestration hierarchy, distributed shared resources, generated skill copies, or evaluation harness.
 
 ## Plugins
 
-Add the marketplace once, then install only the plugins you need. Each works independently.
+### Review Suite
 
-```bash
-# Claude Code: add the marketplace once
+| Index | Skill | Purpose |
+|---:|---|---|
+| 11 | [Plan Reviewer](plugins/review-suite/skills/ln-11-plan-reviewer/SKILL.md) | Validate an implementation plan against repository evidence before execution. |
+| 12 | [Delivery Reviewer](plugins/review-suite/skills/ln-12-delivery-reviewer/SKILL.md) | Review completed code through independent risk-selected perspectives. |
+
+### Codebase Audit Suite
+
+| Index | Skill | Purpose |
+|---:|---|---|
+| 21 | [Documentation Auditor](plugins/codebase-audit-suite/skills/ln-21-documentation-auditor/SKILL.md) | Audit documentation trust, coverage, structure, and factual accuracy. |
+| 22 | [Codebase Auditor](plugins/codebase-audit-suite/skills/ln-22-codebase-auditor/SKILL.md) | Audit cross-cutting code health, security, delivery, and maintainability. |
+| 23 | [Test Suite Auditor](plugins/codebase-audit-suite/skills/ln-23-test-suite-auditor/SKILL.md) | Audit test value, coverage, isolation, and oracle strength. |
+| 24 | [Architecture Auditor](plugins/codebase-audit-suite/skills/ln-24-architecture-auditor/SKILL.md) | Audit system boundaries, ownership, contracts, and dependency topology. |
+| 25 | [Persistence Auditor](plugins/codebase-audit-suite/skills/ln-25-persistence-auditor/SKILL.md) | Audit queries, transactions, consistency, and resource lifecycle. |
+
+### Optimization Suite
+
+| Index | Skill | Purpose |
+|---:|---|---|
+| 31 | [Performance Optimizer](plugins/optimization-suite/skills/ln-31-performance-optimizer/SKILL.md) | Profile, experiment, and keep only measured improvements. |
+| 32 | [Dependency Upgrader](plugins/optimization-suite/skills/ln-32-dependency-upgrader/SKILL.md) | Upgrade dependencies in reversible, verified batches. |
+| 33 | [Code Modernizer](plugins/optimization-suite/skills/ln-33-code-modernizer/SKILL.md) | Replace or simplify bounded capabilities when net value is proven. |
+| 34 | [Benchmark Comparator](plugins/optimization-suite/skills/ln-34-benchmark-comparator/SKILL.md) | Compare alternatives with a frozen, reproducible experiment contract. |
+
+### Testing Suite
+
+| Index | Skill | Purpose |
+|---:|---|---|
+| 41 | [Test Strategy Planner](plugins/testing-suite/skills/ln-41-test-strategy-planner/SKILL.md) | Design a risk-based, decision-complete test strategy without changing code. |
+| 42 | [Acceptance Test Builder](plugins/testing-suite/skills/ln-42-acceptance-test-builder/SKILL.md) | Create reproducible acceptance tests through observable product boundaries. |
+
+### Product Discovery Suite
+
+| Index | Skill | Purpose |
+|---:|---|---|
+| 51 | [Opportunity Evaluator](plugins/product-discovery-suite/skills/ln-51-opportunity-evaluator/SKILL.md) | Compare product opportunities using current evidence and a low-cost validation path. |
+
+## Install in Claude Code
+
+Add the marketplace and install only the suites you need:
+
+```text
 /plugin marketplace add levnikolaevich/claude-code-skills
-
-# Claude Code: install any plugin you need
-/plugin install agile-workflow@levnikolaevich-skills-marketplace
-/plugin install documentation-pipeline@levnikolaevich-skills-marketplace
+/plugin install review-suite@levnikolaevich-skills-marketplace
 /plugin install codebase-audit-suite@levnikolaevich-skills-marketplace
-/plugin install project-bootstrap@levnikolaevich-skills-marketplace
 /plugin install optimization-suite@levnikolaevich-skills-marketplace
-/plugin install community-engagement@levnikolaevich-skills-marketplace
-/plugin install setup-environment@levnikolaevich-skills-marketplace
+/plugin install testing-suite@levnikolaevich-skills-marketplace
+/plugin install product-discovery-suite@levnikolaevich-skills-marketplace
 ```
 
+For local development, load one plugin directly:
+
 ```bash
-# Codex CLI: add the marketplace, then install from /plugins
+claude --plugin-dir ./plugins/review-suite
+```
+
+## Install in Codex
+
+```bash
 codex plugin marketplace add levnikolaevich/claude-code-skills
-codex
-/plugins
+codex plugin add review-suite@levnikolaevich-skills-marketplace
+codex plugin add codebase-audit-suite@levnikolaevich-skills-marketplace
+codex plugin add optimization-suite@levnikolaevich-skills-marketplace
+codex plugin add testing-suite@levnikolaevich-skills-marketplace
+codex plugin add product-discovery-suite@levnikolaevich-skills-marketplace
 ```
 
-| Plugin | Description |
-|--------|-------------|
-| **agile-workflow** | Scope decomposition, Story/Task management, Execution, Quality gates, Orchestration |
-| **documentation-pipeline** | Full project docs pipeline with auto-detection (backend/frontend/devops) |
-| **codebase-audit-suite** | Documentation, Security, Build, Code quality, Tests, Architecture, Performance |
-| **project-bootstrap** | CREATE or TRANSFORM projects to production-ready Clean Architecture |
-| **optimization-suite** | Performance optimization, Dependency upgrades, Code modernization |
-| **community-engagement** | GitHub community management: triage, announcements, RFCs, responses |
-| **setup-environment** | Install CLI agents, configure MCP servers, align marketplace plugins, audit instruction files |
+## Repository layout
 
-Browse and discover individual skills at [skills.sh](https://skills.sh/LevNikolaevich/claude-code-skills).
-
-> [!NOTE]
-> **skills.sh is a showcase only.** The supported install path is the Claude or Codex marketplace plugin flow above. Plugin bundles are self-contained; root `shared/` is not a runtime dependency.
-
----
-
-## Installation
-
-**Prerequisites:** [Claude Code](https://docs.anthropic.com/en/docs/claude-code) or [OpenAI Codex CLI](https://developers.openai.com/codex)
-
-```bash
-# Claude Code
-/plugin marketplace add levnikolaevich/claude-code-skills
-/plugin install setup-environment@levnikolaevich-skills-marketplace
-
-# Codex CLI
-codex plugin marketplace add levnikolaevich/claude-code-skills
-codex
-/plugins
+```text
+.
+├── .agents/plugins/marketplace.json       # Codex catalog
+├── .claude-plugin/marketplace.json        # Claude Code catalog
+└── plugins/
+    ├── review-suite/
+    ├── codebase-audit-suite/
+    ├── optimization-suite/
+    ├── testing-suite/
+    └── product-discovery-suite/
 ```
 
-Verify: run `ln-010-dev-environment-setup`
+Each plugin contains `.codex-plugin/plugin.json` for Codex and a shared `skills/<skill>/SKILL.md` tree used by both hosts.
 
----
+This is the smallest practical shared layout for distributed plugins:
 
-## Quick Start
+- Both hosts use `skills/<name>/SKILL.md`, so each skill has one canonical copy.
+- Codex requires `.codex-plugin/plugin.json` for a plugin.
+- Claude Code can expose a standard `skills/` directory from the marketplace entry, so duplicate per-plugin Claude manifests are unnecessary here.
+- `agents/openai.yaml`, references, scripts, assets, hooks, agents, and MCP configuration are optional and omitted until a concrete need appears.
 
-**Standalone** (works immediately, no setup):
-```bash
-ln-010-dev-environment-setup  # Set up agents, MCP, and marketplace plugins
-ln-620-codebase-auditor       # Audit your code for issues
-ln-100-documents-pipeline     # Generate documentation
-```
+The structure follows the current official [Codex skill guide](https://learn.chatgpt.com/docs/build-skills), [Codex plugin guide](https://learn.chatgpt.com/docs/build-plugins), [Claude Code skill guide](https://code.claude.com/docs/en/skills), and [Claude Code plugin reference](https://code.claude.com/docs/en/plugins-reference).
 
-**Full Agile workflow** (Linear, GitHub Issues, or File Mode — chosen during ln-010 setup, persisted in `.hex-skills/environment_state.json`):
-```bash
-ln-200-scope-decomposer    # Scope -> Epics -> Stories
-ln-1000-pipeline-orchestrator  # Artifact-driven pipeline: tasks → validation → execution → quality gate
-```
+## Migration from v1
 
-**Manual step-by-step** (if you prefer control over each stage):
-```bash
-ln-400-story-executor      # Execute Story tasks
-ln-500-story-quality-gate  # Quality gate + test planning
-```
+Skills v2 replaces the broad workflow framework with small, standalone capabilities. Existing cached installations are not removed automatically: reinstall the desired v2 plugins and start a new Claude Code or Codex session after updating the marketplace.
 
----
-
-## Workflow
-
-```
-ln-010-dev-environment-setup    # 0. Set up dev environment (once)
-         ↓
-ln-100-documents-pipeline       # 1. Documentation
-         ↓
-ln-200-scope-decomposer         # 2. Scope -> Epics -> Stories
-         ↓
-ln-1000-pipeline-orchestrator   # 3. Full artifact-driven pipeline: 300 → 310 → 400 → 500 → Done
-```
-
-Coordinators keep lifecycle status separate from Loop Health: `status` says where the run is, artifacts/checkpoints prove completion, and `loop_health` decides whether another retry is useful. Procedural skills use SOP/TWI-style point-of-use checklists so risky steps carry action, key point, why, evidence, exception, and guard close to the moment of use.
-
----
-
-
-## MCP Servers (Optional)
-
-Bundled MCP servers extend agent capabilities — hash-verified editing, code intelligence, remote access, and research graph navigation. All skills work without MCP (fallback to built-in tools), but MCP servers improve accuracy and save tokens. MCP errors stay as `status: "ERROR"` and include `failure_class`, `next_action`, and recovery fields so skills can feed transport/tool/auth/rate-limit signals into Loop Health without inventing a second retry loop.
-
-### Bundled servers
-
-| Server | What it does | Tools | Docs |
-|--------|-------------|-------|------|
-| **[hex-line-mcp](mcp/hex-line-mcp/)** | Every line carries a content hash — edits prove the agent sees current content. Prevents stale-context corruption. Includes validation hooks. | 9 | [README](mcp/hex-line-mcp/README.md) · [npm](https://www.npmjs.com/package/@levnikolaevich/hex-line-mcp) |
-| **[hex-graph-mcp](mcp/hex-graph-mcp/)** | Indexes codebases into a deterministic SQLite graph with framework-aware overlays, capability-first quality tooling, optional SCIP interop, and architecture/reference analysis. | see README | [README](mcp/hex-graph-mcp/README.md) · [npm](https://www.npmjs.com/package/@levnikolaevich/hex-graph-mcp) |
-| **[hex-ssh-mcp](mcp/hex-ssh-mcp/)** | Hash-verified remote file editing and SFTP transfer over SSH. Normalized output for minimal token usage. | 8 | [README](mcp/hex-ssh-mcp/README.md) · [npm](https://www.npmjs.com/package/@levnikolaevich/hex-ssh-mcp) |
-| **[hex-research-mcp](mcp/hex-research-mcp/)** | Indexes markdown hypotheses, goals, tasks, sources, and benchmark manifests into a local SQLite research graph. | 15 | [README](mcp/hex-research-mcp/README.md) · [npm](https://www.npmjs.com/package/@levnikolaevich/hex-research-mcp) |
-
-Deterministic scope rule: `hex-line`, `hex-graph`, and `hex-research` keep `path` as the project anchor. In normal use the agent fills it automatically from the active file or project root, so users usually do not need to type it manually. `hex-research` writes its local index under `.hex-skills/researchgraph/`. `hex-ssh` runs on Windows/macOS/Linux hosts; remote shell tools stay POSIX-oriented, while SFTP transfers support platform-aware remote paths.
-
-<!-- GENERATED:HEX_GRAPH_MCP_STATUS:START -->
-`hex-graph-mcp` quality snapshot: semantic suite, corpus manifests, provider lanes, and parser-first `green` status are tracked in package artifacts.
-<!-- GENERATED:HEX_GRAPH_MCP_STATUS:END -->
-
-### External servers
-
-| Server | Purpose | API Key | Used by |
-|--------|---------|---------|---------|
-| **[Context7](https://context7.com)** | Library docs, APIs, migration guides | Optional ([dashboard](https://context7.com/dashboard)) | ln-310, ln-511, ln-640+ |
-| **[Ref](https://docs.ref.tools/install)** | Standards, RFCs, best practices | Required ([ref.tools/keys](https://ref.tools/keys)) | ln-310, ln-511, ln-640+ |
-| **[Linear](https://linear.app/docs/mcp)** | Issue tracking (Agile workflow) | OAuth via browser | ln-300+, ln-400+, ln-500+ |
-
-**CLI setup:**
-```bash
-# hex-line — hash-verified file editing (bundled)
-claude mcp add -s user hex-line -- npx -y @levnikolaevich/hex-line-mcp
-
-# hex-ssh — token-efficient SSH with hash verification (bundled)
-claude mcp add -s user hex-ssh -- npx -y @levnikolaevich/hex-ssh-mcp
-
-# hex-graph — code knowledge graph (bundled)
-claude mcp add -s user hex-graph -- npx -y @levnikolaevich/hex-graph-mcp
-
-# hex-research — research hypothesis graph (bundled)
-claude mcp add -s user hex-research -- npx -y @levnikolaevich/hex-research-mcp
-
-# Context7 — library documentation (HTTP, optional API key)
-claude mcp add -s user --transport http --header "CONTEXT7_API_KEY: YOUR_KEY" context7 https://mcp.context7.com/mcp
-
-# Ref — standards & best practices (HTTP, API key required)
-claude mcp add -s user --transport http --header "x-ref-api-key: YOUR_KEY" Ref https://api.ref.tools/mcp
-
-# Linear — issue tracking (HTTP, OAuth via browser)
-claude mcp add -s user --transport http linear-server https://mcp.linear.app/mcp
-```
-
-
-### Agent steering
-
-MCP servers can be installed correctly and still lose to built-ins in practice. `hex-line-mcp` keeps Claude aligned through one output style and five Claude hook events:
-
-| Mechanism | How it works |
-|-----------|-------------|
-| **[Output style](mcp/hex-line-mcp/output-style.md)** | Injected into system prompt — maps built-in tools to MCP equivalents (`Read` → `hex-line read_file`, `Edit` → `hex-line edit_file`) |
-| **SessionStart hook** | Injects a compact bootstrap hint and defers to the active `hex-line` output style when present |
-| **PreToolUse hook** | Hard-redirects project text `Read`/`Edit`/`Write`/`Grep`/`Glob`, redirects Bash file-inspection commands, blocks dangerous commands, enforces plan mode for mutating MCP tools |
-| **PostToolUse hook** | Filters verbose Bash output (50+ lines): normalize, deduplicate, truncate to first 15 + last 15 lines |
-| **ConfigChange hook** | Invalidates cached state when settings change mid-session |
-| **PermissionDenied hook** | Observability: logs when Claude denies a tool call after redirect hint |
-
-Hooks and output style auto-sync on `hex-line-mcp` startup. First run after install performs the initial sync automatically.
-
----
-
-## AI Review Models (Optional)
-
-Review uses two CLI agents: Claude Code and OpenAI Codex. The active host does not call itself as the advisor; Claude-hosted runs delegate to Codex, while Codex-hosted runs delegate to Claude.
-
-| Model | CLI | Version | Used by | Settings |
-|-------|-----|---------|---------|----------|
-| **[Codex](https://developers.openai.com/codex)** | `codex` | user config | ln-310, ln-510, ln-813 | `codex exec --full-auto` |
-| **[Claude Code](https://docs.anthropic.com/en/docs/claude-code)** | `claude` | user config | ln-310, ln-510, ln-813 | `claude -p --dangerously-skip-permissions` |
-
-**Review Workflow:**
-1. **Host-aware routing** — choose the other CLI as external advisor
-2. **Critical verification** — the host agent validates each suggestion before accepting it
-3. **Filtering** — only supported, high-impact suggestions surface
-4. **Fallback** — self-review if the external advisor is unavailable
-
-**Installation:**
-```bash
-# Codex (OpenAI)
-npm install -g @openai/codex
-codex login
-
-# Claude Code
-npm install -g @anthropic-ai/claude-code
-claude auth login
-```
-
-**Configuration:**
-Review agents use the prompt templates and schemas copied into each skill's local `references/agents/` directory. No manual setup required.
-
-**Audit Trail:**
-All prompts/results saved to `.agent-review/{agent}/` for transparency:
-```
-.agent-review/
-├── codex/
-│   ├── PROJ-123_storyreview_prompt.md
-│   ├── PROJ-123_storyreview_result.md
-│   └── PROJ-123_session.json
-└── claude/
-    └── (same structure)
-```
-
-Additional configured agents use the same per-agent directory structure.
-
-<details>
-<summary><b>Skills using external AI review</b></summary>
-
-- **ln-310-multi-agent-validator** — Story/Tasks validation with host-aware Claude/Codex review
-- **ln-510-quality-coordinator** — Code implementation review with host-aware Claude/Codex review
-- **ln-813-optimization-plan-validator** — Optimization plan review before strike execution
-
-All skills support:
-- Session Resume for multi-round debates
-- Zero timeout (wait for completion)
-- Read-only analysis (no project modifications)
-- Internet access for research
-
-</details>
-
-<details>
-<summary><b>Sharing skills & MCP between agents</b></summary>
-
-**Install skills independently per agent.** Do not symlink one agent's plugin root into another agent's discovery root.
-
-Claude Code uses `.claude-plugin/marketplace.json`. Codex uses `.agents/plugins/marketplace.json` plus per-plugin `.codex-plugin/plugin.json` manifests. Both surfaces point at the same plugin-first bundles under `plugins/*`; root `shared/` is a development-only canonical source for files reused by 2+ skills and is distributed into skill-local `references/` through `tools/marketplace/shared-registry.json`.
-
-**MCP settings locations** (for manual sharing):
-
-| Agent | Config File | Format | Docs |
-|-------|------------|--------|------|
-| **Claude Code** | `~/.claude/settings.json` | JSON (`mcpServers: {}`) | [docs](https://docs.anthropic.com/en/docs/claude-code) |
-| **Codex CLI** | `~/.codex/config.toml` | TOML (`[mcp_servers.name]`) | [docs](https://developers.openai.com/codex/mcp) |
-
-**Note:** Claude and Codex use different config formats and native plugin flows. `ln-013-config-syncer` installs or verifies selected marketplace plugins independently for both agents, defaults to `agile-workflow`, and aligns MCP/policy settings non-destructively.
-
-</details>
-
----
-
-## FAQ
-
-<details>
-<summary><b>What is Claude Code Skills?</b></summary>
-
-A plugin for [Claude Code](https://claude.ai/code) that provides production-ready skills automating the full Agile development lifecycle — from project bootstrap and documentation through scope decomposition, task execution, quality gates, and comprehensive code audits.
-
-</details>
-
-<details>
-<summary><b>Is it free and open source?</b></summary>
-
-Yes. MIT license, fully open source. No API keys, no paid services required. Claude Code CLI is the only prerequisite.
-
-</details>
-
-<details>
-<summary><b>What languages and frameworks does it support?</b></summary>
-
-Bootstrap skills scaffold React, .NET, and Python projects to Clean Architecture. Audit and execution skills are language-agnostic — they work on any codebase Claude Code can read. Dependency auditors cover npm, NuGet, and pip ecosystems.
-
-</details>
-
-<details>
-<summary><b>How do I install it?</b></summary>
-
-```bash
-# Add the marketplace once
-/plugin marketplace add levnikolaevich/claude-code-skills
-
-# Install one plugin
-/plugin install agile-workflow@levnikolaevich-skills-marketplace
-
-# Or install the full suite
-/plugin install agile-workflow@levnikolaevich-skills-marketplace
-/plugin install documentation-pipeline@levnikolaevich-skills-marketplace
-/plugin install codebase-audit-suite@levnikolaevich-skills-marketplace
-/plugin install project-bootstrap@levnikolaevich-skills-marketplace
-/plugin install optimization-suite@levnikolaevich-skills-marketplace
-/plugin install community-engagement@levnikolaevich-skills-marketplace
-/plugin install setup-environment@levnikolaevich-skills-marketplace
-```
-
-</details>
-
-<details>
-<summary><b>Which plugin do I need?</b></summary>
-
-| If you want to... | Install |
+| Previous plugin | v2 status |
 |---|---|
-| Run full Agile pipeline (plan → execute → review) | `agile-workflow` |
-| Generate project documentation | `documentation-pipeline` |
-| Audit existing code for issues | `codebase-audit-suite` |
-| Scaffold a new project or restructure existing | `project-bootstrap` |
-| Optimize performance, dependencies, bundle size | `optimization-suite` |
-| Manage GitHub community (triage, announcements, RFCs, responses) | `community-engagement` |
-| Set up multi-agent dev environment | `setup-environment` |
-| Everything | `/plugin marketplace add levnikolaevich/claude-code-skills` + all 7 `/plugin install ...@levnikolaevich-skills-marketplace` commands |
+| `agile-workflow` | Retired. Plan and delivery review moved to `review-suite`; focused audit, testing, optimization, and discovery work moved to their respective suites. Backlog orchestration and task execution are intentionally not retained. |
+| `documentation-pipeline` | Retired. Read-only documentation assessment is covered by `ln-21-documentation-auditor`; document-generation pipelines are not retained. |
+| `project-bootstrap` | Retired without replacement; use project-native setup and host-native tools. |
+| `community-engagement` | Retired without replacement; it is outside the engineering-skill catalog. |
+| `setup-environment` | Retired without replacement; host setup and MCP installation are no longer managed by these skills. |
 
-Add the marketplace once, then install only what you need.
+Every published version of `@levnikolaevich/hex-line-mcp`, `@levnikolaevich/hex-graph-mcp`, `@levnikolaevich/hex-research-mcp`, and `@levnikolaevich/hex-ssh-mcp` is deprecated on npm. Their source and publishing infrastructure were removed from the active tree. The packages receive no updates or support and must not be used for new Skills v2 workflows; historical source remains in Git history and release tags.
 
-</details>
+## Indexing
 
-<details>
-<summary><b>Does it require Linear, GitHub, or any external dependencies?</b></summary>
-
-No. All skills work without external trackers. Linear and GitHub Issues integrations are optional — you choose the tracker provider during `ln-010` setup, and the choice persists in `.hex-skills/environment_state.json`. File mode (local markdown + `kanban_board.md`) is always available with no API keys or paid services required.
-
-</details>
-
-<details>
-<summary><b>Can I use it on an existing project?</b></summary>
-
-Yes. `ln-700-project-bootstrap` has a TRANSFORM mode that restructures existing projects to Clean Architecture without starting from scratch. Audit skills (`ln-6XX`) work standalone on any codebase — no setup required.
-
-</details>
-
-<details>
-<summary><b>How does it automate the Agile workflow?</b></summary>
-
-Skills form a complete pipeline: `ln-700` bootstraps the project → `ln-100` generates documentation → `ln-200` decomposes scope into Epics and Stories → `ln-1000` drives `ln-300 -> ln-310 -> ln-400 -> ln-500` through coordinator stage artifacts. Task-plan, execution, quality, and test-planning workers are stateful and resumable, while coordinators make decisions only from machine-readable artifacts.
-
-</details>
-
-<details>
-<summary><b>Can I run individual skills without the full pipeline?</b></summary>
-
-Yes. Most skills work standalone — just invoke them directly (e.g., `/ln-620-codebase-auditor` for a full code audit). Pipeline orchestrators (`ln-1000`, `ln-400`, `ln-510`, `ln-520`) coordinate other skills but are not required, and their workers remain standalone-capable. In managed runs, coordinators pass deterministic `runId` and exact `summaryArtifactPath`; in standalone runs, workers create their own runtime state and summary path.
-
-</details>
-
-<details>
-<summary><b>Can it generate tests automatically?</b></summary>
-
-Yes. `ln-520-test-planner` orchestrates the full test planning pipeline, `ln-523-auto-test-planner` creates risk-based test scenarios (E2E, integration, unit), and `ln-404-test-executor` implements test tasks. Manual testing is covered by `ln-522-manual-tester` with executable bash scripts. Run `ln-630-test-auditor` to audit an existing test suite across 7 categories.
-
-</details>
-
-<details>
-<summary><b>How does it handle "almost right" AI-generated code?</b></summary>
-
-Through automated review loops. `ln-402-task-reviewer` checks every task output, `ln-403-task-rework` fixes issues and resubmits for review, and `ln-500-story-quality-gate` runs a 4-level gate (PASS/CONCERNS/FAIL/WAIVED) before any Story is marked Done. Code is never shipped without passing quality checks.
-
-</details>
-
-<details>
-<summary><b>Does it replace human code review?</b></summary>
-
-No — it augments human review. Claude/Codex cross-checking catches issues before human reviewers see the code. Human approval points are built into the workflow at Story validation (`ln-310`) and quality gates (`ln-500`). The goal is to reduce reviewer burden, not eliminate oversight.
-
-</details>
-
-<details>
-<summary><b>Can it catch technical debt from AI-generated code?</b></summary>
-
-Yes. Audit skills specifically target AI-induced tech debt: `ln-623` checks DRY/KISS/YAGNI violations, `ln-626` finds dead code and unused imports, `ln-640` audits architectural pattern evolution, `ln-644` detects dependency cycles and coupling metrics, `ln-645` finds obsolete custom architecture mechanisms, and `ln-646` validates physical project structure. Run `ln-620-codebase-auditor` to scan all 9 categories in parallel.
-
-</details>
-
-<details>
-<summary><b>What can the audit skills detect?</b></summary>
-
-Audit skills in 5 groups: documentation quality (structure, semantics, fact-checking, inline code documentation), codebase health (security boundaries, delivery gates, DRY/KISS/YAGNI, maintainability hotspots, dependency/reuse risk, dead code, diagnosability, concurrency, lifecycle/config), test suites (business logic, E2E coverage, value scoring, coverage gaps, isolation, manual test quality, test structure), architecture (patterns, layer ownership, API contracts, dependency topology, modernization, project structure, configuration boundaries), and persistence performance (query efficiency, transactions, runtime, resource lifecycle).
-
-</details>
-
-<details>
-<summary><b>How does it handle multi-stack or polyglot projects?</b></summary>
-
-Bootstrap skills (`ln-7XX`) support React, .NET, and Python project structures. Audit skills are language-aware — `ln-622-build-delivery-gate-auditor` checks compiler/type errors across stacks, `ln-625-dependency-reuse-auditor` scans npm, NuGet, and pip packages, and `ln-651-query-efficiency-auditor` catches N+1 queries regardless of ORM.
-
-</details>
-
-<details>
-<summary><b>What AI models does it use?</b></summary>
-
-The active host model performs orchestration and verification. For code and story reviews, skills can delegate to the other CLI agent: Claude-hosted runs use Codex as advisor, while Codex-hosted runs use Claude as advisor.
-
-</details>
-
-<details>
-<summary><b>What MCP servers are included?</b></summary>
-
-Four bundled MCP servers are published on npm: `hex-line-mcp` (hash-verified file editing), `hex-graph-mcp` (code knowledge graph), `hex-ssh-mcp` (hash-verified remote editing and SFTP over SSH), and `hex-research-mcp` (markdown research graph indexing). Skills work without MCP servers (fallback to built-in tools), but MCP improves edit accuracy and reduces token usage. See [MCP Servers](#mcp-servers-optional) for setup.
-
-</details>
-
-<details>
-<summary><b>What is hash-verified editing and why does it matter?</b></summary>
-
-Every line `hex-line-mcp` reads carries a content hash. When the agent edits, it must reference these hashes — proving it sees current file content, not a stale version from earlier in the conversation. This eliminates a common failure mode where AI agents overwrite recent changes with outdated context. Hooks auto-steer Claude from built-in tools to `hex-line` equivalents so the protection is always active.
-
-</details>
-
-<details>
-<summary><b>How does it maintain context across large codebases?</b></summary>
-
-Through the Orchestrator-Worker pattern plus persisted runtime state. Instead of feeding the entire codebase into one prompt, orchestrators advance stages from coordinator artifacts, coordinators consume worker artifacts, and workers execute with minimal, targeted context. Each layer loads only the files it needs and can resume from checkpoints instead of replaying long chat history.
-
-</details>
-
-<details>
-<summary><b>How much context/tokens does it use?</b></summary>
-
-Skills are designed for token efficiency. Each worker loads only the files it needs via targeted context — no full-codebase prompts. Orchestrators advance stages from machine-readable artifacts instead of replaying chat history, and workers resume from checkpoints instead of reprocessing. See [TOKEN_EFFICIENCY_PATTERNS.md](docs/standards/TOKEN_EFFICIENCY_PATTERNS.md) for the patterns used.
-
-</details>
-
-<details>
-<summary><b>Can I customize or create my own skills?</b></summary>
-
-Yes. Skills are `SKILL.md` files under `plugins/<plugin>/skills/<skill>/`. Single-skill support files live in that skill's `references/`; reusable shared resources live in root `shared/` and are copied into exact skill-local targets listed in `tools/marketplace/shared-registry.json` with `node tools/marketplace/shared.mjs sync`. Validate with `node tools/marketplace/validate.mjs`. Reusable capabilities should use the plugin-first skill structure. See [SKILL_ARCHITECTURE_GUIDE.md](docs/architecture/SKILL_ARCHITECTURE_GUIDE.md) for the development workflow, shared-resource rules, 4-level hierarchy (L0 -> L1 -> L2 -> L3), and writing guidelines.
-
-</details>
-
-<details>
-<summary><b>Can I use these skills with OpenAI Codex?</b></summary>
-
-Yes. Claude and Codex have separate native marketplace surfaces in this repo. Install each agent independently through its own plugin flow; do not expose both surfaces to the same runtime at once. See [AI Review Models > Sharing skills & MCP between agents](#ai-review-models-optional) for config paths.
-
-</details>
-
----
-
-## What's Inside
-
-<details>
-<summary><b>Full Skill Tree</b></summary>
-
-```
-claude-code-skills/                      # MARKETPLACE
-|-- plugins/                                     # INSTALLABLE PLUGINS + SELF-CONTAINED SKILLS
-|-- shared/                                      # CANONICAL MULTI-SKILL DEVELOPMENT SOURCES
-|-- tools/marketplace/shared-registry.json       # shared -> skill-local references map
-|   |
-|   |  ┌─ Plugin: agile-workflow ──────────────────────┐
-|   |
-|   |-- ln-2XX-*/                        # PLANNING
-|   |-- ln-200-scope-decomposer/       # TOP: scope -> Epics -> Stories (one command)
-|   |-- ln-201-opportunity-discoverer/ # Traffic-First KILL funnel for growth direction
-|   |-- ln-210-epic-coordinator/       # CREATE/REPLAN 3-7 Epics
-|   |-- ln-220-story-coordinator/      # CREATE/REPLAN Stories + standards research
-|   |   |-- ln-221-story-creator/      # Creates from IDEAL plan
-|   |   |-- ln-222-story-replanner/    # Replans when requirements change
-|   |-- ln-230-story-prioritizer/      # RICE prioritization + market research
-|
-|-- ln-3XX-*/                          # TASK MANAGEMENT
-|   |-- ln-300-task-coordinator/       # Artifact-first task planning coordinator
-|   |   |-- ln-301-task-creator/       # Stateful task-plan worker (create)
-|   |   |-- ln-302-task-replanner/     # Stateful task-plan worker (replan)
-|   |-- ln-310-multi-agent-validator/   # 20 criteria (8 groups), penalty points system + inline agent review
-|
-|-- ln-4XX-*/                          # EXECUTION
-|   |-- ln-400-story-executor/         # Artifact-first execution coordinator
-|   |-- ln-401-task-executor/          # Stateful implementation worker
-|   |-- ln-402-task-reviewer/          # Stateful review worker and final task outcome
-|   |-- ln-403-task-rework/            # Stateful rework worker
-|   |-- ln-404-test-executor/          # Stateful test execution worker
-|
-|-- ln-5XX-*/                          # QUALITY
-|   |-- ln-500-story-quality-gate/     # Thin orchestrator: verdict + Quality Score
-|   |-- ln-510-quality-coordinator/    # Artifact-first quality coordinator
-|   |   |-- ln-511-code-quality-checker/  # Stateful quality worker
-|   |   |-- ln-512-tech-debt-cleaner/    # Stateful autofix worker
-|   |   |-- ln-513-regression-checker/    # Stateful regression worker
-|   |   |-- ln-514-test-log-analyzer/    # Stateful log-analysis worker
-|   |-- ln-520-test-planner/           # Artifact-first test-planning coordinator
-|   |   |-- ln-521-test-researcher/    # Stateful research worker
-|   |   |-- ln-522-manual-tester/      # Stateful manual-testing worker
-|   |   |-- ln-523-auto-test-planner/  # Stateful automated test-planning worker
-|
-|-- ln-10XX-*/                           # ORCHESTRATION
-|   |-- ln-1000-pipeline-orchestrator/   # L0 Meta: coordinator artifacts drive the 4-stage pipeline
-|
-|  └──────────────────────────────────────────────┘
-|  ┌─ Plugin: documentation-pipeline ──────────────┐
-|
-|-- ln-1XX-*/                          # DOCUMENTATION
-|   |-- ln-100-documents-pipeline/     # L1 Orchestrator: complete docs in one command
-|   |-- ln-110-project-docs-coordinator/  # Detects project type, delegates to workers
-|   |   |-- ln-111-root-docs-creator/     # AGENTS.md, CLAUDE.md, principles.md
-|   |   |-- ln-112-project-core-creator/  # requirements.md, architecture.md
-|   |   |-- ln-113-backend-docs-creator/  # api_spec.md, database_schema.md
-|   |   |-- ln-114-frontend-docs-creator/ # design_guidelines.md
-|   |   |-- ln-115-devops-docs-creator/   # infrastructure.md, runbook.md
-|   |-- ln-120-reference-docs-creator/    # ADRs, guides, manuals structure
-|   |-- ln-130-tasks-docs-creator/        # kanban_board.md, task provider setup
-|   |-- ln-140-test-docs-creator/         # testing-strategy.md
-|   |-- ln-160-docs-skill-extractor/     # Scan docs, classify, extract to .claude/commands
-|   |   |-- ln-161-skill-creator/        # Transform doc sections into commands
-|   |   |-- ln-162-skill-reviewer/       # Review SKILL.md and .claude/commands quality
-|
-|  └──────────────────────────────────────────────┘
-|  ┌─ Plugin: codebase-audit-suite ────────────────┐
-|
-|-- ln-6XX-*/                          # AUDIT
-|   |-- ln-610-docs-auditor/           # Documentation audit coordinator (4 workers)
-|   |   |-- ln-611-docs-structure-auditor/  # Hierarchy, SSOT, compression, freshness
-|   |   |-- ln-612-semantic-content-auditor/ # Scope alignment
-|   |   |-- ln-613-code-comments-auditor/   # WHY-not-WHAT, density, docstrings
-|   |   |-- ln-614-docs-fact-checker/       # Claims extraction, cross-doc verification
-|   |-- ln-620-codebase-auditor/       # 9 parallel auditors:
-|   |   |-- ln-621-security-boundary-auditor/      # Security boundaries
-|   |   |-- ln-622-build-delivery-gate-auditor/         # Build/delivery gates
-|   |   |-- ln-623-duplication-overabstraction-auditor/# Duplication, over-abstraction
-|   |   |-- ln-624-code-maintainability-hotspot-auditor/  # Maintainability hotspots
-|   |   |-- ln-625-dependency-reuse-auditor/  # Dependency and reuse risk
-|   |   |-- ln-626-dead-code-pruning-auditor/     # Dead code pruning
-|   |   |-- ln-627-diagnosability-auditor/ # Diagnosability
-|   |   |-- ln-628-concurrency-correctness-auditor/   # Concurrency correctness
-|   |   |-- ln-629-runtime-lifecycle-config-auditor/     # Runtime lifecycle and config
-|   |-- ln-630-test-auditor/           # 7 test auditors:
-|   |   |-- ln-631-test-business-logic-auditor/ # Framework vs business logic tests
-|   |   |-- ln-632-test-e2e-priority-auditor/   # E2E coverage for critical paths
-|   |   |-- ln-633-test-value-auditor/          # Risk-based test value scoring
-|   |   |-- ln-634-test-coverage-auditor/       # Missing tests for critical paths
-|   |   |-- ln-635-test-isolation-auditor/      # Isolation + anti-patterns
-|   |   |-- ln-636-manual-test-auditor/        # Manual test quality (harness, golden files, fail-fast)
-|   |   |-- ln-637-test-structure-auditor/      # Test file organization + directory layout
-|   |-- ln-640-pattern-evolution-auditor/ # Architectural pattern analysis + 4-score model
-|   |   |-- ln-641-pattern-fitness-auditor/      # Pattern fitness worker
-|   |   |-- ln-642-layer-ownership-boundary-auditor/# Layer and ownership boundaries
-|   |   |-- ln-643-api-contract-auditor/  # Layer leakage, missing DTOs
-|   |   |-- ln-644-dependency-topology-auditor/ # Topology cycles, coupling metrics (Ca/Ce/I)
-|   |   |-- ln-645-architecture-modernization-auditor/ # Architecture modernization
-|   |   |-- ln-646-project-structure-auditor/ # Physical architecture structure
-|   |   |-- ln-647-configuration-boundary-auditor/ # Configuration boundary architecture
-|   |-- ln-650-persistence-performance-auditor/ # DB performance coordinator:
-|   |   |-- ln-651-query-efficiency-auditor/    # N+1, over-fetching, missing bulk ops
-|   |   |-- ln-652-transaction-correctness-auditor/ # Scope, rollback, long-held txns
-|   |   |-- ln-653-runtime-performance-auditor/ # Blocking IO, allocations, sync sleep
-|   |   |-- ln-654-resource-lifecycle-auditor/  # Session scope mismatch, pool config, cleanup
-|
-|  └──────────────────────────────────────────────┘
-|  ┌─ Plugin: project-bootstrap ───────────────────┐
-|
-|-- ln-7XX-*/                          # BOOTSTRAP
-|   |-- ln-700-project-bootstrap/      # L1: CREATE or TRANSFORM project
-|   |-- ln-720-structure-migrator/     # SCAFFOLD or RESTRUCTURE to Clean Architecture
-|   |   |-- ln-721-frontend-restructure/ # React component-based architecture
-|   |   |-- ln-722-backend-generator/    # .NET Clean Architecture from entities
-|   |   |-- ln-723-seed-data-generator/  # Generate seed data from ORM schemas
-|   |   |-- ln-724-artifact-cleaner/     # Remove platform-specific artifacts
-|   |-- ln-730-devops-setup/           # Docker, CI/CD, env
-|   |   |-- ln-731-docker-generator/      # Dockerfiles, docker-compose
-|   |   |-- ln-732-cicd-generator/        # GitHub Actions
-|   |   |-- ln-733-env-configurator/      # .env.example
-|   |-- ln-740-quality-setup/          # Linters, pre-commit, tests
-|   |   |-- ln-741-linter-configurator/  # ESLint, Prettier, Ruff, mypy
-|   |   |-- ln-742-precommit-setup/      # Husky, lint-staged, commitlint
-|   |   |-- ln-743-test-infrastructure/  # Vitest, xUnit, pytest setup
-|   |-- ln-760-security-setup/         # Security scanning
-|   |   |-- ln-761-secret-scanner/       # Detect hardcoded secrets
-|   |-- ln-770-crosscutting-setup/     # Logging, CORS, health checks
-|   |   |-- ln-771-logging-configurator/ # Structured JSON logging
-|   |   |-- ln-772-error-handler-setup/  # Global exception middleware
-|   |   |-- ln-773-cors-configurator/    # CORS policy config
-|   |   |-- ln-774-healthcheck-setup/    # K8s readiness/liveness probes
-|   |   |-- ln-775-api-docs-generator/   # Swagger/OpenAPI docs
-|   |-- ln-780-bootstrap-verifier/     # Build, test, Docker verification
-|   |   |-- ln-781-build-verifier/       # Verify compilation
-|   |   |-- ln-782-test-runner/          # Run test suites
-|   |   |-- ln-783-container-launcher/   # Docker health check
-|
-|  └──────────────────────────────────────────────┘
-|  ┌─ Plugin: optimization-suite ──────────────────┐
-|
-|-- ln-8XX-*/                          # OPTIMIZATION
-|   |-- ln-810-performance-optimizer/       # Performance optimization:
-|   |   |-- ln-811-performance-profiler/     # Full-stack request tracing, bottleneck classification
-|   |   |-- ln-812-optimization-researcher/  # Competitive benchmarks, solution research, hypotheses
-|   |   |-- ln-813-optimization-plan-validator/ # Agent-validated plan review (Claude/Codex)
-|   |   |-- ln-814-optimization-executor/    # Strike-first hypothesis execution (keep/discard)
-|   |-- ln-820-dependency-optimization-coordinator/  # Dependency upgrades:
-|   |   |-- ln-821-npm-upgrader/             # npm/yarn/pnpm with breaking change handling
-|   |   |-- ln-822-nuget-upgrader/           # .NET NuGet with migration support
-|   |   |-- ln-823-pip-upgrader/             # pip/poetry/pipenv with security audit
-|   |-- ln-830-code-modernization-coordinator/       # Code modernization:
-|   |   |-- ln-831-oss-replacer/             # Replace custom code with OSS packages
-|   |   |-- ln-832-bundle-optimizer/         # JS/TS bundle size reduction
-|   |-- ln-840-benchmark-compare/           # Canonical internal A/B: built-in vs hex-line, plus optional third Claude-compatible profile
-|
-|  └──────────────────────────────────────────────┘
-|  ┌─ Plugin: community-engagement ───────────────┐
-|
-|-- ln-9XX-*/                          # COMMUNITY ENGAGEMENT
-|   |-- ln-910-community-engagement/   # L2: Analyze health, consult strategy, delegate
-|   |-- ln-911-github-triager/         # Triage issues/PRs/discussions
-|   |-- ln-912-community-announcer/    # Compose + publish GitHub Discussion announcements
-|   |-- ln-913-community-debater/      # Launch RFC/debate/poll discussions
-|   |-- ln-914-community-responder/    # Respond to unanswered discussions/issues
-|
-|  └──────────────────────────────────────────────┘
-|  ┌─ Plugin: setup-environment ────────────────────┐
-|
-|-- ln-001-push-all/                   # Commit and push all changes in one command
-|-- ln-002-session-analyzer/           # Analyze sessions for optimization opportunities
-|-- ln-0XX-*/                          # SETUP ENVIRONMENT
-|   |-- ln-010-dev-environment-setup/  # L2: Full environment setup coordinator
-|   |-- ln-011-agent-installer/        # Install/update Codex and Claude CLI
-|   |-- ln-012-mcp-configurator/       # Claude-side MCP setup: registration, hooks, permissions, migrations
-|   |-- ln-013-config-syncer/          # Align marketplace plugins, MCP state, and Codex defaults
-|   |-- ln-014-agent-instructions-manager/ # Single owner of CLAUDE.md/AGENTS.md creation and audit
-|   |-- ln-015-hex-line-uninstaller/   # Standalone cleanup for Claude-side hex-line integration
-|-- ln-021-codegraph/                  # Code knowledge graph for dependency analysis & impact checking
-|-- ln-022-researchgraph/              # Research hypothesis/goal graph queries & audits
-|
-|  └──────────────────────────────────────────────┘
-|
-|
-|-- docs/
-|   |-- architecture/                  # Skill patterns & delegation runtime
-|   |-- best-practice/                 # Claude Code usage tips & component selection
-|   |-- standards/                     # Documentation & README standards
-|-- AGENTS.md                          # Canonical agent-facing repo map
-|-- CLAUDE.md                          # Derived Anthropic entrypoint
-```
-
-</details>
-
----
-
-## Links
-
-| | |
-|---|---|
-| **Documentation** | [AGENTS.md](AGENTS.md) |
-| **Architecture** | [SKILL_ARCHITECTURE_GUIDE.md](docs/architecture/SKILL_ARCHITECTURE_GUIDE.md) |
-| **Agent Delegation** | [AGENT_DELEGATION_PLATFORM_GUIDE.md](docs/architecture/AGENT_DELEGATION_PLATFORM_GUIDE.md) |
-| **Component Selection** | [COMPONENT_SELECTION.md](docs/best-practice/COMPONENT_SELECTION.md) |
-| **Workflow Tips** | [WORKFLOW_TIPS.md](docs/best-practice/WORKFLOW_TIPS.md) |
-| **Discussions** | [GitHub Discussions](https://github.com/levnikolaevich/claude-code-skills/discussions) |
-| **Issues** | [GitHub Issues](https://github.com/levnikolaevich/claude-code-skills/issues) |
-| **Contributing** | [CONTRIBUTING.md](CONTRIBUTING.md) |
-| **Browse Skills** | [skills.sh](https://skills.sh/LevNikolaevich/claude-code-skills) |
-
-<details>
-<summary><b>Research & Influences</b></summary>
-
-Papers, docs, and methodologies studied and implemented in the skill architecture.
-
-| Source | Learned | Changed |
-|--------|---------|--------|
-| [STAR Framework](https://arxiv.org/abs/2602.21814) (2025) | Forced goal articulation: +85pp accuracy; structured reasoning > context injection 2.83x | [`goal_articulation_gate.md`](shared/references/goal_articulation_gate.md) — qualitative goal-articulation gate for relevant skills and templates |
-| [Building Effective Agents](https://www.anthropic.com/research/building-effective-agents) (Anthropic, 2024) | Orchestrator-Worker, prompt chaining, evaluator-optimizer patterns | Core 4-level hierarchy (L0→L3), single responsibility per skill |
-| [Multi-Agent Research System](https://www.anthropic.com/engineering/multi-agent-research-system) (Anthropic, 2025) | Production orchestration: 90.2% perf improvement with specialized agents | `ln-1000` pipeline orchestrator, parallel agent reviews (`ln-310`, `ln-510`) |
-| [Scheduler Agent Supervisor](https://learn.microsoft.com/azure/architecture/patterns/scheduler-agent-supervisor) (Microsoft) | Separation of scheduling, execution, and supervision | `ln-400`/`ln-402`/`ln-500` executor-reviewer-gate split |
-| [DIATAXIS](https://diataxis.fr) | 4-type docs: Tutorial / How-to / Reference / Explanation | Documentation levels in AGENTS.md/docs, progressive disclosure |
-| [Sinks, Not Pipes](https://ianbull.com/posts/software-architecture) (Ian Bull, 2026) | "The architecture is the prompt" — AI agents can't reason about side-effect chains >2 levels deep; sinks (self-contained) > pipes (cascading) | [`ai_ready_architecture.md`](plugins/codebase-audit-suite/shared/references/ai_ready_architecture.md) — cascade depth, architectural honesty, flat orchestration checks across relevant skills |
-| [Test Desiderata](https://testdesiderata.com/) (Kent Beck, 2019) | 12 properties of valuable tests — behavioral, predictive, specific, inspiring, deterministic... No numerical targets, only usefulness | [`risk_based_testing_guide.md`](shared/references/risk_based_testing_guide.md) — 6 Test Usefulness Criteria (Risk Priority ≥15, Confidence ROI, Behavioral, Predictive, Specific, Non-Duplicative) |
-| Vertical Slicing ([Humanizing Work](https://www.humanizingwork.com/the-humanizing-work-guide-to-splitting-user-stories/)) | "Never split by architectural layer" | Foundation-First task ordering |
-| [Claude Code Picks](https://amplifying.ai/research/claude-code-picks) (Amplifying AI, 2026) | Claude's tool preferences are learned maturity signals, not bias — Drizzle/Vitest/Zustand chosen for objective quality. Build-not-buy in 12/20 categories. "Correcting" valid preferences = recommending worse tools | Research-to-Action Gate in AGENTS.md — require concrete defect before turning research into skill changes |
-| [autoresearch](https://github.com/karpathy/autoresearch) (Karpathy, 2025) | Autoresearch loop: modify → benchmark → binary keep/discard; compound baselines; simplicity criterion (marginal gain + ugly code = discard) | [`ln-814-optimization-executor`](plugins/optimization-suite/skills/ln-814-optimization-executor/SKILL.md) — keep/discard with adaptive thresholds, multi-file support, compound baselines, experiment log |
-| [The Complete Guide to Building Skills](https://resources.anthropic.com/hubfs/The-Complete-Guide-to-Building-Skill-for-Claude.pdf) (Anthropic, 2026) | WHAT+WHEN descriptions, trigger testing, capability vs preference classification, negative triggers, 3-level progressive disclosure | Check #14 (trigger quality), negative trigger pattern, `metadata.skill-type` classification, functional DoD, M6 advisory |
-
-</details>
-
----
-
+The first digit identifies the plugin and the second identifies the skill within it: `1x` review, `2x` audit, `3x` optimization, `4x` testing, and `5x` product discovery. See the canonical allocation and overflow rules in [AGENTS.md](AGENTS.md#index-system).
 
 ## License
 
 [MIT](LICENSE)
-
----
-
-**Author:** [@levnikolaevich](https://github.com/levnikolaevich)

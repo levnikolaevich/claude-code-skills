@@ -1,526 +1,162 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Claude Code Skills — Production-Ready Plugin Suite</title>
-  <meta name="description" content="Installable plugins for Claude Code: project bootstrap, documentation, codebase audits, performance optimization, Agile pipeline, GitHub community workflows, and setup environment.">
-  <meta property="og:title" content="Claude Code Skills">
-  <meta property="og:description" content="Production-ready plugin suite covering the full Claude Code delivery lifecycle.">
-  <link rel="icon" type="image/jpeg" href="favicon.jpg">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lev Nikolaevich Skills — Focused skills for Claude Code and Codex</title>
+  <meta name="description" content="Fourteen standalone engineering skills in five focused plugins for Claude Code and Codex.">
+  <meta property="og:title" content="Lev Nikolaevich Skills">
+  <meta property="og:description" content="Focused review, audit, optimization, testing, and product discovery skills.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://levnikolaevich.github.io/claude-code-skills/">
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    :root {
-      --bg-primary: #0a0a0f;
-      --bg-secondary: #12121a;
-      --bg-card: #16161f;
-      --bg-card-hover: #1c1c28;
-      --border: #2a2a3a;
-      --text-primary: #e8e8f0;
-      --text-secondary: #9898aa;
-      --text-muted: #6a6a7a;
-      --accent: #7c6aef;
-      --accent-light: #9d8ff5;
-      --accent-glow: rgba(124, 106, 239, 0.15);
-      --green: #34d399;
-      --blue: #60a5fa;
-      --amber: #fbbf24;
-      --font-mono: 'SF Mono', 'Cascadia Code', 'Fira Code', Consolas, monospace;
-      --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      --max-width: 1120px;
-    }
-
-    html { scroll-behavior: smooth; }
-
-    body {
-      font-family: var(--font-sans);
-      background: var(--bg-primary);
-      color: var(--text-primary);
-      line-height: 1.6;
-      -webkit-font-smoothing: antialiased;
-    }
-
-    a { color: var(--accent-light); text-decoration: none; transition: color 0.2s; }
-    a:hover { color: #bfb3ff; }
-
-    .container { max-width: var(--max-width); margin: 0 auto; padding: 0 24px; }
-
-    /* ── NAV ── */
-    nav {
-      position: sticky; top: 0; z-index: 100;
-      background: rgba(10, 10, 15, 0.85);
-      backdrop-filter: blur(12px);
-      border-bottom: 1px solid var(--border);
-    }
-    nav .container {
-      display: flex; align-items: center; justify-content: space-between;
-      height: 56px;
-    }
-    nav .logo { font-weight: 700; font-size: 15px; letter-spacing: -0.3px; }
-    nav .logo span { color: var(--accent-light); }
-    nav .links { display: flex; gap: 24px; font-size: 14px; }
-    nav .links a { color: var(--text-secondary); }
-    nav .links a:hover { color: var(--text-primary); }
-
-    /* ── HERO ── */
-    .hero {
-      padding: 100px 0 80px;
-      text-align: center;
-      background: radial-gradient(ellipse 60% 50% at 50% 0%, var(--accent-glow), transparent);
-    }
-    .hero h1 {
-      font-size: clamp(2.2rem, 5vw, 3.5rem);
-      font-weight: 800;
-      letter-spacing: -1.5px;
-      line-height: 1.1;
-      margin-bottom: 20px;
-    }
-    .hero h1 span { color: var(--accent-light); }
-    .hero .subtitle {
-      font-size: clamp(1rem, 2.5vw, 1.25rem);
-      color: var(--text-secondary);
-      max-width: 640px;
-      margin: 0 auto 32px;
-      line-height: 1.5;
-    }
-    .hero .install-block {
-      background: var(--bg-secondary);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      display: inline-flex;
-      align-items: center;
-      gap: 12px;
-      padding: 12px 20px;
-      font-family: var(--font-mono);
-      font-size: 14px;
-      margin-bottom: 32px;
-      cursor: pointer;
-      transition: border-color 0.2s;
-    }
-    .hero .install-block:hover { border-color: var(--accent); }
-    .hero .install-block .prompt { color: var(--text-muted); user-select: none; }
-    .hero .install-block .cmd { color: var(--green); }
-    .hero .install-block .copy {
-      color: var(--text-muted); font-size: 12px;
-      padding: 4px 8px; border-radius: 4px;
-      background: var(--bg-card);
-      transition: color 0.2s;
-    }
-    .hero .install-block:hover .copy { color: var(--text-primary); }
-    .hero .cta-row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
-    .btn {
-      display: inline-flex; align-items: center; gap: 8px;
-      padding: 10px 22px;
-      border-radius: 8px;
-      font-size: 14px; font-weight: 600;
-      transition: all 0.2s;
-    }
-    .btn-primary { background: var(--accent); color: #fff; }
-    .btn-primary:hover { background: var(--accent-light); color: #fff; }
-    .btn-secondary { background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border); }
-    .btn-secondary:hover { border-color: var(--accent); color: #fff; }
-
-    /* ── STATS ── */
-    .stats {
-      display: flex; justify-content: center; gap: 48px;
-      padding: 32px 0;
-      border-bottom: 1px solid var(--border);
-      flex-wrap: wrap;
-    }
-    .stat { text-align: center; }
-    .stat .num { font-size: 28px; font-weight: 800; letter-spacing: -1px; }
-    .stat .label { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
-
-    /* ── SECTION ── */
-    section { padding: 80px 0; }
-    section h2 {
-      font-size: 1.8rem; font-weight: 700; letter-spacing: -0.5px;
-      margin-bottom: 12px;
-    }
-    section .section-desc {
-      color: var(--text-secondary);
-      font-size: 1.05rem;
-      margin-bottom: 48px;
-      max-width: 600px;
-    }
-
-    /* ── PLUGINS GRID ── */
-    .plugins-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-      gap: 16px;
-    }
-    .plugin-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 28px;
-      transition: all 0.25s;
-      position: relative;
-      overflow: hidden;
-    }
-    .plugin-card:hover {
-      border-color: var(--accent);
-      background: var(--bg-card-hover);
-      transform: translateY(-2px);
-    }
-    .plugin-card .icon { font-size: 28px; margin-bottom: 12px; }
-    .plugin-card h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 8px; }
-    .plugin-card p { color: var(--text-secondary); font-size: 14px; line-height: 1.6; margin-bottom: 16px; }
-    .plugin-card code {
-      display: block;
-      font-family: var(--font-mono);
-      font-size: 12px;
-      color: var(--text-muted);
-      background: var(--bg-primary);
-      padding: 8px 12px;
-      border-radius: 6px;
-      overflow-x: auto;
-    }
-
-    .plugin-link {
-      display: inline-block;
-      margin-top: 12px;
-      font-size: 13px;
-      color: var(--accent-light);
-      font-weight: 500;
-    }
-    .plugin-link:hover { color: #bfb3ff; }
-
-    /* ── USE CASES ── */
-    .usecases { list-style: none; display: flex; flex-direction: column; gap: 12px; }
-    .usecases li {
-      display: flex; align-items: flex-start; gap: 12px;
-      padding: 16px 20px;
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      font-size: 15px;
-      transition: border-color 0.2s;
-    }
-    .usecases li:hover { border-color: var(--accent); }
-    .usecases .marker { color: var(--accent-light); font-weight: 700; flex-shrink: 0; }
-    .usecases .desc { color: var(--text-secondary); font-size: 13px; margin-top: 2px; }
-
-    /* ── QUICK START ── */
-    .code-block {
-      background: var(--bg-secondary);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 24px;
-      font-family: var(--font-mono);
-      font-size: 13px;
-      line-height: 1.8;
-      overflow-x: auto;
-      max-width: 640px;
-    }
-    .code-block .comment { color: var(--text-muted); }
-    .code-block .cmd { color: var(--green); }
-
-    /* ── FEATURES ── */
-    .features-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 24px;
-    }
-    .feature {
-      padding: 24px;
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-    }
-    .feature h3 { font-size: 15px; font-weight: 700; margin-bottom: 8px; }
-    .feature p { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
-
-    /* ── FOOTER ── */
-    footer {
-      padding: 40px 0;
-      border-top: 1px solid var(--border);
-      text-align: center;
-      font-size: 14px;
-      color: var(--text-muted);
-    }
-    footer a { color: var(--text-secondary); }
-    footer .links-row { display: flex; justify-content: center; gap: 24px; margin-bottom: 16px; flex-wrap: wrap; }
-
-    @media (max-width: 640px) {
-      .hero { padding: 60px 0 48px; }
-      .stats { gap: 24px; }
-      .plugins-grid { grid-template-columns: 1fr; }
-      nav .links { gap: 16px; }
-    }
-  </style>
+  <link rel="canonical" href="https://levnikolaevich.github.io/claude-code-skills/">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='8' fill='%23181714'/%3E%3Cpath d='M15 14v36h25v-8H24V14z' fill='%23c7ff42'/%3E%3Cpath d='M35 14v28h14V14h-8v20h-6z' fill='%23ff6b4a'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <nav>
-    <div class="container">
-      <div class="logo">Claude Code <span>Skills</span></div>
-      <div class="links">
-        <a href="#mcp">MCP</a>
-        <a href="#plugins">Plugins</a>
-        <a href="#quickstart">Quick Start</a>
-        <a href="https://github.com/levnikolaevich/claude-code-skills" target="_blank">GitHub</a>
-        <a href="https://github.com/levnikolaevich/claude-code-skills/discussions" target="_blank">Discussions</a>
-      </div>
-    </div>
-  </nav>
-
-  <!-- HERO -->
-  <header class="hero">
-    <div class="container">
-      <h1>Production-ready plugins<br>for <span>Claude Code</span></h1>
-      <p class="subtitle">
-        Add the marketplace once, then install the plugins you need &mdash; from project
-        bootstrap to code audit to production quality gates. No API keys required.
-      </p>
-      <div class="install-block" onclick="navigator.clipboard.writeText('/plugin marketplace add levnikolaevich/claude-code-skills'); this.querySelector('.copy').textContent='Copied!'">
-        <span class="prompt">$</span>
-        <span class="cmd">/plugin marketplace add levnikolaevich/claude-code-skills</span>
-        <span class="copy">Copy</span>
-      </div>
-      <div class="cta-row">
-        <a href="https://github.com/levnikolaevich/claude-code-skills" class="btn btn-primary" target="_blank">
-          View on GitHub
-        </a>
-        <a href="#plugins" class="btn btn-secondary">
-          Choose a plugin
-        </a>
-      </div>
-    </div>
+  <a class="skip-link" href="#catalog">Skip to catalog</a>
+  <header class="masthead">
+    <a class="brand" href="#top" aria-label="Lev Nikolaevich Skills home">
+      <span class="brand-mark" aria-hidden="true">LN</span>
+      <span>Skills v2</span>
+    </a>
+    <nav aria-label="Primary navigation">
+      <a href="#catalog">Catalog</a>
+      <a href="#install">Install</a>
+      <a href="#migration">Migration</a>
+      <a href="https://github.com/levnikolaevich/claude-code-skills">GitHub ↗</a>
+    </nav>
   </header>
 
-  <!-- STATS -->
-  <div class="container">
-    <div class="stats">
-      <div class="stat"><div class="num">MIT</div><div class="label">License</div></div>
-    </div>
-  </div>
-
-  <!-- MCP SERVERS -->
-  <section id="mcp">
-    <div class="container">
-      <h2>Hex MCP Servers</h2>
-      <p class="section-desc">Token-efficient MCP servers for AI coding agents. Hash-verified editing, deterministic project scope, remote SSH ops, code knowledge graphs.</p>
-      <div class="plugins-grid">
-
-        <div class="plugin-card">
-          <div class="icon" style="font-family: var(--font-mono); font-size: 24px;">#</div>
-          <h3>hex-line-mcp</h3>
-          <p>9 tools: hash-verified file editing, AST outline, graph-aware review hints, and auto-synced hooks + output style that steer agents to explicit project scope. <strong style="color: var(--green);">89% avg token savings</strong> across 4 session-derived workflow benchmarks.</p>
-          <code>npm i -g @levnikolaevich/hex-line-mcp</code>
-          <a href="mcp/hex-line.html" class="plugin-link">View details &rarr;</a>
-        </div>
-
-        <div class="plugin-card">
-          <div class="icon" style="font-family: var(--font-mono); font-size: 24px;">&gt;_</div>
-          <h3>hex-ssh-mcp</h3>
-          <p>8 tools: remote file editing plus SFTP upload/download over SSH with FNV-1a hash verification, output normalization, and deduplication. Runs on Windows/macOS/Linux hosts.</p>
-          <code>npm i -g @levnikolaevich/hex-ssh-mcp</code>
-          <a href="mcp/hex-ssh.html" class="plugin-link">View details &rarr;</a>
-        </div>
-
-        <div class="plugin-card">
-          <div class="icon">&#9673;</div>
-          <h3>hex-graph-mcp</h3>
-          <p>14 tools: workspace-first code graph, strict project-scoped queries, semantic review, architecture analysis, and SCIP interop. <strong style="color: var(--green);">61% avg token savings</strong> across 4 session-derived workflow benchmarks.</p>
-          <code>npm i -g @levnikolaevich/hex-graph-mcp</code>
-          <a href="mcp/hex-graph.html" class="plugin-link">View details &rarr;</a>
-        </div>
-
-      </div>
-    </div>
-  </section>
-
-  <!-- PLUGINS -->
-  <section id="plugins">
-    <div class="container">
-      <h2>Choose your plugin</h2>
-      <p class="section-desc">Add the marketplace once, then install only the plugins you need. Each works independently.</p>
-      <div class="plugins-grid">
-
-        <div class="plugin-card">
-          <div class="icon">&#9881;</div>
-          <h3>Agile Workflow</h3>
-          <p>End-to-end artifact-driven delivery pipeline: scope decomposition, Story/Task management, stateful workers, multi-model validation, quality gates, and autonomous orchestration.</p>
-          <code>/plugin install agile-workflow@levnikolaevich-skills-marketplace</code>
-          <a href="plugins/agile-workflow.html" class="plugin-link">View skills &rarr;</a>
-        </div>
-
-        <div class="plugin-card">
-          <div class="icon">&#128269;</div>
-          <h3>Codebase Audit Suite</h3>
-          <p>Parallel auditors for security, code quality, architecture patterns, test suites, and persistence performance. Run on any existing codebase.</p>
-          <code>/plugin install codebase-audit-suite@levnikolaevich-skills-marketplace</code>
-          <a href="plugins/codebase-audit-suite.html" class="plugin-link">View skills &rarr;</a>
-        </div>
-
-        <div class="plugin-card">
-          <div class="icon">&#128196;</div>
-          <h3>Documentation Pipeline</h3>
-          <p>Auto-detect project type (backend, frontend, devops) and generate complete documentation suite: architecture, API spec, runbook, and more.</p>
-          <code>/plugin install documentation-pipeline@levnikolaevich-skills-marketplace</code>
-          <a href="plugins/documentation-pipeline.html" class="plugin-link">View skills &rarr;</a>
-        </div>
-
-        <div class="plugin-card">
-          <div class="icon">&#128640;</div>
-          <h3>Project Bootstrap</h3>
-          <p>CREATE new or TRANSFORM existing projects to production-ready Clean Architecture with Docker, CI/CD, linters, and security scanning.</p>
-          <code>/plugin install project-bootstrap@levnikolaevich-skills-marketplace</code>
-          <a href="plugins/project-bootstrap.html" class="plugin-link">View skills &rarr;</a>
-        </div>
-
-        <div class="plugin-card">
-          <div class="icon">&#9889;</div>
-          <h3>Optimization Suite</h3>
-          <p>Multi-cycle performance profiling, dependency upgrades (npm, NuGet, pip), code modernization, and bundle size optimization.</p>
-          <code>/plugin install optimization-suite@levnikolaevich-skills-marketplace</code>
-          <a href="plugins/optimization-suite.html" class="plugin-link">View skills &rarr;</a>
-        </div>
-
-        <div class="plugin-card">
-          <div class="icon">&#127760;</div>
-          <h3>Community Engagement</h3>
-          <p>Automated GitHub community management: triage issues and PRs, compose announcements, launch RFC debates, respond to discussions.</p>
-          <code>/plugin install community-engagement@levnikolaevich-skills-marketplace</code>
-          <a href="plugins/community-engagement.html" class="plugin-link">View skills &rarr;</a>
-        </div>
-
-        <div class="plugin-card">
-          <div class="icon">&#128736;</div>
-          <h3>Setup Environment</h3>
-          <p>Install CLI agents, configure MCP servers, align marketplace plugins across agents, and audit instruction files. One-command multi-agent setup.</p>
-          <code>/plugin install setup-environment@levnikolaevich-skills-marketplace</code>
-          <a href="plugins/setup-environment.html" class="plugin-link">View skills &rarr;</a>
-        </div>
-
-      </div>
-    </div>
-  </section>
-
-  <!-- USE CASES -->
-  <section id="usecases" style="background: var(--bg-secondary);">
-    <div class="container">
-      <h2>What you can do</h2>
-      <p class="section-desc">Each scenario works standalone. Combine plugins for the full lifecycle.</p>
-      <ul class="usecases">
-        <li>
-          <span class="marker">&#9654;</span>
-          <div>
-            <strong>Audit an existing codebase</strong>
-            <div class="desc">Security, quality, architecture, tests, performance &mdash; parallel auditors scan everything at once.</div>
-          </div>
-        </li>
-        <li>
-          <span class="marker">&#9654;</span>
-          <div>
-            <strong>Bootstrap or restructure a project</strong>
-            <div class="desc">Go from zero to production-ready Clean Architecture, or transform legacy projects without starting over.</div>
-          </div>
-        </li>
-        <li>
-          <span class="marker">&#9654;</span>
-          <div>
-            <strong>Generate complete documentation</strong>
-            <div class="desc">Architecture docs, API specs, runbooks &mdash; auto-detected by project type.</div>
-          </div>
-        </li>
-        <li>
-          <span class="marker">&#9654;</span>
-          <div>
-            <strong>Optimize performance and dependencies</strong>
-            <div class="desc">Profile bottlenecks, research solutions, test hypotheses with keep/discard loop, upgrade outdated packages.</div>
-          </div>
-        </li>
-        <li>
-          <span class="marker">&#9654;</span>
-          <div>
-            <strong>Run the full Agile pipeline</strong>
-            <div class="desc">Scope &rarr; Epics &rarr; Stories &rarr; Tasks &rarr; Implementation &rarr; Review &rarr; Quality Gate &rarr; Done.</div>
-          </div>
-        </li>
-      </ul>
-    </div>
-  </section>
-
-  <!-- QUICK START -->
-  <section id="quickstart">
-    <div class="container">
-      <h2>Quick start</h2>
-      <p class="section-desc">Add the marketplace, install what you need, then run. No configuration required.</p>
-      <div class="code-block">
-        <span class="comment"># Add the marketplace once</span><br>
-        <span class="cmd">/plugin marketplace add levnikolaevich/claude-code-skills</span><br><br>
-        <span class="comment"># Install full suite</span><br>
-        <span class="cmd">/plugin install agile-workflow@levnikolaevich-skills-marketplace</span><br>
-        <span class="cmd">/plugin install documentation-pipeline@levnikolaevich-skills-marketplace</span><br>
-        <span class="cmd">/plugin install codebase-audit-suite@levnikolaevich-skills-marketplace</span><br>
-        <span class="cmd">/plugin install project-bootstrap@levnikolaevich-skills-marketplace</span><br>
-        <span class="cmd">/plugin install optimization-suite@levnikolaevich-skills-marketplace</span><br>
-        <span class="cmd">/plugin install community-engagement@levnikolaevich-skills-marketplace</span><br>
-        <span class="cmd">/plugin install setup-environment@levnikolaevich-skills-marketplace</span><br><br>
-        <span class="comment"># Standalone &mdash; works immediately</span><br>
-        <span class="cmd">ln-620-codebase-auditor</span>&nbsp;&nbsp;&nbsp;<span class="comment"># Audit your code</span><br>
-        <span class="cmd">ln-700-project-bootstrap</span>&nbsp;&nbsp;<span class="comment"># Bootstrap a project</span><br>
-        <span class="cmd">ln-100-documents-pipeline</span>&nbsp;<span class="comment"># Generate docs</span><br><br>
-        <span class="comment"># Full Agile workflow</span><br>
-        <span class="cmd">ln-200-scope-decomposer</span>&nbsp;&nbsp;&nbsp;<span class="comment"># Scope &rarr; Epics &rarr; Stories</span><br>
-        <span class="cmd">ln-1000-pipeline-orchestrator</span>&nbsp;<span class="comment"># Autonomous pipeline</span>
-      </div>
-    </div>
-  </section>
-
-  <!-- FEATURES -->
-  <section style="background: var(--bg-secondary);">
-    <div class="container">
-      <h2>Key features</h2>
-      <p class="section-desc">Built for real-world software delivery at scale.</p>
-      <div class="features-grid">
-        <div class="feature">
-          <h3>External AI Review</h3>
-          <p>The current host cross-checks code with the non-host advisor from the Claude/Codex registry, with graceful fallback when no advisor is available.</p>
-        </div>
-        <div class="feature">
-          <h3>Orchestrator-Worker Architecture</h3>
-          <p>4-level hierarchy (L0&ndash;L3) with single responsibility per skill. Each agent loads only what it needs.</p>
-        </div>
-        <div class="feature">
-          <h3>No Vendor Lock-in</h3>
-          <p>Works without Linear, without MCP servers, without API keys. Falls back to local markdown files automatically.</p>
-        </div>
-        <div class="feature">
-          <h3>Quality Gates</h3>
-          <p>4-level gate (PASS / CONCERNS / WAIVED / FAIL) with quantitative scoring. Nothing ships without passing.</p>
-        </div>
-        <div class="feature">
-          <h3>Pipeline Orchestrator</h3>
-          <p>Autonomous multi-agent system manages the full lifecycle: plan, validate, implement, review, and merge.</p>
-        </div>
-        <div class="feature">
-          <h3>Cross-Agent Compatibility</h3>
-          <p>Use skills from Claude Code and OpenAI Codex. Keep configs aligned with one command.</p>
+  <main id="top">
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="hero-copy">
+        <p class="eyebrow">Claude Code + Codex · standalone by design</p>
+        <h1 id="hero-title">14 focused skills.<br>Five small plugins.<br><em>No orchestration theater.</em></h1>
+        <p class="lede">A compact engineering toolkit that reminds capable models about the hard parts: evidence, boundaries, independent viewpoints, reversible experiments, and residual risk.</p>
+        <div class="hero-actions">
+          <a class="button primary" href="#catalog">Explore the catalog</a>
+          <a class="button" href="#install">Install a plugin</a>
         </div>
       </div>
-    </div>
-  </section>
+      <aside class="field-note" aria-label="Design principles">
+        <p class="note-number">FIELD NOTE / 02</p>
+        <h2>Thin does not mean vague.</h2>
+        <ul>
+          <li>One skill, one bounded outcome</li>
+          <li>Tool choice follows the evidence need</li>
+          <li>Checklists are the Definition of Done</li>
+          <li>No hidden dependency on another skill</li>
+        </ul>
+      </aside>
+    </section>
 
-  <!-- FOOTER -->
+    <section class="principles" aria-label="Repository principles">
+      <article><span>01</span><h2>Standalone</h2><p>No MCP, tracker, coordinator, worker hierarchy, or shared prompt harness.</p></article>
+      <article><span>02</span><h2>Evidence first</h2><p>Findings, verdicts, and changes are tied to observable evidence and limitations.</p></article>
+      <article><span>03</span><h2>Host neutral</h2><p>One canonical <code>SKILL.md</code> works in both Claude Code and Codex.</p></article>
+    </section>
+
+    <section id="catalog" class="catalog section-shell" aria-labelledby="catalog-title">
+      <div class="section-heading">
+        <p class="eyebrow">The catalog</p>
+        <h2 id="catalog-title">Choose the capability,<br>not a workflow empire.</h2>
+        <p>The first digit identifies the plugin family. The second identifies a skill inside it.</p>
+      </div>
+
+      <article id="review-suite" class="plugin-card accent-lime">
+        <header><span class="family-index">1×</span><div><p>Plugin 01</p><h3>Review Suite</h3></div></header>
+        <p class="plugin-summary">Independent, read-only gates for plans and delivered code.</p>
+        <ol class="skill-list">
+          <li><span>11</span><div><strong>Plan Reviewer</strong><p>Tests a proposed implementation against repository evidence, risks, and missing decisions.</p></div></li>
+          <li><span>12</span><div><strong>Delivery Reviewer</strong><p>Reviews completed code through independent, risk-selected perspectives and a strict delivery verdict.</p></div></li>
+        </ol>
+      </article>
+
+      <article id="codebase-audit-suite" class="plugin-card accent-coral wide">
+        <header><span class="family-index">2×</span><div><p>Plugin 02</p><h3>Codebase Audit Suite</h3></div></header>
+        <p class="plugin-summary">Read-only audits that separate confirmed evidence from uncertainty.</p>
+        <ol class="skill-list two-column">
+          <li><span>21</span><div><strong>Documentation Auditor</strong><p>Trust, coverage, structure, freshness, and factual accuracy.</p></div></li>
+          <li><span>22</span><div><strong>Codebase Auditor</strong><p>Security boundaries, delivery gates, maintainability, and diagnosability.</p></div></li>
+          <li><span>23</span><div><strong>Test Suite Auditor</strong><p>Portfolio value, risk coverage, isolation, and oracle strength.</p></div></li>
+          <li><span>24</span><div><strong>Architecture Auditor</strong><p>Ownership, contracts, dependency topology, and structural fitness.</p></div></li>
+          <li><span>25</span><div><strong>Persistence Auditor</strong><p>Queries, transactions, consistency, concurrency, and resource lifecycle.</p></div></li>
+        </ol>
+      </article>
+
+      <article id="optimization-suite" class="plugin-card accent-blue wide">
+        <header><span class="family-index">3×</span><div><p>Plugin 03</p><h3>Optimization Suite</h3></div></header>
+        <p class="plugin-summary">Bounded changes survive only when measurements justify keeping them.</p>
+        <ol class="skill-list two-column">
+          <li><span>31</span><div><strong>Performance Optimizer</strong><p>Profile, experiment, compare, and keep only reproducible improvements.</p></div></li>
+          <li><span>32</span><div><strong>Dependency Upgrader</strong><p>Upgrade in reversible batches with compatibility and regression evidence.</p></div></li>
+          <li><span>33</span><div><strong>Code Modernizer</strong><p>Simplify or replace a bounded capability only when net value is proven.</p></div></li>
+          <li><span>34</span><div><strong>Benchmark Comparator</strong><p>Compare alternatives under a frozen experiment contract.</p></div></li>
+        </ol>
+      </article>
+
+      <article id="testing-suite" class="plugin-card accent-yellow">
+        <header><span class="family-index">4×</span><div><p>Plugin 04</p><h3>Testing Suite</h3></div></header>
+        <p class="plugin-summary">Risk-shaped strategy and executable acceptance evidence.</p>
+        <ol class="skill-list">
+          <li><span>41</span><div><strong>Test Strategy Planner</strong><p>Maps requirements and defect classes to the right test boundary and oracle.</p></div></li>
+          <li><span>42</span><div><strong>Acceptance Test Builder</strong><p>Creates reproducible tests without silently repairing product defects.</p></div></li>
+        </ol>
+      </article>
+
+      <article id="product-discovery-suite" class="plugin-card accent-violet">
+        <header><span class="family-index">5×</span><div><p>Plugin 05</p><h3>Product Discovery Suite</h3></div></header>
+        <p class="plugin-summary">External viability before implementation enthusiasm.</p>
+        <ol class="skill-list">
+          <li><span>51</span><div><strong>Opportunity Evaluator</strong><p>Compares demand, acquisition, competition, economics, and validation cost using current evidence.</p></div></li>
+        </ol>
+      </article>
+    </section>
+
+    <section id="install" class="install section-shell" aria-labelledby="install-title">
+      <div class="section-heading inverse">
+        <p class="eyebrow">Install only what you need</p>
+        <h2 id="install-title">Five plugins.<br>Zero mandatory bundle.</h2>
+      </div>
+      <div class="install-grid">
+        <div>
+          <h3>Claude Code</h3>
+          <pre><code>/plugin marketplace add levnikolaevich/claude-code-skills
+/plugin install review-suite@levnikolaevich-skills-marketplace</code></pre>
+        </div>
+        <div>
+          <h3>Codex</h3>
+          <pre><code>codex plugin marketplace add levnikolaevich/claude-code-skills
+codex plugin add review-suite@levnikolaevich-skills-marketplace</code></pre>
+        </div>
+      </div>
+      <p class="install-note">Replace <code>review-suite</code> with <code>codebase-audit-suite</code>, <code>optimization-suite</code>, <code>testing-suite</code>, or <code>product-discovery-suite</code>.</p>
+    </section>
+
+    <section id="migration" class="migration section-shell" aria-labelledby="migration-title">
+      <div class="section-heading">
+        <p class="eyebrow">Coming from v1?</p>
+        <h2 id="migration-title">Less machinery.<br>More useful memory.</h2>
+        <p>Skills v2 retains the domain knowledge models benefit from being reminded about, and removes the framework they no longer need.</p>
+      </div>
+      <div class="migration-grid">
+        <article><h3>What moved</h3><p>Plan and code review became <code>review-suite</code>. Focused audit, optimization, testing, and opportunity evaluation live in their own small suites.</p></article>
+        <article><h3>What stopped</h3><p><code>agile-workflow</code>, <code>documentation-pipeline</code>, <code>project-bootstrap</code>, <code>community-engagement</code>, and <code>setup-environment</code> are retired.</p></article>
+        <article><h3>What to do</h3><p>Update the marketplace, install the v2 plugins you want, and start a new session. Existing cached v1 plugins are not removed automatically.</p></article>
+      </div>
+    </section>
+
+    <section id="mcp-retirement" class="retirement section-shell" aria-labelledby="retirement-title">
+      <p class="eyebrow">MCP retirement notice</p>
+      <h2 id="retirement-title">Native host tools won.</h2>
+      <p>Every published version of <code>hex-line-mcp</code>, <code>hex-graph-mcp</code>, <code>hex-research-mcp</code>, and <code>hex-ssh-mcp</code> is deprecated on npm. Their source and publishing infrastructure have been removed. There will be no updates or support; do not use them for new Skills v2 workflows.</p>
+    </section>
+  </main>
+
   <footer>
-    <div class="container">
-      <div class="links-row">
-        <a href="https://github.com/levnikolaevich/claude-code-skills" target="_blank">GitHub</a>
-        <a href="https://github.com/levnikolaevich/claude-code-skills/discussions" target="_blank">Discussions</a>
-        <a href="https://github.com/levnikolaevich/claude-code-skills/releases" target="_blank">Releases</a>
-        <a href="https://skills.sh/LevNikolaevich/claude-code-skills" target="_blank">skills.sh</a>
-      </div>
-      <p>
-        Made by <a href="https://github.com/levnikolaevich" target="_blank">@levnikolaevich</a>
-        &middot; MIT License
-      </p>
-    </div>
+    <p><strong>Lev Nikolaevich Skills</strong> · Built for evidence-minded engineering.</p>
+    <p><a href="https://github.com/levnikolaevich/claude-code-skills">Repository</a> · <a href="https://github.com/levnikolaevich/claude-code-skills/blob/master/README.md#migration-from-v1">Full migration notes</a> · MIT</p>
   </footer>
 </body>
 </html>

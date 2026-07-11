@@ -1,9 +1,0 @@
-{
-  "_comment": "Template. ln-840 runner generates a resolved copy with absolute server path.",
-  "mcpServers": {
-    "hex-line": {
-      "command": "node",
-      "args": ["REPO_ROOT/mcp/hex-line-mcp/server.mjs"]
-    }
-  }
-}

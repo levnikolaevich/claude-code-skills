@@ -1,7 +1,7 @@
 {
-  "name": "codebase-audit-suite",
+  "name": "product-discovery-suite",
   "version": "1.0.0",
-  "description": "Read-only audits for documentation, code, tests, architecture, and persistence.",
+  "description": "Evidence-based product opportunity evaluation before implementation.",
   "author": {
     "name": "Lev Nikolaevich",
     "email": "levnikolaevich.com@gmail.com",
@@ -10,18 +10,18 @@
   "homepage": "https://github.com/levnikolaevich/claude-code-skills",
   "repository": "https://github.com/levnikolaevich/claude-code-skills",
   "license": "MIT",
-  "keywords": ["audit", "security", "architecture", "testing", "persistence"],
+  "keywords": ["product-discovery", "market-research", "opportunity", "validation"],
   "skills": "./skills/",
   "interface": {
-    "displayName": "Codebase Audit Suite",
-    "shortDescription": "Evidence-based read-only codebase audits",
-    "longDescription": "Audit documentation, code health, tests, architecture, and persistence without changing the reviewed repository.",
+    "displayName": "Product Discovery Suite",
+    "shortDescription": "Evaluate product opportunities with evidence",
+    "longDescription": "Compare product opportunities using current demand, reachable acquisition, competition, economics, and low-cost validation evidence.",
     "developerName": "Lev Nikolaevich",
     "websiteURL": "https://github.com/levnikolaevich/claude-code-skills",
     "category": "Productivity",
     "capabilities": ["Interactive", "Read"],
     "defaultPrompt": [
-      "Audit this codebase and report evidence-backed risks."
+      "Evaluate these product opportunities and recommend what to validate next."
     ]
   }
 }

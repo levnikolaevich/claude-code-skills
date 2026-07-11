@@ -1,7 +1,7 @@
 {
-  "name": "codebase-audit-suite",
+  "name": "review-suite",
   "version": "1.0.0",
-  "description": "Read-only audits for documentation, code, tests, architecture, and persistence.",
+  "description": "Independent plan and delivery reviews with evidence-based verdicts.",
   "author": {
     "name": "Lev Nikolaevich",
     "email": "levnikolaevich.com@gmail.com",
@@ -10,18 +10,19 @@
   "homepage": "https://github.com/levnikolaevich/claude-code-skills",
   "repository": "https://github.com/levnikolaevich/claude-code-skills",
   "license": "MIT",
-  "keywords": ["audit", "security", "architecture", "testing", "persistence"],
+  "keywords": ["review", "plan-review", "code-review", "delivery"],
   "skills": "./skills/",
   "interface": {
-    "displayName": "Codebase Audit Suite",
-    "shortDescription": "Evidence-based read-only codebase audits",
-    "longDescription": "Audit documentation, code health, tests, architecture, and persistence without changing the reviewed repository.",
+    "displayName": "Review Suite",
+    "shortDescription": "Independent plan and delivery reviews",
+    "longDescription": "Review plans and completed deliveries against repository evidence with explicit findings, verdicts, and residual risks.",
     "developerName": "Lev Nikolaevich",
     "websiteURL": "https://github.com/levnikolaevich/claude-code-skills",
     "category": "Productivity",
     "capabilities": ["Interactive", "Read"],
     "defaultPrompt": [
-      "Audit this codebase and report evidence-backed risks."
+      "Review this implementation plan.",
+      "Review the completed delivery."
     ]
   }
 }

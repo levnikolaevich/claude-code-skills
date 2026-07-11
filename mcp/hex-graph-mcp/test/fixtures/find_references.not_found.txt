@@ -1,3 +1,0 @@
-not_found widen_query
-!reason=no_matches
->mcp__hex-graph__find_symbols path=/repo name=computeTotal expand=references expand_limit=10

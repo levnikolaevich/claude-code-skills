@@ -1,9 +1,0 @@
-{
-  "_comment": "Template. run-benchmark.sh generates resolved copy with absolute server path.",
-  "mcpServers": {
-    "hex-line": {
-      "command": "node",
-      "args": ["REPO_ROOT/mcp/hex-line-mcp/server.mjs"]
-    }
-  }
-}

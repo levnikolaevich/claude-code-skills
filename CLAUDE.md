@@ -1,12 +1,3 @@
-# CLAUDE.md
-
-<!-- Projection of AGENTS.md via the @ import. AGENTS.md is the canonical source. Do not duplicate content here — add it to AGENTS.md instead, or scope it to `.claude/rules/*.md` with a `paths:` filter. -->
+# Claude Code Instructions
 
 @AGENTS.md
-
-## Claude Code
-
-- `/compact` preservation order: architecture decisions, modified files, verification status, open TODOs, tool outputs as summaries only.
-- Auto memory is on by default. Claude writes learnings to `~/.claude/projects/<project>/memory/` — run `/memory` to inspect or edit.
-- Scope path-specific rules to `.claude/rules/*.md` with a `paths:` frontmatter filter rather than inlining conditional "when working on X" blocks here.
-- Nested `CLAUDE.md` files in subdirectories load on demand — prefer them for area-specific guidance over growing this root file.

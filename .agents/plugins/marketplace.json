@@ -1,26 +1,14 @@
 {
   "name": "levnikolaevich-skills-marketplace",
   "interface": {
-    "displayName": "Lev Nikolaevich Skills Marketplace"
+    "displayName": "Lev Nikolaevich Skills"
   },
   "plugins": [
     {
-      "name": "agile-workflow",
+      "name": "review-suite",
       "source": {
         "source": "local",
-        "path": "./plugins/agile-workflow"
-      },
-      "policy": {
-        "installation": "AVAILABLE",
-        "authentication": "ON_INSTALL"
-      },
-      "category": "Productivity"
-    },
-    {
-      "name": "documentation-pipeline",
-      "source": {
-        "source": "local",
-        "path": "./plugins/documentation-pipeline"
+        "path": "./plugins/review-suite"
       },
       "policy": {
         "installation": "AVAILABLE",
@@ -41,18 +29,6 @@
       "category": "Productivity"
     },
     {
-      "name": "project-bootstrap",
-      "source": {
-        "source": "local",
-        "path": "./plugins/project-bootstrap"
-      },
-      "policy": {
-        "installation": "AVAILABLE",
-        "authentication": "ON_INSTALL"
-      },
-      "category": "Productivity"
-    },
-    {
       "name": "optimization-suite",
       "source": {
         "source": "local",
@@ -65,10 +41,10 @@
       "category": "Productivity"
     },
     {
-      "name": "community-engagement",
+      "name": "testing-suite",
       "source": {
         "source": "local",
-        "path": "./plugins/community-engagement"
+        "path": "./plugins/testing-suite"
       },
       "policy": {
         "installation": "AVAILABLE",
@@ -77,10 +53,10 @@
       "category": "Productivity"
     },
     {
-      "name": "setup-environment",
+      "name": "product-discovery-suite",
       "source": {
         "source": "local",
-        "path": "./plugins/setup-environment"
+        "path": "./plugins/product-discovery-suite"
       },
       "policy": {
         "installation": "AVAILABLE",

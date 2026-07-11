@@ -1,7 +1,7 @@
 {
-  "name": "optimization-suite",
+  "name": "testing-suite",
   "version": "1.0.0",
-  "description": "Measured performance, dependency, modernization, and benchmark workflows.",
+  "description": "Risk-based test planning and reproducible acceptance-test creation.",
   "author": {
     "name": "Lev Nikolaevich",
     "email": "levnikolaevich.com@gmail.com",
@@ -10,18 +10,19 @@
   "homepage": "https://github.com/levnikolaevich/claude-code-skills",
   "repository": "https://github.com/levnikolaevich/claude-code-skills",
   "license": "MIT",
-  "keywords": ["optimization", "performance", "dependencies", "modernization", "benchmarking"],
+  "keywords": ["testing", "test-strategy", "acceptance-tests", "quality"],
   "skills": "./skills/",
   "interface": {
-    "displayName": "Optimization Suite",
-    "shortDescription": "Measured and reversible codebase optimization",
-    "longDescription": "Optimize performance, dependencies, and code through reproducible baselines, bounded experiments, and keep-or-discard decisions.",
+    "displayName": "Testing Suite",
+    "shortDescription": "Plan and build high-value tests",
+    "longDescription": "Design risk-based test strategies and build reproducible acceptance tests with explicit oracles and evidence.",
     "developerName": "Lev Nikolaevich",
     "websiteURL": "https://github.com/levnikolaevich/claude-code-skills",
     "category": "Productivity",
     "capabilities": ["Interactive", "Write"],
     "defaultPrompt": [
-      "Optimize this codebase with measured keep-or-discard experiments."
+      "Design a risk-based test strategy for this feature.",
+      "Build reproducible acceptance tests for these requirements."
     ]
   }
 }

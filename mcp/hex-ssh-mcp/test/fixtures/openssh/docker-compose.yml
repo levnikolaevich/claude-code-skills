@@ -1,6 +1,0 @@
-services:
-  openssh:
-    build:
-      context: .
-    ports:
-      - "127.0.0.1:${OPENSSH_PORT:-2222}:2222"

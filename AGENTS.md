@@ -1,6 +1,6 @@
 # Repository Instructions
 
-This repository distributes standalone skills for Claude Code and Codex through five small plugins.
+This repository distributes standalone skills for Claude Code and Codex through six small plugins.
 
 ## Structure
 
@@ -25,6 +25,7 @@ Claude Code discovers the standard `skills/` directories through `.claude-plugin
 - Keep skills in English and target 100–200 lines. Remove repetition before splitting a skill.
 - Review and audit skills are read-only. Optimization skills may mutate only the user-approved scope and must retain or discard changes using measured evidence.
 - Test planning and product discovery skills are read-only. Acceptance-test building may mutate only the approved test and test-documentation scope and must not repair product code.
+- Skill review is read-only. Repository, release, and announcement publication may mutate only explicitly approved local and external scope and must preserve their approval gates.
 
 ## Index system
 
@@ -35,6 +36,7 @@ The first digit identifies the plugin; the second identifies the skill inside it
 - `3x` — optimization suite
 - `4x` — testing suite
 - `5x` — product discovery suite
+- `6x` — maintainer suite
 
 Allocate the next unused index inside the relevant plugin. A new plugin receives the next unused leading digit.
 

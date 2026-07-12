@@ -4,7 +4,7 @@
     "name": "Lev Nikolaevich",
     "email": "levnikolaevich.com@gmail.com"
   },
-  "description": "Focused engineering review, audit, optimization, testing, and product discovery skills.",
+  "description": "Focused engineering review, audit, optimization, testing, discovery, and maintainer skills.",
   "plugins": [
     {
       "name": "review-suite",
@@ -38,6 +38,13 @@
       "name": "product-discovery-suite",
       "description": "Evidence-based product opportunity evaluation before implementation.",
       "source": "./plugins/product-discovery-suite",
+      "strict": false,
+      "skills": "./skills/"
+    },
+    {
+      "name": "maintainer-suite",
+      "description": "Skill review, repository publication, releases, and community announcements.",
+      "source": "./plugins/maintainer-suite",
       "strict": false,
       "skills": "./skills/"
     }

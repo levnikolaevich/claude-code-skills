@@ -1,0 +1,30 @@
+{
+  "name": "maintainer-suite",
+  "version": "1.0.0",
+  "description": "Skill review, repository publication, releases, and community announcements.",
+  "author": {
+    "name": "Lev Nikolaevich",
+    "email": "levnikolaevich.com@gmail.com",
+    "url": "https://github.com/levnikolaevich"
+  },
+  "homepage": "https://github.com/levnikolaevich/claude-code-skills",
+  "repository": "https://github.com/levnikolaevich/claude-code-skills",
+  "license": "MIT",
+  "keywords": ["skills", "release", "publishing", "github", "announcements"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Maintainer Suite",
+    "shortDescription": "Review and publish skills safely",
+    "longDescription": "Review standalone skills, publish repository changes and tagged releases, and create verified community announcements.",
+    "developerName": "Lev Nikolaevich",
+    "websiteURL": "https://github.com/levnikolaevich/claude-code-skills",
+    "category": "Productivity",
+    "capabilities": ["Interactive", "Write"],
+    "defaultPrompt": [
+      "Review these skills for publication readiness.",
+      "Publish the approved repository changes and verify the remote result.",
+      "Prepare a tagged release for explicit approval.",
+      "Draft a fact-checked GitHub Discussions announcement."
+    ]
+  }
+}

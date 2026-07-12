@@ -49,6 +49,15 @@ The repository intentionally contains only the skills, minimal plugin manifests,
 |---:|---|---|
 | 51 | [Opportunity Evaluator](plugins/product-discovery-suite/skills/ln-51-opportunity-evaluator/SKILL.md) | Compare product opportunities using current evidence and a low-cost validation path. |
 
+### Maintainer Suite
+
+| Index | Skill | Purpose |
+|---:|---|---|
+| 61 | [Skill Reviewer](plugins/maintainer-suite/skills/ln-61-skill-reviewer/SKILL.md) | Review skills and marketplace integration before publication. |
+| 62 | [Repository Publisher](plugins/maintainer-suite/skills/ln-62-repository-publisher/SKILL.md) | Validate, commit, push, and verify changes from the public remote. |
+| 63 | [Release Publisher](plugins/maintainer-suite/skills/ln-63-release-publisher/SKILL.md) | Prepare and publish an approved tagged GitHub Release. |
+| 64 | [Community Announcer](plugins/maintainer-suite/skills/ln-64-community-announcer/SKILL.md) | Draft and publish fact-checked GitHub Discussions announcements. |
+
 ## Install in Claude Code
 
 Add the marketplace and install only the suites you need:
@@ -60,6 +69,7 @@ Add the marketplace and install only the suites you need:
 /plugin install optimization-suite@levnikolaevich-skills-marketplace
 /plugin install testing-suite@levnikolaevich-skills-marketplace
 /plugin install product-discovery-suite@levnikolaevich-skills-marketplace
+/plugin install maintainer-suite@levnikolaevich-skills-marketplace
 ```
 
 For local development, load one plugin directly:
@@ -77,6 +87,7 @@ codex plugin add codebase-audit-suite@levnikolaevich-skills-marketplace
 codex plugin add optimization-suite@levnikolaevich-skills-marketplace
 codex plugin add testing-suite@levnikolaevich-skills-marketplace
 codex plugin add product-discovery-suite@levnikolaevich-skills-marketplace
+codex plugin add maintainer-suite@levnikolaevich-skills-marketplace
 ```
 
 ## Repository layout
@@ -90,7 +101,8 @@ codex plugin add product-discovery-suite@levnikolaevich-skills-marketplace
     ├── codebase-audit-suite/
     ├── optimization-suite/
     ├── testing-suite/
-    └── product-discovery-suite/
+    ├── product-discovery-suite/
+    └── maintainer-suite/
 ```
 
 Each plugin contains `.codex-plugin/plugin.json` for Codex and a shared `skills/<skill>/SKILL.md` tree used by both hosts.
@@ -106,7 +118,7 @@ The structure follows the current official [Codex skill guide](https://learn.cha
 
 ## Indexing
 
-The first digit identifies the plugin and the second identifies the skill within it: `1x` review, `2x` audit, `3x` optimization, `4x` testing, and `5x` product discovery. See the canonical allocation and overflow rules in [AGENTS.md](AGENTS.md#index-system).
+The first digit identifies the plugin and the second identifies the skill within it: `1x` review, `2x` audit, `3x` optimization, `4x` testing, `5x` product discovery, and `6x` repository maintenance. See the canonical allocation and overflow rules in [AGENTS.md](AGENTS.md#index-system).
 
 ## License
 

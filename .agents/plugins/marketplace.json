@@ -1,7 +1,7 @@
 {
   "name": "levnikolaevich-skills-marketplace",
   "interface": {
-    "displayName": "Lev Nikolaevich Skills"
+    "displayName": "Claude-Codex Skills"
   },
   "plugins": [
     {

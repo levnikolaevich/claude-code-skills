@@ -1,8 +1,10 @@
-# Lev Nikolaevich Skills
+# Claude-Codex Skills
 
 A compact marketplace of standalone engineering skills for Claude Code and Codex.
 
-[Browse the Skills v2 catalog](https://levnikolaevich.github.io/claude-code-skills/) or install only the plugins you need below.
+> **Why this repository is intentionally small:** Earlier coding models needed a large orchestration and evaluation harness to follow complex workflows reliably. Modern Claude and Codex models work better with concise procedural guidance, so that machinery has been removed. These skills retain only the domain knowledge, decision gates, tool guidance, and evidence checklists worth bringing into context.
+
+[Browse the skills catalog](https://levnikolaevich.github.io/claude-code-skills/) or install only the plugins you need below.
 
 The repository intentionally contains only the skills, minimal plugin manifests, two host-specific marketplace catalogs, documentation, and a static catalog site. It has no MCP servers, orchestration hierarchy, distributed shared resources, generated skill copies, or evaluation harness.
 
@@ -101,20 +103,6 @@ This is the smallest practical shared layout for distributed plugins:
 - `agents/openai.yaml`, references, scripts, assets, hooks, agents, and MCP configuration are optional and omitted until a concrete need appears.
 
 The structure follows the current official [Codex skill guide](https://learn.chatgpt.com/docs/build-skills), [Codex plugin guide](https://learn.chatgpt.com/docs/build-plugins), [Claude Code skill guide](https://code.claude.com/docs/en/skills), and [Claude Code plugin reference](https://code.claude.com/docs/en/plugins-reference).
-
-## Migration from v1
-
-Skills v2 replaces the broad workflow framework with small, standalone capabilities. Existing cached installations are not removed automatically: reinstall the desired v2 plugins and start a new Claude Code or Codex session after updating the marketplace.
-
-| Previous plugin | v2 status |
-|---|---|
-| `agile-workflow` | Retired. Plan and delivery review moved to `review-suite`; focused audit, testing, optimization, and discovery work moved to their respective suites. Backlog orchestration and task execution are intentionally not retained. |
-| `documentation-pipeline` | Retired. Read-only documentation assessment is covered by `ln-21-documentation-auditor`; document-generation pipelines are not retained. |
-| `project-bootstrap` | Retired without replacement; use project-native setup and host-native tools. |
-| `community-engagement` | Retired without replacement; it is outside the engineering-skill catalog. |
-| `setup-environment` | Retired without replacement; host setup and MCP installation are no longer managed by these skills. |
-
-Every published version of `@levnikolaevich/hex-line-mcp`, `@levnikolaevich/hex-graph-mcp`, `@levnikolaevich/hex-research-mcp`, and `@levnikolaevich/hex-ssh-mcp` is deprecated on npm. Their source and publishing infrastructure were removed from the active tree. The packages receive no updates or support and must not be used for new Skills v2 workflows; historical source remains in Git history and release tags.
 
 ## Indexing
 

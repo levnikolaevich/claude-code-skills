@@ -103,13 +103,6 @@ h1 em { color: var(--coral); font-weight: 500; }
 pre { margin: 0; padding: 1.25rem; overflow-x: auto; border: 1px solid #625f56; background: #0d0d0c; color: #fff; font-size: .82rem; line-height: 1.7; }
 .install-note { color: var(--paper-deep); }
 .install-note code { color: var(--lime); }
-.migration-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--ink); border: 1px solid var(--ink); }
-.migration-grid article { padding: 1.5rem; background: var(--paper); }
-.migration-grid h3 { margin-top: 0; font-size: 1.4rem; }
-.migration-grid p { margin-bottom: 0; color: var(--muted); }
-.retirement { margin-top: 2rem; margin-bottom: 5rem; border: 1px solid var(--ink); background: var(--coral); transform: rotate(-.35deg); }
-.retirement h2 { margin: 0; font-size: clamp(2.5rem, 6vw, 5rem); letter-spacing: -.04em; }
-.retirement > p:last-child { max-width: 850px; font-size: 1.15rem; }
 footer { max-width: var(--max); margin: 0 auto; padding: 2rem 1.5rem 4rem; display: flex; justify-content: space-between; gap: 2rem; border-top: 1px solid var(--ink); font-size: .85rem; }
 :focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; }
 
@@ -118,7 +111,7 @@ footer { max-width: var(--max); margin: 0 auto; padding: 2rem 1.5rem 4rem; displ
   nav { justify-content: flex-end; }
   .hero { grid-template-columns: 1fr; }
   .field-note { max-width: 430px; }
-  .principles, .migration-grid, .install-grid { grid-template-columns: 1fr; }
+  .principles, .install-grid { grid-template-columns: 1fr; }
   .section-heading { grid-template-columns: 1fr; }
   .section-heading .eyebrow { margin-bottom: 0; }
   .plugin-card, .plugin-card.wide { width: calc(100% - 7px); margin-left: 0; }

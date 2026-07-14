@@ -86,6 +86,9 @@ Use hosting APIs for remote facts and Git for repository facts. A local marketpl
 
 ## Output Contract
 
+Before returning, account for every checkbox: mark it complete only when its action and required evidence are complete; `N/A`, skipped, unavailable, or delegated items remain incomplete and must be explained. Apply the skill's existing verdict, decision, and approval rules to every incomplete item.
+Prepend this accounting header to every skill-specific report template: **Checklist: X/Y complete**<br>**Incomplete: None | section/item — reason; outcome impact; exact next action**; list every incomplete item.
+
 Return:
 
 1. Published scope and excluded changes.

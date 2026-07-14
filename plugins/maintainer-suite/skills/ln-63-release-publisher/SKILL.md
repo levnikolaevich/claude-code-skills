@@ -98,6 +98,9 @@ Do not browse for generic release advice when repository policy and previous com
 
 ## Output Contract
 
+Before returning, account for every checkbox: mark it complete only when its action and required evidence are complete; `N/A`, skipped, unavailable, or delegated items remain incomplete and must be explained. Apply the skill's existing verdict, decision, and approval rules to every incomplete item.
+Prepend this accounting header to every skill-specific report template: **Checklist: X/Y complete**<br>**Incomplete: None | section/item — reason; outcome impact; exact next action**; list every incomplete item.
+
 Return release scope, version changes, tag and commit, full notes or release URL, validation evidence, publication state, verdict, and residual risks.
 
 For `PARTIAL`, describe every externally visible object and obtain approval before deleting, moving, or replacing any of them.

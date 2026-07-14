@@ -1,6 +1,6 @@
 ---
 name: ln-61-skill-reviewer
-description: "Reviews standalone skills and marketplace integration before publication. Use for skill release readiness; not for reviewing product code or implementation plans."
+description: "Reviews standalone skills and their configured distribution surfaces before publication. Use for skill release readiness; not for product code or implementation-plan review."
 ---
 
 # Skill Reviewer
@@ -12,9 +12,9 @@ Review skill changes without modifying the repository or external state.
 | Need | Preferred capability | Fallback |
 |---|---|---|
 | Repository scope and evidence | Native file search, focused reads, and Git diff | Equivalent read-only shell commands |
-| Frontmatter and skill structure | Installed skill validator | Manual YAML, path, name, and length checks |
-| Plugin integration | Installed plugin validator plus JSON parsing | Manual manifest and catalog comparison |
-| Claude discovery | Strict Claude plugin validator | Manual Claude catalog and source-path inspection |
+| Frontmatter and skill structure | Repository-defined or host-native skill validator | Manual YAML, path, naming, and repository-contract checks |
+| Plugin integration | Repository-defined plugin validator plus manifest parsing | Manual manifest and applicable catalog comparison |
+| Host discovery | Host-native validator for every configured distribution surface | Manual catalog, manifest, and source-path inspection |
 | Current host rules | Official host documentation | Mark the claim `UNVERIFIED` when unavailable |
 | Behavioral independence | Fresh subagent or clean context | Separate self-review passes with reduced-confidence disclosure |
 
@@ -25,36 +25,36 @@ Tool absence is not itself a skill defect. Apply the documented fallback and use
 ## Checklist
 
 - [ ] Establish the review target from explicit paths, the Git diff, staged files, and untracked files.
-- [ ] Read the repository instructions and both marketplace catalogs before judging repository-specific conventions.
+- [ ] Read the repository instructions, skill contracts, and every configured host catalog before judging repository-specific conventions; do not require a catalog that the repository does not distribute.
 - [ ] Separate primary skills from manifests, catalogs, and documentation affected by the same change.
-- [ ] Confirm every skill folder contains one canonical `SKILL.md`; treat host-specific copies as defects.
-- [ ] Confirm frontmatter contains only `name` and `description`, and the folder name equals `name`.
+- [ ] Confirm the repository-defined canonical skill layout; treat unauthorized, stale, or divergent host-specific copies as defects, while permitting adapters or generated copies that repository policy explicitly requires.
+- [ ] Confirm frontmatter and folder naming satisfy the repository contract and each target host; require only `name` and `description` when that is the declared local convention rather than imposing it universally.
 - [ ] Check that each description states the capability, positive trigger, and important near-negative boundary.
 - [ ] Check that descriptions stay within the host limit and avoid claims broader than the workflow supports.
 - [ ] Confirm each skill is standalone: no required skill, MCP server, tracker, coordinator, worker, or shared runtime.
-- [ ] Treat an ordered checklist as the Definition of Done; flag a duplicate completion section.
+- [ ] Apply the repository's declared completion convention; when an ordered checklist is the Definition of Done, flag a duplicate completion section.
 - [ ] Preserve non-obvious domain rules, tool-routing decisions, safety gates, evidence requirements, verdict mapping, output contract, and residual risks.
 - [ ] Flag explanations a capable current model already knows unless they prevent a demonstrated execution failure.
 - [ ] Verify every required capability has an available tool path, a credible fallback, or an explicit `BLOCKED` outcome.
-- [ ] Check mutation boundaries: review, audit, test-planning, and discovery skills must remain read-only.
-- [ ] Check that optimization skills retain or discard mutations using measured evidence.
-- [ ] Check that acceptance-test skills cannot repair product code or touch unapproved external state.
+- [ ] Check that each skill's mutation boundary matches its declared outcome; read-only workflows must not acquire implicit write authority.
+- [ ] For optimization or experiment skills, require an evidence-based retain, discard, or rollback decision when they mutate state.
+- [ ] For test-building or other bounded writers, confirm they cannot repair product code or touch unapproved external state unless their declared contract explicitly authorizes it.
 - [ ] Trace the workflow through missing tools, insufficient context, dirty Git state, failed commands, and conflicting evidence.
 - [ ] Check that the output contract distinguishes facts, inferences, missing evidence, verdict, and residual risk.
 - [ ] Inspect neighboring descriptions for trigger overlap without assuming the skills know about one another.
 
 ## Repository Validation
 
-- [ ] Discover the installed `skill-creator` validator and run `quick_validate.py` for every changed skill directory.
-- [ ] If that validator is unavailable, manually validate YAML parsing, naming, description length, and required file layout.
-- [ ] Run the installed `plugin-creator` validator for every affected plugin directory.
-- [ ] Run `claude plugin validate . --strict` when a Claude marketplace exists.
-- [ ] Parse both marketplace catalogs and confirm identical plugin names and ordering.
-- [ ] Confirm every catalog source and manifest skill path exists.
-- [ ] Confirm each plugin description matches its Claude marketplace entry.
-- [ ] Confirm the marketplace identifier has not changed unintentionally; display branding is not an identifier substitute.
+- [ ] Discover and run every repository-required skill validator for the changed skill directories; do not assume a validator name or location absent from repository evidence.
+- [ ] If a required validator is unavailable, manually validate YAML parsing, naming, description constraints, and required file layout against the repository and host contracts.
+- [ ] Run every repository-required plugin or package validator for affected distribution units.
+- [ ] Run each host-native strict validator when its corresponding catalog or manifest exists.
+- [ ] Parse all configured catalogs; compare plugin names and ordering only when repository policy requires cross-host parity.
+- [ ] Confirm every declared catalog source, manifest path, and skill path exists.
+- [ ] Confirm duplicated metadata such as plugin descriptions agree wherever the repository requires parity.
+- [ ] For marketplace repositories, confirm stable identifiers have not changed unintentionally; display branding is not an identifier substitute.
 - [ ] Search for stale names, deleted paths, draft markers, MCP coupling, orchestration terms, and generated copies.
-- [ ] Apply repository line-count targets as a maintenance constraint, not as evidence of behavioral quality.
+- [ ] Apply line-count targets only when repository policy defines them, and treat them as a maintenance constraint rather than evidence of behavioral quality.
 
 ## Behavioral Review
 

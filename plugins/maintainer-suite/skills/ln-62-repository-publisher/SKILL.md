@@ -14,7 +14,7 @@ Publish only changes the user has authorized, then verify the result from the re
 | Scope, staging, history, and synchronization | Native Git CLI | Stop if equivalent Git evidence is unavailable |
 | Repository validation | Project-native commands and installed validators | Documented manual checks |
 | Remote branch and CI state | Authenticated hosting CLI or connector | Git remote evidence plus direct workflow URLs |
-| Clean-source verification | Temporary clone and isolated host configuration | Remote raw files plus `BLOCKED` for install evidence |
+| Clean-source verification | Temporary clone and isolated host configuration when distribution surfaces changed | Remote raw files plus `BLOCKED` for required install evidence |
 | Static-site verification | Deployment workflow plus direct HTTP request | Hosting API deployment state |
 | Current marketplace behavior | Official host documentation | Mark assumptions and avoid destructive retries |
 
@@ -31,18 +31,18 @@ Use hosting APIs for remote facts and Git for repository facts. A local marketpl
 - [ ] Inspect deletions and generated files as carefully as edited text.
 - [ ] Check whether behavior, installation commands, catalogs, layout, or the public site require matching documentation updates.
 - [ ] Do not create a changelog merely because one is absent; follow the repository's documented release policy.
-- [ ] Do not change plugin versions, tags, or release metadata during an ordinary publication.
-- [ ] For marketplace edits, confirm the stable marketplace identifier is unchanged unless an intentional migration was approved.
-- [ ] Confirm Claude and Codex catalogs contain the same plugin names in the same order.
-- [ ] Confirm plugin descriptions and source paths agree with canonical manifests.
+- [ ] Do not change versions, tags, or release metadata during an ordinary publication unless the request or repository policy explicitly includes them.
+- [ ] For marketplace edits, confirm every stable identifier is unchanged unless an intentional migration was approved.
+- [ ] When multiple host catalogs exist and repository policy requires parity, confirm they contain the same distribution units in the required order.
+- [ ] When metadata is duplicated across manifests or catalogs, confirm descriptions and source paths agree with the canonical source.
 
 ## Validation Routing
 
 - [ ] Discover and run repository-native validation commands before generic checks.
-- [ ] For changed skills, run the installed skill validator or perform its documented manual fallback.
-- [ ] For changed plugins, run the installed plugin validator or perform its documented manual fallback.
-- [ ] Run the strict Claude marketplace validator when applicable.
-- [ ] Run catalog parity, JSON parsing, stale-reference, local-link, and whitespace checks required by the repository.
+- [ ] For changed skills, run repository-required or host-native skill validators, or perform their documented manual fallback.
+- [ ] For changed plugins or packages, run repository-required validators, or perform their documented manual fallback.
+- [ ] Run every host-native strict validator whose distribution surface exists and changed or is required by repository policy.
+- [ ] Run only the catalog parity, manifest parsing, stale-reference, local-link, and whitespace checks required by the repository and affected surfaces.
 - [ ] Run only relevant product tests; do not invent a heavyweight release gate absent from repository policy.
 - [ ] Stop before commit on a confirmed failing required check unless the user explicitly accepts the failure.
 - [ ] Record skipped checks with the exact missing dependency or environment.
@@ -64,9 +64,9 @@ Use hosting APIs for remote facts and Git for repository facts. A local marketpl
 - [ ] Confirm the remote branch resolves to the pushed commit using both Git and the hosting API when available.
 - [ ] Watch required CI runs for that commit until completion; report direct run URLs and failures.
 - [ ] If the static site changed, wait for deployment and verify live content with a cache-busting request.
-- [ ] If marketplace content changed, clone the public remote into a clean temporary directory and validate that clone.
-- [ ] Test marketplace add/update and at least one plugin install from the Git source in isolated host configuration.
-- [ ] Verify the installed plugin resolves under the stable marketplace identifier and expected version.
+- [ ] If installation or marketplace content changed, clone an authorized consumer-accessible remote into a clean temporary directory and validate the affected distribution surface.
+- [ ] When install or update behavior changed, test at least one affected package or plugin from its documented distribution source in isolated host configuration.
+- [ ] When stable distribution identifiers or versions exist, verify the installed artifact resolves under the expected identifier and version.
 - [ ] Keep temporary host configuration isolated from the user's active settings and remove it safely afterward.
 - [ ] Recheck the local worktree and confirm local HEAD equals the remote branch.
 

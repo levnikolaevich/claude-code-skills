@@ -43,7 +43,7 @@
     },
     {
       "name": "maintainer-suite",
-      "description": "Skill review, repository publication, releases, and community announcements.",
+      "description": "Optional maintainer toolkit for skill review, repository publication, releases, and project announcements.",
       "source": "./plugins/maintainer-suite",
       "strict": false,
       "skills": "./skills/"

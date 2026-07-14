@@ -51,12 +51,14 @@ The repository intentionally contains only the skills, minimal plugin manifests,
 
 ### Maintainer Suite
 
+Optional toolkit for people who maintain skill or plugin repositories and other GitHub projects. Users who only consume the engineering skills do not need to install it.
+
 | Index | Skill | Purpose |
 |---:|---|---|
-| 61 | [Skill Reviewer](plugins/maintainer-suite/skills/ln-61-skill-reviewer/SKILL.md) | Review skills and marketplace integration before publication. |
-| 62 | [Repository Publisher](plugins/maintainer-suite/skills/ln-62-repository-publisher/SKILL.md) | Validate, commit, push, and verify changes from the public remote. |
-| 63 | [Release Publisher](plugins/maintainer-suite/skills/ln-63-release-publisher/SKILL.md) | Prepare and publish an approved tagged GitHub Release. |
-| 64 | [Community Announcer](plugins/maintainer-suite/skills/ln-64-community-announcer/SKILL.md) | Draft and publish fact-checked GitHub Discussions announcements. |
+| 61 | [Skill Reviewer](plugins/maintainer-suite/skills/ln-61-skill-reviewer/SKILL.md) | Review standalone skills and configured distribution surfaces before publication. |
+| 62 | [Repository Publisher](plugins/maintainer-suite/skills/ln-62-repository-publisher/SKILL.md) | Validate, commit, push, and remotely verify approved repository changes. |
+| 63 | [Release Publisher](plugins/maintainer-suite/skills/ln-63-release-publisher/SKILL.md) | Prepare and publish an approved tagged GitHub release. |
+| 64 | [Community Announcer](plugins/maintainer-suite/skills/ln-64-community-announcer/SKILL.md) | Draft and publish fact-checked GitHub Discussions project announcements. |
 
 ## Install in Claude Code
 

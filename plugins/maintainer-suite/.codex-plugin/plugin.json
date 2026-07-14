@@ -1,7 +1,7 @@
 {
   "name": "maintainer-suite",
   "version": "1.0.0",
-  "description": "Skill review, repository publication, releases, and community announcements.",
+  "description": "Optional maintainer toolkit for skill review, repository publication, releases, and project announcements.",
   "author": {
     "name": "Lev Nikolaevich",
     "email": "levnikolaevich.com@gmail.com",
@@ -14,8 +14,8 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "Maintainer Suite",
-    "shortDescription": "Review and publish skills safely",
-    "longDescription": "Review standalone skills, publish repository changes and tagged releases, and create verified community announcements.",
+    "shortDescription": "Optional publishing tools for maintainers",
+    "longDescription": "Optional maintainer workflows for reviewing standalone skills, publishing repository changes and tagged releases, and announcing verified project news.",
     "developerName": "Lev Nikolaevich",
     "websiteURL": "https://github.com/levnikolaevich/claude-code-skills",
     "category": "Productivity",

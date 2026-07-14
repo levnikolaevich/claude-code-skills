@@ -41,6 +41,7 @@ When sources disagree, prefer the repository for what is installed and implement
 - [ ] Read all applicable repository instruction files before interpreting code, documentation, or expected workflow.
 - [ ] Inspect Git state when it can affect the review: current branch, uncommitted changes, comparison base, and relevant recent history.
 - [ ] State the real goal, observable definition of done, explicit non-goals, constraints, and assumptions implied by the request or plan.
+- [ ] Separate defects in the plan from pre-existing adjacent problems. Treat an existing problem as a plan finding only when the plan introduces or worsens it, depends on a false assumption about it, must resolve it to satisfy the goal, or creates immediate delivery risk; otherwise record it as an out-of-scope observation and do not expand the plan.
 - [ ] Distinguish facts discoverable from the repository from choices that require user intent; explore first and ask only about consequential choices that remain unresolved.
 - [ ] Classify the review depth. Treat authentication, authorization, money, destructive operations, data migration, public APIs, concurrency, distributed workflows, and irreversible rollout as high-risk.
 - [ ] Keep the run read-only. Do not mutate the source plan, implementation, task tracker, branch, or external system; a corrected plan may appear only in the review response. Allow only host-permitted rebuildable diagnostic caches or build artifacts and disclose them when created.
@@ -86,9 +87,10 @@ When sources disagree, prefer the repository for what is installed and implement
 
 ### 5. Run an Independent Challenge When It Adds Signal
 
-- [ ] For a non-trivial plan, launch three blind perspectives in separate contexts: an execution simulator for sequencing and feasibility, a fresh implementer for implicit knowledge and ambiguity, and an adversarial reviewer for failure, corruption, and rollback risk.
-- [ ] For a small local plan, use only perspectives that can change a decision and record why the others add no signal; never skip independent challenge for high-risk, architectural, cross-service, unfamiliar, or materially ambiguous work.
-- [ ] Give every reviewer the same frozen packet—plan, real goal, relevant repository paths, constraints, assumptions, and evidence questions—without the primary review's conclusions or sibling outputs.
+- [ ] For a small, local, low-risk plan, launch one blind reviewer using the perspective most likely to change the verdict: execution simulation, fresh implementation, or adversarial failure analysis.
+- [ ] For an ordinary medium-risk plan, launch two blind reviewers with distinct evidence questions: execution simulation plus either fresh implementation or adversarial analysis according to the dominant uncertainty.
+- [ ] For high-risk, architectural, cross-service, unfamiliar, or materially ambiguous work, launch all three blind perspectives: an execution simulator for sequencing and feasibility, a fresh implementer for implicit knowledge and ambiguity, and an adversarial reviewer for failure, corruption, and rollback risk.
+- [ ] Give every reviewer the same frozen packet—plan, real goal, relevant repository paths, constraints, assumptions, and evidence questions—without prior conversation history, the primary review's conclusions, or sibling outputs. If the host cannot provide fresh isolated contexts, use distinct self-review passes and disclose reduced independence.
 - [ ] Run independent perspectives in parallel or blind waves, wait for all selected results, and treat every suggestion as a candidate finding that requires repository or authoritative evidence.
 - [ ] Classify pre-mortem concerns as evidence-backed risk, unsupported fear, or unstated assumption; dismiss unsupported fear, and give each accepted risk or assumption an invalidation impact and concrete validation or mitigation step.
 - [ ] Treat reviewer unavailability, tool failure, rate limits, or questions as coverage limitations, not evidence that the plan is defective.
@@ -97,11 +99,12 @@ When sources disagree, prefer the repository for what is installed and implement
 
 - [ ] Deduplicate findings from repository inspection, research, and independent review; keep the strongest evidence and preserve meaningful disagreements.
 - [ ] Classify findings as `BLOCKER`, `MAJOR`, or `MINOR`: blockers prevent safe handoff, majors predict substantial rework or regression, and minors improve clarity without changing feasibility.
-- [ ] Reject unsupported findings, stylistic preferences presented as requirements, and generic best practices with no demonstrated connection to this plan.
+- [ ] Reject unsupported findings, stylistic preferences presented as requirements, generic best practices with no demonstrated connection to this plan, and pre-existing problems that do not meet the plan-impact rule above.
 - [ ] Confirm that every consequential implementation choice is fixed: interfaces, ownership, data flow, failure behavior, compatibility, verification, and rollout where applicable.
 - [ ] For every material assumption, record confidence, what breaks if it is false, and who or what step validates it before dependent work begins.
-- [ ] Map findings to verdicts: use `BLOCKED` when a required user choice, access, or authoritative fact is unavailable; use `REVISE` for any correctable `BLOCKER` or `MAJOR`, and for an unresolved `MINOR` unless it is explicitly accepted as residual risk; use `READY` only when no corrective finding or blocking evidence gap remains.
+- [ ] Map findings to verdicts: use `BLOCKED` when a required user choice, access, or authoritative fact is unavailable; use `REVISE` for any correctable `BLOCKER` or `MAJOR`; use `READY WITH CONCERNS` only when the plan is safe and executable with no uncovered requirement or consequential decision, but bounded non-blocking `MINOR` amendments or explicitly accepted residual risks remain; use `READY` only when no corrective finding or blocking evidence gap remains.
 - [ ] For `REVISE`, provide a complete replacement plan that preserves the user's intent and incorporates accepted corrections; do not leave the implementer to merge prose fragments.
+- [ ] For `READY WITH CONCERNS`, provide only the exact local plan amendments and accepted non-blocking risks; do not restate unchanged sections of the plan.
 - [ ] For `BLOCKED`, ask only the smallest questions that materially unlock a different plan, and state what was already verified.
 - [ ] Respect any host-required wrapper for plans, but keep the output content and verdict semantics below unchanged.
 
@@ -110,7 +113,7 @@ When sources disagree, prefer the repository for what is installed and implement
 ```markdown
 # Plan Review
 
-**Verdict:** READY | REVISE | BLOCKED
+**Verdict:** READY | READY WITH CONCERNS | REVISE | BLOCKED
 
 ## Scope and evidence
 - Plan reviewed
@@ -123,10 +126,10 @@ When sources disagree, prefer the repository for what is installed and implement
 ### [BLOCKER | MAJOR | MINOR] Finding title
 - Evidence: file, symbol, command result, or authoritative source
 - Impact: concrete failure, rework, or uncertainty
-- Required change: smallest sufficient correction
+- Required change or local amendment: smallest sufficient correction
 
-## Corrected plan
-Complete replacement plan for REVISE; otherwise state that the reviewed plan is ready or explain why correction is blocked.
+## Corrected plan or amendments
+Complete replacement plan for REVISE; exact local amendments for READY WITH CONCERNS; otherwise state that the reviewed plan is ready or explain why correction is blocked.
 
 ## Open decisions and residual risks
 Only unresolved user choices, explicitly accepted tradeoffs, and risks that remain after correction.

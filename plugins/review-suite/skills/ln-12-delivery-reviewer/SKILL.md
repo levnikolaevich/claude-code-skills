@@ -58,6 +58,7 @@ Scale the panel to the risk and size of the change. For a small, low-risk change
 | Security and privacy | Authentication, authorization, untrusted input, secrets, sensitive data, isolation, or destructive actions | Trace trust boundaries and sensitive-data flow; require concrete guards and recovery evidence for destructive behavior. |
 | Data and concurrency | Schemas, migrations, transactions, caches, queues, events, shared state, async work, locks, or ordering | Check atomicity, races, duplicate delivery, producer/consumer names and payloads, runtime registration, and orphan channels. |
 | API and compatibility | Public interfaces, protocols, serialization, configuration contracts, SDKs, plugins, or mixed versions | Trace every consumer and confirm that removed signatures, aliases, re-exports, adapters, and compatibility paths match the supported contract. |
+| Target architecture and migration | An approved plan or target architecture, replacement, refactor, cutover, deprecation, or compatibility cleanup | Map planned decisions to code; prove the target state is complete; find unexplained deviations, dual paths, old implementations, aliases, shims, re-exports, adapters, flags, and unmigrated callers that preserve superseded architecture. |
 | Test and oracle | Critical behavior with weak proof, complex regressions, changed test infrastructure, mocks, snapshots, time, or randomness | Ask whether each test would fail for the intended defect and whether doubles hide the integration behavior under review. |
 | Performance and reliability | Hot paths, I/O, resource ownership, retries, timeouts, load, availability, or distributed coordination | Look for unbounded work, amplification, measurement gaps, resource leaks, retry storms, and unsafe degradation. |
 | UI and accessibility | Rendering, interaction, keyboard or screen-reader behavior, responsive layouts, localization, or visual state | Verify keyboard flow, focus behavior, accessible names, reduced-motion preferences, meaningful copy, localization, and rendered behavior. |
@@ -96,7 +97,7 @@ Each subagent returns a compact report:
 
 ### 1. Establish the Delivery Contract
 
-- [ ] Resolve the exact change set, comparison base, user request, acceptance criteria, any approved technical approach, explicit non-goals, invariants, assumptions, and release boundary; mark unsupported assumptions `UNKNOWN`.
+- [ ] Resolve the exact change set, comparison base, user request, acceptance criteria, approved plan or target architecture, allowed transitional compatibility, explicit non-goals, invariants, assumptions, and release boundary; mark unsupported assumptions `UNKNOWN`.
 - [ ] Read all applicable repository instructions and inspect uncommitted work before running commands or interpreting conventions.
 - [ ] Separate in-scope defects from pre-existing adjacent issues; report the latter as observations only when they create immediate delivery risk.
 - [ ] Classify risk based on trust boundaries, money, destructive actions, data migration, public contracts, concurrency, distributed coordination, and rollback difficulty.
@@ -109,7 +110,7 @@ Each subagent returns a compact report:
 - [ ] Map every acceptance criterion to concrete changed code, configuration, data, documentation, and a verification method; mark each `PASS`, `FAIL`, or `UNPROVEN`.
 - [ ] Inspect changed files together with relevant definitions, callers, consumers, interfaces, tests, migrations, and runtime registration.
 - [ ] Verify that the implemented behavior serves the real user or system goal rather than only completing an internal mechanism.
-- [ ] When an approved technical approach exists, compare it with the implementation; accept a deviation only when its rationale is evidenced and it preserves the goal, constraints, and acceptance criteria.
+- [ ] Map every material decision and step in an approved plan or target architecture to the implementation; treat omissions as unmet unless explicitly superseded, and accept deviations only when their rationale is evidenced and preserves the goal, constraints, and acceptance criteria.
 - [ ] Trace each critical scenario through actor trigger -> entrypoint -> runtime discovery or wiring -> usage context -> observable outcome.
 - [ ] Confirm that new components, routes, commands, handlers, jobs, events, or configuration are actually registered and discoverable at runtime.
 - [ ] Check algorithm boundaries, loops, collection semantics, state transitions, duplicate handling, ordering, numeric behavior, and empty or maximum inputs.
@@ -124,7 +125,7 @@ Each subagent returns a compact report:
 - [ ] Verify migrations, backfills, defaults, indexes, deployment ordering, and mixed-version behavior when persisted or distributed state changes.
 - [ ] Check resource ownership for files, streams, sessions, connections, processes, subscriptions, and temporary artifacts on success and failure paths.
 - [ ] Confirm that dependency direction, module boundaries, orchestration, and side-effect ownership remain coherent; flag read-named operations that write state and leaf functions that mix unrelated effects, while allowing explicit orchestration to coordinate them.
-- [ ] When code is replaced, verify that the old implementation, signatures, aliases, re-exports, adapters, and files are removed and every caller is migrated unless the supported contract requires compatibility.
+- [ ] When code is replaced, verify that the old implementation, signatures, aliases, re-exports, shims, adapters, flags, dual-read or dual-write paths, and files are removed and every caller is migrated; retain compatibility only when an evidenced supported contract requires it, with ownership and a bounded removal condition.
 - [ ] Check duplication, hardcoded operational values, misleading names, and unnecessary abstractions.
 - [ ] Challenge custom machinery when an existing platform or declared dependency already provides the required capability with lower risk.
 - [ ] Research only external claims that affect the verdict, using official sources matching the installed or proposed version.

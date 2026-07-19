@@ -27,6 +27,7 @@ Run only safe test and diagnostic commands. Do not rewrite snapshots, update gol
 - A slow test is not low-value when it uniquely protects a critical journey; a fast test is not high-value when it proves framework behavior.
 - A flaky failure must be separated from an intermittently failing product dependency or genuinely nondeterministic requirement.
 - Deletion recommendations require proof that another test covers the same behavior and failure modes with equal or better trust.
+- Merge recommendations require demonstrated duplicate or fragmented coverage and must preserve distinct business and failure scenarios, oracle strength, and failure localization; a larger test is not inherently better.
 - Known regression guards and the only proof of a rare critical edge case are not deletion candidates merely because a numeric value heuristic is low.
 - A real dependency is not inherently a test defect. Judge whether its version, state, ownership, reset, availability, and failure evidence make the result reproducible.
 - External testing guidance becomes actionable only when it explains a concrete weakness in this suite.
@@ -46,12 +47,12 @@ Run only safe test and diagnostic commands. Do not rewrite snapshots, update gol
 
 - [ ] Identify uniquely critical local logic: money, authentication, authorization, data integrity, algorithms, domain rules, destructive operations, and irreversible workflows.
 - [ ] Trace each critical behavior to at least one test whose oracle would fail for the corresponding defect; name/path matches and line coverage are only discovery evidence.
-- [ ] Identify tests that merely re-prove language, framework, ORM, HTTP client, cryptography, serializer, or library behavior without adding local product confidence.
+- [ ] Identify tests that merely re-prove language, framework, database engine, ORM, HTTP client, cryptography, serializer, or library behavior without asserting repository-owned configuration, queries, schemas, adaptation, validation, failure handling, or observable outcomes.
 - [ ] Check whether end-to-end tests cross the production-shaped boundaries relevant to the risk and prove the terminal durable or user-visible outcome, not only an intermediate status, page, or mock call.
 - [ ] Find critical journeys with no end-to-end proof and expensive end-to-end tests whose behavior is already covered more reliably at a lower level.
 - [ ] Inspect error, retry, timeout, authorization, concurrency, migration, compatibility, and recovery behavior where those failures are plausible and costly.
 - [ ] Use coverage data to locate unexecuted critical paths, then inspect behavior and assertions before reporting a gap.
-- [ ] Classify portfolio actions as `KEEP`, `DELETE`, `MERGE`, `REWRITE`, or `ADD`, justified by impact, defect probability, uniqueness, trust, and maintenance cost.
+- [ ] Classify portfolio actions as `KEEP`, `ADD`, `UPDATE`, `DELETE`, or `MERGE`, justified by impact, defect probability, uniqueness, trust, and maintenance cost; use `UPDATE` when valuable behavior remains but its setup, boundary, assertion, or oracle must change.
 
 ### 3. Audit Isolation and Determinism
 
@@ -114,7 +115,7 @@ Prepend this accounting header to every skill-specific report template: **Checkl
 ### [P0 | P1 | P2 | P3] Finding title
 - Behavior and test location
 - Evidence and missed defect class
-- Action: KEEP / DELETE / MERGE / REWRITE / ADD
+- Action: KEEP / ADD / UPDATE / DELETE / MERGE
 - Required change
 
 ## Residual risks

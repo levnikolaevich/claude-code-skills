@@ -59,7 +59,7 @@ Scale the panel to the risk and size of the change. For a small, low-risk change
 | Data and concurrency | Schemas, migrations, transactions, caches, queues, events, shared state, async work, locks, or ordering | Check atomicity, races, duplicate delivery, producer/consumer names and payloads, runtime registration, and orphan channels. |
 | API and compatibility | Public interfaces, protocols, serialization, configuration contracts, SDKs, plugins, or mixed versions | Trace every consumer and confirm that removed signatures, aliases, re-exports, adapters, and compatibility paths match the supported contract. |
 | Target architecture and migration | An approved plan or target architecture, replacement, refactor, cutover, deprecation, or compatibility cleanup | Map planned decisions to code; prove the target state is complete; find unexplained deviations, dual paths, old implementations, aliases, shims, re-exports, adapters, flags, and unmigrated callers that preserve superseded architecture. |
-| Test, oracle, and business behavior | Critical behavior with weak proof, complex regressions, changed test infrastructure, mocks, snapshots, time, or randomness | Map critical requirements and business invariants to observable outcomes. Reject tests of language semantics, framework defaults, library behavior, or external-dependency internals. Prefer reproducible E2E for critical user journeys, then integration or contract tests at the narrowest real risk boundary. Accept unit tests only for isolated domain algorithms or state transitions with a strong oracle and an explicit reason a higher-level test would add less confidence. |
+| Test, oracle, and business behavior | Critical behavior with weak proof, complex regressions, changed test infrastructure, mocks, snapshots, time, or randomness | Map critical requirements and business invariants to observable outcomes. Treat tests as low-value only when they add no repository-owned confidence; crossing a real dependency is valid when it proves owned boundary behavior. Select E2E, integration, contract, or unit coverage at the narrowest deterministic risk seam. |
 | Performance and reliability | Hot paths, I/O, resource ownership, retries, timeouts, load, availability, or distributed coordination | Look for unbounded work, amplification, measurement gaps, resource leaks, retry storms, and unsafe degradation. |
 | UI and accessibility | Rendering, interaction, keyboard or screen-reader behavior, responsive layouts, localization, or visual state | Verify keyboard flow, focus behavior, accessible names, reduced-motion preferences, meaningful copy, localization, and rendered behavior. |
 | Operations and release | Deployment order, feature controls, environment changes, observability, rollback, recovery, or support procedures | Prove safe rollout and rollback, configuration validation, useful signals, and recovery steps in the intended environment. |
@@ -132,9 +132,9 @@ Each subagent returns a compact report:
 
 ### 4. Verify Tests, Documentation, and Operations
 
-- [ ] Reject tests whose subject is language semantics, framework plumbing or defaults, library behavior, or external-dependency internals. Test only repository-owned business behavior and owned boundary contracts; at dependency boundaries verify the product's configuration, adaptation, validation, error translation, fallback, and observable outcome without re-proving vendor behavior.
-- [ ] Prefer reproducible E2E tests for business-critical user journeys; otherwise use integration or contract tests at the narrowest boundary that still crosses the changed risk seam. Accept a unit test only for isolated domain logic with a strong oracle and record why a higher-level test would be less useful or less deterministic.
-- [ ] Check that every test would fail for its intended defect; inspect assertion quality, critical happy and failure paths, authorization, boundaries, data integrity, over-mocking, snapshot-only proof, flaky dependencies, shared state, time or randomness, and order dependence.
+- [ ] Treat a test as low-value only when its oracle adds no repository-owned confidence; do not reject it merely for crossing a language, framework, library, or database boundary. Real-database tests are valid when they prove product-owned queries, schemas, permissions, migrations, transactions, isolation, locking, serialization, or failure handling rather than generic vendor capability.
+- [ ] Choose the narrowest test level that crosses the changed risk seam with a trustworthy oracle: prefer reproducible E2E for business-critical journeys, integration or contract tests for owned boundaries, and unit tests for isolated logic or state transitions when a broader test would add less confidence or determinism.
+- [ ] Classify every affected test as `KEEP`, `ADD`, `UPDATE`, `DELETE`, or `MERGE`; verify that it would fail for its intended defect and inspect assertions, critical success and failure paths, authorization, boundaries, data integrity, over-mocking, snapshots, flakes, shared state, time, randomness, and order dependence. Recommend `DELETE` only when equal or better trusted coverage preserves its failure modes; recommend `MERGE` only when consolidation removes duplication without obscuring behavior, oracle strength, or failure localization.
 - [ ] Discover verification commands in this order: repository docs, tool configuration, package or build manifests, then justified fallback; run the narrowest relevant checks first and record each command's source.
 - [ ] Run the repository's required build, lint, type, test, migration, and smoke gates with non-interactive CI-safe options in their intended environment.
 - [ ] Preserve command, exit status, relevant output, and limitations; do not hide, normalize away, or reinterpret a failing check.
@@ -155,7 +155,7 @@ Each subagent returns a compact report:
 - [ ] Use `FAIL` for any evidenced unresolved `P0` or `P1`, unmet acceptance criterion, required failing gate, or demonstrated unsafe high-risk behavior.
 - [ ] Use `CONCERNS` only when remaining issues are explicitly non-blocking and the accepted risk is stated. Use `PASS` only when required evidence is complete.
 - [ ] Use `BLOCKED` when a required hat, risk-triggered specialist, safety environment, authoritative contract, or other acceptance prerequisite is unavailable without an equivalent credible replacement; report the gap as coverage, not a product defect.
-- [ ] Return hat selection and coverage, the acceptance matrix, verified findings, commands and tools used, limitations, verdict rationale, and residual risks without modifying the delivery.
+- [ ] Return hat selection and coverage, the acceptance matrix, test actions, verified findings, commands and tools used, limitations, verdict rationale, and residual risks without modifying the delivery.
 
 ## Output Contract
 
@@ -190,10 +190,10 @@ Prepend this accounting header to every skill-specific report template: **Checkl
 - Evidence: observed behavior, command, code path, or authoritative contract
 - Root cause: causal path and violated requirement, invariant, or contract
 - Impact: concrete delivery or operational consequence
-- Required change: smallest sufficient correction
+- Required change: `KEEP` / `ADD` / `UPDATE` / `DELETE` / `MERGE` when a test is affected, plus the smallest sufficient correction
 
-## Verification summary
-Passed, failed, skipped, and unavailable checks with reasons.
+## Verification and test-action summary
+Passed, failed, skipped, and unavailable checks with reasons; list every affected test with its `KEEP`, `ADD`, `UPDATE`, `DELETE`, or `MERGE` action.
 
 ## Residual risks
 Accepted tradeoffs and evidence that remains unavailable after the review.

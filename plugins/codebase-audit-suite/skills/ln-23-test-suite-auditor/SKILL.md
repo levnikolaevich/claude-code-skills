@@ -5,7 +5,10 @@ description: "Audits whether an existing test suite proves important product beh
 
 # Test Suite Auditor
 
-Audit the test portfolio as a read-only confidence system. Determine which important failures the suite can detect, which tests cannot be trusted, and where maintenance cost exceeds unique regression value.
+**Goal:** Audit the test portfolio as a read-only confidence system. Determine which important failures the suite can detect, which tests cannot be trusted, and where maintenance cost exceeds unique regression value.
+
+**Execution contract:** Treat the ordered checkbox workflow below as this skill's Definition of Done. Work through every item in order, and mark it complete only when its action and required evidence are complete. `N/A`, skipped, unavailable, or delegated items remain incomplete.
+Before returning, apply this skill's verdict, decision, and approval rules to every incomplete item and prepend **Checklist: X/Y complete**<br>**Incomplete: None | section/item — reason; outcome impact; exact next action**; list every incomplete item.
 
 ## Tool Routing
 
@@ -89,9 +92,6 @@ Run only safe test and diagnostic commands. Do not rewrite snapshots, update gol
 - [ ] Return the verdict with trusted coverage, critical gaps, untrustworthy surfaces, portfolio actions, limitations, and residual test risk.
 
 ## Output Contract
-
-Before returning, account for every checkbox: mark it complete only when its action and required evidence are complete; `N/A`, skipped, unavailable, or delegated items remain incomplete and must be explained. Apply the skill's existing verdict, decision, and approval rules to every incomplete item.
-Prepend this accounting header to every skill-specific report template: **Checklist: X/Y complete**<br>**Incomplete: None | section/item — reason; outcome impact; exact next action**; list every incomplete item.
 
 ```markdown
 # Test Suite Audit

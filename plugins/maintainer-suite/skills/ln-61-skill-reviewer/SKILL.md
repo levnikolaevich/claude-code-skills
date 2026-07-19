@@ -5,7 +5,10 @@ description: "Reviews standalone skills and their configured distribution surfac
 
 # Skill Reviewer
 
-Review skill changes without modifying the repository or external state.
+**Goal:** Review skill changes without modifying the repository or external state.
+
+**Execution contract:** Treat the ordered checkbox workflow below as this skill's Definition of Done. Work through every item in order, and mark it complete only when its action and required evidence are complete. `N/A`, skipped, unavailable, or delegated items remain incomplete.
+Before returning, apply this skill's verdict, decision, and approval rules to every incomplete item and prepend **Checklist: X/Y complete**<br>**Incomplete: None | section/item — reason; outcome impact; exact next action**; list every incomplete item.
 
 ## Tool Routing
 
@@ -84,9 +87,6 @@ Tool absence is not itself a skill defect. Apply the documented fallback and use
 - `BLOCKED` — required evidence or tooling is unavailable and no credible fallback exists.
 
 ## Output Contract
-
-Before returning, account for every checkbox: mark it complete only when its action and required evidence are complete; `N/A`, skipped, unavailable, or delegated items remain incomplete and must be explained. Apply the skill's existing verdict, decision, and approval rules to every incomplete item.
-Prepend this accounting header to every skill-specific report template: **Checklist: X/Y complete**<br>**Incomplete: None | section/item — reason; outcome impact; exact next action**; list every incomplete item.
 
 Return:
 

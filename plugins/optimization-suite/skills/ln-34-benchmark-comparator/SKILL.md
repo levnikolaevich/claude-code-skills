@@ -5,7 +5,10 @@ description: "Compares tools or implementations through reproducible A/B workloa
 
 # Benchmark Comparator
 
-Compare alternatives under controlled, reproducible conditions. Correctness comes before speed, and measured data must remain separate from estimates, setup cost, and interpretation.
+**Goal:** Compare alternatives under controlled, reproducible conditions. Correctness comes before speed, and measured data must remain separate from estimates, setup cost, and interpretation.
+
+**Execution contract:** Treat the ordered checkbox workflow below as this skill's Definition of Done. Work through every item in order, and mark it complete only when its action and required evidence are complete. `N/A`, skipped, unavailable, or delegated items remain incomplete.
+Before returning, apply this skill's verdict, decision, and approval rules to every incomplete item and prepend **Checklist: X/Y complete**<br>**Incomplete: None | section/item — reason; outcome impact; exact next action**; list every incomplete item.
 
 ## Tool Routing
 
@@ -94,9 +97,6 @@ Do not tune the scenario after observing a preferred candidate, mix measurements
 - [ ] Return scenario-level evidence, aggregate tradeoffs, verdict, decision guidance, limitations, and cleanup confirmation.
 
 ## Output Contract
-
-Before returning, account for every checkbox: mark it complete only when its action and required evidence are complete; `N/A`, skipped, unavailable, or delegated items remain incomplete and must be explained. Apply the skill's existing verdict, decision, and approval rules to every incomplete item.
-Prepend this accounting header to every skill-specific report template: **Checklist: X/Y complete**<br>**Incomplete: None | section/item — reason; outcome impact; exact next action**; list every incomplete item.
 
 ```markdown
 # Benchmark Comparison

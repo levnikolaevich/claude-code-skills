@@ -5,7 +5,10 @@ description: "Creates and runs reproducible acceptance tests for stated requirem
 
 # Acceptance Test Builder
 
-Create executable evidence that stated requirements work through the boundary users or external systems observe. Modify only the approved test and test-documentation scope. If a test exposes a product defect, preserve the evidence and report it instead of repairing production code.
+**Goal:** Create executable evidence that stated requirements work through the boundary users or external systems observe. Modify only the approved test and test-documentation scope. If a test exposes a product defect, preserve the evidence and report it instead of repairing production code.
+
+**Execution contract:** Treat the ordered checkbox workflow below as this skill's Definition of Done. Work through every item in order, and mark it complete only when its action and required evidence are complete. `N/A`, skipped, unavailable, or delegated items remain incomplete.
+Before returning, apply this skill's verdict, decision, and approval rules to every incomplete item and prepend **Checklist: X/Y complete**<br>**Incomplete: None | section/item — reason; outcome impact; exact next action**; list every incomplete item.
 
 ## Tool Routing
 
@@ -78,9 +81,6 @@ Never run acceptance tests against production or an unapproved external target. 
 - [ ] Return created and changed test files, commands, evidence, cleanup result, limitations, product defects, and residual risks.
 
 ## Output Contract
-
-Before returning, account for every checkbox: mark it complete only when its action and required evidence are complete; `N/A`, skipped, unavailable, or delegated items remain incomplete and must be explained. Apply the skill's existing verdict, decision, and approval rules to every incomplete item.
-Prepend this accounting header to every skill-specific report template: **Checklist: X/Y complete**<br>**Incomplete: None | section/item — reason; outcome impact; exact next action**; list every incomplete item.
 
 ```markdown
 # Acceptance Test Build

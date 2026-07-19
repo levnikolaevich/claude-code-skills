@@ -5,7 +5,10 @@ description: "Drafts and publishes fact-checked GitHub Discussions announcements
 
 # Community Announcer
 
-Create a source-backed announcement and publish it only after the user approves the full draft.
+**Goal:** Create a source-backed announcement and publish it only after the user approves the full draft.
+
+**Execution contract:** Treat the ordered checkbox workflow below as this skill's Definition of Done. Work through every item in order, and mark it complete only when its action and required evidence are complete. `N/A`, skipped, unavailable, or delegated items remain incomplete.
+Before returning, apply this skill's verdict, decision, and approval rules to every incomplete item and prepend **Checklist: X/Y complete**<br>**Incomplete: None | section/item — reason; outcome impact; exact next action**; list every incomplete item.
 
 ## Tool Routing
 
@@ -91,9 +94,6 @@ Do not expose repository tokens, category node IDs, or other credentials in the 
 - `BLOCKED` — required source evidence, permissions, category, or publication verification is unavailable.
 
 ## Output Contract
-
-Before returning, account for every checkbox: mark it complete only when its action and required evidence are complete; `N/A`, skipped, unavailable, or delegated items remain incomplete and must be explained. Apply the skill's existing verdict, decision, and approval rules to every incomplete item.
-Prepend this accounting header to every skill-specific report template: **Checklist: X/Y complete**<br>**Incomplete: None | section/item — reason; outcome impact; exact next action**; list every incomplete item.
 
 Before approval, return classification, evidence range, selected category, title, full Markdown body, fact-check summary, and `DRAFT READY`.
 

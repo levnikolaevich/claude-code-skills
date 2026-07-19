@@ -5,7 +5,10 @@ description: "Validates, commits, pushes, and remotely verifies approved reposit
 
 # Repository Publisher
 
-Publish only changes the user has authorized, then verify the result from the remote source.
+**Goal:** Publish only changes the user has authorized, then verify the result from the remote source.
+
+**Execution contract:** Treat the ordered checkbox workflow below as this skill's Definition of Done. Work through every item in order, and mark it complete only when its action and required evidence are complete. `N/A`, skipped, unavailable, or delegated items remain incomplete.
+Before returning, apply this skill's verdict, decision, and approval rules to every incomplete item and prepend **Checklist: X/Y complete**<br>**Incomplete: None | section/item — reason; outcome impact; exact next action**; list every incomplete item.
 
 ## Tool Routing
 
@@ -85,9 +88,6 @@ Use hosting APIs for remote facts and Git for repository facts. A local marketpl
 - `BLOCKED` — publication did not complete because authorization, synchronization, validation, or remote access failed.
 
 ## Output Contract
-
-Before returning, account for every checkbox: mark it complete only when its action and required evidence are complete; `N/A`, skipped, unavailable, or delegated items remain incomplete and must be explained. Apply the skill's existing verdict, decision, and approval rules to every incomplete item.
-Prepend this accounting header to every skill-specific report template: **Checklist: X/Y complete**<br>**Incomplete: None | section/item — reason; outcome impact; exact next action**; list every incomplete item.
 
 Return:
 

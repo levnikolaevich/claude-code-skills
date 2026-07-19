@@ -5,7 +5,10 @@ description: "Prepares and publishes a tagged GitHub release from repository evi
 
 # Release Publisher
 
-Prepare a reproducible release and publish it only after the user approves the exact tag and notes.
+**Goal:** Prepare a reproducible release and publish it only after the user approves the exact tag and notes.
+
+**Execution contract:** Treat the ordered checkbox workflow below as this skill's Definition of Done. Work through every item in order, and mark it complete only when its action and required evidence are complete. `N/A`, skipped, unavailable, or delegated items remain incomplete.
+Before returning, apply this skill's verdict, decision, and approval rules to every incomplete item and prepend **Checklist: X/Y complete**<br>**Incomplete: None | section/item — reason; outcome impact; exact next action**; list every incomplete item.
 
 ## Tool Routing
 
@@ -97,9 +100,6 @@ Do not browse for generic release advice when repository policy and previous com
 - `BLOCKED` — release cannot proceed safely.
 
 ## Output Contract
-
-Before returning, account for every checkbox: mark it complete only when its action and required evidence are complete; `N/A`, skipped, unavailable, or delegated items remain incomplete and must be explained. Apply the skill's existing verdict, decision, and approval rules to every incomplete item.
-Prepend this accounting header to every skill-specific report template: **Checklist: X/Y complete**<br>**Incomplete: None | section/item — reason; outcome impact; exact next action**; list every incomplete item.
 
 Return release scope, version changes, tag and commit, full notes or release URL, validation evidence, publication state, verdict, and residual risks.
 

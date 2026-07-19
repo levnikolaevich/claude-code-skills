@@ -5,7 +5,10 @@ description: "Evaluates new product directions using current demand, acquisition
 
 # Opportunity Evaluator
 
-Evaluate product opportunities before implementation commitment. Start from observable demand and a reachable acquisition path, eliminate weak candidates early, and recommend one low-cost validation step without manufacturing market precision.
+**Goal:** Evaluate product opportunities before implementation commitment. Start from observable demand and a reachable acquisition path, eliminate weak candidates early, and recommend one low-cost validation step without manufacturing market precision.
+
+**Execution contract:** Treat the ordered checkbox workflow below as this skill's Definition of Done. Work through every item in order, and mark it complete only when its action and required evidence are complete. `N/A`, skipped, unavailable, or delegated items remain incomplete.
+Before returning, apply this skill's verdict, decision, and approval rules to every incomplete item and prepend **Checklist: X/Y complete**<br>**Incomplete: None | section/item — reason; outcome impact; exact next action**; list every incomplete item.
 
 ## Tool Routing
 
@@ -78,9 +81,6 @@ Do not turn `REPORTED`, `ESTIMATED`, or `INFERRED` evidence into a measured mark
 - [ ] Return one recommendation or an explicit inconclusive result, eliminated and deferred candidates with reasons, the next experiment, source limitations, and residual risks without creating files or implementation work.
 
 ## Output Contract
-
-Before returning, account for every checkbox: mark it complete only when its action and required evidence are complete; `N/A`, skipped, unavailable, or delegated items remain incomplete and must be explained. Apply the skill's existing verdict, decision, and approval rules to every incomplete item.
-Prepend this accounting header to every skill-specific report template: **Checklist: X/Y complete**<br>**Incomplete: None | section/item — reason; outcome impact; exact next action**; list every incomplete item.
 
 ```markdown
 # Opportunity Evaluation

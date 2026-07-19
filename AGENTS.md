@@ -18,8 +18,9 @@ Claude Code discovers the standard `skills/` directories through `.claude-plugin
 - Keep each skill standalone. It must not require another skill, an MCP server, a task tracker, or repository-wide shared instructions.
 - Keep YAML frontmatter to `name` and `description`. The folder name and `name` must match.
 - Put the trigger boundary in `description`: what the skill does, when to use it, and important near-negative cases.
-- Treat the ordered checkbox workflow as the skill's Definition of Done. Do not add a duplicate DoD section.
-- Require every output contract to account for all checkboxes with `Checklist: X/Y complete` and an `Incomplete` list containing each skipped item's reason, outcome impact, and exact next action; apply the skill's own verdict, decision, and approval rules to incomplete items.
+- Begin each skill body, before tool routing, with `**Goal:**` defining its intended outcome and boundary and `**Execution contract:**` telling the agent how to apply the skill.
+- In that execution contract, treat the ordered checkbox workflow as the skill's Definition of Done. Do not add a duplicate DoD section.
+- Require the execution contract to account for all checkboxes with `Checklist: X/Y complete` and an `Incomplete` list containing each skipped item's reason, outcome impact, and exact next action; apply the skill's own verdict, decision, and approval rules to incomplete items.
 - Preserve evidence rules, tool-selection guidance, safety gates, verdict mapping, output contract, and residual-risk reporting when simplifying.
 - Add `references/`, `scripts/`, or `assets/` only after a concrete execution defect shows that the instruction-only skill is insufficient.
 - Prefer capability descriptions over vendor-specific tools. Every required capability needs a credible fallback or an explicit `BLOCKED` outcome.

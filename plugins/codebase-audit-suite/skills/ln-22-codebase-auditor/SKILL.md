@@ -5,7 +5,10 @@ description: "Audits cross-cutting code health across security, delivery, mainta
 
 # Codebase Auditor
 
-Perform a broad, read-only production-code health audit. Find concrete cross-cutting failure, security, delivery, and maintenance risks without turning detector matches or personal style preferences into findings. Do not substitute for documentation trust, test-portfolio, whole-architecture, or persistence-specific review.
+**Goal:** Perform a broad, read-only production-code health audit. Find concrete cross-cutting failure, security, delivery, and maintenance risks without turning detector matches or personal style preferences into findings. Do not substitute for documentation trust, test-portfolio, whole-architecture, or persistence-specific review.
+
+**Execution contract:** Treat the ordered checkbox workflow below as this skill's Definition of Done. Work through every item in order, and mark it complete only when its action and required evidence are complete. `N/A`, skipped, unavailable, or delegated items remain incomplete.
+Before returning, apply this skill's verdict, decision, and approval rules to every incomplete item and prepend **Checklist: X/Y complete**<br>**Incomplete: None | section/item — reason; outcome impact; exact next action**; list every incomplete item.
 
 ## Tool Routing
 
@@ -93,9 +96,6 @@ Start with summary-level discovery and narrow before reading deeply. Run only re
 - [ ] Return the verdict with executed checks, excluded scope, verified findings, unverified candidates, and residual codebase risk.
 
 ## Output Contract
-
-Before returning, account for every checkbox: mark it complete only when its action and required evidence are complete; `N/A`, skipped, unavailable, or delegated items remain incomplete and must be explained. Apply the skill's existing verdict, decision, and approval rules to every incomplete item.
-Prepend this accounting header to every skill-specific report template: **Checklist: X/Y complete**<br>**Incomplete: None | section/item — reason; outcome impact; exact next action**; list every incomplete item.
 
 ```markdown
 # Codebase Audit

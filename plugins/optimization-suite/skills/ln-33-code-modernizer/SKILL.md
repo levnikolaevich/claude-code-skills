@@ -5,7 +5,10 @@ description: "Modernizes a bounded capability by removing obsolete custom mechan
 
 # Code Modernizer
 
-Modernize a bounded capability only when the new design measurably reduces maintenance, risk, dependency duplication, or delivered artifact cost. Preserve behavior, isolate migrations, and revert changes that do not create net value.
+**Goal:** Modernize a bounded capability only when the new design measurably reduces maintenance, risk, dependency duplication, or delivered artifact cost. Preserve behavior, isolate migrations, and revert changes that do not create net value.
+
+**Execution contract:** Treat the ordered checkbox workflow below as this skill's Definition of Done. Work through every item in order, and mark it complete only when its action and required evidence are complete. `N/A`, skipped, unavailable, or delegated items remain incomplete.
+Before returning, apply this skill's verdict, decision, and approval rules to every incomplete item and prepend **Checklist: X/Y complete**<br>**Incomplete: None | section/item — reason; outcome impact; exact next action**; list every incomplete item.
 
 ## Tool Routing
 
@@ -92,9 +95,6 @@ Do not replace working custom code merely because an external package exists. Do
 - [ ] Use `MODERNIZED` when the selected bounded design is fully retained and verified; use `PARTIAL` when an independently safe subset is retained with explicit remaining work; use `NO_CHANGE` when every migration is discarded and the baseline is restored; use `BLOCKED` when authorization, safety evidence, or required verification is unavailable.
 
 ## Output Contract
-
-Before returning, account for every checkbox: mark it complete only when its action and required evidence are complete; `N/A`, skipped, unavailable, or delegated items remain incomplete and must be explained. Apply the skill's existing verdict, decision, and approval rules to every incomplete item.
-Prepend this accounting header to every skill-specific report template: **Checklist: X/Y complete**<br>**Incomplete: None | section/item — reason; outcome impact; exact next action**; list every incomplete item.
 
 ```markdown
 # Code Modernization

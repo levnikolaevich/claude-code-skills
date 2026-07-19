@@ -5,7 +5,10 @@ description: "Audits queries, transactions, data-path performance, and persisten
 
 # Persistence Auditor
 
-Perform a read-only audit of persistence and data-heavy runtime paths. Connect static candidates to real query, transaction, resource, or consistency mechanisms and avoid claiming performance impact without evidence.
+**Goal:** Perform a read-only audit of persistence and data-heavy runtime paths. Connect static candidates to real query, transaction, resource, or consistency mechanisms and avoid claiming performance impact without evidence.
+
+**Execution contract:** Treat the ordered checkbox workflow below as this skill's Definition of Done. Work through every item in order, and mark it complete only when its action and required evidence are complete. `N/A`, skipped, unavailable, or delegated items remain incomplete.
+Before returning, apply this skill's verdict, decision, and approval rules to every incomplete item and prepend **Checklist: X/Y complete**<br>**Incomplete: None | section/item — reason; outcome impact; exact next action**; list every incomplete item.
 
 ## Tool Routing
 
@@ -86,9 +89,6 @@ Never connect to production or run mutating diagnostics. `EXPLAIN ANALYZE` execu
 - [ ] Return the verdict with measured and static scope separated, remediation order, limitations, and residual persistence risks.
 
 ## Output Contract
-
-Before returning, account for every checkbox: mark it complete only when its action and required evidence are complete; `N/A`, skipped, unavailable, or delegated items remain incomplete and must be explained. Apply the skill's existing verdict, decision, and approval rules to every incomplete item.
-Prepend this accounting header to every skill-specific report template: **Checklist: X/Y complete**<br>**Incomplete: None | section/item — reason; outcome impact; exact next action**; list every incomplete item.
 
 ```markdown
 # Persistence Audit

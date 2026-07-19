@@ -5,7 +5,10 @@ description: "Designs a risk-based test strategy and prioritized scenarios witho
 
 # Test Strategy Planner
 
-Design a read-only test strategy that maximizes confidence in important local behavior. Select test levels by the boundary that must be crossed and the defect that must be detected, not by a fixed pyramid, coverage target, or scenario count.
+**Goal:** Design a read-only test strategy that maximizes confidence in important local behavior. Select test levels by the boundary that must be crossed and the defect that must be detected, not by a fixed pyramid, coverage target, or scenario count.
+
+**Execution contract:** Treat the ordered checkbox workflow below as this skill's Definition of Done. Work through every item in order, and mark it complete only when its action and required evidence are complete. `N/A`, skipped, unavailable, or delegated items remain incomplete.
+Before returning, apply this skill's verdict, decision, and approval rules to every incomplete item and prepend **Checklist: X/Y complete**<br>**Incomplete: None | section/item — reason; outcome impact; exact next action**; list every incomplete item.
 
 ## Tool Routing
 
@@ -74,9 +77,6 @@ Keep the run read-only. Do not create tests, fixtures, snapshots, tasks, or docu
 - [ ] State the smallest next evidence-gathering action for every `INCONCLUSIVE` or `BLOCKED` area.
 
 ## Output Contract
-
-Before returning, account for every checkbox: mark it complete only when its action and required evidence are complete; `N/A`, skipped, unavailable, or delegated items remain incomplete and must be explained. Apply the skill's existing verdict, decision, and approval rules to every incomplete item.
-Prepend this accounting header to every skill-specific report template: **Checklist: X/Y complete**<br>**Incomplete: None | section/item — reason; outcome impact; exact next action**; list every incomplete item.
 
 ```markdown
 # Test Strategy

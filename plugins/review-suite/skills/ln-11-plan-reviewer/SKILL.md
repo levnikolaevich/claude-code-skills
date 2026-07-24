@@ -5,7 +5,7 @@ description: "Reviews implementation plans against repository evidence and curre
 
 # Plan Reviewer
 
-**Goal:** Perform a read-only, evidence-first second pass over an implementation plan. Verify the plan; do not execute it. A strong result is decision-complete, grounded in the actual repository, explicit about uncertainty, and no more complex than the problem requires.
+**Goal:** Perform a read-only, evidence-first second pass over an implementation plan. Verify the plan; do not execute it. A strong result is decision-complete, grounded in the actual repository, explicit about uncertainty, no more complex than the problem requires, and expressed in the fewest words and execution steps that preserve safety.
 
 **Execution contract:** Treat the ordered checkbox workflow below as this skill's Definition of Done. Work through every item in order, and mark it complete only when its action and required evidence are complete. `N/A`, skipped, unavailable, or delegated items remain incomplete.
 Before returning, apply this skill's verdict, decision, and approval rules to every incomplete item and prepend **Checklist: X/Y complete**<br>**Incomplete: None | section/item — reason; outcome impact; exact next action**; list every incomplete item.
@@ -43,9 +43,10 @@ When sources disagree, prefer the repository for what is installed and implement
 - [ ] Resolve the exact plan, user request, linked requirements, and repository scope. If no concrete plan exists, stop with `BLOCKED` rather than inventing one to review.
 - [ ] Read all applicable repository instruction files before interpreting code, documentation, or expected workflow.
 - [ ] Inspect Git state when it can affect the review: current branch, uncommitted changes, comparison base, and relevant recent history.
-- [ ] State the real goal, observable definition of done, explicit non-goals, constraints, and assumptions implied by the request or plan.
+- [ ] Separate the literal request and proposed solution from the underlying intent; state the actor, human or system outcome, consequential experience qualities, observable definition of done, non-goals, constraints, and assumptions. Treat emotional or incomplete wording as an intent signal, not a fact, and never let an inference override explicit requirements, evidence, safety, or exact-output constraints.
+- [ ] Calibrate acceptable complexity to evidenced project or product maturity, decision horizon, current scale, team and operational capacity, and business stakes. Treat future growth as a requirement only when a concrete horizon, consumer, load, or constraint supports it.
 - [ ] Separate defects in the plan from pre-existing adjacent problems. Treat an existing problem as a plan finding only when the plan introduces or worsens it, depends on a false assumption about it, must resolve it to satisfy the goal, or creates immediate delivery risk; otherwise record it as an out-of-scope observation and do not expand the plan.
-- [ ] Distinguish facts discoverable from the repository from choices that require user intent; explore first and ask only about consequential choices that remain unresolved.
+- [ ] Distinguish facts discoverable from the repository from choices that require user intent; explore first, and when plausible interpretations would produce materially different plans, ask one concise question that resolves the decision rather than a survey.
 - [ ] Classify the review depth. Treat authentication, authorization, money, destructive operations, data migration, public APIs, concurrency, distributed workflows, and irreversible rollout as high-risk.
 - [ ] Keep the run read-only. Do not mutate the source plan, implementation, task tracker, branch, or external system; a corrected plan may appear only in the review response. Allow only host-permitted rebuildable diagnostic caches or build artifacts and disclose them when created.
 
@@ -74,18 +75,18 @@ When sources disagree, prefer the repository for what is installed and implement
 
 ### 4. Review from Every Applicable Perspective
 
-- [ ] **Intent and traceability:** Every proposed change maps to the goal or an acceptance criterion; no requirement is uncovered and no step is speculative scope.
-- [ ] **Repository fit:** The plan respects actual project structure, conventions, supported stack, existing capabilities, and current work without overwriting unrelated changes.
-- [ ] **Architecture and ownership:** Layers, modules, orchestration, side effects, dependency direction, and resource ownership remain explicit and coherent.
+- [ ] **Intent and traceability:** Every proposed change and source of complexity maps to the intended outcome, an acceptance criterion, a safety need, or an evidenced constraint; combine work serving the same outcome, and remove speculative or merely ceremonial steps.
+- [ ] **Repository fit:** The plan respects actual project structure, conventions, supported stack, existing capabilities, maturity, current scale, team and operational capacity, and current work without overwriting unrelated changes.
+- [ ] **Architecture and ownership:** Layers, modules, orchestration, side effects, dependency direction, and resource ownership remain explicit, coherent, and proportionate to the evidenced problem.
 - [ ] **Interfaces and data:** Public APIs, events, schemas, configuration, persistence, serialization, compatibility, and migration paths are named wherever they change.
-- [ ] **Scenario completeness:** For each critical flow, trace actor trigger -> entrypoint -> runtime discovery or wiring -> usage context -> observable outcome.
+- [ ] **Scenario completeness:** For each critical flow, trace actor trigger -> entrypoint -> runtime discovery or wiring -> usage context -> observable outcome; include first meaningful use, failure, recovery, and repetition when they can change the intended experience.
 - [ ] **Correctness and failure modes:** Cover boundaries, invalid state, partial failure, retries, idempotency, concurrency, cancellation, timeouts, rollback, and cleanup where applicable.
 - [ ] **Security and privacy:** Cover trust boundaries, authentication, authorization, validation, secrets, sensitive data, logging, destructive actions, and abuse paths in proportion to risk.
-- [ ] **Dependencies and sequencing:** Model prerequisites as a DAG; parallel steps have no same-wave dependency or shared mutable output, and migrations, producers, consumers, deployments, and compatibility transitions are ordered safely.
-- [ ] **Capacity and degradation:** Bound user- or data-controlled work, state load and rate assumptions, and define behavior when a critical dependency, provider, queue, cache, or worker is unavailable.
+- [ ] **Dependencies and sequencing:** Use the fewest dependency-ordered steps that can reach acceptance safely; parallel steps have no same-wave dependency or shared mutable output, and migrations, producers, consumers, deployments, and compatibility transitions remain ordered correctly.
+- [ ] **Capacity and degradation:** Bound user- or data-controlled work and state load from evidenced demand; state rate assumptions and failure behavior without introducing scaling machinery for hypothetical traffic.
 - [ ] **Testing and acceptance:** Each important behavior has an observable verification method; tests cover critical product logic, errors, integration seams, and likely regressions.
 - [ ] **Delivery and operations:** Include documentation, configuration rollout, observability, deployment, rollback, and operator actions only where the change requires them.
-- [ ] **Simplicity and alternatives:** Challenge custom mechanisms, excess abstraction, duplicated platform or dependency features, premature extensibility, and changes with poor value-to-risk ratio.
+- [ ] **Simplicity and alternatives:** Challenge layers, services, abstractions, configuration, extensibility, infrastructure, and operational machinery whose lifecycle cost is not justified by the protected outcome, evidenced maturity, business horizon, current scale, or team capacity. Require every step to produce observable progress, merge adjacent work when ownership and verification remain clear, and prefer the shortest reversible design that preserves correctness, safety, compatibility, and an explicit path to evolve.
 - [ ] Mark a perspective `N/A` only when its absence is evident from the plan and repository; never silently skip a high-risk perspective.
 
 ### 5. Run an Independent Challenge When It Adds Signal
@@ -102,14 +103,14 @@ When sources disagree, prefer the repository for what is installed and implement
 
 - [ ] Deduplicate findings from repository inspection, research, and independent review; keep the strongest evidence and preserve meaningful disagreements.
 - [ ] Classify findings as `BLOCKER`, `MAJOR`, or `MINOR`: blockers prevent safe handoff, majors predict substantial rework or regression, and minors improve clarity without changing feasibility.
-- [ ] Reject unsupported findings, stylistic preferences presented as requirements, generic best practices with no demonstrated connection to this plan, and pre-existing problems that do not meet the plan-impact rule above.
+- [ ] Reject unsupported findings, inferred taste presented as fact, stylistic preferences presented as requirements, generic best practices with no demonstrated connection to this plan, architecture justified only by hypothetical maturity or scale, and pre-existing problems that do not meet the plan-impact rule above.
 - [ ] Confirm that every consequential implementation choice is fixed: interfaces, ownership, data flow, failure behavior, compatibility, verification, and rollout where applicable.
 - [ ] For every material assumption, record confidence, what breaks if it is false, and who or what step validates it before dependent work begins.
 - [ ] Map findings to verdicts: use `BLOCKED` when a required user choice, access, or authoritative fact is unavailable; use `REVISE` for any correctable `BLOCKER` or `MAJOR`; use `READY WITH CONCERNS` only when the plan is safe and executable with no uncovered requirement or consequential decision, but bounded non-blocking `MINOR` amendments or explicitly accepted residual risks remain; use `READY` only when no corrective finding or blocking evidence gap remains.
-- [ ] For `REVISE`, provide a complete replacement plan that preserves the user's intent and incorporates accepted corrections; do not leave the implementer to merge prose fragments.
+- [ ] For `REVISE`, provide a complete replacement plan with the fewest dependency-ordered, outcome-producing steps that preserve the user's intent and accepted corrections; omit restated context, meta-work, and phases that add no implementation or verification value.
 - [ ] For `READY WITH CONCERNS`, provide only the exact local plan amendments and accepted non-blocking risks; do not restate unchanged sections of the plan.
 - [ ] For `BLOCKED`, ask only the smallest questions that materially unlock a different plan, and state what was already verified.
-- [ ] Respect any host-required wrapper for plans, but keep the output content and verdict semantics below unchanged.
+- [ ] Respect any host-required wrapper, but keep the response as short as the evidence and verdict allow: state facts once, omit empty commentary and unchanged plan sections, and preserve the output content and verdict semantics below.
 
 ## Output Contract
 
@@ -120,6 +121,8 @@ When sources disagree, prefer the repository for what is installed and implement
 
 ## Scope and evidence
 - Plan reviewed
+- Intent statement: actor, protected outcome, consequential experience qualities, and inferred assumptions
+- Maturity and complexity fit: business horizon, current scale, team and operational capacity, and justified evolution path
 - Repository areas inspected
 - Commands or semantic queries used
 - External sources consulted

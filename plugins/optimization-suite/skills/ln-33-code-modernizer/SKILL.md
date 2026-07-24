@@ -5,7 +5,7 @@ description: "Modernizes a bounded capability by removing obsolete custom mechan
 
 # Code Modernizer
 
-**Goal:** Modernize a bounded capability only when the new design measurably reduces maintenance, risk, dependency duplication, or delivered artifact cost. Preserve behavior, isolate migrations, and revert changes that do not create net value.
+**Goal:** Modernize a bounded capability only when the new design measurably reduces human workflow friction, maintenance, risk, dependency duplication, or delivered artifact cost. Preserve behavior, isolate migrations, and revert changes that do not create net value.
 
 **Execution contract:** Treat the ordered checkbox workflow below as this skill's Definition of Done. Work through every item in order, and mark it complete only when its action and required evidence are complete. `N/A`, skipped, unavailable, or delegated items remain incomplete.
 Before returning, apply this skill's verdict, decision, and approval rules to every incomplete item and prepend **Checklist: X/Y complete**<br>**Incomplete: None | section/item — reason; outcome impact; exact next action**; list every incomplete item.
@@ -36,14 +36,14 @@ Do not replace working custom code merely because an external package exists. Do
 
 ### 1. Define the Modernization Target
 
-- [ ] Resolve the bounded capability, current pain, affected users or operators, success metric, constraints, and explicit non-goals.
+- [ ] Resolve the bounded capability, protected outcome, current pain, affected users, developers, or operators, success metric, constraints, and explicit non-goals. Treat emotional or incomplete wording as an intent signal, not evidence, and never let an inference override explicit requirements, facts, safety, or exact-output constraints.
 - [ ] Read repository instructions and inspect Git state, generated files, package-manager policy, and current user changes.
 - [ ] Inventory the current implementation, public contracts, consumers, configuration, persisted data, runtime registration, tests, and operational procedures.
-- [ ] Identify the specific maintenance, security, compatibility, duplication, bundle, startup, or delivery cost that must improve.
-- [ ] Establish behavioral and relevant quantitative baselines before changing code.
+- [ ] Identify the specific workflow, maintenance, security, compatibility, duplication, bundle, startup, or delivery cost that must improve.
+- [ ] Establish behavioral and relevant quantitative baselines before changing code; for human workflows use reproducible observations such as required steps or concepts, time to first meaningful result, error comprehension, and recovery effort.
 - [ ] Isolate the work so each migration step can be reverted without touching unrelated or user-owned changes.
 - [ ] Start a run-owned resource ledger with every created absolute path, worktree, process ID, cache, report, and temporary artifact; never register pre-existing resources as cleanup targets.
-- [ ] Stop if modernization is only aesthetic, depends on speculative future scale, or cannot define a verifiable net benefit.
+- [ ] Stop with `NO_CHANGE` if modernization is only aesthetic, depends on speculative future scale, or cannot define a reproducible benefit to the protected outcome.
 
 ### 2. Evaluate the Simplest Credible Design
 
@@ -53,8 +53,8 @@ Do not replace working custom code merely because an external package exists. Do
 - [ ] Verify candidate claims from official documentation, repository releases, advisories, and package metadata matching the intended version.
 - [ ] Inspect migration guides, breaking changes, configuration model, lifecycle, failure behavior, transitive dependencies, and exit strategy.
 - [ ] Build a semantic-gap ledger for replacement candidates: input normalization, Unicode/time/date behavior, precision, ordering, errors, cancellation, streaming, concurrency, security limits, and other edge behavior relevant to the current contract.
-- [ ] Compare retain, simplify in place, use existing platform capability, adopt external software, and remove capability where each is credible.
-- [ ] Estimate code removed, adapters added, dependency and bundle delta, migration effort, operational change, rollback difficulty, and residual lock-in.
+- [ ] Compare retain, simplify in place, use existing platform capability, adopt external software, and remove capability where each is credible; prefer the shortest safe path that removes toil without hiding truth or control.
+- [ ] Estimate workflow steps and concepts removed, time-to-result and recovery delta, code removed, adapters added, dependency and bundle delta, migration effort, operational change, rollback difficulty, and residual lock-in where each is relevant.
 - [ ] Select the option with the best evidence-backed value-to-risk ratio, not the newest or most popular option.
 - [ ] Mark the chosen option `SELECTED` and every considered but non-chosen option `REJECTED`, recording the evidence or tradeoff that determined each decision.
 - [ ] Request user direction when licensing, public contract, persisted-data migration, vendor commitment, or irreversible operational tradeoffs change product intent; applying a migration outside a disposable environment always requires explicit authorization.
@@ -76,7 +76,7 @@ Do not replace working custom code merely because an external package exists. Do
 
 - [ ] Run focused contract and regression tests immediately after each migration step.
 - [ ] Run the repository's required build, lint, type, test, smoke, packaging, and application-start checks.
-- [ ] Compare the agreed maintenance, dependency, bundle, startup, performance, or defect metric with the baseline under equivalent conditions.
+- [ ] Compare the agreed workflow, maintenance, dependency, bundle, startup, performance, or defect metric with the baseline under equivalent conditions.
 - [ ] For bundle work, compare real build composition, parsed and compressed size, chunking, loading behavior, and source maps rather than package metadata alone.
 - [ ] Evaluate entrypoint and route critical paths separately: total bytes may fall while initial transfer, request waterfalls, decompression, parse/compile, execution, or cache invalidation gets worse.
 - [ ] Verify tree-shaking and deduplication claims against the actual bundler graph, module format, exports, side-effect metadata, and target browsers/runtimes before changing imports or package metadata.
@@ -102,9 +102,9 @@ Do not replace working custom code merely because an external package exists. Do
 **Verdict:** MODERNIZED | PARTIAL | NO_CHANGE | BLOCKED
 
 ## Target and baseline
-- Capability and current cost
+- Capability, protected outcome, affected human workflow, and current cost
 - Contracts and consumers
-- Behavioral and quantitative baselines
+- Behavioral, workflow, and quantitative baselines
 
 ## Alternatives
 | Option | Evidence | Net value | Risk | Decision |

@@ -5,7 +5,7 @@ description: "Reviews a completed scoped change and its affected runtime and con
 
 # Delivery Reviewer
 
-**Goal:** Review only the requested delivery change and the causal runtime, contract, and data paths needed to prove its business outcome. Judge whether that scope meets acceptance and is safe to release; do not audit unrelated code, repair findings, update trackers, or widen scope.
+**Goal:** Review only the requested delivery change and the causal runtime, contract, and data paths needed to prove its business outcome. Judge whether that scope meets acceptance and is safe to release in the fewest words that preserve evidence; do not audit unrelated code, repair findings, update trackers, or widen scope.
 
 **Execution contract:** Treat the ordered checkbox workflow below as this skill's Definition of Done. Work through every item in order, and mark it complete only when its action and required evidence are complete. `N/A`, skipped, unavailable, or delegated items remain incomplete.
 Before returning, apply this skill's verdict, decision, and approval rules to every incomplete item and prepend **Checklist: X/Y complete**<br>**Incomplete: None | section/item — reason; outcome impact; exact next action**; list every incomplete item.
@@ -50,11 +50,11 @@ Scale the panel to the risk and size of the change. For a small, low-risk change
 
 | Required hat | Independent review question |
 |---|---|
-| White — facts | What business behavior changed, what was required, which causal paths are affected, and what scoped evidence is missing or inconsistent? |
-| Red — human response | Within the changed experience, what will surprise, confuse, frustrate, or mislead a user, developer, reviewer, or operator? Treat intuition as a hypothesis until reproduced or traced. |
+| White — facts | What business behavior changed, what human or system outcome was intended, which causal paths are affected, and what scoped evidence is missing or inconsistent? |
+| Red — human response | Across first use, failure, recovery, and repetition, what will surprise, confuse, frustrate, or mislead a user, developer, reviewer, or operator? Treat intuition as a hypothesis until reproduced or traced to declared intent or observable friction. |
 | Black — caution | How can the changed behavior regress, corrupt state, violate a trust boundary, or fail at edges and under partial failure? |
-| Yellow — value | What intended value, compatibility, and sound tradeoffs of this change must be preserved, and which apparent problems are false positives or overcorrections? |
-| Green — alternatives | Is there a materially simpler, safer, more maintainable, or more testable implementation of the scoped change that avoids demonstrated risk without widening scope? |
+| Yellow — value | What intended value, experience qualities, compatibility, and sound tradeoffs must be preserved, and which apparent problems are false positives or overcorrections? |
+| Green — alternatives | Relative to evidenced maturity, business goals, current scale, and team and operational capacity, is there a materially simpler, safer, more maintainable, or more testable implementation that preserves the protected outcome and required safeguards without widening scope? |
 
 | Optional specialist hat | Add when the diff includes | Focus |
 |---|---|---|
@@ -71,13 +71,12 @@ Choose at most four specialists by highest plausible impact, likelihood, and rol
 
 ### Independence and Prompt Contract
 
-- Give every subagent the same frozen base packet: business change thesis, acceptance criteria, comparison base and head, scope map with changed, causally supporting, and excluded surfaces, non-goals, approved approach, repository instructions, risk classification, and allowed commands.
+- Give every subagent the same frozen base packet: business change thesis and intent statement, maturity and complexity evidence, acceptance criteria, comparison base and head, scope map with changed, causally supporting, and excluded surfaces, non-goals, approved approach, repository instructions, risk classification, and allowed commands.
 - Give each subagent exactly one primary hat, its risk questions, the read-only and scope boundaries, and the result schema below. Require a change-causal scope link for every candidate; do not include the lead's provisional findings or any sibling result.
 - Allow read, search, diff, language intelligence, official-document research, and non-mutating verification. Forbid tracked-file edits, commits, pushes, deployments, tracker updates, external-state changes, and nested subagents.
 - Launch all selected hats in parallel. If concurrency is limited, use waves but keep later prompts blind to earlier results. Wait for every selected hat before synthesis.
 - Retry a failed critical hat once only when the retry changes a concrete cause such as missing scope, transient execution, or unavailable input. Treat remaining failures as coverage limitations, never product findings.
 - Do not run a debate round by default. If material claims conflict, the Blue lead resolves them with direct evidence or one bounded verification pass focused only on the disputed claim.
-
 Each subagent returns a compact report:
 
 ```markdown
@@ -100,7 +99,8 @@ Each subagent returns a compact report:
 
 ### 1. Establish the Business and Change Scope
 
-- [ ] Before reviewing code, state the business change thesis: affected actors, problem, intended observable outcome, changed behavior, acceptance criteria, invariants, explicit non-goals, and release boundary; mark unsupported assumptions `UNKNOWN` and use `BLOCKED` when the thesis cannot be established reliably.
+- [ ] Before reviewing code, state the business change thesis and intent statement: affected actors, problem, protected human or system outcome, consequential experience qualities, changed behavior, acceptance criteria, invariants, explicit non-goals, and release boundary. Treat emotional or incomplete wording as an intent signal, mark unsupported interpretations `UNKNOWN`, never let them override explicit requirements, evidence, safety, or exact-output constraints, and use `BLOCKED` when the thesis cannot be established reliably.
+- [ ] Establish the change's complexity fit from evidenced project or product maturity, business horizon, current scale, team and operational capacity, and lifecycle cost. Do not infer enterprise architecture from hypothetical growth, and do not label complexity required for correctness, safety, compatibility, or demonstrated load as overengineering.
 - [ ] Read applicable repository instructions and inspect uncommitted work, then resolve the exact comparison base and head, implementation delta, approved plan or target architecture, and allowed transitional compatibility before running verification commands.
 - [ ] Build a scope map of changed surfaces, causally affected supporting surfaces, and explicitly excluded surfaces. Read outside the diff only to trace an affected runtime or contract path; do not search unrelated code for possible findings.
 - [ ] Classify only change-triggered risk based on trust boundaries, money, destructive actions, data migration, public contracts, concurrency, distributed coordination, and rollback difficulty.
@@ -112,7 +112,7 @@ Each subagent returns a compact report:
 
 - [ ] Map every acceptance criterion to concrete changed code, configuration, data, documentation, and a verification method; mark each `PASS`, `FAIL`, or `UNPROVEN`.
 - [ ] Inspect changed files plus only the unchanged definitions, callers, consumers, interfaces, tests, migrations, and runtime registration needed to prove an affected path; reading a supporting surface does not make it finding scope.
-- [ ] Verify that the implemented behavior serves the real user or system goal rather than only completing an internal mechanism.
+- [ ] Verify that the implemented behavior serves the protected user or system outcome rather than only completing an internal mechanism, including first meaningful use, failure, recovery, and repetition when they materially shape the experience.
 - [ ] Map every material decision and step in an approved plan or target architecture to the implementation; treat omissions as unmet unless explicitly superseded, and accept deviations only when their rationale is evidenced and preserves the goal, constraints, and acceptance criteria.
 - [ ] Trace each critical scenario through actor trigger -> entrypoint -> runtime discovery or wiring -> usage context -> observable outcome.
 - [ ] Confirm that new components, routes, commands, handlers, jobs, events, or configuration are actually registered and discoverable at runtime.
@@ -127,10 +127,10 @@ Each subagent returns a compact report:
 - [ ] Check public API, event, schema, configuration, serialization, and storage compatibility for changed producers and consumers; match event names, payloads, registration, ordering, and both ends of every changed channel.
 - [ ] Verify migrations, backfills, defaults, indexes, deployment ordering, and mixed-version behavior when persisted or distributed state changes.
 - [ ] Check resource ownership for files, streams, sessions, connections, processes, subscriptions, and temporary artifacts created, consumed, or transferred by affected paths on success and failure.
-- [ ] Check only dependency direction, module boundaries, orchestration, and side-effect ownership crossed or modified by the change; do not turn adjacent architecture into a repository audit.
+- [ ] Check only dependency direction, module boundaries, orchestration, and side-effect ownership crossed or modified by the change; require their complexity to match the evidenced maturity and business need without turning adjacent architecture into a repository audit.
 - [ ] When code is replaced, verify that the old implementation, signatures, aliases, re-exports, shims, adapters, flags, dual-read or dual-write paths, and files are removed and every caller is migrated; retain compatibility only when an evidenced supported contract requires it, with ownership and a bounded removal condition.
-- [ ] Check whether changed code introduces duplication, hardcoded operational values, misleading names, or unnecessary abstractions; do not inventory pre-existing instances elsewhere.
-- [ ] Challenge only custom machinery introduced or expanded by the change when an existing platform or declared dependency provides the required capability with lower risk.
+- [ ] Check whether changed code introduces duplication, hardcoded operational values, misleading names, or abstractions that cannot be traced to the protected outcome, safety, or an evidenced constraint; do not inventory pre-existing instances elsewhere.
+- [ ] Challenge custom or enterprise-grade machinery introduced or expanded by the change when its lifecycle and operational cost exceeds what the protected outcome, maturity, business horizon, current scale, or team capacity justifies, or when an existing platform or declared dependency provides the capability with lower risk.
 - [ ] Research only external claims that affect the scoped verdict, using official sources matching the installed or proposed version.
 
 ### 4. Verify Tests, Documentation, and Operations
@@ -141,7 +141,7 @@ Each subagent returns a compact report:
 - [ ] Discover verification commands in this order: repository docs, tool configuration, package or build manifests, then justified fallback; run the narrowest relevant checks first and record each command's source.
 - [ ] Run required build, lint, type, test, migration, and smoke gates with CI-safe options, then attribute failures to the change or baseline instead of treating every repository failure as an in-scope defect.
 - [ ] Preserve command, exit status, relevant output, and limitations; a pre-existing failure is a verification limitation unless evidence connects it causally to the change.
-- [ ] Verify user-visible behavior with the appropriate runtime or browser tool when acceptance cannot be proven statically; for UI changes exercise keyboard and focus flow, accessible names, reduced motion, responsive states, copy, and localization when applicable.
+- [ ] Verify user-visible behavior from the other side with the appropriate runtime or browser tool when acceptance cannot be proven statically; exercise first use, material failure and recovery, and repeated use where relevant, plus keyboard and focus flow, accessible names, reduced motion, responsive states, copy, and localization for applicable UI changes.
 - [ ] Confirm that affected documentation, API and configuration references, examples, migrations, runbooks, operator steps, and code comments are current, mutually consistent, and non-contradictory with implementation and requirements; comments must explain enduring intent or constraints rather than restate code.
 - [ ] Check logs, metrics, traces, health signals, feature controls, deployment order, rollback, and recovery where the change creates operational risk.
 - [ ] Distinguish a missing verification environment from a product failure; use `UNPROVEN` and explain the exact evidence still required.
@@ -150,15 +150,15 @@ Each subagent returns a compact report:
 
 - [ ] Launch each selected hat in a separate context with the common base packet, one primary perspective, read-only tools, and the required result schema.
 - [ ] Keep hats blind to one another, run independent work in parallel or blind waves, wait for all results, and record failures or retries.
-- [ ] Verify every candidate finding against code, commands, behavior, or authoritative documentation before accepting it; trace symptom -> causal path -> violated contract, inspect only affected sibling paths that share the changed contract, and reject symptom-only corrections.
+- [ ] Verify every candidate finding against code, commands, reproduced behavior, declared intent, or authoritative documentation before accepting it; trace symptom -> causal path -> violated contract or protected outcome, inspect only affected sibling paths that share the changed contract, and reject subjective reactions without that trace and symptom-only corrections.
 - [ ] Accept a finding only when evidence shows it was introduced by the diff, made reachable or materially worse by the diff, violates an acceptance criterion on an affected path, or is a required-gate failure caused by the change. Treat every other pre-existing or out-of-scope issue only as a verification limitation when it blocks acceptance; never recommend its repair.
-- [ ] Deduplicate overlapping findings and preserve the strongest evidence and widest demonstrated impact.
+- [ ] Deduplicate findings by root cause, preserve the strongest evidence and widest demonstrated impact, and recommend one smallest sufficient correction for linked symptoms instead of splitting work into ceremonial steps.
 - [ ] Resolve contradictory claims by tracing the disputed behavior; use a bounded verifier only when direct inspection cannot settle it.
 - [ ] Classify findings as `P0` through `P3`: immediate catastrophic risk, release blocker, important non-blocking defect, or minor actionable issue.
 - [ ] Use `FAIL` for any evidenced unresolved `P0` or `P1`, unmet acceptance criterion, required failing gate, or demonstrated unsafe high-risk behavior.
 - [ ] Use `CONCERNS` only when remaining issues are explicitly non-blocking and the accepted risk is stated. Use `PASS` only when required evidence is complete.
 - [ ] Use `BLOCKED` when a required hat, risk-triggered specialist, safety environment, authoritative contract, or other acceptance prerequisite is unavailable without an equivalent credible replacement; report the gap as coverage, not a product defect.
-- [ ] Return hat selection and coverage, the acceptance matrix, test actions, verified findings, commands and tools used, limitations, verdict rationale, and residual risks without modifying the delivery.
+- [ ] Return only the hat coverage, acceptance evidence, test actions, findings, commands, limitations, verdict rationale, and residual risks needed to support the decision; omit passed-area narration and repeated context, collapse empty sections to `None`, and include rejected hypotheses only when they resolve a material ambiguity.
 
 ## Output Contract
 
@@ -168,7 +168,7 @@ Each subagent returns a compact report:
 **Verdict:** PASS | CONCERNS | FAIL | BLOCKED
 
 ## Scope and evidence
-- Business change thesis, non-goals, and acceptance criteria
+- Business change thesis, intent statement, maturity and complexity fit, non-goals, and acceptance criteria
 - Comparison base, head, and exact implementation delta
 - Scope map: changed, causally supporting, and explicitly excluded surfaces
 - Commands, discovery sources, and runtime checks executed

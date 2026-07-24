@@ -35,7 +35,7 @@ Never run acceptance tests against production or an unapproved external target. 
 
 ### 1. Establish the Change Boundary
 
-- [ ] Resolve the requirements, acceptance criteria, actor, observable outcome, explicit non-goals, allowed test paths, and allowed test-documentation paths.
+- [ ] Resolve the requirements, acceptance criteria, actor, protected human or system outcome, observable contract, explicit non-goals, allowed test paths, and allowed test-documentation paths. Treat inferred experience qualities as assumptions and never let them override explicit requirements, evidence, safety, or exact-output constraints.
 - [ ] Read applicable repository instructions and inspect Git state, untracked files, generated areas, and existing user changes before editing.
 - [ ] Detect the project-native runner, directory layout, naming, fixtures, setup, cleanup, environment configuration, and CI invocation.
 - [ ] Map each requirement to the boundary that can prove it: UI, API, CLI, message, integration, file, or durable state.
@@ -44,9 +44,9 @@ Never run acceptance tests against production or an unapproved external target. 
 
 ### 2. Design Reproducible Acceptance Evidence
 
-- [ ] Define setup, action, terminal outcome, independent oracle, expected evidence, and cleanup for every requirement.
-- [ ] Use the lowest production-shaped boundary that still proves the requirement; do not replace acceptance evidence with a unit-level implementation check.
-- [ ] Include material invalid, authorization, boundary, partial-failure, retry, idempotency, recovery, and compatibility behavior.
+- [ ] Define the protected outcome, defect class, setup, action, terminal outcome, independent oracle, expected evidence, and cleanup for every requirement.
+- [ ] Use the lowest production-shaped boundary that still proves the requirement; do not replace acceptance evidence with a unit-level implementation check or create acceptance coverage for an internal detail absent from the observable contract.
+- [ ] Include invalid, authorization, boundary, partial-failure, retry, idempotency, recovery, and compatibility behavior only when it can materially change the protected outcome.
 - [ ] Allocate unique or namespaced test data and control clock, randomness, locale, ordering, and concurrency where they affect reproducibility.
 - [ ] Use real dependencies or approved emulators when mocks would bypass the behavior under acceptance; pin versions and verify readiness and reset behavior.
 - [ ] For deterministic output, derive golden or diff expectations from an independent contract and keep the artifact small enough to review.
@@ -54,7 +54,7 @@ Never run acceptance tests against production or an unapproved external target. 
 
 ### 3. Implement within Test Scope
 
-- [ ] Create or update tests in the existing project layout with behavioral names and failure messages that identify the violated requirement.
+- [ ] Create or update tests in the existing project layout with behavioral names and failure messages that identify the violated requirement, protected outcome, and detected defect.
 - [ ] Reuse maintained fixtures and helpers only when their defaults and side effects remain visible; avoid a new abstraction for one scenario.
 - [ ] Make setup fail fast on missing prerequisites and make cleanup safe after success, assertion failure, timeout, cancellation, or partial setup.
 - [ ] Keep tests rerunnable and idempotent; do not depend on execution order or silently reuse state from a previous run.
@@ -74,7 +74,7 @@ Never run acceptance tests against production or an unapproved external target. 
 
 ### 5. Finalize without Overclaiming
 
-- [ ] Map every requirement to its test path, command, oracle, and result as `PASS`, `FAIL`, or `UNPROVEN`.
+- [ ] Map every requirement and protected outcome to its test path, command, oracle, and result as `PASS`, `FAIL`, or `UNPROVEN`.
 - [ ] Use `COMPLETE` when the requested tests are created and all required acceptance evidence executes to a recorded `PASS` or `FAIL`; this verdict describes evidence completion, not product correctness.
 - [ ] Use `INCOMPLETE` when tests are created but an environment, dependency, or interrupted run prevents complete execution; state the exact missing check.
 - [ ] Use `BLOCKED` when tests cannot be created safely, requirements lack a reliable oracle, or the workspace cannot be protected.
@@ -92,9 +92,9 @@ Never run acceptance tests against production or an unapproved external target. 
 - Runner, boundary, target, and prerequisites
 
 ## Requirements matrix
-| Requirement | Test | Oracle | Command | Result |
-|---|---|---|---|---|
-| ... | ... | ... | ... | PASS / FAIL / UNPROVEN |
+| Protected outcome | Requirement | Test | Oracle | Command | Result |
+|---|---|---|---|---|---|
+| ... | ... | ... | ... | ... | PASS / FAIL / UNPROVEN |
 
 ## Changes and evidence
 - Created or changed test and documentation files

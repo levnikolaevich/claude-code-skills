@@ -32,16 +32,17 @@ Keep the evaluation read-only. Do not create project files, roadmaps, Epics, Sto
 | `UNKNOWN` | Evidence is unavailable, stale, incomparable, or too weak to support a decision |
 
 Do not turn `REPORTED`, `ESTIMATED`, or `INFERRED` evidence into a measured market size, search volume, conversion rate, revenue, or willingness-to-pay claim. Date every external source and distinguish the event date from the publication date when they differ.
+Treat the creator thesis, intended experience, taste, and conviction as owner preferences and strategic-fit inputs, never as demand, acquisition, or willingness-to-pay evidence.
 
 ## Checklist
 
 ### 1. Frame the Decision
 
-- [ ] Resolve the existing product or capability, target users, decision horizon, available assets, geographic or regulatory scope, constraints, and explicit non-goals.
+- [ ] Resolve the existing product or capability, target users, creator thesis, intended experience, decision horizon, available assets, geographic or regulatory scope, constraints, and explicit non-goals.
 - [ ] Accept user-supplied candidates or generate a bounded set of materially distinct opportunities from product context and current signals; do not create cosmetic variants of one idea.
 - [ ] Define what would justify deeper validation: identifiable user and problem, observable demand, reachable channel, credible value exchange, differentiating wedge, and affordable experiment.
 - [ ] Separate discovery of a new direction from prioritization of already committed work or implementation planning.
-- [ ] Record assumptions that can reverse the recommendation and identify which are discoverable through research versus user intent.
+- [ ] Record assumptions that can reverse the recommendation and identify which are discoverable through research versus user intent. Treat emotional or incomplete wording as an owner-preference signal, never let it override facts, safety, or explicit constraints, and ask one concise question only when different interpretations would materially change the candidates or experiment.
 
 ### 2. Collect One Evidence Bundle per Candidate
 
@@ -64,7 +65,7 @@ Do not turn `REPORTED`, `ESTIMATED`, or `INFERRED` evidence into a measured mark
 
 ### 4. Compare Survivors and Choose the Next Experiment
 
-- [ ] Compare survivors on evidence strength, problem severity, channel reachability, differentiation, economics, validation cost, strategic fit, and reversibility without collapsing them into a fake composite score.
+- [ ] Compare survivors on evidence strength, problem severity, channel reachability, differentiation, economics, validation cost, strategic fit with the creator thesis and intended experience, and reversibility without collapsing them into a fake composite score.
 - [ ] Preserve meaningful disagreements and sensitivity: show which assumption would cause another candidate to become preferable.
 - [ ] Select one primary recommendation only when its evidence is materially stronger for the stated goal; otherwise return `INCONCLUSIVE`.
 - [ ] Define the cheapest credible validation experiment that tests the weakest decisive assumption through observed behavior rather than stated purchase intent alone.
@@ -89,6 +90,7 @@ Do not turn `REPORTED`, `ESTIMATED`, or `INFERRED` evidence into a measured mark
 
 ## Decision context
 - Product, audience, constraints, candidates, and assumptions
+- Creator thesis and intended experience, explicitly separated from market evidence
 
 ## Evidence comparison
 | Candidate | Demand | Reachable channel | Competition and wedge | Economics | Validation cost | Confidence |

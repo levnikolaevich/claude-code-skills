@@ -35,20 +35,20 @@ Keep the run read-only. Do not create tests, fixtures, snapshots, tasks, or docu
 
 ### 1. Establish Scope and Evidence
 
-- [ ] Resolve the feature, requirements, acceptance criteria, actors, explicit non-goals, and observable outcomes; return `BLOCKED` if there is no concrete behavior to plan for.
+- [ ] Resolve the feature, requirements, acceptance criteria, actors, explicit non-goals, and protected human or system outcomes; separate the requested mechanism from the result it must enable and return `BLOCKED` if there is no concrete behavior to plan for.
 - [ ] Read applicable repository instructions and inspect Git state so current work and unrelated changes are not mistaken for established behavior.
 - [ ] Detect languages, frameworks, runners, test directories, fixtures, factories, environments, CI gates, coverage, contract tests, and manual test surfaces.
 - [ ] Map existing evidence to each requirement and mark it `PROVED`, `PARTIAL`, `MISSING`, or `UNAVAILABLE` based on the actual oracle.
 - [ ] Inspect manual, exploratory, incident, and production evidence when it reveals behavior that automated suites do not cover.
 - [ ] Identify environment, data, credentials, services, devices, browsers, and destructive-state constraints before proposing scenarios.
-- [ ] Record assumptions and unknowns that can change test level, priority, or feasibility.
+- [ ] Record assumptions and unknowns that can change test level, priority, or feasibility. Treat emotional or incomplete wording as an intent signal rather than evidence, never let it override explicit requirements, safety, facts, or exact-output constraints, and ask one concise question only when different interpretations would materially change the strategy.
 
 ### 2. Build the Risk Map
 
 - [ ] Trace critical flows from actor trigger through entrypoint, runtime wiring, state change, and durable or user-visible outcome.
 - [ ] Identify uniquely important local behavior involving money, authentication, authorization, ownership, data integrity, destructive actions, migrations, public contracts, or irreversible workflows.
-- [ ] Enumerate plausible defect classes: incorrect success, rejected valid input, accepted invalid input, boundary error, partial failure, duplicate delivery, ordering, timeout, retry, cancellation, race, rollback, recovery, and compatibility drift.
-- [ ] Separate product risks from implementation details and from behavior already guaranteed by a dependency.
+- [ ] Enumerate plausible defect classes: incorrect success, rejected valid input, accepted invalid input, boundary error, partial failure, duplicate delivery, ordering, timeout, retry, cancellation, race, rollback, recovery, and compatibility drift; state what protected outcome is lost or what concrete harm follows.
+- [ ] Separate product risks from implementation details and behavior already guaranteed by a dependency; exclude technically representable states that protect no unique local outcome or decision.
 - [ ] Identify privacy-sensitive or regulated test data and require synthetic, minimized, or explicitly approved fixtures.
 - [ ] Use current external evidence only when version-sensitive contracts, recurring user failures, abuse patterns, or interoperability risks can change the map.
 - [ ] Rank risks qualitatively and explain ties or uncertainty; do not manufacture precision from missing frequency or impact data.
@@ -66,12 +66,12 @@ Keep the run read-only. Do not create tests, fixtures, snapshots, tasks, or docu
 
 ### 4. Produce a Prioritized Test Matrix
 
-- [ ] For every scenario, name the requirement, risk, defect class, test level, setup, action, oracle, expected evidence, and required environment.
+- [ ] For every scenario, name the protected outcome, requirement, risk, defect class, test level, setup, action, oracle, expected evidence, and required environment.
 - [ ] Mark existing scenarios that should be retained or strengthened and new scenarios that should be added; do not redesign the entire suite without a demonstrated need.
 - [ ] Order scenarios so safety-critical and high-information checks run before expensive breadth, while preserving prerequisite and state dependencies.
 - [ ] Identify which scenarios can run in parallel and which share mutable state, rate limits, accounts, devices, or environment setup.
 - [ ] Separate release-gating scenarios from slower diagnostic or exploratory coverage so the plan does not make routine delivery impractical.
-- [ ] State exclusions explicitly, including low-value duplication, framework behavior, infeasible environments, and accepted residual risks.
+- [ ] State exclusions explicitly, including scenarios with no unique protected outcome or defect signal, low-value duplication, framework behavior, infeasible environments, and accepted residual risks.
 - [ ] Use `READY` when the strategy is executable and decision-complete, `INCONCLUSIVE` when useful partial planning is possible but material evidence is missing, and `BLOCKED` when requirements or a safety-critical boundary cannot be established.
 - [ ] Return the verdict, risk map, existing evidence, prioritized matrix, environment needs, exclusions, limitations, and residual risks.
 - [ ] State the smallest next evidence-gathering action for every `INCONCLUSIVE` or `BLOCKED` area.
@@ -89,14 +89,14 @@ Keep the run read-only. Do not create tests, fixtures, snapshots, tasks, or docu
 - Assumptions and unavailable evidence
 
 ## Risk map
-| Behavior | Failure or defect class | Impact | Existing proof | Priority rationale |
-|---|---|---|---|---|
-| ... | ... | ... | PROVED / PARTIAL / MISSING / UNAVAILABLE | ... |
+| Protected outcome | Behavior | Failure or defect class | Impact | Existing proof | Priority rationale |
+|---|---|---|---|---|---|
+| ... | ... | ... | ... | PROVED / PARTIAL / MISSING / UNAVAILABLE | ... |
 
 ## Prioritized scenarios
-| Priority | Requirement | Level | Scenario | Oracle and expected evidence | Environment |
-|---:|---|---|---|---|---|
-| ... | ... | unit / contract / integration / E2E | ... | ... | ... |
+| Priority | Protected outcome | Requirement | Level | Scenario | Oracle and expected evidence | Environment |
+|---:|---|---|---|---|---|---|
+| ... | ... | ... | unit / contract / integration / E2E | ... | ... | ... |
 
 ## Next evidence-gathering actions
 Exact repository, environment, contract, or user decision needed for each `INCONCLUSIVE` or `BLOCKED` area.

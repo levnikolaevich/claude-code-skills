@@ -1,5 +1,7 @@
 # Claude-Codex Skills
 
+[![MCP Toplist](https://mcptoplist.com/badge/io.github.levnikolaevich%2Fhex-line-mcp.svg)](https://mcptoplist.com/server/io.github.levnikolaevich%2Fhex-line-mcp)
+
 A compact marketplace of standalone engineering skills for Claude Code and Codex.
 
 > **Why this repository is intentionally small:** Earlier coding models needed a large orchestration and evaluation harness to follow complex workflows reliably. Modern Claude and Codex models work better with concise procedural guidance, so that machinery has been removed. These skills retain only the domain knowledge, decision gates, tool guidance, and evidence checklists worth bringing into context.

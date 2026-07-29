@@ -60,6 +60,19 @@ Optional toolkit for people who maintain skill or plugin repositories and other 
 | 63 | [Release Publisher](plugins/maintainer-suite/skills/ln-63-release-publisher/SKILL.md) | Prepare and publish an approved tagged GitHub release. |
 | 64 | [Community Announcer](plugins/maintainer-suite/skills/ln-64-community-announcer/SKILL.md) | Draft and publish fact-checked GitHub Discussions project announcements. |
 
+### Architecture Suite
+
+Creates durable architecture artifacts without coupling the skills to one another. Each workflow operates independently and communicates only through optional repository documents.
+
+| Index | Skill | Purpose |
+|---:|---|---|
+| 71 | [System Design Baseline Builder](plugins/architecture-suite/skills/ln-71-system-design-baseline-builder/SKILL.md) | Establish measurable architecture drivers and constraints in one project baseline. |
+| 72 | [Current Architecture Documenter](plugins/architecture-suite/skills/ln-72-current-architecture-documenter/SKILL.md) | Document implemented architecture from repository evidence. |
+| 73 | [System Design Proposal Builder](plugins/architecture-suite/skills/ln-73-system-design-proposal-builder/SKILL.md) | Turn requirements and constraints into a decision-complete target design. |
+| 74 | [Architecture Decision Recorder](plugins/architecture-suite/skills/ln-74-architecture-decision-recorder/SKILL.md) | Record one significant decision with alternatives and consequences. |
+| 75 | [Architecture Diagram Builder](plugins/architecture-suite/skills/ln-75-architecture-diagram-builder/SKILL.md) | Create evidence-backed current or target architecture views. |
+| 76 | [Architecture Migration Planner](plugins/architecture-suite/skills/ln-76-architecture-migration-planner/SKILL.md) | Plan a reversible current-to-target transition with compatibility and rollback. |
+
 ## Install in Claude Code
 
 Add the marketplace and install only the suites you need:
@@ -72,6 +85,7 @@ Add the marketplace and install only the suites you need:
 /plugin install testing-suite@levnikolaevich-skills-marketplace
 /plugin install product-discovery-suite@levnikolaevich-skills-marketplace
 /plugin install maintainer-suite@levnikolaevich-skills-marketplace
+/plugin install architecture-suite@levnikolaevich-skills-marketplace
 ```
 
 For local development, load one plugin directly:
@@ -90,6 +104,7 @@ codex plugin add optimization-suite@levnikolaevich-skills-marketplace
 codex plugin add testing-suite@levnikolaevich-skills-marketplace
 codex plugin add product-discovery-suite@levnikolaevich-skills-marketplace
 codex plugin add maintainer-suite@levnikolaevich-skills-marketplace
+codex plugin add architecture-suite@levnikolaevich-skills-marketplace
 ```
 
 ## Repository layout
@@ -104,7 +119,8 @@ codex plugin add maintainer-suite@levnikolaevich-skills-marketplace
     ├── optimization-suite/
     ├── testing-suite/
     ├── product-discovery-suite/
-    └── maintainer-suite/
+    ├── maintainer-suite/
+    └── architecture-suite/
 ```
 
 Each plugin contains `.codex-plugin/plugin.json` for Codex and a shared `skills/<skill>/SKILL.md` tree used by both hosts.
@@ -120,7 +136,7 @@ The structure follows the current official [Codex skill guide](https://learn.cha
 
 ## Indexing
 
-The first digit identifies the plugin and the second identifies the skill within it: `1x` review, `2x` audit, `3x` optimization, `4x` testing, `5x` product discovery, and `6x` repository maintenance. See the canonical allocation and overflow rules in [AGENTS.md](AGENTS.md#index-system).
+The first digit identifies the plugin and the second identifies the skill within it: `1x` review, `2x` audit, `3x` optimization, `4x` testing, `5x` product discovery, `6x` repository maintenance, and `7x` architecture artifact creation. See the canonical allocation and overflow rules in [AGENTS.md](AGENTS.md#index-system).
 
 ## License
 

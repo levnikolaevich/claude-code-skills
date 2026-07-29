@@ -1,6 +1,6 @@
 ---
 name: ln-24-architecture-auditor
-description: "Audits implemented architecture fitness, boundaries, contracts, dependency topology, structure, and configuration ownership. Use for system structure; not implementation-plan review."
+description: "Audits implemented architecture fitness, boundaries, contracts, dependencies, and configuration ownership. Use for system structure; not for current-state documentation, diagrams, or plan review."
 ---
 
 # Architecture Auditor
@@ -31,18 +31,20 @@ Use diagrams only when they clarify a relationship that prose cannot. Do not gen
 - Framework convention and generated wiring require framework-aware verification before being labeled leakage or dead code.
 - Modernization is justified only by a present defect or measurable simplification, not novelty.
 - Explicit repository boundary rules define intended constraints; documentation explains them; inference from folder names is low-confidence evidence and must not create a violation by itself.
-- A recorded baseline separates new, resolved, and accepted debt. It does not make an active correctness or security risk disappear.
+- A prior audit baseline separates new, resolved, and accepted debt. It does not make an active correctness or security risk disappear.
+- Shared system-design baseline, current-state, target-design, decision, diagram, and migration artifacts are optional intent evidence. Their absence is not a defect by itself, and their presence never outranks executable behavior for the implemented state.
 
 ## Checklist
 
 ### 1. Discover the Actual Architecture
 
 - [ ] Read repository instructions, architecture documents, manifests, entrypoints, deployment definitions, and configuration ownership rules.
+- [ ] Discover shared architecture artifacts by repository convention, distinguish a system-design baseline from a prior audit baseline, and classify each as current, proposed, accepted, superseded, stale, contradictory, or `UNKNOWN`; do not require any particular artifact path.
 - [ ] Map packages, modules, domains, layers, processes, data stores, queues, external systems, and public interfaces in scope.
 - [ ] Record ownership and independent build, deploy, scale, and failure boundaries; do not infer a service boundary from a directory or process name alone.
 - [ ] Identify the dominant organizing model and any competing models: layer-first, domain-first, service boundaries, plugin boundaries, or framework conventions.
 - [ ] Trace representative critical flows from entrypoint through orchestration, domain behavior, persistence or integration, and observable outcome.
-- [ ] Compare documented intent with executable structure and record divergences without assuming either side is automatically correct.
+- [ ] Compare documented current state, target state, accepted decisions, and active migration phase with executable structure; record drift and authority conflicts without assuming documentation describes what actually runs.
 - [ ] Inspect Git state so current work and unrelated user changes are not misclassified as established architecture.
 - [ ] Keep the audit read-only and disclose any permitted diagnostic caches or generated analysis artifacts.
 
@@ -73,7 +75,8 @@ Use diagrams only when they clarify a relationship that prose cannot. Do not gen
 ### 4. Evaluate Evolution and Alternatives
 
 - [ ] Identify current architecture pain using repository evidence: repeated change sets, fragile tests, broad blast radius, duplicate mechanisms, release coupling, or incident-prone ownership.
-- [ ] If an architecture baseline exists, compare new, resolved, and retained violations; continue to report retained risks when their impact remains material.
+- [ ] If a system-design baseline exists, verify its source and freshness, then compare confirmed constraints with actual behavior.
+- [ ] If a prior audit baseline exists, compare new, resolved, and retained findings; continue to report accepted or retained risks when their impact remains material.
 - [ ] Research external pattern or framework behavior only when it can confirm a capability, limitation, lifecycle rule, or supported simplification.
 - [ ] Compare the current shape with the simplest credible alternative, including migration risk, compatibility, rollback, team impact, and operational cost.
 - [ ] Prefer incremental boundary repair when a rewrite or new pattern would create more transitional complexity than it removes.
@@ -100,7 +103,7 @@ Use diagrams only when they clarify a relationship that prose cannot. Do not gen
 ## Actual architecture
 - Modules, boundaries, entrypoints, and external systems
 - Critical flows and runtime wiring
-- Intended versus observed structure
+- Observed current state, intended target state, active transition state, and evidenced drift
 
 ## Fitness summary
 | Area | Status | Evidence |

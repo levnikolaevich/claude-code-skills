@@ -53,6 +53,8 @@ When sources disagree, prefer the repository for what is installed and implement
 ### 2. Ground the Plan in the Repository
 
 - [ ] Build a narrow map of the affected modules, entrypoints, configuration, schemas, migrations, tests, documentation, and deployment surfaces.
+- [ ] Discover shared architecture artifacts by repository convention and common roles: system-design baseline, current-state map, target design, decision records, diagrams, and migration plan. Treat them as optional evidence, never as required workflow dependencies.
+- [ ] Check artifact status, owner, source, as-of date, supersession, and review triggers before applying a constraint. Missing artifacts do not block review by themselves; a material unresolved driver does.
 - [ ] Verify every existing path, symbol, component, command, environment key, interface, and dependency named by the plan. Mark genuinely new artifacts as new.
 - [ ] Read enough implementation context to understand ownership and invariants, not just the files explicitly named by the plan.
 - [ ] Use semantic graph queries when a conclusion depends on symbol identity, callers, implementations, module coupling, API consumers, or blast radius.
@@ -78,6 +80,7 @@ When sources disagree, prefer the repository for what is installed and implement
 - [ ] **Intent and traceability:** Every proposed change and source of complexity maps to the intended outcome, an acceptance criterion, a safety need, or an evidenced constraint; combine work serving the same outcome, and remove speculative or merely ceremonial steps.
 - [ ] **Repository fit:** The plan respects actual project structure, conventions, supported stack, existing capabilities, maturity, current scale, team and operational capacity, and current work without overwriting unrelated changes.
 - [ ] **Architecture and ownership:** Layers, modules, orchestration, side effects, dependency direction, and resource ownership remain explicit, coherent, and proportionate to the evidenced problem.
+- [ ] **Architecture traceability:** The plan respects current confirmed constraints, accepted decisions, target boundaries, and the active migration phase; expose stale or contradictory artifacts instead of silently selecting the convenient one.
 - [ ] **Interfaces and data:** Public APIs, events, schemas, configuration, persistence, serialization, compatibility, and migration paths are named wherever they change.
 - [ ] **Scenario completeness:** For each critical flow, trace actor trigger -> entrypoint -> runtime discovery or wiring -> usage context -> observable outcome; include first meaningful use, failure, recovery, and repetition when they can change the intended experience.
 - [ ] **Correctness and failure modes:** Cover boundaries, invalid state, partial failure, retries, idempotency, concurrency, cancellation, timeouts, rollback, and cleanup where applicable.
@@ -123,6 +126,7 @@ When sources disagree, prefer the repository for what is installed and implement
 - Plan reviewed
 - Intent statement: actor, protected outcome, consequential experience qualities, and inferred assumptions
 - Maturity and complexity fit: business horizon, current scale, team and operational capacity, and justified evolution path
+- Architecture artifacts inspected, their status, and any authority or freshness limitations
 - Repository areas inspected
 - Commands or semantic queries used
 - External sources consulted

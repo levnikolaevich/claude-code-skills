@@ -4,7 +4,7 @@
     "name": "Lev Nikolaevich",
     "email": "levnikolaevich.com@gmail.com"
   },
-  "description": "Focused engineering review, audit, optimization, testing, discovery, and maintainer skills.",
+  "description": "Focused engineering review, audit, optimization, testing, discovery, maintainer, and architecture skills.",
   "plugins": [
     {
       "name": "review-suite",
@@ -45,6 +45,13 @@
       "name": "maintainer-suite",
       "description": "Optional maintainer toolkit for skill review, repository publication, releases, and project announcements.",
       "source": "./plugins/maintainer-suite",
+      "strict": false,
+      "skills": "./skills/"
+    },
+    {
+      "name": "architecture-suite",
+      "description": "Architecture baselines, current-state documentation, target designs, decisions, diagrams, and migration plans.",
+      "source": "./plugins/architecture-suite",
       "strict": false,
       "skills": "./skills/"
     }

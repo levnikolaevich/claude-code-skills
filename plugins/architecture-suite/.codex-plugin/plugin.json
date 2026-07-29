@@ -1,0 +1,32 @@
+{
+  "name": "architecture-suite",
+  "version": "1.0.0",
+  "description": "Architecture baselines, current-state documentation, target designs, decisions, diagrams, and migration plans.",
+  "author": {
+    "name": "Lev Nikolaevich",
+    "email": "levnikolaevich.com@gmail.com",
+    "url": "https://github.com/levnikolaevich"
+  },
+  "homepage": "https://github.com/levnikolaevich/claude-code-skills",
+  "repository": "https://github.com/levnikolaevich/claude-code-skills",
+  "license": "MIT",
+  "keywords": ["architecture", "system-design", "adr", "diagrams", "migration"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Architecture Suite",
+    "shortDescription": "Create durable architecture artifacts",
+    "longDescription": "Create and update evidence-backed architecture baselines, current-state maps, target designs, decision records, diagrams, and reversible migration plans.",
+    "developerName": "Lev Nikolaevich",
+    "websiteURL": "https://github.com/levnikolaevich/claude-code-skills",
+    "category": "Productivity",
+    "capabilities": ["Interactive", "Read", "Write"],
+    "defaultPrompt": [
+      "Create or update the system-design baseline for this project.",
+      "Document the current implemented architecture from repository evidence.",
+      "Create a decision-complete target system design.",
+      "Record this architecturally significant decision.",
+      "Create an evidence-backed architecture diagram.",
+      "Plan a reversible migration from the current architecture to the target."
+    ]
+  }
+}

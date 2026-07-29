@@ -23,7 +23,6 @@ Before returning, apply this skill's verdict, decision, and approval rules to ev
 | Independent review | Native subagents with separate contexts | Every code-bearing review; assign one evidence lens per subagent and run independent passes in parallel | Return `BLOCKED` when required independent coverage has no credible replacement; never claim the panel ran |
 
 The delivery gate is intentionally stricter than plan review: independent code-review coverage cannot be simulated by self-review because acceptance depends on genuinely separate evidence passes.
-
 Use tools to answer specific evidence questions. A failed tool is a limitation, not a product defect. Never convert an unavailable build, advisor, browser, or documentation source into a failing finding without implementation evidence.
 
 ## Evidence Rules
@@ -37,7 +36,6 @@ Use tools to answer specific evidence questions. A failed tool is a limitation, 
 | Pattern match, reviewer intuition, or generic best practice | Lead only until connected to a concrete failure or risk |
 
 A finding must name the affected business behavior, its causal link to the change, evidence, impact, and smallest credible correction. Do not report style preferences or unrelated repository health concerns.
-
 The review unit is the business change, not the repository. Reading unchanged code is permitted only to prove an affected path and never brings unrelated defects into scope. Verify every accepted claim against the implementation, executable behavior, or an authoritative contract.
 
 ## Independent Review Panel
@@ -68,7 +66,6 @@ Scale the panel to the risk and size of the change. For a small, low-risk change
 | Operations and release | Deployment order, feature controls, environment changes, observability, rollback, recovery, or support procedures | Prove safe rollout and rollback, configuration validation, useful signals, and recovery steps in the intended environment. |
 
 Choose at most four specialists by highest plausible impact, likelihood, and rollback difficulty. Prefer trust-boundary, data-loss, public-contract, and concurrency risks. Do not add two agents with substantially the same evidence question. Record why each specialist was selected or why a triggered perspective was merged into another hat.
-
 ### Independence and Prompt Contract
 
 - Give every subagent the same frozen base packet: business change thesis and intent statement, maturity and complexity evidence, acceptance criteria, comparison base and head, scope map with changed, causally supporting, and excluded surfaces, non-goals, approved approach, repository instructions, risk classification, and allowed commands.
@@ -101,7 +98,7 @@ Each subagent returns a compact report:
 
 - [ ] Before reviewing code, state the business change thesis and intent statement: affected actors, problem, protected human or system outcome, consequential experience qualities, changed behavior, acceptance criteria, invariants, explicit non-goals, and release boundary. Treat emotional or incomplete wording as an intent signal, mark unsupported interpretations `UNKNOWN`, never let them override explicit requirements, evidence, safety, or exact-output constraints, and use `BLOCKED` when the thesis cannot be established reliably.
 - [ ] Establish the change's complexity fit from evidenced project or product maturity, business horizon, current scale, team and operational capacity, and lifecycle cost. Do not infer enterprise architecture from hypothetical growth, and do not label complexity required for correctness, safety, compatibility, or demonstrated load as overengineering.
-- [ ] Read applicable repository instructions and inspect uncommitted work, then resolve the exact comparison base and head, implementation delta, approved plan or target architecture, and allowed transitional compatibility before running verification commands.
+- [ ] Read applicable repository instructions and inspect uncommitted work, then resolve the exact comparison base and head, implementation delta, approved plan or target architecture, and allowed transitional compatibility. Discover change-relevant baseline, current-state, target-design, decision, diagram, and migration artifacts by repository convention; record status and freshness, and do not widen or block review merely because one is absent.
 - [ ] Build a scope map of changed surfaces, causally affected supporting surfaces, and explicitly excluded surfaces. Read outside the diff only to trace an affected runtime or contract path; do not search unrelated code for possible findings.
 - [ ] Classify only change-triggered risk based on trust boundaries, money, destructive actions, data migration, public contracts, concurrency, distributed coordination, and rollback difficulty.
 - [ ] Define the evidence required for each acceptance criterion before reading implementation details: behavior, commands, tests, documentation, and operational proof.
@@ -113,7 +110,7 @@ Each subagent returns a compact report:
 - [ ] Map every acceptance criterion to concrete changed code, configuration, data, documentation, and a verification method; mark each `PASS`, `FAIL`, or `UNPROVEN`.
 - [ ] Inspect changed files plus only the unchanged definitions, callers, consumers, interfaces, tests, migrations, and runtime registration needed to prove an affected path; reading a supporting surface does not make it finding scope.
 - [ ] Verify that the implemented behavior serves the protected user or system outcome rather than only completing an internal mechanism, including first meaningful use, failure, recovery, and repetition when they materially shape the experience.
-- [ ] Map every material decision and step in an approved plan or target architecture to the implementation; treat omissions as unmet unless explicitly superseded, and accept deviations only when their rationale is evidenced and preserves the goal, constraints, and acceptance criteria.
+- [ ] Map every material decision and step in an approved plan, target architecture, accepted decision record, active migration phase, or confirmed baseline constraint to the implementation; treat omissions as unmet unless explicitly superseded, accept only evidenced deviations that preserve the goal and acceptance criteria, distinguish implementation drift from stale or proposed documentation, and treat executable behavior as authoritative for what shipped.
 - [ ] Trace each critical scenario through actor trigger -> entrypoint -> runtime discovery or wiring -> usage context -> observable outcome.
 - [ ] Confirm that new components, routes, commands, handlers, jobs, events, or configuration are actually registered and discoverable at runtime.
 - [ ] Within changed behavior, check applicable algorithm boundaries, loops, collection semantics, state transitions, duplicate handling, ordering, numeric behavior, and empty or maximum inputs.
@@ -170,7 +167,7 @@ Each subagent returns a compact report:
 ## Scope and evidence
 - Business change thesis, intent statement, maturity and complexity fit, non-goals, and acceptance criteria
 - Comparison base, head, and exact implementation delta
-- Scope map: changed, causally supporting, and explicitly excluded surfaces
+- Scope map: changed, causally supporting, and explicitly excluded surfaces; change-relevant architecture artifacts, statuses, and freshness limitations
 - Commands, discovery sources, and runtime checks executed
 - External sources and limitations
 

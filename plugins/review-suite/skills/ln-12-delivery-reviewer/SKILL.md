@@ -44,7 +44,7 @@ Use a Six Thinking Hats-inspired protocol to create genuinely different review q
 
 ### Agent Count and Hats
 
-Scale the panel to the risk and size of the change. For a small, low-risk change that activates no specialist risk trigger, spawn White and Black; add another canonical hat only when it can change the verdict. For ordinary medium-risk work, run White and Black plus one to three canonical or specialist hats selected by distinct evidence questions. Run all five canonical non-Blue hats for high-risk, architectural, cross-service, unfamiliar, or materially ambiguous work. Add up to four specialist hats only when changed code activates their risk triggers. The result is two to nine subagents plus the Blue lead.
+Always spawn White, Black, and Green for every code-bearing review. For a small, low-risk change with no specialist trigger, stop there. For ordinary medium-risk work, add one or two canonical or specialist hats with distinct evidence questions. Run all five canonical non-Blue hats for high-risk, architectural, cross-service, unfamiliar, or materially ambiguous work. Add up to four specialists only when changed code activates their risk triggers. The result is three to nine subagents plus the Blue lead.
 
 | Required hat | Independent review question |
 |---|---|
@@ -52,7 +52,7 @@ Scale the panel to the risk and size of the change. For a small, low-risk change
 | Red — human response | Across first use, failure, recovery, and repetition, what will surprise, confuse, frustrate, or mislead a user, developer, reviewer, or operator? Treat intuition as a hypothesis until reproduced or traced to declared intent or observable friction. |
 | Black — caution | How can the changed behavior regress, corrupt state, violate a trust boundary, or fail at edges and under partial failure? |
 | Yellow — value | What intended value, experience qualities, compatibility, and sound tradeoffs must be preserved, and which apparent problems are false positives or overcorrections? |
-| Green — alternatives | Relative to evidenced maturity, business goals, current scale, and team and operational capacity, is there a materially simpler, safer, more maintainable, or more testable implementation that preserves the protected outcome and required safeguards without widening scope? |
+| Green — surgical simplicity | AI slop is prohibited. What is the surgically precise, smallest sufficient diff and simplest efficient algorithm for the evidenced workload that satisfy the scoped business outcome by reusing existing mechanisms and avoiding needless code, files, layers, abstractions, configuration, branches, wrappers, or compatibility paths? Never trade correctness, safety, clarity, maintainability, or testability for fewer lines or code golf. |
 
 | Optional specialist hat | Add when the diff includes | Focus |
 |---|---|---|
@@ -102,7 +102,7 @@ Each subagent returns a compact report:
 - [ ] Build a scope map of changed surfaces, causally affected supporting surfaces, and explicitly excluded surfaces. Read outside the diff only to trace an affected runtime or contract path; do not search unrelated code for possible findings.
 - [ ] Classify only change-triggered risk based on trust boundaries, money, destructive actions, data migration, public contracts, concurrency, distributed coordination, and rollback difficulty.
 - [ ] Define the evidence required for each acceptance criterion before reading implementation details: behavior, commands, tests, documentation, and operational proof.
-- [ ] Freeze the business thesis and scope map in the common subagent packet; select hats only for risks activated by the change and do not expose preliminary conclusions.
+- [ ] Freeze the business thesis and scope map in the common subagent packet; always select White, Black, and Green, add other hats only for risks activated by the change, and do not expose preliminary conclusions.
 - [ ] Keep the review read-only. Allow only host-permitted caches or build artifacts; do not edit tracked files, change status, create tasks, commit, push, or deploy.
 
 ### 2. Trace Requirements into the Implementation
@@ -126,7 +126,7 @@ Each subagent returns a compact report:
 - [ ] Check resource ownership for files, streams, sessions, connections, processes, subscriptions, and temporary artifacts created, consumed, or transferred by affected paths on success and failure.
 - [ ] Check only dependency direction, module boundaries, orchestration, and side-effect ownership crossed or modified by the change; require their complexity to match the evidenced maturity and business need without turning adjacent architecture into a repository audit.
 - [ ] When code is replaced, verify that the old implementation, signatures, aliases, re-exports, shims, adapters, flags, dual-read or dual-write paths, and files are removed and every caller is migrated; retain compatibility only when an evidenced supported contract requires it, with ownership and a bounded removal condition.
-- [ ] Check whether changed code introduces duplication, hardcoded operational values, misleading names, or abstractions that cannot be traced to the protected outcome, safety, or an evidenced constraint; do not inventory pre-existing instances elsewhere.
+- [ ] Enforce the Green gate: AI slop is prohibited. Require a surgically precise, minimum sufficient diff and the simplest efficient algorithm for evidenced needs; reject needless duplication, code, files, layers, abstractions, configuration, branches, wrappers, compatibility paths, hardcoded operational values, and misleading names without auditing pre-existing instances elsewhere.
 - [ ] Challenge custom or enterprise-grade machinery introduced or expanded by the change when its lifecycle and operational cost exceeds what the protected outcome, maturity, business horizon, current scale, or team capacity justifies, or when an existing platform or declared dependency provides the capability with lower risk.
 - [ ] Research only external claims that affect the scoped verdict, using official sources matching the installed or proposed version.
 
@@ -145,7 +145,7 @@ Each subagent returns a compact report:
 
 ### 5. Challenge and Synthesize
 
-- [ ] Launch each selected hat in a separate context with the common base packet, one primary perspective, read-only tools, and the required result schema.
+- [ ] Launch White, Black, Green, and every selected additional hat in separate contexts with the common base packet, one primary perspective, read-only tools, and the required result schema.
 - [ ] Keep hats blind to one another, run independent work in parallel or blind waves, wait for all results, and record failures or retries.
 - [ ] Verify every candidate finding against code, commands, reproduced behavior, declared intent, or authoritative documentation before accepting it; trace symptom -> causal path -> violated contract or protected outcome, inspect only affected sibling paths that share the changed contract, and reject subjective reactions without that trace and symptom-only corrections.
 - [ ] Accept a finding only when evidence shows it was introduced by the diff, made reachable or materially worse by the diff, violates an acceptance criterion on an affected path, or is a required-gate failure caused by the change. Treat every other pre-existing or out-of-scope issue only as a verification limitation when it blocks acceptance; never recommend its repair.

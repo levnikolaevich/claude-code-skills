@@ -51,7 +51,7 @@ The repository intentionally contains only the skills, minimal plugin manifests,
 
 ### Maintainer Suite
 
-Optional toolkit for people who maintain skill or plugin repositories and other GitHub projects. Users who only consume the engineering skills do not need to install it.
+Optional maintainer toolkit: skill 61 reviews skill repositories, skill 62 publishes any Git repository with equivalent remote evidence, and skills 63–64 publish GitHub releases and Discussions. Users who only consume the engineering skills do not need to install it.
 
 | Index | Skill | Purpose |
 |---:|---|---|

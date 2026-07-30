@@ -23,7 +23,7 @@ Before returning, apply this skill's verdict, decision, and approval rules to ev
 
 Prefer compact Git output first, then open the full diff for files that will be staged. Never pipe commands in a way that hides the failing exit code.
 
-Use hosting APIs for remote facts and Git for repository facts. A local marketplace directory cannot prove that a Git-backed user update works.
+Use hosting APIs for remote facts and Git for repository facts. Local distribution or deployment state cannot prove that a remote consumer update works.
 
 ## Checklist
 

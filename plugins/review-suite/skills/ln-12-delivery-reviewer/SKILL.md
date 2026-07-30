@@ -5,173 +5,148 @@ description: "Reviews a completed scoped change and its affected runtime and con
 
 # Delivery Reviewer
 
-**Goal:** Review only the requested delivery change and the causal runtime, contract, and data paths needed to prove its business outcome. Judge whether that scope meets acceptance and is safe to release in the fewest words that preserve evidence; do not audit unrelated code, repair findings, update trackers, or widen scope.
+**Goal:** Review only the requested delivery change and the causal paths needed to prove its business outcome. Judge scoped acceptance and release safety with concise evidence; do not audit unrelated code, repair findings, update trackers, or widen scope.
 
 **Execution contract:** Treat the ordered checkbox workflow below as this skill's Definition of Done. Work through every item in order, and mark it complete only when its action and required evidence are complete. `N/A`, skipped, unavailable, or delegated items remain incomplete.
 Before returning, apply this skill's verdict, decision, and approval rules to every incomplete item and prepend **Checklist: X/Y complete**<br>**Incomplete: None | section/item — reason; outcome impact; exact next action**; list every incomplete item.
 
 ## Tool Routing
 
-| Need | Preferred tool | Use it when | Fallback |
+| Need | Preferred capability | Use when | Fallback |
 |---|---|---|---|
-| Business scope, requirements, and repository rules | Native file read plus Git | Always establish the business outcome, acceptance boundary, non-goals, branch, comparison base, and working-tree state | User-provided requirements plus explicit limitations |
-| Changed behavior | `git diff`, `git status`, and focused file reads | Establishing the exact implementation delta and affected entrypoints | Compare the supplied implementation against its stated baseline |
-| Definitions, callers, consumers, and contracts | Language server or host-native code intelligence | Correctness of an affected path depends on unchanged symbols, routes, events, or public surfaces | Targeted search and direct inspection that stops when the affected causal path is proven |
-| Build and automated verification | Repository-defined shell commands | The repository exposes build, lint, type, test, migration, or smoke commands | Inspect CI and scripts; mark execution as unverified |
-| User-visible behavior | Browser, application client, API client, or runtime logs | Acceptance depends on rendered UI, interaction, protocol response, or observable runtime behavior | Static trace plus an explicit manual-verification requirement |
-| External contracts and standards | Official vendor documentation, specifications, advisories, and release notes | A current external fact can change severity or correctness | Web research from primary sources; otherwise mark `UNVERIFIED` |
-| Independent review | Native subagents with separate contexts | Every code-bearing review; assign one evidence lens per subagent and run independent passes in parallel | Return `BLOCKED` when required independent coverage has no credible replacement; never claim the panel ran |
+| Scope and repository state | Native file reads plus Git | Establishing outcome, non-goals, base, head, and worktree | Supplied requirements with explicit limitations |
+| Changed behavior | Diff, status, and focused reads | Resolving the implementation delta and entrypoints | Compare supplied artifacts with their stated baseline |
+| Definitions and consumers | Code intelligence | An affected path depends on unchanged symbols or contracts | Targeted search that stops when the causal path is proven |
+| Automated verification | Repository-defined commands | Build, lint, type, test, migration, or smoke gates exist | Inspect scripts and CI; mark execution `UNPROVEN` |
+| Observable behavior | Browser, client, or runtime evidence | Acceptance depends on UI, interaction, protocol, or logs | Static trace plus an exact manual check |
+| External contracts | Current official documentation or specifications | A changing external fact can alter correctness or severity | Primary-source research; otherwise mark `UNVERIFIED` |
+| Independent review | Native subagents in separate contexts | Every code-bearing review | Run blind waves within host limits; return `BLOCKED` if independence remains impossible |
 
-The delivery gate is intentionally stricter than plan review: independent code-review coverage cannot be simulated by self-review because acceptance depends on genuinely separate evidence passes.
-Use tools to answer specific evidence questions. A failed tool is a limitation, not a product defect. Never convert an unavailable build, advisor, browser, or documentation source into a failing finding without implementation evidence.
+Use tools only for the current evidence question. Tool failure is a limitation, not a defect. Do not convert an unavailable command, runtime, or source into a finding without implementation evidence.
 
 ## Evidence Rules
 
 | Evidence | Weight |
 |---|---|
-| Reproduced behavior, failing test, compiler output, or deterministic command | Strongest evidence of current behavior |
+| Reproduced behavior, failing test, compiler output, or deterministic command | Strongest current-behavior evidence |
 | Changed code plus verified caller, consumer, schema, or configuration path | Strong static evidence |
-| Acceptance criterion mapped to an implementation and verification result | Required delivery evidence |
-| Official external contract matching the used version | Strong evidence for standards and compatibility |
-| Pattern match, reviewer intuition, or generic best practice | Lead only until connected to a concrete failure or risk |
+| Acceptance criterion mapped to implementation and verification | Required delivery evidence |
+| Official external contract matching the used version | Strong compatibility evidence |
+| Pattern, intuition, or generic practice | Lead only until tied to a concrete failure or risk |
 
-A finding must name the affected business behavior, its causal link to the change, evidence, impact, and smallest credible correction. Do not report style preferences or unrelated repository health concerns.
-The review unit is the business change, not the repository. Reading unchanged code is permitted only to prove an affected path and never brings unrelated defects into scope. Verify every accepted claim against the implementation, executable behavior, or an authoritative contract.
+Every finding must name the affected business behavior, change-causal path, violated contract, evidence, impact, and smallest credible correction. The review unit is the business change, not the repository. Read unchanged code only to prove an affected path; do not report style preferences or unrelated repository health.
 
 ## Independent Review Panel
 
-Use a Six Thinking Hats-inspired protocol to create genuinely different review questions. This is a code-review adaptation: hats are temporary evidence lenses, not personalities. The lead reviewer holds the Blue role by scoping the review, selecting agents, verifying their claims, resolving conflicts, and issuing the verdict.
+Use Six Thinking Hats as evidence lenses, not personalities. The Blue lead scopes the review, selects agents, verifies claims, resolves conflicts, and issues the verdict.
 
-### Agent Count and Hats
+Always spawn White, Black, and Green for code-bearing review. Stop there for small low-risk work; add one or two distinct hats for medium risk; run all five non-Blue hats for high-risk, architectural, cross-service, unfamiliar, or ambiguous work. Add up to four specialists only for risks activated by the change: three to nine subagents plus the Blue lead.
+For non-code delivery, select only lenses triggered by its risks; when none apply, record `Independent review panel: None`.
 
-Always spawn White, Black, and Green for every code-bearing review. For a small, low-risk change with no specialist trigger, stop there. For ordinary medium-risk work, add one or two canonical or specialist hats with distinct evidence questions. Run all five canonical non-Blue hats for high-risk, architectural, cross-service, unfamiliar, or materially ambiguous work. Add up to four specialists only when changed code activates their risk triggers. The result is three to nine subagents plus the Blue lead.
-
-| Required hat | Independent review question |
+| Hat | Question |
 |---|---|
-| White — facts | What business behavior changed, what human or system outcome was intended, which causal paths are affected, and what scoped evidence is missing or inconsistent? |
-| Red — human response | Across first use, failure, recovery, and repetition, what will surprise, confuse, frustrate, or mislead a user, developer, reviewer, or operator? Treat intuition as a hypothesis until reproduced or traced to declared intent or observable friction. |
-| Black — caution | How can the changed behavior regress, corrupt state, violate a trust boundary, or fail at edges and under partial failure? |
-| Yellow — value | What intended value, experience qualities, compatibility, and sound tradeoffs must be preserved, and which apparent problems are false positives or overcorrections? |
-| Green — surgical simplicity | AI slop is prohibited. What is the surgically precise, smallest sufficient diff and simplest efficient algorithm for the evidenced workload that satisfy the scoped business outcome by reusing existing mechanisms and avoiding needless code, files, layers, abstractions, configuration, branches, wrappers, or compatibility paths? Never trade correctness, safety, clarity, maintainability, or testability for fewer lines or code golf. |
+| White — facts | What changed, which outcome and paths are affected, and what scoped evidence is missing? |
+| Red — human response | What will surprise or mislead a user, developer, reviewer, or operator? Treat intuition as a hypothesis. |
+| Black — caution | How can the change regress, corrupt state, breach trust, or fail at edges and partial failure? |
+| Yellow — value | Which intended value, compatibility, and sound tradeoffs must be preserved; which concerns are false positives? |
+| Green — surgical simplicity | AI slop is prohibited. Is this the smallest sufficient diff and simplest efficient algorithm for the evidenced need without sacrificing safety, clarity, testability, or operability? |
 
-| Optional specialist hat | Add when the diff includes | Focus |
+| Specialist | Trigger | Focus |
 |---|---|---|
-| Security and privacy | Authentication, authorization, untrusted input, secrets, sensitive data, isolation, or destructive actions | Trace trust boundaries and sensitive-data flow; require concrete guards and recovery evidence for destructive behavior. |
-| Data and concurrency | Schemas, migrations, transactions, caches, queues, events, shared state, async work, locks, or ordering | Check atomicity, races, duplicate delivery, producer/consumer names and payloads, runtime registration, and orphan channels. |
-| API and compatibility | Public interfaces, protocols, serialization, configuration contracts, SDKs, plugins, or mixed versions | Trace every consumer and confirm that removed signatures, aliases, re-exports, adapters, and compatibility paths match the supported contract. |
-| Target architecture and migration | An approved plan or target architecture, replacement, refactor, cutover, deprecation, or compatibility cleanup | Map planned decisions to code; prove the target state is complete; find unexplained deviations, dual paths, old implementations, aliases, shims, re-exports, adapters, flags, and unmigrated callers that preserve superseded architecture. |
-| Test, oracle, and business behavior | Critical behavior with weak proof, complex regressions, changed test infrastructure, mocks, snapshots, time, or randomness | Map critical requirements and business invariants to observable outcomes. Treat tests as low-value only when they add no repository-owned confidence; crossing a real dependency is valid when it proves owned boundary behavior. Select E2E, integration, contract, or unit coverage at the narrowest deterministic risk seam. |
-| Performance and reliability | Hot paths, I/O, resource ownership, retries, timeouts, load, availability, or distributed coordination | Look for unbounded work, amplification, measurement gaps, resource leaks, retry storms, and unsafe degradation. |
-| UI and accessibility | Rendering, interaction, keyboard or screen-reader behavior, responsive layouts, localization, or visual state | Verify keyboard flow, focus behavior, accessible names, reduced-motion preferences, meaningful copy, localization, and rendered behavior. |
-| Operations and release | Deployment order, feature controls, environment changes, observability, rollback, recovery, or support procedures | Prove safe rollout and rollback, configuration validation, useful signals, and recovery steps in the intended environment. |
+| Security and privacy | Trust boundaries, untrusted input, secrets, sensitive data, destructive action | Guards, isolation, recovery, and sensitive-data flow |
+| Data and concurrency | Schemas, transactions, queues, caches, events, async work, locks | Atomicity, races, ordering, duplicates, wiring, and orphan channels |
+| API and compatibility | Public interfaces, protocols, serialization, configuration, mixed versions | Producers, consumers, removals, and supported compatibility |
+| Architecture and migration | Approved design, replacement, refactor, cutover, or deprecation | Plan traceability, target completeness, old paths, and unmigrated callers |
+| Tests and oracles | Critical behavior, weak proof, mocks, snapshots, time, randomness | Business invariants, trustworthy oracles, and the narrowest useful test seam |
+| Performance and reliability | Hot paths, I/O, retries, timeouts, load, resource ownership | Amplification, measurement, leaks, storms, and degradation |
+| UI and accessibility | Rendering, interaction, responsive state, localization | Keyboard, focus, names, motion, copy, and rendered behavior |
+| Operations and release | Deployment, configuration, observability, rollback, recovery | Safe rollout, useful signals, and recovery steps |
 
-Choose at most four specialists by highest plausible impact, likelihood, and rollback difficulty. Prefer trust-boundary, data-loss, public-contract, and concurrency risks. Do not add two agents with substantially the same evidence question. Record why each specialist was selected or why a triggered perspective was merged into another hat.
-### Independence and Prompt Contract
+Choose specialists by impact, likelihood, and rollback difficulty; avoid duplicate questions and record selection or merge reasons.
 
-- Give every subagent the same frozen base packet: business change thesis and intent statement, maturity and complexity evidence, acceptance criteria, comparison base and head, scope map with changed, causally supporting, and excluded surfaces, non-goals, approved approach, repository instructions, risk classification, and allowed commands.
-- Give each subagent exactly one primary hat, its risk questions, the read-only and scope boundaries, and the result schema below. Require a change-causal scope link for every candidate; do not include the lead's provisional findings or any sibling result.
-- Allow read, search, diff, language intelligence, official-document research, and non-mutating verification. Forbid tracked-file edits, commits, pushes, deployments, tracker updates, external-state changes, and nested subagents.
-- Launch all selected hats in parallel. If concurrency is limited, use waves but keep later prompts blind to earlier results. Wait for every selected hat before synthesis.
-- Retry a failed critical hat once only when the retry changes a concrete cause such as missing scope, transient execution, or unavailable input. Treat remaining failures as coverage limitations, never product findings.
-- Do not run a debate round by default. If material claims conflict, the Blue lead resolves them with direct evidence or one bounded verification pass focused only on the disputed claim.
-Each subagent returns a compact report:
+Give each subagent the same frozen packet: business thesis, acceptance criteria, maturity evidence, base and head, changed/supporting/excluded scope, non-goals, approved approach, repository instructions, risk class, and allowed commands. Add exactly one lens, read-only and scope boundaries, and the result schema. Do not include provisional or sibling findings.
 
-```markdown
-**Hat:** name
-**Coverage:** paths, symbols, scenarios, and commands inspected
+Run agents in parallel or blind waves. Allow read, search, code intelligence, official-source research, and non-mutating verification; forbid tracked edits, commits, pushes, deployments, external writes, and nested subagents. Retry a failed critical lens once only when a concrete cause changes. Wait for all selected lenses; resolve material conflicts through direct evidence or one bounded verifier.
 
-## Candidate findings
-- Priority candidate; location; scope link to the change; evidence; causal path and violated contract; impact; confidence; smallest credible correction
-
-## Rejected hypotheses
-- Suspected issue and evidence that ruled it out
-
-## Open questions and limitations
-- Missing evidence and the exact check needed
-```
-
-`No findings` is a valid result. A hat must not manufacture comments to justify its existence.
+Each subagent returns coverage, candidate findings with change-causal evidence and smallest correction, rejected hypotheses that resolve material ambiguity, and open questions. `No findings` is valid; never manufacture comments to justify a lens.
 
 ## Checklist
 
-### 1. Establish the Business and Change Scope
+### 1. Establish Business and Change Scope
 
-- [ ] Before reviewing code, state the business change thesis: affected actors, problem, protected outcome, changed behavior, acceptance criteria, invariants, explicit non-goals, and release boundary. Mark unsupported interpretations `UNKNOWN` and use `BLOCKED` when the thesis cannot be established reliably.
-- [ ] Establish the change's complexity fit from evidenced project or product maturity, business horizon, current scale, team and operational capacity, and lifecycle cost. Do not infer enterprise architecture from hypothetical growth, and do not label complexity required for correctness, safety, compatibility, or demonstrated load as overengineering.
-- [ ] Read applicable repository instructions and inspect uncommitted work, then resolve the exact comparison base and head, implementation delta, approved plan or target architecture, and allowed transitional compatibility. Discover change-relevant baseline, current-state, target-design, decision, diagram, and migration artifacts by repository convention; record status and freshness, and do not widen or block review merely because one is absent.
-- [ ] Build a scope map of changed surfaces, causally affected supporting surfaces, and explicitly excluded surfaces. Read outside the diff only to trace an affected runtime or contract path; do not search unrelated code for possible findings.
-- [ ] Classify only change-triggered risk based on trust boundaries, money, destructive actions, data migration, public contracts, concurrency, distributed coordination, and rollback difficulty.
-- [ ] Define the evidence required for each acceptance criterion before reading implementation details: behavior, commands, tests, documentation, and operational proof.
-- [ ] Freeze the business thesis and scope map in the common subagent packet; always select White, Black, and Green, add other hats only for risks activated by the change, and do not expose preliminary conclusions.
-- [ ] Keep the review read-only. Allow only host-permitted caches or build artifacts; do not edit tracked files, change status, create tasks, commit, push, or deploy.
+- [ ] Before reading implementation detail, state the affected actors, problem, protected outcome, changed behavior, acceptance criteria, invariants, non-goals, and release boundary. Mark unsupported interpretations `UNKNOWN`; use `BLOCKED` when the thesis cannot be established.
+- [ ] Establish complexity fit from evidenced maturity, business horizon, scale, team capacity, and lifecycle cost; do not infer enterprise needs from hypothetical growth or call safety-required complexity overengineering.
+- [ ] Read applicable repository instructions, inspect uncommitted work, and resolve base, head, implementation delta, approved plan or target architecture, and permitted transitional compatibility.
+- [ ] Discover only change-relevant baseline, current-state, target-design, decision, diagram, and migration artifacts by repository convention; record status and freshness without requiring a particular path.
+- [ ] Map changed, causally supporting, and explicitly excluded surfaces. Read outside the diff only to trace affected behavior; do not hunt unrelated code for findings.
+- [ ] Classify change-triggered risk from trust, money, destructive action, migration, public contracts, concurrency, distributed coordination, and rollback difficulty; define acceptance evidence before implementation review.
+- [ ] For code-bearing review, freeze the thesis and scope, select White, Black, and Green plus only risk-triggered hats, and keep preliminary conclusions private. For non-code delivery, select only triggered lenses or record the panel as `None`.
+- [ ] Keep the review read-only. Permit only host-approved caches or build artifacts; do not edit tracked files, create tasks, commit, push, deploy, or repair findings.
 
-### 2. Trace Requirements into the Implementation
+### 2. Trace Requirements into Implementation
 
-- [ ] Map every acceptance criterion to concrete changed code, configuration, data, documentation, and a verification method; mark each `PASS`, `FAIL`, or `UNPROVEN`.
-- [ ] Inspect changed files plus only the unchanged definitions, callers, consumers, interfaces, tests, migrations, and runtime registration needed to prove an affected path; reading a supporting surface does not make it finding scope.
-- [ ] Verify that the implemented behavior serves the protected user or system outcome rather than only completing an internal mechanism, including first meaningful use, failure, recovery, and repetition when they materially shape the experience.
-- [ ] Map every material decision and step in an approved plan, target architecture, accepted decision record, active migration phase, or confirmed baseline constraint to the implementation; treat omissions as unmet unless explicitly superseded, accept only evidenced deviations that preserve the goal and acceptance criteria, distinguish implementation drift from stale or proposed documentation, and treat executable behavior as authoritative for what shipped.
-- [ ] Trace each critical scenario through actor trigger -> entrypoint -> runtime discovery or wiring -> usage context -> observable outcome.
-- [ ] Confirm that new components, routes, commands, handlers, jobs, events, or configuration are actually registered and discoverable at runtime.
-- [ ] Within changed behavior, check applicable algorithm boundaries, loops, collection semantics, state transitions, duplicate handling, ordering, numeric behavior, and empty or maximum inputs.
-- [ ] Check error propagation, partial failure, retries, idempotency, cancellation, timeouts, rollback, and cleanup in every changed side-effect path.
-- [ ] Within affected asynchronous paths, check applicable concurrency, shared state, transaction boundaries, race windows, lock ordering, and blocking work.
+- [ ] Map every acceptance criterion to changed code, configuration, data, documentation, and verification; mark it `PASS`, `FAIL`, or `UNPROVEN`.
+- [ ] Inspect changed files and only the unchanged definitions, consumers, interfaces, tests, migrations, and registration needed to prove an affected path.
+- [ ] Verify the change serves the protected outcome, including first meaningful use, material failure, recovery, and repetition where relevant.
+- [ ] Trace approved plan, architecture, decision, migration, and baseline constraints into the implementation. Treat unexplained omissions as unmet, distinguish drift from stale or proposed documentation, and accept deviations only when evidence preserves the goal.
+- [ ] Trace each critical scenario from actor trigger through entrypoint, runtime wiring, usage context, and observable outcome.
+- [ ] Confirm new components, routes, commands, handlers, jobs, events, and configuration are registered and discoverable at runtime.
+- [ ] Within affected behavior, inspect applicable boundaries, collections, state transitions, duplicates, ordering, numeric behavior, empty and maximum inputs, errors, retries, idempotency, cancellation, timeouts, rollback, and cleanup.
+- [ ] Within affected async paths, inspect shared state, transactions, races, lock ordering, and blocking work.
 
-### 3. Review Safety, Contracts, and Maintainability
+### 3. Review Safety, Contracts, and Simplicity
 
-- [ ] Within affected paths only, check applicable authentication, authorization, tenant or ownership boundaries, validation, injection, secrets, sensitive data, logging, and destructive-operation guards.
-- [ ] When the change introduces or modifies destructive behavior, require evidence for recovery, rollback, blast radius, environment or authorization guards, and preview or dry-run; justify infeasible items and compensating controls.
-- [ ] Check public API, event, schema, configuration, serialization, and storage compatibility for changed producers and consumers; match event names, payloads, registration, ordering, and both ends of every changed channel.
+- [ ] Within affected paths, inspect applicable authentication, authorization, ownership, validation, injection, secrets, sensitive data, logging, and destructive-operation guards.
+- [ ] For changed destructive behavior, require recovery, rollback, blast-radius, environment or authorization, and preview or dry-run evidence; justify infeasible controls.
+- [ ] Verify changed API, event, schema, configuration, serialization, and storage producers and consumers, including names, payloads, registration, ordering, and compatibility.
 - [ ] Verify migrations, backfills, defaults, indexes, deployment ordering, and mixed-version behavior when persisted or distributed state changes.
-- [ ] Check resource ownership for files, streams, sessions, connections, processes, subscriptions, and temporary artifacts created, consumed, or transferred by affected paths on success and failure.
-- [ ] Check only dependency direction, module boundaries, orchestration, and side-effect ownership crossed or modified by the change; require their complexity to match the evidenced maturity and business need without turning adjacent architecture into a repository audit.
-- [ ] When code is replaced, verify that the old implementation, signatures, aliases, re-exports, shims, adapters, flags, dual-read or dual-write paths, and files are removed and every caller is migrated; retain compatibility only when an evidenced supported contract requires it, with ownership and a bounded removal condition.
-- [ ] Run a subtractive cleanup pass whenever business logic, constraints, configuration, schemas, routes, states, or operations change: inspect whether each new or changed mechanism leaves obsolete code, branches, flags, keys, defaults, aliases, shims, data paths, documentation, tests, permissions, metrics, or rollout scaffolding, and require removal only when scoped repository evidence proves it is superseded and safe to delete. Treat `one in, two out` only as a reminder to seek simplification, never as a quota or presumption that something must be deleted; preserve current behavior, supported contracts, and necessary transition paths, recording why no removal is appropriate or who owns a temporary legacy path and its bounded removal condition.
-- [ ] **KISS:** AI slop is prohibited. Require a surgically precise, minimum sufficient diff and the simplest correct, efficient algorithm for evidenced needs. Reject needless duplication, code, files, layers, abstractions, dependencies, configuration, branches, wrappers, compatibility paths, generalized extension points, and custom machinery when an existing mechanism suffices. Judge simplicity by clarity, testability, operability, and change surface, never by code golf or omitted safeguards.
-- [ ] Derive every accepted finding's smallest correction from scoped repository evidence first, preferring an existing mechanism over new machinery.
-- [ ] Before recommending or handing off a correction involving an external API, library, security control, protocol, platform, standard, or version, verify the supported solution in official documentation matched to the installed or proposed version. When official guidance leaves a consequential tradeoff unresolved, search current primary engineering sources for applicable best practice; do not browse generic practices for repository-owned business logic already proven by requirements, code, and tests.
-- [ ] Record remediation evidence: sources and dates, verified claims, candidate corrections, rejected alternatives, and why the chosen correction is the smallest safe fit. Review findings never authorize repair; require a later implementer to revalidate unstable external facts immediately before editing.
+- [ ] Check ownership and cleanup of files, streams, sessions, connections, processes, subscriptions, and temporary artifacts on success and failure.
+- [ ] Inspect only architecture boundaries crossed or changed; match complexity to evidenced need without turning adjacent architecture into an audit.
+- [ ] When code is replaced, verify old implementations, signatures, aliases, re-exports, shims, adapters, flags, dual paths, and files are removed and callers migrated. Retain compatibility only for a supported contract with an owner and bounded removal condition.
+- [ ] Run a subtractive pass for changed logic, constraints, configuration, schemas, routes, states, and operations. Record obsolete candidates, proven removals, and retention evidence; use `one in, two out` only as a prompt, never a deletion quota.
+- [ ] **KISS:** AI slop is prohibited. Require the minimum sufficient diff and simplest correct, efficient algorithm. Reject needless duplication, files, layers, abstractions, dependencies, configuration, branches, compatibility paths, or custom machinery when existing mechanisms suffice; never trade away safeguards or maintainability.
+- [ ] Derive each correction from scoped repository evidence, preferring an existing mechanism. For external APIs, libraries, security controls, protocols, platforms, standards, or versions, verify the solution in current official version-matched documentation; use primary engineering sources only for unresolved consequential tradeoffs.
+- [ ] Record correction sources, dates, verified claims, alternatives, and why the choice is the smallest safe fit. Review never authorizes repair; a later implementer must revalidate unstable external facts.
 
 ### 4. Verify Tests, Documentation, and Operations
 
-- [ ] Treat a test as low-value only when its oracle adds no repository-owned confidence; do not reject it merely for crossing a language, framework, library, or database boundary. Real-database tests are valid when they prove product-owned queries, schemas, permissions, migrations, transactions, isolation, locking, serialization, or failure handling rather than generic vendor capability.
-- [ ] Choose the narrowest test level that crosses the changed risk seam with a trustworthy oracle: prefer reproducible E2E for business-critical journeys, integration or contract tests for owned boundaries, and unit tests for isolated logic or state transitions when a broader test would add less confidence or determinism.
-- [ ] Classify every affected test as `KEEP`, `ADD`, `UPDATE`, `DELETE`, or `MERGE`; verify that it would fail for its intended defect and inspect assertions, critical success and failure paths, authorization, boundaries, data integrity, over-mocking, snapshots, flakes, shared state, time, randomness, and order dependence. Recommend `DELETE` only when equal or better trusted coverage preserves its failure modes; recommend `MERGE` only when consolidation removes duplication without obscuring behavior, oracle strength, or failure localization.
-- [ ] Discover verification commands in this order: repository docs, tool configuration, package or build manifests, then justified fallback; run the narrowest relevant checks first and record each command's source.
-- [ ] Run required build, lint, type, test, migration, and smoke gates with CI-safe options, then attribute failures to the change or baseline instead of treating every repository failure as an in-scope defect.
-- [ ] Preserve command, exit status, relevant output, and limitations; a pre-existing failure is a verification limitation unless evidence connects it causally to the change.
-- [ ] Verify user-visible behavior from the other side with the appropriate runtime or browser tool when acceptance cannot be proven statically; exercise first use, material failure and recovery, and repeated use where relevant, plus keyboard and focus flow, accessible names, reduced motion, responsive states, copy, and localization for applicable UI changes.
-- [ ] Confirm that affected documentation, API and configuration references, examples, migrations, runbooks, operator steps, and code comments are current, mutually consistent, and non-contradictory with implementation and requirements; comments must explain enduring intent or constraints rather than restate code.
+- [ ] Treat a test as low-value only when its oracle adds no repository-owned confidence. Real-database tests are valid when they prove owned queries, schemas, permissions, migrations, transactions, isolation, locking, serialization, or failure handling—not generic vendor capability.
+- [ ] Choose the narrowest level crossing the changed risk seam: reproducible E2E for critical journeys, integration or contract tests for owned boundaries, and unit tests for isolated logic when broader proof adds less confidence.
+- [ ] Classify every affected test as `KEEP`, `ADD`, `UPDATE`, `DELETE`, or `MERGE`; verify defect sensitivity, assertions, success and failure paths, authorization, boundaries, data integrity, over-mocking, snapshots, flakes, shared state, time, randomness, and order dependence.
+- [ ] Recommend `DELETE` only when the asserted contract is intentionally retired or equal or stronger trusted coverage preserves still-supported failure modes; recommend `MERGE` only when it removes duplication without obscuring behavior, oracle strength, or failure localization.
+- [ ] Discover commands from repository docs, tool configuration, and manifests before justified fallback. Run narrow checks first, then required build, lint, type, test, migration, and smoke gates with CI-safe options.
+- [ ] Record command source, exit status, relevant output, and limitations. Attribute failures to the change or baseline; a missing environment or pre-existing failure is `UNPROVEN` unless causally linked.
+- [ ] Verify user-visible acceptance from the other side when static proof is insufficient, including material failure and recovery; for applicable UI, check keyboard, focus, accessible names, motion, responsive states, copy, and localization.
+- [ ] Review only documentation and comments changed by or required for the scoped business change; classify each as `KEEP`, `ADD`, `UPDATE`, `DELETE`, or `MERGE`. Delete or merge only when canonical coverage preserves every needed audience task and contract.
+- [ ] Enforce documentation SSOT and hierarchy: update the narrowest canonical owner, link instead of copying rules, avoid a new document when an existing owner fits, and remove superseded references without auditing unrelated documentation.
+- [ ] Reject documentation AI slop: filler, repeated summaries, speculation, or implementation and business-logic restatement. Keep concise audience-needed intent, contracts, actions, and constraints; allow only minimal verified code or command examples needed to act.
+- [ ] Keep volatile versions, paths, defaults, counts, commands, generated output, and current-state data in authoritative code, configuration, or generated sources where practical. Otherwise require the source, scope, and owner or generation/update trigger.
+- [ ] Verify affected API and configuration references, examples, migrations, runbooks, operator steps, and comments against implementation and requirements; comments explain enduring intent or constraints rather than syntax.
 - [ ] Check logs, metrics, traces, health signals, feature controls, deployment order, rollback, and recovery where the change creates operational risk.
-- [ ] Distinguish a missing verification environment from a product failure; use `UNPROVEN` and explain the exact evidence still required.
 
 ### 5. Challenge and Synthesize
 
-- [ ] Launch White, Black, Green, and every selected additional hat in separate contexts with the common base packet, one primary perspective, read-only tools, and the required result schema.
-- [ ] Keep hats blind to one another, run independent work in parallel or blind waves, wait for all results, and record failures or retries.
-- [ ] Verify every candidate finding against code, commands, reproduced behavior, declared intent, or authoritative documentation before accepting it; trace symptom -> causal path -> violated contract or protected outcome, inspect only affected sibling paths that share the changed contract, and reject subjective reactions without that trace and symptom-only corrections.
-- [ ] Accept a finding only when evidence shows it was introduced by the diff, made reachable or materially worse by the diff, violates an acceptance criterion on an affected path, or is a required-gate failure caused by the change. Treat every other pre-existing or out-of-scope issue only as a verification limitation when it blocks acceptance; never recommend its repair.
-- [ ] Deduplicate findings by root cause, preserve the strongest evidence and widest demonstrated impact, and recommend one smallest sufficient correction for linked symptoms instead of splitting work into ceremonial steps.
-- [ ] Resolve contradictory claims by tracing the disputed behavior; use a bounded verifier only when direct inspection cannot settle it.
-- [ ] Classify findings as `P0` through `P3`: immediate catastrophic risk, release blocker, important non-blocking defect, or minor actionable issue.
-- [ ] Use `FAIL` for any evidenced unresolved `P0` or `P1`, unmet acceptance criterion, required failing gate, or demonstrated unsafe high-risk behavior.
-- [ ] Use `CONCERNS` only when remaining issues are explicitly non-blocking and the accepted risk is stated. Use `PASS` only when required evidence is complete.
-- [ ] Use `BLOCKED` when a required hat, risk-triggered specialist, safety environment, authoritative contract, or other acceptance prerequisite is unavailable without an equivalent credible replacement; report the gap as coverage, not a product defect.
-- [ ] Return only the hat coverage, acceptance evidence, test actions, findings, commands, limitations, verdict rationale, and residual risks needed to support the decision; omit passed-area narration and repeated context, collapse empty sections to `None`, and include rejected hypotheses only when they resolve a material ambiguity.
+- [ ] Launch all selected lenses in separate contexts with the frozen packet, one primary question, read-only tools, and the required schema; keep them blind, wait for all, and record failures or retries.
+- [ ] Verify each candidate against code, commands, behavior, declared intent, or authoritative documentation; trace symptom to causal path and violated contract, and reject subjective or symptom-only claims.
+- [ ] Accept a finding only when the diff introduced, exposed, or worsened it; it violates scoped acceptance; or the change caused a required-gate failure. Treat other issues only as limitations when they block acceptance; never recommend their repair.
+- [ ] Deduplicate by root cause, preserve the strongest evidence and widest demonstrated impact, and recommend one smallest sufficient correction.
+- [ ] Resolve contradictions by tracing behavior; use one bounded verifier only when direct inspection cannot settle the claim.
+- [ ] Classify findings `P0` catastrophic, `P1` release-blocking, `P2` important non-blocking, or `P3` minor actionable.
+- [ ] Use `FAIL` for unresolved `P0/P1`, unmet acceptance, a change-caused required-gate failure, or demonstrated unsafe high-risk behavior. Use `CONCERNS` only for explicit non-blocking risk and `PASS` only with complete required evidence.
+- [ ] Use `BLOCKED` when a required lens, specialist, safety environment, authoritative contract, or acceptance prerequisite has no credible replacement; report the coverage gap, not a product defect.
+- [ ] Return only scope, panel coverage, acceptance evidence, test and documentation actions, findings, commands, limitations, verdict rationale, and residual risk. Omit passed-area narration and repeated context; collapse empty sections to `None`.
 
 ## Output Contract
 
 ```markdown
 # Delivery Review
-
 **Verdict:** PASS | CONCERNS | FAIL | BLOCKED
 
 ## Scope and evidence
-- Business change thesis, intent statement, maturity and complexity fit, non-goals, and acceptance criteria
-- Comparison base, head, and exact implementation delta
-- Scope map: changed, causally supporting, and explicitly excluded surfaces; subtraction ledger of candidates, proven removals, and retention or no-removal evidence; change-relevant architecture artifacts, statuses, and freshness limitations
-- Commands, discovery sources, and runtime checks executed
-- External sources and limitations
+- Business thesis, acceptance, non-goals, base, head, and exact delta
+- Changed, supporting, and excluded surfaces
+- Subtraction ledger and relevant architecture-artifact status
+- Commands, external sources, and limitations
 
 ## Acceptance matrix
 | Requirement | Evidence | Verification | Result |
@@ -181,19 +156,19 @@ Each subagent returns a compact report:
 ## Independent review panel
 | Hat | Why selected | Coverage | Result |
 |---|---|---|---|
-| White / Red / Black / Yellow / Green / specialist | required or triggered risk | inspected surfaces and checks | findings / no findings / failed |
+| ... | required or triggered risk | inspected surfaces and checks | findings / none / failed |
+Use `None` for a non-code delivery with no triggered lens.
 
 ## Findings
 ### [P0 | P1 | P2 | P3] Finding title
-- Location and scope link: file, symbol, route, schema, or runtime surface; changed behavior, affected path, or acceptance criterion
-- Evidence: observed behavior, command, code path, or authoritative contract
-- Root cause: causal path and violated requirement, invariant, or contract
-- Impact: concrete delivery or operational consequence
-- Required change: proven-obsolete production and test surfaces to remove, or retention or no-removal evidence; `KEEP` / `ADD` / `UPDATE` / `DELETE` / `MERGE` for affected tests; smallest sufficient correction; repository mechanism used; official version-matched sources or justified local-only basis; primary-practice sources when needed; alternatives rejected
+- Location and scope link
+- Evidence and causal root
+- Violated requirement or contract and impact
+- Smallest required correction, removals or retention evidence, existing mechanism, authoritative sources, and rejected alternatives
 
-## Verification and test-action summary
-Passed, failed, skipped, and unavailable checks with reasons; list every affected test with its `KEEP`, `ADD`, `UPDATE`, `DELETE`, or `MERGE` action.
+## Verification, test, and documentation actions
+Passed, failed, skipped, and unavailable checks with reasons; list every affected test and documentation surface with its `KEEP`, `ADD`, `UPDATE`, `DELETE`, or `MERGE` action.
 
 ## Residual risks
-Accepted tradeoffs and unavailable evidence within the scoped change; do not include unrelated repository health observations.
+Accepted tradeoffs and unavailable evidence within the scoped change; exclude unrelated repository health.
 ```

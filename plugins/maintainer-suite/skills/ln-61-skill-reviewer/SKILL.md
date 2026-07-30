@@ -38,6 +38,8 @@ Tool absence is not itself a skill defect. Apply the documented fallback and use
 - [ ] Apply the repository's declared completion convention; when an ordered checklist is the Definition of Done, flag a duplicate completion section.
 - [ ] Preserve non-obvious domain rules, tool-routing decisions, safety gates, evidence requirements, verdict mapping, output contract, and residual risks.
 - [ ] Flag explanations a capable current model already knows unless they prevent a demonstrated execution failure.
+- [ ] Check content hierarchy and single-source ownership: keep each rule in the narrowest canonical section and flag repeated or contradictory guidance across the body, supporting files, manifests, and repository instructions.
+- [ ] Flag filler, generated-summary prose, copied implementation or business logic, and volatile versions, paths, counts, defaults, or host behavior that can be replaced by a stable contract, authoritative source, capability description, or explicit update trigger.
 - [ ] Verify every required capability has an available tool path, a credible fallback, or an explicit `BLOCKED` outcome.
 - [ ] Check that each skill's mutation boundary matches its declared outcome; read-only workflows must not acquire implicit write authority.
 - [ ] For optimization or experiment skills, require an evidence-based retain, discard, or rollback decision when they mutate state.

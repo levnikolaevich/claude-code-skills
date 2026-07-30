@@ -14,7 +14,7 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "Product Discovery Suite",
-    "shortDescription": "Evaluate product opportunities with evidence",
+    "shortDescription": "Evaluate product opportunities",
     "longDescription": "Compare product opportunities using current demand, reachable acquisition, competition, economics, and low-cost validation evidence.",
     "developerName": "Lev Nikolaevich",
     "websiteURL": "https://github.com/levnikolaevich/claude-code-skills",

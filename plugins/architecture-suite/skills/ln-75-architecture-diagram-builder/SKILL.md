@@ -1,6 +1,6 @@
 ---
 name: ln-75-architecture-diagram-builder
-description: "Creates evidence-backed current or target architecture diagrams. Use when relationships need visualization; not for UI design, architecture audit, or invented structure."
+description: "Creates evidence-backed current or target architecture diagrams when the diagram is the primary deliverable. Not for UI design, architecture audit, or invented structure."
 ---
 
 # Architecture Diagram Builder

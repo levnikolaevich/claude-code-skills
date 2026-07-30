@@ -14,7 +14,7 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "Review Suite",
-    "shortDescription": "Independent plan and delivery reviews",
+    "shortDescription": "Review plans and deliveries",
     "longDescription": "Review plans and completed deliveries against repository evidence with explicit findings, verdicts, and residual risks.",
     "developerName": "Lev Nikolaevich",
     "websiteURL": "https://github.com/levnikolaevich/claude-code-skills",

@@ -36,7 +36,7 @@ Do not replace working custom code merely because an external package exists. Do
 
 ### 1. Define the Modernization Target
 
-- [ ] Resolve the bounded capability, protected outcome, current pain, affected users, developers, or operators, success metric, constraints, and explicit non-goals. Treat emotional or incomplete wording as an intent signal, not evidence, and never let an inference override explicit requirements, facts, safety, or exact-output constraints.
+- [ ] Resolve the bounded capability, protected outcome, current pain, affected users, developers, or operators, success metric, constraints, and explicit non-goals; label unsupported intent inferences.
 - [ ] Read repository instructions and inspect Git state, generated files, package-manager policy, and current user changes.
 - [ ] Inventory the current implementation, public contracts, consumers, configuration, persisted data, runtime registration, tests, and operational procedures.
 - [ ] Identify the specific workflow, maintenance, security, compatibility, duplication, bundle, startup, or delivery cost that must improve.

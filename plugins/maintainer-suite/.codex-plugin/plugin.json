@@ -14,7 +14,7 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "Maintainer Suite",
-    "shortDescription": "Optional publishing tools for maintainers",
+    "shortDescription": "Maintain and publish plugins",
     "longDescription": "Optional maintainer workflows for reviewing standalone skills, publishing repository changes and tagged releases, and announcing verified project news.",
     "developerName": "Lev Nikolaevich",
     "websiteURL": "https://github.com/levnikolaevich/claude-code-skills",
@@ -23,8 +23,7 @@
     "defaultPrompt": [
       "Review these skills for publication readiness.",
       "Publish the approved repository changes and verify the remote result.",
-      "Prepare a tagged release for explicit approval.",
-      "Draft a fact-checked GitHub Discussions announcement."
+      "Prepare a release or project announcement for approval."
     ]
   }
 }

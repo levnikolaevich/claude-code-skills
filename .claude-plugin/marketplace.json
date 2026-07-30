@@ -10,50 +10,43 @@
       "name": "review-suite",
       "description": "Independent plan and delivery reviews with evidence-based verdicts.",
       "source": "./plugins/review-suite",
-      "strict": false,
-      "skills": "./skills/"
+      "strict": false
     },
     {
       "name": "codebase-audit-suite",
       "description": "Read-only audits for documentation, code, tests, architecture, and persistence.",
       "source": "./plugins/codebase-audit-suite",
-      "strict": false,
-      "skills": "./skills/"
+      "strict": false
     },
     {
       "name": "optimization-suite",
       "description": "Measured performance, dependency, modernization, and benchmark workflows.",
       "source": "./plugins/optimization-suite",
-      "strict": false,
-      "skills": "./skills/"
+      "strict": false
     },
     {
       "name": "testing-suite",
       "description": "Risk-based test planning and reproducible acceptance-test creation.",
       "source": "./plugins/testing-suite",
-      "strict": false,
-      "skills": "./skills/"
+      "strict": false
     },
     {
       "name": "product-discovery-suite",
       "description": "Evidence-based product opportunity evaluation before implementation.",
       "source": "./plugins/product-discovery-suite",
-      "strict": false,
-      "skills": "./skills/"
+      "strict": false
     },
     {
       "name": "maintainer-suite",
       "description": "Optional maintainer toolkit for skill review, repository publication, releases, and project announcements.",
       "source": "./plugins/maintainer-suite",
-      "strict": false,
-      "skills": "./skills/"
+      "strict": false
     },
     {
       "name": "architecture-suite",
       "description": "Architecture baselines, current-state documentation, target designs, decisions, diagrams, and migration plans.",
       "source": "./plugins/architecture-suite",
-      "strict": false,
-      "skills": "./skills/"
+      "strict": false
     }
   ]
 }

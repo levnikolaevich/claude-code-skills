@@ -51,7 +51,7 @@ Tool absence is not itself a skill defect. Apply the documented fallback and use
 - [ ] Discover and run every repository-required skill validator for the changed skill directories; do not assume a validator name or location absent from repository evidence.
 - [ ] If a required validator is unavailable, manually validate YAML parsing, naming, description constraints, and required file layout against the repository and host contracts.
 - [ ] Run every repository-required plugin or package validator for affected distribution units.
-- [ ] Run each host-native strict validator when its corresponding catalog or manifest exists.
+- [ ] Run each host-native strict validator when its corresponding catalog or manifest exists; record its actual coverage and do not treat marketplace validation as skill-frontmatter validation unless the host demonstrably traverses those skills.
 - [ ] Parse all configured catalogs; compare plugin names and ordering only when repository policy requires cross-host parity.
 - [ ] Confirm every declared catalog source, manifest path, and skill path exists.
 - [ ] Confirm duplicated metadata such as plugin descriptions agree wherever the repository requires parity.

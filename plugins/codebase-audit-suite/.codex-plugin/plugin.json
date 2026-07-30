@@ -14,7 +14,7 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "Codebase Audit Suite",
-    "shortDescription": "Evidence-based read-only codebase audits",
+    "shortDescription": "Run evidence-based audits",
     "longDescription": "Audit documentation, code health, tests, architecture, and persistence without changing the reviewed repository.",
     "developerName": "Lev Nikolaevich",
     "websiteURL": "https://github.com/levnikolaevich/claude-code-skills",

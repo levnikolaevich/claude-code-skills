@@ -14,7 +14,7 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "Testing Suite",
-    "shortDescription": "Plan and build high-value tests",
+    "shortDescription": "Plan and build valuable tests",
     "longDescription": "Design risk-based test strategies and build reproducible acceptance tests with explicit oracles and evidence.",
     "developerName": "Lev Nikolaevich",
     "websiteURL": "https://github.com/levnikolaevich/claude-code-skills",

@@ -14,18 +14,15 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "Architecture Suite",
-    "shortDescription": "Create durable architecture artifacts",
+    "shortDescription": "Build architecture artifacts",
     "longDescription": "Create and update evidence-backed architecture baselines, current-state maps, target designs, decision records, diagrams, and reversible migration plans.",
     "developerName": "Lev Nikolaevich",
     "websiteURL": "https://github.com/levnikolaevich/claude-code-skills",
     "category": "Productivity",
     "capabilities": ["Interactive", "Read", "Write"],
     "defaultPrompt": [
-      "Create or update the system-design baseline for this project.",
-      "Document the current implemented architecture from repository evidence.",
-      "Create a decision-complete target system design.",
-      "Record this architecturally significant decision.",
-      "Create an evidence-backed architecture diagram.",
+      "Document or design the architecture for this project.",
+      "Record an architecture decision or create a diagram.",
       "Plan a reversible migration from the current architecture to the target."
     ]
   }

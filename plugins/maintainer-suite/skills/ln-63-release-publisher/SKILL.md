@@ -29,7 +29,7 @@ Do not browse for generic release advice when repository policy and previous com
 
 - [ ] Confirm the user explicitly requested a release and identify the repository, release target, and intended audience.
 - [ ] Read repository release rules before selecting a version, tag shape, files, or publication sequence.
-- [ ] Verify GitHub CLI availability, authentication, repository access, and permission to create releases.
+- [ ] Verify an authenticated GitHub release capability, repository access, and permission to create releases.
 - [ ] Require a clean worktree or explicitly exclude unrelated changes before release preparation.
 - [ ] Fetch tags and the target branch; confirm local HEAD is synchronized with the remote release branch.
 - [ ] Find the latest relevant tag and GitHub Release rather than assuming the newest tag belongs to this release line.

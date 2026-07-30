@@ -42,7 +42,7 @@ Treat the creator thesis, intended experience, taste, and conviction as owner pr
 - [ ] Accept user-supplied candidates or generate a bounded set of materially distinct opportunities from product context and current signals; do not create cosmetic variants of one idea.
 - [ ] Define what would justify deeper validation: identifiable user and problem, observable demand, reachable channel, credible value exchange, differentiating wedge, and affordable experiment.
 - [ ] Separate discovery of a new direction from prioritization of already committed work or implementation planning.
-- [ ] Record assumptions that can reverse the recommendation and identify which are discoverable through research versus user intent. Treat emotional or incomplete wording as an owner-preference signal, never let it override facts, safety, or explicit constraints, and ask one concise question only when different interpretations would materially change the candidates or experiment.
+- [ ] Record assumptions that can reverse the recommendation, separate researchable facts from owner preference, and ask one concise question only when different interpretations materially change the candidates or experiment.
 
 ### 2. Collect One Evidence Bundle per Candidate
 

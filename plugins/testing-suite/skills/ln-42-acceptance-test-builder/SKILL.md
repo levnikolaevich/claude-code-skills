@@ -35,7 +35,7 @@ Never run acceptance tests against production or an unapproved external target. 
 
 ### 1. Establish the Change Boundary
 
-- [ ] Resolve the requirements, acceptance criteria, actor, protected human or system outcome, observable contract, explicit non-goals, allowed test paths, and allowed test-documentation paths. Treat inferred experience qualities as assumptions and never let them override explicit requirements, evidence, safety, or exact-output constraints.
+- [ ] Resolve the requirements, acceptance criteria, actor, protected outcome, observable contract, explicit non-goals, allowed test paths, and allowed test-documentation paths; label inferred experience qualities as assumptions.
 - [ ] Read applicable repository instructions and inspect Git state, untracked files, generated areas, and existing user changes before editing.
 - [ ] Detect the project-native runner, directory layout, naming, fixtures, setup, cleanup, environment configuration, and CI invocation.
 - [ ] Map each requirement to the boundary that can prove it: UI, API, CLI, message, integration, file, or durable state.

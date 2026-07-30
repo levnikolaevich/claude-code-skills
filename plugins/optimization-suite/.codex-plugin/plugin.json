@@ -14,7 +14,7 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "Optimization Suite",
-    "shortDescription": "Measured and reversible codebase optimization",
+    "shortDescription": "Measured code optimization",
     "longDescription": "Optimize performance, dependencies, and code through reproducible baselines, bounded experiments, and keep-or-discard decisions.",
     "developerName": "Lev Nikolaevich",
     "websiteURL": "https://github.com/levnikolaevich/claude-code-skills",

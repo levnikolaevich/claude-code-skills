@@ -41,7 +41,7 @@ Keep the run read-only. Do not create tests, fixtures, snapshots, tasks, or docu
 - [ ] Map existing evidence to each requirement and mark it `PROVED`, `PARTIAL`, `MISSING`, or `UNAVAILABLE` based on the actual oracle.
 - [ ] Inspect manual, exploratory, incident, and production evidence when it reveals behavior that automated suites do not cover.
 - [ ] Identify environment, data, credentials, services, devices, browsers, and destructive-state constraints before proposing scenarios.
-- [ ] Record assumptions and unknowns that can change test level, priority, or feasibility. Treat emotional or incomplete wording as an intent signal rather than evidence, never let it override explicit requirements, safety, facts, or exact-output constraints, and ask one concise question only when different interpretations would materially change the strategy.
+- [ ] Record assumptions and unknowns that can change test level, priority, or feasibility, and ask one concise question only when different interpretations materially change the strategy.
 
 ### 2. Build the Risk Map
 

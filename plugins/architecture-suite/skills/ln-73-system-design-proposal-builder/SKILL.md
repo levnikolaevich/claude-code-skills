@@ -15,7 +15,7 @@ Before returning, apply this skill's verdict and approval rules to every incompl
 | Need | Preferred capability | Fallback |
 |---|---|---|
 | Requirements and constraints | Approved requirements, baseline, decisions, and direct stakeholder input | Mark material gaps and ask the smallest decision question |
-| Current implementation and conventions | Repository search, manifests, entrypoints, and architecture artifacts | Treat the design as greenfield and state the limitation |
+| Current implementation and conventions | Repository search, manifests, entrypoints, and architecture artifacts | Treat as greenfield only when the user or repository establishes that fact; otherwise mark current state `UNKNOWN` and return `REVISE` or `BLOCKED` when the gap can change boundaries, compatibility, or migration |
 | External capabilities and limits | Current official documentation and specifications | Mark claims `UNVERIFIED`; avoid vendor-dependent commitment |
 | Estimates | Reproducible arithmetic from sourced workload assumptions | Use ranges and sensitivity; never present estimates as measurements |
 | Document mutation | Minimal patch to the approved target-design artifact | Return `BLOCKED` if scope or path is unsafe |

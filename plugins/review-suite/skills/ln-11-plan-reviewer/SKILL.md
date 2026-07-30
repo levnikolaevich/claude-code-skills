@@ -90,6 +90,7 @@ When sources disagree, prefer the repository for what is installed and implement
 - [ ] **Testing and acceptance:** Each important behavior has an observable verification method; tests cover critical product logic, errors, integration seams, and likely regressions.
 - [ ] **Delivery and operations:** Include documentation, configuration rollout, observability, deployment, rollback, and operator actions only where the change requires them.
 - [ ] **Simplicity and alternatives:** Challenge layers, services, abstractions, configuration, extensibility, infrastructure, and operational machinery whose lifecycle cost is not justified by the protected outcome, evidenced maturity, business horizon, current scale, or team capacity. Require every step to produce observable progress, merge adjacent work when ownership and verification remain clear, and prefer the shortest reversible design that preserves correctness, safety, compatibility, and an explicit path to evolve.
+- [ ] **Subtractive completeness:** Whenever business logic, constraints, configuration, schemas, routes, states, or operations change, inspect whether each new or changed mechanism makes code, branches, flags, keys, defaults, aliases, shims, data paths, documentation, tests, permissions, metrics, or rollout scaffolding obsolete, and plan safe removal or migration only when repository evidence proves it is superseded and in scope. Treat `one in, two out` only as a reminder to seek simplification, never as a quota or presumption that something must be deleted; preserve current behavior, supported contracts, and necessary transition paths, recording why no removal is appropriate or who owns a temporary legacy path and its bounded removal condition.
 - [ ] Mark a perspective `N/A` only when its absence is evident from the plan and repository; never silently skip a high-risk perspective.
 
 ### 5. Run an Independent Challenge When It Adds Signal
@@ -126,6 +127,7 @@ When sources disagree, prefer the repository for what is installed and implement
 - Plan reviewed
 - Intent statement: actor, protected outcome, consequential experience qualities, and inferred assumptions
 - Maturity and complexity fit: business horizon, current scale, team and operational capacity, and justified evolution path
+- Subtraction ledger: candidates inspected, proven removals, and evidence-backed retention or no-removal conclusions
 - Architecture artifacts inspected, their status, and any authority or freshness limitations
 - Repository areas inspected
 - Commands or semantic queries used

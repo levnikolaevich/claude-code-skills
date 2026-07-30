@@ -126,6 +126,7 @@ Each subagent returns a compact report:
 - [ ] Check resource ownership for files, streams, sessions, connections, processes, subscriptions, and temporary artifacts created, consumed, or transferred by affected paths on success and failure.
 - [ ] Check only dependency direction, module boundaries, orchestration, and side-effect ownership crossed or modified by the change; require their complexity to match the evidenced maturity and business need without turning adjacent architecture into a repository audit.
 - [ ] When code is replaced, verify that the old implementation, signatures, aliases, re-exports, shims, adapters, flags, dual-read or dual-write paths, and files are removed and every caller is migrated; retain compatibility only when an evidenced supported contract requires it, with ownership and a bounded removal condition.
+- [ ] Run a subtractive cleanup pass whenever business logic, constraints, configuration, schemas, routes, states, or operations change: inspect whether each new or changed mechanism leaves obsolete code, branches, flags, keys, defaults, aliases, shims, data paths, documentation, tests, permissions, metrics, or rollout scaffolding, and require removal only when scoped repository evidence proves it is superseded and safe to delete. Treat `one in, two out` only as a reminder to seek simplification, never as a quota or presumption that something must be deleted; preserve current behavior, supported contracts, and necessary transition paths, recording why no removal is appropriate or who owns a temporary legacy path and its bounded removal condition.
 - [ ] Enforce the Green gate: AI slop is prohibited. Require a surgically precise, minimum sufficient diff and the simplest efficient algorithm for evidenced needs; reject needless duplication, code, files, layers, abstractions, configuration, branches, wrappers, compatibility paths, hardcoded operational values, and misleading names without auditing pre-existing instances elsewhere.
 - [ ] Challenge custom or enterprise-grade machinery introduced or expanded by the change when its lifecycle and operational cost exceeds what the protected outcome, maturity, business horizon, current scale, or team capacity justifies, or when an existing platform or declared dependency provides the capability with lower risk.
 - [ ] Derive every accepted finding's smallest correction from scoped repository evidence first, preferring an existing mechanism over new machinery.
@@ -169,7 +170,7 @@ Each subagent returns a compact report:
 ## Scope and evidence
 - Business change thesis, intent statement, maturity and complexity fit, non-goals, and acceptance criteria
 - Comparison base, head, and exact implementation delta
-- Scope map: changed, causally supporting, and explicitly excluded surfaces; change-relevant architecture artifacts, statuses, and freshness limitations
+- Scope map: changed, causally supporting, and explicitly excluded surfaces; subtraction ledger of candidates, proven removals, and retention or no-removal evidence; change-relevant architecture artifacts, statuses, and freshness limitations
 - Commands, discovery sources, and runtime checks executed
 - External sources and limitations
 
@@ -189,7 +190,7 @@ Each subagent returns a compact report:
 - Evidence: observed behavior, command, code path, or authoritative contract
 - Root cause: causal path and violated requirement, invariant, or contract
 - Impact: concrete delivery or operational consequence
-- Required change: `KEEP` / `ADD` / `UPDATE` / `DELETE` / `MERGE` when a test is affected, plus the smallest sufficient correction; repository mechanism used; official version-matched sources or justified local-only basis; primary-practice sources when needed; alternatives rejected
+- Required change: proven-obsolete production and test surfaces to remove, or retention or no-removal evidence; `KEEP` / `ADD` / `UPDATE` / `DELETE` / `MERGE` for affected tests; smallest sufficient correction; repository mechanism used; official version-matched sources or justified local-only basis; primary-practice sources when needed; alternatives rejected
 
 ## Verification and test-action summary
 Passed, failed, skipped, and unavailable checks with reasons; list every affected test with its `KEEP`, `ADD`, `UPDATE`, `DELETE`, or `MERGE` action.

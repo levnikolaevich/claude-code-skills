@@ -23,6 +23,7 @@ Claude Code discovers the standard `skills/` directories through `.claude-plugin
 - Require the execution contract to account for all checkboxes with `Checklist: X/Y complete` and an `Incomplete` list containing each skipped item's reason, outcome impact, and exact next action; apply the skill's own verdict, decision, and approval rules to incomplete items.
 - Preserve evidence rules, tool-selection guidance, safety gates, verdict mapping, output contract, and residual-risk reporting when simplifying.
 - Add `references/`, `scripts/`, or `assets/` only after a concrete execution defect shows that the instruction-only skill is insufficient.
+- Treat each `SKILL.md` as the canonical operational document for its workflow: keep rules at the narrowest relevant section, remove filler and duplicated guidance, and avoid volatile values or copied implementation detail unless execution requires them and the authoritative source or update trigger is explicit.
 - Prefer capability descriptions over vendor-specific tools. Every required capability needs a credible fallback or an explicit `BLOCKED` outcome.
 - Keep skills in English and target 100–200 lines. Remove repetition before splitting a skill.
 - Review and audit skills are read-only. Optimization skills may mutate only the user-approved scope and must retain or discard changes using measured evidence.

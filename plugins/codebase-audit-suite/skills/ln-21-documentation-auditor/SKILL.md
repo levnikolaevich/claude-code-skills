@@ -61,6 +61,8 @@ Absence of documentation is a finding only when a real audience needs the missin
 
 - [ ] Compare each document's title, scope statement, and intended audience with its actual content.
 - [ ] Judge content by document kind: indexes route without duplicating detail, references optimize exact lookup, how-to guides are safely sequenced, explanations build the right mental model, and decision records preserve context, decision, alternatives, and consequences.
+- [ ] Flag filler, repeated summaries, speculative narration, generic generated prose, and ceremonial sections that do not help the intended audience decide or act.
+- [ ] Prefer durable intent, contracts, constraints, and operations over copied implementation or business logic; retain only minimal verified code or command examples needed to act safely.
 - [ ] Identify off-topic content, scope creep, unexplained prerequisites, hidden assumptions, and sections that no longer support an active task.
 - [ ] Check coverage of public behavior, configuration, deployment, migrations, failure recovery, security-sensitive operation, and extension points where applicable.
 - [ ] Trace requirements and architecture statements across documents; report contradictions and ambiguous ownership rather than choosing silently.
@@ -80,6 +82,7 @@ Absence of documentation is a finding only when a real audience needs the missin
 - [ ] Check examples for missing imports, placeholders presented as real values, invalid paths, unsafe secrets, obsolete syntax, and output that no longer matches behavior.
 - [ ] Filter examples, templates, future plans, conditional instructions, and external-system references before declaring a claim false; verify a conditional claim only when its prerequisite is active in this project.
 - [ ] Verify numeric counts with a reproducible query and documented exclusions; avoid preserving aggregate counts that will drift without automation.
+- [ ] Recommend moving change-prone versions, paths, defaults, inventories, generated output, and status snapshots to authoritative code, configuration, or generated sources where practical; otherwise identify the source, scope, and owner or generation/update trigger needed to prevent silent staleness.
 - [ ] Apply the research-to-action gate: external guidance becomes a finding only when it proves a concrete in-repository defect or risk.
 
 ### 5. Review Comments and Produce the Report
@@ -89,6 +92,7 @@ Absence of documentation is a finding only when a real audience needs the missin
 - [ ] Flag comments that narrate syntax, preserve history, contain dead code, promise behavior the code does not provide, or duplicate information better expressed by names and types.
 - [ ] Check public interfaces for documentation required by the language or ecosystem and for examples that match the actual contract.
 - [ ] Filter intentional audience simplification, framework convention, generated prose, and accepted legacy constraints before reporting.
+- [ ] Classify every in-scope document or comment surface as `KEEP`, `ADD`, `UPDATE`, `DELETE`, or `MERGE`; recommend deletion or consolidation only when canonical coverage preserves every required audience task and contract.
 - [ ] Classify findings as `P0`-`P3` based on the harm caused by wrong action, inability to operate, maintenance drift, or minor friction.
 - [ ] Support every finding with document location, verifying evidence, affected audience, impact, and a concrete correction or canonical owner.
 - [ ] Use `BLOCKED` when a safety-critical claim, required audience journey, or authoritative source cannot be verified without a credible fallback; use `FAIL` when evidence proves unsafe guidance, an inoperable required journey, or an unresolved `P0/P1`; use `CONCERNS` only for material non-blocking trust gaps, and `PASS` only when required claims and journeys are verified with no material finding.
@@ -112,7 +116,13 @@ Absence of documentation is a finding only when a real audience needs the missin
 | Structure | PASS / CONCERNS / FAIL | ... |
 | Coverage | PASS / CONCERNS / FAIL | ... |
 | Factual accuracy | PASS / CONCERNS / FAIL | ... |
+| Durability and SSOT | PASS / CONCERNS / FAIL | ... |
 | Comments and examples | PASS / CONCERNS / FAIL | ... |
+
+## Document actions
+| Surface | Action | Evidence |
+|---|---|---|
+| ... | KEEP / ADD / UPDATE / DELETE / MERGE | ... |
 
 ## Findings
 ### [P0 | P1 | P2 | P3] Finding title

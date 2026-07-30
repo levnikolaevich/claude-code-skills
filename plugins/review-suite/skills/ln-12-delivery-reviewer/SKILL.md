@@ -128,7 +128,9 @@ Each subagent returns a compact report:
 - [ ] When code is replaced, verify that the old implementation, signatures, aliases, re-exports, shims, adapters, flags, dual-read or dual-write paths, and files are removed and every caller is migrated; retain compatibility only when an evidenced supported contract requires it, with ownership and a bounded removal condition.
 - [ ] Enforce the Green gate: AI slop is prohibited. Require a surgically precise, minimum sufficient diff and the simplest efficient algorithm for evidenced needs; reject needless duplication, code, files, layers, abstractions, configuration, branches, wrappers, compatibility paths, hardcoded operational values, and misleading names without auditing pre-existing instances elsewhere.
 - [ ] Challenge custom or enterprise-grade machinery introduced or expanded by the change when its lifecycle and operational cost exceeds what the protected outcome, maturity, business horizon, current scale, or team capacity justifies, or when an existing platform or declared dependency provides the capability with lower risk.
-- [ ] Research only external claims that affect the scoped verdict, using official sources matching the installed or proposed version.
+- [ ] Derive every accepted finding's smallest correction from scoped repository evidence first, preferring an existing mechanism over new machinery.
+- [ ] Before recommending or handing off a correction involving an external API, library, security control, protocol, platform, standard, or version, verify the supported solution in official documentation matched to the installed or proposed version. When official guidance leaves a consequential tradeoff unresolved, search current primary engineering sources for applicable best practice; do not browse generic practices for repository-owned business logic already proven by requirements, code, and tests.
+- [ ] Record remediation evidence: sources and dates, verified claims, candidate corrections, rejected alternatives, and why the chosen correction is the smallest safe fit. Review findings never authorize repair; require a later implementer to revalidate unstable external facts immediately before editing.
 
 ### 4. Verify Tests, Documentation, and Operations
 
@@ -187,7 +189,7 @@ Each subagent returns a compact report:
 - Evidence: observed behavior, command, code path, or authoritative contract
 - Root cause: causal path and violated requirement, invariant, or contract
 - Impact: concrete delivery or operational consequence
-- Required change: `KEEP` / `ADD` / `UPDATE` / `DELETE` / `MERGE` when a test is affected, plus the smallest sufficient correction
+- Required change: `KEEP` / `ADD` / `UPDATE` / `DELETE` / `MERGE` when a test is affected, plus the smallest sufficient correction; repository mechanism used; official version-matched sources or justified local-only basis; primary-practice sources when needed; alternatives rejected
 
 ## Verification and test-action summary
 Passed, failed, skipped, and unavailable checks with reasons; list every affected test with its `KEEP`, `ADD`, `UPDATE`, `DELETE`, or `MERGE` action.

@@ -68,12 +68,12 @@ When sources disagree, prefer the repository for what is installed and implement
 
 - [ ] Extract plan claims that are external or unstable: versions, API signatures, deprecations, standards, security requirements, library capabilities, performance characteristics, and platform limits.
 - [ ] Resolve installed versions and enabled features from project manifests, lockfiles, configuration, and generated metadata before searching generic documentation.
-- [ ] Search official documentation or standards for each consequential external claim, matching the documentation to the installed or proposed version rather than merely the latest page.
-- [ ] Use web search for recent ecosystem practice, comparative alternatives, or gaps not covered by primary sources; prefer original sources over summaries.
+- [ ] Before recommending a correction that depends on an external API, library, security control, protocol, platform, standard, or version, verify the supported solution, constraints, deprecations, and security guidance in official documentation matched to the installed or proposed version.
+- [ ] When official sources leave a consequential tradeoff unresolved, use web search for current practice and comparative alternatives, preferring original engineering sources over summaries. Do not browse generic practices for repository-owned business logic already established by requirements, code, and tests.
 - [ ] Open and inspect any specific document, proposal, issue, or URL that the plan relies on instead of trusting a quotation or paraphrase.
-- [ ] Record research as compact evidence: topic, source and date, verified claim, confidence, impact on the plan, and required action.
+- [ ] Record solution research as compact evidence: topic, source and date, verified claim, candidate corrections, chosen approach, rejected alternatives, confidence, plan impact, and why the choice is the smallest safe fit.
 - [ ] Apply the research-to-action gate: if a source does not reveal a specific defect, risk, missing decision, or better-supported alternative, keep it informational and do not inflate the review.
-- [ ] If authoritative research is unavailable, label the affected claim `UNVERIFIED`; use `BLOCKED` only when implementation safety or a consequential design choice depends on it.
+- [ ] If authoritative research is unavailable, label the affected claim `UNVERIFIED`; use `BLOCKED` when implementation safety or a consequential design choice depends on it. Review approval never authorizes execution; require a later implementer to revalidate unstable external facts immediately before editing.
 
 ### 4. Review from Every Applicable Perspective
 
@@ -136,7 +136,7 @@ When sources disagree, prefer the repository for what is installed and implement
 ### [BLOCKER | MAJOR | MINOR] Finding title
 - Evidence: file, symbol, command result, or authoritative source
 - Impact: concrete failure, rework, or uncertainty
-- Required change or local amendment: smallest sufficient correction
+- Required change or local amendment: smallest sufficient correction; repository mechanism used; official version-matched sources or justified local-only basis; primary-practice sources when needed; alternatives rejected; why this choice is the smallest safe fit
 
 ## Corrected plan or amendments
 Complete replacement plan for REVISE; exact local amendments for READY WITH CONCERNS; otherwise state that the reviewed plan is ready or explain why correction is blocked.

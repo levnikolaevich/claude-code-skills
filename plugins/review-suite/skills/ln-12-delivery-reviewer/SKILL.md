@@ -64,7 +64,7 @@ For non-code delivery, select only lenses triggered by its risks; when none appl
 
 Always select Tests and oracles for code-bearing review. Choose up to three other specialists by impact, likelihood, and rollback difficulty; avoid duplicate questions and record selection or merge reasons.
 
-Give each subagent the same frozen packet: business thesis, acceptance criteria, maturity evidence, base and head, changed/supporting/excluded scope, non-goals, approved approach, repository instructions, risk class, and allowed commands. Add exactly one lens, read-only and scope boundaries, and the result schema. Do not include provisional or sibling findings.
+Give each subagent the same frozen packet: authoritative task, required plan items, business thesis, acceptance criteria, maturity evidence, base and head, changed/supporting/excluded scope, non-goals, approved approach, repository instructions, risk class, and allowed commands. Add exactly one lens, read-only and scope boundaries, and the result schema. Do not include provisional or sibling findings.
 
 Run agents in parallel or blind waves. Allow read, search, code intelligence, official-source research, and non-mutating verification; forbid tracked edits, commits, pushes, deployments, external writes, and nested subagents. Retry a failed critical lens once only when a concrete cause changes. Wait for all selected lenses; resolve material conflicts through direct evidence or one bounded verifier.
 
@@ -76,7 +76,7 @@ Each subagent returns coverage, candidate findings with change-causal evidence a
 
 - [ ] Before reading implementation detail, state the affected actors, problem, protected outcome, changed behavior, acceptance criteria, invariants, non-goals, and release boundary. Mark unsupported interpretations `UNKNOWN`; use `BLOCKED` when the thesis cannot be established.
 - [ ] Establish complexity fit from evidenced maturity, business horizon, scale, team capacity, and lifecycle cost; do not infer enterprise needs from hypothetical growth or call safety-required complexity overengineering.
-- [ ] Read applicable repository instructions, inspect uncommitted work, and resolve base, head, implementation delta, approved plan or target architecture, and permitted transitional compatibility.
+- [ ] Read applicable repository instructions, inspect uncommitted work, and resolve the authoritative task, base, head, implementation delta, approved plan or target architecture, and permitted transitional compatibility.
 - [ ] Discover only change-relevant baseline, current-state, target-design, decision, diagram, and migration artifacts by repository convention; record status and freshness without requiring a particular path.
 - [ ] Map changed, causally supporting, and explicitly excluded surfaces. Read outside the diff only to trace affected behavior; do not hunt unrelated code for findings.
 - [ ] Classify change-triggered risk from trust, money, destructive action, migration, public contracts, concurrency, distributed coordination, and rollback difficulty; define acceptance evidence before implementation review.
@@ -85,10 +85,10 @@ Each subagent returns coverage, candidate findings with change-causal evidence a
 
 ### 2. Trace Requirements into Implementation
 
-- [ ] Map every acceptance criterion to changed code, configuration, data, documentation, and verification; mark it `PASS`, `FAIL`, or `UNPROVEN`.
+- [ ] Enumerate every authoritative task requirement and acceptance criterion, plus every required approved-plan item. Map each to concrete implementation and independent behavioral evidence; mark task and plan items `COMPLETE`, `DEVIATED`, `OMITTED`, or `UNPROVEN` and acceptance `PASS`, `FAIL`, or `UNPROVEN`. Author claims, checked boxes, commits, and code presence are not completion evidence.
 - [ ] Inspect changed files and only the unchanged definitions, consumers, interfaces, tests, migrations, and registration needed to prove an affected path.
 - [ ] Verify the change serves the protected outcome, including first meaningful use, material failure, recovery, and repetition where relevant.
-- [ ] Trace approved plan, architecture, decision, migration, and baseline constraints into the implementation. Treat unexplained omissions as unmet, distinguish drift from stale or proposed documentation, and accept deviations only when evidence preserves the goal.
+- [ ] Verify each required plan item was implemented and works in its intended runtime path. Treat unexplained omissions as unmet; accept `DEVIATED` only when explicit evidence proves the alternative fully preserves the task, protected outcome, constraints, and acceptance. Distinguish justified deviation from stale or proposed documentation.
 - [ ] Trace each critical scenario from actor trigger through entrypoint, runtime wiring, usage context, and observable outcome.
 - [ ] Confirm new components, routes, commands, handlers, jobs, events, and configuration are registered and discoverable at runtime.
 - [ ] Within affected behavior, inspect applicable boundaries, collections, state transitions, duplicates, ordering, numeric behavior, empty and maximum inputs, errors, retries, idempotency, cancellation, timeouts, rollback, and cleanup.
@@ -133,8 +133,8 @@ Each subagent returns coverage, candidate findings with change-causal evidence a
 - [ ] Deduplicate by root cause, preserve the strongest evidence and widest demonstrated impact, and recommend one smallest sufficient correction.
 - [ ] Resolve contradictions by tracing behavior; use one bounded verifier only when direct inspection cannot settle the claim.
 - [ ] Classify findings `P0` catastrophic, `P1` release-blocking, `P2` important non-blocking, or `P3` minor actionable.
-- [ ] Use `FAIL` for unresolved `P0/P1`, unmet acceptance, a change-caused required-gate failure, or demonstrated unsafe high-risk behavior. Use `CONCERNS` only for explicit non-blocking risk and `PASS` only with complete required evidence.
-- [ ] Use `BLOCKED` when a required lens, specialist, safety environment, authoritative contract, or acceptance prerequisite has no credible replacement; report the coverage gap, not a product defect.
+- [ ] Use `FAIL` for unresolved `P0/P1`, a required task or plan item that is `OMITTED` or demonstrably incorrect, unmet acceptance, a change-caused required-gate failure, or demonstrated unsafe high-risk behavior. Use `CONCERNS` only for explicit non-blocking risk. Use `PASS` only when every required task and plan item is `COMPLETE` or evidence-backed `DEVIATED`, every acceptance criterion passes, and all required evidence is complete.
+- [ ] Use `BLOCKED` when a required task or plan item remains `UNPROVEN`, or a required lens, specialist, safety environment, authoritative contract, or acceptance prerequisite has no credible replacement; report the coverage gap, not a product defect.
 - [ ] Return only scope, panel coverage, acceptance evidence, test and documentation actions, findings, commands, limitations, verdict rationale, and residual risk. Omit passed-area narration and repeated context; collapse empty sections to `None`.
 
 ## Output Contract
@@ -144,15 +144,15 @@ Each subagent returns coverage, candidate findings with change-causal evidence a
 **Verdict:** PASS | CONCERNS | FAIL | BLOCKED
 
 ## Scope and evidence
-- Business thesis, acceptance, non-goals, base, head, and exact delta
+- Authoritative task, approved plan, business thesis, acceptance, non-goals, base, head, and exact delta
 - Changed, supporting, and excluded surfaces
 - Subtraction ledger and relevant architecture-artifact status
 - Commands, external sources, and limitations
 
-## Acceptance matrix
-| Requirement | Evidence | Verification | Result |
-|---|---|---|---|
-| ... | ... | ... | PASS / FAIL / UNPROVEN |
+## Task, plan, and acceptance matrix
+| Source | Required item | Implementation evidence | Behavioral verification | Result |
+|---|---|---|---|---|
+| task / plan / acceptance | ... | ... | ... | COMPLETE / DEVIATED / OMITTED / PASS / FAIL / UNPROVEN |
 
 ## Independent review panel
 | Hat | Why selected | Coverage | Result |

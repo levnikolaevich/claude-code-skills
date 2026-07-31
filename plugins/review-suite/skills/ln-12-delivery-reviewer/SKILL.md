@@ -20,7 +20,7 @@ Before returning, apply this skill's verdict, decision, and approval rules to ev
 | Automated verification | Repository-defined commands | Build, lint, type, test, migration, or smoke gates exist | Inspect scripts and CI; mark execution `UNPROVEN` |
 | Observable behavior | Browser, client, or runtime evidence | Acceptance depends on UI, interaction, protocol, or logs | Static trace plus an exact manual check |
 | External contracts | Current official documentation or specifications | A changing external fact can alter correctness or severity | Primary-source research; otherwise mark `UNVERIFIED` |
-| Independent review | Native subagents in separate contexts | Every code-bearing review | Run blind waves within host limits; return `BLOCKED` if independence remains impossible |
+| Independent review | Native subagents in separate contexts | Initial code-bearing review; optional on follow-up | Run blind waves within host limits; return `BLOCKED` only when required initial independence remains impossible |
 
 Use tools only for the current evidence question. Tool failure is a limitation, not a defect. Do not convert an unavailable command, runtime, or source into a finding without implementation evidence.
 
@@ -40,8 +40,8 @@ Every finding must name the affected business behavior, change-causal path, viol
 
 Use Six Thinking Hats as evidence lenses, not personalities. The Blue lead scopes the review, selects agents, verifies claims, resolves conflicts, and issues the verdict.
 
-Always spawn White, Black, Green, and Tests and oracles for code-bearing review. Stop there for small low-risk work; add one or two distinct hats for medium risk; run all five non-Blue hats for high-risk, architectural, cross-service, unfamiliar, or ambiguous work. Add up to three other specialists only for risks activated by the change: four to nine subagents plus the Blue lead.
-For non-code delivery, select only lenses triggered by its risks; when none apply, record `Independent review panel: None`.
+On the first completed-delivery review for an authoritative task, always spawn White, Black, Green, and Tests and oracles. Stop there for small low-risk work; add one or two distinct hats for medium risk; run all five non-Blue hats for high-risk, architectural, cross-service, unfamiliar, or ambiguous work. Add up to three other specialists only for risks activated by the change: four to nine subagents plus the Blue lead. Treat a review as first when no completed prior report proves the reviewed base, head, scope, and panel, or when the task, scope, or baseline materially changed.
+On a follow-up review of the same task and scope, no hat or specialist is mandatory. The Blue lead may select any non-duplicative subset or none from the new diff, unresolved findings, unproven evidence, and changed risks; record the rationale and never rerun a lens only because it ran before. Apply the same risk-based freedom to non-code delivery and record `Independent review panel: None` when no lens adds value.
 
 | Hat | Question |
 |---|---|
@@ -57,12 +57,12 @@ For non-code delivery, select only lenses triggered by its risks; when none appl
 | Data and concurrency | Schemas, transactions, queues, caches, events, async work, locks | Atomicity, races, ordering, duplicates, wiring, and orphan channels |
 | API and compatibility | Public interfaces, protocols, serialization, configuration, mixed versions | Producers, consumers, removals, and supported compatibility |
 | Architecture and migration | Approved design, replacement, refactor, cutover, or deprecation | Plan traceability, target completeness, old paths, and unmigrated callers |
-| Tests and oracles | Every code-bearing review | Material business risks, trustworthy oracles, E2E-first coverage, and removal or consolidation of low-value tests |
+| Tests and oracles | Initial code-bearing review; follow-up when test risk warrants | Material business risks, trustworthy oracles, E2E-first coverage, and removal or consolidation of low-value tests |
 | Performance and reliability | Hot paths, I/O, retries, timeouts, load, resource ownership | Amplification, measurement, leaks, storms, and degradation |
 | UI and accessibility | Rendering, interaction, responsive state, localization | Keyboard, focus, names, motion, copy, and rendered behavior |
 | Operations and release | Deployment, configuration, observability, rollback, recovery | Safe rollout, useful signals, and recovery steps |
 
-Always select Tests and oracles for code-bearing review. Choose up to three other specialists by impact, likelihood, and rollback difficulty; avoid duplicate questions and record selection or merge reasons.
+On an initial code-bearing review, always select Tests and oracles and choose up to three other specialists by impact, likelihood, and rollback difficulty. On follow-up, every specialist is optional; choose freely from current evidence, avoid duplicate questions, and record selection, omission, or merge reasons.
 
 Give each subagent the same frozen packet: authoritative task, required plan items, business thesis, acceptance criteria, maturity evidence, base and head, changed/supporting/excluded scope, non-goals, approved approach, repository instructions, risk class, and allowed commands. Add exactly one lens, read-only and scope boundaries, and the result schema. Do not include provisional or sibling findings.
 
@@ -80,7 +80,7 @@ Each subagent returns coverage, candidate findings with change-causal evidence a
 - [ ] Discover only change-relevant baseline, current-state, target-design, decision, diagram, and migration artifacts by repository convention; record status and freshness without requiring a particular path.
 - [ ] Map changed, causally supporting, and explicitly excluded surfaces. Read outside the diff only to trace affected behavior; do not hunt unrelated code for findings.
 - [ ] Classify change-triggered risk from trust, money, destructive action, migration, public contracts, concurrency, distributed coordination, and rollback difficulty; define acceptance evidence before implementation review.
-- [ ] For code-bearing review, freeze the thesis and scope, select White, Black, Green, and Tests and oracles plus only risk-triggered hats, and keep preliminary conclusions private. For non-code delivery, select only triggered lenses or record the panel as `None`.
+- [ ] Classify the pass as first or follow-up from a completed prior report and stable task, scope, and baseline; freeze the thesis and scope. For a first code-bearing review, select White, Black, Green, and Tests and oracles plus only risk-triggered lenses. For follow-up or non-code delivery, let the Blue lead select any useful subset or `None` and record why; keep preliminary conclusions private.
 - [ ] Keep the review read-only. Permit only host-approved caches or build artifacts; do not edit tracked files, create tasks, commit, push, deploy, or repair findings.
 
 ### 2. Trace Requirements into Implementation
@@ -158,7 +158,7 @@ Each subagent returns coverage, candidate findings with change-causal evidence a
 | Hat | Why selected | Coverage | Result |
 |---|---|---|---|
 | ... | required or triggered risk | inspected surfaces and checks | findings / none / failed |
-Use `None` for a non-code delivery with no triggered lens.
+Use `None` for a non-code or follow-up delivery with no selected lens.
 
 ## Findings
 ### [P0 | P1 | P2 | P3] Finding title

@@ -59,12 +59,12 @@ On a follow-up review of the same task and scope, no hat or specialist is mandat
 | Architecture and migration | Approved design, replacement, refactor, cutover, or deprecation | Plan traceability, target completeness, old paths, and unmigrated callers |
 | Tests and oracles | Initial code-bearing review; follow-up when test risk warrants | Material business risks, trustworthy oracles, E2E-first coverage, and removal or consolidation of low-value tests |
 | Performance and reliability | Hot paths, I/O, retries, timeouts, load, resource ownership | Amplification, measurement, leaks, storms, and degradation |
-| UI and accessibility | Rendering, interaction, responsive state, localization | Keyboard, focus, names, motion, copy, and rendered behavior |
+| UI and accessibility | A user-facing surface is changed or causally reached, even when UX change is not requested | Existing-experience preservation, stable selectors, keyboard, focus, names, motion, copy, and rendered behavior |
 | Operations and release | Deployment, configuration, observability, rollback, recovery | Safe rollout, useful signals, and recovery steps |
 
 On an initial code-bearing review, always select Tests and oracles and choose up to three other specialists by impact, likelihood, and rollback difficulty. On follow-up, every specialist is optional; choose freely from current evidence, avoid duplicate questions, and record selection, omission, or merge reasons.
 
-Give each subagent the same frozen packet: authoritative task, required plan items, business thesis, acceptance criteria, maturity evidence, base and head, changed/supporting/excluded scope, non-goals, approved approach, repository instructions, risk class, and allowed commands. Add exactly one lens, read-only and scope boundaries, and the result schema. Do not include provisional or sibling findings.
+Give each subagent the same frozen packet: authoritative task, required plan items, business thesis, acceptance criteria, user-experience baseline and authorized changes, maturity evidence, base and head, changed/supporting/excluded scope, non-goals, approved approach, repository instructions, risk class, and allowed commands. Add exactly one lens, read-only and scope boundaries, and the result schema. Do not include provisional or sibling findings.
 
 Run agents in parallel or blind waves. Allow read, search, code intelligence, official-source research, and non-mutating verification; forbid tracked edits, commits, pushes, deployments, external writes, and nested subagents. Retry a failed critical lens once only when a concrete cause changes. Wait for all selected lenses; resolve material conflicts through direct evidence or one bounded verifier.
 
@@ -74,7 +74,7 @@ Each subagent returns coverage, candidate findings with change-causal evidence a
 
 ### 1. Establish Business and Change Scope
 
-- [ ] Before reading implementation detail, state the affected actors, problem, protected outcome, changed behavior, acceptance criteria, invariants, non-goals, and release boundary. Mark unsupported interpretations `UNKNOWN`; use `BLOCKED` when the thesis cannot be established.
+- [ ] Before reading implementation detail, state the affected actors, problem, protected outcome, changed behavior, acceptance criteria, existing user experience, explicitly authorized user-facing changes, invariants, non-goals, and release boundary. Mark unsupported interpretations `UNKNOWN`; use `BLOCKED` when the thesis cannot be established.
 - [ ] Establish complexity fit from evidenced maturity, business horizon, scale, team capacity, and lifecycle cost; do not infer enterprise needs from hypothetical growth or call safety-required complexity overengineering.
 - [ ] Read applicable repository instructions, inspect uncommitted work, and resolve the authoritative task, base, head, implementation delta, approved plan or target architecture, and permitted transitional compatibility.
 - [ ] Discover only change-relevant baseline, current-state, target-design, decision, diagram, and migration artifacts by repository convention; record status and freshness without requiring a particular path.
@@ -89,6 +89,7 @@ Each subagent returns coverage, candidate findings with change-causal evidence a
 - [ ] Inspect changed files and only the unchanged definitions, consumers, interfaces, tests, migrations, and registration needed to prove an affected path.
 - [ ] Verify the change serves the protected outcome, including first meaningful use, material failure, recovery, and repetition where relevant.
 - [ ] Verify each required plan item was implemented and works in its intended runtime path. Treat unexplained omissions as unmet; accept `DEVIATED` only when explicit evidence proves the alternative fully preserves the task, protected outcome, constraints, and acceptance. Distinguish justified deviation from stale or proposed documentation.
+- [ ] Compare the user-observable baseline with the delivery. Existing screens, copy, styles, navigation, interaction order, focus, accessibility, and user scenarios may change only when a specific task requirement authorizes that change; otherwise treat any delta as a regression. New screens, copy, controls, or additional scenarios may be accepted as additive surfaces when existing elements and paths remain unchanged, but list each explicitly with its trigger, rationale, and evidence.
 - [ ] Trace each critical scenario from actor trigger through entrypoint, runtime wiring, usage context, and observable outcome.
 - [ ] Confirm new components, routes, commands, handlers, jobs, events, and configuration are registered and discoverable at runtime.
 - [ ] Within affected behavior, inspect applicable boundaries, collections, state transitions, duplicates, ordering, numeric behavior, empty and maximum inputs, errors, retries, idempotency, cancellation, timeouts, rollback, and cleanup.
@@ -113,6 +114,7 @@ Each subagent returns coverage, candidate findings with change-causal evidence a
 - [ ] Before recommending or retaining any test, rank the changed business scenario by failure likelihood, user or operational impact, blast radius, reversibility, and regression history. Cover only material risks; reject test count, line coverage, and tests for trivial or low-risk behavior as goals.
 - [ ] Prohibit tests whose oracle merely re-proves language or standard-library behavior, default framework routing, validation, or lifecycle, external-package behavior, uncustomized ORM or driver mechanics, database-vendor capability, getters, pass-through wrappers, or other trivial implementation. Crossing a real dependency is valid only when it proves a repository-owned business rule, configuration, runtime registration, integration contract, query, schema, permission, transaction, recovery path, or user journey.
 - [ ] Prefer deterministic E2E tests through the user-observable boundary for every material business risk. Require an explicit reason for integration or contract coverage instead. Permit a unit test only when it isolates material repository-owned business logic and evidence shows broader coverage would be less deterministic, precise, or useful; without that recorded justification, assign `DELETE` or `MERGE`.
+- [ ] Require UI and other interaction tests to locate elements only through stable repository-owned contracts such as durable IDs or dedicated test hooks, never visible copy, translated text, CSS styling or layout, position, or incidental DOM structure. When exact copy is an explicit acceptance contract, assert it separately as an outcome but never use it as a locator; assign `UPDATE`, `DELETE`, or `MERGE` to affected tests that violate this rule.
 - [ ] Classify every affected test as `KEEP`, `ADD`, `UPDATE`, `DELETE`, or `MERGE`; verify business-risk linkage, defect sensitivity, oracle strength, assertions, success and failure paths, authorization, boundaries, data integrity, over-mocking, snapshots, flakes, shared state, time, randomness, and order dependence.
 - [ ] Assign `DELETE` to every test that covers only forbidden or trivial logic, an obsolete contract, an implementation detail, duplicate behavior, or immaterial risk. Assign `MERGE` when its unique valuable assertion can be absorbed into a risk-focused E2E, integration, or contract test; never `KEEP` or `UPDATE` a nonconforming test.
 - [ ] Discover commands from repository docs, tool configuration, and manifests before justified fallback. Run narrow checks first, then required build, lint, type, test, migration, and smoke gates with CI-safe options.
@@ -133,7 +135,7 @@ Each subagent returns coverage, candidate findings with change-causal evidence a
 - [ ] Deduplicate by root cause, preserve the strongest evidence and widest demonstrated impact, and recommend one smallest sufficient correction.
 - [ ] Resolve contradictions by tracing behavior; use one bounded verifier only when direct inspection cannot settle the claim.
 - [ ] Classify findings `P0` catastrophic, `P1` release-blocking, `P2` important non-blocking, or `P3` minor actionable.
-- [ ] Use `FAIL` for unresolved `P0/P1`, a required task or plan item that is `OMITTED` or demonstrably incorrect, unmet acceptance, a change-caused required-gate failure, or demonstrated unsafe high-risk behavior. Use `CONCERNS` only for explicit non-blocking risk. Use `PASS` only when every required task and plan item is `COMPLETE` or evidence-backed `DEVIATED`, every acceptance criterion passes, and all required evidence is complete.
+- [ ] Use `FAIL` for unresolved `P0/P1`, a required task or plan item that is `OMITTED` or demonstrably incorrect, unmet acceptance, an unauthorized change to existing user experience, a change-caused required-gate failure, or demonstrated unsafe high-risk behavior. Use `CONCERNS` only for explicit non-blocking risk. Use `PASS` only when every required task and plan item is `COMPLETE` or evidence-backed `DEVIATED`, every acceptance criterion passes, and all required evidence is complete.
 - [ ] Use `BLOCKED` when a required task or plan item remains `UNPROVEN`, or a required lens, specialist, safety environment, authoritative contract, or acceptance prerequisite has no credible replacement; report the coverage gap, not a product defect.
 - [ ] Return only scope, panel coverage, acceptance evidence, test and documentation actions, findings, commands, limitations, verdict rationale, and residual risk. Omit passed-area narration and repeated context; collapse empty sections to `None`.
 
@@ -146,6 +148,7 @@ Each subagent returns coverage, candidate findings with change-causal evidence a
 ## Scope and evidence
 - Authoritative task, approved plan, business thesis, acceptance, non-goals, base, head, and exact delta
 - Changed, supporting, and excluded surfaces
+- User-experience baseline and explicit change authorization
 - Subtraction ledger and relevant architecture-artifact status
 - Commands, external sources, and limitations
 
@@ -153,6 +156,10 @@ Each subagent returns coverage, candidate findings with change-causal evidence a
 | Source | Required item | Implementation evidence | Behavioral verification | Result |
 |---|---|---|---|---|
 | task / plan / acceptance | ... | ... | ... | COMPLETE / DEVIATED / OMITTED / PASS / FAIL / UNPROVEN |
+
+## User-experience delta
+- Existing experience changes: None | item - explicit task authorization and verification
+- Additions: None | new screen, copy, control, or scenario - trigger, rationale, and evidence
 
 ## Independent review panel
 | Hat | Why selected | Coverage | Result |

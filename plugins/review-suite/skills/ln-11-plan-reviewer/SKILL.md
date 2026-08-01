@@ -20,7 +20,7 @@ Before returning, apply this skill's verdict, decision, and approval rules to ev
 | Planned edit risk | Code intelligence plus caller and consumer search | The plan names an edit region, route, event, response contract, or existing change surface | Inspect named symbols and adjacent integration points manually |
 | Build, test, migration, and script feasibility | Repository-defined commands through the shell | The plan depends on a command, baseline, generated artifact, or existing test surface being available | Inspect scripts and CI configuration; mark execution unverified |
 | External APIs, versions, standards, and current practice | Official vendor documentation or standards through documentation search or the web | An external or time-sensitive fact can change the plan | Built-in knowledge only when tools fail, marked `UNVERIFIED` |
-| Independent challenge | Native subagents in separate contexts | A non-trivial plan benefits from execution, fresh-context, and adversarial perspectives | Run the same perspectives as distinct self-review passes and report reduced independence |
+| Independent challenge | Native subagents in separate contexts | A plan benefits from execution, fresh-context, or adversarial perspective | Run the selected perspectives once as one bounded self-review batch and report reduced independence |
 
 Use the preferred tool only when it answers the current evidence question. Tool failure is not a domain finding: report reduced confidence and block only when missing evidence prevents a safe decision. Do not use semantic tooling for prose or configuration questions, and do not use web research to rediscover stable local facts.
 
@@ -93,15 +93,13 @@ When sources disagree, prefer the repository for what is installed and implement
 - [ ] **Subtractive completeness:** For changed logic, constraints, configuration, schemas, routes, states, or operations, identify obsolete code, branches, flags, keys, defaults, shims, data paths, documentation, tests, permissions, metrics, and rollout scaffolding. Plan removal only when evidence proves it superseded and in scope; otherwise record retention evidence or a temporary path's owner and removal condition. `One in, two out` is a simplification prompt, never a quota.
 - [ ] Mark a perspective `N/A` only when its absence is evident from the plan and repository; never silently skip a high-risk perspective.
 
-### 5. Run an Independent Challenge When It Adds Signal
+### 5. Run One Independent Challenge Round
 
-- [ ] For a small, local, low-risk plan, launch one blind reviewer using the perspective most likely to change the verdict: execution simulation, fresh implementation, or adversarial failure analysis.
-- [ ] For an ordinary medium-risk plan, launch two blind reviewers with distinct evidence questions: execution simulation plus either fresh implementation or adversarial analysis according to the dominant uncertainty.
-- [ ] For high-risk, architectural, cross-service, unfamiliar, or materially ambiguous work, launch all three blind perspectives: an execution simulator for sequencing and feasibility, a fresh implementer for implicit knowledge and ambiguity, and an adversarial reviewer for failure, corruption, and rollback risk.
+- [ ] Run exactly one independent review round for the plan. Select one blind reviewer for small low-risk work, two distinct reviewers for ordinary medium risk, or all three for high-risk, architectural, cross-service, unfamiliar, or materially ambiguous work: execution simulation, fresh implementation, and adversarial failure analysis. Do not start a second analytical round for corrections, disagreements, or low confidence.
 - [ ] Give every reviewer the same frozen packet—plan, real goal, relevant repository paths, constraints, assumptions, and evidence questions—without prior conversation history, the primary review's conclusions, or sibling outputs. If the host cannot provide fresh isolated contexts, use distinct self-review passes and disclose reduced independence.
-- [ ] Run independent perspectives in parallel or blind waves, wait for all selected results, and treat every suggestion as a candidate finding that requires repository or authoritative evidence.
+- [ ] Launch the selected perspectives once in parallel or one blind wave, wait for all, and treat every suggestion as a candidate finding requiring repository or authoritative evidence. Resolve conflicts and verify candidates directly; never launch a verifier or another reviewer round.
 - [ ] Classify pre-mortem concerns as evidence-backed risk, unsupported fear, or unstated assumption; dismiss unsupported fear, and give each accepted risk or assumption an invalidation impact and concrete validation or mitigation step.
-- [ ] Treat reviewer unavailability, tool failure, rate limits, or questions as coverage limitations, not evidence that the plan is defective.
+- [ ] Treat reviewer unavailability, tool failure, rate limits, or questions as coverage limitations, not evidence that the plan is defective. Retry or replace one technically failed selected reviewer only when a concrete cause changes, using the same evidence question; this completes the original round and must not broaden it.
 
 ### 6. Synthesize a Decision-Complete Result
 
@@ -132,6 +130,7 @@ When sources disagree, prefer the repository for what is installed and implement
 - Repository areas inspected
 - Commands or semantic queries used
 - External sources consulted
+- Independent challenge: one round, selected perspectives, and coverage limitations
 - Limitations
 
 ## Findings

@@ -86,8 +86,10 @@ Run only safe test and diagnostic commands. Do not rewrite snapshots, update gol
 - [ ] Research runner or framework semantics only when lifecycle, fixture, isolation, retry, or mocking behavior can change a finding; use official version-matched sources.
 - [ ] Reproduce high-severity trust failures where safe, preserving command, seed, order, and environment evidence.
 - [ ] Deduplicate findings that share one root cause, such as a global fixture causing multiple flaky suites.
+- [ ] Apply a materiality and acceptable-alternative gate to every candidate. Require a concrete critical behavior left unproven, false confidence, delivery risk, or recurring maintenance cost at the suite's evidenced scale. Reject nitpicks, test-style taste, theoretical purity, coverage vanity, generic best practice, and a different but equally trustworthy test design; when several test shapes work, require the risk coverage and oracle rather than one preferred implementation.
+- [ ] Put a directly relevant Markdown practice link in every finding's required resolution: prefer current official documentation or a specification, and use reputable primary engineering material only when official sources do not resolve the tradeoff. Open and verify the source; it must support the proposed test mechanism, not merely the defect category. Reject search-result links, generic best-practice articles, and decorative citations.
 - [ ] Classify findings as `P0`-`P3` based on critical behavior left unproven, false confidence, delivery blockage, and maintenance drag.
-- [ ] Include affected behavior, test location, evidence, missed defect class, portfolio action, and smallest credible remediation.
+- [ ] Include affected behavior, test location, evidence, missed defect class, portfolio action, why the current compromise is not acceptable, and the smallest credible remediation while allowing equivalent solutions.
 - [ ] Use `BLOCKED` when a required critical suite, environment, or oracle cannot be accessed and no credible static or historical fallback exists; use `FAIL` when evidence shows critical behavior is unproven, a required gate fails, or false confidence remains in an untrustworthy critical surface; use `CONCERNS` only for non-blocking portfolio or maintenance risk, and `PASS` only when required evidence is trustworthy and no critical gap remains.
 - [ ] Return the verdict with trusted coverage, critical gaps, untrustworthy surfaces, portfolio actions, limitations, and residual test risk.
 
@@ -112,11 +114,11 @@ Run only safe test and diagnostic commands. Do not rewrite snapshots, update gol
 | Assertion and oracle strength | PASS / CONCERNS / FAIL | ... |
 
 ## Findings and portfolio actions
-### [P0 | P1 | P2 | P3] Finding title
-- Behavior and test location
-- Evidence and missed defect class
-- Action: KEEP / ADD / UPDATE / DELETE / MERGE
-- Required change
+| Priority | Problem | Evidence and justification | Required resolution |
+|---|---|---|---|
+| P0 / P1 / P2 / P3 | Concrete confidence or maintenance defect | Behavior and test location, evidence, missed defect class, material risk, and why the current tradeoff is not acceptable | `KEEP` / `ADD` / `UPDATE` / `DELETE` / `MERGE`, the smallest sufficient correction, and a verified `[practice reference](URL)` to official or primary engineering guidance; allow equivalent test designs with the same risk coverage and oracle strength |
+
+Use `None` when no candidate survives the evidence, materiality, portfolio-value, and acceptable-alternative gates.
 
 ## Residual risks
 Unexecuted suites, unavailable environments, and behavior that remains unproven.

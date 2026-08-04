@@ -105,7 +105,9 @@ When sources disagree, prefer the repository for what is installed and implement
 
 - [ ] Deduplicate findings from repository inspection, research, and independent review; keep the strongest evidence and preserve meaningful disagreements.
 - [ ] Classify findings as `BLOCKER`, `MAJOR`, or `MINOR`: blockers prevent safe handoff, majors predict substantial rework or regression, and minors improve clarity without changing feasibility.
-- [ ] Reject unsupported findings, inferred taste presented as fact, stylistic preferences presented as requirements, generic best practices with no demonstrated connection to this plan, architecture justified only by hypothetical maturity or scale, and pre-existing problems that do not meet the plan-impact rule above.
+- [ ] Apply a materiality and acceptable-alternative gate to every candidate. Ask whether it proves a violated requirement or contract, or a concrete user, business, safety, operational, delivery, or lifecycle impact at the evidenced project scale. Reject nitpicks, personal taste, theoretical purity, generic best practice, hypothetical scale, and an implementation that is merely different when the current tradeoff is reasonable. When several approaches are valid, require the outcome or constraint rather than one preferred design.
+- [ ] Reject unsupported findings and pre-existing problems that do not meet the plan-impact rule above. For every accepted finding, explain why the current compromise is not acceptable and prescribe the smallest sufficient correction while allowing equivalent solutions.
+- [ ] Put a directly relevant Markdown practice link in every finding's required resolution: prefer current official documentation or a specification, and use reputable primary engineering material only when official sources do not resolve the tradeoff. Open and verify the source; it must support the proposed mechanism, not merely the defect category. Reject search-result links, generic best-practice articles, and decorative citations.
 - [ ] Confirm that every consequential implementation choice is fixed: interfaces, ownership, data flow, failure behavior, compatibility, verification, and rollout where applicable.
 - [ ] For every material assumption, record confidence, what breaks if it is false, and who or what step validates it before dependent work begins.
 - [ ] Map findings to verdicts: use `BLOCKED` when a required user choice, access, or authoritative fact is unavailable; use `REVISE` for any correctable `BLOCKER` or `MAJOR`; use `READY WITH CONCERNS` only when the plan is safe and executable with no uncovered requirement or consequential decision, but bounded non-blocking `MINOR` amendments or explicitly accepted residual risks remain; use `READY` only when no corrective finding or blocking evidence gap remains.
@@ -134,10 +136,11 @@ When sources disagree, prefer the repository for what is installed and implement
 - Limitations
 
 ## Findings
-### [BLOCKER | MAJOR | MINOR] Finding title
-- Evidence: file, symbol, command result, or authoritative source
-- Impact: concrete failure, rework, or uncertainty
-- Required change or local amendment: smallest sufficient correction; repository mechanism used; official version-matched sources or justified local-only basis; primary-practice sources when needed; alternatives rejected; why this choice is the smallest safe fit
+| Priority | Problem | Evidence and justification | Required resolution |
+|---|---|---|---|
+| BLOCKER / MAJOR / MINOR | Concrete violated behavior, requirement, or decision | File, symbol, command, or authoritative source; material impact at evidenced scale; why the current tradeoff is not acceptable | Smallest sufficient outcome or constraint; existing mechanism; a verified `[practice reference](URL)` to official or primary engineering guidance; allow equivalent valid solutions |
+
+Use `None` when no candidate survives the evidence, materiality, scope, and acceptable-alternative gates.
 
 ## Corrected plan or amendments
 Complete replacement plan for REVISE; exact local amendments for READY WITH CONCERNS; otherwise state that the reviewed plan is ready or explain why correction is blocked.

@@ -93,8 +93,10 @@ Absence of documentation is a finding only when a real audience needs the missin
 - [ ] Check public interfaces for documentation required by the language or ecosystem and for examples that match the actual contract.
 - [ ] Filter intentional audience simplification, framework convention, generated prose, and accepted legacy constraints before reporting.
 - [ ] Classify every in-scope document or comment surface as `KEEP`, `ADD`, `UPDATE`, `DELETE`, or `MERGE`; recommend deletion or consolidation only when canonical coverage preserves every required audience task and contract.
+- [ ] Apply a materiality and acceptable-alternative gate to every candidate. Require a demonstrated reader error, blocked task, unsafe action, contradiction, or recurring maintenance cost at the repository's evidenced scale. Reject nitpicks, prose taste, theoretical purity, generic best practice, and reasonable audience or maintenance tradeoffs; when several structures work, require the reader outcome rather than one preferred format.
+- [ ] Put a directly relevant Markdown practice link in every finding's required resolution: prefer current official documentation or a specification, and use reputable primary engineering material only when official sources do not resolve the tradeoff. Open and verify the source; it must support the proposed mechanism, not merely the defect category. Reject search-result links, generic best-practice articles, and decorative citations.
 - [ ] Classify findings as `P0`-`P3` based on the harm caused by wrong action, inability to operate, maintenance drift, or minor friction.
-- [ ] Support every finding with document location, verifying evidence, affected audience, impact, and a concrete correction or canonical owner.
+- [ ] Support every finding with document location, verifying evidence, affected audience, impact, why the current compromise is not acceptable, and the smallest sufficient correction or canonical owner while allowing equivalent solutions.
 - [ ] Use `BLOCKED` when a safety-critical claim, required audience journey, or authoritative source cannot be verified without a credible fallback; use `FAIL` when evidence proves unsafe guidance, an inoperable required journey, or an unresolved `P0/P1`; use `CONCERNS` only for material non-blocking trust gaps, and `PASS` only when required claims and journeys are verified with no material finding.
 - [ ] Return the verdict with audited scope, verified and unverified claims, prioritized findings, blind spots, and residual trust risk.
 
@@ -125,11 +127,11 @@ Absence of documentation is a finding only when a real audience needs the missin
 | ... | KEEP / ADD / UPDATE / DELETE / MERGE | ... |
 
 ## Findings
-### [P0 | P1 | P2 | P3] Finding title
-- Location: document, heading, or code symbol
-- Evidence: repository, command, or official source
-- Audience impact: incorrect action, missing capability, or maintenance cost
-- Required change: correction and canonical owner
+| Priority | Problem | Evidence and justification | Required resolution |
+|---|---|---|---|
+| P0 / P1 / P2 / P3 | Concrete documentation or comment defect | Location, repository, command, or official evidence; affected audience and material impact; why the current tradeoff is not acceptable | Smallest sufficient correction, canonical owner, and a verified `[practice reference](URL)` to official or primary engineering guidance; allow equivalent structures that preserve the required reader outcome |
+
+Use `None` when no candidate survives the evidence, materiality, audience-need, and acceptable-alternative gates.
 
 ## Unverified claims and residual risks
 Claims that could not be checked, why, and the evidence still required.

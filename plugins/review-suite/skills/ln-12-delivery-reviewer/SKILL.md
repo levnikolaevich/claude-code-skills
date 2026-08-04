@@ -133,6 +133,8 @@ Each subagent returns coverage, candidate findings with change-causal evidence a
 - [ ] Launch all selected lenses once for the current allowed round in separate contexts with the frozen packet, one primary question, read-only tools, and the required schema; keep them blind, wait for all, and record failures or same-round retries. Never create a third subagent round.
 - [ ] Verify each candidate against code, commands, behavior, declared intent, or authoritative documentation; trace symptom to causal path and violated contract, and reject subjective or symptom-only claims.
 - [ ] Accept a finding only when the diff introduced, exposed, or worsened it; it violates scoped acceptance; or the change caused a required-gate failure. Treat other issues only as limitations when they block acceptance; never recommend their repair.
+- [ ] Apply a materiality and acceptable-alternative gate to every in-scope candidate. Ask whether it proves a concrete user, business, safety, operational, delivery, or lifecycle impact at the evidenced project scale. Reject nitpicks, personal taste, theoretical purity, generic best practice, hypothetical scale, and an implementation that is merely different when the current tradeoff is reasonable. When several approaches are valid, require the outcome or constraint rather than one preferred design.
+- [ ] Put a directly relevant Markdown practice link in every finding's required resolution: prefer current official documentation or a specification, and use reputable primary engineering material only when official sources do not resolve the tradeoff. Open and verify the source; it must support the proposed mechanism, not merely the defect category. Reject search-result links, generic best-practice articles, and decorative citations.
 - [ ] Deduplicate by root cause, preserve the strongest evidence and widest demonstrated impact, and recommend one smallest sufficient correction.
 - [ ] Resolve contradictions by tracing behavior; use one bounded verifier only when direct inspection cannot settle the claim.
 - [ ] Classify findings `P0` catastrophic, `P1` release-blocking, `P2` important non-blocking, or `P3` minor actionable.
@@ -170,11 +172,11 @@ Subagent rounds used: 0 / 1 / 2; initial scope-scaled or full / selective follow
 Use `None` for a non-code or follow-up delivery with no selected lens.
 
 ## Findings
-### [P0 | P1 | P2 | P3] Finding title
-- Location and scope link
-- Evidence and causal root
-- Violated requirement or contract and impact
-- Smallest required correction, removals or retention evidence, existing mechanism, authoritative sources, and rejected alternatives
+| Priority | Problem | Evidence and justification | Required resolution |
+|---|---|---|---|
+| P0 / P1 / P2 / P3 | Concrete scoped defect or violated requirement | Location, change-causal evidence, violated contract, material impact at evidenced scale, and why the current tradeoff is not acceptable | Smallest sufficient correction, removals or retention evidence, existing mechanism, and a verified `[practice reference](URL)` to official or primary engineering guidance; allow equivalent valid solutions |
+
+Use `None` when no candidate survives the evidence, causality, materiality, scope, and acceptable-alternative gates.
 
 ## Verification, test, and documentation actions
 Passed, failed, skipped, and unavailable checks with reasons; list every affected test with its material business risk, oracle, level rationale, and `KEEP`, `ADD`, `UPDATE`, `DELETE`, or `MERGE` action. List each affected documentation surface with the same action taxonomy.

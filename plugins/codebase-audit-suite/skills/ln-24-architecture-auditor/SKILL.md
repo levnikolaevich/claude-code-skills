@@ -87,8 +87,10 @@ Use diagrams only when they clarify a relationship that prose cannot. Do not gen
 
 - [ ] Verify structural findings through at least one dependency path, call path, registration path, public contract, or reproducible analysis result.
 - [ ] Filter generated code, framework conventions, deliberate adapters, test-only architecture, and documented exceptions before confirming a violation.
+- [ ] Apply a materiality and acceptable-alternative gate to every candidate. Require a concrete correctness, security, ownership, deployment, change-amplification, or recurring maintenance impact at the system's evidenced scale. Reject nitpicks, pattern preference, theoretical purity, generic best practice, speculative scale, and a merely different architecture when the current tradeoff is reasonable; when several shapes work, require the boundary outcome or constraint rather than one preferred pattern.
+- [ ] Put a directly relevant Markdown practice link in every finding's required resolution: prefer current official documentation or a specification, and use reputable primary engineering material only when official sources do not resolve the tradeoff. Open and verify the source; it must support the proposed architectural mechanism, not merely the defect category. Reject search-result links, generic best-practice articles, and decorative citations.
 - [ ] Classify findings as `P0`-`P3` based on correctness, security, change amplification, deployment coupling, and recurring maintenance cost.
-- [ ] Include affected boundaries, evidence, concrete consequence, target shape, migration risk, and smallest safe next step for every finding.
+- [ ] Include affected boundaries, evidence, concrete consequence, why the current compromise is not acceptable, migration risk, and the smallest safe next step for every finding while allowing equivalent target shapes.
 - [ ] Order recommendations by prerequisite and risk reduction, separating immediate correctness fixes from optional evolution.
 - [ ] Use `BLOCKED` when required runtime wiring, boundary evidence, or an authoritative contract cannot be verified without a credible fallback; use `FAIL` for an evidenced unresolved correctness or security boundary defect, unsafe ownership ambiguity, or `P0/P1` structural risk; use `CONCERNS` only for material non-blocking change amplification, and `PASS` only when no evidenced architecture defect creates material cost or risk.
 - [ ] Return the verdict with the actual architecture map, fitness assessment, findings, limitations, and residual structural risks.
@@ -114,11 +116,11 @@ Use diagrams only when they clarify a relationship that prose cannot. Do not gen
 | Physical structure and configuration | PASS / CONCERNS / FAIL | ... |
 
 ## Findings
-### [P0 | P1 | P2 | P3] Finding title
-- Boundary and evidence
-- Concrete architectural consequence
-- Target shape and smallest next step
-- Migration and rollback risk
+| Priority | Problem | Evidence and justification | Required resolution |
+|---|---|---|---|
+| P0 / P1 / P2 / P3 | Concrete architectural defect | Boundary and evidence, material consequence at evidenced scale, migration context, and why the current tradeoff is not acceptable | Smallest safe outcome or boundary correction, migration and rollback constraints, and a verified `[practice reference](URL)` to official or primary engineering guidance; allow equivalent valid target shapes |
+
+Use `None` when no candidate survives the evidence, materiality, fitness, and acceptable-alternative gates.
 
 ## Evolution order and residual risks
 Prerequisite-aware recommendations, accepted exceptions, and blind spots.

@@ -83,8 +83,10 @@ Never connect to production or run mutating diagnostics. `EXPLAIN ANALYZE` execu
 - [ ] Reproduce high-severity correctness defects with a safe test or complete failure trace and performance defects with query, plan, lock, or profile evidence where possible.
 - [ ] Filter framework-managed lifecycle, bounded maintenance tasks, fixtures, migrations kept for history, and documented consistency tradeoffs before confirming findings.
 - [ ] Deduplicate symptoms that share one root query, transaction boundary, scope mismatch, or pool configuration.
+- [ ] Apply a materiality and acceptable-alternative gate to every candidate. Require a concrete integrity, security, availability, latency, scalability, resource, or recurring maintenance impact at the evidenced workload and deployment scale. Reject nitpicks, query-style taste, theoretical purity, generic best practice, hypothetical load, and a different but reasonable consistency or performance tradeoff; when several designs work, require the data or runtime outcome rather than one preferred mechanism.
+- [ ] Put a directly relevant Markdown practice link in every finding's required resolution: prefer current official database, driver, framework, or runtime documentation or a specification, and use reputable primary engineering material only when official sources do not resolve the tradeoff. Open and verify the source; it must support the proposed mechanism, not merely the defect category. Reject search-result links, generic best-practice articles, and decorative citations.
 - [ ] Classify findings as `P0`-`P3` based on data corruption, security, outage risk, scalability, latency, resource exhaustion, and recurrence.
-- [ ] Include call path, query or resource, evidence, failure or cost mechanism, impact, confidence, and smallest safe remediation.
+- [ ] Include call path, query or resource, evidence, failure or cost mechanism, impact, confidence, why the current compromise is not acceptable, and the smallest safe remediation while allowing equivalent solutions.
 - [ ] Use `BLOCKED` when a critical data path, database semantic, or required non-production environment cannot be verified without a credible fallback; use `FAIL` for an evidenced unresolved corruption, atomicity, outage, resource-exhaustion risk, required failing gate, or another `P0/P1`; use `CONCERNS` only for evidenced non-blocking risk or material unmeasured uncertainty, and `PASS` only when critical paths are trustworthy with no material finding.
 - [ ] Return the verdict with measured and static scope separated, remediation order, limitations, and residual persistence risks.
 
@@ -109,11 +111,11 @@ Never connect to production or run mutating diagnostics. `EXPLAIN ANALYZE` execu
 | Resource lifecycle | PASS / CONCERNS / FAIL | ... |
 
 ## Findings
-### [P0 | P1 | P2 | P3] Finding title
-- Call path, query, transaction, or resource
-- Evidence and confidence
-- Failure or cost mechanism
-- Required change and verification
+| Priority | Problem | Evidence and justification | Required resolution |
+|---|---|---|---|
+| P0 / P1 / P2 / P3 | Concrete persistence defect | Call path, query, transaction, or resource; evidence and confidence; material failure or cost mechanism at evidenced scale; why the current tradeoff is not acceptable | Smallest safe correction and verification plus a verified `[practice reference](URL)` to official or primary engineering guidance; allow equivalent valid consistency or performance mechanisms |
+
+Use `None` when no candidate survives the evidence, materiality, workload-context, and acceptable-alternative gates.
 
 ## Measurement gaps and residual risks
 Unmeasured candidates, unavailable environments, and accepted consistency tradeoffs.

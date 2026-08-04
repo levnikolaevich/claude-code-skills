@@ -89,8 +89,10 @@ Start with summary-level discovery and narrow before reading deeply. Run only re
 - [ ] Research external APIs, standards, vulnerabilities, and runtime behavior only when they can change a finding, using official sources matching the relevant version.
 - [ ] Filter framework conventions, generated code, bounded administrative paths, tests, examples, and documented tradeoffs before confirming a candidate.
 - [ ] Reproduce high-severity issues with a safe command, test, minimal call trace, or complete static failure path whenever possible.
+- [ ] Apply a materiality and acceptable-alternative gate to every candidate. Require a concrete failure, security, delivery, operability, or recurring maintenance impact at the repository's evidenced scale. Reject nitpicks, personal taste, theoretical purity, generic best practice, hypothetical scale, and a merely different implementation when the current tradeoff is reasonable; when several designs work, require the outcome or constraint rather than one preferred style.
+- [ ] Put a directly relevant Markdown practice link in every finding's required resolution: prefer current official documentation or a specification, and use reputable primary engineering material only when official sources do not resolve the tradeoff. Open and verify the source; it must support the proposed mechanism, not merely the defect category. Reject search-result links, generic best-practice articles, and decorative citations.
 - [ ] Classify findings as `P0`-`P3` based on exploitability, data or availability impact, delivery blockage, recurrence, and remediation urgency.
-- [ ] Include location, evidence, trigger or failure path, impact, confidence, effort, and smallest credible remediation for every finding.
+- [ ] Include location, evidence, trigger or failure path, impact, confidence, why the current compromise is not acceptable, and the smallest credible remediation for every finding while allowing equivalent solutions.
 - [ ] Order remediation by risk reduction and dependency, not by file order or detector category.
 - [ ] Use `BLOCKED` when a required safety environment, high-risk behavior, or authoritative contract cannot be verified without a credible fallback; use `FAIL` for an evidenced unresolved `P0/P1`, required failing delivery gate, or demonstrated unsafe behavior; use `CONCERNS` only for verified non-blocking risks, and `PASS` only when required checks complete with no material finding.
 - [ ] Return the verdict with executed checks, excluded scope, verified findings, unverified candidates, and residual codebase risk.
@@ -117,11 +119,11 @@ Start with summary-level discovery and narrow before reading deeply. Run only re
 | Diagnosability, concurrency, lifecycle | PASS / CONCERNS / FAIL | ... |
 
 ## Findings
-### [P0 | P1 | P2 | P3] Finding title
-- Location and path to failure
-- Evidence and confidence
-- Impact and affected surface
-- Required change and effort
+| Priority | Problem | Evidence and justification | Required resolution |
+|---|---|---|---|
+| P0 / P1 / P2 / P3 | Concrete codebase defect | Location, trigger or failure path, evidence, confidence, material impact at evidenced scale, and why the current tradeoff is not acceptable | Smallest credible correction, expected effort, and a verified `[practice reference](URL)` to official or primary engineering guidance; allow equivalent valid solutions |
+
+Use `None` when no candidate survives the evidence, materiality, context, and acceptable-alternative gates.
 
 ## Remediation order and residual risks
 Dependency-aware next actions, blind spots, and unverified candidates.

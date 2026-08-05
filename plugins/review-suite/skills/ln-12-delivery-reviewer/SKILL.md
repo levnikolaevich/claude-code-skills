@@ -77,8 +77,8 @@ Each subagent returns coverage, candidate findings with change-causal evidence a
 
 - [ ] Before reading implementation detail, state the affected actors, problem, protected outcome, changed behavior, acceptance criteria, existing user experience, explicitly authorized user-facing changes, invariants, non-goals, and release boundary. Mark unsupported interpretations `UNKNOWN`; use `BLOCKED` when the thesis cannot be established.
 - [ ] Establish complexity fit from evidenced maturity, business horizon, scale, team capacity, and lifecycle cost; do not infer enterprise needs from hypothetical growth or call safety-required complexity overengineering.
-- [ ] Read applicable repository instructions, inspect uncommitted work, and resolve the authoritative task, base, head, implementation delta, approved plan or target architecture, and permitted transitional compatibility.
-- [ ] Discover only change-relevant baseline, current-state, target-design, decision, diagram, and migration artifacts by repository convention; record status and freshness without requiring a particular path.
+- [ ] Read applicable repository instructions, inspect uncommitted work, and resolve the authoritative task, base, head, implementation delta, approved plan or target architecture, and permitted transitional compatibility. Identify only change-relevant project policies, standards, and ADRs; do not treat every document as binding.
+- [ ] Discover only change-relevant baseline, current-state, target-design, policy, decision, diagram, and migration artifacts by repository convention. Record authority, owner, status, freshness, and supersession, and keep one policy and decision ledger of applicable sources and implementation evidence for compliance, explicit approved deviation, or an unresolved gap.
 - [ ] Map changed, causally supporting, and explicitly excluded surfaces. Read outside the diff only to trace affected behavior; do not hunt unrelated code for findings.
 - [ ] Classify change-triggered risk from trust, money, destructive action, migration, public contracts, concurrency, distributed coordination, and rollback difficulty; define acceptance evidence before implementation review.
 - [ ] Classify the pass as initial, selective follow-up, or Blue-only from a completed prior report and stable task, scope, and comparison lineage. Freeze the thesis and scope, select only verdict-relevant lenses within the two-round budget, and record the round, selection rationale, and omissions while keeping preliminary conclusions private.
@@ -100,10 +100,10 @@ Each subagent returns coverage, candidate findings with change-causal evidence a
 
 - [ ] Within affected paths, inspect applicable authentication, authorization, ownership, validation, injection, secrets, sensitive data, logging, and destructive-operation guards.
 - [ ] For changed destructive behavior, require recovery, rollback, blast-radius, environment or authorization, and preview or dry-run evidence; justify infeasible controls.
-- [ ] Verify changed API, event, schema, configuration, serialization, and storage producers and consumers, including names, payloads, registration, ordering, and compatibility.
+- [ ] Verify changed API, event, schema, configuration, serialization, and storage producers and consumers, including names, payloads, registration, ordering, and compatibility. For changed semantic values and closed sets--such as states, roles, permissions, event names, error codes, configuration keys, feature identifiers, limits, timeouts, and routing keys--require one authoritative owner shared by every in-scope producer and consumer through the repository-standard mechanism (for example a typed union, enum, constant set, value object, schema, typed configuration, or generated contract). Accept a harmless one-off local literal when it creates no duplication, invalid-state, or drift risk.
 - [ ] Verify migrations, backfills, defaults, indexes, deployment ordering, and mixed-version behavior when persisted or distributed state changes.
 - [ ] Check ownership and cleanup of files, streams, sessions, connections, processes, subscriptions, and temporary artifacts on success and failure.
-- [ ] Inspect only architecture boundaries crossed or changed. Verify that responsibility, dependency direction, contracts, state, lifecycle, and failure ownership remain coherent with the approved architecture or the simplest established repository mechanism; do not turn adjacent architecture into an audit.
+- [ ] Inspect only architecture and policy boundaries crossed or changed. Verify that responsibility, dependency direction, contracts, state, lifecycle, and failure ownership remain coherent with the approved architecture or the simplest established repository mechanism. Apply every current authoritative project policy or ADR in the change-scoped ledger, including project-defined logging (logger, structured fields, levels, correlation, and redaction) and error handling (taxonomy, types or codes, boundary mapping, propagation, retry, and recovery) when affected; accept deviation only with explicit approval and evidence that scoped acceptance remains intact. Do not turn adjacent architecture or policy compliance into an audit.
 - [ ] Prove that the delivered mechanism resolves the causal defect or need at its owning boundary across every in-scope entrypoint, producer, consumer, runtime registration, state transition, and material failure or recovery path. Reject symptom masking, caller-specific special cases, duplicated side channels, and accidental ordering, timing, or data dependencies. Accept tactical containment only when explicitly authorized or required for immediate safety and bounded by an owner, removal condition, and durable follow-up; completeness ends at the causal business scope, not the repository.
 - [ ] When code is replaced, verify old implementations, signatures, aliases, re-exports, shims, adapters, flags, dual paths, and files are removed and callers migrated. Retain compatibility only for a supported contract with an owner and bounded removal condition.
 - [ ] Run a subtractive pass for changed logic, constraints, configuration, schemas, routes, states, and operations. Record obsolete candidates, proven removals, and retention evidence; use `one in, two out` only as a prompt, never a deletion quota.
@@ -162,6 +162,13 @@ Each subagent returns coverage, candidate findings with change-causal evidence a
 ## User-experience delta
 - Existing experience changes: None | item - explicit task authorization and verification
 - Additions: None | new screen, copy, control, or scenario - trigger, rationale, and evidence
+
+## Policy and decision compliance
+| Applicable policy or ADR | Affected implementation surface | Implementation evidence | Status |
+|---|---|---|---|
+| ... | ... | compliant path or explicitly approved deviation | COMPLIANT / DEVIATED / UNPROVEN |
+
+Include only current authoritative sources that apply to the change; omit draft, superseded, and merely descriptive material. Use `None` when none applies.
 
 ## Independent review panel
 Pass: initial scope-scaled / initial full / selective follow-up / Blue-only; subagent rounds consumed: 0 / 1 / 2

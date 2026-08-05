@@ -41,7 +41,7 @@ When sources disagree, prefer the repository for what is installed and implement
 ### 1. Establish the Review Contract
 
 - [ ] Resolve the exact plan, user request, linked requirements, and repository scope. If no concrete plan exists, stop with `BLOCKED` rather than inventing one to review.
-- [ ] Read all applicable repository instruction files before interpreting code, documentation, or expected workflow.
+- [ ] Read all applicable repository instruction files before interpreting code, documentation, or expected workflow. Identify only change-relevant project policies, standards, and ADRs; distinguish current accepted authority from draft, superseded, stale, or merely descriptive material instead of treating every document as binding.
 - [ ] Inspect Git state when it can affect the review: current branch, uncommitted changes, comparison base, and relevant recent history.
 - [ ] Separate the literal request and proposed solution from the underlying intent; state the actor, protected outcome, observable definition of done, non-goals, constraints, and assumptions, and label unsupported intent inferences.
 - [ ] Calibrate acceptable complexity to evidenced project or product maturity, decision horizon, current scale, team and operational capacity, and business stakes. Treat future growth as a requirement only when a concrete horizon, consumer, load, or constraint supports it.
@@ -53,8 +53,8 @@ When sources disagree, prefer the repository for what is installed and implement
 ### 2. Ground the Plan in the Repository
 
 - [ ] Build a narrow map of the affected modules, entrypoints, configuration, schemas, migrations, tests, documentation, and deployment surfaces.
-- [ ] Discover shared architecture artifacts by repository convention and common roles: system-design baseline, current-state map, target design, decision records, diagrams, and migration plan. Treat them as optional evidence, never as required workflow dependencies.
-- [ ] Check artifact status, owner, source, as-of date, supersession, and review triggers before applying a constraint. Missing artifacts do not block review by themselves; a material unresolved driver does.
+- [ ] Discover shared architecture and governance artifacts by repository convention and common roles: system-design baseline, current-state map, target design, accepted decisions, engineering policies, diagrams, and migration plan. Treat them as optional evidence, never as required workflow dependencies.
+- [ ] Check artifact status, authority, owner, source, as-of date, supersession, and review triggers before applying a constraint. Keep one change-scoped policy and decision ledger of applicable sources and the plan evidence for compliance, explicit approved deviation, or an unresolved gap. Missing artifacts do not block review by themselves; a material unresolved driver does.
 - [ ] Verify every existing path, symbol, component, command, environment key, interface, and dependency named by the plan. Mark genuinely new artifacts as new.
 - [ ] Read enough implementation context to understand ownership and invariants, not just the files explicitly named by the plan.
 - [ ] Use semantic graph queries when a conclusion depends on symbol identity, callers, implementations, module coupling, API consumers, or blast radius.
@@ -79,10 +79,10 @@ When sources disagree, prefer the repository for what is installed and implement
 ### 4. Review from Every Applicable Perspective
 
 - [ ] **Intent and traceability:** Every proposed change and source of complexity maps to the intended outcome, an acceptance criterion, a safety need, or an evidenced constraint; combine work serving the same outcome, and remove speculative or merely ceremonial steps.
-- [ ] **Repository fit:** The plan respects actual project structure, conventions, supported stack, existing capabilities, maturity, current scale, team and operational capacity, and current work without overwriting unrelated changes.
+- [ ] **Repository fit:** The plan respects actual project structure, conventions, supported stack, existing capabilities, maturity, current scale, team and operational capacity, and current work without overwriting unrelated changes. For each applicable current project policy or ADR in the ledger, trace the affected plan surface to compliance or an explicitly approved and justified deviation; include project-defined logging, error taxonomy and boundary mapping, configuration, observability, security, persistence, testing, and release rules only when the change reaches them.
 - [ ] **Architecture, ownership, and traceability:** Layers, modules, orchestration, side effects, dependency direction, and resource ownership remain explicit, coherent, and proportionate. The plan respects confirmed constraints, accepted decisions, target boundaries, and the active migration phase; expose stale or contradictory artifacts instead of silently selecting the convenient one.
 - [ ] **Root cause and solution completeness:** Prove that the proposed mechanism resolves the causal need at its owning boundary across every in-scope entrypoint, producer, consumer, runtime registration, state transition, and material failure or recovery path. Reject symptom patches, caller-specific special cases, duplicated side channels, and accidental ordering, timing, or data dependencies. Accept tactical containment only when explicitly requested or required for immediate safety and bounded by an owner, removal condition, and durable follow-up; completeness ends at the causal business scope, not the repository.
-- [ ] **Interfaces and data:** Public APIs, events, schemas, configuration, persistence, serialization, compatibility, and migration paths are named wherever they change.
+- [ ] **Interfaces and data:** Public APIs, events, schemas, configuration, persistence, serialization, compatibility, and migration paths are named wherever they change. For changed semantic values and closed sets--such as states, roles, permissions, event names, error codes, configuration keys, feature identifiers, limits, timeouts, and routing keys--plan one authoritative owner shared by every in-scope producer and consumer through the repository-standard mechanism (for example a typed union, enum, constant set, value object, schema, typed configuration, or generated contract). Do not demand extraction of a harmless one-off local literal with no duplication, invalid-state, or drift risk.
 - [ ] **Scenario completeness:** For each critical flow, trace actor trigger -> entrypoint -> runtime discovery or wiring -> usage context -> observable outcome; include first meaningful use, failure, recovery, and repetition when they can change the intended experience.
 - [ ] **Correctness and failure modes:** Cover boundaries, invalid state, partial failure, retries, idempotency, concurrency, cancellation, timeouts, rollback, and cleanup where applicable.
 - [ ] **Security and privacy:** Cover trust boundaries, authentication, authorization, validation, secrets, sensitive data, logging, destructive actions, and abuse paths in proportion to risk.
@@ -135,6 +135,13 @@ When sources disagree, prefer the repository for what is installed and implement
 - External sources consulted
 - Independent challenge: one round, selected perspectives, and coverage limitations
 - Limitations
+
+## Policy and decision compliance
+| Applicable policy or ADR | Affected plan surface | Plan evidence | Status |
+|---|---|---|---|
+| ... | ... | compliant step or explicitly approved deviation | COMPLIANT / DEVIATED / UNPROVEN |
+
+Include only current authoritative sources that apply to the change; omit draft, superseded, and merely descriptive material. Use `None` when none applies.
 
 ## Findings
 | Priority | Problem | Evidence and justification | Required resolution |

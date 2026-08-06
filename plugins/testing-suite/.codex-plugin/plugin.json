@@ -1,7 +1,7 @@
 {
   "name": "testing-suite",
   "version": "1.0.0",
-  "description": "Risk-based test planning and reproducible acceptance-test creation.",
+  "description": "Risk-based test portfolio planning and reproducible acceptance-test lifecycle.",
   "author": {
     "name": "Lev Nikolaevich",
     "email": "levnikolaevich.com@gmail.com",
@@ -14,15 +14,15 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "Testing Suite",
-    "shortDescription": "Plan and build valuable tests",
-    "longDescription": "Design risk-based test strategies and build reproducible acceptance tests with explicit oracles and evidence.",
+    "shortDescription": "Plan and maintain useful tests",
+    "longDescription": "Design risk-based test portfolio decisions and maintain reproducible acceptance evidence through addition, update, consolidation, and retirement.",
     "developerName": "Lev Nikolaevich",
     "websiteURL": "https://github.com/levnikolaevich/claude-code-skills",
     "category": "Productivity",
     "capabilities": ["Interactive", "Write"],
     "defaultPrompt": [
       "Design a risk-based test strategy for this feature.",
-      "Build reproducible acceptance tests for these requirements."
+      "Maintain the smallest reproducible acceptance-test portfolio for these requirements."
     ]
   }
 }

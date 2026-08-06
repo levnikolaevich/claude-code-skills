@@ -1,7 +1,7 @@
 {
   "name": "optimization-suite",
   "version": "1.0.0",
-  "description": "Measured performance, dependency, modernization, and benchmark workflows.",
+  "description": "Surgical implementation plus measured performance, dependency, modernization, and benchmark workflows.",
   "author": {
     "name": "Lev Nikolaevich",
     "email": "levnikolaevich.com@gmail.com",
@@ -15,13 +15,13 @@
   "interface": {
     "displayName": "Optimization Suite",
     "shortDescription": "Measured code optimization",
-    "longDescription": "Optimize performance, dependencies, and code through reproducible baselines, bounded experiments, and keep-or-discard decisions.",
+    "longDescription": "Deliver minimal complete changes and optimize code through bounded scope, reproducible evidence, and keep-or-discard decisions.",
     "developerName": "Lev Nikolaevich",
     "websiteURL": "https://github.com/levnikolaevich/claude-code-skills",
     "category": "Productivity",
     "capabilities": ["Interactive", "Write"],
     "defaultPrompt": [
-      "Optimize this codebase with measured keep-or-discard experiments."
+      "Implement or optimize this bounded change through the smallest evidence-backed solution."
     ]
   }
 }

@@ -19,7 +19,7 @@ Before returning, apply this skill's verdict, decision, and approval rules to ev
 | External replacement candidates | Official package registries, source repositories, documentation, releases, advisories, and license data | Comparing maintained software with custom implementation | Primary-source web research; do not rely on popularity lists alone |
 | Baseline and value | Build output, bundle analysis, code inventory, benchmark, defects, or maintenance evidence | Defining what modernization must improve | Reproducible static counts with documented scope and limitations |
 | Safe migration | Git isolation, focused edits, native package manager, and repository generation commands | Replacing one bounded capability and its consumers | Stop if user changes or generated state cannot be protected |
-| Verification | Repository-defined build, lint, type, test, smoke, packaging, and runtime checks | Before migration and after every retained step | Add a focused compatibility test when existing coverage cannot prove the contract |
+| Verification | Repository-defined build, lint, type, test, smoke, packaging, and runtime checks | Before migration and after every retained step | Choose the smallest portfolio action when existing evidence cannot prove a material contract |
 | Delivered artifact analysis | Existing bundle analyzer, size report, startup profile, or dependency report | Bundle size, load path, or runtime cost is part of the goal | Build artifact comparison with reproducible file and compression rules |
 
 Do not replace working custom code merely because an external package exists. Do not introduce an unmaintained dependency, accept incompatible licensing, or remove the old path until all consumers and rollback conditions are understood.
@@ -61,7 +61,7 @@ Do not replace working custom code merely because an external package exists. Do
 
 ### 3. Execute a Bounded Migration
 
-- [ ] Add or identify tests that capture the current external contract, important failures, and data or configuration compatibility.
+- [ ] Map the current external contract, important failures, and data or configuration compatibility to existing proof; implement `KEEP`, `ADD`, `UPDATE`, `MERGE`, `DELETE`, or justified `NO_TEST` within the approved test scope, remove superseded testware, and give temporary characterization or compatibility evidence a removal trigger.
 - [ ] Use differential or characterization cases at the replacement boundary when old and new implementations can be run on the same representative and adversarial inputs.
 - [ ] Introduce the replacement at one clear boundary rather than mixing old and new mechanisms throughout the codebase.
 - [ ] Use native package-manager and generation commands for dependencies and generated state; do not hand-edit lockfiles or generated artifacts.
@@ -118,6 +118,9 @@ Do not replace working custom code merely because an external package exists. Do
 
 ## Final state and residual risks
 Removed and retained code, dependencies, adapters, measurements, rollback, limitations, and follow-up decisions.
+
+## Test portfolio decisions
+Affected evidence, protected contract, action, oracle, gate and result, removed testware, and any review or retirement trigger; use `None` when existing proof remained sufficient and unchanged.
 
 ## Evidence artifacts
 Run-owned paths and hashes for characterization evidence, exact commands, final diff, rollback, and cleanup proof.

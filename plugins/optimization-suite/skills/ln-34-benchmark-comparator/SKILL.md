@@ -53,6 +53,7 @@ Do not tune the scenario after observing a preferred candidate, mix measurements
 
 - [ ] Use the same runner, timeout, logging, environment construction, and artifact collection for every candidate.
 - [ ] Create clean worktrees or equivalent isolated copies from the same commit and verify identical starting state.
+- [ ] Inventory global and user-level instructions, hooks, plugins, settings, credentials, caches, and environment variables that can leak candidate behavior across supposedly isolated arms; disable, equalize, or record each one.
 - [ ] Control seeds, clock, locale, concurrency, network access, dependency versions, cache state, warmup, and scenario order where they can influence results.
 - [ ] Record exact candidate configuration, feature flags, prompts, command lines, permissions, and versions.
 - [ ] Define a symmetric tuning policy and budget—default configuration, equally tuned configuration, or both—so one candidate is not optimized after seeing the other's result.
@@ -67,6 +68,7 @@ Do not tune the scenario after observing a preferred candidate, mix measurements
 - [ ] Capture start and end state, command, exit status, timing, resource metrics, logs, outputs, diffs, tests, and candidate-specific artifacts for every run.
 - [ ] Verify activation before grading; mark unproven or fallback runs invalid rather than assigning them to the intended candidate.
 - [ ] Grade correctness against the predefined oracle before examining performance and cost metrics.
+- [ ] Grade task completeness separately from correctness and efficiency: verify every required outcome and prohibited side effect, rather than treating a smaller diff, lower token count, or successful subset as completion.
 - [ ] Blind manual or qualitative graders to candidate identity and randomize presentation order; record disagreements instead of resolving them toward a preferred candidate.
 - [ ] Record timeout, crash, malformed output, partial completion, tool error, and environmental failure as distinct failure classes.
 - [ ] Repeat valid runs according to the predefined count and preserve raw per-run results without deleting inconvenient data.
@@ -114,9 +116,9 @@ Do not tune the scenario after observing a preferred candidate, mix measurements
 - Invalid runs, exclusions, and confounders
 
 ## Results
-| Scenario | Candidate | Correctness | Failures | Primary metric | Spread | Other costs |
-|---|---|---|---:|---:|---:|---|
-| ... | ... | ... | ... | ... | ... | ... |
+| Scenario | Candidate | Completeness | Correctness | Failures | Primary metric | Spread | Other costs |
+|---|---|---|---|---:|---:|---:|---|
+| ... | ... | ... | ... | ... | ... | ... | ... |
 
 ## Decision, limitations, and residual risks
 Scenario tradeoffs, setup and maintenance cost, verdict rationale, sensitivity, falsification conditions, unresolved decision risks, and cleanup confirmation.

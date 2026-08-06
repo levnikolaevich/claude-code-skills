@@ -67,9 +67,12 @@ Tool absence is not itself a skill defect. Apply the documented fallback and use
 - [ ] Derive close negative prompts from adjacent capabilities and likely ambiguous user wording.
 - [ ] Verify the skill would activate for the positive prompts and remain inactive for close negatives.
 - [ ] Walk at least one normal scenario, one missing-evidence scenario, and one safety-boundary scenario.
+- [ ] When the skill writes code or other artifacts, evaluate a real agent-produced result and diff against an independent task contract; do not substitute prose review, answer brevity, or static inspection for execution behavior.
+- [ ] Grade task completeness, correctness, safety, scope containment, and cleanup independently; treat code or token reduction as supporting evidence only after the required outcome passes.
 - [ ] For complex or high-risk changes, use fresh independent contexts when available and provide only the skill plus raw task artifacts.
 - [ ] Do not reveal expected findings, intended fixes, or prior conclusions to an independent evaluator.
 - [ ] Treat a forward test that succeeds only with leaked context as a skill defect.
+- [ ] Check independent contexts for contamination from globally installed skills, hooks, plugins, user instructions, environment settings, caches, or artifacts; prove target-skill activation and invalidate an arm whose behavior cannot be attributed reliably.
 - [ ] Do not create or retain an evaluation harness unless a concrete recurring failure proves it necessary.
 
 ## Evidence Rules

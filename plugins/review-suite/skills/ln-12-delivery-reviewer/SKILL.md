@@ -20,7 +20,7 @@ Before returning, derive the count from the ledger with only `PROVEN` and `CLEAR
 | Definitions and consumers | Code intelligence | An affected path depends on unchanged symbols or contracts | Targeted search that stops when the causal path is proven |
 | Automated verification | Repository-defined commands | Build, lint, type, test, migration, or smoke gates exist | Inspect scripts and CI; mark execution `UNPROVEN` |
 | Observable behavior | Browser, client, or runtime evidence | Acceptance depends on UI, interaction, protocol, or logs | Static trace plus an exact manual check |
-| Correction research | Current official documentation or specifications | External behavior affects correctness or an accepted finding needs its required practice reference | Reputable primary engineering material; otherwise mark the correction `UNVERIFIED` |
+| Reuse and correction research | Installed manifests plus current official documentation, specifications, and package sources | A changed generic mechanism needs a reuse decision, external behavior affects correctness, or a finding needs its practice reference | Reputable primary engineering material; otherwise mark the decision or correction `UNVERIFIED` |
 | Independent review | Native subagents in separate contexts | One scope-scaled initial review; at most one selective follow-up | Use the smallest panel that can change the verdict within the two-round budget; report reduced confidence or `BLOCKED` only when missing selected independence leaves required evidence unproven |
 
 Use tools only for the current evidence question. Tool failure is a limitation, not a defect. Do not convert an unavailable command, runtime, or source into a finding without implementation evidence.
@@ -97,7 +97,7 @@ Each subagent returns coverage, candidate findings with change-causal evidence a
 - [ ] Within affected behavior, inspect applicable boundaries, collections, state transitions, duplicates, ordering, numeric behavior, empty and maximum inputs, errors, retries, idempotency, cancellation, timeouts, rollback, and cleanup.
 - [ ] Within affected async paths, inspect shared state, transactions, races, lock ordering, and blocking work.
 
-### 3. Review Safety, Contracts, and Simplicity (`DESIGN-1` through `DESIGN-10`)
+### 3. Review Safety, Contracts, and Simplicity (`DESIGN-1` through `DESIGN-11`)
 
 - [ ] Within affected paths, inspect applicable authentication, authorization, ownership, validation, injection, secrets, sensitive data, logging, and destructive-operation guards.
 - [ ] For changed destructive behavior, require recovery, rollback, blast-radius, environment or authorization, and preview or dry-run evidence; justify infeasible controls.
@@ -108,6 +108,7 @@ Each subagent returns coverage, candidate findings with change-causal evidence a
 - [ ] Prove that the delivered mechanism resolves the causal defect or need at its owning boundary across every in-scope entrypoint, producer, consumer, runtime registration, state transition, and material failure or recovery path. Reject symptom masking, caller-specific special cases, duplicated side channels, and accidental ordering, timing, or data dependencies. Accept tactical containment only when explicitly authorized or required for immediate safety and bounded by an owner, removal condition, and durable follow-up; completeness ends at the causal business scope, not the repository.
 - [ ] When code is replaced, verify old implementations, signatures, aliases, re-exports, shims, adapters, flags, dual paths, and files are removed and callers migrated. Retain compatibility only for a supported contract with an owner and bounded removal condition.
 - [ ] Run a subtractive pass for changed logic, constraints, configuration, schemas, routes, states, and operations. Record obsolete candidates, proven removals, and retention evidence; use `one in, two out` only as a prompt, never a deletion quota.
+- [ ] For every added or materially expanded generic mechanism outside repository-owned business policy, run a reuse gate before accepting custom code: compare platform or standard-library capability, an already-installed dependency, and a current maintained package against the exact contract, then custom implementation. Record `REUSE_EXISTING`, `ADOPT_PACKAGE`, `KEEP_CUSTOM`, `DELETE`, or `MERGE` with official evidence and security, maintenance, license, bundle or runtime, API-stability, migration, and wrapper-cost tradeoffs. Prefer the lowest-lifecycle-cost complete fit; do not add a dependency for compact domain logic or when its residual wrapper is no smaller or safer, and inspect only mechanisms changed by or necessary to the delivery.
 - [ ] **KISS:** AI slop is prohibited. Require the minimum sufficient diff and simplest correct, efficient algorithm. Reject needless duplication, files, layers, abstractions, dependencies, configuration, branches, compatibility paths, or custom machinery when existing mechanisms suffice; never trade away safeguards or maintainability.
 
 ### 4. Verify Tests, Documentation, and Operations (`VERIFY-1` through `VERIFY-15`)
@@ -134,7 +135,7 @@ Each subagent returns coverage, candidate findings with change-causal evidence a
 - [ ] Verify each candidate against code, commands, behavior, declared intent, or authoritative documentation; trace symptom to causal path and violated contract, and reject subjective or symptom-only claims.
 - [ ] Accept a finding only when the diff introduced, exposed, or worsened it; it violates scoped acceptance; or the change caused a required-gate failure. Treat other issues only as limitations when they block acceptance; never recommend their repair.
 - [ ] Apply a materiality and acceptable-alternative gate to every in-scope candidate. Ask whether it proves a concrete user, business, safety, operational, delivery, or lifecycle impact at the evidenced project scale. Reject nitpicks, personal taste, theoretical purity, generic best practice, hypothetical scale, and an implementation that is merely different when the current tradeoff is reasonable. When several approaches are valid, require the outcome or constraint rather than one preferred design.
-- [ ] After proving a local defect, research its correction, preferring an existing repository mechanism. Open current official version-matched documentation or a specification; use reputable primary engineering material only when official sources do not resolve the tradeoff. Put a directly relevant Markdown practice link in the required resolution and record the source date, verified claim, alternatives, and why this is the smallest complete fit. Reject search-result links, generic articles, and decorative citations; mark the correction `UNVERIFIED` when no credible source is available. Review never authorizes repair, and an implementer must revalidate unstable facts.
+- [ ] Research corrections only after proving a local defect, except that `DESIGN-10` must research reuse candidates before deciding whether changed custom code is justified. For corrections outside that gate, prefer an existing repository mechanism. Open current official version-matched documentation, specifications, or authoritative package sources; use reputable primary engineering material only when official sources do not resolve the tradeoff. Put a directly relevant Markdown practice link in every required resolution and record the source date, verified claim, alternatives, and smallest complete fit. Reject search-result links, generic articles, and decorative citations; mark unsupported decisions `UNVERIFIED`. Review never authorizes repair, and an implementer must revalidate unstable facts.
 - [ ] Deduplicate by root cause, preserve the strongest evidence and widest demonstrated impact, and recommend one smallest sufficient correction.
 - [ ] Resolve contradictions by tracing behavior directly. Do not add a verifier round; carry genuinely unresolved material evidence into `BLOCKED` or residual risk according to the verdict rules.
 - [ ] Classify findings `P0` catastrophic, `P1` release-blocking, `P2` important non-blocking, or `P3` minor actionable.
@@ -170,6 +171,11 @@ Each subagent returns coverage, candidate findings with change-causal evidence a
 | ... | ... | compliant path or explicitly approved deviation | COMPLIANT / DEVIATED / UNPROVEN |
 
 Include only current authoritative sources that apply to the change; omit draft, superseded, and merely descriptive material. Use `None` when none applies.
+
+## Reuse and custom-code decisions
+| Mechanism | Alternatives and official evidence | Decision | Lifecycle rationale |
+|---|---|---|---|
+| None when no changed generic mechanism applies | platform / installed / maintained package / custom | REUSE_EXISTING / ADOPT_PACKAGE / KEEP_CUSTOM / DELETE / MERGE | contract fit and material tradeoffs |
 
 ## Independent review panel
 Pass: initial scope-scaled / initial full / selective follow-up / Blue-only; subagent rounds consumed: 0 / 1 / 2

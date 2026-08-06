@@ -35,6 +35,7 @@ The repository intentionally contains only the skills, minimal plugin manifests,
 | 32 | [Dependency Upgrader](plugins/optimization-suite/skills/ln-32-dependency-upgrader/SKILL.md) | Upgrade dependencies in reversible, verified batches. |
 | 33 | [Code Modernizer](plugins/optimization-suite/skills/ln-33-code-modernizer/SKILL.md) | Replace or simplify bounded capabilities when net value is proven. |
 | 34 | [Benchmark Comparator](plugins/optimization-suite/skills/ln-34-benchmark-comparator/SKILL.md) | Compare alternatives with a frozen, reproducible experiment contract. |
+| 35 | [Surgical Change Implementer](plugins/optimization-suite/skills/ln-35-surgical-change-implementer/SKILL.md) | Implement a bounded change through the smallest complete root-cause solution. |
 
 ### Testing Suite
 

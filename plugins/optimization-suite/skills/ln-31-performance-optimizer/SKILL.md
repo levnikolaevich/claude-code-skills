@@ -18,7 +18,7 @@ Before returning, apply this skill's verdict, decision, and approval rules to ev
 | Baseline and final metric | Existing benchmark, load test, reproducible command, or production-like replay | The metric and workload reflect the reported problem | Create the smallest local benchmark that reproduces the behavior without inventing production scale |
 | Bottleneck evidence | Existing profiler, tracing, query diagnostics, allocation tools, or OS-level metrics | Locating CPU, memory, I/O, lock, query, network, or scheduler cost | Targeted instrumentation with cleanup plan |
 | Code path and blast radius | Language server or host-native code intelligence | Following hot symbols, callers, implementations, and affected contracts | Narrow search plus direct inspection of definitions and consumers |
-| Correctness and regressions | Repository-defined tests, build, lint, type, and smoke commands | Before and after every retained experiment | Add a focused safety test when current coverage cannot detect the likely regression |
+| Correctness and regressions | Repository-defined tests, build, lint, type, and smoke commands | Before and after every retained experiment | Choose the smallest portfolio action when current evidence cannot detect the likely material regression |
 | Runtime and dependency semantics | Official documentation, release notes, and specifications matching installed versions | A hypothesis depends on optimizer, runtime, database, framework, or library behavior | Primary-source web research; otherwise mark the hypothesis `UNVERIFIED` |
 | Independent challenge | One native subagent or advisor when policy and scope allow | Competing hypotheses, unfamiliar runtime behavior, or high-risk change needs independent scrutiny | Separate adversarial hypothesis review |
 
@@ -73,7 +73,7 @@ Do not optimize by aesthetic preference or benchmark a different workload from t
 
 ### 4. Execute Atomic Keep-or-Discard Experiments
 
-- [ ] Add or identify a safety test for behavior most likely to regress before applying each risky hypothesis.
+- [ ] Map each risky hypothesis to existing proof and the material regression it could cause; implement `KEEP`, `ADD`, `UPDATE`, `MERGE`, `DELETE`, or justified `NO_TEST` within the approved test scope to produce the smallest trustworthy safety evidence, remove superseded testware, and retire temporary characterization proof when its trigger ends.
 - [ ] For caching, batching, parallelism, pooling, or retry changes, explicitly protect invalidation, ordering, idempotency, cancellation, backpressure, timeout, and bounded-resource semantics that the faster path could violate.
 - [ ] Apply the smallest coherent change that tests one mechanism; group changes only when their effects are intentionally inseparable.
 - [ ] Keep instrumentation bounded, low-overhead, and easy to remove; never leave secrets or sensitive payloads in diagnostic output.
@@ -119,6 +119,9 @@ Do not optimize by aesthetic preference or benchmark a different workload from t
 
 ## Final result
 Comparable before/after metrics, full verification, cleanup, limitations, and residual bottlenecks.
+
+## Test portfolio decisions
+Affected evidence, material regression, action, oracle, gate and result, removed testware, and any review or retirement trigger; use `None` when existing proof remained sufficient and unchanged.
 
 ## Evidence artifacts
 Run-owned paths and hashes for raw samples, commands, environment capture, final diff, and cleanup proof.

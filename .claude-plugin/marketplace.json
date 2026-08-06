@@ -20,13 +20,13 @@
     },
     {
       "name": "optimization-suite",
-      "description": "Measured performance, dependency, modernization, and benchmark workflows.",
+      "description": "Surgical implementation plus measured performance, dependency, modernization, and benchmark workflows.",
       "source": "./plugins/optimization-suite",
       "strict": false
     },
     {
       "name": "testing-suite",
-      "description": "Risk-based test planning and reproducible acceptance-test creation.",
+      "description": "Risk-based test portfolio planning and reproducible acceptance-test lifecycle.",
       "source": "./plugins/testing-suite",
       "strict": false
     },

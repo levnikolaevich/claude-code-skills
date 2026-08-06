@@ -7,8 +7,9 @@ description: "Reviews a completed scoped change and its affected runtime and con
 
 **Goal:** Review only the requested delivery change and the causal paths needed to prove its business outcome. Judge scoped acceptance and release safety with concise evidence; do not audit unrelated code, repair findings, update trackers, or widen scope.
 
-**Execution contract:** Treat the ordered checkbox workflow below as this skill's Definition of Done. Work through every item in order, and mark it complete only when its action and required evidence are complete. `N/A`, skipped, unavailable, or delegated items remain incomplete.
-Before returning, apply this skill's verdict, decision, and approval rules to every incomplete item and prepend **Checklist: X/Y complete**<br>**Incomplete: None | section/item — reason; outcome impact; exact next action**; list every incomplete item.
+**Execution contract:** Treat the ordered checkbox workflow below as this skill's Definition of Done. Before reviewing, create an internal coverage ledger with one `PENDING` row per checkbox, using the heading's ID range in printed order. Change a row only to `PROVEN` with a concrete evidence reference, `CLEARED` with evidence that its conditional trigger is absent, or `UNPROVEN`; reading, mentioning, delegating, skipping, or tool failure is not proof.
+At the end of each numbered section, reconcile its ledger rows and resolve every `PENDING`. Before verdict, run exactly one closure pass over the ledger, evidence, and draft: challenge unsupported `PROVEN` or `CLEARED` states, surface every accepted finding, and align matrices, limitations, and verdict. Correct the report or downgrade the verdict; do not rescan the repository, restart the review, or launch another subagent round.
+Before returning, derive the count from the ledger with only `PROVEN` and `CLEARED` rows complete, apply this skill's verdict rules to every `UNPROVEN`, allow no `PENDING`, and prepend **Checklist: X/Y complete**<br>**Incomplete: None | ID — reason; outcome impact; exact next action**; list every `UNPROVEN` row.
 
 ## Tool Routing
 
@@ -73,7 +74,7 @@ Each subagent returns coverage, candidate findings with change-causal evidence a
 
 ## Checklist
 
-### 1. Establish Business and Change Scope
+### 1. Establish Business and Change Scope (`SCOPE-1` through `SCOPE-8`)
 
 - [ ] Before reading implementation detail, state the affected actors, problem, protected outcome, changed behavior, acceptance criteria, existing user experience, explicitly authorized user-facing changes, invariants, non-goals, and release boundary. Mark unsupported interpretations `UNKNOWN`; use `BLOCKED` when the thesis cannot be established.
 - [ ] Establish complexity fit from evidenced maturity, business horizon, scale, team capacity, and lifecycle cost; do not infer enterprise needs from hypothetical growth or call safety-required complexity overengineering.
@@ -84,7 +85,7 @@ Each subagent returns coverage, candidate findings with change-causal evidence a
 - [ ] Classify the pass as initial, selective follow-up, or Blue-only from a completed prior report and stable task, scope, and comparison lineage. Freeze the thesis and scope, select only verdict-relevant lenses within the two-round budget, and record the round, selection rationale, and omissions while keeping preliminary conclusions private.
 - [ ] Keep the review read-only. Permit only host-approved caches or build artifacts; do not edit tracked files, create tasks, commit, push, deploy, or repair findings.
 
-### 2. Trace Requirements into Implementation
+### 2. Trace Requirements into Implementation (`TRACE-1` through `TRACE-9`)
 
 - [ ] Enumerate every authoritative task requirement and acceptance criterion, plus every required approved-plan item. Map each to concrete implementation and independent behavioral evidence; mark task and plan items `COMPLETE`, `DEVIATED`, `OMITTED`, or `UNPROVEN` and acceptance `PASS`, `FAIL`, or `UNPROVEN`. Author claims, checked boxes, commits, and code presence are not completion evidence.
 - [ ] Inspect changed files and only the unchanged definitions, consumers, interfaces, tests, migrations, and registration needed to prove an affected path.
@@ -96,7 +97,7 @@ Each subagent returns coverage, candidate findings with change-causal evidence a
 - [ ] Within affected behavior, inspect applicable boundaries, collections, state transitions, duplicates, ordering, numeric behavior, empty and maximum inputs, errors, retries, idempotency, cancellation, timeouts, rollback, and cleanup.
 - [ ] Within affected async paths, inspect shared state, transactions, races, lock ordering, and blocking work.
 
-### 3. Review Safety, Contracts, and Simplicity
+### 3. Review Safety, Contracts, and Simplicity (`DESIGN-1` through `DESIGN-10`)
 
 - [ ] Within affected paths, inspect applicable authentication, authorization, ownership, validation, injection, secrets, sensitive data, logging, and destructive-operation guards.
 - [ ] For changed destructive behavior, require recovery, rollback, blast-radius, environment or authorization, and preview or dry-run evidence; justify infeasible controls.
@@ -109,7 +110,7 @@ Each subagent returns coverage, candidate findings with change-causal evidence a
 - [ ] Run a subtractive pass for changed logic, constraints, configuration, schemas, routes, states, and operations. Record obsolete candidates, proven removals, and retention evidence; use `one in, two out` only as a prompt, never a deletion quota.
 - [ ] **KISS:** AI slop is prohibited. Require the minimum sufficient diff and simplest correct, efficient algorithm. Reject needless duplication, files, layers, abstractions, dependencies, configuration, branches, compatibility paths, or custom machinery when existing mechanisms suffice; never trade away safeguards or maintainability.
 
-### 4. Verify Tests, Documentation, and Operations
+### 4. Verify Tests, Documentation, and Operations (`VERIFY-1` through `VERIFY-15`)
 
 - [ ] Before recommending or retaining any test, rank the changed business scenario by failure likelihood, user or operational impact, blast radius, reversibility, and regression history. Cover only material risks; reject test count, line coverage, and tests for trivial or low-risk behavior as goals.
 - [ ] Prohibit tests whose oracle merely re-proves language or standard-library behavior, default framework routing, validation, or lifecycle, external-package behavior, uncustomized ORM or driver mechanics, database-vendor capability, getters, pass-through wrappers, or other trivial implementation. Crossing a real dependency is valid only when it proves a repository-owned business rule, configuration, runtime registration, integration contract, query, schema, permission, transaction, recovery path, or user journey.
@@ -127,7 +128,7 @@ Each subagent returns coverage, candidate findings with change-causal evidence a
 - [ ] Verify affected API and configuration references, examples, migrations, runbooks, operator steps, and comments against implementation and requirements; comments explain enduring intent or constraints rather than syntax.
 - [ ] Check logs, metrics, traces, health signals, feature controls, deployment order, rollback, and recovery where the change creates operational risk.
 
-### 5. Challenge and Synthesize
+### 5. Challenge and Synthesize (`CLOSE-1` through `CLOSE-11`)
 
 - [ ] Launch all selected lenses once for the current allowed round in separate contexts with the frozen packet, one primary question, read-only tools, and the required schema; keep them blind, wait for all, and record failures or same-round retries. Never create a third subagent round.
 - [ ] Verify each candidate against code, commands, behavior, declared intent, or authoritative documentation; trace symptom to causal path and violated contract, and reject subjective or symptom-only claims.

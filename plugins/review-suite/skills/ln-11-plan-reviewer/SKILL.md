@@ -7,8 +7,9 @@ description: "Reviews implementation plans against repository evidence and curre
 
 **Goal:** Perform a read-only, evidence-first second pass over an implementation plan. Verify the plan; do not execute it. A strong result is decision-complete, grounded in the actual repository, explicit about uncertainty, no more complex than the problem requires, and expressed in the fewest words and execution steps that preserve safety.
 
-**Execution contract:** Treat the ordered checkbox workflow below as this skill's Definition of Done. Work through every item in order, and mark it complete only when its action and required evidence are complete. `N/A`, skipped, unavailable, or delegated items remain incomplete.
-Before returning, apply this skill's verdict, decision, and approval rules to every incomplete item and prepend **Checklist: X/Y complete**<br>**Incomplete: None | section/item — reason; outcome impact; exact next action**; list every incomplete item.
+**Execution contract:** Treat the ordered checkbox workflow below as this skill's Definition of Done. Before reviewing, create an internal coverage ledger with one `PENDING` row per checkbox, using the heading's ID range in printed order. Change a row only to `PROVEN` with a concrete evidence reference, `CLEARED` with evidence that its conditional trigger is absent, or `UNPROVEN`; reading, mentioning, delegating, skipping, or tool failure is not proof.
+At the end of each numbered section, reconcile its ledger rows and resolve every `PENDING`. Before verdict, run exactly one closure pass over the ledger, evidence, and draft: challenge unsupported `PROVEN` or `CLEARED` states, surface every accepted finding, and align matrices, limitations, and verdict. Correct the report or downgrade the verdict; do not rescan the repository, restart the review, or launch another subagent round.
+Before returning, derive the count from the ledger with only `PROVEN` and `CLEARED` rows complete, apply this skill's verdict rules to every `UNPROVEN`, allow no `PENDING`, and prepend **Checklist: X/Y complete**<br>**Incomplete: None | ID — reason; outcome impact; exact next action**; list every `UNPROVEN` row.
 
 ## Tool Routing
 
@@ -38,7 +39,7 @@ When sources disagree, prefer the repository for what is installed and implement
 
 ## Checklist
 
-### 1. Establish the Review Contract
+### 1. Establish the Review Contract (`CONTRACT-1` through `CONTRACT-9`)
 
 - [ ] Resolve the exact plan, user request, linked requirements, and repository scope. If no concrete plan exists, stop with `BLOCKED` rather than inventing one to review.
 - [ ] Read all applicable repository instruction files before interpreting code, documentation, or expected workflow. Identify only change-relevant project policies, standards, and ADRs; distinguish current accepted authority from draft, superseded, stale, or merely descriptive material instead of treating every document as binding.
@@ -50,7 +51,7 @@ When sources disagree, prefer the repository for what is installed and implement
 - [ ] Classify the review depth. Treat authentication, authorization, money, destructive operations, data migration, public APIs, concurrency, distributed workflows, and irreversible rollout as high-risk.
 - [ ] Keep the run read-only. Do not mutate the source plan, implementation, task tracker, branch, or external system; a corrected plan may appear only in the review response. Allow only host-permitted rebuildable diagnostic caches or build artifacts and disclose them when created.
 
-### 2. Ground the Plan in the Repository
+### 2. Ground the Plan in the Repository (`REPO-1` through `REPO-11`)
 
 - [ ] Build a narrow map of the affected modules, entrypoints, configuration, schemas, migrations, tests, documentation, and deployment surfaces.
 - [ ] Discover shared architecture and governance artifacts by repository convention and common roles: system-design baseline, current-state map, target design, accepted decisions, engineering policies, diagrams, and migration plan. Treat them as optional evidence, never as required workflow dependencies.
@@ -64,7 +65,7 @@ When sources disagree, prefer the repository for what is installed and implement
 - [ ] Check active branches, plans, migrations, or sibling work for structural overlap: shared contracts, files, schemas, or the same trigger with a conflicting outcome; keyword similarity alone is only a lead.
 - [ ] Stop expanding the scan when additional files cannot change a plan decision, finding, or confidence level.
 
-### 3. Research Corrections and Unknown External Claims
+### 3. Research Corrections and Unknown External Claims (`RESEARCH-1` through `RESEARCH-9`)
 
 - [ ] Research a correction only after repository evidence establishes a material candidate gap; prefer an existing repository mechanism and do not browse to invent findings.
 - [ ] Extract plan claims that are external or unstable: versions, API signatures, deprecations, standards, security requirements, library capabilities, performance characteristics, and platform limits.
@@ -76,7 +77,7 @@ When sources disagree, prefer the repository for what is installed and implement
 - [ ] Apply the research-to-action gate: if a source does not reveal a specific defect, risk, missing decision, or better-supported alternative, keep it informational and do not inflate the review.
 - [ ] If authoritative research is unavailable, label the affected claim `UNVERIFIED`; use `BLOCKED` when implementation safety or a consequential design choice depends on it. Review approval never authorizes execution; require a later implementer to revalidate unstable external facts immediately before editing.
 
-### 4. Review from Every Applicable Perspective
+### 4. Review from Every Applicable Perspective (`LENS-1` through `LENS-15`)
 
 - [ ] **Intent and traceability:** Every proposed change and source of complexity maps to the intended outcome, an acceptance criterion, a safety need, or an evidenced constraint; combine work serving the same outcome, and remove speculative or merely ceremonial steps.
 - [ ] **Repository fit:** The plan respects actual project structure, conventions, supported stack, existing capabilities, maturity, current scale, team and operational capacity, and current work without overwriting unrelated changes. For each applicable current project policy or ADR in the ledger, trace the affected plan surface to compliance or an explicitly approved and justified deviation; include project-defined logging, error taxonomy and boundary mapping, configuration, observability, security, persistence, testing, and release rules only when the change reaches them.
@@ -92,9 +93,9 @@ When sources disagree, prefer the repository for what is installed and implement
 - [ ] **Delivery and operations:** Include documentation, configuration rollout, observability, deployment, rollback, and operator actions only where the change requires them.
 - [ ] **KISS — simplicity and alternatives:** Prefer the simplest correct plan that satisfies the evidenced outcome and constraints. Challenge unjustified layers, services, abstractions, configuration, extensibility, infrastructure, and operational machinery; merge adjacent work when ownership and verification remain clear, while preserving correctness, safety, compatibility, testability, and reversibility. KISS is not code golf or omitted safeguards.
 - [ ] **Subtractive completeness:** For changed logic, constraints, configuration, schemas, routes, states, or operations, identify obsolete code, branches, flags, keys, defaults, shims, data paths, documentation, tests, permissions, metrics, and rollout scaffolding. Plan removal only when evidence proves it superseded and in scope; otherwise record retention evidence or a temporary path's owner and removal condition. `One in, two out` is a simplification prompt, never a quota.
-- [ ] Mark a perspective `N/A` only when its absence is evident from the plan and repository; never silently skip a high-risk perspective.
+- [ ] Mark a perspective `CLEARED` only when evidence shows its trigger is absent from the plan and repository; never silently skip a high-risk perspective.
 
-### 5. Run One Independent Challenge Round
+### 5. Run One Independent Challenge Round (`CHALLENGE-1` through `CHALLENGE-5`)
 
 - [ ] Run exactly one independent review round for the plan. Select one blind reviewer for small low-risk work, two distinct reviewers for ordinary medium risk, or all three for high-risk, architectural, cross-service, unfamiliar, or materially ambiguous work: execution simulation, fresh implementation, and adversarial failure analysis. Do not start a second analytical round for corrections, disagreements, or low confidence.
 - [ ] Give every reviewer the same frozen packet—plan, real goal, relevant repository paths, constraints, assumptions, and evidence questions—without prior conversation history, the primary review's conclusions, or sibling outputs. If the host cannot provide fresh isolated contexts, use distinct self-review passes and disclose reduced independence.
@@ -102,7 +103,7 @@ When sources disagree, prefer the repository for what is installed and implement
 - [ ] Classify pre-mortem concerns as evidence-backed risk, unsupported fear, or unstated assumption; dismiss unsupported fear, and give each accepted risk or assumption an invalidation impact and concrete validation or mitigation step.
 - [ ] Treat reviewer unavailability, tool failure, rate limits, or questions as coverage limitations, not evidence that the plan is defective. Retry or replace one technically failed selected reviewer only when a concrete cause changes, using the same evidence question; this completes the original round and must not broaden it.
 
-### 6. Synthesize a Decision-Complete Result
+### 6. Synthesize a Decision-Complete Result (`CLOSE-1` through `CLOSE-11`)
 
 - [ ] Deduplicate findings from repository inspection, research, and independent review; keep the strongest evidence and preserve meaningful disagreements.
 - [ ] Classify findings as `BLOCKER`, `MAJOR`, or `MINOR`: blockers prevent safe handoff, majors predict substantial rework or regression, and minors improve clarity without changing feasibility.

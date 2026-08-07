@@ -2,6 +2,8 @@
 
 A compact marketplace of standalone engineering skills for Claude Code and Codex.
 
+Supports the portable [Agent Plugins v1 standard](https://agent-plugins.org/specification) while retaining native Claude Code and Codex distribution compatibility.
+
 > **Why this repository is intentionally small:** Earlier coding models needed a large orchestration and evaluation harness to follow complex workflows reliably. Modern Claude and Codex models work better with concise procedural guidance, so that machinery has been removed. These skills retain only the domain knowledge, decision gates, tool guidance, and evidence checklists worth bringing into context.
 
 [Browse the skills catalog](https://levnikolaevich.github.io/claude-code-skills/) or install only the plugins you need below.
@@ -127,16 +129,17 @@ codex plugin add architecture-suite@levnikolaevich-skills-marketplace
     └── architecture-suite/
 ```
 
-Each plugin contains `.codex-plugin/plugin.json` for Codex and a shared `skills/<skill>/SKILL.md` tree used by both hosts.
+Each plugin contains a portable Agent Plugins v1 `plugin.json`, the current `.codex-plugin/plugin.json` OpenAI host adapter, and one shared `skills/<skill>/SKILL.md` tree.
 
 This is the smallest practical shared layout for distributed plugins:
 
 - Both hosts use `skills/<name>/SKILL.md`, so each skill has one canonical copy.
-- Codex requires `.codex-plugin/plugin.json` for a plugin.
-- Claude Code automatically scans each manifest-less marketplace source's standard `skills/` directory, so duplicate per-plugin Claude manifests are unnecessary here.
+- Agent Plugins clients discover the portable package through root `plugin.json`; its minimal manifest owns only the schema target and stable name.
+- Current ChatGPT and Codex packaging still requires `.codex-plugin/plugin.json`, which remains the single owner of mutable version, description, publisher, and interface metadata.
+- Claude Code scans each marketplace source's standard `skills/` directory, so a duplicate Claude-specific plugin manifest is unnecessary.
 - `agents/openai.yaml`, references, scripts, assets, hooks, agents, and MCP configuration are optional and omitted until a concrete need appears.
 
-The structure follows the current official [Codex skill guide](https://developers.openai.com/codex/skills), [OpenAI plugin guide](https://developers.openai.com/plugins/build/plugins), [Claude Code skill guide](https://code.claude.com/docs/en/skills), and [Claude Code plugin reference](https://code.claude.com/docs/en/plugins-reference).
+The structure follows the [Agent Plugins v1 specification](https://agent-plugins.org/specification), current [OpenAI plugin guide](https://developers.openai.com/plugins/build/plugins), [Agent Skills specification](https://agentskills.io/specification), [Claude Code skill guide](https://code.claude.com/docs/en/skills), and [Claude Code plugin reference](https://code.claude.com/docs/en/plugins-reference).
 
 ## Indexing
 

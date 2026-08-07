@@ -6,11 +6,14 @@ This repository distributes standalone skills for Claude Code and Codex through 
 
 ```text
 plugins/<plugin>/
+├── plugin.json
 ├── .codex-plugin/plugin.json
 └── skills/<skill>/SKILL.md
 ```
 
-Claude Code discovers the standard `skills/` directories through `.claude-plugin/marketplace.json`. Codex uses `.agents/plugins/marketplace.json` and each `.codex-plugin/plugin.json`. Do not add host-specific copies of a skill.
+Root `plugin.json` is the minimal portable Agent Plugins v1 manifest. `.codex-plugin/plugin.json` is the current OpenAI host adapter for richer metadata and component pointers. Claude Code discovers the shared `skills/` directories through `.claude-plugin/marketplace.json`; Codex uses `.agents/plugins/marketplace.json` and the host adapter. Do not add host-specific copies of a skill.
+
+Keep portable manifests limited to the canonical Agent Plugins schema identifier and stable plugin `name`; optional version, description, and publisher metadata remain in the host adapter to avoid duplicated mutable metadata. Both names and the plugin directory must match. Add portable optional fields only when a concrete cross-client requirement justifies a new canonical owner and matching parity validation.
 
 ## Skill rules
 
@@ -54,15 +57,16 @@ Before finishing a change:
 1. Run the installed `skill-creator` `quick_validate.py` for every skill directory.
 2. Run the installed `plugin-creator` `validate_plugin.py` for every plugin directory.
 3. Run `claude plugin validate . --strict` for the Claude marketplace. This validates the catalog, not Claude skill frontmatter in manifest-less plugin directories; the per-skill validator and manual frontmatter checks cover that known boundary.
-4. Confirm both marketplace catalogs contain the same plugin names in the same order, every manifest path exists, and each plugin description matches its Claude marketplace entry.
-5. Confirm OpenAI directory-facing metadata meets current limits, including at most three starter prompts and display and short descriptions of at most 30 characters.
-6. Search for stale references to removed skills, MCP packages, shared registries, drafts, and orchestration harnesses.
+4. Validate every root `plugin.json` against the repository's minimal Agent Plugins v1 contract: exactly `$schema` and `name`, canonical schema identifier, conforming name, and parity with the directory, host adapter, and both catalogs.
+5. Confirm both marketplace catalogs contain the same plugin names in the same order, every host manifest path exists, and each host description matches its Claude marketplace entry.
+6. Confirm OpenAI directory-facing metadata meets current limits, including at most three starter prompts and display and short descriptions of at most 30 characters.
+7. Search for stale references to removed skills, MCP packages, shared registries, drafts, and orchestration harnesses.
 
-If an installed validator is unavailable, perform the equivalent checks manually: frontmatter contains only `name` and `description`; folder and frontmatter names match; descriptions are at most 200 characters; skills stay within the 100–200 line target; manifests parse and point to existing paths; both catalogs match; and no stale coupling remains.
+If an installed validator is unavailable, perform the equivalent checks manually: frontmatter contains only `name` and `description`; folder and frontmatter names match; descriptions are at most 200 characters; skills stay within the 100–200 line target; portable and host manifests parse and satisfy their contracts; both catalogs match; and no stale coupling remains.
 
 ## Release rules
 
-- Explicit plugin SemVer lives only in `.codex-plugin/plugin.json`. Claude marketplace entries intentionally omit `version`, so Claude Code identifies ordinary updates by their source commit SHA.
+- Explicit plugin SemVer lives only in `.codex-plugin/plugin.json`; the minimal portable manifest intentionally omits its optional `version` to preserve one mutable version owner. Claude marketplace entries also omit `version`, so Claude Code identifies ordinary updates by their source commit SHA.
 - Change a version only when the user explicitly requests a release; ordinary repository edits do not bump versions.
 - Record a release with a matching Git tag and GitHub Release. Document user-facing migration in `README.md`; a repository `CHANGELOG.md` is not required.
 

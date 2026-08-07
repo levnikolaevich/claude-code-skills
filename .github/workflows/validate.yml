@@ -50,25 +50,49 @@ jobs:
           }
 
           $skillNames = [Collections.Generic.HashSet[string]]::new()
+          $agentPluginsSchema = "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json"
           foreach ($entry in $claude.plugins) {
             $pluginRoot = Join-Path $PWD ($entry.source -replace "^\./", "")
-            $manifestPath = Join-Path $pluginRoot ".codex-plugin/plugin.json"
-            if (-not (Test-Path -LiteralPath $manifestPath)) {
-              throw "Missing manifest for $($entry.name)."
+            $portableManifestPath = Join-Path $pluginRoot "plugin.json"
+            $hostManifestPath = Join-Path $pluginRoot ".codex-plugin/plugin.json"
+            foreach ($manifestPath in @($portableManifestPath, $hostManifestPath)) {
+              if (-not (Test-Path -LiteralPath $manifestPath -PathType Leaf)) {
+                throw "Missing manifest for $($entry.name): $manifestPath"
+              }
             }
 
-            $manifest = Get-Content $manifestPath -Raw | ConvertFrom-Json
-            if ($manifest.name -ne $entry.name) {
-              throw "Manifest name differs for $($entry.name)."
+            $portableManifest = Get-Content $portableManifestPath -Raw | ConvertFrom-Json
+            $portableFields = @($portableManifest.PSObject.Properties.Name)
+            if ($portableFields.Count -ne 2 -or
+                $portableFields -notcontains '$schema' -or
+                $portableFields -notcontains 'name') {
+              throw "Portable manifest for $($entry.name) must contain exactly `$schema and name."
             }
-            if ($manifest.description -ne $entry.description) {
+            if ($portableManifest.'$schema' -ne $agentPluginsSchema) {
+              throw "Unsupported Agent Plugins schema for $($entry.name)."
+            }
+            if ($portableManifest.name -ne $entry.name -or
+                $portableManifest.name -ne (Split-Path $pluginRoot -Leaf)) {
+              throw "Portable manifest, catalog, and directory names differ for $($entry.name)."
+            }
+            if ($portableManifest.name.Length -gt 64 -or
+                $portableManifest.name -notmatch '^[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?$' -or
+                $portableManifest.name -match '(--|\.\.)') {
+              throw "Portable plugin name violates Agent Plugins v1 for $($entry.name)."
+            }
+
+            $hostManifest = Get-Content $hostManifestPath -Raw | ConvertFrom-Json
+            if ($hostManifest.name -ne $portableManifest.name) {
+              throw "Host and portable manifest names differ for $($entry.name)."
+            }
+            if ($hostManifest.description -ne $entry.description) {
               throw "Manifest description differs for $($entry.name)."
             }
-            if ($manifest.version -notmatch "^\d+\.\d+\.\d+$") {
+            if ($hostManifest.version -notmatch "^\d+\.\d+\.\d+$") {
               throw "Manifest version is not SemVer for $($entry.name)."
             }
             foreach ($field in @("license", "homepage", "repository")) {
-              if ([string]::IsNullOrWhiteSpace($manifest.$field)) {
+              if ([string]::IsNullOrWhiteSpace($hostManifest.$field)) {
                 throw "Missing $field for $($entry.name)."
               }
             }

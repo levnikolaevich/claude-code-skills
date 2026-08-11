@@ -1,5 +1,7 @@
 # Claude-Codex Skills
 
+[![MCP Toplist](https://mcptoplist.com/badge/io.github.levnikolaevich%2Fhex-line-mcp.svg)](https://mcptoplist.com/server/io.github.levnikolaevich%2Fhex-line-mcp)
+
 A compact marketplace of standalone engineering skills for Claude Code and Codex.
 
 Supports the portable [Agent Plugins v1 standard](https://agent-plugins.org/specification) while retaining native Claude Code and Codex distribution compatibility.

@@ -23,6 +23,7 @@ Keep portable manifests limited to the canonical Agent Plugins schema identifier
 - Put the trigger boundary in `description`: what the skill does, when to use it, and important near-negative cases.
 - Begin each skill body, before tool routing, with `**Goal:**` defining its intended outcome and boundary and `**Execution contract:**` telling the agent how to apply the skill.
 - In that execution contract, treat the ordered checkbox workflow as the skill's Definition of Done. Do not add a duplicate DoD section.
+- Track every checkbox as `PENDING`, then resolve it to `PROVEN` with concrete evidence, `CLEARED` with evidence that its conditional trigger is absent, or `UNPROVEN`; only `PROVEN` and `CLEARED` count as complete, and no `PENDING` may remain at return.
 - Require the execution contract to account for all checkboxes with `Checklist: X/Y complete` and an `Incomplete` list containing each skipped item's reason, outcome impact, and exact next action; apply the skill's own verdict, decision, and approval rules to incomplete items.
 - Preserve evidence rules, tool-selection guidance, safety gates, verdict mapping, output contract, and residual-risk reporting when simplifying.
 - Add `references/`, `scripts/`, or `assets/` only after a concrete execution defect shows that the instruction-only skill is insufficient.
@@ -54,13 +55,11 @@ Each plugin can contain at most nine indexed skills. A tenth capability starts a
 
 Before finishing a change:
 
-1. Run the installed `skill-creator` `quick_validate.py` for every skill directory.
-2. Run the installed `plugin-creator` `validate_plugin.py` for every plugin directory.
-3. Run `claude plugin validate . --strict` for the Claude marketplace. This validates the catalog, not Claude skill frontmatter in manifest-less plugin directories; the per-skill validator and manual frontmatter checks cover that known boundary.
-4. Validate every root `plugin.json` against the repository's minimal Agent Plugins v1 contract: exactly `$schema` and `name`, canonical schema identifier, conforming name, and parity with the directory, host adapter, and both catalogs.
-5. Confirm both marketplace catalogs contain the same plugin names in the same order, every host manifest path exists, and each host description matches its Claude marketplace entry.
-6. Confirm OpenAI directory-facing metadata meets current limits, including at most three starter prompts and display and short descriptions of at most 30 characters.
-7. Search for stale references to removed skills, MCP packages, shared registries, drafts, and orchestration harnesses.
+1. Run `pwsh -File scripts/validate-repository.ps1`; it is the executable owner for repository structure, manifest and catalog parity, skill contracts, metadata limits, README and site coverage, local site links, and known retired paths.
+2. Run the installed `skill-creator` `quick_validate.py` for every skill directory.
+3. Run the installed `plugin-creator` `validate_plugin.py` for every plugin directory.
+4. Run `claude plugin validate . --strict` for the Claude marketplace. This validates the catalog, not Claude skill frontmatter in manifest-less plugin directories; the per-skill validator and repository validator cover that known boundary.
+5. Search for stale references to removed skills, MCP packages, shared registries, drafts, and orchestration harnesses that are not already encoded as known retired paths in the repository validator.
 
 If an installed validator is unavailable, perform the equivalent checks manually: frontmatter contains only `name` and `description`; folder and frontmatter names match; descriptions are at most 200 characters; skills stay within the 100–200 line target; portable and host manifests parse and satisfy their contracts; both catalogs match; and no stale coupling remains.
 

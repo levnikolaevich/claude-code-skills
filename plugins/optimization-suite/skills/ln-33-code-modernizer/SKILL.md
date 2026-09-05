@@ -1,14 +1,14 @@
 ---
 name: ln-33-code-modernizer
-description: "Modernizes a bounded capability by removing obsolete custom mechanisms or reducing bundle and maintenance cost. Use for proven modernization value; not routine upgrades or tuning."
+description: "Modernizes a bounded capability to reduce proven maintenance, workflow, or artifact cost. Not for routine upgrades or performance tuning."
 ---
 
 # Code Modernizer
 
 **Goal:** Modernize a bounded capability only when the new design measurably reduces human workflow friction, maintenance, risk, dependency duplication, or delivered artifact cost. Preserve behavior, isolate migrations, and revert changes that do not create net value.
 
-**Execution contract:** Treat the ordered checkbox workflow below as this skill's Definition of Done. Track every checkbox as `PENDING`, then resolve it to `PROVEN` with concrete evidence, `CLEARED` with evidence that its conditional trigger is absent, or `UNPROVEN`; reading, mentioning, delegating, skipping, or tool failure is not proof.
-Before returning, resolve every `PENDING`, count only `PROVEN` and `CLEARED` items as complete, apply this skill's verdict, decision, and approval rules to every `UNPROVEN`, and prepend **Checklist: X/Y complete**<br>**Incomplete: None | section/item — reason; outcome impact; exact next action**; list every `UNPROVEN` item.
+**Execution contract:** The ordered checkboxes are the Definition of Done. Track every item internally as `PENDING`, `PROVEN` with concrete evidence, `CLEARED` with evidence that its condition is absent, or `UNPROVEN` with a gap; reading, delegation, or tool failure is not proof. Reconcile items after each section. Before returning, resolve all `PENDING` and count only `PROVEN` and `CLEARED`; apply the skill's verdict and approval rules to every gap.
+Preserve user intent, scope, and existing authorization. Continue authorized work; ask only for consequential unresolved choices or required external approval. Scale depth to material risk without silently skipping checks. Preserve dependency and safety ordering; otherwise choose the verification method appropriate to each obligation.
 
 ## Tool Routing
 
@@ -26,7 +26,6 @@ Do not replace working custom code merely because an external package exists. Do
 
 ## Evidence Rules
 
-- Start from a concrete defect, cost, duplication, unsupported mechanism, audit finding, or user goal.
 - Compare net system complexity: removed code and risk minus new dependency, adapter, operational, and migration costs.
 - External candidate claims require current primary evidence for maintenance, security, license, runtime support, and API fit.
 - Bundle or performance value requires comparable measurements; line-count reduction alone does not prove a better design.
@@ -43,7 +42,7 @@ Do not replace working custom code merely because an external package exists. Do
 - [ ] Establish behavioral and relevant quantitative baselines before changing code; for human workflows use reproducible observations such as required steps or concepts, time to first meaningful result, error comprehension, and recovery effort.
 - [ ] Isolate the work so each migration step can be reverted without touching unrelated or user-owned changes.
 - [ ] Start a run-owned resource ledger with every created absolute path, worktree, process ID, cache, report, and temporary artifact; never register pre-existing resources as cleanup targets.
-- [ ] Stop with `NO_CHANGE` if modernization is only aesthetic, depends on speculative future scale, or cannot define a reproducible benefit to the protected outcome.
+- [ ] Use `NO_CHANGE` when evidence shows no worthwhile in-scope modernization; use `BLOCKED` when a plausible requested benefit cannot be evaluated because essential evidence is unavailable.
 
 ### 2. Evaluate the Simplest Credible Design
 
@@ -62,14 +61,14 @@ Do not replace working custom code merely because an external package exists. Do
 ### 3. Execute a Bounded Migration
 
 - [ ] Map the current external contract, important failures, and data or configuration compatibility to existing proof; implement `KEEP`, `ADD`, `UPDATE`, `MERGE`, `DELETE`, or justified `NO_TEST` within the approved test scope, remove superseded testware, and give temporary characterization or compatibility evidence a removal trigger.
-- [ ] Use differential or characterization cases at the replacement boundary when old and new implementations can be run on the same representative and adversarial inputs.
+- [ ] Use differential or characterization cases on shared representative and adversarial inputs; the old implementation is comparison evidence, not the authority for known defects or explicitly changed behavior. Resolve differences against the intended contract.
 - [ ] Introduce the replacement at one clear boundary rather than mixing old and new mechanisms throughout the codebase.
 - [ ] Use native package-manager and generation commands for dependencies and generated state; do not hand-edit lockfiles or generated artifacts.
 - [ ] Update callers, types, configuration, dependency injection, routes, events, serialization, tests, build scripts, and documentation required by the bounded capability.
 - [ ] Preserve backward compatibility only where a real consumer requires it and define the removal condition for every temporary adapter.
 - [ ] Prepare and test persisted-data or configuration migrations against a disposable copy with explicit ordering, resumability, mixed-version behavior, backup/restore evidence, rollback, and failure recovery; apply them elsewhere only when the user names the target environment and authorizes the rehearsed operation.
-- [ ] Remove the old implementation only after search and runtime wiring checks show no remaining consumer.
 - [ ] Before removing a dependency or module reported as unused, check dynamic imports, reflection, plugin/config registration, code generation, build scripts, CLIs, and optional runtime paths that static import scans miss.
+- [ ] Remove the old implementation only after search and runtime wiring checks show no remaining consumer.
 - [ ] Inspect the diff for unrelated refactoring, formatting churn, duplicate dependencies, debug code, and accidental public contract changes.
 
 ### 4. Verify and Keep or Discard
@@ -83,45 +82,29 @@ Do not replace working custom code merely because an external package exists. Do
 - [ ] Check security advisories, licenses, runtime support, package provenance, and new transitive dependencies for the retained design.
 - [ ] Exercise rollback or removal mechanics when migration failure would be costly or difficult to detect.
 - [ ] Mark the migration `KEEP` only when required behavior and verification pass and the defined net value is achieved.
-- [ ] Mark it `DISCARD` and revert the bounded change completely when value is unproven, regressions appear, or long-term complexity increases.
+- [ ] Resolve bounded migration defects and repeat affected checks before the final decision; mark `DISCARD` and revert the bounded change when value remains unproven, regressions remain, or net complexity exceeds the agreed tradeoff.
 - [ ] Remove non-retained adapters, instrumentation, feature flags, packages, and generated artifacts only when their ownership is proven; clean only run-owned ledger paths and exact process IDs, preserving dirty or pre-existing worktrees and reported evidence.
 
 ### 5. Finalize and Report
 
 - [ ] Verify that no stale implementation, import, registration, configuration, documentation, or dependency remains after a kept migration.
-- [ ] Run full relevant verification on the final retained state and compare the final diff with the original modernization scope.
-- [ ] Report considered alternatives, evidence, applied and discarded migrations, code and dependency delta, measurements, verification, and rollback state.
+- [ ] Confirm relevant verification covers the final retained state, reusing still-valid results and rerunning checks invalidated by changes or unresolved failures. Compare the final diff with the original modernization scope.
+- [ ] Reconcile option and migration ledgers with final code, dependencies, measurements, and rollback state.
 - [ ] Identify residual custom code, compatibility adapters, migration steps, operational changes, and external dependency risks.
 - [ ] Use `MODERNIZED` when the selected bounded design is fully retained and verified; use `PARTIAL` when an independently safe subset is retained with explicit remaining work; use `NO_CHANGE` when every migration is discarded and the baseline is restored; use `BLOCKED` when authorization, safety evidence, or required verification is unavailable.
 
+## Self-Check
+
+- [ ] **Reconcile before returning.** Check item-level evidence, requirement coverage, contradictions, scope, verdict, and applicable cleanup. Correct the report or authorized artifacts. Reuse valid evidence; do not automatically rescan the repository or rerun successful commands. Repeat checks only for relevant changes, failures, or unresolved evidence. Disclose remaining gaps.
+
 ## Output Contract
 
-```markdown
-# Code Modernization
+Report in the user's language, in this order; retain all five fields and state each fact once. Small results may use one line per field; omit empty tables and do not copy linked artifacts:
 
-**Verdict:** MODERNIZED | PARTIAL | NO_CHANGE | BLOCKED
+1. **Result:** Skill-specific verdict and supported outcome.
+2. **Scope:** Reviewed/changed scope, exclusions, baseline, and material assumptions.
+3. **Evidence:** Skill-specific fields below; distinguish facts, inferences, and unverified claims. Link artifacts; use tables when useful.
+4. **Verification:** Checks/results, unavailable evidence, and applicable cleanup/external state.
+5. **Completion:** `Checklist: X/Y complete`; `Incomplete: None` or each `UNPROVEN` item's reason, outcome impact, and exact next action; residual risks and required decisions.
 
-## Target and baseline
-- Capability, protected outcome, affected human workflow, and current cost
-- Contracts and consumers
-- Behavioral, workflow, and quantitative baselines
-
-## Alternatives
-| Option | Evidence | Net value | Risk | Decision |
-|---|---|---|---|---|
-| ... | ... | ... | ... | SELECTED / REJECTED |
-
-## Migration results
-| Step | Change | Verification | Metric delta | Decision |
-|---|---|---|---|---|
-| ... | ... | ... | ... | KEEP / DISCARD |
-
-## Final state and residual risks
-Removed and retained code, dependencies, adapters, measurements, rollback, limitations, and follow-up decisions.
-
-## Test portfolio decisions
-Affected evidence, protected contract, action, oracle, gate and result, removed testware, and any review or retirement trigger; use `None` when existing proof remained sufficient and unchanged.
-
-## Evidence artifacts
-Run-owned paths and hashes for characterization evidence, exact commands, final diff, rollback, and cleanup proof.
-```
+**Skill-specific evidence:** Capability, protected contract, consumers, current cost, and behavioral/value baselines. Compare considered alternatives and `SELECTED / REJECTED` reasons. Per migration: changes, verification, comparable value metrics, and `KEEP / DISCARD`. Include code/dependency and workflow deltas, affected test actions, residual custom code/compatibility, outstanding transition work, and run-owned measurement/diff/rollback/cleanup evidence.

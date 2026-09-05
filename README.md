@@ -4,11 +4,13 @@ A compact marketplace of standalone engineering skills for Claude Code and Codex
 
 Supports the portable [Agent Plugins v1 standard](https://agent-plugins.org/specification) while retaining native Claude Code and Codex distribution compatibility.
 
-> **Why this repository is intentionally small:** Earlier coding models needed a large orchestration and evaluation harness to follow complex workflows reliably. Modern Claude and Codex models work better with concise procedural guidance, so that machinery has been removed. These skills retain only the domain knowledge, decision gates, tool guidance, and evidence checklists worth bringing into context.
+> **Why this repository is intentionally small:** Each skill provides domain knowledge, decision gates, tool guidance, and evidence checks for one bounded outcome. Instructions that duplicate an existing obligation or do not support that outcome are removed; useful checks remain individually accountable.
 
 [Browse the skills catalog](https://levnikolaevich.github.io/claude-code-skills/) or install only the plugins you need below.
 
 The repository intentionally contains only the skills, minimal plugin manifests, two host-specific marketplace catalogs, documentation, and a static catalog site. It has no MCP servers, orchestration hierarchy, distributed shared resources, generated skill copies, or evaluation harness.
+
+The [repository skill template](SKILL_TEMPLATE.md) defines the shared authoring format. Skills track every domain checklist item with evidence or an explicit applicability reason. A final self-check reconciles evidence, scope, omissions, and verdict. Reports use the same order—result, scope, evidence, verification, completion—with skill-specific decisions and evidence. Supporting references stay inside the skill and are loaded only for the relevant workflow branch; the delivery review panel is one such branch. Skills have a 200-line ceiling and no minimum.
 
 ## Plugins
 
@@ -17,7 +19,7 @@ The repository intentionally contains only the skills, minimal plugin manifests,
 | Index | Skill | Purpose |
 |---:|---|---|
 | 11 | [Plan Reviewer](plugins/review-suite/skills/ln-11-plan-reviewer/SKILL.md) | Validate an implementation plan against repository evidence before execution. |
-| 12 | [Delivery Reviewer](plugins/review-suite/skills/ln-12-delivery-reviewer/SKILL.md) | Review completed code through independent risk-selected perspectives. |
+| 12 | [Delivery Reviewer](plugins/review-suite/skills/ln-12-delivery-reviewer/SKILL.md) | Review scoped delivery acceptance, regressions, and release risks; use independent perspectives only when needed and permitted. |
 
 ### Codebase Audit Suite
 
@@ -44,7 +46,7 @@ The repository intentionally contains only the skills, minimal plugin manifests,
 | Index | Skill | Purpose |
 |---:|---|---|
 | 41 | [Test Strategy Planner](plugins/testing-suite/skills/ln-41-test-strategy-planner/SKILL.md) | Design a risk-based, decision-complete test strategy without changing code. |
-| 42 | [Acceptance Test Builder](plugins/testing-suite/skills/ln-42-acceptance-test-builder/SKILL.md) | Create reproducible acceptance tests through observable product boundaries. |
+| 42 | [Acceptance Test Builder](plugins/testing-suite/skills/ln-42-acceptance-test-builder/SKILL.md) | Build, update, consolidate, or retire acceptance evidence without repairing product code. |
 
 ### Product Discovery Suite
 
@@ -58,7 +60,7 @@ Optional maintainer toolkit: skill 61 reviews skill repositories, skill 62 publi
 
 | Index | Skill | Purpose |
 |---:|---|---|
-| 61 | [Skill Reviewer](plugins/maintainer-suite/skills/ln-61-skill-reviewer/SKILL.md) | Review standalone skills and configured distribution surfaces before publication. |
+| 61 | [Skill Reviewer](plugins/maintainer-suite/skills/ln-61-skill-reviewer/SKILL.md) | Review skill content, goal alignment, triggers, and distribution contracts; distinguish static review from authorized behavioral validation. |
 | 62 | [Repository Publisher](plugins/maintainer-suite/skills/ln-62-repository-publisher/SKILL.md) | Validate, commit, push, and remotely verify approved repository changes. |
 | 63 | [Release Publisher](plugins/maintainer-suite/skills/ln-63-release-publisher/SKILL.md) | Prepare and publish an approved tagged GitHub release. |
 | 64 | [Community Announcer](plugins/maintainer-suite/skills/ln-64-community-announcer/SKILL.md) | Draft and publish fact-checked GitHub Discussions project announcements. |
@@ -74,7 +76,7 @@ Creates durable architecture artifacts without coupling the skills to one anothe
 | 73 | [System Design Proposal Builder](plugins/architecture-suite/skills/ln-73-system-design-proposal-builder/SKILL.md) | Turn requirements and constraints into a decision-complete target design. |
 | 74 | [Architecture Decision Recorder](plugins/architecture-suite/skills/ln-74-architecture-decision-recorder/SKILL.md) | Record one significant decision with alternatives and consequences. |
 | 75 | [Architecture Diagram Builder](plugins/architecture-suite/skills/ln-75-architecture-diagram-builder/SKILL.md) | Create evidence-backed current or target architecture views. |
-| 76 | [Architecture Migration Planner](plugins/architecture-suite/skills/ln-76-architecture-migration-planner/SKILL.md) | Plan a reversible current-to-target transition with compatibility and rollback. |
+| 76 | [Architecture Migration Planner](plugins/architecture-suite/skills/ln-76-architecture-migration-planner/SKILL.md) | Plan a safe current-to-target transition with compatibility, reversibility limits, and recovery actions. |
 
 ## Install in Claude Code
 
@@ -119,6 +121,10 @@ codex plugin add architecture-suite@levnikolaevich-skills-marketplace
 .
 ├── .agents/plugins/marketplace.json       # Codex catalog
 ├── .claude-plugin/marketplace.json        # Claude Code catalog
+├── AGENTS.md                            # Repository and publication rules
+├── SKILL_TEMPLATE.md                    # Canonical authoring format
+├── scripts/                             # Repository validation
+├── site/                                # Public catalog
 └── plugins/
     ├── review-suite/
     ├── codebase-audit-suite/
@@ -137,13 +143,19 @@ This is the smallest practical shared layout for distributed plugins:
 - Agent Plugins clients discover the portable package through root `plugin.json`; its minimal manifest owns only the schema target and stable name.
 - Current ChatGPT and Codex packaging still requires `.codex-plugin/plugin.json`, which remains the single owner of mutable version, description, publisher, and interface metadata.
 - Claude Code scans each marketplace source's standard `skills/` directory, so a duplicate Claude-specific plugin manifest is unnecessary.
-- `agents/openai.yaml`, references, scripts, assets, hooks, agents, and MCP configuration are optional and omitted until a concrete need appears.
+- Skill-local references hold substantial conditional procedures, with an explicit loading trigger in `SKILL.md`. Scripts or assets are added only for a concrete execution or output need; no shared runtime or MCP dependency is required.
 
 The structure follows the [Agent Plugins v1 specification](https://agent-plugins.org/specification), current [OpenAI plugin guide](https://developers.openai.com/plugins/build/plugins), [Agent Skills specification](https://agentskills.io/specification), [Claude Code skill guide](https://code.claude.com/docs/en/skills), and [Claude Code plugin reference](https://code.claude.com/docs/en/plugins-reference).
 
 ## Indexing
 
 The first digit identifies the plugin and the second identifies the skill within it: `1x` review, `2x` audit, `3x` optimization, `4x` testing, `5x` product discovery, `6x` repository maintenance, and `7x` architecture artifact creation. See the canonical allocation and overflow rules in [AGENTS.md](AGENTS.md#index-system).
+
+## Maintaining skills
+
+Use [SKILL_TEMPLATE.md](SKILL_TEMPLATE.md) for authoring and [AGENTS.md](AGENTS.md) for repository rules and required validation. Review each instruction against the skill's goal: remove unnecessary work, fill missing evidence or safety obligations, and clarify conditions, ordering, and failure handling. Preserve domain checks rather than replacing an entire phase with one checkbox.
+
+Run `pwsh -File scripts/validate-repository.ps1` for repository structure, common skill contracts, catalogs, and documentation coverage, together with the additional validators required by AGENTS.md. Static validation establishes format and consistency; it does not certify task performance. Ordinary edits do not change plugin versions or create a release.
 
 ## License
 

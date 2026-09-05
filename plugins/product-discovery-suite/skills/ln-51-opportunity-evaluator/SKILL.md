@@ -1,14 +1,14 @@
 ---
 name: ln-51-opportunity-evaluator
-description: "Evaluates new product directions using current demand, acquisition, competition, economics, and validation evidence. Use before commitment; not for backlog or implementation planning."
+description: "Evaluates new product opportunities using demand, channels, competition, and economics. Not for committed-backlog or implementation planning."
 ---
 
 # Opportunity Evaluator
 
 **Goal:** Evaluate product opportunities before implementation commitment. Start from observable demand and a reachable acquisition path, eliminate weak candidates early, and recommend one low-cost validation step without manufacturing market precision.
 
-**Execution contract:** Treat the ordered checkbox workflow below as this skill's Definition of Done. Track every checkbox as `PENDING`, then resolve it to `PROVEN` with concrete evidence, `CLEARED` with evidence that its conditional trigger is absent, or `UNPROVEN`; reading, mentioning, delegating, skipping, or tool failure is not proof.
-Before returning, resolve every `PENDING`, count only `PROVEN` and `CLEARED` items as complete, apply this skill's verdict, decision, and approval rules to every `UNPROVEN`, and prepend **Checklist: X/Y complete**<br>**Incomplete: None | section/item — reason; outcome impact; exact next action**; list every `UNPROVEN` item.
+**Execution contract:** The ordered checkboxes are the Definition of Done. Track every item internally as `PENDING`, `PROVEN` with concrete evidence, `CLEARED` with evidence that its condition is absent, or `UNPROVEN` with a gap; reading, delegation, or tool failure is not proof. Reconcile items after each section. Before returning, resolve all `PENDING` and count only `PROVEN` and `CLEARED`; apply the skill's verdict and approval rules to every gap.
+Preserve user intent, scope, and existing authorization. Continue authorized work; ask only for consequential unresolved choices or required external approval. Scale depth to material risk without silently skipping checks. Preserve dependency and safety ordering; otherwise choose the verification method appropriate to each obligation.
 
 ## Tool Routing
 
@@ -51,13 +51,13 @@ Treat the creator thesis, intended experience, taste, and conviction as owner pr
 - [ ] Inspect direct competitors, substitutes, do-nothing behavior, pricing, positioning, distribution, review complaints, and evidence of continued investment or abandonment.
 - [ ] Examine economic signals without inventing unit economics: price anchors, budget owner, purchase frequency, switching cost, delivery cost, platform fees, and support burden.
 - [ ] Identify implementation, data, dependency, regulation, trust, distribution, and operational blockers that affect the cost of a validation experiment.
-- [ ] Capture source, date, evidence class, scope, confidence, contradiction, and the candidate decision each signal can change.
+- [ ] Capture source/date, evidence class, scope, confidence, contradictions, and decision impact. Trace reused statistics and syndicated reports to their origin; correlated copies are one signal, not independent corroboration.
 - [ ] Stop researching a candidate once the evidence is sufficient to eliminate it or additional sources cannot change its status.
 
 ### 3. Apply Evidence-First Elimination
 
-- [ ] Eliminate a candidate when no specific user problem, observable demand signal, reachable channel, credible value exchange, or feasible validation path can be established.
-- [ ] Treat competition as evidence of demand and constraints, not an automatic rejection; require a concrete wedge against substitutes and the do-nothing option.
+- [ ] Eliminate a candidate when evidence contradicts a necessary viability condition or shows no feasible validation path within the stated constraints. Missing public data alone defers the candidate to `UNKNOWN` under the rule below.
+- [ ] Treat competitor presence as a lead on demand and constraints; verify usage or purchase signals rather than assuming a listing proves demand. Require a concrete wedge against substitutes and doing nothing.
 - [ ] Do not use universal thresholds for search volume, competitor count, ARPU, market size, or MVP duration.
 - [ ] Preserve candidates with weak public data as `UNKNOWN` rather than labeling them invalid when a cheap primary experiment can resolve the uncertainty.
 - [ ] Record the decisive evidence and falsification condition for every eliminated candidate so rejection is reproducible.
@@ -74,37 +74,25 @@ Treat the creator thesis, intended experience, taste, and conviction as owner pr
 
 ### 5. Validate and Report
 
-- [ ] Recheck every consequential external claim against a current primary source or label it with the weaker evidence class and limitation.
+- [ ] Reconcile consequential external claims with the collected primary-source evidence; refresh only stale, contradicted, or decision-critical unsupported claims, and label weaker evidence explicitly.
 - [ ] Separate facts, estimates, inferences, owner preferences, and unresolved unknowns in the final result.
 - [ ] Use `RECOMMEND <candidate>` only when the candidate has a credible demand signal, reachable channel, differentiating path, plausible value exchange, and executable validation experiment.
 - [ ] Use `INCONCLUSIVE` when evidence cannot distinguish the leading candidates or a cheap experiment is required before choosing.
 - [ ] Use `BLOCKED` when the decision lacks product context, candidate scope, lawful research access, or a safe validation boundary.
-- [ ] Return one recommendation or an explicit inconclusive result, eliminated and deferred candidates with reasons, the next experiment, source limitations, and residual risks without creating files or implementation work.
+- [ ] Reconcile recommended, eliminated, and deferred candidates against their evidence; report the proposed next experiment without creating files or executing it.
+
+## Self-Check
+
+- [ ] **Reconcile before returning.** Check item-level evidence, requirement coverage, contradictions, scope, verdict, and applicable cleanup. Correct the report or authorized artifacts. Reuse valid evidence; do not automatically rescan the repository or rerun successful commands. Repeat checks only for relevant changes, failures, or unresolved evidence. Disclose remaining gaps.
 
 ## Output Contract
 
-```markdown
-# Opportunity Evaluation
+Report in the user's language, in this order; retain all five fields and state each fact once. Small results may use one line per field; omit empty tables and do not copy linked artifacts:
 
-**Verdict:** RECOMMEND <candidate> | INCONCLUSIVE | BLOCKED
+1. **Result:** Skill-specific verdict and supported outcome.
+2. **Scope:** Reviewed/changed scope, exclusions, baseline, and material assumptions.
+3. **Evidence:** Skill-specific fields below; distinguish facts, inferences, and unverified claims. Link artifacts; use tables when useful.
+4. **Verification:** Checks/results, unavailable evidence, and applicable cleanup/external state.
+5. **Completion:** `Checklist: X/Y complete`; `Incomplete: None` or each `UNPROVEN` item's reason, outcome impact, and exact next action; residual risks and required decisions.
 
-## Decision context
-- Product, audience, constraints, candidates, and assumptions
-- Creator thesis and intended experience, explicitly separated from market evidence
-
-## Evidence comparison
-| Candidate | Demand | Reachable channel | Competition and wedge | Economics | Validation cost | Confidence |
-|---|---|---|---|---|---|---|
-| ... | evidence class + source | ... | ... | ... | ... | ... |
-
-## Eliminated and deferred candidates
-| Candidate | Status | Decisive evidence or unresolved unknown | Resolution or falsification condition |
-|---|---|---|---|
-| ... | ELIMINATED / UNKNOWN | ... | ... |
-
-## Recommendation and next validation experiment
-Primary choice or reason for inconclusive result, experiment contract, stop rule, and decision-changing evidence.
-
-## Source limitations and residual risks
-Stale, unavailable, contradictory, estimated, or inferred evidence and unresolved owner choices.
-```
+**Skill-specific evidence:** Product, audience, candidates, constraints, and creator thesis separated from market evidence. Compare demand, channel, substitutes/wedge, economics, validation cost, source/date/class, and confidence. For eliminated or deferred candidates give decisive evidence or unknown and falsification/resolution condition. State the recommendation or inconclusive rationale and the proposed experiment contract, budget, stop rule, and decision-changing evidence; do not execute outreach or experiments.

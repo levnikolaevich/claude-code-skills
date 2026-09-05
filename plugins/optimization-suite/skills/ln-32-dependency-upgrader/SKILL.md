@@ -1,14 +1,14 @@
 ---
 name: ln-32-dependency-upgrader
-description: "Upgrades dependencies across package managers with breaking-change research and rollback-safe verification. Use for dependency maintenance; not general code modernization."
+description: "Upgrades dependencies with version-specific compatibility research and reversible verification. Not for general modernization."
 ---
 
 # Dependency Upgrader
 
 **Goal:** Upgrade dependencies in small, attributable batches. Preserve manifests, lockfiles, runtime support, and product behavior; do not treat a newer version as valuable without compatibility, security, or maintenance evidence.
 
-**Execution contract:** Treat the ordered checkbox workflow below as this skill's Definition of Done. Track every checkbox as `PENDING`, then resolve it to `PROVEN` with concrete evidence, `CLEARED` with evidence that its conditional trigger is absent, or `UNPROVEN`; reading, mentioning, delegating, skipping, or tool failure is not proof.
-Before returning, resolve every `PENDING`, count only `PROVEN` and `CLEARED` items as complete, apply this skill's verdict, decision, and approval rules to every `UNPROVEN`, and prepend **Checklist: X/Y complete**<br>**Incomplete: None | section/item — reason; outcome impact; exact next action**; list every `UNPROVEN` item.
+**Execution contract:** The ordered checkboxes are the Definition of Done. Track every item internally as `PENDING`, `PROVEN` with concrete evidence, `CLEARED` with evidence that its condition is absent, or `UNPROVEN` with a gap; reading, delegation, or tool failure is not proof. Reconcile items after each section. Before returning, resolve all `PENDING` and count only `PROVEN` and `CLEARED`; apply the skill's verdict and approval rules to every gap.
+Preserve user intent, scope, and existing authorization. Continue authorized work; ask only for consequential unresolved choices or required external approval. Scale depth to material risk without silently skipping checks. Preserve dependency and safety ordering; otherwise choose the verification method appropriate to each obligation.
 
 ## Tool Routing
 
@@ -26,7 +26,7 @@ Never publish packages, rotate credentials, deploy, or weaken audit and verifica
 
 ## Evidence Rules
 
-- Manifests and lockfiles define what is installed; registry "latest" does not override project runtime or compatibility constraints.
+- Manifests declare constraints and lockfiles record resolved versions; install metadata proves the active environment when it differs. Registry "latest" does not override runtime or compatibility constraints.
 - A vulnerability finding requires the affected version, advisory, reachability or exposure context, and a credible remediation.
 - A breaking-change claim requires release or migration evidence matching the exact version transition.
 - Keep generated lockfile changes only when produced by the selected native package manager and expected repository version.
@@ -36,7 +36,7 @@ Never publish packages, rotate credentials, deploy, or weaken audit and verifica
 
 ### 1. Discover Scope and Protect the Workspace
 
-- [ ] Detect all package managers, workspaces, manifests, lockfiles, central version files, registries, runtime pins, tool manifests, and generated dependency files.
+- [ ] Detect package managers, manifests, locks, registries, runtime/tool pins, generated state, and dependency-linked workspaces within the requested update scope; expand only for demonstrated compatibility dependencies.
 - [ ] Classify each deliverable as an application, library, plugin, CLI, container, or build tool so version ranges, lockfiles, peer constraints, and supported-runtime promises are interpreted correctly.
 - [ ] Read repository instructions and determine supported package-manager versions, update commands, lockfile policy, and CI expectations.
 - [ ] Inspect Git state and isolate the work so existing user changes cannot be overwritten or mistaken for upgrade output.
@@ -54,7 +54,7 @@ Never publish packages, rotate credentials, deploy, or weaken audit and verifica
 - [ ] Check official advisories for affected ranges, exploit conditions, fixed versions, workarounds, and whether the dependency is reachable in this project.
 - [ ] Search actual imports, symbols, plugins, scripts, configuration, generated code, and runtime loading for every consequential dependency.
 - [ ] Identify unused, duplicate, abandoned, replaced, or platform-redundant dependencies as separate removal candidates; require runtime and dynamic-loading evidence, and explicit user approval when removal is outside the requested upgrade scope.
-- [ ] Order batches by prerequisite: package manager or runtime, build tooling, foundational libraries, framework, integrations, then leaf packages.
+- [ ] Order batches by the actual compatibility graph; package manager/runtime, tooling, foundational libraries, framework, integrations, and leaves are a discovery guide, not a fixed sequence. Combine mutually dependent transitions.
 - [ ] Keep routine batches small enough to attribute failure; batch framework families, analyzers, generated clients, or tightly constrained peers together only when their compatibility matrix requires it.
 - [ ] Stop for user direction when mutually exclusive version strategies, runtime support, licensing, registry policy, or migration scope changes product intent.
 
@@ -78,44 +78,31 @@ Never publish packages, rotate credentials, deploy, or weaken audit and verifica
 - [ ] Compare bundle, startup, artifact, or performance metrics when the updated dependency can materially change them.
 - [ ] Re-run the security audit and distinguish fixed, remaining, newly introduced, unreachable, and no-fix advisories.
 - [ ] Keep the batch only when verification passes and expected behavior remains supported.
-- [ ] Revert the entire failed batch without touching user work, record the blocking package or migration, and continue only with independent safe batches.
+- [ ] For a failed batch, distinguish baseline or environment failures from upgrade defects; repair bounded migration errors and recheck, or revert the entire batch without touching user work. Record the blocker and continue only with independent safe batches.
 - [ ] Establish the retained dependency state as the baseline before applying the next batch.
 - [ ] Classify each planned batch as `KEPT` when applied and verified, `REVERTED` when applied then fully rolled back after failed verification, or `SKIPPED` when deliberately not applied because a required decision, compatibility strategy, or independent prerequisite is unresolved.
 
 ### 5. Finalize and Report
 
-- [ ] Run the full required repository verification on the combined retained state.
+- [ ] Confirm all required repository verification covers the combined retained state. Reuse still-valid results; run missing checks and rerun those invalidated by later batches or unresolved failures.
 - [ ] Confirm manifests, lockfiles, runtime pins, CI, containers, documentation, and generated metadata agree on the final versions.
 - [ ] Remove only run-owned ledger entries: verify absolute paths remain inside approved temporary roots, stop exact recorded process IDs, preserve dirty or pre-existing worktrees, and retain evidence artifacts intentionally reported.
 - [ ] List intentionally skipped packages with exact constraint, risk, advisory, or migration reason.
-- [ ] Report direct and important transitive changes, removals, code migrations, advisories, verification, lockfile churn, and residual maintenance risk.
-- [ ] Use `UPDATED` when every requested retained batch passes required verification; use `PARTIAL` when at least one independent batch is retained and another is reverted, skipped, or optional coverage remains; use `NO_CHANGE` when no batch is retained and the baseline is restored; use `BLOCKED` when no safe batch can proceed or required verification is unavailable.
+- [ ] Reconcile the batch ledger with final versions, migration edits, advisories, lockfile churn, and residual risks.
+- [ ] Use `UPDATED` only when the requested update scope is satisfied and verified; `PARTIAL` when a safe subset is retained but requested work or optional coverage remains; `NO_CHANGE` when no batch is retained and baseline is restored; `BLOCKED` when safe progress or required verification is unavailable.
+
+## Self-Check
+
+- [ ] **Reconcile before returning.** Check item-level evidence, requirement coverage, contradictions, scope, verdict, and applicable cleanup. Correct the report or authorized artifacts. Reuse valid evidence; do not automatically rescan the repository or rerun successful commands. Repeat checks only for relevant changes, failures, or unresolved evidence. Disclose remaining gaps.
 
 ## Output Contract
 
-```markdown
-# Dependency Upgrade
+Report in the user's language, in this order; retain all five fields and state each fact once. Small results may use one line per field; omit empty tables and do not copy linked artifacts:
 
-**Verdict:** UPDATED | PARTIAL | NO_CHANGE | BLOCKED
+1. **Result:** Skill-specific verdict and supported outcome.
+2. **Scope:** Reviewed/changed scope, exclusions, baseline, and material assumptions.
+3. **Evidence:** Skill-specific fields below; distinguish facts, inferences, and unverified claims. Link artifacts; use tables when useful.
+4. **Verification:** Checks/results, unavailable evidence, and applicable cleanup/external state.
+5. **Completion:** `Checklist: X/Y complete`; `Incomplete: None` or each `UNPROVEN` item's reason, outcome impact, and exact next action; residual risks and required decisions.
 
-## Scope and baseline
-- Package managers, workspaces, and runtime constraints
-- Requested update policy
-- Pre-existing verification and advisories
-
-## Batches
-| Batch | Packages | Version changes | Decision | Verification |
-|---|---|---|---|---|
-| ... | ... | ... | KEPT / REVERTED / SKIPPED | ... |
-
-## Security and compatibility
-- Fixed, remaining, and introduced advisories
-- Breaking changes and code migrations
-- Runtime, peer, and registry constraints
-
-## Final verification and residual risks
-Commands, results, skipped packages, limitations, and follow-up decisions.
-
-## Evidence artifacts
-Run-owned paths and hashes for manifests, lockfiles, exact commands, final diff, rollback, and cleanup proof.
-```
+**Skill-specific evidence:** Managers, workspaces, runtimes, requested update policy, and pre-existing failures/advisories. Per batch: packages, versions, migrations, `KEPT / REVERTED / SKIPPED`, and verification. Include fixed/remaining/new advisories, peer/runtime/registry constraints, lockfile churn, skipped-package reasons, combined-state checks, run-owned manifest/lockfile/diff and rollback/cleanup evidence.

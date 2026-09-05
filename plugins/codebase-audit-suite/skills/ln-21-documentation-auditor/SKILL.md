@@ -1,14 +1,14 @@
 ---
 name: ln-21-documentation-auditor
-description: "Audits documentation and code comments for structure, coverage, factual accuracy, and maintainability. Use for documentation trust reviews; not code, test, or architecture audits."
+description: "Audits documentation and comments for trustworthy claims, coverage, and discoverability. Not for code, test, or architecture audits."
 ---
 
 # Documentation Auditor
 
 **Goal:** Audit documentation as a read-only evidence system: can a new contributor, operator, user, or coding agent find the right source, trust its claims, and act without hidden context? Review both standalone documents and code comments where they carry public or operational knowledge.
 
-**Execution contract:** Treat the ordered checkbox workflow below as this skill's Definition of Done. Track every checkbox as `PENDING`, then resolve it to `PROVEN` with concrete evidence, `CLEARED` with evidence that its conditional trigger is absent, or `UNPROVEN`; reading, mentioning, delegating, skipping, or tool failure is not proof.
-Before returning, resolve every `PENDING`, count only `PROVEN` and `CLEARED` items as complete, apply this skill's verdict, decision, and approval rules to every `UNPROVEN`, and prepend **Checklist: X/Y complete**<br>**Incomplete: None | section/item — reason; outcome impact; exact next action**; list every `UNPROVEN` item.
+**Execution contract:** The ordered checkboxes are the Definition of Done. Track every item internally as `PENDING`, `PROVEN` with concrete evidence, `CLEARED` with evidence that its condition is absent, or `UNPROVEN` with a gap; reading, delegation, or tool failure is not proof. Reconcile items after each section. Before returning, resolve all `PENDING` and count only `PROVEN` and `CLEARED`; apply the skill's verdict and approval rules to every gap.
+Preserve user intent, scope, and existing authorization. Continue authorized work; ask only for consequential unresolved choices or required external approval. Scale depth to material risk without silently skipping checks. Preserve dependency and safety ordering; otherwise choose the verification method appropriate to each obligation.
 
 ## Tool Routing
 
@@ -33,7 +33,7 @@ Do not run commands that publish, migrate, deploy, write production state, or re
 | Historical rationale | Current decision record or history that still matches implementation |
 | Recommendation | A demonstrated reader failure, contradiction, maintenance cost, or operational risk |
 
-Absence of documentation is a finding only when a real audience needs the missing knowledge. A stale claim is more serious than a missing optional explanation because it directs readers toward incorrect action.
+Absence of documentation is a finding only when a real audience needs the missing knowledge. Judge stale and missing guidance by the reader failure or harm they cause.
 
 ## Checklist
 
@@ -51,7 +51,7 @@ Absence of documentation is a finding only when a real audience needs the missin
 
 - [ ] Verify that the root entry document explains purpose, supported use, prerequisites, installation path, and navigation appropriate to its audience.
 - [ ] Check hierarchy, headings, table of contents, local navigation, cross-links, anchors, and predictable placement of related material.
-- [ ] Find broken, redirected, case-sensitive, or repository-relative links and verify that linked files and headings exist.
+- [ ] Verify local paths and anchors, including case sensitivity, and inspect external redirects for a wrong or unavailable destination; a working intentional redirect is not a defect.
 - [ ] Identify orphan documents, duplicate entrypoints, circular navigation, deep chains, and important content reachable only by repository search.
 - [ ] Check that concepts have one canonical owner and that secondary documents link rather than fork rules, thresholds, or procedures.
 - [ ] Verify that generated documentation names its generator and does not invite hand editing that will be overwritten.
@@ -69,7 +69,7 @@ Absence of documentation is a finding only when a real audience needs the missin
 - [ ] Find obsolete future-tense plans, completed TODOs, removed features, legacy compatibility guidance, old directory layouts, and stale screenshots or examples.
 - [ ] Check terminology, entity names, identifiers, capitalization, and lifecycle states for consistency with code and across documents.
 - [ ] Verify that warnings, prerequisites, destructive actions, rollback steps, and failure outcomes appear at the point where readers need them.
-- [ ] In always-loaded agent instruction files, flag deterministic formatting rules better enforced by tooling and path-specific rules placed at repository root instead of scoped near the affected paths.
+- [ ] In always-loaded agent instructions, identify redundant formatting prose already enforced by tooling and path-specific detail that can move to supported scoped files. Preserve discovery, non-obvious requirements, and host compatibility.
 
 ### 4. Verify Facts and Examples
 
@@ -80,7 +80,7 @@ Absence of documentation is a finding only when a real audience needs the missin
 - [ ] Use official sources for external APIs, deprecations, security standards, platform limits, and compatibility statements.
 - [ ] Execute examples only in a safe local or disposable context; otherwise inspect parsing, tests, and expected output and mark them statically verified.
 - [ ] Check examples for missing imports, placeholders presented as real values, invalid paths, unsafe secrets, obsolete syntax, and output that no longer matches behavior.
-- [ ] Filter examples, templates, future plans, conditional instructions, and external-system references before declaring a claim false; verify a conditional claim only when its prerequisite is active in this project.
+- [ ] Interpret examples, templates, future plans, and external references in their declared context. Verify conditional guidance for supported prerequisites even when currently disabled; do not judge a hypothetical example as deployed behavior.
 - [ ] Verify numeric counts with a reproducible query and documented exclusions; avoid preserving aggregate counts that will drift without automation.
 - [ ] Recommend moving change-prone versions, paths, defaults, inventories, generated output, and status snapshots to authoritative code, configuration, or generated sources where practical; otherwise identify the source, scope, and owner or generation/update trigger needed to prevent silent staleness.
 - [ ] Apply the research-to-action gate: external guidance becomes a finding only when it proves a concrete in-repository defect or risk.
@@ -89,50 +89,27 @@ Absence of documentation is a finding only when a real audience needs the missin
 
 - [ ] Check comments and docstrings for useful rationale, invariants, contracts, side effects, failure behavior, and non-obvious constraints.
 - [ ] Match docstrings for public or non-obvious interfaces against the current signature, parameters, return value, raised errors, side effects, nullability, and lifecycle obligations.
-- [ ] Flag comments that narrate syntax, preserve history, contain dead code, promise behavior the code does not provide, or duplicate information better expressed by names and types.
+- [ ] Flag syntax narration, obsolete history, dead code, false promises, and information better expressed by names or types; preserve historical rationale that still explains a constraint or prevents a known regression.
 - [ ] Check public interfaces for documentation required by the language or ecosystem and for examples that match the actual contract.
 - [ ] Filter intentional audience simplification, framework convention, generated prose, and accepted legacy constraints before reporting.
 - [ ] Classify every in-scope document or comment surface as `KEEP`, `ADD`, `UPDATE`, `DELETE`, or `MERGE`; recommend deletion or consolidation only when canonical coverage preserves every required audience task and contract.
-- [ ] Apply a materiality and acceptable-alternative gate to every candidate. Require a demonstrated reader error, blocked task, unsafe action, contradiction, or recurring maintenance cost at the repository's evidenced scale. Reject nitpicks, prose taste, theoretical purity, generic best practice, and reasonable audience or maintenance tradeoffs; when several structures work, require the reader outcome rather than one preferred format.
-- [ ] Put a directly relevant Markdown practice link in every finding's required resolution: prefer current official documentation or a specification, and use reputable primary engineering material only when official sources do not resolve the tradeoff. Open and verify the source; it must support the proposed mechanism, not merely the defect category. Reject search-result links, generic best-practice articles, and decorative citations.
+- [ ] Apply the materiality gate: require concrete reader error, blocked task, unsafe action, contradiction, or recurring maintenance cost at evidenced scale. Reject taste, theoretical purity, generic practice, hypothetical scale, and reasonable alternatives; require the outcome or constraint, not a preferred implementation.
+- [ ] Ground external corrections in version-matched official contracts, using primary engineering sources for unresolved tradeoffs. Cite the supported mechanism; local evidence suffices for local defects.
 - [ ] Classify findings as `P0`-`P3` based on the harm caused by wrong action, inability to operate, maintenance drift, or minor friction.
-- [ ] Support every finding with document location, verifying evidence, affected audience, impact, why the current compromise is not acceptable, and the smallest sufficient correction or canonical owner while allowing equivalent solutions.
 - [ ] Use `BLOCKED` when a safety-critical claim, required audience journey, or authoritative source cannot be verified without a credible fallback; use `FAIL` when evidence proves unsafe guidance, an inoperable required journey, or an unresolved `P0/P1`; use `CONCERNS` only for material non-blocking trust gaps, and `PASS` only when required claims and journeys are verified with no material finding.
-- [ ] Return the verdict with audited scope, verified and unverified claims, prioritized findings, blind spots, and residual trust risk.
+
+## Self-Check
+
+- [ ] **Reconcile before returning.** Check item-level evidence, requirement coverage, contradictions, scope, verdict, and applicable cleanup. Correct the report or authorized artifacts. Reuse valid evidence; do not automatically rescan the repository or rerun successful commands. Repeat checks only for relevant changes, failures, or unresolved evidence. Disclose remaining gaps.
 
 ## Output Contract
 
-```markdown
-# Documentation Audit
+Report in the user's language, in this order; retain all five fields and state each fact once. Small results may use one line per field; omit empty tables and do not copy linked artifacts:
 
-**Verdict:** PASS | CONCERNS | FAIL | BLOCKED
+1. **Result:** Skill-specific verdict and supported outcome.
+2. **Scope:** Reviewed/changed scope, exclusions, baseline, and material assumptions.
+3. **Evidence:** Skill-specific fields below; distinguish facts, inferences, and unverified claims. Link artifacts; use tables when useful.
+4. **Verification:** Checks/results, unavailable evidence, and applicable cleanup/external state.
+5. **Completion:** `Checklist: X/Y complete`; `Incomplete: None` or each `UNPROVEN` item's reason, outcome impact, and exact next action; residual risks and required decisions.
 
-## Scope and audiences
-- Documents and comment surfaces audited
-- Audiences and tasks considered
-- Exclusions and generated content
-
-## Trust summary
-| Area | Status | Evidence |
-|---|---|---|
-| Structure | PASS / CONCERNS / FAIL | ... |
-| Coverage | PASS / CONCERNS / FAIL | ... |
-| Factual accuracy | PASS / CONCERNS / FAIL | ... |
-| Durability and SSOT | PASS / CONCERNS / FAIL | ... |
-| Comments and examples | PASS / CONCERNS / FAIL | ... |
-
-## Document actions
-| Surface | Action | Evidence |
-|---|---|---|
-| ... | KEEP / ADD / UPDATE / DELETE / MERGE | ... |
-
-## Findings
-| Priority | Problem | Evidence and justification | Required resolution |
-|---|---|---|---|
-| P0 / P1 / P2 / P3 | Concrete documentation or comment defect | Location, repository, command, or official evidence; affected audience and material impact; why the current tradeoff is not acceptable | Smallest sufficient correction, canonical owner, and a verified `[practice reference](URL)` to official or primary engineering guidance; allow equivalent structures that preserve the required reader outcome |
-
-Use `None` when no candidate survives the evidence, materiality, audience-need, and acceptable-alternative gates.
-
-## Unverified claims and residual risks
-Claims that could not be checked, why, and the evidence still required.
-```
+**Skill-specific evidence:** Documentation audiences and journeys; structure, coverage, accuracy, durability/SSOT, and comment trust. Record `KEEP / ADD / UPDATE / DELETE / MERGE` per in-scope surface. Findings need priority, document location, verifying evidence, affected audience, material impact, unacceptable tradeoff, and minimal correction or canonical owner; allow equivalent structures. Distinguish unverified claims from proven defects.

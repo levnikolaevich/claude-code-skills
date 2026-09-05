@@ -1,14 +1,14 @@
 ---
 name: ln-34-benchmark-comparator
-description: "Compares tools or implementations through reproducible A/B workloads, correctness oracles, and controlled measurements. Use to choose alternatives; not to optimize a known bottleneck."
+description: "Compares tools or implementations through controlled workloads and independent correctness evidence. Not for speculative rankings."
 ---
 
 # Benchmark Comparator
 
 **Goal:** Compare alternatives under controlled, reproducible conditions. Correctness comes before speed, and measured data must remain separate from estimates, setup cost, and interpretation.
 
-**Execution contract:** Treat the ordered checkbox workflow below as this skill's Definition of Done. Track every checkbox as `PENDING`, then resolve it to `PROVEN` with concrete evidence, `CLEARED` with evidence that its conditional trigger is absent, or `UNPROVEN`; reading, mentioning, delegating, skipping, or tool failure is not proof.
-Before returning, resolve every `PENDING`, count only `PROVEN` and `CLEARED` items as complete, apply this skill's verdict, decision, and approval rules to every `UNPROVEN`, and prepend **Checklist: X/Y complete**<br>**Incomplete: None | section/item — reason; outcome impact; exact next action**; list every `UNPROVEN` item.
+**Execution contract:** The ordered checkboxes are the Definition of Done. Track every item internally as `PENDING`, `PROVEN` with concrete evidence, `CLEARED` with evidence that its condition is absent, or `UNPROVEN` with a gap; reading, delegation, or tool failure is not proof. Reconcile items after each section. Before returning, resolve all `PENDING` and count only `PROVEN` and `CLEARED`; apply the skill's verdict and approval rules to every gap.
+Preserve user intent, scope, and existing authorization. Continue authorized work; ask only for consequential unresolved choices or required external approval. Scale depth to material risk without silently skipping checks. Preserve dependency and safety ordering; otherwise choose the verification method appropriate to each obligation.
 
 ## Tool Routing
 
@@ -26,7 +26,6 @@ Do not tune the scenario after observing a preferred candidate, mix measurements
 
 ## Evidence Rules
 
-- Specify scenarios, oracle, metrics, exclusions, and decision rule before running candidates.
 - Hold all non-tested variables constant or record and analyze the confounder.
 - Correctness failure cannot be compensated by better speed, token use, or cost unless the decision explicitly allows degraded correctness.
 - Use repeated runs and report raw values, center, spread, failures, and outliers; never headline the best run.
@@ -41,8 +40,8 @@ Do not tune the scenario after observing a preferred candidate, mix measurements
 - [ ] Include ordinary cases where a simpler or built-in candidate could reasonably win as well as cases exercising each candidate's claimed advantage; do not construct a feature demo for one side.
 - [ ] Define scenario inputs, expected outcomes, correctness criteria, failure conditions, and an oracle independent of candidate self-report.
 - [ ] Define primary and secondary metrics, units, measurement point, acceptance threshold, allowed tradeoffs, and tie or inconclusive rules.
-- [ ] Identify variables that must remain fixed: repository revision, model, prompts, permissions, runtime, hardware, data, cache policy, and network conditions.
-- [ ] Predeclare a pilot-derived repetition count tied to the minimum meaningful effect and observed noise, or a bounded sequential stopping rule with fixed error tolerance and maximum runs.
+- [ ] Define the treatment variable, then hold other relevant variables fixed: revision, model, prompts, permissions, runtime, hardware, data, caches, and network. A variable being compared cannot also be declared fixed.
+- [ ] Predeclare repetitions using existing variability evidence or a bounded pilot, or a bounded sequential rule with fixed error tolerance and maximum runs. Return `INCONCLUSIVE` if the budget cannot resolve the meaningful effect.
 - [ ] Freeze and hash the scenario text, fixtures, expectations, runner, parser, and decision rule before the first candidate result is inspected.
 - [ ] Read repository instructions and inspect Git state before creating worktrees, temporary data, or runners.
 - [ ] Start a run-owned resource ledger with every created absolute path, worktree, process ID, cache, account, dataset, report, and temporary artifact; never register pre-existing resources or credentials as cleanup targets.
@@ -71,9 +70,9 @@ Do not tune the scenario after observing a preferred candidate, mix measurements
 - [ ] Grade task completeness separately from correctness and efficiency: verify every required outcome and prohibited side effect, rather than treating a smaller diff, lower token count, or successful subset as completion.
 - [ ] Blind manual or qualitative graders to candidate identity and randomize presentation order; record disagreements instead of resolving them toward a preferred candidate.
 - [ ] Record timeout, crash, malformed output, partial completion, tool error, and environmental failure as distinct failure classes.
-- [ ] Repeat valid runs according to the predefined count and preserve raw per-run results without deleting inconvenient data.
+- [ ] Follow the predeclared repetition or sequential stopping rule; count and preserve all attempts, including failed and invalid runs. Do not keep retrying until the desired number of successes appears.
 - [ ] Pause when environmental drift, rate limits, external outages, background load, or runner defects make additional runs incomparable.
-- [ ] Re-run both candidates after fixing a harness defect; never repair evidence for only one side.
+- [ ] After a harness fix, invalidate affected comparisons and rerun both candidates for those scenarios under the corrected harness; retain unaffected evidence and label prior invalid results.
 - [ ] Treat setup, activation, parser, and environmental failures separately from task incorrectness, then state whether setup reliability is part of the actual product decision.
 
 ### 4. Analyze Validity and Results
@@ -90,39 +89,26 @@ Do not tune the scenario after observing a preferred candidate, mix measurements
 ### 5. Decide, Preserve, and Clean Up
 
 - [ ] Use `WIN` only when the candidate satisfies correctness and the predefined decision rule with sufficient valid evidence.
-- [ ] Use `TIE` when differences are operationally negligible or tradeoffs balance under the stated priorities.
+- [ ] Use `TIE` only when evidence supports the predefined negligible-difference margin or balanced tradeoff; failure to detect a difference with insufficient evidence is `INCONCLUSIVE`.
 - [ ] Use `INCONCLUSIVE` when sample size, activation, oracle, environmental control, or conflicting scenarios prevent a reliable choice.
 - [ ] Preserve reproducible commands, configuration, scenario definitions, expectations, raw results, normalized results, and analysis needed for independent verification.
 - [ ] Remove only run-owned ledger entries: verify absolute paths remain inside approved temporary roots, stop exact recorded process IDs, preserve dirty or pre-existing worktrees, never delete credentials, and verify source and external baseline state.
 - [ ] Report invalid runs, exclusions, confounders, sensitivity to assumptions, and how the conclusion could be falsified.
 - [ ] Report residual decision risks that remain after the comparison, including unsupported workloads, unmeasured costs, unstable environments, and assumptions that could reverse the verdict.
-- [ ] Return scenario-level evidence, aggregate tradeoffs, verdict, decision guidance, limitations, and cleanup confirmation.
+- [ ] Verify that decision guidance follows scenario-level evidence and the frozen rule, with cleanup and limitations accounted for.
+
+## Self-Check
+
+- [ ] **Reconcile before returning.** Check item-level evidence, requirement coverage, contradictions, scope, verdict, and applicable cleanup. Correct the report or authorized artifacts. Reuse valid evidence; do not automatically rescan the repository or rerun successful commands. Repeat checks only for relevant changes, failures, or unresolved evidence. Disclose remaining gaps.
 
 ## Output Contract
 
-```markdown
-# Benchmark Comparison
+Report in the user's language, in this order; retain all five fields and state each fact once. Small results may use one line per field; omit empty tables and do not copy linked artifacts:
 
-**Verdict:** WIN <candidate> | TIE | INCONCLUSIVE | BLOCKED
+1. **Result:** Skill-specific verdict and supported outcome.
+2. **Scope:** Reviewed/changed scope, exclusions, baseline, and material assumptions.
+3. **Evidence:** Skill-specific fields below; distinguish facts, inferences, and unverified claims. Link artifacts; use tables when useful.
+4. **Verification:** Checks/results, unavailable evidence, and applicable cleanup/external state.
+5. **Completion:** `Checklist: X/Y complete`; `Incomplete: None` or each `UNPROVEN` item's reason, outcome impact, and exact next action; residual risks and required decisions.
 
-## Experiment contract
-- Decision, candidates, scenarios, and oracle
-- Fixed variables and candidate configurations
-- Metrics, repetitions, exclusions, and decision rule
-
-## Validity
-- Activation proof
-- Harness validation
-- Invalid runs, exclusions, and confounders
-
-## Results
-| Scenario | Candidate | Completeness | Correctness | Failures | Primary metric | Spread | Other costs |
-|---|---|---|---|---:|---:|---:|---|
-| ... | ... | ... | ... | ... | ... | ... | ... |
-
-## Decision, limitations, and residual risks
-Scenario tradeoffs, setup and maintenance cost, verdict rationale, sensitivity, falsification conditions, unresolved decision risks, and cleanup confirmation.
-
-## Evidence artifacts
-Run-owned paths and hashes for frozen scenarios, raw runs, exact configuration, environment capture, and cleanup proof.
-```
+**Skill-specific evidence:** Frozen decision, candidates, scenarios, independent oracle, fixed variables, configuration, metrics, repetitions, exclusions, and decision rule. Prove activation and harness validity; report invalid runs, confounders, exclusions, and cleanup. Compare scenario-level completeness, correctness, failures, primary metric, spread/sample size, and other costs before aggregating. Preserve setup/maintenance tradeoffs, sensitivity, falsification conditions, raw results, configurations, scenario artifacts, and hashes when available.

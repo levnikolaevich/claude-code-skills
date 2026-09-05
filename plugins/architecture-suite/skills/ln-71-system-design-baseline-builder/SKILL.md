@@ -1,14 +1,14 @@
 ---
 name: ln-71-system-design-baseline-builder
-description: "Creates a project baseline of architecture drivers and constraints. Use before design or planning; not for target design, plan review, implementation, or architecture audit."
+description: "Creates architecture-driving requirements and constraints before design. Not for target design, plan review, or implementation audits."
 ---
 
 # System Design Baseline Builder
 
 **Goal:** Create or update one durable source of truth for the project's architecture-driving requirements and constraints. Change only the approved architecture document; do not design the solution, review a plan, audit implementation, edit product code, or invent missing targets.
 
-**Execution contract:** Treat the ordered checkbox workflow below as this skill's Definition of Done. Track every checkbox as `PENDING`, then resolve it to `PROVEN` with concrete evidence, `CLEARED` with evidence that its conditional trigger is absent, or `UNPROVEN`; reading, mentioning, delegating, skipping, or tool failure is not proof.
-Before returning, resolve every `PENDING`, count only `PROVEN` and `CLEARED` items as complete, apply this skill's verdict, decision, and approval rules to every `UNPROVEN`, and prepend **Checklist: X/Y complete**<br>**Incomplete: None | section/item — reason; outcome impact; exact next action**; list every `UNPROVEN` item.
+**Execution contract:** The ordered checkboxes are the Definition of Done. Track every item internally as `PENDING`, `PROVEN` with concrete evidence, `CLEARED` with evidence that its condition is absent, or `UNPROVEN` with a gap; reading, delegation, or tool failure is not proof. Reconcile items after each section. Before returning, resolve all `PENDING` and count only `PROVEN` and `CLEARED`; apply the skill's verdict and approval rules to every gap.
+Preserve user intent, scope, and existing authorization. Continue authorized work; ask only for consequential unresolved choices or required external approval. Scale depth to material risk without silently skipping checks. Preserve dependency and safety ordering; otherwise choose the verification method appropriate to each obligation.
 
 ## Tool Routing
 
@@ -30,9 +30,8 @@ Use external research only when a time-sensitive fact changes a constraint. Do n
 - Classify applicability separately as `APPLICABLE` or `NOT_APPLICABLE`, with evidence for exclusions.
 - Rank each applicable item as `DRIVER`, `SUPPORTING`, or `INFORMATIONAL`.
 - Classify evidence separately as `CONFIRMED`, `ASSUMED`, or `UNKNOWN`.
-- Record source, owner, confirmation date, and review trigger for each architecture driver.
 - Separate observed current values, required targets, hard limits, and future evolution triggers.
-- Use measurable quality-attribute scenarios; avoid words such as "fast", "scalable", or "secure" without a response measure.
+- Express quality attributes through observable scenarios and response measures; record undecided targets as missing decisions rather than inventing numbers.
 - Treat the baseline as versioned project knowledge, not an immutable promise.
 
 ## Checklist
@@ -47,7 +46,7 @@ Use external research only when a time-sensitive fact changes a constraint. Do n
 
 ### 2. Build the Evidence Ledger
 
-- [ ] Extract confirmed business goals, actors, critical journeys, scope, non-goals, and decision horizon.
+- [ ] Collect business goals, actors, journeys, scope, non-goals, and decision horizon with their sources and confidence for the driver analysis; do not create a second context inventory.
 - [ ] Record sources for current workload, data volume, service behavior, platform limits, and existing commitments.
 - [ ] Separate repository facts from stakeholder choices and estimates.
 - [ ] Detect contradictions between documents, code, configuration, and stated requirements; preserve both claims until resolved.
@@ -68,7 +67,7 @@ Use external research only when a time-sensitive fact changes a constraint. Do n
 ### 4. Write the Baseline
 
 - [ ] Create or update the artifact with: identity and status; business context; scope and non-goals; critical scenarios; workload and data; quality targets; recovery; consistency; security; cost and operations; constraints; assumptions and unknowns; review triggers.
-- [ ] Give every material parameter its theme, applicability, criticality, evidence status, value or range, source, owner, as-of date, and review trigger.
+- [ ] Give material parameters their theme, applicability, criticality, evidence status, value/range, source, owner, as-of date, and review trigger. State shared metadata once with explicit inheritance; use `UNKNOWN` for missing ownership or values.
 - [ ] Keep calculations reproducible and label estimates separately from observed measurements.
 - [ ] Link shared architecture artifacts only by repository path or document title; never require a particular workflow or tool.
 - [ ] Preserve historical context needed to understand changed requirements instead of silently rewriting prior commitments.
@@ -78,29 +77,20 @@ Use external research only when a time-sensitive fact changes a constraint. Do n
 - [ ] Re-read the written artifact and verify that no unknown was converted into a confident fact.
 - [ ] Check that targets are measurable, internally consistent, and proportionate to the evidenced business horizon.
 - [ ] Check that every architecture-critical gap has an owner or exact next evidence action.
-- [ ] Confirm no product code, tests, unrelated documents, or external systems changed.
 - [ ] Use `READY` only when the baseline is usable for decisions and no material unknown lacks a safe handling rule; use `INCOMPLETE` for a useful artifact with consequential open drivers; use `BLOCKED` when scope, authority, or destination prevents safe creation.
+
+## Self-Check
+
+- [ ] **Reconcile before returning.** Check item-level evidence, requirement coverage, contradictions, scope, verdict, and applicable cleanup. Correct the report or authorized artifacts. Reuse valid evidence; do not automatically rescan the repository or rerun successful commands. Repeat checks only for relevant changes, failures, or unresolved evidence. Disclose remaining gaps.
 
 ## Output Contract
 
-```markdown
-# System Design Baseline
+Report in the user's language, in this order; retain all five fields and state each fact once. Small results may use one line per field; omit empty tables and do not copy linked artifacts:
 
-**Verdict:** READY | INCOMPLETE | BLOCKED
-**Artifact:** path
+1. **Result:** Skill-specific verdict and supported outcome.
+2. **Scope:** Reviewed/changed scope, exclusions, baseline, and material assumptions.
+3. **Evidence:** Skill-specific fields below; distinguish facts, inferences, and unverified claims. Link artifacts; use tables when useful.
+4. **Verification:** Checks/results, unavailable evidence, and applicable cleanup/external state.
+5. **Completion:** `Checklist: X/Y complete`; `Incomplete: None` or each `UNPROVEN` item's reason, outcome impact, and exact next action; residual risks and required decisions.
 
-## Established drivers
-- Prioritized architecture-driving scenarios
-- Applicable business, demand, quality, data, security, operational, economic, and evolution constraints
-
-## Driver register
-| Theme | Parameter | Applicability | Criticality | Evidence status | Value or measure | Source and owner | Review trigger |
-|---|---|---|---|---|---|---|---|
-
-## Changes made
-- Created or updated sections
-- Preserved conventions and related artifacts
-
-## Residual risks
-Only constraints that can still reverse an architecture decision.
-```
+**Skill-specific evidence:** Artifact path, established drivers and prioritized quality scenarios, applicable constraints, and changed sections. The artifact owns the driver register: theme/parameter, applicability, criticality, evidence status, value/measure, source/owner, as-of date, and review trigger. Summarize only decision-changing gaps; do not copy the register into the response.

@@ -1,14 +1,14 @@
 ---
 name: ln-42-acceptance-test-builder
-description: "Creates, updates, consolidates, retires, and runs scoped acceptance tests using project-native tooling. Use when executable acceptance evidence must change; not for audits or product fixes."
+description: "Builds, updates, consolidates, or retires scoped acceptance tests and records execution evidence. Not for product-code fixes or audits."
 ---
 
 # Acceptance Test Builder
 
 **Goal:** Deliver the smallest trustworthy acceptance-test portfolio for stated requirements through a user- or external-system-observable boundary. Modify only approved tests and test documentation; implement justified additions, updates, merges, and deletions without repairing product code.
 
-**Execution contract:** Treat the ordered checkbox workflow below as this skill's Definition of Done. Track every checkbox as `PENDING`, then resolve it to `PROVEN` with concrete evidence, `CLEARED` with evidence that its conditional trigger is absent, or `UNPROVEN`; reading, mentioning, delegating, skipping, or tool failure is not proof.
-Before returning, resolve every `PENDING`, count only `PROVEN` and `CLEARED` items as complete, apply this skill's verdict, decision, and approval rules to every `UNPROVEN`, and prepend **Checklist: X/Y complete**<br>**Incomplete: None | section/item — reason; outcome impact; exact next action**; list every `UNPROVEN` item.
+**Execution contract:** The ordered checkboxes are the Definition of Done. Track every item internally as `PENDING`, `PROVEN` with concrete evidence, `CLEARED` with evidence that its condition is absent, or `UNPROVEN` with a gap; reading, delegation, or tool failure is not proof. Reconcile items after each section. Before returning, resolve all `PENDING` and count only `PROVEN` and `CLEARED`; apply the skill's verdict and approval rules to every gap.
+Preserve user intent, scope, and existing authorization. Continue authorized work; ask only for consequential unresolved choices or required external approval. Scale depth to material risk without silently skipping checks. Preserve dependency and safety ordering; otherwise choose the verification method appropriate to each obligation.
 
 ## Tool Routing
 
@@ -56,7 +56,7 @@ Never run acceptance tests against production or an unapproved external target. 
 - [ ] Use real dependencies or approved emulators when mocks would bypass the behavior under acceptance; pin versions and verify readiness and reset behavior.
 - [ ] For deterministic output, derive golden or diff expectations from an independent contract and keep the artifact small enough to review.
 - [ ] For nondeterministic output, assert stable invariants and semantic fields instead of normalizing away failures or snapshotting noise.
-- [ ] Locate UI and other interaction elements only through stable repository-owned IDs or dedicated test hooks; never locate by visible or translated copy, styling, layout, position, or incidental structure, and assert exact copy separately only when it is an explicit contract.
+- [ ] Use stable project-native semantic locators (roles, accessible names, labels) or explicit IDs/test hooks according to the observable contract and locale strategy. Avoid styling, position, timing, and incidental structure. Treat exact-copy assertions separately when copy is a requirement; do not require product edits solely to add hooks when a robust semantic locator exists.
 - [ ] Define the required or diagnostic gate and a review or retirement trigger when evidence is temporary, compatibility-bound, incident-specific, or coupled to a changing contract.
 
 ### 3. Implement within Test Scope
@@ -73,10 +73,10 @@ Never run acceptance tests against production or an unapproved external target. 
 ### 4. Execute and Preserve Evidence
 
 - [ ] Run the smallest affected scenario first, then the relevant suite and required repository gate when available; when actions only remove evidence, run the replacement or nearest retained proof.
-- [ ] Record the exact command, working directory, environment class, target, versions, exit status, duration, and artifact locations.
+- [ ] Record command, working directory, environment class, target, versions, exit status, duration, artifacts, and actual scenarios executed. No selected tests or all-skipped output cannot prove acceptance.
 - [ ] Preserve the first failing output, seed, order, request, response, screenshot, diff, or durable state needed to reproduce the defect.
 - [ ] Distinguish product failure, test defect, environment failure, unavailable dependency, and flaky evidence before changing the test.
-- [ ] If the test exposes a product defect, stop modifying the implementation, retain the failing acceptance evidence, and report the smallest reproduction.
+- [ ] If a valid test exposes a product defect, retain the failing acceptance evidence and report the smallest reproduction; never repair product code. Continue independent in-scope test work when safe.
 - [ ] Verify cleanup and rerun at least the affected scenario when state ownership or idempotency is material.
 - [ ] Avoid retries unless they diagnose nondeterminism; a retry must not convert the initial failure into a silent pass.
 
@@ -84,33 +84,22 @@ Never run acceptance tests against production or an unapproved external target. 
 
 - [ ] Map every requirement and protected outcome to its final test path or `NONE`, command or alternative control, oracle or accepted risk, and result as `PASS`, `FAIL`, `BLOCKED`, or `UNPROVEN`.
 - [ ] Reconcile planned and actual portfolio actions, including justified deviations, and report the net count of tests added, updated, merged, and deleted without treating counts as quality targets.
-- [ ] Use `COMPLETE` when all approved portfolio actions are implemented and required acceptance evidence executes to a recorded `PASS` or `FAIL`; this verdict describes evidence completion, not product correctness.
-- [ ] Use `INCOMPLETE` when actions are implemented but an environment, dependency, or interrupted run prevents complete execution; state the exact missing check.
+- [ ] Use `COMPLETE` when all approved portfolio actions are implemented and required evidence records a trustworthy `PASS` or product `FAIL`, or a justified `NO_TEST` control. Unresolved test defects are not completed evidence; this verdict does not certify product correctness.
+- [ ] Use `INCOMPLETE` when safe work remains unfinished or environment, dependency, test defects, or interruption prevents trustworthy execution; state the exact remaining action or check.
 - [ ] Use `BLOCKED` when actions cannot be implemented safely, requirements lack a reliable oracle, or the workspace cannot be protected.
-- [ ] Return created, changed, merged, and deleted test files, commands, evidence, cleanup result, limitations, product defects, and residual risks.
+
+## Self-Check
+
+- [ ] **Reconcile before returning.** Check item-level evidence, requirement coverage, contradictions, scope, verdict, and applicable cleanup. Correct the report or authorized artifacts. Reuse valid evidence; do not automatically rescan the repository or rerun successful commands. Repeat checks only for relevant changes, failures, or unresolved evidence. Disclose remaining gaps.
 
 ## Output Contract
 
-```markdown
-# Acceptance Test Build
+Report in the user's language, in this order; retain all five fields and state each fact once. Small results may use one line per field; omit empty tables and do not copy linked artifacts:
 
-**Verdict:** COMPLETE | INCOMPLETE | BLOCKED
+1. **Result:** Skill-specific verdict and supported outcome.
+2. **Scope:** Reviewed/changed scope, exclusions, baseline, and material assumptions.
+3. **Evidence:** Skill-specific fields below; distinguish facts, inferences, and unverified claims. Link artifacts; use tables when useful.
+4. **Verification:** Checks/results, unavailable evidence, and applicable cleanup/external state.
+5. **Completion:** `Checklist: X/Y complete`; `Incomplete: None` or each `UNPROVEN` item's reason, outcome impact, and exact next action; residual risks and required decisions.
 
-## Scope and environment
-- Requirements and approved paths
-- Runner, boundary, target, and prerequisites
-
-## Requirements matrix
-| Protected outcome and test basis | Existing evidence or affected test | Action | Final test | Oracle and command | Gate and result | Review or retirement trigger |
-|---|---|---|---|---|---|---|
-| ... | path / command / NONE | KEEP / ADD / UPDATE / MERGE / DELETE / NO_TEST | path / NONE | ... | required / diagnostic; PASS / FAIL / BLOCKED / UNPROVEN | ... |
-
-## Changes and evidence
-- Created or changed test and documentation files
-- Deleted or consolidated tests and their replacement evidence; net portfolio effect
-- Exact commands, outputs, and evidence artifacts
-- Product defects preserved without repair
-
-## Cleanup, limitations, and residual risks
-State cleanup, unavailable environments, excluded cells, and remaining evidence needs.
-```
+**Skill-specific evidence:** Requirement/protected outcome → existing evidence → portfolio action → final test path or `NONE` → independent oracle/command → gate/result → retirement trigger. List changed test/documentation files, replacement evidence for consolidation/deletion, net portfolio effect, exact commands and artifacts, retained product-failure reproductions, cleanup, unavailable environments, and excluded cells. Evidence completion does not imply product correctness.

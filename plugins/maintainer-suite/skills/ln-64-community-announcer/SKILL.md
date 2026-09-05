@@ -1,21 +1,21 @@
 ---
 name: ln-64-community-announcer
-description: "Drafts and publishes fact-checked GitHub Discussions announcements. Use for releases, updates, or project news; not for release creation or issue responses."
+description: "Drafts or publishes fact-checked GitHub Discussions announcements for project updates. Not for release creation or issue responses."
 ---
 
 # Community Announcer
 
 **Goal:** Create a source-backed announcement and publish it only after the user approves the full draft.
 
-**Execution contract:** Treat the ordered checkbox workflow below as this skill's Definition of Done. Track every checkbox as `PENDING`, then resolve it to `PROVEN` with concrete evidence, `CLEARED` with evidence that its conditional trigger is absent, or `UNPROVEN`; reading, mentioning, delegating, skipping, or tool failure is not proof.
-Before returning, resolve every `PENDING`, count only `PROVEN` and `CLEARED` items as complete, apply this skill's verdict, decision, and approval rules to every `UNPROVEN`, and prepend **Checklist: X/Y complete**<br>**Incomplete: None | section/item — reason; outcome impact; exact next action**; list every `UNPROVEN` item.
+**Execution contract:** The ordered checkboxes are the Definition of Done. Track every item internally as `PENDING`, `PROVEN` with concrete evidence, `CLEARED` with evidence that its condition is absent, or `UNPROVEN` with a gap; reading, delegation, or tool failure is not proof. Reconcile items after each section. Before returning, resolve all `PENDING` and count only `PROVEN` and `CLEARED`; apply the skill's verdict and approval rules to every gap.
+Preserve user intent, scope, and existing authorization. Continue authorized work; ask only for consequential unresolved choices or required external approval. Scale depth to material risk without silently skipping checks. Preserve dependency and safety ordering; otherwise choose the verification method appropriate to each obligation.
 
 ## Tool Routing
 
 | Need | Preferred capability | Fallback |
 |---|---|---|
 | Repository identity and permissions | Authenticated GitHub CLI or connector | Public GitHub API for read-only discovery |
-| Discussion categories and publication | GitHub GraphQL API | `BLOCKED`; do not substitute an issue |
+| Discussion categories and publication | GitHub GraphQL API | Continue a draft with destination limitations; publication is `BLOCKED` without this capability |
 | Shipped-change evidence | Remote Git history, releases, and canonical files | Clean remote clone |
 | Commands, paths, names, and counts | Focused repository search and direct reads | Hosting API content reads |
 | Current external claims | Primary dated sources | Omit the claim when it cannot be verified |
@@ -27,41 +27,38 @@ Do not expose repository tokens, category node IDs, or other credentials in the 
 
 ## Checklist
 
-- [ ] Resolve the target repository from the authenticated hosting client and verify write access.
-- [ ] Discover the repository ID, default branch, Discussions availability, and a repository-approved suitable category through the API.
-- [ ] Stop with `BLOCKED` when Discussions or a suitable category is unavailable; do not silently publish elsewhere.
+### Establish scope and evidence
+
+- [ ] Resolve the target repository from the request or hosting client and determine whether the task is draft-only or includes publication.
+- [ ] Read the default branch and source evidence. Discover Discussions availability and a suitable category when accessible; missing publication access does not prevent a fact-checked draft.
+- [ ] For draft-only work, report destination limitations and continue. Before publication, require write access, repository/category IDs, and a suitable enabled Discussions category; do not silently publish elsewhere.
 - [ ] Identify the announcement subject from the user's request, a release, or a bounded commit range.
 - [ ] Read repository communication guidance when present, but do not require a community strategy file.
 - [ ] Read the current authoritative documentation, installation instructions, affected manifests, release notes, and relevant source diffs when present.
 - [ ] Inspect recent commits and up to three available comparable announcements for cadence, repeated claims, and house style; do not require prior announcements in a new or low-volume repository.
-- [ ] Use the target remote state as the source for already-published changes; do not announce an unpushed local diff as available.
+- [ ] Pin shipped claims to the target remote commit or release, including release lines behind the default branch; never present an unpushed local diff as available.
 - [ ] Separate what shipped, what changed for users, migration needs, and future intent.
 
-## Classification and Style
+### Classification and Style
 
 - [ ] Classify the announcement as release, breaking change, feature update, architecture change, or community news.
 - [ ] Choose the shortest style that explains the user outcome and its significance.
-- [ ] Use a concise release digest for several independent changes.
-- [ ] Use a problem-to-solution narrative when the motivation is necessary to understand the redesign.
-- [ ] Use migration-first structure when existing users must take action.
-- [ ] Vary the opening from recent announcements when doing so remains natural; variety is not more important than clarity.
-- [ ] Do not force emoji, slogans, dramatic metaphors, or a fixed template.
 - [ ] Match the project's voice while keeping claims understandable without internal repository context.
 
-## Draft
+### Draft
 
 - [ ] Write a specific title that names the outcome rather than saying only "update" or "announcement".
 - [ ] Open with the user problem or the most important shipped outcome.
 - [ ] Explain why the change was made using evidence from commits, docs, or release notes.
 - [ ] Summarize highlights in outcome language and name exact products, packages, plugins, skills, or components where useful.
 - [ ] Include verified installation or update commands when the reader must act.
-- [ ] Add an `IMPORTANT` migration block for breaking changes, including clear before-and-after steps.
+- [ ] Make breaking changes prominent and provide clear before-and-after migration steps; follow repository format rather than requiring a particular callout label.
 - [ ] Link to canonical documentation at the default branch or immutable release tag as appropriate.
 - [ ] Include a short "What's next" section only for committed or clearly labelled tentative work.
 - [ ] Thank verified external contributors by handle; omit the section for solo work.
 - [ ] End with one genuine, answerable feedback question when community input would be useful.
 
-## Fact Check
+### Fact Check
 
 - [ ] Verify every command against current authoritative documentation and any stable package, plugin, or marketplace identifier it uses.
 - [ ] Verify every named product, package, plugin, skill, component, file path, category, version, tag, and link against the remote repository.
@@ -71,34 +68,39 @@ Do not expose repository tokens, category node IDs, or other credentials in the 
 - [ ] Do not invent adoption, download, search-volume, performance, compatibility, or roadmap claims.
 - [ ] Label estimates, interpretations, and future intent instead of presenting them as shipped facts.
 - [ ] Remove generic hype, repeated conclusions, excessive headings, canned transitions, and symmetrical filler lists.
-- [ ] Prefer concrete verbs and varied sentence length; keep technical identifiers only where readers need them.
 - [ ] Re-read the draft as a new user and ensure it explains both the value and any required action.
 
-## Approval and Publication
+### Approval and Publication
 
 - [ ] Present the exact title and full Markdown body to the user before creating external state.
-- [ ] Include the selected category and evidence range with the draft.
-- [ ] Wait for explicit approval; a request to draft or announce is not approval of unseen final copy.
+- [ ] Include the evidence range and selected category, or the unresolved destination limitation, with the draft.
+- [ ] For draft-only work, complete the self-check and report `DRAFT READY` without waiting; clear publication-only items with this scope reason. For publication, require explicit approval of the exact copy and destination; reuse unchanged approval already given in the session. A request to announce does not approve unseen final copy.
 - [ ] If the user changes any substantive claim or instruction, fact-check the revised draft again.
 - [ ] Write the approved body to a temporary file to preserve formatting and avoid shell interpolation errors.
-- [ ] Publish through the GitHub Discussions GraphQL mutation using discovered repository and category IDs.
-- [ ] Read the created discussion back and verify its title, body, category, and URL.
+- [ ] Only for authorized publication, verify write access and destination, then publish through the GitHub Discussions GraphQL mutation using discovered repository and category IDs. Clear publication-only criteria when the request ends at a draft.
+- [ ] Read the discussion back and verify title, body, category, and URL. After an uncertain response, inspect the returned ID or matching destination/content before retrying; stop if identity remains ambiguous rather than risk a duplicate.
 - [ ] Remove the temporary draft safely after verification.
 - [ ] Report the discussion URL and any manual action, such as pinning, that the API cannot perform.
 - [ ] Do not create tags, releases, issues, comments, or cross-posts unless explicitly requested.
 
 ## Verdict
 
-- `DRAFT READY` — fact-checked copy is awaiting explicit approval.
+- `DRAFT READY` — fact-checked copy is complete; publication is either outside scope or awaiting exact-copy approval.
 - `PUBLISHED` — the approved discussion exists and was read back successfully.
-- `BLOCKED` — required source evidence, permissions, category, or publication verification is unavailable.
+- `BLOCKED` — source evidence prevents a trustworthy draft, or a requested publication cannot proceed because its permissions, category, or verification is unavailable. Distinguish a completed draft from blocked publication.
+
+## Self-Check
+
+- [ ] **Reconcile before returning.** Check item-level evidence, requirement coverage, contradictions, scope, verdict, and applicable cleanup. Correct the report or authorized artifacts. Reuse valid evidence; do not automatically rescan the repository or rerun successful commands. Repeat checks only for relevant changes, failures, or unresolved evidence. Disclose remaining gaps.
 
 ## Output Contract
 
-Before approval, return classification, evidence range, selected category, title, full Markdown body, fact-check summary, and `DRAFT READY`.
+Report in the user's language, in this order; retain all five fields and state each fact once. Small results may use one line per field; omit empty tables and do not copy linked artifacts:
 
-After publication, return the approved title, discussion URL, verification evidence, `PUBLISHED`, and residual risks.
+1. **Result:** Skill-specific verdict and supported outcome.
+2. **Scope:** Reviewed/changed scope, exclusions, baseline, and material assumptions.
+3. **Evidence:** Skill-specific fields below; distinguish facts, inferences, and unverified claims. Link artifacts; use tables when useful.
+4. **Verification:** Checks/results, unavailable evidence, and applicable cleanup/external state.
+5. **Completion:** `Checklist: X/Y complete`; `Incomplete: None` or each `UNPROVEN` item's reason, outcome impact, and exact next action; residual risks and required decisions.
 
-If a published discussion differs from the approved draft, report `BLOCKED` and ask before editing or deleting the external content.
-
-Preserve the approved copy in the response so the user can compare it with the published discussion.
+**Skill-specific evidence:** Announcement classification, evidence range, destination/category or limitation, exact title, full fact-checked Markdown draft before approval, and fact-check summary. After publication, give the discussion URL and read-back verification while retaining approved copy in the response history. Report manual actions such as pinning; a mismatch with approved copy is `BLOCKED` and requires approval before editing/deleting external content.

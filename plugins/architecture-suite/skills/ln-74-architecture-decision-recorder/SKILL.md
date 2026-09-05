@@ -1,14 +1,14 @@
 ---
 name: ln-74-architecture-decision-recorder
-description: "Records one architecture decision with context, alternatives, tradeoffs, and consequences. Use for a significant choice; not for broad design, audit, or implementation."
+description: "Records one significant architecture decision, alternatives, and consequences. Not for broad system design, audit, or implementation."
 ---
 
 # Architecture Decision Recorder
 
 **Goal:** Preserve the context, forces, alternatives, decision, and consequences of one architecturally significant choice in a compact durable record. Change only approved decision documentation; do not design the whole system, approve a decision silently, delete history, audit code, or implement the choice.
 
-**Execution contract:** Treat the ordered checkbox workflow below as this skill's Definition of Done. Track every checkbox as `PENDING`, then resolve it to `PROVEN` with concrete evidence, `CLEARED` with evidence that its conditional trigger is absent, or `UNPROVEN`; reading, mentioning, delegating, skipping, or tool failure is not proof.
-Before returning, resolve every `PENDING`, count only `PROVEN` and `CLEARED` items as complete, apply this skill's verdict, decision, and approval rules to every `UNPROVEN`, and prepend **Checklist: X/Y complete**<br>**Incomplete: None | section/item — reason; outcome impact; exact next action**; list every `UNPROVEN` item.
+**Execution contract:** The ordered checkboxes are the Definition of Done. Track every item internally as `PENDING`, `PROVEN` with concrete evidence, `CLEARED` with evidence that its condition is absent, or `UNPROVEN` with a gap; reading, delegation, or tool failure is not proof. Reconcile items after each section. Before returning, resolve all `PENDING` and count only `PROVEN` and `CLEARED`; apply the skill's verdict and approval rules to every gap.
+Preserve user intent, scope, and existing authorization. Continue authorized work; ask only for consequential unresolved choices or required external approval. Scale depth to material risk without silently skipping checks. Preserve dependency and safety ordering; otherwise choose the verification method appropriate to each obligation.
 
 ## Tool Routing
 
@@ -26,12 +26,10 @@ One record captures one decision. If the request contains independent decisions 
 
 - Reuse the repository's established ADR convention when one exists.
 - Otherwise use `docs/architecture/decisions/NNNN-<slug>.md` with the next unused monotonic number.
-- Never renumber, overwrite, or delete historical records.
+- Never renumber, delete, or rewrite the decision and rationale of historical records. Permit scoped status and supersession-link updates under the rules below; distinguish evolving proposed drafts from accepted history.
 - Default a new record to `Proposed`.
 - Use `Accepted` only after explicit confirmation from an authorized decision-maker.
-- Mark a replaced record `Superseded` and link both directions; preserve its original content.
-- Link shared requirements and architecture artifacts only by path or title.
-- Record positive, negative, and neutral consequences without advocacy language.
+- A proposed replacement links to the current decision without changing its effective status. Mark the old record `Superseded` and link both directions only after the replacement is explicitly accepted; preserve historical content.
 - Keep the record short enough to review as a single decision.
 - Preserve the rationale a future maintainer needs to reconsider it safely.
 - Label retrospective records explicitly; do not imply that documentation created after implementation was prior approval.
@@ -70,34 +68,27 @@ One record captures one decision. If the request contains independent decisions 
 - [ ] State the decision in active, testable language and name what remains deliberately undecided.
 - [ ] Record positive, negative, and neutral consequences plus accepted risks.
 - [ ] Link affected requirements, designs, diagrams, interfaces, migration documents, or issues by stable repository reference.
-- [ ] For supersession, update status and cross-links without erasing prior rationale.
+- [ ] Apply the Artifact Rules for proposed or accepted supersession; verify links and preserve prior rationale.
 
 ### 5. Validate and Report
 
 - [ ] Confirm the record contains one decision and can be understood without conversation history.
-- [ ] Confirm every consequential claim has evidence, a named assumption, or an explicit owner.
+- [ ] Confirm consequential claims have evidence or labelled assumptions/unknowns with validation actions; never invent historical rationale or rejected alternatives for a retrospective record.
 - [ ] Confirm `Accepted` was not assigned without explicit authority.
-- [ ] Confirm no architecture, code, tests, task tracker, or external system changed beyond approved decision documentation.
-- [ ] Use `RECORDED` when the record and status are valid; use `INCOMPLETE` when material context or authority remains open; use `BLOCKED` for ambiguous scope, unsafe numbering, conflicting ownership, or no writable destination.
+- [ ] Use `RECORDED` when the record and status are valid; use `INCOMPLETE` when material context or required acceptance authority remains unresolved; a complete explicitly Proposed record does not require acceptance to be `RECORDED`; use `BLOCKED` for ambiguous scope, unsafe numbering, conflicting ownership, or no writable destination.
+
+## Self-Check
+
+- [ ] **Reconcile before returning.** Check item-level evidence, requirement coverage, contradictions, scope, verdict, and applicable cleanup. Correct the report or authorized artifacts. Reuse valid evidence; do not automatically rescan the repository or rerun successful commands. Repeat checks only for relevant changes, failures, or unresolved evidence. Disclose remaining gaps.
 
 ## Output Contract
 
-```markdown
-# Architecture Decision Record
+Report in the user's language, in this order; retain all five fields and state each fact once. Small results may use one line per field; omit empty tables and do not copy linked artifacts:
 
-**Verdict:** RECORDED | INCOMPLETE | BLOCKED
-**Artifact:** path
-**Decision status:** Proposed | Accepted | Deprecated | Superseded
+1. **Result:** Skill-specific verdict and supported outcome.
+2. **Scope:** Reviewed/changed scope, exclusions, baseline, and material assumptions.
+3. **Evidence:** Skill-specific fields below; distinguish facts, inferences, and unverified claims. Link artifacts; use tables when useful.
+4. **Verification:** Checks/results, unavailable evidence, and applicable cleanup/external state.
+5. **Completion:** `Checklist: X/Y complete`; `Incomplete: None` or each `UNPROVEN` item's reason, outcome impact, and exact next action; residual risks and required decisions.
 
-## Decision captured
-- Context, selected option, and decisive drivers
-
-## Alternatives and consequences
-- Rejected options, accepted costs, and review triggers
-
-## Links changed
-- New record and any supersession links
-
-## Open authority or evidence
-Only items that prevent acceptance or could reverse the decision.
-```
+**Skill-specific evidence:** Artifact path, decision identity/status/owner, selected option, alternatives, consequences, evidence, and acceptance/validation needs. Report links or status changes to historical records, preserving their rationale; identify unresolved choices and review triggers without implying acceptance of a proposal.

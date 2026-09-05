@@ -1,14 +1,14 @@
 ---
 name: ln-24-architecture-auditor
-description: "Audits implemented architecture fitness, boundaries, contracts, dependencies, and configuration ownership. Use for system structure; not for current-state documentation, diagrams, or plan review."
+description: "Audits implemented architecture, boundaries, dependencies, and configuration ownership. Not for documenting current state or reviewing plans."
 ---
 
 # Architecture Auditor
 
 **Goal:** Perform a read-only audit of the architecture the system actually executes. Evaluate whether structure, dependencies, contracts, and cross-component ownership fit current product needs without rewarding pattern names or speculative modernization. Judge where atomicity and resource ownership belong; leave local query, transaction, and data-resource correctness to a persistence-focused review.
 
-**Execution contract:** Treat the ordered checkbox workflow below as this skill's Definition of Done. Track every checkbox as `PENDING`, then resolve it to `PROVEN` with concrete evidence, `CLEARED` with evidence that its conditional trigger is absent, or `UNPROVEN`; reading, mentioning, delegating, skipping, or tool failure is not proof.
-Before returning, resolve every `PENDING`, count only `PROVEN` and `CLEARED` items as complete, apply this skill's verdict, decision, and approval rules to every `UNPROVEN`, and prepend **Checklist: X/Y complete**<br>**Incomplete: None | section/item — reason; outcome impact; exact next action**; list every `UNPROVEN` item.
+**Execution contract:** The ordered checkboxes are the Definition of Done. Track every item internally as `PENDING`, `PROVEN` with concrete evidence, `CLEARED` with evidence that its condition is absent, or `UNPROVEN` with a gap; reading, delegation, or tool failure is not proof. Reconcile items after each section. Before returning, resolve all `PENDING` and count only `PROVEN` and `CLEARED`; apply the skill's verdict and approval rules to every gap.
+Preserve user intent, scope, and existing authorization. Continue authorized work; ask only for consequential unresolved choices or required external approval. Scale depth to material risk without silently skipping checks. Preserve dependency and safety ordering; otherwise choose the verification method appropriate to each obligation.
 
 ## Tool Routing
 
@@ -50,7 +50,7 @@ Use diagrams only when they clarify a relationship that prose cannot. Do not gen
 
 ### 2. Audit Pattern Fitness and Ownership
 
-- [ ] Identify major patterns from code behavior rather than names and score each on problem fit, completeness, consistency, and current maintenance cost.
+- [ ] Identify major patterns from behavior and assess problem fit, completeness, consistency, and evidenced maintenance cost; avoid invented numeric scores.
 - [ ] Check whether abstractions remove real volatility or merely move straightforward code behind interfaces, factories, registries, or generic layers.
 - [ ] Check layer direction, domain ownership, orchestration depth, side-effect boundaries, and whether policy remains separated from infrastructure detail.
 - [ ] Trace where cross-component transactions, sessions, connections, streams, processes, subscriptions, and background work are owned; report boundary ambiguity without duplicating local lifecycle or transaction-correctness analysis.
@@ -62,10 +62,10 @@ Use diagrams only when they clarify a relationship that prose cannot. Do not gen
 ### 3. Audit Contracts and Dependencies
 
 - [ ] Inspect public API, service, event, command, and persistence boundaries for stable input/output models plus explicit error, nullability, idempotency, and compatibility contracts.
-- [ ] Check entity or framework-type leakage, missing boundary models, boolean-mode APIs, excessive parameters, unstable serialization, and inconsistent naming across layers.
+- [ ] Check whether shared entity or framework types, missing boundary models, boolean modes, excessive parameters, unstable serialization, or naming drift create coupling or contract ambiguity; do not demand DTOs where a shared model is an intentional stable contract.
 - [ ] Build module or package dependency direction using resolved internal edges; account for aliases, re-exports, generated code, reflection, registries, plugins, and runtime loading before declaring an edge absent.
 - [ ] Apply configured forbidden/allowed dependency rules first; if rules are only inferred, report the inferred model and confidence instead of presenting it as policy.
-- [ ] Identify cycles, forbidden imports, unstable dependency direction, excessive fan-in or fan-out, and isolated islands without treating a metric threshold as a finding until it predicts a concrete cost.
+- [ ] Identify forbidden imports, cycles, unstable dependency direction, excessive fan-in/fan-out, and isolated islands; use structural metrics to locate candidates, then apply the consequence check below.
 - [ ] Trace cycle and coupling findings to concrete effects on change radius, initialization, testing, deployment, ownership, or failure propagation.
 - [ ] Check that producers and consumers agree on event names, schemas, versions, delivery semantics, ordering, and registration.
 - [ ] Check physical structure for domain cohesion, framework placement, junk drawers, duplicate module roots, orphan packages, and files whose location hides ownership.
@@ -87,41 +87,24 @@ Use diagrams only when they clarify a relationship that prose cannot. Do not gen
 
 - [ ] Verify structural findings through at least one dependency path, call path, registration path, public contract, or reproducible analysis result.
 - [ ] Filter generated code, framework conventions, deliberate adapters, test-only architecture, and documented exceptions before confirming a violation.
-- [ ] Apply a materiality and acceptable-alternative gate to every candidate. Require a concrete correctness, security, ownership, deployment, change-amplification, or recurring maintenance impact at the system's evidenced scale. Reject nitpicks, pattern preference, theoretical purity, generic best practice, speculative scale, and a merely different architecture when the current tradeoff is reasonable; when several shapes work, require the boundary outcome or constraint rather than one preferred pattern.
-- [ ] Put a directly relevant Markdown practice link in every finding's required resolution: prefer current official documentation or a specification, and use reputable primary engineering material only when official sources do not resolve the tradeoff. Open and verify the source; it must support the proposed architectural mechanism, not merely the defect category. Reject search-result links, generic best-practice articles, and decorative citations.
+- [ ] Apply the materiality gate: require concrete correctness, security, ownership, deployment, change amplification, or recurring maintenance impact at evidenced scale. Reject taste, theoretical purity, generic practice, hypothetical scale, and reasonable alternatives; require the outcome or constraint, not a preferred implementation.
+- [ ] Ground external corrections in version-matched official contracts, using primary engineering sources for unresolved tradeoffs. Cite the supported mechanism; local evidence suffices for local defects.
 - [ ] Classify findings as `P0`-`P3` based on correctness, security, change amplification, deployment coupling, and recurring maintenance cost.
-- [ ] Include affected boundaries, evidence, concrete consequence, why the current compromise is not acceptable, migration risk, and the smallest safe next step for every finding while allowing equivalent target shapes.
 - [ ] Order recommendations by prerequisite and risk reduction, separating immediate correctness fixes from optional evolution.
 - [ ] Use `BLOCKED` when required runtime wiring, boundary evidence, or an authoritative contract cannot be verified without a credible fallback; use `FAIL` for an evidenced unresolved correctness or security boundary defect, unsafe ownership ambiguity, or `P0/P1` structural risk; use `CONCERNS` only for material non-blocking change amplification, and `PASS` only when no evidenced architecture defect creates material cost or risk.
-- [ ] Return the verdict with the actual architecture map, fitness assessment, findings, limitations, and residual structural risks.
+
+## Self-Check
+
+- [ ] **Reconcile before returning.** Check item-level evidence, requirement coverage, contradictions, scope, verdict, and applicable cleanup. Correct the report or authorized artifacts. Reuse valid evidence; do not automatically rescan the repository or rerun successful commands. Repeat checks only for relevant changes, failures, or unresolved evidence. Disclose remaining gaps.
 
 ## Output Contract
 
-```markdown
-# Architecture Audit
+Report in the user's language, in this order; retain all five fields and state each fact once. Small results may use one line per field; omit empty tables and do not copy linked artifacts:
 
-**Verdict:** PASS | CONCERNS | FAIL | BLOCKED
+1. **Result:** Skill-specific verdict and supported outcome.
+2. **Scope:** Reviewed/changed scope, exclusions, baseline, and material assumptions.
+3. **Evidence:** Skill-specific fields below; distinguish facts, inferences, and unverified claims. Link artifacts; use tables when useful.
+4. **Verification:** Checks/results, unavailable evidence, and applicable cleanup/external state.
+5. **Completion:** `Checklist: X/Y complete`; `Incomplete: None` or each `UNPROVEN` item's reason, outcome impact, and exact next action; residual risks and required decisions.
 
-## Actual architecture
-- Modules, boundaries, entrypoints, and external systems
-- Critical flows and runtime wiring
-- Observed current state, intended target state, active transition state, and evidenced drift
-
-## Fitness summary
-| Area | Status | Evidence |
-|---|---|---|
-| Pattern fitness and ownership | PASS / CONCERNS / FAIL | ... |
-| Contracts and boundaries | PASS / CONCERNS / FAIL | ... |
-| Dependency topology | PASS / CONCERNS / FAIL | ... |
-| Physical structure and configuration | PASS / CONCERNS / FAIL | ... |
-
-## Findings
-| Priority | Problem | Evidence and justification | Required resolution |
-|---|---|---|---|
-| P0 / P1 / P2 / P3 | Concrete architectural defect | Boundary and evidence, material consequence at evidenced scale, migration context, and why the current tradeoff is not acceptable | Smallest safe outcome or boundary correction, migration and rollback constraints, and a verified `[practice reference](URL)` to official or primary engineering guidance; allow equivalent valid target shapes |
-
-Use `None` when no candidate survives the evidence, materiality, fitness, and acceptable-alternative gates.
-
-## Evolution order and residual risks
-Prerequisite-aware recommendations, accepted exceptions, and blind spots.
-```
+**Skill-specific evidence:** Actual modules, boundaries, wiring, dependencies, configuration, and critical flows; distinguish current, target, transition, and drift. Findings need priority, affected boundary, evidence, consequence at current scale, unacceptable tradeoff, migration risk, and smallest safe next step; allow equivalent target shapes. Order evolution by prerequisites and preserve accepted exceptions.

@@ -1,14 +1,14 @@
 ---
 name: ln-62-repository-publisher
-description: "Validates, commits, pushes, and remotely verifies approved repository changes. Use when publication is requested; not for releases, package publishing, or announcements."
+description: "Commits, pushes, and remotely verifies authorized repository changes. Not for releases, package publication, or announcements."
 ---
 
 # Repository Publisher
 
 **Goal:** Publish only changes the user has authorized, then verify the result from the remote source.
 
-**Execution contract:** Treat the ordered checkbox workflow below as this skill's Definition of Done. Track every checkbox as `PENDING`, then resolve it to `PROVEN` with concrete evidence, `CLEARED` with evidence that its conditional trigger is absent, or `UNPROVEN`; reading, mentioning, delegating, skipping, or tool failure is not proof.
-Before returning, resolve every `PENDING`, count only `PROVEN` and `CLEARED` items as complete, apply this skill's verdict, decision, and approval rules to every `UNPROVEN`, and prepend **Checklist: X/Y complete**<br>**Incomplete: None | section/item — reason; outcome impact; exact next action**; list every `UNPROVEN` item.
+**Execution contract:** The ordered checkboxes are the Definition of Done. Track every item internally as `PENDING`, `PROVEN` with concrete evidence, `CLEARED` with evidence that its condition is absent, or `UNPROVEN` with a gap; reading, delegation, or tool failure is not proof. Reconcile items after each section. Before returning, resolve all `PENDING` and count only `PROVEN` and `CLEARED`; apply the skill's verdict and approval rules to every gap.
+Preserve user intent, scope, and existing authorization. Continue authorized work; ask only for consequential unresolved choices or required external approval. Scale depth to material risk without silently skipping checks. Preserve dependency and safety ordering; otherwise choose the verification method appropriate to each obligation.
 
 ## Tool Routing
 
@@ -27,19 +27,20 @@ Use hosting APIs for remote facts and Git for repository facts. Local distributi
 
 ## Checklist
 
+### Establish scope and evidence
+
 - [ ] Confirm the user explicitly requested a commit and push and identify the intended branch.
 - [ ] Read repository instructions, release rules, and the current branch policy before mutation.
 - [ ] Check `git status -sb`, staged and unstaged diffs, untracked files, remotes, and recent commit style.
 - [ ] Identify unrelated user changes; do not stage them without explicit whole-worktree authorization.
 - [ ] Inspect deletions and generated files as carefully as edited text.
 - [ ] Check whether behavior, installation commands, catalogs, layout, or the public site require matching documentation updates.
-- [ ] Do not create a changelog merely because one is absent; follow the repository's documented release policy.
 - [ ] Do not change versions, tags, or release metadata during an ordinary publication unless the request or repository policy explicitly includes them.
 - [ ] For marketplace edits, confirm every stable identifier is unchanged unless an intentional migration was approved.
 - [ ] When multiple host catalogs exist and repository policy requires parity, confirm they contain the same distribution units in the required order.
 - [ ] When metadata is duplicated across manifests or catalogs, confirm descriptions and source paths agree with the canonical source.
 
-## Validation Routing
+### Validation Routing
 
 - [ ] Discover and run repository-native validation commands before generic checks.
 - [ ] For changed skills, run repository-required or host-native skill validators, or perform their documented manual fallback.
@@ -50,35 +51,34 @@ Use hosting APIs for remote facts and Git for repository facts. Local distributi
 - [ ] Stop before commit on a confirmed failing required check unless the user explicitly accepts the failure.
 - [ ] Record skipped checks with the exact missing dependency or environment.
 
-## Synchronization and Commit
+### Synchronization and Commit
 
 - [ ] Fetch the target remote and compare local HEAD with the remote branch before committing.
-- [ ] If histories diverge, stop and report the commits on both sides; do not force-push or rewrite history implicitly.
+- [ ] If behind or diverged, inspect both sides and reconcile within the authorized branch workflow while preserving user changes; stop for unresolved semantic conflicts or a required history rewrite. Never force-push implicitly.
 - [ ] Stage explicit paths when the worktree is mixed; use whole-worktree staging only when the user approved all changes.
 - [ ] Review the cached diff and diffstat after staging.
-- [ ] Remove secrets, local caches, temporary artifacts, and unintended credentials from the staged set.
+- [ ] Exclude secrets, local caches, temporary artifacts, and unintended credentials from the staged set without deleting user-owned files; if an intended change contains a secret, block that publication and report redacted evidence.
 - [ ] Match the repository's commit-message convention and summarize the entire staged change.
-- [ ] Do not add an automated co-author or signature unless repository policy or the user requests it.
+- [ ] Preserve configured commit signing and attribution policy; do not invent contributor identities or disable required signing.
 - [ ] Create the commit and capture its full SHA.
 - [ ] Push to the authorized branch without changing branch protections or using force.
 
-## Remote Verification
+### Remote Verification
 
-- [ ] Confirm the remote branch resolves to the pushed commit using both Git and the hosting API when available.
-- [ ] Watch required CI runs for that commit until completion; report direct run URLs and failures.
+- [ ] Verify the published commit on the authorized remote through Git or the hosting API; use a second source only if identity or synchronization is uncertain.
+- [ ] Track required CI for the pushed commit with bounded waits and direct run URLs. If execution cannot continue waiting, report pending state as `PARTIAL`; do not equate pending with success.
 - [ ] If the static site changed, wait for deployment and verify live content with a cache-busting request.
 - [ ] If installation or marketplace content changed, clone an authorized consumer-accessible remote into a clean temporary directory and validate the affected distribution surface.
 - [ ] When install or update behavior changed, test at least one affected package or plugin from its documented distribution source in isolated host configuration.
 - [ ] When stable distribution identifiers or versions exist, verify the installed artifact resolves under the expected identifier and version.
 - [ ] Keep temporary host configuration isolated from the user's active settings and remove it safely afterward.
-- [ ] Recheck the local worktree and confirm local HEAD equals the remote branch.
+- [ ] Recheck local worktree and HEAD against the published commit. If the remote advanced concurrently, verify that it still contains the published commit and report both SHAs; do not overwrite newer work to restore equality.
 
-## Safety Gates
+### Safety Gates
 
 - [ ] Never expose authentication tokens or credential values in output.
 - [ ] Never create a release, tag, package publication, discussion, or pull request unless explicitly requested.
 - [ ] Never delete remote branches or alter the default branch as a side effect.
-- [ ] Never treat a successful push as proof that CI, marketplace refresh, or deployment succeeded.
 - [ ] Return `BLOCKED` rather than bypassing branch protection, authentication, or required checks.
 
 ## Verdict
@@ -87,18 +87,18 @@ Use hosting APIs for remote facts and Git for repository facts. Local distributi
 - `PARTIAL` — the push succeeded but a non-destructive remote check is pending or failed.
 - `BLOCKED` — publication did not complete because authorization, synchronization, validation, or remote access failed.
 
+## Self-Check
+
+- [ ] **Reconcile before returning.** Check item-level evidence, requirement coverage, contradictions, scope, verdict, and applicable cleanup. Correct the report or authorized artifacts. Reuse valid evidence; do not automatically rescan the repository or rerun successful commands. Repeat checks only for relevant changes, failures, or unresolved evidence. Disclose remaining gaps.
+
 ## Output Contract
 
-Return:
+Report in the user's language, in this order; retain all five fields and state each fact once. Small results may use one line per field; omit empty tables and do not copy linked artifacts:
 
-1. Published scope and excluded changes.
-2. Branch, commit SHA, and remote URL.
-3. Validation commands and results.
-4. CI and deployment URLs.
-5. Clean-source installation or update evidence when applicable.
-6. Verdict.
-7. Residual risks and any manual follow-up.
+1. **Result:** Skill-specific verdict and supported outcome.
+2. **Scope:** Reviewed/changed scope, exclusions, baseline, and material assumptions.
+3. **Evidence:** Skill-specific fields below; distinguish facts, inferences, and unverified claims. Link artifacts; use tables when useful.
+4. **Verification:** Checks/results, unavailable evidence, and applicable cleanup/external state.
+5. **Completion:** `Checklist: X/Y complete`; `Incomplete: None` or each `UNPROVEN` item's reason, outcome impact, and exact next action; residual risks and required decisions.
 
-If publication is `PARTIAL`, state whether the pushed commit is safe to leave in place and what observable event would close the remaining check.
-
-Do not call the result `PUBLISHED` until the remote commit and every applicable required workflow are observable.
+**Skill-specific evidence:** Published/excluded paths, branch, full commit SHA, remote URL, validation results, CI/deployment URLs, and applicable clean-source install/update proof. For `PARTIAL`, state whether the pushed commit is safe to leave and the observable event that closes verification. Use `PUBLISHED` only when the remote commit and every applicable required workflow are observed.

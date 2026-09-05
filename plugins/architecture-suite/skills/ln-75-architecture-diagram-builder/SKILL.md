@@ -1,14 +1,14 @@
 ---
 name: ln-75-architecture-diagram-builder
-description: "Creates evidence-backed current or target architecture diagrams when the diagram is the primary deliverable. Not for UI design, architecture audit, or invented structure."
+description: "Creates current or target architecture diagrams as the primary deliverable. Not for UI design, architecture audits, or invented structure."
 ---
 
 # Architecture Diagram Builder
 
 **Goal:** Create the smallest set of understandable, evidence-backed diagrams needed to communicate current or proposed architecture. Change only approved architecture documentation; do not invent relationships, perform visual product design, replace prose evidence, audit fitness, or edit implementation.
 
-**Execution contract:** Treat the ordered checkbox workflow below as this skill's Definition of Done. Track every checkbox as `PENDING`, then resolve it to `PROVEN` with concrete evidence, `CLEARED` with evidence that its conditional trigger is absent, or `UNPROVEN`; reading, mentioning, delegating, skipping, or tool failure is not proof.
-Before returning, resolve every `PENDING`, count only `PROVEN` and `CLEARED` items as complete, apply this skill's verdict, decision, and approval rules to every `UNPROVEN`, and prepend **Checklist: X/Y complete**<br>**Incomplete: None | section/item — reason; outcome impact; exact next action**; list every `UNPROVEN` item.
+**Execution contract:** The ordered checkboxes are the Definition of Done. Track every item internally as `PENDING`, `PROVEN` with concrete evidence, `CLEARED` with evidence that its condition is absent, or `UNPROVEN` with a gap; reading, delegation, or tool failure is not proof. Reconcile items after each section. Before returning, resolve all `PENDING` and count only `PROVEN` and `CLEARED`; apply the skill's verdict and approval rules to every gap.
+Preserve user intent, scope, and existing authorization. Continue authorized work; ask only for consequential unresolved choices or required external approval. Scale depth to material risk without silently skipping checks. Preserve dependency and safety ordering; otherwise choose the verification method appropriate to each obligation.
 
 ## Tool Routing
 
@@ -26,12 +26,7 @@ Diagrams communicate a model; executable behavior remains authoritative for curr
 
 - Reuse an existing diagram convention or use `docs/architecture/diagrams/<view>.md`.
 - Prefer Markdown with Mermaid for text-reviewable source; use ASCII when Mermaid is unsupported.
-- Choose only views that answer a named audience question.
-- For static structure, start with system context and container views; add component depth only when it changes a decision.
-- Use sequence or dynamic views for critical runtime interactions and failure paths.
-- Use data-flow views for stores, sensitive data, trust boundaries, and transformations.
-- Use deployment views for runtime nodes, regions, networks, scaling, and failover.
-- Give every diagram a title, scope, audience, legend, element descriptions, and labeled relationships.
+- For static structure, choose the context, container, or component level that answers the requested question; do not create prerequisite overview diagrams when existing context suffices.
 - Keep diagram source reviewable in version control.
 - Split views when one diagram needs multiple unrelated stories.
 - Never use color as the only carrier of meaning.
@@ -51,7 +46,7 @@ Diagrams communicate a model; executable behavior remains authoritative for curr
 
 ### 2. Build the Architecture Model
 
-- [ ] Identify people, software systems, deployable containers, components, stores, queues, and external dependencies relevant to the question.
+- [ ] Identify relevant people, systems, applications/data stores (C4 containers when using C4), components, queues, and external dependencies; distinguish logical containers from OS/container-runtime deployment units.
 - [ ] Record responsibility, type, technology when decision-relevant, owner when known, and current/target status for each element.
 - [ ] Resolve relationship direction, label, protocol or data, synchronicity, and trust or network boundary where relevant.
 - [ ] Trace runtime discovery and registration before including current-state routes, handlers, jobs, plugins, or consumers.
@@ -60,7 +55,7 @@ Diagrams communicate a model; executable behavior remains authoritative for curr
 ### 3. Select and Draw Views
 
 - [ ] Create a system-context view when readers need system scope and external actors.
-- [ ] Create a container or deployment view when readers need responsibilities, deployability, stores, or operational topology.
+- [ ] Create a container or deployment view for responsibilities, deployability, stores, or operational topology; include nodes, regions, networks, scaling, and failover when relevant to the audience question.
 - [ ] Create a component view only for a complex area whose internal boundaries change understanding.
 - [ ] Create sequence or dynamic views for critical success, failure, retry, timeout, recovery, or migration interactions.
 - [ ] Create data-flow or trust-boundary views when security, privacy, residency, or system-of-record questions require them.
@@ -77,27 +72,22 @@ Diagrams communicate a model; executable behavior remains authoritative for curr
 ### 5. Verify and Report
 
 - [ ] Validate syntax with the repository renderer or perform a complete manual syntax inspection.
-- [ ] Check readability at normal rendering size and split overloaded views rather than shrinking labels.
-- [ ] Verify each current-state element and relationship against repository evidence.
-- [ ] Confirm no UI design, audit verdict, code, tests, or external state changed.
+- [ ] Inspect rendered readability when a preview is available and split overloaded views rather than shrinking labels. Without a renderer, record visual readability as `UNPROVEN`; manual syntax inspection is not render proof.
+- [ ] Verify current-state elements and relationships against implementation evidence, and target-state elements against the declared proposal or explicitly labelled assumptions.
 - [ ] Use `READY` when diagrams are valid, scoped, and evidenced; use `INCONCLUSIVE` when material relationships remain unknown; use `BLOCKED` when scope, evidence, format, or destination prevents a trustworthy diagram.
+
+## Self-Check
+
+- [ ] **Reconcile before returning.** Check item-level evidence, requirement coverage, contradictions, scope, verdict, and applicable cleanup. Correct the report or authorized artifacts. Reuse valid evidence; do not automatically rescan the repository or rerun successful commands. Repeat checks only for relevant changes, failures, or unresolved evidence. Disclose remaining gaps.
 
 ## Output Contract
 
-```markdown
-# Architecture Diagrams
+Report in the user's language, in this order; retain all five fields and state each fact once. Small results may use one line per field; omit empty tables and do not copy linked artifacts:
 
-**Verdict:** READY | INCONCLUSIVE | BLOCKED
-**Artifacts:** paths
+1. **Result:** Skill-specific verdict and supported outcome.
+2. **Scope:** Reviewed/changed scope, exclusions, baseline, and material assumptions.
+3. **Evidence:** Skill-specific fields below; distinguish facts, inferences, and unverified claims. Link artifacts; use tables when useful.
+4. **Verification:** Checks/results, unavailable evidence, and applicable cleanup/external state.
+5. **Completion:** `Checklist: X/Y complete`; `Incomplete: None` or each `UNPROVEN` item's reason, outcome impact, and exact next action; residual risks and required decisions.
 
-## Views created or updated
-| View | State | Audience question | Evidence basis |
-|---|---|---|---|
-
-## Verification
-- Syntax or render check
-- Current-state relationship checks
-
-## Unknowns and residual risks
-Only missing relationships or rendering limits that affect interpretation.
-```
+**Skill-specific evidence:** Artifact paths; each view’s current/target state, audience question, and evidence basis. Report syntax/render verification and current-state relationship checks, unknown relationships, and rendering limits that affect interpretation.

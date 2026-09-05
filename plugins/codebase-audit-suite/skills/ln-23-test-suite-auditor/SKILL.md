@@ -1,14 +1,14 @@
 ---
 name: ln-23-test-suite-auditor
-description: "Audits whether an existing test suite proves important behavior as a sustainable portfolio. Use when test confidence or lifecycle control is uncertain; not to implement tests or review one delivery."
+description: "Audits existing tests for meaningful coverage, trustworthy oracles, and maintenance value. Not for test implementation or a single delivery review."
 ---
 
 # Test Suite Auditor
 
 **Goal:** Audit the test portfolio as a read-only lifecycle and confidence system. Determine which important failures it detects, which evidence is untrustworthy or obsolete, and which additions, changes, consolidations, retirements, or explicit omissions produce the smallest sustainable portfolio.
 
-**Execution contract:** Treat the ordered checkbox workflow below as this skill's Definition of Done. Track every checkbox as `PENDING`, then resolve it to `PROVEN` with concrete evidence, `CLEARED` with evidence that its conditional trigger is absent, or `UNPROVEN`; reading, mentioning, delegating, skipping, or tool failure is not proof.
-Before returning, resolve every `PENDING`, count only `PROVEN` and `CLEARED` items as complete, apply this skill's verdict, decision, and approval rules to every `UNPROVEN`, and prepend **Checklist: X/Y complete**<br>**Incomplete: None | section/item — reason; outcome impact; exact next action**; list every `UNPROVEN` item.
+**Execution contract:** The ordered checkboxes are the Definition of Done. Track every item internally as `PENDING`, `PROVEN` with concrete evidence, `CLEARED` with evidence that its condition is absent, or `UNPROVEN` with a gap; reading, delegation, or tool failure is not proof. Reconcile items after each section. Before returning, resolve all `PENDING` and count only `PROVEN` and `CLEARED`; apply the skill's verdict and approval rules to every gap.
+Preserve user intent, scope, and existing authorization. Continue authorized work; ask only for consequential unresolved choices or required external approval. Scale depth to material risk without silently skipping checks. Preserve dependency and safety ordering; otherwise choose the verification method appropriate to each obligation.
 
 ## Tool Routing
 
@@ -45,7 +45,7 @@ Run only safe test and diagnostic commands. Do not rewrite snapshots, update gol
 - [ ] Map source domains and critical entrypoints to unit, integration, contract, end-to-end, and manual test surfaces.
 - [ ] Trace requirements, product risks, incidents, public contracts, and changed behavior to tests and results where evidence exists; identify tests with no current test basis and basis elements with no credible proof.
 - [ ] Read repository instructions and CI configuration to identify required suites, environment assumptions, retries, sharding, and exclusions.
-- [ ] Run the smallest representative suites, then required test gates where feasible; record environment, duration, exit status, failures, skips, and retries.
+- [ ] Run representative suites and required gates where feasible; record environment, duration, exit status, discovered/executed scope, failures, skips, and retries. Flag required suites that silently select no tests.
 - [ ] Separate generated, vendored, example, migration-history, and infrastructure fixtures from product tests before evaluating the portfolio.
 - [ ] Keep the audit read-only and disclose any caches or test artifacts created by permitted commands.
 
@@ -64,7 +64,7 @@ Run only safe test and diagnostic commands. Do not rewrite snapshots, update gol
 
 - [ ] Check shared database, filesystem, environment, process, network, cache, clock, random generator, and global state for leakage between tests.
 - [ ] Check setup and teardown on success and failure, unique test data, transaction boundaries, cleanup, and parallel-safe resource ownership.
-- [ ] Diagnose suspected flakes with the smallest discriminating matrix available: run alone, in-suite, repeated with a fixed seed, shuffled/reversed, and parallel; preserve the first failing order, seed, worker, and environment.
+- [ ] Diagnose suspected flakes using only discriminating modes: alone, in-suite, fixed-seed repetition, shuffled/reversed order, or parallel execution. Preserve the first failure, order, seed, worker, and environment; stop when evidence identifies the cause or the bounded diagnostic budget ends.
 - [ ] Detect time, timezone, locale, randomness, sleep, scheduler, and race sensitivity; require controllable clocks or seeds where behavior depends on them.
 - [ ] For real dependencies and emulators, verify version pinning, readiness, namespace/state reset, failure cleanup, credentials, and CI availability instead of assuming either real or mocked is preferable.
 - [ ] Review retries and quarantine rules so they preserve the first failure and reproducibility data rather than converting an initial failure into a silent pass.
@@ -75,11 +75,11 @@ Run only safe test and diagnostic commands. Do not rewrite snapshots, update gol
 
 - [ ] Check whether test layout follows source domains or a clear type-based convention and whether contributors can locate the owning tests.
 - [ ] Find orphan tests, disabled suites, duplicate fixtures, fragmented scenario coverage, oversized files, and flat directories that obscure ownership.
-- [ ] Identify temporary characterization, migration, compatibility, incident, workaround, and regression tests whose original trigger has ended; require current unique risk evidence or a safe merge or deletion path.
+- [ ] Review temporary characterization, migration, compatibility, incident, workaround, and regression tests against current risk. A fixed incident does not retire its regression guard; require obsolete behavior or trustworthy replacement coverage before recommending merge or deletion.
 - [ ] Check test names and arrangement for behavioral intent, prerequisites, action, and expected outcome rather than implementation narration.
-- [ ] For UI and interaction tests, reject locators coupled to visible or translated copy, styling, layout, position, or incidental structure; require stable repository-owned IDs or dedicated test hooks and keep explicit copy assertions separate from element discovery.
+- [ ] Use stable project-native semantic locators (roles, accessible names, labels) or explicit IDs/test hooks according to the observable contract and locale strategy. Avoid styling, position, timing, and incidental structure. Treat exact-copy assertions separately when copy is a requirement; do not require product edits solely to add hooks when a robust semantic locator exists.
 - [ ] Inspect assertions for specificity, negative proof, state and interaction balance, useful failure messages, and resistance to false positives.
-- [ ] Flag assertion-free tests, weak truthiness checks, snapshot-only proof, broad exception acceptance, and mocks that bypass the behavior under test.
+- [ ] Flag tests without a meaningful failure oracle, weak truthiness, snapshots of incidental or unreviewable output, broad exception acceptance, and mocks that bypass tested behavior. Retain snapshots or implicit failure oracles that independently prove the required contract.
 - [ ] Check that expected values come from an independent contract, example, invariant, or golden artifact rather than reproducing the implementation's calculation inside the test.
 - [ ] Check mocks, fakes, emulators, and generated clients for contract drift; require a contract test or another credible comparison with the real boundary where drift could create false confidence.
 - [ ] Exercise non-default configuration values where a passing test with defaults could conceal hard-coded ports, limits, timeouts, paths, or feature behavior.
@@ -93,50 +93,24 @@ Run only safe test and diagnostic commands. Do not rewrite snapshots, update gol
 - [ ] Research runner or framework semantics only when lifecycle, fixture, isolation, retry, or mocking behavior can change a finding; use official version-matched sources.
 - [ ] Reproduce high-severity trust failures where safe, preserving command, seed, order, and environment evidence.
 - [ ] Deduplicate findings that share one root cause, such as a global fixture causing multiple flaky suites.
-- [ ] Apply a materiality and acceptable-alternative gate to every candidate. Require a concrete critical behavior left unproven, false confidence, delivery risk, or recurring maintenance cost at the suite's evidenced scale. Reject nitpicks, test-style taste, theoretical purity, coverage vanity, generic best practice, and a different but equally trustworthy test design; when several test shapes work, require the risk coverage and oracle rather than one preferred implementation.
-- [ ] Put a directly relevant Markdown practice link in every finding's required resolution: prefer current official documentation or a specification, and use reputable primary engineering material only when official sources do not resolve the tradeoff. Open and verify the source; it must support the proposed test mechanism, not merely the defect category. Reject search-result links, generic best-practice articles, and decorative citations.
+- [ ] Apply the materiality gate: require concrete critical proof gap, false confidence, delivery risk, or recurring maintenance cost at evidenced scale. Reject taste, theoretical purity, generic practice, hypothetical scale, and reasonable alternatives; require the outcome or constraint, not a preferred implementation.
+- [ ] Ground external corrections in version-matched official contracts, using primary engineering sources for unresolved tradeoffs. Cite the supported mechanism; local evidence suffices for local defects.
 - [ ] Classify findings as `P0`-`P3` based on critical behavior left unproven, false confidence, delivery blockage, and maintenance drag.
-- [ ] Include affected behavior, test location, evidence, missed defect class, portfolio action, why the current compromise is not acceptable, and the smallest credible remediation while allowing equivalent solutions.
 - [ ] Report decision-useful portfolio signals when evidence exists: material risks by proof state, action distribution, required-gate results and duration, skips, retries, quarantine, and orphan or obsolete candidates. Reject total test count, pass rate without exclusions, raw coverage, and level ratios as standalone quality targets.
 - [ ] Use `BLOCKED` when a required critical suite, environment, or oracle cannot be accessed and no credible static or historical fallback exists; use `FAIL` when evidence shows critical behavior is unproven, a required gate fails, or false confidence remains in an untrustworthy critical surface; use `CONCERNS` only for non-blocking portfolio or maintenance risk, and `PASS` only when required evidence is trustworthy and no critical gap remains.
-- [ ] Return the verdict with trusted coverage, critical gaps, untrustworthy surfaces, portfolio actions, limitations, and residual test risk.
+
+## Self-Check
+
+- [ ] **Reconcile before returning.** Check item-level evidence, requirement coverage, contradictions, scope, verdict, and applicable cleanup. Correct the report or authorized artifacts. Reuse valid evidence; do not automatically rescan the repository or rerun successful commands. Repeat checks only for relevant changes, failures, or unresolved evidence. Disclose remaining gaps.
 
 ## Output Contract
 
-```markdown
-# Test Suite Audit
+Report in the user's language, in this order; retain all five fields and state each fact once. Small results may use one line per field; omit empty tables and do not copy linked artifacts:
 
-**Verdict:** PASS | CONCERNS | FAIL | BLOCKED
+1. **Result:** Skill-specific verdict and supported outcome.
+2. **Scope:** Reviewed/changed scope, exclusions, baseline, and material assumptions.
+3. **Evidence:** Skill-specific fields below; distinguish facts, inferences, and unverified claims. Link artifacts; use tables when useful.
+4. **Verification:** Checks/results, unavailable evidence, and applicable cleanup/external state.
+5. **Completion:** `Checklist: X/Y complete`; `Incomplete: None` or each `UNPROVEN` item's reason, outcome impact, and exact next action; residual risks and required decisions.
 
-## Portfolio map and baseline
-- Runners, suites, and test types
-- Commands and environments executed
-- Coverage, flake, and mutation evidence available
-
-## Confidence summary
-| Area | Status | Evidence |
-|---|---|---|
-| Critical behavior coverage | PASS / CONCERNS / FAIL | ... |
-| Isolation and determinism | PASS / CONCERNS / FAIL | ... |
-| Structure and maintenance | PASS / CONCERNS / FAIL | ... |
-| Assertion and oracle strength | PASS / CONCERNS / FAIL | ... |
-| Lifecycle and portfolio control | PASS / CONCERNS / FAIL | traceability, gates, quarantine, retirement triggers, and net portfolio effect |
-
-## Portfolio decisions
-| Test basis or protected risk | Existing evidence or affected test | Action | Gate and result | Replacement evidence or review trigger |
-|---|---|---|---|---|
-| ... | path / command / NONE | KEEP / ADD / UPDATE / MERGE / DELETE / NO_TEST | required / diagnostic; PASS / FAIL / BLOCKED / UNPROVEN / QUARANTINED | ... |
-
-## Findings and portfolio actions
-| Priority | Problem | Evidence and justification | Required resolution |
-|---|---|---|---|
-| P0 / P1 / P2 / P3 | Concrete confidence or maintenance defect | Test basis, behavior and test location, evidence, missed defect class, material risk, and why the current tradeoff is not acceptable | `KEEP` / `ADD` / `UPDATE` / `MERGE` / `DELETE` / `NO_TEST`, replacement evidence or accepted risk, the smallest sufficient correction, and a verified `[practice reference](URL)` to official or primary engineering guidance; allow equivalent test designs with the same risk coverage and oracle strength |
-
-Use `None` when no candidate survives the evidence, materiality, portfolio-value, and acceptable-alternative gates.
-
-## Portfolio control
-Net additions, updates, merges, and deletions; `NO_TEST` decisions; required versus diagnostic gates; skips, retries, quarantine, and review or retirement triggers. Use only evidenced signals that can change a decision.
-
-## Residual risks
-Unexecuted suites, unavailable environments, accepted `NO_TEST` exposure, and behavior that remains unproven.
-```
+**Skill-specific evidence:** Test basis/protected risk → existing test or missing proof → portfolio action → oracle → gate/result → replacement evidence or retirement trigger. Cover critical behavior, isolation, maintenance, assertion strength, lifecycle, net portfolio effect, required/diagnostic gates, duration, skips, retries, and quarantine where evidenced. Findings need priority, test location, missed defect class, impact, unacceptable tradeoff, and minimal correction; preserve unique coverage and distinguish portfolio actions from execution states.

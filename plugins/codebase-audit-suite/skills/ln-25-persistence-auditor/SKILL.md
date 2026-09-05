@@ -1,14 +1,14 @@
 ---
 name: ln-25-persistence-auditor
-description: "Audits queries, transactions, data-path performance, and persistence resource lifecycle. Use when data correctness or scalability is at risk; not for general performance tuning."
+description: "Audits queries, transactions, data-path costs, and persistence resource lifetimes. Not for general performance tuning."
 ---
 
 # Persistence Auditor
 
 **Goal:** Perform a read-only audit of persistence and data-heavy runtime paths. Connect static candidates to real query, transaction, resource, or consistency mechanisms and avoid claiming performance impact without evidence.
 
-**Execution contract:** Treat the ordered checkbox workflow below as this skill's Definition of Done. Track every checkbox as `PENDING`, then resolve it to `PROVEN` with concrete evidence, `CLEARED` with evidence that its conditional trigger is absent, or `UNPROVEN`; reading, mentioning, delegating, skipping, or tool failure is not proof.
-Before returning, resolve every `PENDING`, count only `PROVEN` and `CLEARED` items as complete, apply this skill's verdict, decision, and approval rules to every `UNPROVEN`, and prepend **Checklist: X/Y complete**<br>**Incomplete: None | section/item — reason; outcome impact; exact next action**; list every `UNPROVEN` item.
+**Execution contract:** The ordered checkboxes are the Definition of Done. Track every item internally as `PENDING`, `PROVEN` with concrete evidence, `CLEARED` with evidence that its condition is absent, or `UNPROVEN` with a gap; reading, delegation, or tool failure is not proof. Reconcile items after each section. Before returning, resolve all `PENDING` and count only `PROVEN` and `CLEARED`; apply the skill's verdict and approval rules to every gap.
+Preserve user intent, scope, and existing authorization. Continue authorized work; ask only for consequential unresolved choices or required external approval. Scale depth to material risk without silently skipping checks. Preserve dependency and safety ordering; otherwise choose the verification method appropriate to each obligation.
 
 ## Tool Routing
 
@@ -41,12 +41,12 @@ Never connect to production or run mutating diagnostics. `EXPLAIN ANALYZE` execu
 - [ ] Identify critical data paths, high-volume paths, streaming paths, scheduled work, and operations that hold transactions or resources across external calls.
 - [ ] Read repository instructions and inspect Git state before running diagnostics or interpreting current work.
 - [ ] Establish available query logs, metrics, traces, profiles, representative data, test environments, and safe diagnostic permissions.
-- [ ] Keep the audit read-only and document every executed query, command, target, and artifact created.
+- [ ] Keep the audit read-only; record executed query shapes, commands, targets, and created artifacts with sensitive parameters, credentials, and row data redacted.
 
 ### 2. Audit Query and Cache Efficiency
 
-- [ ] Trace representative paths from entrypoint through business logic to generated query and materialization.
-- [ ] Find N+1 behavior, repeated identical fetches, query-in-loop patterns, sequential independent reads, and redundant existence or count queries.
+- [ ] Trace representative paths from entrypoint to generated query and materialization, including tenant/owner predicates and row-level controls where they determine which data may be read or changed.
+- [ ] Find N+1 behavior, repeated fetches, query-in-loop amplification, unnecessary sequential independent reads, and redundant existence/count queries; preserve snapshot, ordering, connection-budget, and transaction constraints when proposing batching or parallelism.
 - [ ] Check over-fetching, broad entity loading, unbounded reads, premature materialization, missing pagination, and user-controlled result amplification.
 - [ ] Check missing bulk operations, per-row writes, avoidable round trips, fragmented commits, and opportunities for set-based work.
 - [ ] Inspect predicates, joins, sort and group operations, index alignment, query-plan assumptions, and statistics only with schema and workload context.
@@ -83,40 +83,23 @@ Never connect to production or run mutating diagnostics. `EXPLAIN ANALYZE` execu
 - [ ] Reproduce high-severity correctness defects with a safe test or complete failure trace and performance defects with query, plan, lock, or profile evidence where possible.
 - [ ] Filter framework-managed lifecycle, bounded maintenance tasks, fixtures, migrations kept for history, and documented consistency tradeoffs before confirming findings.
 - [ ] Deduplicate symptoms that share one root query, transaction boundary, scope mismatch, or pool configuration.
-- [ ] Apply a materiality and acceptable-alternative gate to every candidate. Require a concrete integrity, security, availability, latency, scalability, resource, or recurring maintenance impact at the evidenced workload and deployment scale. Reject nitpicks, query-style taste, theoretical purity, generic best practice, hypothetical load, and a different but reasonable consistency or performance tradeoff; when several designs work, require the data or runtime outcome rather than one preferred mechanism.
-- [ ] Put a directly relevant Markdown practice link in every finding's required resolution: prefer current official database, driver, framework, or runtime documentation or a specification, and use reputable primary engineering material only when official sources do not resolve the tradeoff. Open and verify the source; it must support the proposed mechanism, not merely the defect category. Reject search-result links, generic best-practice articles, and decorative citations.
+- [ ] Apply the materiality gate: require concrete integrity, security, availability, latency, scalability, resource, or recurring maintenance impact at evidenced scale. Reject taste, theoretical purity, generic practice, hypothetical scale, and reasonable alternatives; require the outcome or constraint, not a preferred implementation.
+- [ ] Ground external corrections in version-matched official contracts, using primary engineering sources for unresolved tradeoffs. Cite the supported mechanism; local evidence suffices for local defects.
 - [ ] Classify findings as `P0`-`P3` based on data corruption, security, outage risk, scalability, latency, resource exhaustion, and recurrence.
-- [ ] Include call path, query or resource, evidence, failure or cost mechanism, impact, confidence, why the current compromise is not acceptable, and the smallest safe remediation while allowing equivalent solutions.
 - [ ] Use `BLOCKED` when a critical data path, database semantic, or required non-production environment cannot be verified without a credible fallback; use `FAIL` for an evidenced unresolved corruption, atomicity, outage, resource-exhaustion risk, required failing gate, or another `P0/P1`; use `CONCERNS` only for evidenced non-blocking risk or material unmeasured uncertainty, and `PASS` only when critical paths are trustworthy with no material finding.
-- [ ] Return the verdict with measured and static scope separated, remediation order, limitations, and residual persistence risks.
+
+## Self-Check
+
+- [ ] **Reconcile before returning.** Check item-level evidence, requirement coverage, contradictions, scope, verdict, and applicable cleanup. Correct the report or authorized artifacts. Reuse valid evidence; do not automatically rescan the repository or rerun successful commands. Repeat checks only for relevant changes, failures, or unresolved evidence. Disclose remaining gaps.
 
 ## Output Contract
 
-```markdown
-# Persistence Audit
+Report in the user's language, in this order; retain all five fields and state each fact once. Small results may use one line per field; omit empty tables and do not copy linked artifacts:
 
-**Verdict:** PASS | CONCERNS | FAIL | BLOCKED
+1. **Result:** Skill-specific verdict and supported outcome.
+2. **Scope:** Reviewed/changed scope, exclusions, baseline, and material assumptions.
+3. **Evidence:** Skill-specific fields below; distinguish facts, inferences, and unverified claims. Link artifacts; use tables when useful.
+4. **Verification:** Checks/results, unavailable evidence, and applicable cleanup/external state.
+5. **Completion:** `Checklist: X/Y complete`; `Incomplete: None` or each `UNPROVEN` item's reason, outcome impact, and exact next action; residual risks and required decisions.
 
-## Data context and evidence
-- Stores, frameworks, versions, and deployment topology
-- Critical and measured paths
-- Diagnostics, commands, and environments used
-
-## Health summary
-| Area | Status | Evidence basis |
-|---|---|---|
-| Query and cache efficiency | PASS / CONCERNS / FAIL | measured / static |
-| Transactions and consistency | PASS / CONCERNS / FAIL | ... |
-| Runtime performance | PASS / CONCERNS / FAIL | measured / static |
-| Resource lifecycle | PASS / CONCERNS / FAIL | ... |
-
-## Findings
-| Priority | Problem | Evidence and justification | Required resolution |
-|---|---|---|---|
-| P0 / P1 / P2 / P3 | Concrete persistence defect | Call path, query, transaction, or resource; evidence and confidence; material failure or cost mechanism at evidenced scale; why the current tradeoff is not acceptable | Smallest safe correction and verification plus a verified `[practice reference](URL)` to official or primary engineering guidance; allow equivalent valid consistency or performance mechanisms |
-
-Use `None` when no candidate survives the evidence, materiality, workload-context, and acceptable-alternative gates.
-
-## Measurement gaps and residual risks
-Unmeasured candidates, unavailable environments, and accepted consistency tradeoffs.
-```
+**Skill-specific evidence:** Stores, versions, workload, deployment, and measured versus statically inspected paths; query/cache efficiency, transactions, consistency, and resource lifecycle. Findings need priority, call path/query/resource, evidence and confidence, failure or cost mechanism, workload impact, unacceptable tradeoff, and minimal safe correction plus verification. Label unmeasured impact and accepted consistency tradeoffs.

@@ -48,6 +48,17 @@ try {
     $skillNames = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
     $canonicalSkillPaths = [Collections.Generic.List[string]]::new()
     $skillIdsByPlugin = @{}
+    $templatePath = Join-Path $repositoryRoot 'SKILL_TEMPLATE.md'
+    Assert-Condition (Test-Path -LiteralPath $templatePath -PathType Leaf) 'Missing canonical SKILL_TEMPLATE.md.'
+    $templateText = [IO.File]::ReadAllText($templatePath).Replace("`r`n", "`n")
+    Assert-Condition ($templateText.Contains('**Status: ADOPTED.**')) 'Skill template must be adopted before use.'
+    $contractPattern = '(?s)\*\*Execution contract:\*\*.*?(?=\n## Tool Routing)'
+    $selfCheckPattern = '(?s)## Self-Check\n.*?(?=\n## Output Contract)'
+    $reportPattern = '(?s)## Output Contract\n.*?(?=\*\*Skill-specific evidence:\*\*)'
+    $templateContract = [regex]::Match($templateText, $contractPattern)
+    $templateSelfCheck = [regex]::Match($templateText, $selfCheckPattern)
+    $templateReport = [regex]::Match($templateText, $reportPattern)
+    Assert-Condition ($templateContract.Success -and $templateSelfCheck.Success -and $templateReport.Success) 'Skill template is missing a common contract block.'
 
     for ($pluginIndex = 0; $pluginIndex -lt $claudeCatalog.plugins.Count; $pluginIndex++) {
         $entry = $claudeCatalog.plugins[$pluginIndex]
@@ -92,7 +103,7 @@ try {
             Assert-Condition (Test-Path -LiteralPath $skillPath -PathType Leaf) "Missing SKILL.md in $($skillDirectory.Name)."
 
             $lines = [IO.File]::ReadAllLines($skillPath)
-            Assert-Condition ($lines.Count -ge 100 -and $lines.Count -le 200) "$($skillDirectory.Name) has $($lines.Count) lines; expected 100-200."
+            Assert-Condition ($lines.Count -le 200) "$($skillDirectory.Name) has $($lines.Count) lines; maximum is 200."
             Assert-Condition ($lines.Count -gt 3 -and $lines[0] -ceq '---' -and $lines[3] -ceq '---') "$($skillDirectory.Name) frontmatter must contain only name and description."
 
             $name = ($lines[1] -replace '^name:\s*', '').Trim('"')
@@ -104,13 +115,35 @@ try {
             Assert-Condition $nameMatch.Success "Invalid indexed skill name: $name."
             Assert-Condition ($nameMatch.Groups[1].Value -ceq $expectedLeadingIndex) "$name is assigned to the wrong plugin family."
 
-            $skillText = [IO.File]::ReadAllText($skillPath)
+            $skillText = [IO.File]::ReadAllText($skillPath).Replace("`r`n", "`n")
             Assert-Condition (-not $skillText.Contains($legacyCompletionRule)) "$name uses the contradictory legacy completion rule."
             foreach ($state in @('PROVEN', 'CLEARED', 'UNPROVEN')) {
                 Assert-Condition ($skillText -cmatch [regex]::Escape($state)) "$name execution contract does not define $state."
             }
             Assert-Condition ($skillText -cmatch 'Checklist: X/Y complete') "$name does not require the completion count."
             Assert-Condition ($skillText -cmatch '(?m)^- \[ \] ') "$name has no executable checklist."
+
+            $goalPosition = $skillText.IndexOf('**Goal:**')
+            $contractPosition = $skillText.IndexOf('**Execution contract:**')
+            $routingPosition = $skillText.IndexOf('## Tool Routing')
+            Assert-Condition ($goalPosition -ge 0 -and $contractPosition -gt $goalPosition -and $routingPosition -gt $contractPosition) "$name must define Goal and Execution contract before Tool Routing."
+            $contractMatch = [regex]::Match($skillText, $contractPattern)
+            $selfCheckMatch = [regex]::Match($skillText, $selfCheckPattern)
+            $reportMatch = [regex]::Match($skillText, $reportPattern)
+            Assert-Condition ($contractMatch.Success -and $selfCheckMatch.Success -and $reportMatch.Success) "$name is missing the item-level contract, final self-check, or common report with skill-specific evidence."
+            Assert-Condition ($contractMatch.Value -cmatch 'Track every item internally' -and $selfCheckMatch.Value -cmatch '(?m)^- \[ \] ') "$name must track individual checklist items and a final self-check."
+            $reportFields = @([regex]::Matches($reportMatch.Value, '(?m)^\d\. \*\*([^:]+):\*\*') | ForEach-Object { $_.Groups[1].Value })
+            Assert-SequenceEqual $reportFields @('Result', 'Scope', 'Evidence', 'Verification', 'Completion') "$name report fields or order differ."
+            Assert-Condition ($contractMatch.Value -ceq $templateContract.Value -and $selfCheckMatch.Value -ceq $templateSelfCheck.Value -and $reportMatch.Value -ceq $templateReport.Value) "$name common contract, self-check, or report differs from SKILL_TEMPLATE.md."
+
+            foreach ($link in [regex]::Matches($skillText, '\[[^\]]+\]\(([^)]+)\)')) {
+                $target = $link.Groups[1].Value
+                if ($target -match '^[a-zA-Z][a-zA-Z0-9+.-]*:' -or $target.StartsWith('#')) { continue }
+                $localTarget = ($target -split '#')[0]
+                $resolvedTarget = [IO.Path]::GetFullPath((Join-Path $skillDirectory.FullName $localTarget))
+                Assert-Condition ($resolvedTarget.StartsWith($skillDirectory.FullName + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) "$name reference must stay inside its standalone skill: $target"
+                Assert-Condition (Test-Path -LiteralPath $resolvedTarget -PathType Leaf) "$name has a missing local reference: $target"
+            }
 
             $skillId = $nameMatch.Groups[1].Value + $nameMatch.Groups[2].Value
             $skillIds.Add($skillId)

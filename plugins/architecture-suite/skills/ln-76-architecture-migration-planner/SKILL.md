@@ -1,14 +1,14 @@
 ---
 name: ln-76-architecture-migration-planner
-description: "Plans a reversible architecture migration with compatibility, data movement, rollout, and rollback. Use for current-to-target transitions; not execution, generic planning, or delivery review."
+description: "Plans an architecture transition with compatibility, data movement, rollout, and rollback. Not for migration execution or generic task planning."
 ---
 
 # Architecture Migration Planner
 
-**Goal:** Create a safe, reversible transition from an evidenced current architecture to an explicit target architecture. Change only the approved migration document; do not execute migrations, edit product code, build a generic task plan, approve delivery, or hide irreversible steps.
+**Goal:** Plan a safe transition from evidenced current architecture to an explicit target, with reversibility limits and recovery actions. Change only the approved migration document; do not execute migrations, edit product code, build a generic task plan, approve delivery, or hide irreversible steps.
 
-**Execution contract:** Treat the ordered checkbox workflow below as this skill's Definition of Done. Track every checkbox as `PENDING`, then resolve it to `PROVEN` with concrete evidence, `CLEARED` with evidence that its conditional trigger is absent, or `UNPROVEN`; reading, mentioning, delegating, skipping, or tool failure is not proof.
-Before returning, resolve every `PENDING`, count only `PROVEN` and `CLEARED` items as complete, apply this skill's verdict, decision, and approval rules to every `UNPROVEN`, and prepend **Checklist: X/Y complete**<br>**Incomplete: None | section/item — reason; outcome impact; exact next action**; list every `UNPROVEN` item.
+**Execution contract:** The ordered checkboxes are the Definition of Done. Track every item internally as `PENDING`, `PROVEN` with concrete evidence, `CLEARED` with evidence that its condition is absent, or `UNPROVEN` with a gap; reading, delegation, or tool failure is not proof. Reconcile items after each section. Before returning, resolve all `PENDING` and count only `PROVEN` and `CLEARED`; apply the skill's verdict and approval rules to every gap.
+Preserve user intent, scope, and existing authorization. Continue authorized work; ask only for consequential unresolved choices or required external approval. Scale depth to material risk without silently skipping checks. Preserve dependency and safety ordering; otherwise choose the verification method appropriate to each obligation.
 
 ## Tool Routing
 
@@ -28,7 +28,6 @@ A migration phase must leave the system in a supported state. Additive and rever
 - Treat current-state, target-design, baseline, decisions, diagrams, interfaces, and telemetry as optional shared evidence.
 - Keep the plan architectural: phases, compatibility, data, topology, gates, rollback, ownership, and removal.
 - Leave file-level implementation tasks to downstream planning.
-- Separate preparation, coexistence, migration, cutover, stabilization, and removal.
 - Never describe rollback as "revert" when data or external effects are not reversible.
 - Give every destructive step explicit approval, backup, restoration, and zero-consumer evidence requirements.
 
@@ -53,9 +52,9 @@ A migration phase must leave the system in a supported state. Additive and rever
 ### 3. Design Compatibility and Data Safety
 
 - [ ] Define old/new contract compatibility, version negotiation, adapters, dual-read or dual-write behavior, and deprecation policy where relevant.
-- [ ] Use expand/migrate/contract for schema and data-shape changes; keep additive and destructive operations in separate releases.
+- [ ] Use expand/migrate/contract when mixed versions or online migration require coexistence; separate additive and destructive releases in that case. For an approved offline atomic transition, document the equivalent compatibility, recovery, and downtime controls.
 - [ ] Define backfill selection, batching, throttling, idempotency, checkpoints, retries, reconciliation, and correctness oracle.
-- [ ] Define source of truth during coexistence and conflict handling for concurrent writes.
+- [ ] Define source of truth during coexistence, concurrent-write conflict handling, and detection, retry, and reconciliation of partial dual-write failure; do not assume two writes are atomic.
 - [ ] Define backup, restore, RPO/RTO impact, privacy, retention, and audit evidence for data movement.
 
 ### 4. Build Reversible Phases
@@ -69,8 +68,8 @@ A migration phase must leave the system in a supported state. Additive and rever
 ### 5. Plan Cutover and Removal
 
 - [ ] Define go/no-go authority, communication, freeze conditions, exact cutover control, and immediate verification.
-- [ ] Define rollback boundaries separately for code, configuration, traffic, schema, and already-migrated data.
-- [ ] Require measured zero use, migrated consumers, retention expiry, and explicit approval before destructive removal.
+- [ ] Define rollback boundaries separately for code, configuration, traffic, schema, and migrated data, including points of no return and roll-forward recovery when rollback would lose accepted writes.
+- [ ] Before destructive removal, require usage evidence over a window covering relevant schedules and offline consumers, migrated consumers, applicable retention expiry, and explicit approval. A short zero-traffic sample cannot establish zero use.
 - [ ] List old code paths, contracts, flags, adapters, jobs, data, infrastructure, dashboards, and documentation to remove.
 - [ ] Define post-cutover observation period, ownership handoff, incident response, and closure evidence.
 
@@ -79,27 +78,20 @@ A migration phase must leave the system in a supported state. Additive and rever
 - [ ] Write transition summary, state gap, dependencies, compatibility, data plan, phased sequence, gates, observability, rollback, removal, owners, assumptions, and open decisions.
 - [ ] Link shared artifacts by stable repository path or title without requiring a particular workflow.
 - [ ] Re-read every phase for unsupported zero-downtime, zero-loss, consumer, capacity, or reversibility claims.
-- [ ] Confirm no migration, code, test, deployment, task tracker, or external change was executed.
 - [ ] Use `READY` only when phases are safely executable inputs to implementation planning; use `REVISE` for material compatibility, data, gate, or rollback gaps; use `BLOCKED` when current state, target state, authority, or safety evidence is unavailable.
+
+## Self-Check
+
+- [ ] **Reconcile before returning.** Check item-level evidence, requirement coverage, contradictions, scope, verdict, and applicable cleanup. Correct the report or authorized artifacts. Reuse valid evidence; do not automatically rescan the repository or rerun successful commands. Repeat checks only for relevant changes, failures, or unresolved evidence. Disclose remaining gaps.
 
 ## Output Contract
 
-```markdown
-# Architecture Migration Plan
+Report in the user's language, in this order; retain all five fields and state each fact once. Small results may use one line per field; omit empty tables and do not copy linked artifacts:
 
-**Verdict:** READY | REVISE | BLOCKED
-**Artifact:** path
+1. **Result:** Skill-specific verdict and supported outcome.
+2. **Scope:** Reviewed/changed scope, exclusions, baseline, and material assumptions.
+3. **Evidence:** Skill-specific fields below; distinguish facts, inferences, and unverified claims. Link artifacts; use tables when useful.
+4. **Verification:** Checks/results, unavailable evidence, and applicable cleanup/external state.
+5. **Completion:** `Checklist: X/Y complete`; `Incomplete: None` or each `UNPROVEN` item's reason, outcome impact, and exact next action; residual risks and required decisions.
 
-## State transition
-- Current state, target state, gap, consumers, and invariants
-
-## Phases
-| Phase | Entry gate | Change | Success evidence | Abort condition | Rollback or roll-forward |
-|---|---|---|---|---|---|
-
-## Data, compatibility, and removal
-- Coexistence, migration, reconciliation, cutover, and zero-use proof
-
-## Open decisions and residual risks
-Only items that can change safety, ordering, or reversibility.
-```
+**Skill-specific evidence:** Artifact path; current/target gap, consumers, dependencies, and protected invariants. Summarize phases with entry gates, changes, success evidence, abort conditions, rollback/roll-forward; data/coexistence/reconciliation/cutover/removal proof; and open decisions that affect safety, ordering, or reversibility.

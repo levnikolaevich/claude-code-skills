@@ -1,14 +1,14 @@
 ---
 name: ln-73-system-design-proposal-builder
-description: "Creates a decision-complete target system design from requirements and constraints. Use before implementation planning; not for requirements baselines, reviews, audits, or code changes."
+description: "Creates a target system design from requirements before implementation planning. Not for requirements baselines, audits, or code changes."
 ---
 
 # System Design Proposal Builder
 
 **Goal:** Create a proportionate, evidence-backed target system design that turns requirements into explicit boundaries, contracts, data flow, failure behavior, operations, and tradeoffs. Change only the approved design document; do not implement, audit, or approve the delivery.
 
-**Execution contract:** Treat the ordered checkbox workflow below as this skill's Definition of Done. Track every checkbox as `PENDING`, then resolve it to `PROVEN` with concrete evidence, `CLEARED` with evidence that its conditional trigger is absent, or `UNPROVEN`; reading, mentioning, delegating, skipping, or tool failure is not proof.
-Before returning, resolve every `PENDING`, count only `PROVEN` and `CLEARED` items as complete, apply this skill's verdict, decision, and approval rules to every `UNPROVEN`, and prepend **Checklist: X/Y complete**<br>**Incomplete: None | section/item — reason; outcome impact; exact next action**; list every `UNPROVEN` item.
+**Execution contract:** The ordered checkboxes are the Definition of Done. Track every item internally as `PENDING`, `PROVEN` with concrete evidence, `CLEARED` with evidence that its condition is absent, or `UNPROVEN` with a gap; reading, delegation, or tool failure is not proof. Reconcile items after each section. Before returning, resolve all `PENDING` and count only `PROVEN` and `CLEARED`; apply the skill's verdict and approval rules to every gap.
+Preserve user intent, scope, and existing authorization. Continue authorized work; ask only for consequential unresolved choices or required external approval. Scale depth to material risk without silently skipping checks. Preserve dependency and safety ordering; otherwise choose the verification method appropriate to each obligation.
 
 ## Tool Routing
 
@@ -27,16 +27,15 @@ Use patterns as candidate solutions, not goals. Introduce infrastructure only wh
 - Reuse a clear target-design document; otherwise use `docs/architecture/target-design.md`.
 - Read available baseline, current-state, decision, interface, diagram, and migration artifacts by path; none is mandatory.
 - Label facts, assumptions, estimates, proposed decisions, and unresolved choices separately.
-- Start with requirements and estimates, then domains and contracts, HLD, and only the critical LLD.
-- Consider at least two credible alternatives for consequential decisions, including the simplest option.
-- Prefer reversible choices and a modular monolith unless evidence justifies independent service boundaries.
+- Compare credible alternatives for consequential decisions, including the simplest feasible option; when constraints permit only one, document why rather than inventing another.
+- Prefer reversible choices and the simplest topology fitting the system. For a new application, consider a modular monolith before independent services; do not force that shape onto libraries, plugins, or an established topology.
 - Do not silently change an accepted decision; record the conflict and required governance action.
 
 ## Checklist
 
 ### 1. Frame the Design
 
-- [ ] Resolve business outcome, actors, critical journeys, scope, non-goals, decision horizon, and intended readers.
+- [ ] Resolve business outcome, actors, journeys, scope, non-goals, horizon, readers, language, and the approved canonical destination before editing.
 - [ ] Read repository instructions and inspect relevant architecture artifacts and current implementation.
 - [ ] Extract functional requirements and measurable quality drivers, preserving their source and status.
 - [ ] Identify architecture-critical unknowns and ask only questions whose answers change the target shape.
@@ -62,7 +61,7 @@ Use patterns as candidate solutions, not goals. Introduce infrastructure only wh
 
 - [ ] Describe system context, deployable units, stores, queues, external systems, responsibilities, and labeled data flows.
 - [ ] Trace success, overload, dependency failure, partial failure, retry, timeout, degradation, recovery, and cancellation for critical journeys.
-- [ ] Deep-dive only the two or three components with the highest correctness, scale, security, or reversibility risk.
+- [ ] Deep-dive only components whose correctness, scale, security, or reversibility risk warrants implementation-level detail.
 - [ ] Define observability, SLI measurement points, health, deployment strategy, rollback, backup, and operator actions.
 - [ ] Define ownership, team impact, cost drivers, and operational burden for the proposed topology.
 
@@ -71,7 +70,7 @@ Use patterns as candidate solutions, not goals. Introduce infrastructure only wh
 - [ ] Compare credible alternatives against requirements, estimates, failure behavior, complexity, cost, migration, and future triggers.
 - [ ] State selected and rejected options with consequences, sensitivity points, and assumptions that would reopen the decision.
 - [ ] Identify significant decisions that deserve their own compact decision records without requiring another workflow.
-- [ ] Define architecture acceptance evidence: contract checks, load or failure experiments, security validation, recovery proof, and observability signals.
+- [ ] Define architecture acceptance evidence appropriate to each material driver: contract checks, load/failure experiments, security validation, recovery proof, or observability signals. Specify prerequisites and pass criteria; do not execute them during design.
 - [ ] Outline current-to-target implications and compatibility needs without expanding into a full implementation plan.
 
 ### 6. Write and Report
@@ -79,27 +78,20 @@ Use patterns as candidate solutions, not goals. Introduce infrastructure only wh
 - [ ] Write context, drivers, estimates, domains, contracts, HLD, critical LLD, failure and operations model, security, alternatives, decisions, validation, open questions, and evolution triggers.
 - [ ] Preserve existing content outside the approved scope and link shared artifacts only by document path or title.
 - [ ] Re-read the proposal for unsupported facts, hidden decisions, mixed abstraction, and unjustified machinery.
-- [ ] Confirm no code, tests, delivery plan, audit result, or external state changed.
 - [ ] Use `READY` only when the design is decision-complete enough for implementation planning; use `REVISE` for material but solvable gaps; use `BLOCKED` when required intent, evidence, authority, or destination is unavailable.
+
+## Self-Check
+
+- [ ] **Reconcile before returning.** Check item-level evidence, requirement coverage, contradictions, scope, verdict, and applicable cleanup. Correct the report or authorized artifacts. Reuse valid evidence; do not automatically rescan the repository or rerun successful commands. Repeat checks only for relevant changes, failures, or unresolved evidence. Disclose remaining gaps.
 
 ## Output Contract
 
-```markdown
-# System Design Proposal
+Report in the user's language, in this order; retain all five fields and state each fact once. Small results may use one line per field; omit empty tables and do not copy linked artifacts:
 
-**Verdict:** READY | REVISE | BLOCKED
-**Artifact:** path
+1. **Result:** Skill-specific verdict and supported outcome.
+2. **Scope:** Reviewed/changed scope, exclusions, baseline, and material assumptions.
+3. **Evidence:** Skill-specific fields below; distinguish facts, inferences, and unverified claims. Link artifacts; use tables when useful.
+4. **Verification:** Checks/results, unavailable evidence, and applicable cleanup/external state.
+5. **Completion:** `Checklist: X/Y complete`; `Incomplete: None` or each `UNPROVEN` item's reason, outcome impact, and exact next action; residual risks and required decisions.
 
-## Target design
-- Requirements, estimates, boundaries, contracts, HLD, and critical LLD
-
-## Decisions and tradeoffs
-| Decision | Selected option | Alternatives | Evidence | Reopen trigger |
-|---|---|---|---|---|
-
-## Validation and transition
-- Required evidence, compatibility, rollout, rollback, and observability
-
-## Open decisions and residual risks
-Only items that can still change implementation planning.
-```
+**Skill-specific evidence:** Artifact path; requirements, estimates, boundaries, contracts, HLD/critical LLD, selected decisions, alternatives, evidence, and reopen triggers. Summarize validation/transition needs, compatibility, rollout, rollback, observability, and only unresolved choices that affect implementation planning.

@@ -19,17 +19,13 @@ Keep portable manifests limited to the canonical Agent Plugins schema identifier
 
 - Edit the canonical skill only at `plugins/<plugin>/skills/<skill>/SKILL.md`.
 - Keep each skill standalone. It must not require another skill, MCP server, task tracker, separately installed coordinator or worker, or shared runtime. A skill may require host-native independent contexts when that is intrinsic to its outcome and it defines an explicit `BLOCKED` result.
-- Keep YAML frontmatter to `name` and `description`. The folder name and `name` must match.
-- Put the trigger boundary in `description`: what the skill does, when to use it, and important near-negative cases.
-- Begin each skill body, before tool routing, with `**Goal:**` defining its intended outcome and boundary and `**Execution contract:**` telling the agent how to apply the skill.
-- In that execution contract, treat the ordered checkbox workflow as the skill's Definition of Done. Do not add a duplicate DoD section.
-- Track every checkbox as `PENDING`, then resolve it to `PROVEN` with concrete evidence, `CLEARED` with evidence that its conditional trigger is absent, or `UNPROVEN`; only `PROVEN` and `CLEARED` count as complete, and no `PENDING` may remain at return.
-- Require the execution contract to account for all checkboxes with `Checklist: X/Y complete` and an `Incomplete` list containing each skipped item's reason, outcome impact, and exact next action; apply the skill's own verdict, decision, and approval rules to incomplete items.
+- Follow [SKILL_TEMPLATE.md](SKILL_TEMPLATE.md), the canonical owner of skill format, detailed checklist accounting, self-check, and common report blocks. Preserve individually verifiable obligations and skill-specific verdicts; validate standalone copies against the template.
 - Preserve evidence rules, tool-selection guidance, safety gates, verdict mapping, output contract, and residual-risk reporting when simplifying.
-- Add `references/`, `scripts/`, or `assets/` only after a concrete execution defect shows that the instruction-only skill is insufficient.
+- Keep common purpose, constraints, and routing in `SKILL.md`. Move substantial conditional detail into skill-local `references/` when it saves irrelevant reading; link each reference with its trigger and keep each rule in one owner. Add scripts or assets only for a concrete reliability or output need; do not create placeholders or a shared runtime.
 - Treat each `SKILL.md` as the canonical operational document for its workflow: keep rules at the narrowest relevant section, remove filler and duplicated guidance, and avoid volatile values or copied implementation detail unless execution requires them and the authoritative source or update trigger is explicit.
 - Prefer capability descriptions over vendor-specific tools. Every required capability needs a credible fallback or an explicit `BLOCKED` outcome.
-- Keep skills in English and target 100–200 lines. Remove repetition before splitting a skill.
+- Keep skills in English and at most 200 lines, with no minimum and no padding. Line count is a ceiling, not a quality measure; inspect word volume and repeated rules as well. Remove repetition before splitting conditional detail.
+- Preserve user intent and already-granted authorization within each skill's mutation boundary. Prepare a concrete result before required external approval; do not ask again for unchanged authorization. Run proportionate checks and repeat them only for new changes, failures, or unresolved evidence.
 - Review and audit skills are read-only. Optimization skills may mutate only the user-approved scope and must retain or discard changes using measured evidence.
 - Test planning and product discovery skills are read-only. Acceptance-test building may mutate only the approved test and test-documentation scope and must not repair product code.
 - Architecture artifact skills may mutate only explicitly approved architecture documents and must not edit product code or tests, execute migrations, or change external systems.
@@ -61,7 +57,7 @@ Before finishing a change:
 4. Run `claude plugin validate . --strict` for the Claude marketplace. This validates the catalog, not Claude skill frontmatter in manifest-less plugin directories; the per-skill validator and repository validator cover that known boundary.
 5. Search for stale references to removed skills, MCP packages, shared registries, drafts, and orchestration harnesses that are not already encoded as known retired paths in the repository validator.
 
-If an installed validator is unavailable, perform the equivalent checks manually: frontmatter contains only `name` and `description`; folder and frontmatter names match; descriptions are at most 200 characters; skills stay within the 100–200 line target; portable and host manifests parse and satisfy their contracts; both catalogs match; and no stale coupling remains.
+If an installed validator is unavailable, perform the equivalent checks manually: frontmatter contains only `name` and `description`; folder and frontmatter names match; descriptions are at most 200 characters; skills have at most 200 lines with no minimum, use item-level completion and self-checks, and follow the common report order; portable and host manifests parse and satisfy their contracts; both catalogs match; and no stale coupling remains.
 
 ## Release rules
 

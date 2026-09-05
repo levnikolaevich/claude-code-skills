@@ -1,14 +1,14 @@
 ---
 name: ln-22-codebase-auditor
-description: "Audits cross-cutting code health across security, delivery, maintainability, dependencies, diagnosability, concurrency, and lifecycle. Use when no specialist audit is primary."
+description: "Audits cross-cutting code health, security, delivery, and maintainability when no specialist audit is primary. Not for a single delivery review."
 ---
 
 # Codebase Auditor
 
 **Goal:** Perform a broad, read-only production-code health audit. Find concrete cross-cutting failure, security, delivery, and maintenance risks without turning detector matches or personal style preferences into findings. Do not substitute for documentation trust, test-portfolio, whole-architecture, or persistence-specific review.
 
-**Execution contract:** Treat the ordered checkbox workflow below as this skill's Definition of Done. Track every checkbox as `PENDING`, then resolve it to `PROVEN` with concrete evidence, `CLEARED` with evidence that its conditional trigger is absent, or `UNPROVEN`; reading, mentioning, delegating, skipping, or tool failure is not proof.
-Before returning, resolve every `PENDING`, count only `PROVEN` and `CLEARED` items as complete, apply this skill's verdict, decision, and approval rules to every `UNPROVEN`, and prepend **Checklist: X/Y complete**<br>**Incomplete: None | section/item — reason; outcome impact; exact next action**; list every `UNPROVEN` item.
+**Execution contract:** The ordered checkboxes are the Definition of Done. Track every item internally as `PENDING`, `PROVEN` with concrete evidence, `CLEARED` with evidence that its condition is absent, or `UNPROVEN` with a gap; reading, delegation, or tool failure is not proof. Reconcile items after each section. Before returning, resolve all `PENDING` and count only `PROVEN` and `CLEARED`; apply the skill's verdict and approval rules to every gap.
+Preserve user intent, scope, and existing authorization. Continue authorized work; ask only for consequential unresolved choices or required external approval. Scale depth to material risk without silently skipping checks. Preserve dependency and safety ordering; otherwise choose the verification method appropriate to each obligation.
 
 ## Tool Routing
 
@@ -40,7 +40,7 @@ Start with summary-level discovery and narrow before reading deeply. Run only re
 - [ ] Classify each runtime surface as long-running service, CLI, library, job, serverless function, or platform-managed component before requiring probes, telemetry, signal handling, or shutdown behavior.
 - [ ] Read applicable instructions and identify security boundaries, critical business paths, public interfaces, and irreversible operations.
 - [ ] Inspect Git state so the audit does not overwrite, misattribute, or ignore unrelated user changes.
-- [ ] Establish build, lint, type, test, and smoke baseline where feasible; record commands, environment, exit status, and relevant output.
+- [ ] Establish feasible build, lint, type, test, and smoke baselines; record executed scope, environment, exit status, and evidence. Verify required work ran rather than succeeding with no selected tests or skipped gates.
 - [ ] Define exclusions and depth based on risk rather than scanning every file with equal effort.
 - [ ] Keep the audit read-only. Allow only permitted caches and build artifacts and disclose them when created.
 
@@ -67,7 +67,7 @@ Start with summary-level discovery and narrow before reading deeply. Run only re
 - [ ] Check hardcoded operational values, URLs, timeouts, limits, identifiers, and environment-specific behavior that should be explicit configuration or named policy.
 - [ ] Trace one concept across external contracts, DTOs, services, persistence, and storage; flag synonym or casing drift only when no explicit serializer, code-generation, or ORM boundary mapping explains it.
 - [ ] Audit dependency vulnerabilities, support status, license or runtime constraints, duplicate packages, unused packages, and credible replacement or removal opportunities.
-- [ ] Verify vulnerability findings against the installed version and whether the vulnerable API or feature is reachable; distinguish affected code from a package merely present in the lockfile.
+- [ ] Match advisories to the resolved version and deployment, then classify exposure as confirmed, unknown, or not applicable using reachability and exploit conditions; an unavailable call path cannot clear an affected component.
 - [ ] Recommend native, existing-dependency, or external replacements only after checking required feature parity, migration surface, maintenance, license, security history, and domain-specific behavior.
 - [ ] Find unreachable code, unused imports and exports, commented-out implementations, obsolete flags, dead compatibility shims, and replacement code left beside its successor.
 - [ ] Confirm dead-code findings against reflection, registration, framework discovery, configuration, serialization, templates, and external entrypoints before reporting deletion as safe.
@@ -82,49 +82,31 @@ Start with summary-level discovery and narrow before reading deeply. Run only re
 - [ ] Check blocking I/O or synchronous waits in async paths, unbounded concurrency, orphan tasks, deadlocks, TOCTOU hazards, and thread-unsafe resources.
 - [ ] Inspect startup ordering, dependency readiness, configuration validation, fail-fast behavior, signal handling, graceful shutdown, and in-flight work draining.
 - [ ] Inventory resources acquired during startup and runtime, then match each to idempotent cleanup in safe reverse dependency order on success, failure, timeout, cancellation, and repeated shutdown signals.
-- [ ] Keep probe semantics distinct: liveness proves the process can recover without checking fragile dependencies, while readiness withholds traffic until required dependencies and initialization are usable; neither probe should create material load or side effects.
+- [ ] Verify host-specific probe semantics: liveness failure should justify restart, readiness governs traffic eligibility, and startup checks protect initialization. Avoid dependency-triggered restart cascades and probes that create material load or side effects.
 
 ### 5. Validate Findings and Report
 
 - [ ] Research external APIs, standards, vulnerabilities, and runtime behavior only when they can change a finding, using official sources matching the relevant version.
 - [ ] Filter framework conventions, generated code, bounded administrative paths, tests, examples, and documented tradeoffs before confirming a candidate.
 - [ ] Reproduce high-severity issues with a safe command, test, minimal call trace, or complete static failure path whenever possible.
-- [ ] Apply a materiality and acceptable-alternative gate to every candidate. Require a concrete failure, security, delivery, operability, or recurring maintenance impact at the repository's evidenced scale. Reject nitpicks, personal taste, theoretical purity, generic best practice, hypothetical scale, and a merely different implementation when the current tradeoff is reasonable; when several designs work, require the outcome or constraint rather than one preferred style.
-- [ ] Put a directly relevant Markdown practice link in every finding's required resolution: prefer current official documentation or a specification, and use reputable primary engineering material only when official sources do not resolve the tradeoff. Open and verify the source; it must support the proposed mechanism, not merely the defect category. Reject search-result links, generic best-practice articles, and decorative citations.
+- [ ] Apply the materiality gate: require concrete failure, security, delivery, operability, or recurring maintenance impact at evidenced scale. Reject taste, theoretical purity, generic practice, hypothetical scale, and reasonable alternatives; require the outcome or constraint, not a preferred implementation.
+- [ ] Ground external corrections in version-matched official contracts, using primary engineering sources for unresolved tradeoffs. Cite the supported mechanism; local evidence suffices for local defects.
 - [ ] Classify findings as `P0`-`P3` based on exploitability, data or availability impact, delivery blockage, recurrence, and remediation urgency.
-- [ ] Include location, evidence, trigger or failure path, impact, confidence, why the current compromise is not acceptable, and the smallest credible remediation for every finding while allowing equivalent solutions.
 - [ ] Order remediation by risk reduction and dependency, not by file order or detector category.
 - [ ] Use `BLOCKED` when a required safety environment, high-risk behavior, or authoritative contract cannot be verified without a credible fallback; use `FAIL` for an evidenced unresolved `P0/P1`, required failing delivery gate, or demonstrated unsafe behavior; use `CONCERNS` only for verified non-blocking risks, and `PASS` only when required checks complete with no material finding.
-- [ ] Return the verdict with executed checks, excluded scope, verified findings, unverified candidates, and residual codebase risk.
+
+## Self-Check
+
+- [ ] **Reconcile before returning.** Check item-level evidence, requirement coverage, contradictions, scope, verdict, and applicable cleanup. Correct the report or authorized artifacts. Reuse valid evidence; do not automatically rescan the repository or rerun successful commands. Repeat checks only for relevant changes, failures, or unresolved evidence. Disclose remaining gaps.
 
 ## Output Contract
 
-```markdown
-# Codebase Audit
+Report in the user's language, in this order; retain all five fields and state each fact once. Small results may use one line per field; omit empty tables and do not copy linked artifacts:
 
-**Verdict:** PASS | CONCERNS | FAIL | BLOCKED
+1. **Result:** Skill-specific verdict and supported outcome.
+2. **Scope:** Reviewed/changed scope, exclusions, baseline, and material assumptions.
+3. **Evidence:** Skill-specific fields below; distinguish facts, inferences, and unverified claims. Link artifacts; use tables when useful.
+4. **Verification:** Checks/results, unavailable evidence, and applicable cleanup/external state.
+5. **Completion:** `Checklist: X/Y complete`; `Incomplete: None` or each `UNPROVEN` item's reason, outcome impact, and exact next action; residual risks and required decisions.
 
-## Scope and baseline
-- Stack, entrypoints, and exclusions
-- Commands and environments checked
-- Static and runtime evidence available
-
-## Health summary
-| Area | Status | Evidence |
-|---|---|---|
-| Security | PASS / CONCERNS / FAIL | ... |
-| Delivery | PASS / CONCERNS / FAIL | ... |
-| Maintainability | PASS / CONCERNS / FAIL | ... |
-| Dependencies and dead code | PASS / CONCERNS / FAIL | ... |
-| Diagnosability, concurrency, lifecycle | PASS / CONCERNS / FAIL | ... |
-
-## Findings
-| Priority | Problem | Evidence and justification | Required resolution |
-|---|---|---|---|
-| P0 / P1 / P2 / P3 | Concrete codebase defect | Location, trigger or failure path, evidence, confidence, material impact at evidenced scale, and why the current tradeoff is not acceptable | Smallest credible correction, expected effort, and a verified `[practice reference](URL)` to official or primary engineering guidance; allow equivalent valid solutions |
-
-Use `None` when no candidate survives the evidence, materiality, context, and acceptable-alternative gates.
-
-## Remediation order and residual risks
-Dependency-aware next actions, blind spots, and unverified candidates.
-```
+**Skill-specific evidence:** Security, delivery, maintainability/dependencies, diagnosability, concurrency, and lifecycle evidence. Findings need priority, location, trigger or failure path, confidence, material impact, unacceptable tradeoff, and minimal remediation with expected effort; allow equivalent valid solutions. Order remediation by prerequisites and risk reduction, not detector count.

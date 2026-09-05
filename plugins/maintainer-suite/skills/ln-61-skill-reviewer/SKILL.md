@@ -1,14 +1,14 @@
 ---
 name: ln-61-skill-reviewer
-description: "Reviews standalone skills and their configured distribution surfaces before publication. Use for skill release readiness; not for product code or implementation-plan review."
+description: "Reviews skill quality, trigger boundaries, and distribution readiness. Use for skill audits or release review; not product-code or implementation-plan review."
 ---
 
 # Skill Reviewer
 
-**Goal:** Review skill changes without modifying the repository or external state.
+**Goal:** Review skill quality and configured distribution surfaces without modifying repository or external state. Distinguish static contract assurance from observed execution behavior.
 
-**Execution contract:** Treat the ordered checkbox workflow below as this skill's Definition of Done. Track every checkbox as `PENDING`, then resolve it to `PROVEN` with concrete evidence, `CLEARED` with evidence that its conditional trigger is absent, or `UNPROVEN`; reading, mentioning, delegating, skipping, or tool failure is not proof.
-Before returning, resolve every `PENDING`, count only `PROVEN` and `CLEARED` items as complete, apply this skill's verdict, decision, and approval rules to every `UNPROVEN`, and prepend **Checklist: X/Y complete**<br>**Incomplete: None | section/item — reason; outcome impact; exact next action**; list every `UNPROVEN` item.
+**Execution contract:** The ordered checkboxes are the Definition of Done. Track every item internally as `PENDING`, `PROVEN` with concrete evidence, `CLEARED` with evidence that its condition is absent, or `UNPROVEN` with a gap; reading, delegation, or tool failure is not proof. Reconcile items after each section. Before returning, resolve all `PENDING` and count only `PROVEN` and `CLEARED`; apply the skill's verdict and approval rules to every gap.
+Preserve user intent, scope, and existing authorization. Continue authorized work; ask only for consequential unresolved choices or required external approval. Scale depth to material risk without silently skipping checks. Preserve dependency and safety ordering; otherwise choose the verification method appropriate to each obligation.
 
 ## Tool Routing
 
@@ -27,7 +27,9 @@ Tool absence is not itself a skill defect. Apply the documented fallback and use
 
 ## Checklist
 
-- [ ] Establish the review target from explicit paths, the Git diff, staged files, and untracked files.
+### Establish scope and evidence
+
+- [ ] Resolve target paths, Git diff, staged and untracked files; establish review mode: static content/distribution review, or behavioral validation when requested or warranted and permitted. Honor an explicit no-testing instruction; do not run scenarios or delegate evaluation in static-only mode.
 - [ ] Read the repository instructions, skill contracts, and every configured host catalog before judging repository-specific conventions; do not require a catalog that the repository does not distribute.
 - [ ] Separate primary skills from manifests, catalogs, and documentation affected by the same change.
 - [ ] Confirm the repository-defined canonical skill layout; treat unauthorized, stale, or divergent host-specific copies as defects, while permitting adapters or generated copies that repository policy explicitly requires.
@@ -36,19 +38,19 @@ Tool absence is not itself a skill defect. Apply the documented fallback and use
 - [ ] Check that descriptions stay within the host limit and avoid claims broader than the workflow supports.
 - [ ] Confirm each skill is standalone: no required skill, MCP server, tracker, coordinator, worker, or shared runtime.
 - [ ] Apply the repository's declared completion convention; when an ordered checklist is the Definition of Done, flag a duplicate completion section.
-- [ ] Preserve non-obvious domain rules, tool-routing decisions, safety gates, evidence requirements, verdict mapping, output contract, and residual risks.
-- [ ] Flag explanations a capable current model already knows unless they prevent a demonstrated execution failure.
+- [ ] Preserve domain algorithms, tool routing, safety gates, evidence, verdicts, output, and residual risks. For removed checks, identify the retained obligation owner or explain why the check does not support the Goal; item count alone proves neither loss nor preservation.
+- [ ] Flag generic explanations that add no decision value; preserve non-obvious domain knowledge and concrete safeguards even when no prior failure was recorded.
 - [ ] Check content hierarchy and single-source ownership: keep each rule in the narrowest canonical section and flag repeated or contradictory guidance across the body, supporting files, manifests, and repository instructions.
 - [ ] Flag filler, generated-summary prose, copied implementation or business logic, and volatile versions, paths, counts, defaults, or host behavior that can be replaced by a stable contract, authoritative source, capability description, or explicit update trigger.
 - [ ] Verify every required capability has an available tool path, a credible fallback, or an explicit `BLOCKED` outcome.
 - [ ] Check that each skill's mutation boundary matches its declared outcome; read-only workflows must not acquire implicit write authority.
 - [ ] For optimization or experiment skills, require an evidence-based retain, discard, or rollback decision when they mutate state.
 - [ ] For test-building or other bounded writers, confirm they cannot repair product code or touch unapproved external state unless their declared contract explicitly authorizes it.
-- [ ] Trace the workflow through missing tools, insufficient context, dirty Git state, failed commands, and conflicting evidence.
+- [ ] Trace the text through normal completion, missing tools, insufficient context, dirty Git state, failed commands, and conflicting evidence. Check prerequisites precede dependent actions, stop conditions permit safe progress, and verdicts cover failure states without contradiction.
 - [ ] Check that the output contract distinguishes facts, inferences, missing evidence, verdict, and residual risk.
-- [ ] Inspect neighboring descriptions for trigger overlap without assuming the skills know about one another.
+- [ ] Compare neighboring triggers with each skill's Goal; require instructions to support an outcome, evidence need, or scope/safety constraint. Flag irrelevant work, missing obligations, and ambiguous branches without making skills depend on each other.
 
-## Repository Validation
+### Repository Validation
 
 - [ ] Discover and run every repository-required skill validator for the changed skill directories; do not assume a validator name or location absent from repository evidence.
 - [ ] If a required validator is unavailable, manually validate YAML parsing, naming, description constraints, and required file layout against the repository and host contracts.
@@ -61,8 +63,9 @@ Tool absence is not itself a skill defect. Apply the documented fallback and use
 - [ ] Search for stale names, deleted paths, draft markers, MCP coupling, orchestration terms, and generated copies.
 - [ ] Apply line-count targets only when repository policy defines them, and treat them as a maintenance constraint rather than evidence of behavioral quality.
 
-## Behavioral Review
+### Behavioral Review When In Scope
 
+- [ ] Apply this phase only when behavioral execution is in scope and authorized; otherwise mark its execution-only items `CLEARED` with the scope reason and state that behavior was not tested. Static inspection does not prove activation or execution quality.
 - [ ] Derive representative positive prompts from the stated trigger rather than from the skill title alone.
 - [ ] Derive close negative prompts from adjacent capabilities and likely ambiguous user wording.
 - [ ] Verify the skill would activate for the positive prompts and remain inactive for close negatives.
@@ -75,34 +78,33 @@ Tool absence is not itself a skill defect. Apply the documented fallback and use
 - [ ] Check independent contexts for contamination from globally installed skills, hooks, plugins, user instructions, environment settings, caches, or artifacts; prove target-skill activation and invalidate an arm whose behavior cannot be attributed reliably.
 - [ ] Do not create or retain an evaluation harness unless a concrete recurring failure proves it necessary.
 
-## Evidence Rules
+### Evidence Rules
 
 - [ ] Cite each finding to an exact file and the smallest useful line or section.
 - [ ] Distinguish validator failures from manual concerns and speculative improvements.
-- [ ] Reproduce critical failures before assigning a blocking severity.
-- [ ] Do not report a preference as a correctness defect.
+- [ ] Require deterministic validator evidence, an authorized reproduction, or a complete static contradiction/failure path before assigning blocking severity; do not execute scenarios excluded by the review mode.
 - [ ] Record commands executed, exit status, and material output without exposing secrets.
-- [ ] Report coverage gaps when a required host or clean-context test cannot be run.
+- [ ] Report coverage gaps when a required host or clean-context test cannot be run. Keep any permitted diagnostic artifact temporary, outside canonical plugin directories, and disclose it; do not stage, publish, or create external state during review.
 
 ## Verdict
 
-- `PASS` — structural, behavioral, and integration checks pass with no material concern.
-- `PASS WITH CONCERNS` — publishable, but bounded non-blocking uncertainty remains.
+- `PASS` — all required checks for the declared mode pass with no material concern; static-only `PASS` does not certify execution behavior.
+- `PASS WITH CONCERNS` — no confirmed blocking defect in the reviewed scope, but bounded non-blocking uncertainty remains; do not infer untested publication or behavioral readiness.
 - `FAIL` — a confirmed defect can cause wrong triggering, unsafe behavior, broken installation, or an invalid contract.
 - `BLOCKED` — required evidence or tooling is unavailable and no credible fallback exists.
 
+## Self-Check
+
+- [ ] **Reconcile before returning.** Check item-level evidence, requirement coverage, contradictions, scope, verdict, and applicable cleanup. Correct the report or authorized artifacts. Reuse valid evidence; do not automatically rescan the repository or rerun successful commands. Repeat checks only for relevant changes, failures, or unresolved evidence. Disclose remaining gaps.
+
 ## Output Contract
 
-Return:
+Report in the user's language, in this order; retain all five fields and state each fact once. Small results may use one line per field; omit empty tables and do not copy linked artifacts:
 
-1. Scope and changed surfaces.
-2. Validator and behavioral evidence.
-3. Findings ordered by severity, each with location, impact, evidence, and minimal correction.
-4. Trigger boundary assessment.
-5. Marketplace and host parity assessment.
-6. Verdict.
-7. Residual risks and checks not run.
+1. **Result:** Skill-specific verdict and supported outcome.
+2. **Scope:** Reviewed/changed scope, exclusions, baseline, and material assumptions.
+3. **Evidence:** Skill-specific fields below; distinguish facts, inferences, and unverified claims. Link artifacts; use tables when useful.
+4. **Verification:** Checks/results, unavailable evidence, and applicable cleanup/external state.
+5. **Completion:** `Checklist: X/Y complete`; `Incomplete: None` or each `UNPROVEN` item's reason, outcome impact, and exact next action; residual risks and required decisions.
 
-Do not edit files, stage changes, publish packages, update marketplaces, or create GitHub state while reviewing.
-
-Any diagnostic artifact must be temporary, outside canonical plugin directories, and disclosed in the residual-risk section.
+**Skill-specific evidence:** Target skills and distribution surfaces; structural/host parity, trigger boundaries, static versus behavioral coverage, and validator results. Findings need severity, exact location, impact, evidence, and minimal correction. Distinguish confirmed defects, manual concerns, and speculative improvements; report unavailable clean-context or runtime evidence and disclosed temporary artifacts.

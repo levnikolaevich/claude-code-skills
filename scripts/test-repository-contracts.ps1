@@ -27,6 +27,7 @@ function New-RepositoryFixture {
         Copy-Item -LiteralPath (Join-Path $repositoryRoot $path) -Destination $fixtureRoot -Recurse
     }
     Copy-Item -LiteralPath (Join-Path $repositoryRoot "README.md") -Destination $fixtureRoot
+    Copy-Item -LiteralPath (Join-Path $repositoryRoot "SKILL_TEMPLATE.md") -Destination $fixtureRoot
     return $fixtureRoot
 }
 

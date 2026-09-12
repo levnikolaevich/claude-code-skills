@@ -1,0 +1,34 @@
+{
+  "name": "delivery-planning-suite",
+  "version": "1.0.0",
+  "description": "Build delivery plans, select risk-based verification, and review readiness before implementation.",
+  "author": {
+    "name": "Lev Nikolaevich",
+    "email": "levnikolaevich.com@gmail.com",
+    "url": "https://github.com/levnikolaevich"
+  },
+  "homepage": "https://github.com/levnikolaevich/claude-code-skills",
+  "repository": "https://github.com/levnikolaevich/claude-code-skills",
+  "license": "MIT",
+  "keywords": [
+    "delivery-planning",
+    "engineering",
+    "lifecycle"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Delivery Planning Suite",
+    "shortDescription": "Plan delivery and verification",
+    "longDescription": "Build delivery plans, select risk-based verification, and review readiness before implementation.",
+    "developerName": "Lev Nikolaevich",
+    "websiteURL": "https://github.com/levnikolaevich/claude-code-skills",
+    "category": "Productivity",
+    "capabilities": [
+      "Interactive",
+      "Read"
+    ],
+    "defaultPrompt": [
+      "Plan this change and its verification."
+    ]
+  }
+}

@@ -17,6 +17,9 @@
 - Self-check means reconciling existing evidence and coverage, not automatically rereading the repository or rerunning successful commands. New changes, failures, or unresolved evidence justify additional checks.
 - Retain all five report fields, but scale their length to the result. A small task may use one line per field; avoid empty tables, repeated context, and copied artifacts.
 
+- Preserve detailed checklists, the final self-check, and the five-field report when applying model guidance; improve clarity and evidence without weakening obligations.
+- Lifecycle compatibility is an evidence contract, not a dependency on a coordinator, a model, or another installed skill.
+
 ## File and format rules
 
 - Canonical location: `plugins/<plugin>/skills/<skill>/SKILL.md`.
@@ -40,6 +43,10 @@ description: "State the specific capability and trigger; add exclusions only for
 
 **Execution contract:** The ordered checkboxes are the Definition of Done. Track every item internally as `PENDING`, `PROVEN` with concrete evidence, `CLEARED` with evidence that its condition is absent, or `UNPROVEN` with a gap; reading, delegation, or tool failure is not proof. Reconcile items after each section. Before returning, resolve all `PENDING` and count only `PROVEN` and `CLEARED`; apply the skill's verdict and approval rules to every gap.
 Preserve user intent, scope, and existing authorization. Continue authorized work; ask only for consequential unresolved choices or required external approval. Scale depth to material risk without silently skipping checks. Preserve dependency and safety ordering; otherwise choose the verification method appropriate to each obligation.
+Treat equivalent user or repository evidence as valid input; another skill, named artifact, or complete lifecycle is not a prerequisite. Preserve source requirement and decision identifiers when available. Bind reused evidence to the relevant source version, dirty changes, configuration, and environment; invalidate only affected claims after a change.
+On continuation, reconcile the task, existing authorization, current state, and unresolved evidence before resuming. For long work, return a compact continuation record or update an already authorized task artifact; read-only skills do not persist it. Distinguish artifact readiness, verified behavior, and authority to perform an external action.
+Prepare authorized work before any required approval. If an instruction prevents progress, identify its exact source and explain the unresolved boundary; do not invent an approval gate from general caution.
+
 
 ## Tool Routing
 
@@ -107,3 +114,5 @@ Validate skill structure and common contract blocks against this template using 
 This template adapts [OpenAI skill-creator](https://github.com/openai/skills/blob/main/skills/.system/skill-creator/SKILL.md), [skill documentation](https://learn.chatgpt.com/docs/build-skills), and [GPT-6 Astra guidance](https://developers.openai.com/api/docs/guides/latest-model?model=gpt-6-astra): concise discovery, useful domain knowledge, risk-appropriate specificity, progressive disclosure, and proportionate verification.
 
 The exact section names, checklist states, five-field report, two-field frontmatter restriction, and 200-character/200-line ceilings are repository conventions, not universal OpenAI requirements. Revisit compatibility when host contracts change; preserve useful domain checks when simplifying instructions.
+
+The [Astra skill guidance](https://developers.openai.com/blog/rethinking-skills-and-prompts-for-gpt-6-astra) and [prompting guidance](https://developers.openai.com/api/docs/guides/latest-model/gpt-6-astra.md#prompting-best-practices), checked on 2026-09-12, inform precise triggers, contextual loading, intent preservation, and proportionate verification. These recommendations do not remove this repository's approved checklist, self-check, or report requirements. Recheck on a relevant authoring or host-contract change.

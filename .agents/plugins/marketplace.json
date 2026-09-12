@@ -5,54 +5,6 @@
   },
   "plugins": [
     {
-      "name": "review-suite",
-      "source": {
-        "source": "local",
-        "path": "./plugins/review-suite"
-      },
-      "policy": {
-        "installation": "AVAILABLE",
-        "authentication": "ON_INSTALL"
-      },
-      "category": "Productivity"
-    },
-    {
-      "name": "codebase-audit-suite",
-      "source": {
-        "source": "local",
-        "path": "./plugins/codebase-audit-suite"
-      },
-      "policy": {
-        "installation": "AVAILABLE",
-        "authentication": "ON_INSTALL"
-      },
-      "category": "Productivity"
-    },
-    {
-      "name": "optimization-suite",
-      "source": {
-        "source": "local",
-        "path": "./plugins/optimization-suite"
-      },
-      "policy": {
-        "installation": "AVAILABLE",
-        "authentication": "ON_INSTALL"
-      },
-      "category": "Productivity"
-    },
-    {
-      "name": "testing-suite",
-      "source": {
-        "source": "local",
-        "path": "./plugins/testing-suite"
-      },
-      "policy": {
-        "installation": "AVAILABLE",
-        "authentication": "ON_INSTALL"
-      },
-      "category": "Productivity"
-    },
-    {
       "name": "product-discovery-suite",
       "source": {
         "source": "local",
@@ -65,10 +17,10 @@
       "category": "Productivity"
     },
     {
-      "name": "maintainer-suite",
+      "name": "architecture-suite",
       "source": {
         "source": "local",
-        "path": "./plugins/maintainer-suite"
+        "path": "./plugins/architecture-suite"
       },
       "policy": {
         "installation": "AVAILABLE",
@@ -77,10 +29,70 @@
       "category": "Productivity"
     },
     {
-      "name": "architecture-suite",
+      "name": "delivery-planning-suite",
       "source": {
         "source": "local",
-        "path": "./plugins/architecture-suite"
+        "path": "./plugins/delivery-planning-suite"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    },
+    {
+      "name": "implementation-suite",
+      "source": {
+        "source": "local",
+        "path": "./plugins/implementation-suite"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    },
+    {
+      "name": "quality-assurance-suite",
+      "source": {
+        "source": "local",
+        "path": "./plugins/quality-assurance-suite"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    },
+    {
+      "name": "delivery-suite",
+      "source": {
+        "source": "local",
+        "path": "./plugins/delivery-suite"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    },
+    {
+      "name": "operations-suite",
+      "source": {
+        "source": "local",
+        "path": "./plugins/operations-suite"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    },
+    {
+      "name": "skill-maintenance-suite",
+      "source": {
+        "source": "local",
+        "path": "./plugins/skill-maintenance-suite"
       },
       "policy": {
         "installation": "AVAILABLE",

@@ -4,48 +4,54 @@
     "name": "Lev Nikolaevich",
     "email": "levnikolaevich.com@gmail.com"
   },
-  "description": "Focused engineering review, audit, optimization, testing, discovery, maintainer, and architecture skills.",
+  "description": "Standalone lifecycle skills from product discovery through delivery and operations.",
   "plugins": [
     {
-      "name": "review-suite",
-      "description": "Independent plan and delivery reviews with evidence-based verdicts.",
-      "source": "./plugins/review-suite",
-      "strict": false
-    },
-    {
-      "name": "codebase-audit-suite",
-      "description": "Read-only audits for documentation, code, tests, architecture, and persistence.",
-      "source": "./plugins/codebase-audit-suite",
-      "strict": false
-    },
-    {
-      "name": "optimization-suite",
-      "description": "Surgical implementation plus measured performance, dependency, modernization, and benchmark workflows.",
-      "source": "./plugins/optimization-suite",
-      "strict": false
-    },
-    {
-      "name": "testing-suite",
-      "description": "Risk-based test portfolio planning and reproducible acceptance-test lifecycle.",
-      "source": "./plugins/testing-suite",
-      "strict": false
-    },
-    {
       "name": "product-discovery-suite",
-      "description": "Evidence-based product opportunity evaluation before implementation.",
+      "description": "Evaluate opportunities, define product requirements, and design user interaction.",
       "source": "./plugins/product-discovery-suite",
       "strict": false
     },
     {
-      "name": "maintainer-suite",
-      "description": "Optional maintainer toolkit for skill review, repository publication, releases, and project announcements.",
-      "source": "./plugins/maintainer-suite",
+      "name": "architecture-suite",
+      "description": "Establish architecture drivers, document current systems, and design decisions and migrations.",
+      "source": "./plugins/architecture-suite",
       "strict": false
     },
     {
-      "name": "architecture-suite",
-      "description": "Architecture baselines, current-state documentation, target designs, decisions, diagrams, and migration plans.",
-      "source": "./plugins/architecture-suite",
+      "name": "delivery-planning-suite",
+      "description": "Build delivery plans, select risk-based verification, and review readiness before implementation.",
+      "source": "./plugins/delivery-planning-suite",
+      "strict": false
+    },
+    {
+      "name": "implementation-suite",
+      "description": "Deliver scoped changes, dependency upgrades, modernization, and measured performance improvements.",
+      "source": "./plugins/implementation-suite",
+      "strict": false
+    },
+    {
+      "name": "quality-assurance-suite",
+      "description": "Build acceptance tests and review deliveries, documentation, code, tests, architecture, and persistence.",
+      "source": "./plugins/quality-assurance-suite",
+      "strict": false
+    },
+    {
+      "name": "delivery-suite",
+      "description": "Publish repositories and releases, prepare and execute deployments, and announce approved results.",
+      "source": "./plugins/delivery-suite",
+      "strict": false
+    },
+    {
+      "name": "operations-suite",
+      "description": "Investigate operational deviations and evaluate observed product outcomes without changing live systems.",
+      "source": "./plugins/operations-suite",
+      "strict": false
+    },
+    {
+      "name": "skill-maintenance-suite",
+      "description": "Review standalone skills, instruction boundaries, evidence contracts, and distribution integrity.",
+      "source": "./plugins/skill-maintenance-suite",
       "strict": false
     }
   ]

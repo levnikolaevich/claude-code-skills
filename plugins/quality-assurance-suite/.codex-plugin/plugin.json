@@ -1,0 +1,35 @@
+{
+  "name": "quality-assurance-suite",
+  "version": "1.0.0",
+  "description": "Build acceptance tests and review deliveries, documentation, code, tests, architecture, and persistence.",
+  "author": {
+    "name": "Lev Nikolaevich",
+    "email": "levnikolaevich.com@gmail.com",
+    "url": "https://github.com/levnikolaevich"
+  },
+  "homepage": "https://github.com/levnikolaevich/claude-code-skills",
+  "repository": "https://github.com/levnikolaevich/claude-code-skills",
+  "license": "MIT",
+  "keywords": [
+    "quality-assurance",
+    "engineering",
+    "lifecycle"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Quality Assurance Suite",
+    "shortDescription": "Verify delivery and quality",
+    "longDescription": "Build acceptance tests and review deliveries, documentation, code, tests, architecture, and persistence.",
+    "developerName": "Lev Nikolaevich",
+    "websiteURL": "https://github.com/levnikolaevich/claude-code-skills",
+    "category": "Productivity",
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Verify this delivery against its acceptance criteria."
+    ]
+  }
+}

@@ -26,22 +26,26 @@ Keep portable manifests limited to the canonical Agent Plugins schema identifier
 - Prefer capability descriptions over vendor-specific tools. Every required capability needs a credible fallback or an explicit `BLOCKED` outcome.
 - Keep skills in English and at most 200 lines, with no minimum and no padding. Line count is a ceiling, not a quality measure; inspect word volume and repeated rules as well. Remove repetition before splitting conditional detail.
 - Preserve user intent and already-granted authorization within each skill's mutation boundary. Prepare a concrete result before required external approval; do not ask again for unchanged authorization. Run proportionate checks and repeat them only for new changes, failures, or unresolved evidence.
-- Review and audit skills are read-only. Optimization skills may mutate only the user-approved scope and must retain or discard changes using measured evidence.
-- Test planning and product discovery skills are read-only. Acceptance-test building may mutate only the approved test and test-documentation scope and must not repair product code.
+- Review and audit skills are read-only. Implementation skills may mutate only the user-approved scope and must retain or discard changes using measured evidence.
+- Delivery/test planning, opportunity evaluation, operations investigation, and product outcome evaluation are read-only. Product requirements and interaction design may change only approved product/design artifacts. Acceptance-test building may mutate only the approved test and test-documentation scope and must not repair product code.
 - Architecture artifact skills may mutate only explicitly approved architecture documents and must not edit product code or tests, execute migrations, or change external systems.
 - Skill review is read-only. Repository, release, and announcement publication may mutate only explicitly approved local and external scope and must preserve their approval gates.
+
+- Deployment engineering may modify only approved delivery files and explicitly authorized target environments; preparation, publication, deployment, and operational health are distinct outcomes.
+- Model-specific guidance may improve triggers, intent handling and contextual routing; preserve detailed domain checklists, self-checks, evidence thresholds and the approved five-field report.
 
 ## Index system
 
 The first digit identifies the plugin; the second identifies the skill inside it:
 
-- `1x` — review suite
-- `2x` — codebase audit suite
-- `3x` — optimization suite
-- `4x` — testing suite
-- `5x` — product discovery suite
-- `6x` — maintainer suite
-- `7x` — architecture suite
+- `1x` — product discovery suite
+- `2x` — architecture suite
+- `3x` — delivery planning suite
+- `4x` — implementation suite
+- `5x` — quality assurance suite
+- `6x` — delivery suite
+- `7x` — operations suite
+- `8x` — skill maintenance suite
 
 Allocate the next unused index inside the relevant plugin. A new plugin receives the next unused leading digit.
 

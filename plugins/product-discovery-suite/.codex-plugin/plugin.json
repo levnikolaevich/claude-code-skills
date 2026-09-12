@@ -1,7 +1,7 @@
 {
   "name": "product-discovery-suite",
   "version": "1.0.0",
-  "description": "Evidence-based product opportunity evaluation before implementation.",
+  "description": "Evaluate opportunities, define product requirements, and design user interaction.",
   "author": {
     "name": "Lev Nikolaevich",
     "email": "levnikolaevich.com@gmail.com",
@@ -10,18 +10,26 @@
   "homepage": "https://github.com/levnikolaevich/claude-code-skills",
   "repository": "https://github.com/levnikolaevich/claude-code-skills",
   "license": "MIT",
-  "keywords": ["product-discovery", "market-research", "opportunity", "validation"],
+  "keywords": [
+    "product-discovery",
+    "engineering",
+    "lifecycle"
+  ],
   "skills": "./skills/",
   "interface": {
     "displayName": "Product Discovery Suite",
-    "shortDescription": "Evaluate product opportunities",
-    "longDescription": "Compare product opportunities using current demand, reachable acquisition, competition, economics, and low-cost validation evidence.",
+    "shortDescription": "Product intent and experience",
+    "longDescription": "Evaluate opportunities, define product requirements, and design user interaction.",
     "developerName": "Lev Nikolaevich",
     "websiteURL": "https://github.com/levnikolaevich/claude-code-skills",
     "category": "Productivity",
-    "capabilities": ["Interactive", "Read"],
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Write"
+    ],
     "defaultPrompt": [
-      "Evaluate these product opportunities and recommend what to validate next."
+      "Evaluate this opportunity or define its product requirements."
     ]
   }
 }

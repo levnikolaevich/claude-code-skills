@@ -1,0 +1,26 @@
+{
+  "description": "Standalone skills for Claude Code and Codex: product discovery, architecture, planning, implementation, quality assurance, delivery, and operations.",
+  "homepage": "https://levnikolaevich.github.io/claude-code-skills/",
+  "topics": [
+    "agent-skills",
+    "ai-agents",
+    "ai-driven-development",
+    "anthropic",
+    "claude-code",
+    "claude-code-skills",
+    "code-review",
+    "codebase-audit",
+    "codex",
+    "developer-productivity",
+    "developer-tools",
+    "devops",
+    "github-actions",
+    "openai",
+    "performance-optimization",
+    "plugin-marketplace",
+    "product-discovery",
+    "software-architecture",
+    "software-development-lifecycle",
+    "testing"
+  ]
+}

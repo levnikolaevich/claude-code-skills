@@ -1,0 +1,34 @@
+{
+  "name": "operations-suite",
+  "description": "Investigate operational deviations and evaluate observed product outcomes without changing live systems.",
+  "author": {
+    "name": "Lev Nikolaevich",
+    "email": "levnikolaevich.com@gmail.com",
+    "url": "https://github.com/levnikolaevich"
+  },
+  "homepage": "https://github.com/levnikolaevich/claude-code-skills",
+  "repository": "https://github.com/levnikolaevich/claude-code-skills",
+  "license": "MIT",
+  "keywords": [
+    "operations",
+    "engineering",
+    "lifecycle"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Operations Suite",
+    "shortDescription": "Investigate operation/value",
+    "longDescription": "Investigate operational deviations and evaluate observed product outcomes without changing live systems.",
+    "developerName": "Lev Nikolaevich",
+    "websiteURL": "https://github.com/levnikolaevich/claude-code-skills",
+    "category": "Productivity",
+    "capabilities": [
+      "Interactive",
+      "Read"
+    ],
+    "defaultPrompt": [
+      "Investigate this operational issue or product outcome."
+    ]
+  },
+  "version": "1.0.0"
+}

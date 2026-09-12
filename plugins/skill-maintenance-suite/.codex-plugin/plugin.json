@@ -1,0 +1,34 @@
+{
+  "name": "skill-maintenance-suite",
+  "description": "Review standalone skills, instruction boundaries, evidence contracts, and distribution integrity.",
+  "author": {
+    "name": "Lev Nikolaevich",
+    "email": "levnikolaevich.com@gmail.com",
+    "url": "https://github.com/levnikolaevich"
+  },
+  "homepage": "https://github.com/levnikolaevich/claude-code-skills",
+  "repository": "https://github.com/levnikolaevich/claude-code-skills",
+  "license": "MIT",
+  "keywords": [
+    "skill-maintenance",
+    "engineering",
+    "lifecycle"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Skill Maintenance Suite",
+    "shortDescription": "Review skill quality",
+    "longDescription": "Review standalone skills, instruction boundaries, evidence contracts, and distribution integrity.",
+    "developerName": "Lev Nikolaevich",
+    "websiteURL": "https://github.com/levnikolaevich/claude-code-skills",
+    "category": "Productivity",
+    "capabilities": [
+      "Interactive",
+      "Read"
+    ],
+    "defaultPrompt": [
+      "Review this standalone skill."
+    ]
+  },
+  "version": "1.0.0"
+}

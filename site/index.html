@@ -3,10 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Claude-Codex Skills — Focused engineering skills</title>
-  <meta name="description" content="Standalone engineering and architecture skills in focused plugins for Claude Code and Codex.">
+  <title>Claude-Codex Skills — Engineering lifecycle skills</title>
+  <meta name="description" content="Standalone skills for Claude Code and Codex, from product discovery and architecture through implementation, delivery, and operations.">
   <meta property="og:title" content="Claude-Codex Skills">
-  <meta property="og:description" content="Focused review, audit, optimization, testing, discovery, maintainer, and architecture skills.">
+  <meta property="og:description" content="Product discovery, architecture, planning, implementation, quality, delivery, and operations.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://levnikolaevich.github.io/claude-code-skills/">
   <meta property="og:image" content="https://levnikolaevich.github.io/claude-code-skills/social-preview.png">
@@ -15,7 +15,7 @@
   <meta property="og:image:alt" content="Claude-Codex Skills — focused engineering workflows for Claude Code and Codex">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Claude-Codex Skills">
-  <meta name="twitter:description" content="Focused review, audit, optimization, testing, discovery, maintainer, and architecture skills.">
+  <meta name="twitter:description" content="Product discovery, architecture, planning, implementation, quality, delivery, and operations.">
   <meta name="twitter:image" content="https://levnikolaevich.github.io/claude-code-skills/social-preview.png">
   <link rel="canonical" href="https://levnikolaevich.github.io/claude-code-skills/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='8' fill='%23181714'/%3E%3Cpath d='M15 14v36h25v-8H24V14z' fill='%23c7ff42'/%3E%3Cpath d='M35 14v28h14V14h-8v20h-6z' fill='%23ff6b4a'/%3E%3C/svg%3E">
@@ -31,6 +31,7 @@
     <nav aria-label="Primary navigation">
       <a href="#catalog">Catalog</a>
       <a href="#install">Install</a>
+      <a href="https://github.com/levnikolaevich/claude-code-skills#choose-a-route">Routes</a>
       <a href="https://github.com/levnikolaevich/claude-code-skills">GitHub ↗</a>
     </nav>
   </header>
@@ -39,8 +40,8 @@
     <section class="hero" aria-labelledby="hero-title">
       <div class="hero-copy">
         <p class="eyebrow">Claude Code + Codex · standalone by design</p>
-        <h1 id="hero-title">Focused skills.<br>Small plugins.<br><em>No orchestration theater.</em></h1>
-        <p class="lede">A compact engineering toolkit that reminds capable models about the hard parts: evidence, boundaries, independent viewpoints, reversible experiments, and residual risk.</p>
+        <h1 id="hero-title">From intent<br>to operation.<br><em>31 standalone skills.</em></h1>
+        <p class="lede">A connected engineering lifecycle with independent skills for discovery, design, planning, implementation, verification, delivery, and operations.</p>
         <div class="hero-actions">
           <a class="button primary" href="#catalog">Explore the catalog</a>
           <a class="button" href="#install">Install a plugin</a>
@@ -48,7 +49,7 @@
       </div>
       <aside class="field-note" aria-label="Design principles">
         <p class="note-number">FIELD NOTE / 02</p>
-        <h2>Thin does not mean vague.</h2>
+        <h2>Complete where it counts.</h2>
         <ul>
           <li>One skill, one bounded outcome</li>
           <li>Tool choice follows the evidence need</li>
@@ -59,7 +60,7 @@
     </section>
 
     <section class="principles" aria-label="Repository principles">
-      <article><span>01</span><h2>Standalone</h2><p>No MCP, tracker, coordinator, worker hierarchy, or shared prompt harness.</p></article>
+      <article><span>01</span><h2>Standalone</h2><p>Use one capability or a connected route. No required MCP server, tracker, coordinator, or shared runtime.</p></article>
       <article><span>02</span><h2>Evidence first</h2><p>Findings, verdicts, and changes are tied to observable evidence and limitations.</p></article>
       <article><span>03</span><h2>Host neutral</h2><p>One canonical <code>SKILL.md</code> works in both Claude Code and Codex.</p></article>
     </section>
@@ -67,83 +68,97 @@
     <section id="catalog" class="catalog section-shell" aria-labelledby="catalog-title">
       <div class="section-heading">
         <p class="eyebrow">The catalog</p>
-        <h2 id="catalog-title">Choose the capability,<br>not a workflow empire.</h2>
-        <p>The first digit identifies the plugin family. The second identifies a skill inside it.</p>
+        <h2 id="catalog-title">Eight plugins.<br>One connected lifecycle.</h2>
+        <p>Discovery → architecture → planning → implementation → quality → delivery → operations. Skill maintenance supports the collection. Run only the capabilities needed for the task.</p>
       </div>
 
-      <article id="review-suite" class="plugin-card accent-lime">
-        <header><span class="family-index">1×</span><div><p>Plugin 01</p><h3>Review Suite</h3></div></header>
-        <p class="plugin-summary">Read-only reviews of plans and scoped deliveries, with independent challenge when needed and permitted.</p>
+      <article id="product-discovery-suite" class="plugin-card accent-lime">
+        <header><span class="family-index">1×</span><div><p>Plugin 01</p><h3>Product Discovery Suite</h3></div></header>
+        <p class="plugin-summary">Evaluate opportunities, define product requirements, and design user interaction.</p>
         <ol class="skill-list">
-          <li><span>11</span><div><strong>Plan Reviewer</strong><p>Tests a proposed implementation against repository evidence, risks, and missing decisions.</p></div></li>
-          <li><span>12</span><div><strong>Delivery Reviewer</strong><p>Checks scoped acceptance, regressions, and release risks; adds independent perspectives only when they provide needed evidence.</p></div></li>
-        </ol>
-      </article>
-
-      <article id="codebase-audit-suite" class="plugin-card accent-coral wide">
-        <header><span class="family-index">2×</span><div><p>Plugin 02</p><h3>Codebase Audit Suite</h3></div></header>
-        <p class="plugin-summary">Read-only audits that separate confirmed evidence from uncertainty.</p>
-        <ol class="skill-list two-column">
-          <li><span>21</span><div><strong>Documentation Auditor</strong><p>Trust, coverage, structure, freshness, and factual accuracy.</p></div></li>
-          <li><span>22</span><div><strong>Codebase Auditor</strong><p>Security boundaries, delivery gates, maintainability, and diagnosability.</p></div></li>
-          <li><span>23</span><div><strong>Test Suite Auditor</strong><p>Portfolio value, risk coverage, isolation, and oracle strength.</p></div></li>
-          <li><span>24</span><div><strong>Architecture Auditor</strong><p>Ownership, contracts, dependency topology, and structural fitness.</p></div></li>
-          <li><span>25</span><div><strong>Persistence Auditor</strong><p>Queries, transactions, consistency, concurrency, and resource lifecycle.</p></div></li>
-        </ol>
-      </article>
-
-      <article id="optimization-suite" class="plugin-card accent-blue wide">
-        <header><span class="family-index">3×</span><div><p>Plugin 03</p><h3>Optimization Suite</h3></div></header>
-        <p class="plugin-summary">Bounded changes survive only when measurements justify keeping them.</p>
-        <ol class="skill-list two-column">
-          <li><span>31</span><div><strong>Performance Optimizer</strong><p>Profile, experiment, compare, and keep only reproducible improvements.</p></div></li>
-          <li><span>32</span><div><strong>Dependency Upgrader</strong><p>Upgrade in reversible batches with compatibility and regression evidence.</p></div></li>
-          <li><span>33</span><div><strong>Code Modernizer</strong><p>Simplify or replace a bounded capability only when net value is proven.</p></div></li>
-          <li><span>34</span><div><strong>Benchmark Comparator</strong><p>Compare alternatives under a frozen experiment contract.</p></div></li>
-          <li><span>35</span><div><strong>Surgical Change Implementer</strong><p>Deliver the smallest complete root-cause solution for a bounded change.</p></div></li>
-        </ol>
-      </article>
-
-      <article id="testing-suite" class="plugin-card accent-yellow">
-        <header><span class="family-index">4×</span><div><p>Plugin 04</p><h3>Testing Suite</h3></div></header>
-        <p class="plugin-summary">Risk-shaped strategy and executable acceptance evidence.</p>
-        <ol class="skill-list">
-          <li><span>41</span><div><strong>Test Strategy Planner</strong><p>Maps requirements and defect classes to the right test boundary and oracle.</p></div></li>
-          <li><span>42</span><div><strong>Acceptance Test Builder</strong><p>Builds, updates, consolidates, or retires acceptance evidence without repairing product code.</p></div></li>
-        </ol>
-      </article>
-
-      <article id="product-discovery-suite" class="plugin-card accent-violet">
-        <header><span class="family-index">5×</span><div><p>Plugin 05</p><h3>Product Discovery Suite</h3></div></header>
-        <p class="plugin-summary">External viability before implementation enthusiasm.</p>
-        <ol class="skill-list">
-          <li><span>51</span><div><strong>Opportunity Evaluator</strong><p>Compares demand, acquisition, competition, economics, and validation cost using current evidence.</p></div></li>
-        </ol>
-      </article>
-
-      <article id="maintainer-suite" class="plugin-card accent-coral wide">
-        <header><span class="family-index">6×</span><div><p>Plugin 06</p><h3>Maintainer Suite</h3></div></header>
-        <p class="plugin-summary">Optional, repository-aware workflows for maintainers who review skills and publish code, releases, or project news.</p>
-        <ol class="skill-list two-column">
-          <li><span>61</span><div><strong>Skill Reviewer</strong><p>Reviews content, goal alignment, triggers, and distribution contracts; distinguishes static review from authorized behavioral validation.</p></div></li>
-          <li><span>62</span><div><strong>Repository Publisher</strong><p>Validates, commits, pushes, and verifies approved changes from their authorized remote.</p></div></li>
-          <li><span>63</span><div><strong>Release Publisher</strong><p>Builds an evidence-backed tagged release and waits for approval before publication.</p></div></li>
-          <li><span>64</span><div><strong>Community Announcer</strong><p>Drafts, fact-checks, and publishes GitHub Discussions announcements after approval.</p></div></li>
+          <li><span>11</span><div><strong><a href="https://github.com/levnikolaevich/claude-code-skills/blob/master/plugins/product-discovery-suite/skills/ln-11-opportunity-evaluator/SKILL.md">Opportunity Evaluator</a></strong><p>Evaluates new product opportunities through demand, channels and economics before committing to build.</p></div></li>
+          <li><span>12</span><div><strong><a href="https://github.com/levnikolaevich/claude-code-skills/blob/master/plugins/product-discovery-suite/skills/ln-12-product-requirements-builder/SKILL.md">Product Requirements Builder</a></strong><p>Defines product requirements, business rules and acceptance criteria for a committed intent; edits product docs only.</p></div></li>
+          <li><span>13</span><div><strong><a href="https://github.com/levnikolaevich/claude-code-skills/blob/master/plugins/product-discovery-suite/skills/ln-13-interaction-design-builder/SKILL.md">Interaction Design Builder</a></strong><p>Designs user flows, interaction states and mockups for a defined product scope; does not implement UI code.</p></div></li>
         </ol>
       </article>
 
       <article id="architecture-suite" class="plugin-card accent-blue wide">
-        <header><span class="family-index">7×</span><div><p>Plugin 07</p><h3>Architecture Suite</h3></div></header>
-        <p class="plugin-summary">Independent workflows that create durable architecture artifacts and communicate only through optional repository documents.</p>
-        <ol class="skill-list two-column">
-          <li><span>71</span><div><strong>System Design Baseline Builder</strong><p>Establishes measurable architecture drivers and constraints in one project baseline.</p></div></li>
-          <li><span>72</span><div><strong>Current Architecture Documenter</strong><p>Maps implemented architecture from repository evidence without issuing an audit verdict.</p></div></li>
-          <li><span>73</span><div><strong>System Design Proposal Builder</strong><p>Turns requirements, estimates, boundaries, and tradeoffs into a target design.</p></div></li>
-          <li><span>74</span><div><strong>Architecture Decision Recorder</strong><p>Preserves one significant decision with alternatives, consequences, and review triggers.</p></div></li>
-          <li><span>75</span><div><strong>Architecture Diagram Builder</strong><p>Creates evidence-backed current or target views with explicit scope and notation.</p></div></li>
-          <li><span>76</span><div><strong>Architecture Migration Planner</strong><p>Plans coexistence, data movement, cutover, reversibility limits, recovery, and old-path removal.</p></div></li>
+        <header><span class="family-index">2×</span><div><p>Plugin 02</p><h3>Architecture Suite</h3></div></header>
+        <p class="plugin-summary">Establish architecture drivers, document current systems, and design decisions and migrations.</p>
+        <ol class="skill-list">
+          <li><span>21</span><div><strong><a href="https://github.com/levnikolaevich/claude-code-skills/blob/master/plugins/architecture-suite/skills/ln-21-system-design-baseline-builder/SKILL.md">System Design Baseline Builder</a></strong><p>Defines measurable architecture drivers and constraints before system design; edits architecture docs only.</p></div></li>
+          <li><span>22</span><div><strong><a href="https://github.com/levnikolaevich/claude-code-skills/blob/master/plugins/architecture-suite/skills/ln-22-current-architecture-documenter/SKILL.md">Current Architecture Documenter</a></strong><p>Documents current architecture from implementation evidence; does not propose a target or audit fitness.</p></div></li>
+          <li><span>23</span><div><strong><a href="https://github.com/levnikolaevich/claude-code-skills/blob/master/plugins/architecture-suite/skills/ln-23-system-design-proposal-builder/SKILL.md">System Design Proposal Builder</a></strong><p>Designs target system boundaries, contracts and tradeoffs from requirements; does not plan tasks or implement.</p></div></li>
+          <li><span>24</span><div><strong><a href="https://github.com/levnikolaevich/claude-code-skills/blob/master/plugins/architecture-suite/skills/ln-24-architecture-decision-recorder/SKILL.md">Architecture Decision Recorder</a></strong><p>Records one architecture decision with alternatives, consequences and status; does not design the whole system.</p></div></li>
+          <li><span>25</span><div><strong><a href="https://github.com/levnikolaevich/claude-code-skills/blob/master/plugins/architecture-suite/skills/ln-25-architecture-diagram-builder/SKILL.md">Architecture Diagram Builder</a></strong><p>Creates evidence-backed current or target architecture diagrams; not UI design.</p></div></li>
+          <li><span>26</span><div><strong><a href="https://github.com/levnikolaevich/claude-code-skills/blob/master/plugins/architecture-suite/skills/ln-26-architecture-migration-planner/SKILL.md">Architecture Migration Planner</a></strong><p>Plans architecture migrations with compatibility, data safety, rollout and recovery; does not execute them.</p></div></li>
         </ol>
       </article>
+
+      <article id="delivery-planning-suite" class="plugin-card accent-yellow">
+        <header><span class="family-index">3×</span><div><p>Plugin 03</p><h3>Delivery Planning Suite</h3></div></header>
+        <p class="plugin-summary">Build delivery plans, select risk-based verification, and review readiness before implementation.</p>
+        <ol class="skill-list">
+          <li><span>31</span><div><strong><a href="https://github.com/levnikolaevich/claude-code-skills/blob/master/plugins/delivery-planning-suite/skills/ln-31-delivery-plan-builder/SKILL.md">Delivery Plan Builder</a></strong><p>Builds dependency-ordered delivery plans from requirements and repository evidence; read-only.</p></div></li>
+          <li><span>32</span><div><strong><a href="https://github.com/levnikolaevich/claude-code-skills/blob/master/plugins/delivery-planning-suite/skills/ln-32-test-strategy-planner/SKILL.md">Test Strategy Planner</a></strong><p>Plans risk-based test portfolios and acceptance evidence; does not write or execute tests.</p></div></li>
+          <li><span>33</span><div><strong><a href="https://github.com/levnikolaevich/claude-code-skills/blob/master/plugins/delivery-planning-suite/skills/ln-33-plan-reviewer/SKILL.md">Plan Reviewer</a></strong><p>Reviews a concrete implementation plan for missing decisions, feasibility and risk before execution; read-only.</p></div></li>
+        </ol>
+      </article>
+
+      <article id="implementation-suite" class="plugin-card accent-coral wide">
+        <header><span class="family-index">4×</span><div><p>Plugin 04</p><h3>Implementation Suite</h3></div></header>
+        <p class="plugin-summary">Deliver scoped changes, dependency upgrades, modernization, and measured performance improvements.</p>
+        <ol class="skill-list">
+          <li><span>41</span><div><strong><a href="https://github.com/levnikolaevich/claude-code-skills/blob/master/plugins/implementation-suite/skills/ln-41-surgical-change-implementer/SKILL.md">Surgical Change Implementer</a></strong><p>Implements one scoped feature or fix through the smallest complete solution; not upgrades or performance tuning.</p></div></li>
+          <li><span>42</span><div><strong><a href="https://github.com/levnikolaevich/claude-code-skills/blob/master/plugins/implementation-suite/skills/ln-42-dependency-upgrader/SKILL.md">Dependency Upgrader</a></strong><p>Upgrades dependencies in reversible batches with version-specific compatibility and regression checks.</p></div></li>
+          <li><span>43</span><div><strong><a href="https://github.com/levnikolaevich/claude-code-skills/blob/master/plugins/implementation-suite/skills/ln-43-code-modernizer/SKILL.md">Code Modernizer</a></strong><p>Modernizes a bounded capability to reduce demonstrated maintenance cost; not routine upgrades or performance tuning.</p></div></li>
+          <li><span>44</span><div><strong><a href="https://github.com/levnikolaevich/claude-code-skills/blob/master/plugins/implementation-suite/skills/ln-44-performance-optimizer/SKILL.md">Performance Optimizer</a></strong><p>Profiles and improves a measured performance bottleneck; retains only verified improvements.</p></div></li>
+          <li><span>45</span><div><strong><a href="https://github.com/levnikolaevich/claude-code-skills/blob/master/plugins/implementation-suite/skills/ln-45-benchmark-comparator/SKILL.md">Benchmark Comparator</a></strong><p>Compares tools or implementations through controlled benchmarks and independent correctness checks.</p></div></li>
+        </ol>
+      </article>
+
+      <article id="quality-assurance-suite" class="plugin-card accent-violet wide">
+        <header><span class="family-index">5×</span><div><p>Plugin 05</p><h3>Quality Assurance Suite</h3></div></header>
+        <p class="plugin-summary">Build acceptance tests and review deliveries, documentation, code, tests, architecture, and persistence.</p>
+        <ol class="skill-list">
+          <li><span>51</span><div><strong><a href="https://github.com/levnikolaevich/claude-code-skills/blob/master/plugins/quality-assurance-suite/skills/ln-51-acceptance-test-builder/SKILL.md">Acceptance Test Builder</a></strong><p>Builds, updates or retires scoped acceptance tests and verifies execution; does not repair product code.</p></div></li>
+          <li><span>52</span><div><strong><a href="https://github.com/levnikolaevich/claude-code-skills/blob/master/plugins/quality-assurance-suite/skills/ln-52-delivery-reviewer/SKILL.md">Delivery Reviewer</a></strong><p>Reviews a completed change for acceptance, regressions and release risk; read-only, not a whole-codebase audit.</p></div></li>
+          <li><span>53</span><div><strong><a href="https://github.com/levnikolaevich/claude-code-skills/blob/master/plugins/quality-assurance-suite/skills/ln-53-documentation-auditor/SKILL.md">Documentation Auditor</a></strong><p>Audits documentation and comments for trust, coverage, consistency and freshness; read-only.</p></div></li>
+          <li><span>54</span><div><strong><a href="https://github.com/levnikolaevich/claude-code-skills/blob/master/plugins/quality-assurance-suite/skills/ln-54-codebase-auditor/SKILL.md">Codebase Auditor</a></strong><p>Audits cross-cutting codebase health, security and maintainability; not a single-change review or specialist audit.</p></div></li>
+          <li><span>55</span><div><strong><a href="https://github.com/levnikolaevich/claude-code-skills/blob/master/plugins/quality-assurance-suite/skills/ln-55-test-suite-auditor/SKILL.md">Test Suite Auditor</a></strong><p>Audits existing tests for risk coverage, reliable oracles and maintenance value; does not edit tests.</p></div></li>
+          <li><span>56</span><div><strong><a href="https://github.com/levnikolaevich/claude-code-skills/blob/master/plugins/quality-assurance-suite/skills/ln-56-architecture-auditor/SKILL.md">Architecture Auditor</a></strong><p>Audits implemented architecture boundaries, dependencies and ownership; not target design or plan review.</p></div></li>
+          <li><span>57</span><div><strong><a href="https://github.com/levnikolaevich/claude-code-skills/blob/master/plugins/quality-assurance-suite/skills/ln-57-persistence-auditor/SKILL.md">Persistence Auditor</a></strong><p>Audits queries, transactions, consistency and persistence resource lifetimes; read-only.</p></div></li>
+        </ol>
+      </article>
+
+      <article id="delivery-suite" class="plugin-card accent-blue wide">
+        <header><span class="family-index">6×</span><div><p>Plugin 06</p><h3>Delivery Suite</h3></div></header>
+        <p class="plugin-summary">Publish repositories and releases, prepare and execute deployments, and announce approved results.</p>
+        <ol class="skill-list">
+          <li><span>61</span><div><strong><a href="https://github.com/levnikolaevich/claude-code-skills/blob/master/plugins/delivery-suite/skills/ln-61-repository-publisher/SKILL.md">Repository Publisher</a></strong><p>Commits, pushes and remotely verifies authorized repository changes; does not create releases.</p></div></li>
+          <li><span>62</span><div><strong><a href="https://github.com/levnikolaevich/claude-code-skills/blob/master/plugins/delivery-suite/skills/ln-62-release-publisher/SKILL.md">Release Publisher</a></strong><p>Prepares and publishes an explicitly requested tagged GitHub release; does not deploy applications.</p></div></li>
+          <li><span>63</span><div><strong><a href="https://github.com/levnikolaevich/claude-code-skills/blob/master/plugins/delivery-suite/skills/ln-63-deployment-engineer/SKILL.md">Deployment Engineer</a></strong><p>Prepares CI/CD and infrastructure, then executes authorized deployments with health and recovery checks.</p></div></li>
+          <li><span>64</span><div><strong><a href="https://github.com/levnikolaevich/claude-code-skills/blob/master/plugins/delivery-suite/skills/ln-64-community-announcer/SKILL.md">Community Announcer</a></strong><p>Drafts or publishes authorized, fact-checked GitHub Discussions announcements; does not create releases.</p></div></li>
+        </ol>
+      </article>
+
+      <article id="operations-suite" class="plugin-card accent-yellow">
+        <header><span class="family-index">7×</span><div><p>Plugin 07</p><h3>Operations Suite</h3></div></header>
+        <p class="plugin-summary">Investigate operational deviations and evaluate observed product outcomes without changing live systems.</p>
+        <ol class="skill-list">
+          <li><span>71</span><div><strong><a href="https://github.com/levnikolaevich/claude-code-skills/blob/master/plugins/operations-suite/skills/ln-71-operations-investigator/SKILL.md">Operations Investigator</a></strong><p>Diagnoses incidents from operational evidence and proposes recovery; does not change live systems.</p></div></li>
+          <li><span>72</span><div><strong><a href="https://github.com/levnikolaevich/claude-code-skills/blob/master/plugins/operations-suite/skills/ln-72-product-outcome-evaluator/SKILL.md">Product Outcome Evaluator</a></strong><p>Evaluates observed product outcomes against a prior hypothesis; does not run experiments or change user treatment.</p></div></li>
+        </ol>
+      </article>
+
+      <article id="skill-maintenance-suite" class="plugin-card accent-lime">
+        <header><span class="family-index">8×</span><div><p>Plugin 08</p><h3>Skill Maintenance Suite</h3></div></header>
+        <p class="plugin-summary">Review standalone skills, instruction boundaries, evidence contracts, and distribution integrity.</p>
+        <ol class="skill-list">
+          <li><span>81</span><div><strong><a href="https://github.com/levnikolaevich/claude-code-skills/blob/master/plugins/skill-maintenance-suite/skills/ln-81-skill-reviewer/SKILL.md">Skill Reviewer</a></strong><p>Reviews skill instructions, trigger boundaries and distribution contracts; not product code.</p></div></li>
+        </ol>
+      </article>
+
     </section>
 
     <section id="install" class="install section-shell" aria-labelledby="install-title">
@@ -155,15 +170,15 @@
         <div>
           <h3>Claude Code</h3>
           <pre><code>/plugin marketplace add levnikolaevich/claude-code-skills
-/plugin install review-suite@levnikolaevich-skills-marketplace</code></pre>
+/plugin install delivery-planning-suite@levnikolaevich-skills-marketplace</code></pre>
         </div>
         <div>
           <h3>Codex</h3>
           <pre><code>codex plugin marketplace add levnikolaevich/claude-code-skills
-codex plugin add review-suite@levnikolaevich-skills-marketplace</code></pre>
+codex plugin add delivery-planning-suite@levnikolaevich-skills-marketplace</code></pre>
         </div>
       </div>
-      <p class="install-note">Replace <code>review-suite</code> with <code>codebase-audit-suite</code>, <code>optimization-suite</code>, <code>testing-suite</code>, <code>product-discovery-suite</code>, <code>maintainer-suite</code>, or <code>architecture-suite</code>.</p>
+      <p class="install-note">Replace <code>delivery-planning-suite</code> with <code>product-discovery-suite</code>, <code>architecture-suite</code>, <code>implementation-suite</code>, <code>quality-assurance-suite</code>, <code>delivery-suite</code>, <code>operations-suite</code>, or <code>skill-maintenance-suite</code>. Existing users: see the <a href="https://github.com/levnikolaevich/claude-code-skills#migration-from-the-previous-catalog">invocation migration</a>. Install commands use the default branch; historical releases may contain the previous catalog.</p>
     </section>
 
   </main>

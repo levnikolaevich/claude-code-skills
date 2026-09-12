@@ -36,6 +36,7 @@ try {
     $claudeNames = @($claudeCatalog.plugins.name)
     $codexNames = @($codexCatalog.plugins.name)
     Assert-SequenceEqual $codexNames $claudeNames "Claude and Codex plugin names or order differ."
+    Assert-SequenceEqual $claudeNames @('product-discovery-suite', 'architecture-suite', 'delivery-planning-suite', 'implementation-suite', 'quality-assurance-suite', 'delivery-suite', 'operations-suite', 'skill-maintenance-suite') 'Plugin order differs from the approved lifecycle.'
 
     $pluginDirectories = @(Get-ChildItem -LiteralPath "plugins" -Directory | Sort-Object Name)
     Assert-SequenceEqual @($pluginDirectories.Name) @($claudeNames | Sort-Object) "Catalog and plugin directories differ."
@@ -48,6 +49,7 @@ try {
     $skillNames = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
     $canonicalSkillPaths = [Collections.Generic.List[string]]::new()
     $skillIdsByPlugin = @{}
+    $skillMetadata = @{}
     $templatePath = Join-Path $repositoryRoot 'SKILL_TEMPLATE.md'
     Assert-Condition (Test-Path -LiteralPath $templatePath -PathType Leaf) 'Missing canonical SKILL_TEMPLATE.md.'
     $templateText = [IO.File]::ReadAllText($templatePath).Replace("`r`n", "`n")
@@ -116,6 +118,9 @@ try {
             Assert-Condition ($nameMatch.Groups[1].Value -ceq $expectedLeadingIndex) "$name is assigned to the wrong plugin family."
 
             $skillText = [IO.File]::ReadAllText($skillPath).Replace("`r`n", "`n")
+            $title = [regex]::Match($skillText, '(?m)^# (.+)$').Groups[1].Value
+            Assert-Condition (-not [string]::IsNullOrWhiteSpace($title)) "Missing skill title: $name"
+            $skillMetadata[$name] = @{ Title = $title; Description = $description; Plugin = $entry.name }
             Assert-Condition (-not $skillText.Contains($legacyCompletionRule)) "$name uses the contradictory legacy completion rule."
             foreach ($state in @('PROVEN', 'CLEARED', 'UNPROVEN')) {
                 Assert-Condition ($skillText -cmatch [regex]::Escape($state)) "$name execution contract does not define $state."
@@ -150,18 +155,45 @@ try {
             $relativeSkillPath = [IO.Path]::GetRelativePath($repositoryRoot, $skillPath).Replace('\', '/')
             $canonicalSkillPaths.Add($relativeSkillPath)
         }
+        Assert-Condition ($skillIds.Count -ge 1 -and $skillIds.Count -le 9) "Plugin must contain one to nine indexed skills: $($entry.name)."
         $skillIdsByPlugin[$entry.name] = @($skillIds)
+    }
+
+    $migration = Get-Content -LiteralPath 'docs/lifecycle-migration.json' -Raw | ConvertFrom-Json
+    foreach ($item in $migration.skills) {
+        $target = "plugins/$($item.plugin)/skills/$($item.new)/SKILL.md"
+        Assert-Condition (Test-Path -LiteralPath $target -PathType Leaf) "Missing migration destination: $target"
+        Assert-Condition (-not (Test-Path -LiteralPath "plugins/$($item.oldPlugin)/skills/$($item.old)")) "Retired skill must not be restored: $($item.old)"
+        foreach ($path in $canonicalSkillPaths) {
+            $text = [IO.File]::ReadAllText((Join-Path $repositoryRoot $path))
+            Assert-Condition ($item.old -ceq $item.new -or -not $text.Contains($item.old)) "Stale skill reference in ${path}: $($item.old)"
+        }
+    }
+    foreach ($retiredPlugin in @('review-suite', 'codebase-audit-suite', 'optimization-suite', 'testing-suite', 'maintainer-suite')) {
+        Assert-Condition (-not (Test-Path -LiteralPath "plugins/$retiredPlugin")) "Retired plugin must not be restored: $retiredPlugin"
     }
 
     $readme = Get-Content -LiteralPath "README.md" -Raw
     $readmeSkillPaths = @([regex]::Matches($readme, 'plugins/[^/)]+/skills/[^/)]+/SKILL\.md') | ForEach-Object { $_.Value } | Sort-Object -Unique)
     Assert-SequenceEqual $readmeSkillPaths @($canonicalSkillPaths | Sort-Object) "README skill catalog differs from canonical skill directories."
+    $readmeCount = [regex]::Match($readme, '(?m)^(\d+) standalone skills').Groups[1].Value
+    Assert-Condition ([int]$readmeCount -eq $skillNames.Count) 'README skill count differs from the catalog.'
 
     $site = Get-Content -LiteralPath "site/index.html" -Raw
+    foreach ($name in $skillMetadata.Keys) {
+        $metadata = $skillMetadata[$name]
+        $path = "plugins/$($metadata.Plugin)/skills/$name/SKILL.md"
+        $readmeRow = "[$($metadata.Title)]($path) | $($metadata.Description) |"
+        Assert-Condition ($readme.Contains($readmeRow)) "README title/description differs for $name."
+        $siteRow = '<strong><a href="https://github.com/levnikolaevich/claude-code-skills/blob/master/{0}">{1}</a></strong><p>{2}</p>' -f $path, [Net.WebUtility]::HtmlEncode($metadata.Title), [Net.WebUtility]::HtmlEncode($metadata.Description)
+        Assert-Condition ($site.Contains($siteRow)) "Site title/description/link differs for $name."
+    }
     foreach ($pluginName in $claudeNames) {
         $articlePattern = '(?s)<article id="{0}".*?</article>' -f [regex]::Escape($pluginName)
         $articleMatch = [regex]::Match($site, $articlePattern)
         Assert-Condition $articleMatch.Success "Missing site article for $pluginName."
+        $adapter = Get-Content -LiteralPath "plugins/$pluginName/.codex-plugin/plugin.json" -Raw | ConvertFrom-Json
+        Assert-Condition ($articleMatch.Value.Contains("<h3>$($adapter.interface.displayName)</h3>") -and $articleMatch.Value.Contains("<p class=`"plugin-summary`">$($adapter.description)</p>")) "Site plugin title/description differs for $pluginName."
         $siteSkillIds = @([regex]::Matches($articleMatch.Value, '<li><span>(\d{2})</span>') | ForEach-Object { $_.Groups[1].Value })
         Assert-SequenceEqual $siteSkillIds @($skillIdsByPlugin[$pluginName]) "Site skill catalog differs from canonical skills for $pluginName."
     }
@@ -183,6 +215,26 @@ try {
         $redirect = Get-Content -LiteralPath $redirectPath.FullName -Raw
         $target = [regex]::Match($redirect, 'index\.html#([a-z0-9-]+)')
         Assert-Condition ($target.Success -and $siteIds -contains $target.Groups[1].Value) "Invalid site redirect target in $($redirectPath.Name)."
+    }
+
+    $documentationPaths = @('README.md', 'AGENTS.md', 'CLAUDE.md', 'SKILL_TEMPLATE.md') + @(Get-ChildItem -LiteralPath 'docs' -Filter '*.md' -File | ForEach-Object { $_.FullName })
+    foreach ($documentationPath in $documentationPaths) {
+        $document = Get-Item -LiteralPath $documentationPath
+        $text = [IO.File]::ReadAllText($document.FullName)
+        foreach ($link in [regex]::Matches($text, '\[[^\]]+\]\(([^)]+)\)')) {
+            $target = $link.Groups[1].Value
+            if ($target -match '^[a-zA-Z][a-zA-Z0-9+.-]*:' -or $target.StartsWith('#')) { continue }
+            $localTarget = ($target -split '#')[0]
+            Assert-Condition (Test-Path -LiteralPath (Join-Path $document.DirectoryName $localTarget) -PathType Leaf) "Missing documentation link in $($document.Name): $target"
+        }
+    }
+    $repositoryMetadata = Get-Content -LiteralPath '.github/repository-metadata.json' -Raw | ConvertFrom-Json
+    Assert-Condition ($repositoryMetadata.description.Length -gt 0 -and $repositoryMetadata.description.Length -le 350) 'Invalid repository description.'
+    Assert-Condition ($site.Contains("<meta property=`"og:url`" content=`"$($repositoryMetadata.homepage)`">") -and $readme.Contains($repositoryMetadata.homepage)) 'Repository homepage differs from README/site.'
+    Assert-Condition ($repositoryMetadata.topics.Count -ge 1 -and $repositoryMetadata.topics.Count -le 20) 'Repository must have one to twenty discovery topics.'
+    Assert-Condition (@($repositoryMetadata.topics | Sort-Object -Unique).Count -eq $repositoryMetadata.topics.Count) 'Duplicate repository topic.'
+    foreach ($topic in $repositoryMetadata.topics) {
+        Assert-Condition ($topic -cmatch '^[a-z0-9-]{1,50}$') "Invalid repository topic: $topic"
     }
 
     foreach ($retiredPath in @("mcp", "site/mcp")) {

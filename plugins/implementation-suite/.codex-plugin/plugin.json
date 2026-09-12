@@ -1,0 +1,35 @@
+{
+  "name": "implementation-suite",
+  "version": "1.0.0",
+  "description": "Deliver scoped changes, dependency upgrades, modernization, and measured performance improvements.",
+  "author": {
+    "name": "Lev Nikolaevich",
+    "email": "levnikolaevich.com@gmail.com",
+    "url": "https://github.com/levnikolaevich"
+  },
+  "homepage": "https://github.com/levnikolaevich/claude-code-skills",
+  "repository": "https://github.com/levnikolaevich/claude-code-skills",
+  "license": "MIT",
+  "keywords": [
+    "implementation",
+    "engineering",
+    "lifecycle"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Implementation Suite",
+    "shortDescription": "Implement and improve systems",
+    "longDescription": "Deliver scoped changes, dependency upgrades, modernization, and measured performance improvements.",
+    "developerName": "Lev Nikolaevich",
+    "websiteURL": "https://github.com/levnikolaevich/claude-code-skills",
+    "category": "Productivity",
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Implement this scoped change."
+    ]
+  }
+}

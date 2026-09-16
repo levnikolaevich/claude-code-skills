@@ -6,7 +6,7 @@ You ask for a fix and get a new abstraction. A review lists generic advice. The 
 
 These skills give Claude Code and Codex a concrete way to finish the task: establish the intended outcome, work within scope, verify the result, and make remaining gaps explicit. Choose the skill for the problem in front of you.
 
-[Install](#install) · [Full catalog](#lifecycle-and-plugins)
+[Project page](https://levnikolaevich.com/projects/claude-code-skills) · [Install](#install) · [Full catalog](#lifecycle-and-plugins)
 
 ## What changes in your workflow
 

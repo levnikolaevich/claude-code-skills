@@ -100,6 +100,7 @@ try {
     $pluginManifest = Get-Content -LiteralPath (Join-Path $repositoryRoot 'plugins/product-discovery-suite/.codex-plugin/plugin.json') -Raw | ConvertFrom-Json
     $repositoryMetadata = Get-Content -LiteralPath (Join-Path $repositoryRoot '.github/repository-metadata.json') -Raw | ConvertFrom-Json
     $metadataCases = @(
+        @{ Name='stale-plugin-homepage'; Path='plugins/product-discovery-suite/.codex-plugin/plugin.json'; Old=$repositoryMetadata.homepage; Message='Plugin homepage differs from repository metadata' }
         @{ Name='stale-plugin-long-description'; Path='plugins/product-discovery-suite/.codex-plugin/plugin.json'; Old='"longDescription": "' + $pluginManifest.description + '"'; Message='Host longDescription differs' }
         @{ Name='stale-readme-plugin-description'; Path='README.md'; Old=$pluginManifest.description; Message='README plugin title/description differs' }
         @{ Name='stale-marketplace-description'; Path='.claude-plugin/marketplace.json'; Old=$repositoryMetadata.description; Message='Marketplace description differs from repository metadata' }

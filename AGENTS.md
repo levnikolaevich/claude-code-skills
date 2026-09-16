@@ -54,7 +54,7 @@ Keep portable manifests limited to the canonical Agent Plugins schema identifier
 | Skill format, common execution/report blocks and reusable checks | `SKILL_TEMPLATE.md` | Standalone skill blocks checked by the repository validator |
 | Plugin identity and membership | Canonical plugin/skill directories and the index rules below | Both catalogs and plugin manifests |
 | Plugin display metadata and version | `.codex-plugin/plugin.json`; `description` owns its long form | `interface.longDescription`, Claude catalog and README |
-| Repository description, homepage and topics | `.github/repository-metadata.json` | Applicable marketplace metadata and remote GitHub About |
+| Repository description, homepage and topics | `.github/repository-metadata.json` | README project link, plugin homepages, applicable marketplace metadata and remote GitHub About |
 | Repository maintenance and publication rules | `AGENTS.md` | `CLAUDE.md` imports it |
 
 Within a skill, keep each rule at its narrowest operational owner. Required standalone copies are distribution copies, not independent authorities; references own conditional procedures and entrypoints specify when to load them.

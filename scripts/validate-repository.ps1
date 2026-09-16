@@ -32,6 +32,7 @@ Push-Location $repositoryRoot
 try {
     $claudeCatalog = Get-Content -LiteralPath ".claude-plugin/marketplace.json" -Raw | ConvertFrom-Json
     $codexCatalog = Get-Content -LiteralPath ".agents/plugins/marketplace.json" -Raw | ConvertFrom-Json
+    $repositoryMetadata = Get-Content -LiteralPath '.github/repository-metadata.json' -Raw | ConvertFrom-Json
     $claudeNames = @($claudeCatalog.plugins.name)
     $codexNames = @($codexCatalog.plugins.name)
     Assert-SequenceEqual $codexNames $claudeNames "Claude and Codex plugin names or order differ."
@@ -84,6 +85,7 @@ try {
 
         $hostManifest = Get-Content -LiteralPath $hostManifestPath -Raw | ConvertFrom-Json
         Assert-Condition ($hostManifest.name -ceq $portableManifest.name) "Host and portable manifest names differ for $($entry.name)."
+        Assert-Condition ($hostManifest.homepage -ceq $repositoryMetadata.homepage) "Plugin homepage differs from repository metadata for $($entry.name)."
         Assert-Condition ($hostManifest.description -ceq $entry.description) "Manifest description differs for $($entry.name)."
         Assert-Condition ($hostManifest.version -cmatch '^\d+\.\d+\.\d+$') "Manifest version is not SemVer for $($entry.name)."
         Assert-Condition ($hostManifest.skills -ceq './skills/') "Host skill path must be ./skills/ for $($entry.name)."
@@ -198,7 +200,6 @@ try {
             Assert-Condition (Test-Path -LiteralPath (Join-Path $document.DirectoryName $localTarget) -PathType Leaf) "Missing documentation link in $($document.Name): $target"
         }
     }
-    $repositoryMetadata = Get-Content -LiteralPath '.github/repository-metadata.json' -Raw | ConvertFrom-Json
     Assert-Condition ($repositoryMetadata.description.Length -gt 0 -and $repositoryMetadata.description.Length -le 350) 'Invalid repository description.'
     Assert-Condition ($claudeCatalog.description -ceq $repositoryMetadata.description) 'Marketplace description differs from repository metadata.'
     Assert-Condition ($readme.Contains($repositoryMetadata.homepage)) 'Repository homepage differs from README.'

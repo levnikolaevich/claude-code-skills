@@ -7,4 +7,3 @@ Thumbs.db
 *.bak
 .claude/settings.local.json
 .claude/worktrees/
-.hex-skills/

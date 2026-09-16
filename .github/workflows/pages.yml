@@ -1,0 +1,67 @@
+name: Redirect Project Page
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - .github/repository-metadata.json
+      - .github/workflows/pages.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Generate redirect
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $metadata = Get-Content .github/repository-metadata.json -Raw | ConvertFrom-Json
+          $uri = [uri]$metadata.homepage
+          if (-not $uri.IsAbsoluteUri -or $uri.Scheme -ne 'https') {
+            throw 'The project homepage must be an absolute HTTPS URL.'
+          }
+          $target = [System.Net.WebUtility]::HtmlEncode($uri.AbsoluteUri)
+          $output = Join-Path $env:RUNNER_TEMP 'pages-redirect'
+          New-Item -ItemType Directory -Path $output -Force | Out-Null
+          @"
+          <!doctype html>
+          <html lang="en">
+          <head>
+            <meta charset="utf-8">
+            <meta http-equiv="refresh" content="0; url=$target">
+            <link rel="canonical" href="$target">
+            <title>Claude-Codex Skills</title>
+          </head>
+          <body><p><a href="$target">Continue to the project page</a>.</p></body>
+          </html>
+          "@ | Set-Content -LiteralPath (Join-Path $output 'index.html') -Encoding utf8
+
+      - name: Upload redirect
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: ${{ runner.temp }}/pages-redirect
+
+      - name: Deploy redirect
+        id: deployment
+        uses: actions/deploy-pages@v4

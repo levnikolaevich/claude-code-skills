@@ -38,11 +38,11 @@ Keep portable manifests limited to the canonical Agent Plugins schema identifier
 
 ## Public documentation and metadata
 
-- Write `README.md` and the site for users choosing and using skills: lead with their problem and the supported outcome, then task selection, installation, and the catalog. Keep authoring rules, validation commands, maintenance reminders, and internal approval history here or in the linked maintainer documents.
+- Write `README.md` for users choosing and using skills: lead with their problem and the supported outcome, then task selection, installation, and the catalog. Keep authoring rules, validation commands, maintenance reminders, and internal approval history here or in the linked maintainer documents.
 - Describe benefits supported by the workflows. Do not promise measured savings, comparative superiority, or guaranteed correctness without matching behavioral evidence.
-- Do not hard-code changing inventory counts or statistics in README, site copy, repository descriptions, or plugin metadata, whether as digits or words. Derive any needed counts at execution time; identifiers, versions, and explicit contract limits are not inventory claims.
-- Treat README, site cards, and host catalogs as projections of the canonical sources below; update required copies together and validate parity. Do not introduce another metadata registry or host-specific skill body.
-- [.github/repository-metadata.json](.github/repository-metadata.json) owns the GitHub About description, homepage, and topics. Align the site's search/social descriptions with the repository positioning. During authorized publication, sync the GitHub About fields and verify them remotely; editing the local file alone does not update GitHub.
+- Do not hard-code changing inventory counts or statistics in README, repository descriptions, or plugin metadata, whether as digits or words. Derive any needed counts at execution time; identifiers, versions, and explicit contract limits are not inventory claims.
+- Treat README and host catalogs as projections of the canonical sources below; update required copies together and validate parity. Do not introduce another metadata registry or host-specific skill body.
+- [.github/repository-metadata.json](.github/repository-metadata.json) owns the GitHub About description, homepage, and topics. During authorized publication, sync the GitHub About fields and verify them remotely; editing the local file alone does not update GitHub. The external project page is a manually maintained portfolio overview and does not mirror or validate the live catalog.
 - Describe only the current supported catalog. Do not retain previous-name mappings, obsolete skill URLs, migration archives, or redirects for removed plugins. Validate references against current canonical files rather than a historical registry.
 - Use [docs/token-efficiency.md](docs/token-efficiency.md) for authoring and measurement guidance and [docs/behavioral-validation.md](docs/behavioral-validation.md) for observed-outcome checks. Model-guidance provenance belongs in [SKILL_TEMPLATE.md](SKILL_TEMPLATE.md). Local Claude development can load a plugin with `claude --plugin-dir ./plugins/<plugin>`.
 
@@ -50,11 +50,11 @@ Keep portable manifests limited to the canonical Agent Plugins schema identifier
 
 | Information | Canonical owner | Derived or checked copies |
 |---|---|---|
-| Skill behavior, title, description | The skill's `SKILL.md` | README and site skill entries |
+| Skill behavior, title, description | The skill's `SKILL.md` | README skill entries |
 | Skill format, common execution/report blocks and reusable checks | `SKILL_TEMPLATE.md` | Standalone skill blocks checked by the repository validator |
 | Plugin identity and membership | Canonical plugin/skill directories and the index rules below | Both catalogs and plugin manifests |
-| Plugin display metadata and version | `.codex-plugin/plugin.json`; `description` owns its long form | `interface.longDescription`, Claude catalog, README and site |
-| Repository description, homepage and topics | `.github/repository-metadata.json` | Applicable marketplace/site metadata and remote GitHub About |
+| Plugin display metadata and version | `.codex-plugin/plugin.json`; `description` owns its long form | `interface.longDescription`, Claude catalog and README |
+| Repository description, homepage and topics | `.github/repository-metadata.json` | Applicable marketplace metadata and remote GitHub About |
 | Repository maintenance and publication rules | `AGENTS.md` | `CLAUDE.md` imports it |
 
 Within a skill, keep each rule at its narrowest operational owner. Required standalone copies are distribution copies, not independent authorities; references own conditional procedures and entrypoints specify when to load them.
@@ -82,7 +82,7 @@ Before finishing a change:
 
 Keep checks tied to concrete failures: invalid distribution, contract drift, incomplete catalogs, or broken references. Do not test helper logic created only inside a test, duplicate the same guarantee, or enforce historical text and cosmetic markers.
 
-1. Run `pwsh -File scripts/validate-repository.ps1`; it is the executable owner for repository structure, manifest and catalog parity, skill contracts, metadata limits, README and site coverage, and current local references.
+1. Run `pwsh -File scripts/validate-repository.ps1`; it is the executable owner for repository structure, manifest and catalog parity, skill contracts, metadata limits, README coverage, and current local references.
 2. Run the installed `skill-creator` `quick_validate.py` for every skill directory.
 3. Run the installed `plugin-creator` `validate_plugin.py` for every plugin directory.
 4. Run `claude plugin validate . --strict` for the Claude marketplace. This validates the catalog, not Claude skill frontmatter in manifest-less plugin directories; the per-skill validator and repository validator cover that known boundary.
@@ -96,4 +96,4 @@ If an installed validator is unavailable, manually check the template's format, 
 - Explicit plugin SemVer lives only in `.codex-plugin/plugin.json`; the minimal portable manifest intentionally omits its optional `version` to preserve one mutable version owner. Claude marketplace entries also omit `version`, so Claude Code identifies ordinary updates by their source commit SHA.
 - Change a version only when the user explicitly requests a release; ordinary repository edits do not bump versions.
 - Record a release with a matching Git tag and GitHub Release; a repository `CHANGELOG.md` is not required.
-- Repository publication and Pages deployment do not create a tagged release or bump versions. Installation follows the default branch.
+- Repository publication does not create a tagged release or bump versions. Installation follows the default branch.

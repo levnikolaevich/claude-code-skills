@@ -23,7 +23,7 @@ function New-RepositoryFixture {
 
     $fixtureRoot = Join-Path $temporaryRoot $Name
     New-Item -ItemType Directory -Path $fixtureRoot | Out-Null
-    foreach ($path in @("plugins", ".claude-plugin", ".agents", "site", "docs", ".github")) {
+    foreach ($path in @("plugins", ".claude-plugin", ".agents", "docs", ".github")) {
         Copy-Item -LiteralPath (Join-Path $repositoryRoot $path) -Destination $fixtureRoot -Recurse
     }
     Copy-Item -LiteralPath (Join-Path $repositoryRoot "README.md") -Destination $fixtureRoot
@@ -53,17 +53,6 @@ function Assert-ValidatorFailure {
 New-Item -ItemType Directory -Path $temporaryRoot | Out-Null
 try {
     & $validatorPath -RepositoryRoot $repositoryRoot *> $null
-
-    $siteFixture = New-RepositoryFixture "missing-site-skill"
-    $sitePath = Join-Path $siteFixture "site/index.html"
-    $siteText = [IO.File]::ReadAllText($sitePath)
-    $siteText = [regex]::Replace($siteText, '(?m)^\s*<li><span>41</span>.*\r?\n', '', 1)
-    [IO.File]::WriteAllText($sitePath, $siteText)
-    Assert-ValidatorFailure $siteFixture "Site title/description/link differs"
-
-    $pageFixture = New-RepositoryFixture 'unknown-plugin-page'
-    Set-Content -LiteralPath (Join-Path $pageFixture 'site/plugins/unknown-plugin.html') -Value '<html></html>'
-    Assert-ValidatorFailure $pageFixture 'Site plugin pages differ from the current catalog'
 
     $checklistFixture = New-RepositoryFixture 'missing-domain-checklist'
     $checklistPath = Join-Path $checklistFixture 'plugins/implementation-suite/skills/ln-41-surgical-change-implementer/SKILL.md'
@@ -113,7 +102,6 @@ try {
     $metadataCases = @(
         @{ Name='stale-plugin-long-description'; Path='plugins/product-discovery-suite/.codex-plugin/plugin.json'; Old='"longDescription": "' + $pluginManifest.description + '"'; Message='Host longDescription differs' }
         @{ Name='stale-readme-plugin-description'; Path='README.md'; Old=$pluginManifest.description; Message='README plugin title/description differs' }
-        @{ Name='stale-site-description'; Path='site/index.html'; Old='<meta name="description" content="' + [Net.WebUtility]::HtmlEncode($repositoryMetadata.description) + '">'; Message='Site description differs from repository metadata' }
         @{ Name='stale-marketplace-description'; Path='.claude-plugin/marketplace.json'; Old=$repositoryMetadata.description; Message='Marketplace description differs from repository metadata' }
     )
     foreach ($case in $metadataCases) {

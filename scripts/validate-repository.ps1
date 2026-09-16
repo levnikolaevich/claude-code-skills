@@ -46,7 +46,6 @@ try {
 
     $skillNames = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
     $canonicalSkillPaths = [Collections.Generic.List[string]]::new()
-    $skillIdsByPlugin = @{}
     $skillMetadata = @{}
     $templatePath = Join-Path $repositoryRoot 'SKILL_TEMPLATE.md'
     Assert-Condition (Test-Path -LiteralPath $templatePath -PathType Leaf) 'Missing canonical SKILL_TEMPLATE.md.'
@@ -163,7 +162,6 @@ try {
             $canonicalSkillPaths.Add($relativeSkillPath)
         }
         Assert-Condition ($skillIds.Count -ge 1 -and $skillIds.Count -le 9) "Plugin must contain one to nine indexed skills: $($entry.name)."
-        $skillIdsByPlugin[$entry.name] = @($skillIds)
     }
 
     foreach ($path in $canonicalSkillPaths) {
@@ -177,46 +175,16 @@ try {
     $readmeSkillPaths = @([regex]::Matches($readme, 'plugins/[^/)]+/skills/[^/)]+/SKILL\.md') | ForEach-Object { $_.Value } | Sort-Object -Unique)
     Assert-SequenceEqual $readmeSkillPaths @($canonicalSkillPaths | Sort-Object) "README skill catalog differs from canonical skill directories."
 
-    $site = Get-Content -LiteralPath "site/index.html" -Raw
     foreach ($name in $skillMetadata.Keys) {
         $metadata = $skillMetadata[$name]
         $path = "plugins/$($metadata.Plugin)/skills/$name/SKILL.md"
         $readmeRow = "[$($metadata.Title)]($path) | $($metadata.Description) |"
         Assert-Condition ($readme.Contains($readmeRow)) "README title/description differs for $name."
-        $siteRow = '<strong><a href="https://github.com/levnikolaevich/claude-code-skills/blob/master/{0}">{1}</a></strong><p>{2}</p>' -f $path, [Net.WebUtility]::HtmlEncode($metadata.Title), [Net.WebUtility]::HtmlEncode($metadata.Description)
-        Assert-Condition ($site.Contains($siteRow)) "Site title/description/link differs for $name."
     }
     foreach ($pluginName in $claudeNames) {
-        $articlePattern = '(?s)<article id="{0}".*?</article>' -f [regex]::Escape($pluginName)
-        $articleMatch = [regex]::Match($site, $articlePattern)
-        Assert-Condition $articleMatch.Success "Missing site article for $pluginName."
         $adapter = Get-Content -LiteralPath "plugins/$pluginName/.codex-plugin/plugin.json" -Raw | ConvertFrom-Json
         $readmePluginPattern = '(?s)### {0}\r?\n\r?\n{1}\r?\n' -f [regex]::Escape($adapter.interface.displayName), [regex]::Escape($adapter.description)
         Assert-Condition ([regex]::IsMatch($readme, $readmePluginPattern)) "README plugin title/description differs for $pluginName."
-        Assert-Condition ($articleMatch.Value.Contains("<h3>$($adapter.interface.displayName)</h3>") -and $articleMatch.Value.Contains("<p class=`"plugin-summary`">$($adapter.description)</p>")) "Site plugin title/description differs for $pluginName."
-        $siteSkillIds = @([regex]::Matches($articleMatch.Value, '<li><span>(\d{2})</span>') | ForEach-Object { $_.Groups[1].Value })
-        Assert-SequenceEqual $siteSkillIds @($skillIdsByPlugin[$pluginName]) "Site skill catalog differs from canonical skills for $pluginName."
-    }
-
-    $siteIds = @([regex]::Matches($site, 'id="([^"]+)"') | ForEach-Object { $_.Groups[1].Value })
-    $siteHrefs = @([regex]::Matches($site, 'href="([^"]+)"') | ForEach-Object { $_.Groups[1].Value })
-    foreach ($href in $siteHrefs) {
-        if ($href.StartsWith('#')) {
-            Assert-Condition ($siteIds -contains $href.Substring(1)) "Missing site anchor: $href."
-        } elseif (-not $href.StartsWith('http') -and -not $href.StartsWith('data:')) {
-            $assetPath = ($href -split '#')[0]
-            if ($assetPath) {
-                Assert-Condition (Test-Path -LiteralPath (Join-Path "site" $assetPath)) "Missing site asset: $href."
-            }
-        }
-    }
-
-    $redirectPaths = @(Get-ChildItem -LiteralPath "site/plugins" -Filter "*.html" -File)
-    Assert-SequenceEqual @($redirectPaths.BaseName | Sort-Object) @($claudeNames | Sort-Object) 'Site plugin pages differ from the current catalog.'
-    foreach ($redirectPath in $redirectPaths) {
-        $redirect = Get-Content -LiteralPath $redirectPath.FullName -Raw
-        $target = [regex]::Match($redirect, 'index\.html#([a-z0-9-]+)')
-        Assert-Condition ($target.Success -and $siteIds -contains $target.Groups[1].Value) "Invalid site redirect target in $($redirectPath.Name)."
     }
 
     $documentationPaths = @('README.md', 'AGENTS.md', 'CLAUDE.md', 'SKILL_TEMPLATE.md') + @(Get-ChildItem -LiteralPath 'docs' -Filter '*.md' -File | ForEach-Object { $_.FullName })
@@ -233,18 +201,14 @@ try {
     $repositoryMetadata = Get-Content -LiteralPath '.github/repository-metadata.json' -Raw | ConvertFrom-Json
     Assert-Condition ($repositoryMetadata.description.Length -gt 0 -and $repositoryMetadata.description.Length -le 350) 'Invalid repository description.'
     Assert-Condition ($claudeCatalog.description -ceq $repositoryMetadata.description) 'Marketplace description differs from repository metadata.'
-    $encodedDescription = [Net.WebUtility]::HtmlEncode($repositoryMetadata.description)
-    foreach ($attribute in @('name="description"', 'property="og:description"', 'name="twitter:description"')) {
-        Assert-Condition ($site.Contains("<meta $attribute content=`"$encodedDescription`">")) "Site description differs from repository metadata: $attribute."
-    }
-    Assert-Condition ($site.Contains("<meta property=`"og:url`" content=`"$($repositoryMetadata.homepage)`">") -and $readme.Contains($repositoryMetadata.homepage)) 'Repository homepage differs from README/site.'
+    Assert-Condition ($readme.Contains($repositoryMetadata.homepage)) 'Repository homepage differs from README.'
     Assert-Condition ($repositoryMetadata.topics.Count -ge 1 -and $repositoryMetadata.topics.Count -le 20) 'Repository must have one to twenty discovery topics.'
     Assert-Condition (@($repositoryMetadata.topics | Sort-Object -Unique).Count -eq $repositoryMetadata.topics.Count) 'Duplicate repository topic.'
     foreach ($topic in $repositoryMetadata.topics) {
         Assert-Condition ($topic -cmatch '^[a-z0-9-]{1,50}$') "Invalid repository topic: $topic"
     }
 
-    Write-Host "Validated $($claudeNames.Count) plugins, $($skillNames.Count) standalone skills, both catalogs, README, and the static site."
+    Write-Host "Validated $($claudeNames.Count) plugins, $($skillNames.Count) standalone skills, both catalogs, README, and repository metadata."
 } finally {
     Pop-Location
 }

@@ -7,11 +7,11 @@ description: "Builds, updates or retires scoped acceptance tests and verifies ex
 
 **Goal:** Deliver the smallest trustworthy acceptance-test portfolio for stated requirements through a user- or external-system-observable boundary. Modify only approved tests and test documentation; implement justified additions, updates, merges, and deletions without repairing product code.
 
-**Execution contract:** The ordered checkboxes are the Definition of Done. Track every item internally as `PENDING`, `PROVEN` with concrete evidence, `CLEARED` with evidence that its condition is absent, or `UNPROVEN` with a gap; reading, delegation, or tool failure is not proof. Reconcile items after each section. Before returning, resolve all `PENDING` and count only `PROVEN` and `CLEARED`; apply the skill's verdict and approval rules to every gap.
-Preserve user intent, scope, and existing authorization. Continue authorized work; ask only for consequential unresolved choices or required external approval. Scale depth to material risk without silently skipping checks. Preserve dependency and safety ordering; otherwise choose the verification method appropriate to each obligation.
-Treat equivalent user or repository evidence as valid input; another skill, named artifact, or complete lifecycle is not a prerequisite. Preserve source requirement and decision identifiers when available. Bind reused evidence to the relevant source version, dirty changes, configuration, and environment; invalidate only affected claims after a change.
-On continuation, reconcile the task, existing authorization, current state, and unresolved evidence before resuming. For long work, return a compact continuation record or update an already authorized task artifact; read-only skills do not persist it. Distinguish artifact readiness, verified behavior, and authority to perform an external action.
-Prepare authorized work before any required approval. If an instruction prevents progress, identify its exact source and explain the unresolved boundary; do not invent an approval gate from general caution.
+**Execution contract:** The checklist defines completion. Track each item internally as `PENDING`, `PROVEN` with evidence, `CLEARED` with evidence its condition is absent, or `UNPROVEN` with a gap; reading, delegation, or tool failure is not proof. Reconcile after each section. Before returning, resolve all `PENDING`, count only `PROVEN` and `CLEARED`, and apply verdict and approval rules to every gap.
+Preserve intent, scope, and existing authorization. Continue authorized work; ask only for consequential unresolved choices or required external approval. Scale depth to material risk without skipping checks. Preserve dependency and safety order; otherwise choose an appropriate verification method.
+Accept equivalent user or repository evidence; no other skill, named artifact, or complete lifecycle is required. Preserve source requirement and decision IDs. Bind reused evidence to relevant source versions, dirty changes, configuration, and environment; invalidate only affected claims.
+On continuation, reconcile task, authorization, current state, and unresolved evidence. For long work, return a compact continuation record or update an already authorized artifact; read-only skills do not persist it. Distinguish artifact readiness, verified behavior, and external-action authority.
+Prepare authorized work before required approval. If blocked by an instruction, cite its exact source and unresolved boundary; do not invent approval gates from caution.
 
 
 ## Tool Routing
@@ -34,7 +34,7 @@ Never run acceptance tests against production or an unapproved external target. 
 - Use golden files or snapshots only for deterministic, reviewable contracts. Updating expected output is a specification change, not test verification.
 - Make setup, data allocation, execution, cleanup, and rerun behavior reproducible; preserve the first failure before retries or cleanup obscure it.
 - A passing command proves only the environment and scenarios it actually exercised. State every excluded cell and unavailable boundary.
-- Do not test language, framework, package, database-vendor, or other generic behavior; test only the repository-owned observable contract, configuration, integration, or policy that depends on it.
+
 - Treat `KEEP`, `ADD`, `UPDATE`, `MERGE`, `DELETE`, and `NO_TEST` as portfolio decisions, distinct from execution results. Do not default to `ADD` when existing evidence, consolidation, retirement, or accepted residual risk is the better answer.
 - Delete or merge only when the test basis is obsolete or evidence shows that all still-required unique material behavior, failure modes, oracle strength, and useful failure localization remain covered.
 
@@ -54,13 +54,13 @@ Never run acceptance tests against production or an unapproved external target. 
 
 - [ ] Define the protected outcome, defect class, setup, action, terminal outcome, independent oracle, expected evidence, and cleanup for every requirement.
 - [ ] Confirm or derive one portfolio action per affected test and material risk. When no approved strategy exists, justify the action from impact, plausible failure, uniqueness, trust, and maintenance cost; record `NO_TEST` with existing proof, another control, or accepted residual risk.
-- [ ] Prefer deterministic end-to-end evidence for material user-observable business risk. Use a narrower production-shaped contract or integration boundary only when it still proves the terminal outcome more deterministically or precisely; never replace acceptance evidence with a unit implementation check or cover an internal detail absent from the observable contract.
+- [ ] **Test value and boundary:** Require every test to detect a concrete defect in this product's business logic and name the protected business outcome. Prefer E2E through user or external-system boundaries; use integration or unit tests only for business scenarios difficult to exercise reliably through E2E. Reject platform, trivial-wiring, implementation-detail, and duplicate proof with no distinct business failure signal.
 - [ ] Include invalid, authorization, boundary, partial-failure, retry, idempotency, recovery, and compatibility behavior only when it can materially change the protected outcome.
 - [ ] Allocate unique or namespaced test data and control clock, randomness, locale, ordering, and concurrency where they affect reproducibility.
 - [ ] Use real dependencies or approved emulators when mocks would bypass the behavior under acceptance; pin versions and verify readiness and reset behavior.
 - [ ] For deterministic output, derive golden or diff expectations from an independent contract and keep the artifact small enough to review.
 - [ ] For nondeterministic output, assert stable invariants and semantic fields instead of normalizing away failures or snapshotting noise.
-- [ ] Use stable project-native semantic locators (roles, accessible names, labels) or explicit IDs/test hooks according to the observable contract and locale strategy. Avoid styling, position, timing, and incidental structure. Treat exact-copy assertions separately when copy is a requirement; do not require product edits solely to add hooks when a robust semantic locator exists.
+- [ ] **UI test locators:** Use stable project-native semantic locators (roles, accessible names, labels) or explicit IDs/test hooks according to the observable contract and locale strategy. Avoid styling, position, timing, and incidental structure. Treat exact-copy assertions separately when copy is a requirement; do not require product edits solely to add hooks when a robust semantic locator exists.
 - [ ] Define the required or diagnostic gate and a review or retirement trigger when evidence is temporary, compatibility-bound, incident-specific, or coupled to a changing contract.
 
 ### 3. Implement within Test Scope
@@ -88,11 +88,10 @@ Never run acceptance tests against production or an unapproved external target. 
 
 - [ ] Map every requirement and protected outcome to its final test path or `NONE`, command or alternative control, oracle or accepted risk, and result as `PASS`, `FAIL`, `BLOCKED`, or `UNPROVEN`.
 - [ ] Reconcile planned and actual portfolio actions, including justified deviations, and report the net count of tests added, updated, merged, and deleted without treating counts as quality targets.
+- [ ] Preserve source acceptance identifiers and expected behavior independently of implementation; report selected/executed/skipped scope and never accept zero executed relevant tests as proof.
 - [ ] Use `COMPLETE` when all approved portfolio actions are implemented and required evidence records a trustworthy `PASS` or product `FAIL`, or a justified `NO_TEST` control. Unresolved test defects are not completed evidence; this verdict does not certify product correctness.
 - [ ] Use `INCOMPLETE` when safe work remains unfinished or environment, dependency, test defects, or interruption prevents trustworthy execution; state the exact remaining action or check.
 - [ ] Use `BLOCKED` when actions cannot be implemented safely, requirements lack a reliable oracle, or the workspace cannot be protected.
-
-- [ ] Preserve source acceptance identifiers and expected behavior independently of implementation; report selected/executed/skipped scope and never accept zero executed relevant tests as proof.
 
 ## Self-Check
 

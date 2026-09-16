@@ -7,11 +7,11 @@ description: "Audits existing tests for risk coverage, reliable oracles and main
 
 **Goal:** Audit the test portfolio as a read-only lifecycle and confidence system. Determine which important failures it detects, which evidence is untrustworthy or obsolete, and which additions, changes, consolidations, retirements, or explicit omissions produce the smallest sustainable portfolio.
 
-**Execution contract:** The ordered checkboxes are the Definition of Done. Track every item internally as `PENDING`, `PROVEN` with concrete evidence, `CLEARED` with evidence that its condition is absent, or `UNPROVEN` with a gap; reading, delegation, or tool failure is not proof. Reconcile items after each section. Before returning, resolve all `PENDING` and count only `PROVEN` and `CLEARED`; apply the skill's verdict and approval rules to every gap.
-Preserve user intent, scope, and existing authorization. Continue authorized work; ask only for consequential unresolved choices or required external approval. Scale depth to material risk without silently skipping checks. Preserve dependency and safety ordering; otherwise choose the verification method appropriate to each obligation.
-Treat equivalent user or repository evidence as valid input; another skill, named artifact, or complete lifecycle is not a prerequisite. Preserve source requirement and decision identifiers when available. Bind reused evidence to the relevant source version, dirty changes, configuration, and environment; invalidate only affected claims after a change.
-On continuation, reconcile the task, existing authorization, current state, and unresolved evidence before resuming. For long work, return a compact continuation record or update an already authorized task artifact; read-only skills do not persist it. Distinguish artifact readiness, verified behavior, and authority to perform an external action.
-Prepare authorized work before any required approval. If an instruction prevents progress, identify its exact source and explain the unresolved boundary; do not invent an approval gate from general caution.
+**Execution contract:** The checklist defines completion. Track each item internally as `PENDING`, `PROVEN` with evidence, `CLEARED` with evidence its condition is absent, or `UNPROVEN` with a gap; reading, delegation, or tool failure is not proof. Reconcile after each section. Before returning, resolve all `PENDING`, count only `PROVEN` and `CLEARED`, and apply verdict and approval rules to every gap.
+Preserve intent, scope, and existing authorization. Continue authorized work; ask only for consequential unresolved choices or required external approval. Scale depth to material risk without skipping checks. Preserve dependency and safety order; otherwise choose an appropriate verification method.
+Accept equivalent user or repository evidence; no other skill, named artifact, or complete lifecycle is required. Preserve source requirement and decision IDs. Bind reused evidence to relevant source versions, dirty changes, configuration, and environment; invalidate only affected claims.
+On continuation, reconcile task, authorization, current state, and unresolved evidence. For long work, return a compact continuation record or update an already authorized artifact; read-only skills do not persist it. Distinguish artifact readiness, verified behavior, and external-action authority.
+Prepare authorized work before required approval. If blocked by an instruction, cite its exact source and unresolved boundary; do not invent approval gates from caution.
 
 
 ## Tool Routing
@@ -57,9 +57,9 @@ Run only safe test and diagnostic commands. Do not rewrite snapshots, update gol
 
 - [ ] Identify uniquely critical local logic: money, authentication, authorization, data integrity, algorithms, domain rules, destructive operations, and irreversible workflows.
 - [ ] Trace each critical behavior to at least one test whose oracle would fail for the corresponding defect; name/path matches and line coverage are only discovery evidence.
-- [ ] Identify tests that merely re-prove language, framework, database engine, ORM, HTTP client, cryptography, serializer, or library behavior without asserting repository-owned configuration, queries, schemas, adaptation, validation, failure handling, or observable outcomes.
+- [ ] For tests of configuration, queries, schemas, adaptation, validation, or failure handling, trace the asserted behavior to a concrete business rule or outcome; technical coverage alone does not establish value.
 - [ ] Check whether end-to-end tests cross the production-shaped boundaries relevant to the risk and prove the terminal durable or user-visible outcome, not only an intermediate status, page, or mock call.
-- [ ] Find critical journeys with no end-to-end proof and expensive end-to-end tests whose behavior is already covered more reliably at a lower level.
+- [ ] **Test value and boundary:** Require every test to detect a concrete defect in this product's business logic and name the protected business outcome. Prefer E2E through user or external-system boundaries; use integration or unit tests only for business scenarios difficult to exercise reliably through E2E. Reject platform, trivial-wiring, implementation-detail, and duplicate proof with no distinct business failure signal.
 - [ ] Inspect error, retry, timeout, authorization, concurrency, migration, compatibility, and recovery behavior where those failures are plausible and costly.
 - [ ] Use coverage data to locate unexecuted critical paths, then inspect behavior and assertions before reporting a gap.
 - [ ] Classify every material gap and in-scope affected test as `KEEP`, `ADD`, `UPDATE`, `MERGE`, `DELETE`, or `NO_TEST`, justified by impact, plausible failure, uniqueness, trust, and maintenance cost; use `UPDATE` when valuable intent remains but its basis, setup, boundary, assertion, or oracle must change.
@@ -81,13 +81,13 @@ Run only safe test and diagnostic commands. Do not rewrite snapshots, update gol
 - [ ] Find orphan tests, disabled suites, duplicate fixtures, fragmented scenario coverage, oversized files, and flat directories that obscure ownership.
 - [ ] Review temporary characterization, migration, compatibility, incident, workaround, and regression tests against current risk. A fixed incident does not retire its regression guard; require obsolete behavior or trustworthy replacement coverage before recommending merge or deletion.
 - [ ] Check test names and arrangement for behavioral intent, prerequisites, action, and expected outcome rather than implementation narration.
-- [ ] Use stable project-native semantic locators (roles, accessible names, labels) or explicit IDs/test hooks according to the observable contract and locale strategy. Avoid styling, position, timing, and incidental structure. Treat exact-copy assertions separately when copy is a requirement; do not require product edits solely to add hooks when a robust semantic locator exists.
+- [ ] **UI test locators:** Use stable project-native semantic locators (roles, accessible names, labels) or explicit IDs/test hooks according to the observable contract and locale strategy. Avoid styling, position, timing, and incidental structure. Treat exact-copy assertions separately when copy is a requirement; do not require product edits solely to add hooks when a robust semantic locator exists.
 - [ ] Inspect assertions for specificity, negative proof, state and interaction balance, useful failure messages, and resistance to false positives.
 - [ ] Flag tests without a meaningful failure oracle, weak truthiness, snapshots of incidental or unreviewable output, broad exception acceptance, and mocks that bypass tested behavior. Retain snapshots or implicit failure oracles that independently prove the required contract.
 - [ ] Check that expected values come from an independent contract, example, invariant, or golden artifact rather than reproducing the implementation's calculation inside the test.
 - [ ] Check mocks, fakes, emulators, and generated clients for contract drift; require a contract test or another credible comparison with the real boundary where drift could create false confidence.
-- [ ] Exercise non-default configuration values where a passing test with defaults could conceal hard-coded ports, limits, timeouts, paths, or feature behavior.
-- [ ] Use existing mutation results or a safe targeted counterfactual for critical weak-oracle candidates; do not mandate repository-wide mutation testing.
+- [ ] Inspect non-default configuration cases for business failures hidden by passing defaults; use supported runtime overrides for safe reproduction, not edits to reviewed code or tests.
+- [ ] Use existing mutation results or a targeted counterfactual for critical weak-oracle candidates. Execute mutations only in an authorized disposable copy, preserve the reviewed source, and clean run-owned artifacts; otherwise use static reasoning. Do not mandate repository-wide mutation testing.
 - [ ] Review manual tests for reproducible setup, fail-fast behavior, explicit expected evidence, idempotency, cleanup, portability, and operator documentation.
 - [ ] Check fixture and helper abstraction for readability and honest defaults; hidden behavior in builders must not make important test conditions invisible.
 - [ ] Review gate placement and suite cost: required gates protect material release risk, while slower diagnostic or exploratory evidence remains discoverable without blocking routine delivery unnecessarily.
@@ -98,12 +98,11 @@ Run only safe test and diagnostic commands. Do not rewrite snapshots, update gol
 - [ ] Reproduce high-severity trust failures where safe, preserving command, seed, order, and environment evidence.
 - [ ] Deduplicate findings that share one root cause, such as a global fixture causing multiple flaky suites.
 - [ ] Apply the materiality gate: require concrete critical proof gap, false confidence, delivery risk, or recurring maintenance cost at evidenced scale. Reject taste, theoretical purity, generic practice, hypothetical scale, and reasonable alternatives; require the outcome or constraint, not a preferred implementation.
-- [ ] Ground external corrections in version-matched official contracts, using primary engineering sources for unresolved tradeoffs. Cite the supported mechanism; local evidence suffices for local defects.
+- [ ] **External correction evidence:** Ground external corrections in version-matched official contracts, using primary engineering sources for unresolved tradeoffs. Cite the supported mechanism; local evidence suffices for local defects.
+- [ ] Make accepted portfolio findings actionable through the protected behavior, owning test boundary, and evidence needed to close the gap; keep changes outside this read-only audit.
 - [ ] Classify findings as `P0`-`P3` based on critical behavior left unproven, false confidence, delivery blockage, and maintenance drag.
 - [ ] Report decision-useful portfolio signals when evidence exists: material risks by proof state, action distribution, required-gate results and duration, skips, retries, quarantine, and orphan or obsolete candidates. Reject total test count, pass rate without exclusions, raw coverage, and level ratios as standalone quality targets.
 - [ ] Use `BLOCKED` when a required critical suite, environment, or oracle cannot be accessed and no credible static or historical fallback exists; use `FAIL` when evidence shows critical behavior is unproven, a required gate fails, or false confidence remains in an untrustworthy critical surface; use `CONCERNS` only for non-blocking portfolio or maintenance risk, and `PASS` only when required evidence is trustworthy and no critical gap remains.
-
-- [ ] Make accepted portfolio findings actionable through the protected behavior, owning test boundary, and evidence needed to close the gap; keep changes outside this read-only audit.
 
 ## Self-Check
 

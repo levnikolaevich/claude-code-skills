@@ -7,11 +7,11 @@ description: "Implements one scoped feature or fix through the smallest complete
 
 **Goal:** Deliver one approved product-code change through the smallest complete solution that satisfies the business outcome. Remove superseded code and avoid speculative abstraction, duplicate mechanisms, and custom infrastructure already provided by the repository or platform.
 
-**Execution contract:** The ordered checkboxes are the Definition of Done. Track every item internally as `PENDING`, `PROVEN` with concrete evidence, `CLEARED` with evidence that its condition is absent, or `UNPROVEN` with a gap; reading, delegation, or tool failure is not proof. Reconcile items after each section. Before returning, resolve all `PENDING` and count only `PROVEN` and `CLEARED`; apply the skill's verdict and approval rules to every gap.
-Preserve user intent, scope, and existing authorization. Continue authorized work; ask only for consequential unresolved choices or required external approval. Scale depth to material risk without silently skipping checks. Preserve dependency and safety ordering; otherwise choose the verification method appropriate to each obligation.
-Treat equivalent user or repository evidence as valid input; another skill, named artifact, or complete lifecycle is not a prerequisite. Preserve source requirement and decision identifiers when available. Bind reused evidence to the relevant source version, dirty changes, configuration, and environment; invalidate only affected claims after a change.
-On continuation, reconcile the task, existing authorization, current state, and unresolved evidence before resuming. For long work, return a compact continuation record or update an already authorized task artifact; read-only skills do not persist it. Distinguish artifact readiness, verified behavior, and authority to perform an external action.
-Prepare authorized work before any required approval. If an instruction prevents progress, identify its exact source and explain the unresolved boundary; do not invent an approval gate from general caution.
+**Execution contract:** The checklist defines completion. Track each item internally as `PENDING`, `PROVEN` with evidence, `CLEARED` with evidence its condition is absent, or `UNPROVEN` with a gap; reading, delegation, or tool failure is not proof. Reconcile after each section. Before returning, resolve all `PENDING`, count only `PROVEN` and `CLEARED`, and apply verdict and approval rules to every gap.
+Preserve intent, scope, and existing authorization. Continue authorized work; ask only for consequential unresolved choices or required external approval. Scale depth to material risk without skipping checks. Preserve dependency and safety order; otherwise choose an appropriate verification method.
+Accept equivalent user or repository evidence; no other skill, named artifact, or complete lifecycle is required. Preserve source requirement and decision IDs. Bind reused evidence to relevant source versions, dirty changes, configuration, and environment; invalidate only affected claims.
+On continuation, reconcile task, authorization, current state, and unresolved evidence. For long work, return a compact continuation record or update an already authorized artifact; read-only skills do not persist it. Distinguish artifact readiness, verified behavior, and external-action authority.
+Prepare authorized work before required approval. If blocked by an instruction, cite its exact source and unresolved boundary; do not invent approval gates from caution.
 
 
 ## Tool Routing
@@ -71,15 +71,16 @@ Do not expand the task into repository-wide cleanup, redesign, dependency work, 
 - [ ] Before removal, verify allegedly unused paths against dynamic imports, reflection, registries, configuration, generation, scripts, optional features, and external consumers; static search alone cannot authorize deletion.
 - [ ] Remove obsolete branches, helpers, adapters, aliases, flags, exports, configuration, dependencies, documentation, and tests made unnecessary by the retained design.
 - [ ] Preserve compatibility only for a verified consumer; make every temporary bridge narrow, observable, owned, time-bounded by a removal trigger, and explicit in the report.
+- [ ] For deliberate simplifications with material, non-obvious limits, record current contract fit, supported bounds, an observable revisit trigger, and what to reconsider in a local comment or existing decision record within scope. Do not invent thresholds, mandate markers or registries, or document routine simplicity.
 - [ ] Inspect the diff during implementation for unrelated formatting, opportunistic refactoring, accidental UX or contract changes, debug artifacts, and net-new code unsupported by the change contract.
 
 ### 4. Build Proportionate Evidence
 
 - [ ] Map each acceptance row and material regression risk to existing evidence before adding tests; assess likelihood, impact, detectability, and blast radius.
 - [ ] Choose exactly one portfolio action per affected test or gap: `KEEP`, `ADD`, `UPDATE`, `MERGE`, `DELETE`, or justified `NO_TEST`; remove superseded and low-value testware in the approved scope.
-- [ ] Choose unit, integration, contract, or E2E evidence by the material defect and observable outcome it must prove. Prefer the smallest reliable boundary; use E2E when cross-boundary behavior is essential, and avoid duplicating equally strong existing proof.
-- [ ] Do not test language, framework, package, database-vendor, generated-code, or trivial wiring behavior. A test must fail for a meaningful defect in this product's business, security, data, or delivery contract.
-- [ ] Use stable project-native semantic locators (roles, accessible names, labels) or explicit IDs/test hooks according to the observable contract and locale strategy. Avoid styling, position, timing, and incidental structure. Treat exact-copy assertions separately when copy is a requirement; do not require product edits solely to add hooks when a robust semantic locator exists.
+- [ ] **Test value and boundary:** Require every test to detect a concrete defect in this product's business logic and name the protected business outcome. Prefer E2E through user or external-system boundaries; use integration or unit tests only for business scenarios difficult to exercise reliably through E2E. Reject platform, trivial-wiring, implementation-detail, and duplicate proof with no distinct business failure signal.
+
+- [ ] **UI test locators:** Use stable project-native semantic locators (roles, accessible names, labels) or explicit IDs/test hooks according to the observable contract and locale strategy. Avoid styling, position, timing, and incidental structure. Treat exact-copy assertions separately when copy is a requirement; do not require product edits solely to add hooks when a robust semantic locator exists.
 - [ ] Give temporary characterization or migration tests an owner and retirement trigger; keep quarantine explicit and never count skipped, flaky, or unproven evidence as passing.
 - [ ] Run focused checks after the coherent edit, then the repository-required build, lint, type, test, smoke, packaging, and application-start gates relevant to the affected path.
 - [ ] Exercise meaningful failure, boundary, authorization, transaction, concurrency, or rollback behavior when the change contract makes it material.
@@ -92,9 +93,8 @@ Do not expand the task into repository-wide cleanup, redesign, dependency work, 
 - [ ] Verify the retained solution remains the simplest complete rung after implementation; collapse wrappers, intermediate states, and abstractions that no longer protect a demonstrated invariant.
 - [ ] If verification fails, distinguish baseline/environment failures from change-caused defects; repair the latter within scope and rerun affected checks. Keep working until acceptance passes or a concrete prerequisite prevents progress. Mark `KEEP` only with passing required evidence; use `DISCARD` and revert only run-owned edits when the approach is unsuitable or cannot be completed safely, preserving user work.
 - [ ] Preserve unrelated user work, clean only run-owned temporary artifacts, and confirm no unapproved external or persisted state changed.
-- [ ] Use `DELIVERED` for a kept, fully implemented and verified outcome; `NO_CHANGE` only when the requested outcome already holds without edits; `BLOCKED` when a required decision, proof, safe completion, or restoration path is unavailable. A discarded attempt is not a satisfied request: report the unresolved outcome and restoration state.
-
 - [ ] Verify the delivered increment works with its required consumers and prior increments; reconcile changed requirements against dependent implementation and acceptance evidence before claiming completeness.
+- [ ] Use `DELIVERED` for a kept, fully implemented and verified outcome; `NO_CHANGE` only when the requested outcome already holds without edits; `BLOCKED` when a required decision, proof, safe completion, or restoration path is unavailable. A discarded attempt is not a satisfied request: report the unresolved outcome and restoration state.
 
 ## Self-Check
 

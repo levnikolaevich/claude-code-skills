@@ -7,11 +7,11 @@ description: "Records one architecture decision with alternatives, consequences 
 
 **Goal:** Preserve the context, forces, alternatives, decision, and consequences of one architecturally significant choice in a compact durable record. Change only approved decision documentation; do not design the whole system, approve a decision silently, delete history, audit code, or implement the choice.
 
-**Execution contract:** The ordered checkboxes are the Definition of Done. Track every item internally as `PENDING`, `PROVEN` with concrete evidence, `CLEARED` with evidence that its condition is absent, or `UNPROVEN` with a gap; reading, delegation, or tool failure is not proof. Reconcile items after each section. Before returning, resolve all `PENDING` and count only `PROVEN` and `CLEARED`; apply the skill's verdict and approval rules to every gap.
-Preserve user intent, scope, and existing authorization. Continue authorized work; ask only for consequential unresolved choices or required external approval. Scale depth to material risk without silently skipping checks. Preserve dependency and safety ordering; otherwise choose the verification method appropriate to each obligation.
-Treat equivalent user or repository evidence as valid input; another skill, named artifact, or complete lifecycle is not a prerequisite. Preserve source requirement and decision identifiers when available. Bind reused evidence to the relevant source version, dirty changes, configuration, and environment; invalidate only affected claims after a change.
-On continuation, reconcile the task, existing authorization, current state, and unresolved evidence before resuming. For long work, return a compact continuation record or update an already authorized task artifact; read-only skills do not persist it. Distinguish artifact readiness, verified behavior, and authority to perform an external action.
-Prepare authorized work before any required approval. If an instruction prevents progress, identify its exact source and explain the unresolved boundary; do not invent an approval gate from general caution.
+**Execution contract:** The checklist defines completion. Track each item internally as `PENDING`, `PROVEN` with evidence, `CLEARED` with evidence its condition is absent, or `UNPROVEN` with a gap; reading, delegation, or tool failure is not proof. Reconcile after each section. Before returning, resolve all `PENDING`, count only `PROVEN` and `CLEARED`, and apply verdict and approval rules to every gap.
+Preserve intent, scope, and existing authorization. Continue authorized work; ask only for consequential unresolved choices or required external approval. Scale depth to material risk without skipping checks. Preserve dependency and safety order; otherwise choose an appropriate verification method.
+Accept equivalent user or repository evidence; no other skill, named artifact, or complete lifecycle is required. Preserve source requirement and decision IDs. Bind reused evidence to relevant source versions, dirty changes, configuration, and environment; invalidate only affected claims.
+On continuation, reconcile task, authorization, current state, and unresolved evidence. For long work, return a compact continuation record or update an already authorized artifact; read-only skills do not persist it. Distinguish artifact readiness, verified behavior, and external-action authority.
+Prepare authorized work before required approval. If blocked by an instruction, cite its exact source and unresolved boundary; do not invent approval gates from caution.
 
 
 ## Tool Routing
@@ -61,7 +61,7 @@ One record captures one decision. If the request contains independent decisions 
 ### 3. Evaluate Alternatives
 
 - [ ] Include the status quo and the simplest credible option unless they are demonstrably infeasible.
-- [ ] Include materially different alternatives rather than cosmetic variants.
+- [ ] For an open choice, compare materially different credible alternatives; for retrospective records, include only evidenced historical options and mark missing rationale unknown.
 - [ ] Compare options against the same drivers: correctness, quality targets, complexity, reversibility, cost, operations, team fit, and evolution.
 - [ ] State why each rejected alternative loses in this context without claiming universal inferiority.
 - [ ] Record sensitivity or review triggers that would make a rejected option preferable later.
@@ -79,9 +79,8 @@ One record captures one decision. If the request contains independent decisions 
 - [ ] Confirm the record contains one decision and can be understood without conversation history.
 - [ ] Confirm consequential claims have evidence or labelled assumptions/unknowns with validation actions; never invent historical rationale or rejected alternatives for a retrospective record.
 - [ ] Confirm `Accepted` was not assigned without explicit authority.
-- [ ] Use `RECORDED` when the record and status are valid; use `INCOMPLETE` when material context or required acceptance authority remains unresolved; a complete explicitly Proposed record does not require acceptance to be `RECORDED`; use `BLOCKED` for ambiguous scope, unsafe numbering, conflicting ownership, or no writable destination.
-
 - [ ] Identify the requirements, interfaces, and downstream decisions affected by this decision or its supersession; preserve the accepted/proposed distinction and historical rationale.
+- [ ] Use `RECORDED` when the record and status are valid; use `INCOMPLETE` when material context or required acceptance authority remains unresolved; a complete explicitly Proposed record does not require acceptance to be `RECORDED`; use `BLOCKED` for ambiguous scope, unsafe numbering, conflicting ownership, or no writable destination.
 
 ## Self-Check
 

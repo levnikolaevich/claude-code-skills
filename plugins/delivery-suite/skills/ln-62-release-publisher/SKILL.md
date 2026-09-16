@@ -7,11 +7,11 @@ description: "Prepares and publishes an explicitly requested tagged GitHub relea
 
 **Goal:** Prepare a reproducible release and publish it only after the user approves the exact tag and notes.
 
-**Execution contract:** The ordered checkboxes are the Definition of Done. Track every item internally as `PENDING`, `PROVEN` with concrete evidence, `CLEARED` with evidence that its condition is absent, or `UNPROVEN` with a gap; reading, delegation, or tool failure is not proof. Reconcile items after each section. Before returning, resolve all `PENDING` and count only `PROVEN` and `CLEARED`; apply the skill's verdict and approval rules to every gap.
-Preserve user intent, scope, and existing authorization. Continue authorized work; ask only for consequential unresolved choices or required external approval. Scale depth to material risk without silently skipping checks. Preserve dependency and safety ordering; otherwise choose the verification method appropriate to each obligation.
-Treat equivalent user or repository evidence as valid input; another skill, named artifact, or complete lifecycle is not a prerequisite. Preserve source requirement and decision identifiers when available. Bind reused evidence to the relevant source version, dirty changes, configuration, and environment; invalidate only affected claims after a change.
-On continuation, reconcile the task, existing authorization, current state, and unresolved evidence before resuming. For long work, return a compact continuation record or update an already authorized task artifact; read-only skills do not persist it. Distinguish artifact readiness, verified behavior, and authority to perform an external action.
-Prepare authorized work before any required approval. If an instruction prevents progress, identify its exact source and explain the unresolved boundary; do not invent an approval gate from general caution.
+**Execution contract:** The checklist defines completion. Track each item internally as `PENDING`, `PROVEN` with evidence, `CLEARED` with evidence its condition is absent, or `UNPROVEN` with a gap; reading, delegation, or tool failure is not proof. Reconcile after each section. Before returning, resolve all `PENDING`, count only `PROVEN` and `CLEARED`, and apply verdict and approval rules to every gap.
+Preserve intent, scope, and existing authorization. Continue authorized work; ask only for consequential unresolved choices or required external approval. Scale depth to material risk without skipping checks. Preserve dependency and safety order; otherwise choose an appropriate verification method.
+Accept equivalent user or repository evidence; no other skill, named artifact, or complete lifecycle is required. Preserve source requirement and decision IDs. Bind reused evidence to relevant source versions, dirty changes, configuration, and environment; invalidate only affected claims.
+On continuation, reconcile task, authorization, current state, and unresolved evidence. For long work, return a compact continuation record or update an already authorized artifact; read-only skills do not persist it. Distinguish artifact readiness, verified behavior, and external-action authority.
+Prepare authorized work before required approval. If blocked by an instruction, cite its exact source and unresolved boundary; do not invent approval gates from caution.
 
 
 ## Tool Routing
@@ -85,6 +85,7 @@ Do not browse for generic release advice when repository policy and previous com
 - [ ] Confirm required CI succeeds on the release commit before creating the tag.
 - [ ] Create an annotated or repository-standard tag pointing at the verified commit and push it without force.
 - [ ] Create the GitHub Release from a file containing the approved notes to preserve Markdown and shell safety.
+- [ ] Bind the published release to the checked commit, exact tag, and approved notes; do not infer application deployment or operational health from a GitHub Release.
 - [ ] Verify the published tag, target commit, title, body, and release URL through the hosting API.
 - [ ] Test documented installation or update from the repository's documented release or distribution source when the release changes an installation surface.
 - [ ] Do not publish npm, PyPI, NuGet, container, or other packages unless separately authorized.
@@ -103,8 +104,6 @@ Do not browse for generic release advice when repository policy and previous com
 - `READY` — proposal and evidence are complete but publication awaits approval.
 - `PARTIAL` — externally visible release state exists but verification or a later step failed.
 - `BLOCKED` — release cannot proceed safely.
-
-- [ ] Bind the published release to the checked commit, exact tag, and approved notes; do not infer application deployment or operational health from a GitHub Release.
 
 ## Self-Check
 

@@ -1,6 +1,6 @@
 {
   "name": "operations-suite",
-  "description": "Investigate operational deviations and evaluate observed product outcomes without changing live systems.",
+  "description": "Turn incidents and product signals into evidence for the next recovery or product decision.",
   "author": {
     "name": "Lev Nikolaevich",
     "email": "levnikolaevich.com@gmail.com",
@@ -18,7 +18,7 @@
   "interface": {
     "displayName": "Operations Suite",
     "shortDescription": "Investigate operation/value",
-    "longDescription": "Investigate operational deviations and evaluate observed product outcomes without changing live systems.",
+    "longDescription": "Turn incidents and product signals into evidence for the next recovery or product decision.",
     "developerName": "Lev Nikolaevich",
     "websiteURL": "https://github.com/levnikolaevich/claude-code-skills",
     "category": "Productivity",

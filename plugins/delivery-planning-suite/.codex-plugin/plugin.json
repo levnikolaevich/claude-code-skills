@@ -1,7 +1,7 @@
 {
   "name": "delivery-planning-suite",
   "version": "1.0.0",
-  "description": "Build delivery plans, select risk-based verification, and review readiness before implementation.",
+  "description": "Find missing decisions and risky dependencies before they become implementation rework.",
   "author": {
     "name": "Lev Nikolaevich",
     "email": "levnikolaevich.com@gmail.com",
@@ -19,7 +19,7 @@
   "interface": {
     "displayName": "Delivery Planning Suite",
     "shortDescription": "Plan delivery and verification",
-    "longDescription": "Build delivery plans, select risk-based verification, and review readiness before implementation.",
+    "longDescription": "Find missing decisions and risky dependencies before they become implementation rework.",
     "developerName": "Lev Nikolaevich",
     "websiteURL": "https://github.com/levnikolaevich/claude-code-skills",
     "category": "Productivity",

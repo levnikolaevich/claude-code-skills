@@ -4,53 +4,53 @@
     "name": "Lev Nikolaevich",
     "email": "levnikolaevich.com@gmail.com"
   },
-  "description": "Standalone lifecycle skills from product discovery through delivery and operations.",
+  "description": "Help your AI agent finish the job: solve the right problem, keep changes focused, and show what was verified. For Claude Code and Codex.",
   "plugins": [
     {
       "name": "product-discovery-suite",
-      "description": "Evaluate opportunities, define product requirements, and design user interaction.",
+      "description": "Decide what is worth building, who it serves, and what a useful first version must do.",
       "source": "./plugins/product-discovery-suite",
       "strict": false
     },
     {
       "name": "architecture-suite",
-      "description": "Establish architecture drivers, document current systems, and design decisions and migrations.",
+      "description": "Understand the system you have and choose changes with clear boundaries, tradeoffs, and recovery paths.",
       "source": "./plugins/architecture-suite",
       "strict": false
     },
     {
       "name": "delivery-planning-suite",
-      "description": "Build delivery plans, select risk-based verification, and review readiness before implementation.",
+      "description": "Find missing decisions and risky dependencies before they become implementation rework.",
       "source": "./plugins/delivery-planning-suite",
       "strict": false
     },
     {
       "name": "implementation-suite",
-      "description": "Deliver scoped changes, dependency upgrades, modernization, and measured performance improvements.",
+      "description": "Fix the cause, reuse what already works, and keep changes focused on a verified outcome.",
       "source": "./plugins/implementation-suite",
       "strict": false
     },
     {
       "name": "quality-assurance-suite",
-      "description": "Build acceptance tests and review deliveries, documentation, code, tests, architecture, and persistence.",
+      "description": "Find gaps that could break a release, mislead a maintainer, or make a passing test meaningless.",
       "source": "./plugins/quality-assurance-suite",
       "strict": false
     },
     {
       "name": "delivery-suite",
-      "description": "Publish repositories and releases, prepare and execute deployments, and announce approved results.",
+      "description": "Publish the intended changes and verify what reached the remote repository or target environment.",
       "source": "./plugins/delivery-suite",
       "strict": false
     },
     {
       "name": "operations-suite",
-      "description": "Investigate operational deviations and evaluate observed product outcomes without changing live systems.",
+      "description": "Turn incidents and product signals into evidence for the next recovery or product decision.",
       "source": "./plugins/operations-suite",
       "strict": false
     },
     {
       "name": "skill-maintenance-suite",
-      "description": "Review standalone skills, instruction boundaries, evidence contracts, and distribution integrity.",
+      "description": "Make skills easier to invoke correctly, follow consistently, and verify before distribution.",
       "source": "./plugins/skill-maintenance-suite",
       "strict": false
     }

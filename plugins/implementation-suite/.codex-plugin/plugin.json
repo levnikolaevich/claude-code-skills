@@ -1,7 +1,7 @@
 {
   "name": "implementation-suite",
   "version": "1.0.0",
-  "description": "Deliver scoped changes, dependency upgrades, modernization, and measured performance improvements.",
+  "description": "Fix the cause, reuse what already works, and keep changes focused on a verified outcome.",
   "author": {
     "name": "Lev Nikolaevich",
     "email": "levnikolaevich.com@gmail.com",
@@ -19,7 +19,7 @@
   "interface": {
     "displayName": "Implementation Suite",
     "shortDescription": "Implement and improve systems",
-    "longDescription": "Deliver scoped changes, dependency upgrades, modernization, and measured performance improvements.",
+    "longDescription": "Fix the cause, reuse what already works, and keep changes focused on a verified outcome.",
     "developerName": "Lev Nikolaevich",
     "websiteURL": "https://github.com/levnikolaevich/claude-code-skills",
     "category": "Productivity",

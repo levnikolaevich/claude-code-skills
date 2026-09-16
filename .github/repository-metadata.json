@@ -1,5 +1,5 @@
 {
-  "description": "Standalone skills for Claude Code and Codex: product discovery, architecture, planning, implementation, quality assurance, delivery, and operations.",
+  "description": "Help your AI agent finish the job: solve the right problem, keep changes focused, and show what was verified. For Claude Code and Codex.",
   "homepage": "https://levnikolaevich.github.io/claude-code-skills/",
   "topics": [
     "agent-skills",

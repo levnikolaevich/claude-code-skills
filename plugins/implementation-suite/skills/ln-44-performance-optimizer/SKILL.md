@@ -7,11 +7,11 @@ description: "Profiles and improves a measured performance bottleneck; retains o
 
 **Goal:** Optimize only measured problems. Preserve correctness, isolate experiments, and retain a change only when comparable evidence shows that it improves the agreed metric without unacceptable regressions.
 
-**Execution contract:** The ordered checkboxes are the Definition of Done. Track every item internally as `PENDING`, `PROVEN` with concrete evidence, `CLEARED` with evidence that its condition is absent, or `UNPROVEN` with a gap; reading, delegation, or tool failure is not proof. Reconcile items after each section. Before returning, resolve all `PENDING` and count only `PROVEN` and `CLEARED`; apply the skill's verdict and approval rules to every gap.
-Preserve user intent, scope, and existing authorization. Continue authorized work; ask only for consequential unresolved choices or required external approval. Scale depth to material risk without silently skipping checks. Preserve dependency and safety ordering; otherwise choose the verification method appropriate to each obligation.
-Treat equivalent user or repository evidence as valid input; another skill, named artifact, or complete lifecycle is not a prerequisite. Preserve source requirement and decision identifiers when available. Bind reused evidence to the relevant source version, dirty changes, configuration, and environment; invalidate only affected claims after a change.
-On continuation, reconcile the task, existing authorization, current state, and unresolved evidence before resuming. For long work, return a compact continuation record or update an already authorized task artifact; read-only skills do not persist it. Distinguish artifact readiness, verified behavior, and authority to perform an external action.
-Prepare authorized work before any required approval. If an instruction prevents progress, identify its exact source and explain the unresolved boundary; do not invent an approval gate from general caution.
+**Execution contract:** The checklist defines completion. Track each item internally as `PENDING`, `PROVEN` with evidence, `CLEARED` with evidence its condition is absent, or `UNPROVEN` with a gap; reading, delegation, or tool failure is not proof. Reconcile after each section. Before returning, resolve all `PENDING`, count only `PROVEN` and `CLEARED`, and apply verdict and approval rules to every gap.
+Preserve intent, scope, and existing authorization. Continue authorized work; ask only for consequential unresolved choices or required external approval. Scale depth to material risk without skipping checks. Preserve dependency and safety order; otherwise choose an appropriate verification method.
+Accept equivalent user or repository evidence; no other skill, named artifact, or complete lifecycle is required. Preserve source requirement and decision IDs. Bind reused evidence to relevant source versions, dirty changes, configuration, and environment; invalidate only affected claims.
+On continuation, reconcile task, authorization, current state, and unresolved evidence. For long work, return a compact continuation record or update an already authorized artifact; read-only skills do not persist it. Distinguish artifact readiness, verified behavior, and external-action authority.
+Prepare authorized work before required approval. If blocked by an instruction, cite its exact source and unresolved boundary; do not invent approval gates from caution.
 
 
 ## Tool Routing
@@ -72,6 +72,7 @@ Do not optimize by aesthetic preference or benchmark a different workload from t
 
 ### 4. Execute Atomic Keep-or-Discard Experiments
 
+- [ ] **Test value and boundary:** Require every test to detect a concrete defect in this product's business logic and name the protected business outcome. Prefer E2E through user or external-system boundaries; use integration or unit tests only for business scenarios difficult to exercise reliably through E2E. Reject platform, trivial-wiring, implementation-detail, and duplicate proof with no distinct business failure signal.
 - [ ] Map each risky hypothesis to existing proof and the material regression it could cause; implement `KEEP`, `ADD`, `UPDATE`, `MERGE`, `DELETE`, or justified `NO_TEST` within the approved test scope to produce the smallest trustworthy safety evidence, remove superseded testware, and retire temporary characterization proof when its trigger ends.
 - [ ] For caching, batching, parallelism, pooling, or retry changes, explicitly protect invalidation, ordering, idempotency, cancellation, backpressure, timeout, and bounded-resource semantics that the faster path could violate.
 - [ ] Apply the smallest coherent change that tests one mechanism; group changes only when their effects are intentionally inseparable.
@@ -87,12 +88,11 @@ Do not optimize by aesthetic preference or benchmark a different workload from t
 
 - [ ] Continue only when new measurement supports another hypothesis; stop at the agreed target, diminishing returns, exhausted safe options, or a missing prerequisite; report explicitly whether the target was reached.
 - [ ] Confirm that build, lint, type, test, smoke, benchmark, and operational evidence covers the final retained state and all required gates. Reuse passing evidence for that state; rerun checks only where later changes or unresolved failures invalidate it.
-- [ ] Remove only run-owned ledger entries: verify absolute paths remain inside approved temporary roots, stop exact recorded process IDs, preserve dirty or pre-existing worktrees, and retain evidence artifacts intentionally reported.
+- [ ] **Run-owned cleanup:** Remove only run-owned ledger entries: verify absolute paths remain inside approved temporary roots, stop exact recorded process IDs, preserve dirty or pre-existing worktrees, and retain evidence artifacts intentionally reported.
 - [ ] Confirm that the benchmark definition and acceptance threshold did not drift during the run.
 - [ ] Reconcile the hypothesis ledger with retained edits and raw results, including discarded experiments.
-- [ ] Use `IMPROVED` only when at least one retained change improves the agreed metric beyond noise with every constraint passing; use `NO_CHANGE` when all experiments are discarded and the baseline is restored; use `BLOCKED` when a safety prerequisite, reproducible baseline, or safe restoration path is unavailable.
-
 - [ ] Bind measured improvement to the workload, environment, baseline and retained code/configuration; distinguish benchmark improvement from proven production impact.
+- [ ] Use `IMPROVED` only when at least one retained change improves the agreed metric beyond noise with every constraint passing; use `NO_CHANGE` when all experiments are discarded and the baseline is restored; use `BLOCKED` when a safety prerequisite, reproducible baseline, or safe restoration path is unavailable.
 
 ## Self-Check
 

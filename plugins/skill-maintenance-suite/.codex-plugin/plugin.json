@@ -1,6 +1,6 @@
 {
   "name": "skill-maintenance-suite",
-  "description": "Review standalone skills, instruction boundaries, evidence contracts, and distribution integrity.",
+  "description": "Make skills easier to invoke correctly, follow consistently, and verify before distribution.",
   "author": {
     "name": "Lev Nikolaevich",
     "email": "levnikolaevich.com@gmail.com",
@@ -18,7 +18,7 @@
   "interface": {
     "displayName": "Skill Maintenance Suite",
     "shortDescription": "Review skill quality",
-    "longDescription": "Review standalone skills, instruction boundaries, evidence contracts, and distribution integrity.",
+    "longDescription": "Make skills easier to invoke correctly, follow consistently, and verify before distribution.",
     "developerName": "Lev Nikolaevich",
     "websiteURL": "https://github.com/levnikolaevich/claude-code-skills",
     "category": "Productivity",

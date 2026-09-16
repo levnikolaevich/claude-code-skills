@@ -7,11 +7,11 @@ description: "Commits, pushes and remotely verifies authorized repository change
 
 **Goal:** Publish only changes the user has authorized, then verify the result from the remote source.
 
-**Execution contract:** The ordered checkboxes are the Definition of Done. Track every item internally as `PENDING`, `PROVEN` with concrete evidence, `CLEARED` with evidence that its condition is absent, or `UNPROVEN` with a gap; reading, delegation, or tool failure is not proof. Reconcile items after each section. Before returning, resolve all `PENDING` and count only `PROVEN` and `CLEARED`; apply the skill's verdict and approval rules to every gap.
-Preserve user intent, scope, and existing authorization. Continue authorized work; ask only for consequential unresolved choices or required external approval. Scale depth to material risk without silently skipping checks. Preserve dependency and safety ordering; otherwise choose the verification method appropriate to each obligation.
-Treat equivalent user or repository evidence as valid input; another skill, named artifact, or complete lifecycle is not a prerequisite. Preserve source requirement and decision identifiers when available. Bind reused evidence to the relevant source version, dirty changes, configuration, and environment; invalidate only affected claims after a change.
-On continuation, reconcile the task, existing authorization, current state, and unresolved evidence before resuming. For long work, return a compact continuation record or update an already authorized task artifact; read-only skills do not persist it. Distinguish artifact readiness, verified behavior, and authority to perform an external action.
-Prepare authorized work before any required approval. If an instruction prevents progress, identify its exact source and explain the unresolved boundary; do not invent an approval gate from general caution.
+**Execution contract:** The checklist defines completion. Track each item internally as `PENDING`, `PROVEN` with evidence, `CLEARED` with evidence its condition is absent, or `UNPROVEN` with a gap; reading, delegation, or tool failure is not proof. Reconcile after each section. Before returning, resolve all `PENDING`, count only `PROVEN` and `CLEARED`, and apply verdict and approval rules to every gap.
+Preserve intent, scope, and existing authorization. Continue authorized work; ask only for consequential unresolved choices or required external approval. Scale depth to material risk without skipping checks. Preserve dependency and safety order; otherwise choose an appropriate verification method.
+Accept equivalent user or repository evidence; no other skill, named artifact, or complete lifecycle is required. Preserve source requirement and decision IDs. Bind reused evidence to relevant source versions, dirty changes, configuration, and environment; invalidate only affected claims.
+On continuation, reconcile task, authorization, current state, and unresolved evidence. For long work, return a compact continuation record or update an already authorized artifact; read-only skills do not persist it. Distinguish artifact readiness, verified behavior, and external-action authority.
+Prepare authorized work before required approval. If blocked by an instruction, cite its exact source and unresolved boundary; do not invent approval gates from caution.
 
 
 ## Tool Routing
@@ -60,7 +60,7 @@ Use hosting APIs for remote facts and Git for repository facts. Local distributi
 - [ ] Fetch the target remote and compare local HEAD with the remote branch before committing.
 - [ ] If behind or diverged, inspect both sides and reconcile within the authorized branch workflow while preserving user changes; stop for unresolved semantic conflicts or a required history rewrite. Never force-push implicitly.
 - [ ] Stage explicit paths when the worktree is mixed; use whole-worktree staging only when the user approved all changes.
-- [ ] Review the cached diff and diffstat after staging.
+- [ ] Review the cached diff and diffstat after staging; ensure required checks cover this exact tree, rerunning only checks invalidated by synchronization or subsequent edits.
 - [ ] Exclude secrets, local caches, temporary artifacts, and unintended credentials from the staged set without deleting user-owned files; if an intended change contains a secret, block that publication and report redacted evidence.
 - [ ] Match the repository's commit-message convention and summarize the entire staged change.
 - [ ] Preserve configured commit signing and attribution policy; do not invent contributor identities or disable required signing.
@@ -69,6 +69,7 @@ Use hosting APIs for remote facts and Git for repository facts. Local distributi
 
 ### Remote Verification
 
+- [ ] Verify remote publication refers to the exact checked source state and exclude unverified later changes; repository publication alone does not prove a release or deployment.
 - [ ] Verify the published commit on the authorized remote through Git or the hosting API; use a second source only if identity or synchronization is uncertain.
 - [ ] Track required CI for the pushed commit with bounded waits and direct run URLs. If execution cannot continue waiting, report pending state as `PARTIAL`; do not equate pending with success.
 - [ ] If the static site changed, wait for deployment and verify live content with a cache-busting request.
@@ -90,8 +91,6 @@ Use hosting APIs for remote facts and Git for repository facts. Local distributi
 - `PUBLISHED` — commit, push, required CI, and applicable remote verification succeeded.
 - `PARTIAL` — the push succeeded but a non-destructive remote check is pending or failed.
 - `BLOCKED` — publication did not complete because authorization, synchronization, validation, or remote access failed.
-
-- [ ] Verify remote publication refers to the exact checked source state and exclude unverified later changes; repository publication alone does not prove a release or deployment.
 
 ## Self-Check
 

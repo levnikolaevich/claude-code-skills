@@ -1,6 +1,6 @@
 # Repository Skill Template
 
-**Status: ADOPTED.** This is the canonical authoring template for this repository. It is not an installed skill or a runtime dependency. Repository instructions own distribution, mutation scope, and release policy; this template owns skill structure, completion tracking, and report conventions.
+This is the canonical authoring template, not an installed skill or runtime dependency. Repository instructions own distribution, mutation scope, and release policy; this template owns skill format, shared execution rules, and report conventions.
 
 ## Preservation contract
 
@@ -17,7 +17,6 @@
 - Self-check means reconciling existing evidence and coverage, not automatically rereading the repository or rerunning successful commands. New changes, failures, or unresolved evidence justify additional checks.
 - Retain all five report fields, but scale their length to the result. A small task may use one line per field; avoid empty tables, repeated context, and copied artifacts.
 
-- Preserve detailed checklists, the final self-check, and the five-field report when applying model guidance; improve clarity and evidence without weakening obligations.
 - Lifecycle compatibility is an evidence contract, not a dependency on a coordinator, a model, or another installed skill.
 
 ## File and format rules
@@ -41,11 +40,11 @@ description: "State the specific capability and trigger; add exclusions only for
 
 **Goal:** Define the intended outcome, protected behavior, and mutation boundary. State what this skill does not authorize when that boundary matters.
 
-**Execution contract:** The ordered checkboxes are the Definition of Done. Track every item internally as `PENDING`, `PROVEN` with concrete evidence, `CLEARED` with evidence that its condition is absent, or `UNPROVEN` with a gap; reading, delegation, or tool failure is not proof. Reconcile items after each section. Before returning, resolve all `PENDING` and count only `PROVEN` and `CLEARED`; apply the skill's verdict and approval rules to every gap.
-Preserve user intent, scope, and existing authorization. Continue authorized work; ask only for consequential unresolved choices or required external approval. Scale depth to material risk without silently skipping checks. Preserve dependency and safety ordering; otherwise choose the verification method appropriate to each obligation.
-Treat equivalent user or repository evidence as valid input; another skill, named artifact, or complete lifecycle is not a prerequisite. Preserve source requirement and decision identifiers when available. Bind reused evidence to the relevant source version, dirty changes, configuration, and environment; invalidate only affected claims after a change.
-On continuation, reconcile the task, existing authorization, current state, and unresolved evidence before resuming. For long work, return a compact continuation record or update an already authorized task artifact; read-only skills do not persist it. Distinguish artifact readiness, verified behavior, and authority to perform an external action.
-Prepare authorized work before any required approval. If an instruction prevents progress, identify its exact source and explain the unresolved boundary; do not invent an approval gate from general caution.
+**Execution contract:** The checklist defines completion. Track each item internally as `PENDING`, `PROVEN` with evidence, `CLEARED` with evidence its condition is absent, or `UNPROVEN` with a gap; reading, delegation, or tool failure is not proof. Reconcile after each section. Before returning, resolve all `PENDING`, count only `PROVEN` and `CLEARED`, and apply verdict and approval rules to every gap.
+Preserve intent, scope, and existing authorization. Continue authorized work; ask only for consequential unresolved choices or required external approval. Scale depth to material risk without skipping checks. Preserve dependency and safety order; otherwise choose an appropriate verification method.
+Accept equivalent user or repository evidence; no other skill, named artifact, or complete lifecycle is required. Preserve source requirement and decision IDs. Bind reused evidence to relevant source versions, dirty changes, configuration, and environment; invalidate only affected claims.
+On continuation, reconcile task, authorization, current state, and unresolved evidence. For long work, return a compact continuation record or update an already authorized artifact; read-only skills do not persist it. Distinguish artifact readiness, verified behavior, and external-action authority.
+Prepare authorized work before required approval. If blocked by an instruction, cite its exact source and unresolved boundary; do not invent approval gates from caution.
 
 
 ## Tool Routing
@@ -101,6 +100,25 @@ Report in the user's language, in this order; retain all five fields and state e
 5. **Completion:** `Checklist: X/Y complete`; `Incomplete: None` or each `UNPROVEN` item's reason, outcome impact, and exact next action; residual risks and required decisions.
 
 **Skill-specific evidence:** Define the domain-specific report fields here. Preserve existing required data, such as finding severity and causal evidence, acceptance traceability, measured baselines, portfolio decisions, artifact paths, or remote publication identity. Reference canonical artifacts instead of copying their contents, except when the user must approve exact content.
+```
+
+## Product-test policy
+
+This is the canonical test-value and boundary rule for skills that plan, implement, or assess product tests. Copy the checkbox into the owning test-decision phase of each applicable standalone skill; repository validation checks copied wording. Keep task-specific oracles and portfolio actions local. Compiler, packaging, installation, and other required delivery checks remain separate from product-test design.
+
+```markdown
+- [ ] **Test value and boundary:** Require every test to detect a concrete defect in this product's business logic and name the protected business outcome. Prefer E2E through user or external-system boundaries; use integration or unit tests only for business scenarios difficult to exercise reliably through E2E. Reject platform, trivial-wiring, implementation-detail, and duplicate proof with no distinct business failure signal.
+```
+
+## Reusable domain checks
+
+Copy these checks only into workflows that need the obligation. Their marked wording is canonical here and validated in standalone copies; task-specific additions retain their own local owner.
+
+```markdown
+- [ ] **External correction evidence:** Ground external corrections in version-matched official contracts, using primary engineering sources for unresolved tradeoffs. Cite the supported mechanism; local evidence suffices for local defects.
+- [ ] **UI test locators:** Use stable project-native semantic locators (roles, accessible names, labels) or explicit IDs/test hooks according to the observable contract and locale strategy. Avoid styling, position, timing, and incidental structure. Treat exact-copy assertions separately when copy is a requirement; do not require product edits solely to add hooks when a robust semantic locator exists.
+- [ ] **Run-owned cleanup:** Remove only run-owned ledger entries: verify absolute paths remain inside approved temporary roots, stop exact recorded process IDs, preserve dirty or pre-existing worktrees, and retain evidence artifacts intentionally reported.
+- [ ] **Run-owned resources:** Start a run-owned resource ledger with every created absolute path, worktree, process ID, cache, report, and temporary artifact; never register pre-existing resources as cleanup targets.
 ```
 
 ## Change control and validation

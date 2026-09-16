@@ -7,11 +7,11 @@ description: "Plans risk-based test portfolios and acceptance evidence; does not
 
 **Goal:** Design a read-only, risk-based test portfolio decision for the requested scope. Maximize confidence in important local behavior while preventing test growth that lacks a unique defect signal, and define how affected evidence is retained, changed, consolidated, retired, or deliberately omitted.
 
-**Execution contract:** The ordered checkboxes are the Definition of Done. Track every item internally as `PENDING`, `PROVEN` with concrete evidence, `CLEARED` with evidence that its condition is absent, or `UNPROVEN` with a gap; reading, delegation, or tool failure is not proof. Reconcile items after each section. Before returning, resolve all `PENDING` and count only `PROVEN` and `CLEARED`; apply the skill's verdict and approval rules to every gap.
-Preserve user intent, scope, and existing authorization. Continue authorized work; ask only for consequential unresolved choices or required external approval. Scale depth to material risk without silently skipping checks. Preserve dependency and safety ordering; otherwise choose the verification method appropriate to each obligation.
-Treat equivalent user or repository evidence as valid input; another skill, named artifact, or complete lifecycle is not a prerequisite. Preserve source requirement and decision identifiers when available. Bind reused evidence to the relevant source version, dirty changes, configuration, and environment; invalidate only affected claims after a change.
-On continuation, reconcile the task, existing authorization, current state, and unresolved evidence before resuming. For long work, return a compact continuation record or update an already authorized task artifact; read-only skills do not persist it. Distinguish artifact readiness, verified behavior, and authority to perform an external action.
-Prepare authorized work before any required approval. If an instruction prevents progress, identify its exact source and explain the unresolved boundary; do not invent an approval gate from general caution.
+**Execution contract:** The checklist defines completion. Track each item internally as `PENDING`, `PROVEN` with evidence, `CLEARED` with evidence its condition is absent, or `UNPROVEN` with a gap; reading, delegation, or tool failure is not proof. Reconcile after each section. Before returning, resolve all `PENDING`, count only `PROVEN` and `CLEARED`, and apply verdict and approval rules to every gap.
+Preserve intent, scope, and existing authorization. Continue authorized work; ask only for consequential unresolved choices or required external approval. Scale depth to material risk without skipping checks. Preserve dependency and safety order; otherwise choose an appropriate verification method.
+Accept equivalent user or repository evidence; no other skill, named artifact, or complete lifecycle is required. Preserve source requirement and decision IDs. Bind reused evidence to relevant source versions, dirty changes, configuration, and environment; invalidate only affected claims.
+On continuation, reconcile task, authorization, current state, and unresolved evidence. For long work, return a compact continuation record or update an already authorized artifact; read-only skills do not persist it. Distinguish artifact readiness, verified behavior, and external-action authority.
+Prepare authorized work before required approval. If blocked by an instruction, cite its exact source and unresolved boundary; do not invent approval gates from caution.
 
 
 ## Tool Routing
@@ -21,18 +21,17 @@ Prepare authorized work before any required approval. If an instruction prevents
 | Requirements and repository rules | Native file reads plus Git | Establishing scope, current work, acceptance criteria, and supported commands | User-provided requirements with explicit limitations |
 | Existing test surface | File listing, search, manifests, runner configuration, and CI | Mapping test levels, fixtures, environments, and conventions | Repository tree and known test entrypoints |
 | Behavior and boundaries | Language server or host-native code intelligence | Tracing entrypoints, consumers, trust boundaries, persistence, queues, and external contracts | Narrow search followed by direct inspection |
-| Existing evidence | Existing test/CI reports, test reads, and safe repository commands | A material uncertainty about current proof can change the strategy | Use static evidence with execution limits; do not run suites merely to produce a plan |
+| Existing evidence | Existing test/CI reports and test/configuration reads | Current proof can change the strategy | Use static evidence with execution limits; do not execute tests during planning |
 | Current external failure modes | Official documentation, specifications, advisories, and primary field evidence | An external contract or real user failure can change scenarios or priority | Mark the claim `UNVERIFIED`; do not invent risk |
 
 Keep the run read-only. Do not create tests, fixtures, snapshots, tasks, or documentation, and do not update the reviewed implementation.
 
 ## Evidence Rules
 
-- Choose the smallest reliable boundary that proves each material risk. Use end-to-end evidence when the terminal journey cannot be established lower; preserve distinct unit, integration, and contract proof where they detect different failures.
 - Coverage is discovery evidence, not proof. Require an oracle that would fail for the named defect.
 - Prioritize by impact, plausible failure, uniqueness, detectability, and recovery cost; do not convert those judgments into universal numeric thresholds.
 - Existing tests reduce a gap only when their setup and assertions prove the same behavior and failure mode.
-- Framework, language, ORM, serializer, or library behavior is not a product test unless local configuration or integration changes its contract.
+
 - Keep portfolio action separate from execution status. Use `KEEP`, `ADD`, `UPDATE`, `MERGE`, `DELETE`, or `NO_TEST` for the decision and `PASS`, `FAIL`, `BLOCKED`, or `UNPROVEN` only for evidence state.
 - `NO_TEST` is an explicit risk decision, not missing work. Name the existing proof, alternative control, or accepted residual risk.
 - A persistent test register is optional. Prefer repository-native test names, paths, tags, CI configuration, and task output unless scale or governance requires another maintained artifact.
@@ -64,11 +63,11 @@ Keep the run read-only. Do not create tests, fixtures, snapshots, tasks, or docu
 
 - [ ] Assign every material risk and affected test exactly one provisional action: `KEEP` when trusted unique proof remains valid; `ADD` for an unproved material risk; `UPDATE` when valuable intent remains but basis, boundary, setup, or oracle changed; `MERGE` for safely consolidatable proof; `DELETE` for obsolete, duplicate, trivial, or untrustworthy proof; or `NO_TEST` when another control or accepted risk is sufficient.
 - [ ] For `DELETE` or `MERGE`, prove that the test basis is obsolete or identify replacement evidence that preserves every still-required material behavior, failure mode, oracle, and useful failure localization; never retain obsolete proof merely because it already exists.
-- [ ] Choose unit tests for isolated local rules, contract tests for producer-consumer agreement, integration tests for owned boundaries, and end-to-end tests for production-shaped journeys whose terminal outcome cannot be proved lower.
-- [ ] Avoid duplicating the same behavior at every level unless each level detects a distinct failure class.
+- [ ] **Test value and boundary:** Require every test to detect a concrete defect in this product's business logic and name the protected business outcome. Prefer E2E through user or external-system boundaries; use integration or unit tests only for business scenarios difficult to exercise reliably through E2E. Reject platform, trivial-wiring, implementation-detail, and duplicate proof with no distinct business failure signal.
+
 - [ ] Define the minimum sufficient independent oracle, combining observations when the contract requires them: returned contract, durable state, emitted event, rendered behavior, external effect, invariant, or deterministic artifact.
 - [ ] Check that mocks and fakes do not bypass the boundary or failure semantics the scenario claims to prove.
-- [ ] Use stable project-native semantic locators (roles, accessible names, labels) or explicit IDs/test hooks according to the observable contract and locale strategy. Avoid styling, position, timing, and incidental structure. Treat exact-copy assertions separately when copy is a requirement; do not require product edits solely to add hooks when a robust semantic locator exists.
+- [ ] **UI test locators:** Use stable project-native semantic locators (roles, accessible names, labels) or explicit IDs/test hooks according to the observable contract and locale strategy. Avoid styling, position, timing, and incidental structure. Treat exact-copy assertions separately when copy is a requirement; do not require product edits solely to add hooks when a robust semantic locator exists.
 - [ ] Include positive, invalid, boundary, authorization, error, recovery, concurrency, and compatibility cases only where the risk map makes them material.
 - [ ] Specify non-default configuration, time, locale, randomness, ordering, or data scale when defaults could conceal hard-coded behavior.
 - [ ] Add browser, device, operating-system, runtime, or version cells only when the supported contract or a known risk makes them decision-relevant.
@@ -83,11 +82,10 @@ Keep the run read-only. Do not create tests, fixtures, snapshots, tasks, or docu
 - [ ] Identify which scenarios can run in parallel and which share mutable state, rate limits, accounts, devices, or environment setup.
 - [ ] Classify gates by failure consequence and required detection time; place slow diagnostic checks outside routine gates only when another control covers release-critical risk.
 - [ ] State exclusions explicitly, including scenarios with no unique protected outcome or defect signal, low-value duplication, framework behavior, infeasible environments, and accepted residual risks.
+- [ ] Map material requirements and operational risks to distinct evidence, the owning test boundary, prerequisites, and pass criteria; identify which checks remain valid after a requirement or environment changes.
 - [ ] Use `READY` when the strategy is executable and decision-complete, `INCONCLUSIVE` when useful partial planning is possible but material evidence is missing, and `BLOCKED` when requirements or a safety-critical boundary cannot be established.
 - [ ] Reconcile the risk map and decision ledger: no material risk or affected test lacks an action and supporting rationale.
 - [ ] State the smallest next evidence-gathering action for every `INCONCLUSIVE` or `BLOCKED` area.
-
-- [ ] Map material requirements and operational risks to distinct evidence, the owning test boundary, prerequisites, and pass criteria; identify which checks remain valid after a requirement or environment changes.
 
 ## Self-Check
 

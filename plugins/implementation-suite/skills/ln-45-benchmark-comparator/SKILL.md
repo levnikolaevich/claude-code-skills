@@ -7,11 +7,11 @@ description: "Compares tools or implementations through controlled benchmarks an
 
 **Goal:** Compare alternatives under controlled, reproducible conditions. Correctness comes before speed, and measured data must remain separate from estimates, setup cost, and interpretation.
 
-**Execution contract:** The ordered checkboxes are the Definition of Done. Track every item internally as `PENDING`, `PROVEN` with concrete evidence, `CLEARED` with evidence that its condition is absent, or `UNPROVEN` with a gap; reading, delegation, or tool failure is not proof. Reconcile items after each section. Before returning, resolve all `PENDING` and count only `PROVEN` and `CLEARED`; apply the skill's verdict and approval rules to every gap.
-Preserve user intent, scope, and existing authorization. Continue authorized work; ask only for consequential unresolved choices or required external approval. Scale depth to material risk without silently skipping checks. Preserve dependency and safety ordering; otherwise choose the verification method appropriate to each obligation.
-Treat equivalent user or repository evidence as valid input; another skill, named artifact, or complete lifecycle is not a prerequisite. Preserve source requirement and decision identifiers when available. Bind reused evidence to the relevant source version, dirty changes, configuration, and environment; invalidate only affected claims after a change.
-On continuation, reconcile the task, existing authorization, current state, and unresolved evidence before resuming. For long work, return a compact continuation record or update an already authorized task artifact; read-only skills do not persist it. Distinguish artifact readiness, verified behavior, and authority to perform an external action.
-Prepare authorized work before any required approval. If an instruction prevents progress, identify its exact source and explain the unresolved boundary; do not invent an approval gate from general caution.
+**Execution contract:** The checklist defines completion. Track each item internally as `PENDING`, `PROVEN` with evidence, `CLEARED` with evidence its condition is absent, or `UNPROVEN` with a gap; reading, delegation, or tool failure is not proof. Reconcile after each section. Before returning, resolve all `PENDING`, count only `PROVEN` and `CLEARED`, and apply verdict and approval rules to every gap.
+Preserve intent, scope, and existing authorization. Continue authorized work; ask only for consequential unresolved choices or required external approval. Scale depth to material risk without skipping checks. Preserve dependency and safety order; otherwise choose an appropriate verification method.
+Accept equivalent user or repository evidence; no other skill, named artifact, or complete lifecycle is required. Preserve source requirement and decision IDs. Bind reused evidence to relevant source versions, dirty changes, configuration, and environment; invalidate only affected claims.
+On continuation, reconcile task, authorization, current state, and unresolved evidence. For long work, return a compact continuation record or update an already authorized artifact; read-only skills do not persist it. Distinguish artifact readiness, verified behavior, and external-action authority.
+Prepare authorized work before required approval. If blocked by an instruction, cite its exact source and unresolved boundary; do not invent approval gates from caution.
 
 
 ## Tool Routing
@@ -92,6 +92,7 @@ Do not tune the scenario after observing a preferred candidate, mix measurements
 
 ### 5. Decide, Preserve, and Clean Up
 
+- [ ] Identify which decision the comparison can support, its valid workload/environment range, and conditions requiring another experiment; do not extrapolate outside observed evidence.
 - [ ] Use `WIN` only when the candidate satisfies correctness and the predefined decision rule with sufficient valid evidence.
 - [ ] Use `TIE` only when evidence supports the predefined negligible-difference margin or balanced tradeoff; failure to detect a difference with insufficient evidence is `INCONCLUSIVE`.
 - [ ] Use `INCONCLUSIVE` when sample size, activation, oracle, environmental control, or conflicting scenarios prevent a reliable choice.
@@ -100,8 +101,6 @@ Do not tune the scenario after observing a preferred candidate, mix measurements
 - [ ] Report invalid runs, exclusions, confounders, sensitivity to assumptions, and how the conclusion could be falsified.
 - [ ] Report residual decision risks that remain after the comparison, including unsupported workloads, unmeasured costs, unstable environments, and assumptions that could reverse the verdict.
 - [ ] Verify that decision guidance follows scenario-level evidence and the frozen rule, with cleanup and limitations accounted for.
-
-- [ ] Identify which decision the comparison can support, its valid workload/environment range, and conditions requiring another experiment; do not extrapolate outside observed evidence.
 
 ## Self-Check
 

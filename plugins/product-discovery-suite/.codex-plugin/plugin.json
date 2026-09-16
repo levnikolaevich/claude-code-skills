@@ -1,7 +1,7 @@
 {
   "name": "product-discovery-suite",
   "version": "1.0.0",
-  "description": "Evaluate opportunities, define product requirements, and design user interaction.",
+  "description": "Decide what is worth building, who it serves, and what a useful first version must do.",
   "author": {
     "name": "Lev Nikolaevich",
     "email": "levnikolaevich.com@gmail.com",
@@ -19,7 +19,7 @@
   "interface": {
     "displayName": "Product Discovery Suite",
     "shortDescription": "Product intent and experience",
-    "longDescription": "Evaluate opportunities, define product requirements, and design user interaction.",
+    "longDescription": "Decide what is worth building, who it serves, and what a useful first version must do.",
     "developerName": "Lev Nikolaevich",
     "websiteURL": "https://github.com/levnikolaevich/claude-code-skills",
     "category": "Productivity",

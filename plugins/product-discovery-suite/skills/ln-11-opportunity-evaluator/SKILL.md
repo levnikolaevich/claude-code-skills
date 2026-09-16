@@ -7,11 +7,11 @@ description: "Evaluates new product opportunities through demand, channels and e
 
 **Goal:** Evaluate product opportunities before implementation commitment. Start from observable demand and a reachable acquisition path, eliminate weak candidates early, and recommend one low-cost validation step without manufacturing market precision.
 
-**Execution contract:** The ordered checkboxes are the Definition of Done. Track every item internally as `PENDING`, `PROVEN` with concrete evidence, `CLEARED` with evidence that its condition is absent, or `UNPROVEN` with a gap; reading, delegation, or tool failure is not proof. Reconcile items after each section. Before returning, resolve all `PENDING` and count only `PROVEN` and `CLEARED`; apply the skill's verdict and approval rules to every gap.
-Preserve user intent, scope, and existing authorization. Continue authorized work; ask only for consequential unresolved choices or required external approval. Scale depth to material risk without silently skipping checks. Preserve dependency and safety ordering; otherwise choose the verification method appropriate to each obligation.
-Treat equivalent user or repository evidence as valid input; another skill, named artifact, or complete lifecycle is not a prerequisite. Preserve source requirement and decision identifiers when available. Bind reused evidence to the relevant source version, dirty changes, configuration, and environment; invalidate only affected claims after a change.
-On continuation, reconcile the task, existing authorization, current state, and unresolved evidence before resuming. For long work, return a compact continuation record or update an already authorized task artifact; read-only skills do not persist it. Distinguish artifact readiness, verified behavior, and authority to perform an external action.
-Prepare authorized work before any required approval. If an instruction prevents progress, identify its exact source and explain the unresolved boundary; do not invent an approval gate from general caution.
+**Execution contract:** The checklist defines completion. Track each item internally as `PENDING`, `PROVEN` with evidence, `CLEARED` with evidence its condition is absent, or `UNPROVEN` with a gap; reading, delegation, or tool failure is not proof. Reconcile after each section. Before returning, resolve all `PENDING`, count only `PROVEN` and `CLEARED`, and apply verdict and approval rules to every gap.
+Preserve intent, scope, and existing authorization. Continue authorized work; ask only for consequential unresolved choices or required external approval. Scale depth to material risk without skipping checks. Preserve dependency and safety order; otherwise choose an appropriate verification method.
+Accept equivalent user or repository evidence; no other skill, named artifact, or complete lifecycle is required. Preserve source requirement and decision IDs. Bind reused evidence to relevant source versions, dirty changes, configuration, and environment; invalidate only affected claims.
+On continuation, reconcile task, authorization, current state, and unresolved evidence. For long work, return a compact continuation record or update an already authorized artifact; read-only skills do not persist it. Distinguish artifact readiness, verified behavior, and external-action authority.
+Prepare authorized work before required approval. If blocked by an instruction, cite its exact source and unresolved boundary; do not invent approval gates from caution.
 
 
 ## Tool Routing
@@ -80,12 +80,11 @@ Treat the creator thesis, intended experience, taste, and conviction as owner pr
 
 - [ ] Reconcile consequential external claims with the collected primary-source evidence; refresh only stale, contradicted, or decision-critical unsupported claims, and label weaker evidence explicitly.
 - [ ] Separate facts, estimates, inferences, owner preferences, and unresolved unknowns in the final result.
+- [ ] Keep the recommended opportunity, falsification condition, and experiment evidence distinct from an approved product requirement or commitment to build.
 - [ ] Use `RECOMMEND <candidate>` only when the candidate has a credible demand signal, reachable channel, differentiating path, plausible value exchange, and executable validation experiment.
-- [ ] Use `INCONCLUSIVE` when evidence cannot distinguish the leading candidates or a cheap experiment is required before choosing.
+- [ ] Use `INCONCLUSIVE` when candidates remain plausible but evidence cannot select among them or a cheap experiment is required; use `DO_NOT_PURSUE` only when evidence eliminates every candidate within scope.
 - [ ] Use `BLOCKED` when the decision lacks product context, candidate scope, lawful research access, or a safe validation boundary.
 - [ ] Reconcile recommended, eliminated, and deferred candidates against their evidence; report the proposed next experiment without creating files or executing it.
-
-- [ ] Keep the recommended opportunity, falsification condition, and experiment evidence distinct from an approved product requirement or commitment to build.
 
 ## Self-Check
 

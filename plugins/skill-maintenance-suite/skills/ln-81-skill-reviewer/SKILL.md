@@ -5,13 +5,13 @@ description: "Reviews skill instructions, trigger boundaries and distribution co
 
 # Skill Reviewer
 
-**Goal:** Review skill quality and configured distribution surfaces without modifying repository or external state. Distinguish static contract assurance from observed execution behavior.
+**Goal:** Review skill quality and configured distribution surfaces without modifying reviewed source or external systems. Distinguish static contract assurance from observed execution behavior.
 
-**Execution contract:** The ordered checkboxes are the Definition of Done. Track every item internally as `PENDING`, `PROVEN` with concrete evidence, `CLEARED` with evidence that its condition is absent, or `UNPROVEN` with a gap; reading, delegation, or tool failure is not proof. Reconcile items after each section. Before returning, resolve all `PENDING` and count only `PROVEN` and `CLEARED`; apply the skill's verdict and approval rules to every gap.
-Preserve user intent, scope, and existing authorization. Continue authorized work; ask only for consequential unresolved choices or required external approval. Scale depth to material risk without silently skipping checks. Preserve dependency and safety ordering; otherwise choose the verification method appropriate to each obligation.
-Treat equivalent user or repository evidence as valid input; another skill, named artifact, or complete lifecycle is not a prerequisite. Preserve source requirement and decision identifiers when available. Bind reused evidence to the relevant source version, dirty changes, configuration, and environment; invalidate only affected claims after a change.
-On continuation, reconcile the task, existing authorization, current state, and unresolved evidence before resuming. For long work, return a compact continuation record or update an already authorized task artifact; read-only skills do not persist it. Distinguish artifact readiness, verified behavior, and authority to perform an external action.
-Prepare authorized work before any required approval. If an instruction prevents progress, identify its exact source and explain the unresolved boundary; do not invent an approval gate from general caution.
+**Execution contract:** The checklist defines completion. Track each item internally as `PENDING`, `PROVEN` with evidence, `CLEARED` with evidence its condition is absent, or `UNPROVEN` with a gap; reading, delegation, or tool failure is not proof. Reconcile after each section. Before returning, resolve all `PENDING`, count only `PROVEN` and `CLEARED`, and apply verdict and approval rules to every gap.
+Preserve intent, scope, and existing authorization. Continue authorized work; ask only for consequential unresolved choices or required external approval. Scale depth to material risk without skipping checks. Preserve dependency and safety order; otherwise choose an appropriate verification method.
+Accept equivalent user or repository evidence; no other skill, named artifact, or complete lifecycle is required. Preserve source requirement and decision IDs. Bind reused evidence to relevant source versions, dirty changes, configuration, and environment; invalidate only affected claims.
+On continuation, reconcile task, authorization, current state, and unresolved evidence. For long work, return a compact continuation record or update an already authorized artifact; read-only skills do not persist it. Distinguish artifact readiness, verified behavior, and external-action authority.
+Prepare authorized work before required approval. If blocked by an instruction, cite its exact source and unresolved boundary; do not invent approval gates from caution.
 
 
 ## Tool Routing
@@ -51,6 +51,7 @@ Tool absence is not itself a skill defect. Apply the documented fallback and use
 - [ ] For optimization or experiment skills, require an evidence-based retain, discard, or rollback decision when they mutate state.
 - [ ] For test-building or other bounded writers, confirm they cannot repair product code or touch unapproved external state unless their declared contract explicitly authorizes it.
 - [ ] Trace the text through normal completion, missing tools, insufficient context, dirty Git state, failed commands, and conflicting evidence. Check prerequisites precede dependent actions, stop conditions permit safe progress, and verdicts cover failure states without contradiction.
+- [ ] Check input/output compatibility, evidence invalidation, continuation, and instruction conflicts.
 - [ ] Check that the output contract distinguishes facts, inferences, missing evidence, verdict, and residual risk.
 - [ ] Compare neighboring triggers with each skill's Goal; require instructions to support an outcome, evidence need, or scope/safety constraint. Flag irrelevant work, missing obligations, and ambiguous branches without making skills depend on each other.
 
@@ -75,9 +76,11 @@ Tool absence is not itself a skill defect. Apply the documented fallback and use
 - [ ] Verify the skill would activate for the positive prompts and remain inactive for close negatives.
 - [ ] Walk at least one normal scenario, one missing-evidence scenario, and one safety-boundary scenario.
 - [ ] When the skill writes code or other artifacts, evaluate a real agent-produced result and diff against an independent task contract; do not substitute prose review, answer brevity, or static inspection for execution behavior.
+- [ ] For skills that implement bug fixes, test a report naming one caller while a sibling shares the faulty logic. Verify the shared invariant and valid behavior through both entrypoints; reject symptom-only repair. Keep the sibling oracle out of the task prompt.
+- [ ] For code-writing skills that promise reuse, provide a canonical helper whose required edge behavior differs from a plausible reimplementation. Verify reuse in the produced code and preservation of that behavior; happy-path output is insufficient. Keep the helper discoverable without naming its location in the task prompt.
 - [ ] Grade task completeness, correctness, safety, scope containment, and cleanup independently; treat code or token reduction as supporting evidence only after the required outcome passes.
-- [ ] For complex or high-risk changes, use fresh independent contexts when available and provide only the skill plus raw task artifacts.
-- [ ] Do not reveal expected findings, intended fixes, or prior conclusions to an independent evaluator.
+- [ ] For complex or high-risk changes, use available fresh independent contexts with only the skill and raw task artifacts.
+- [ ] Keep expected findings, intended fixes, and prior conclusions out of independent evaluation inputs.
 - [ ] Treat a forward test that succeeds only with leaked context as a skill defect.
 - [ ] Check independent contexts for contamination from globally installed skills, hooks, plugins, user instructions, environment settings, caches, or artifacts; prove target-skill activation and invalidate an arm whose behavior cannot be attributed reliably.
 - [ ] Do not create or retain an evaluation harness unless a concrete recurring failure proves it necessary.
@@ -96,8 +99,6 @@ Tool absence is not itself a skill defect. Apply the documented fallback and use
 - `PASS WITH CONCERNS` — no confirmed blocking defect in the reviewed scope, but bounded non-blocking uncertainty remains; do not infer untested publication or behavioral readiness.
 - `FAIL` — a confirmed defect can cause wrong triggering, unsafe behavior, broken installation, or an invalid contract.
 - `BLOCKED` — required evidence or tooling is unavailable and no credible fallback exists.
-
-- [ ] Review input/output compatibility, stale-evidence handling, continuation, and instruction conflicts while preserving detailed checklists and the common final report; distinguish static checks from observed agent behavior.
 
 ## Self-Check
 

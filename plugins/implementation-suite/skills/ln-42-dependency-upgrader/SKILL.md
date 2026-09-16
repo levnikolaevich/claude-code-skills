@@ -7,11 +7,11 @@ description: "Upgrades dependencies in reversible batches with version-specific 
 
 **Goal:** Upgrade dependencies in small, attributable batches. Preserve manifests, lockfiles, runtime support, and product behavior; do not treat a newer version as valuable without compatibility, security, or maintenance evidence.
 
-**Execution contract:** The ordered checkboxes are the Definition of Done. Track every item internally as `PENDING`, `PROVEN` with concrete evidence, `CLEARED` with evidence that its condition is absent, or `UNPROVEN` with a gap; reading, delegation, or tool failure is not proof. Reconcile items after each section. Before returning, resolve all `PENDING` and count only `PROVEN` and `CLEARED`; apply the skill's verdict and approval rules to every gap.
-Preserve user intent, scope, and existing authorization. Continue authorized work; ask only for consequential unresolved choices or required external approval. Scale depth to material risk without silently skipping checks. Preserve dependency and safety ordering; otherwise choose the verification method appropriate to each obligation.
-Treat equivalent user or repository evidence as valid input; another skill, named artifact, or complete lifecycle is not a prerequisite. Preserve source requirement and decision identifiers when available. Bind reused evidence to the relevant source version, dirty changes, configuration, and environment; invalidate only affected claims after a change.
-On continuation, reconcile the task, existing authorization, current state, and unresolved evidence before resuming. For long work, return a compact continuation record or update an already authorized task artifact; read-only skills do not persist it. Distinguish artifact readiness, verified behavior, and authority to perform an external action.
-Prepare authorized work before any required approval. If an instruction prevents progress, identify its exact source and explain the unresolved boundary; do not invent an approval gate from general caution.
+**Execution contract:** The checklist defines completion. Track each item internally as `PENDING`, `PROVEN` with evidence, `CLEARED` with evidence its condition is absent, or `UNPROVEN` with a gap; reading, delegation, or tool failure is not proof. Reconcile after each section. Before returning, resolve all `PENDING`, count only `PROVEN` and `CLEARED`, and apply verdict and approval rules to every gap.
+Preserve intent, scope, and existing authorization. Continue authorized work; ask only for consequential unresolved choices or required external approval. Scale depth to material risk without skipping checks. Preserve dependency and safety order; otherwise choose an appropriate verification method.
+Accept equivalent user or repository evidence; no other skill, named artifact, or complete lifecycle is required. Preserve source requirement and decision IDs. Bind reused evidence to relevant source versions, dirty changes, configuration, and environment; invalidate only affected claims.
+On continuation, reconcile task, authorization, current state, and unresolved evidence. For long work, return a compact continuation record or update an already authorized artifact; read-only skills do not persist it. Distinguish artifact readiness, verified behavior, and external-action authority.
+Prepare authorized work before required approval. If blocked by an instruction, cite its exact source and unresolved boundary; do not invent approval gates from caution.
 
 
 ## Tool Routing
@@ -44,7 +44,7 @@ Never publish packages, rotate credentials, deploy, or weaken audit and verifica
 - [ ] Classify each deliverable as an application, library, plugin, CLI, container, or build tool so version ranges, lockfiles, peer constraints, and supported-runtime promises are interpreted correctly.
 - [ ] Read repository instructions and determine supported package-manager versions, update commands, lockfile policy, and CI expectations.
 - [ ] Inspect Git state and isolate the work so existing user changes cannot be overwritten or mistaken for upgrade output.
-- [ ] Start a run-owned resource ledger with every created absolute path, worktree, process ID, cache, report, and temporary artifact; never register pre-existing resources as cleanup targets.
+- [ ] **Run-owned resources:** Start a run-owned resource ledger with every created absolute path, worktree, process ID, cache, report, and temporary artifact; never register pre-existing resources as cleanup targets.
 - [ ] Resolve the requested scope: security-only, routine patch or minor maintenance, selected packages, majors, runtime migration, or complete refresh.
 - [ ] Capture install or restore, build, lint, type, test, smoke, and security-audit baseline before editing.
 - [ ] Record pre-existing failures, advisories, deprecations, peer conflicts, and unsupported runtime combinations.
@@ -75,6 +75,7 @@ Never publish packages, rotate credentials, deploy, or weaken audit and verifica
 
 ### 4. Verify and Keep or Revert
 
+- [ ] **Test value and boundary:** Require every test to detect a concrete defect in this product's business logic and name the protected business outcome. Prefer E2E through user or external-system boundaries; use integration or unit tests only for business scenarios difficult to exercise reliably through E2E. Reject platform, trivial-wiring, implementation-detail, and duplicate proof with no distinct business failure signal.
 - [ ] Run install or restore from a clean-enough state to prove lockfile reproducibility.
 - [ ] Run the relevant build, lint, type, unit, integration, smoke, packaging, migration, and application-start checks after each batch.
 - [ ] Classify affected runtime, target-framework, OS, architecture, and feature combinations as required or optional; retain a batch only with local or trusted CI evidence for every required cell, and return `BLOCKED` when required coverage has no credible fallback.
@@ -90,12 +91,11 @@ Never publish packages, rotate credentials, deploy, or weaken audit and verifica
 
 - [ ] Confirm all required repository verification covers the combined retained state. Reuse still-valid results; run missing checks and rerun those invalidated by later batches or unresolved failures.
 - [ ] Confirm manifests, lockfiles, runtime pins, CI, containers, documentation, and generated metadata agree on the final versions.
-- [ ] Remove only run-owned ledger entries: verify absolute paths remain inside approved temporary roots, stop exact recorded process IDs, preserve dirty or pre-existing worktrees, and retain evidence artifacts intentionally reported.
+- [ ] **Run-owned cleanup:** Remove only run-owned ledger entries: verify absolute paths remain inside approved temporary roots, stop exact recorded process IDs, preserve dirty or pre-existing worktrees, and retain evidence artifacts intentionally reported.
 - [ ] List intentionally skipped packages with exact constraint, risk, advisory, or migration reason.
 - [ ] Reconcile the batch ledger with final versions, migration edits, advisories, lockfile churn, and residual risks.
-- [ ] Use `UPDATED` only when the requested update scope is satisfied and verified; `PARTIAL` when a safe subset is retained but requested work or optional coverage remains; `NO_CHANGE` when no batch is retained and baseline is restored; `BLOCKED` when safe progress or required verification is unavailable.
-
 - [ ] Bind each retained batch to its original and final dependency state, runtime/configuration, compatibility evidence, and any invalidated checks.
+- [ ] Use `UPDATED` only when the requested update scope is satisfied and verified; `PARTIAL` when a safe subset is retained but requested work or optional coverage remains; `NO_CHANGE` when no batch is retained and baseline is restored; `BLOCKED` when safe progress or required verification is unavailable.
 
 ## Self-Check
 

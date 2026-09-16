@@ -7,11 +7,11 @@ description: "Modernizes a bounded capability to reduce demonstrated maintenance
 
 **Goal:** Modernize a bounded capability only when the new design measurably reduces human workflow friction, maintenance, risk, dependency duplication, or delivered artifact cost. Preserve behavior, isolate migrations, and revert changes that do not create net value.
 
-**Execution contract:** The ordered checkboxes are the Definition of Done. Track every item internally as `PENDING`, `PROVEN` with concrete evidence, `CLEARED` with evidence that its condition is absent, or `UNPROVEN` with a gap; reading, delegation, or tool failure is not proof. Reconcile items after each section. Before returning, resolve all `PENDING` and count only `PROVEN` and `CLEARED`; apply the skill's verdict and approval rules to every gap.
-Preserve user intent, scope, and existing authorization. Continue authorized work; ask only for consequential unresolved choices or required external approval. Scale depth to material risk without silently skipping checks. Preserve dependency and safety ordering; otherwise choose the verification method appropriate to each obligation.
-Treat equivalent user or repository evidence as valid input; another skill, named artifact, or complete lifecycle is not a prerequisite. Preserve source requirement and decision identifiers when available. Bind reused evidence to the relevant source version, dirty changes, configuration, and environment; invalidate only affected claims after a change.
-On continuation, reconcile the task, existing authorization, current state, and unresolved evidence before resuming. For long work, return a compact continuation record or update an already authorized task artifact; read-only skills do not persist it. Distinguish artifact readiness, verified behavior, and authority to perform an external action.
-Prepare authorized work before any required approval. If an instruction prevents progress, identify its exact source and explain the unresolved boundary; do not invent an approval gate from general caution.
+**Execution contract:** The checklist defines completion. Track each item internally as `PENDING`, `PROVEN` with evidence, `CLEARED` with evidence its condition is absent, or `UNPROVEN` with a gap; reading, delegation, or tool failure is not proof. Reconcile after each section. Before returning, resolve all `PENDING`, count only `PROVEN` and `CLEARED`, and apply verdict and approval rules to every gap.
+Preserve intent, scope, and existing authorization. Continue authorized work; ask only for consequential unresolved choices or required external approval. Scale depth to material risk without skipping checks. Preserve dependency and safety order; otherwise choose an appropriate verification method.
+Accept equivalent user or repository evidence; no other skill, named artifact, or complete lifecycle is required. Preserve source requirement and decision IDs. Bind reused evidence to relevant source versions, dirty changes, configuration, and environment; invalidate only affected claims.
+On continuation, reconcile task, authorization, current state, and unresolved evidence. For long work, return a compact continuation record or update an already authorized artifact; read-only skills do not persist it. Distinguish artifact readiness, verified behavior, and external-action authority.
+Prepare authorized work before required approval. If blocked by an instruction, cite its exact source and unresolved boundary; do not invent approval gates from caution.
 
 
 ## Tool Routing
@@ -45,7 +45,7 @@ Do not replace working custom code merely because an external package exists. Do
 - [ ] Identify the specific workflow, maintenance, security, compatibility, duplication, bundle, startup, or delivery cost that must improve.
 - [ ] Establish behavioral and relevant quantitative baselines before changing code; for human workflows use reproducible observations such as required steps or concepts, time to first meaningful result, error comprehension, and recovery effort.
 - [ ] Isolate the work so each migration step can be reverted without touching unrelated or user-owned changes.
-- [ ] Start a run-owned resource ledger with every created absolute path, worktree, process ID, cache, report, and temporary artifact; never register pre-existing resources as cleanup targets.
+- [ ] **Run-owned resources:** Start a run-owned resource ledger with every created absolute path, worktree, process ID, cache, report, and temporary artifact; never register pre-existing resources as cleanup targets.
 - [ ] Use `NO_CHANGE` when evidence shows no worthwhile in-scope modernization; use `BLOCKED` when a plausible requested benefit cannot be evaluated because essential evidence is unavailable.
 
 ### 2. Evaluate the Simplest Credible Design
@@ -64,6 +64,7 @@ Do not replace working custom code merely because an external package exists. Do
 
 ### 3. Execute a Bounded Migration
 
+- [ ] **Test value and boundary:** Require every test to detect a concrete defect in this product's business logic and name the protected business outcome. Prefer E2E through user or external-system boundaries; use integration or unit tests only for business scenarios difficult to exercise reliably through E2E. Reject platform, trivial-wiring, implementation-detail, and duplicate proof with no distinct business failure signal.
 - [ ] Map the current external contract, important failures, and data or configuration compatibility to existing proof; implement `KEEP`, `ADD`, `UPDATE`, `MERGE`, `DELETE`, or justified `NO_TEST` within the approved test scope, remove superseded testware, and give temporary characterization or compatibility evidence a removal trigger.
 - [ ] Use differential or characterization cases on shared representative and adversarial inputs; the old implementation is comparison evidence, not the authority for known defects or explicitly changed behavior. Resolve differences against the intended contract.
 - [ ] Introduce the replacement at one clear boundary rather than mixing old and new mechanisms throughout the codebase.
@@ -95,9 +96,8 @@ Do not replace working custom code merely because an external package exists. Do
 - [ ] Confirm relevant verification covers the final retained state, reusing still-valid results and rerunning checks invalidated by changes or unresolved failures. Compare the final diff with the original modernization scope.
 - [ ] Reconcile option and migration ledgers with final code, dependencies, measurements, and rollback state.
 - [ ] Identify residual custom code, compatibility adapters, migration steps, operational changes, and external dependency risks.
-- [ ] Use `MODERNIZED` when the selected bounded design is fully retained and verified; use `PARTIAL` when an independently safe subset is retained with explicit remaining work; use `NO_CHANGE` when every migration is discarded and the baseline is restored; use `BLOCKED` when authorization, safety evidence, or required verification is unavailable.
-
 - [ ] Bind the modernization result to the protected behavior and final implementation state; identify which prior assumptions or verification became stale.
+- [ ] Use `MODERNIZED` when the selected bounded design is fully retained and verified; use `PARTIAL` when an independently safe subset is retained with explicit remaining work; use `NO_CHANGE` when every migration is discarded and the baseline is restored; use `BLOCKED` when authorization, safety evidence, or required verification is unavailable.
 
 ## Self-Check
 

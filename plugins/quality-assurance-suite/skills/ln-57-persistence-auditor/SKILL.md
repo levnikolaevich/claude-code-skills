@@ -7,11 +7,11 @@ description: "Audits queries, transactions, consistency and persistence resource
 
 **Goal:** Perform a read-only audit of persistence and data-heavy runtime paths. Connect static candidates to real query, transaction, resource, or consistency mechanisms and avoid claiming performance impact without evidence.
 
-**Execution contract:** The ordered checkboxes are the Definition of Done. Track every item internally as `PENDING`, `PROVEN` with concrete evidence, `CLEARED` with evidence that its condition is absent, or `UNPROVEN` with a gap; reading, delegation, or tool failure is not proof. Reconcile items after each section. Before returning, resolve all `PENDING` and count only `PROVEN` and `CLEARED`; apply the skill's verdict and approval rules to every gap.
-Preserve user intent, scope, and existing authorization. Continue authorized work; ask only for consequential unresolved choices or required external approval. Scale depth to material risk without silently skipping checks. Preserve dependency and safety ordering; otherwise choose the verification method appropriate to each obligation.
-Treat equivalent user or repository evidence as valid input; another skill, named artifact, or complete lifecycle is not a prerequisite. Preserve source requirement and decision identifiers when available. Bind reused evidence to the relevant source version, dirty changes, configuration, and environment; invalidate only affected claims after a change.
-On continuation, reconcile the task, existing authorization, current state, and unresolved evidence before resuming. For long work, return a compact continuation record or update an already authorized task artifact; read-only skills do not persist it. Distinguish artifact readiness, verified behavior, and authority to perform an external action.
-Prepare authorized work before any required approval. If an instruction prevents progress, identify its exact source and explain the unresolved boundary; do not invent an approval gate from general caution.
+**Execution contract:** The checklist defines completion. Track each item internally as `PENDING`, `PROVEN` with evidence, `CLEARED` with evidence its condition is absent, or `UNPROVEN` with a gap; reading, delegation, or tool failure is not proof. Reconcile after each section. Before returning, resolve all `PENDING`, count only `PROVEN` and `CLEARED`, and apply verdict and approval rules to every gap.
+Preserve intent, scope, and existing authorization. Continue authorized work; ask only for consequential unresolved choices or required external approval. Scale depth to material risk without skipping checks. Preserve dependency and safety order; otherwise choose an appropriate verification method.
+Accept equivalent user or repository evidence; no other skill, named artifact, or complete lifecycle is required. Preserve source requirement and decision IDs. Bind reused evidence to relevant source versions, dirty changes, configuration, and environment; invalidate only affected claims.
+On continuation, reconcile task, authorization, current state, and unresolved evidence. For long work, return a compact continuation record or update an already authorized artifact; read-only skills do not persist it. Distinguish artifact readiness, verified behavior, and external-action authority.
+Prepare authorized work before required approval. If blocked by an instruction, cite its exact source and unresolved boundary; do not invent approval gates from caution.
 
 
 ## Tool Routing
@@ -88,11 +88,10 @@ Never connect to production or run mutating diagnostics. `EXPLAIN ANALYZE` execu
 - [ ] Filter framework-managed lifecycle, bounded maintenance tasks, fixtures, migrations kept for history, and documented consistency tradeoffs before confirming findings.
 - [ ] Deduplicate symptoms that share one root query, transaction boundary, scope mismatch, or pool configuration.
 - [ ] Apply the materiality gate: require concrete integrity, security, availability, latency, scalability, resource, or recurring maintenance impact at evidenced scale. Reject taste, theoretical purity, generic practice, hypothetical scale, and reasonable alternatives; require the outcome or constraint, not a preferred implementation.
-- [ ] Ground external corrections in version-matched official contracts, using primary engineering sources for unresolved tradeoffs. Cite the supported mechanism; local evidence suffices for local defects.
+- [ ] **External correction evidence:** Ground external corrections in version-matched official contracts, using primary engineering sources for unresolved tradeoffs. Cite the supported mechanism; local evidence suffices for local defects.
+- [ ] For accepted persistence findings, name the data invariant, owning transaction/query boundary, and reproducible correction evidence without performing remediation.
 - [ ] Classify findings as `P0`-`P3` based on data corruption, security, outage risk, scalability, latency, resource exhaustion, and recurrence.
 - [ ] Use `BLOCKED` when a critical data path, database semantic, or required non-production environment cannot be verified without a credible fallback; use `FAIL` for an evidenced unresolved corruption, atomicity, outage, resource-exhaustion risk, required failing gate, or another `P0/P1`; use `CONCERNS` only for evidenced non-blocking risk or material unmeasured uncertainty, and `PASS` only when critical paths are trustworthy with no material finding.
-
-- [ ] For accepted persistence findings, name the data invariant, owning transaction/query boundary, and reproducible correction evidence without performing remediation.
 
 ## Self-Check
 

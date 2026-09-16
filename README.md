@@ -1,14 +1,61 @@
 # Claude-Codex Skills
 
-31 standalone skills in eight lifecycle-ordered plugins for Claude Code and Codex.
+**Give your AI agent a clear finish line.**
 
-The collection covers product discovery, architecture, planning, implementation, verification, delivery, and operations. Each skill has one bounded outcome, detailed evidence checks, a final self-check, and the same five-field report. Install only the capabilities you need.
+You ask for a fix and get a new abstraction. A review lists generic advice. The agent says “done,” but you still have to work out what it checked.
 
-The lifecycle is coordinated by the user or host agent. This repository supplies no deterministic workflow engine, mandatory skill chain, MCP server, tracker, or shared runtime. Equivalent user or repository evidence can replace any upstream artifact.
+These skills give Claude Code and Codex a concrete way to finish the task: establish the intended outcome, work within scope, verify the result, and make remaining gaps explicit. Choose the skill for the problem in front of you.
 
-[Browse the catalog](https://levnikolaevich.github.io/claude-code-skills/).
+[Browse by task](https://levnikolaevich.github.io/claude-code-skills/) · [Install](#install) · [Full catalog](#lifecycle-and-plugins)
+
+## What changes in your workflow
+
+- **A clearer target.** Turn an idea, bug report, or incident into an outcome the agent can check.
+- **Focused work.** Reuse existing capabilities, fix the owning cause, and remove what the change makes obsolete.
+- **A result you can assess.** See the evidence, failed or unavailable checks, and remaining risks behind the verdict.
+- **Control over consequential actions.** Reviews report findings; implementation stays within the agreed scope; publication and deployment follow their authorization boundaries.
+
+## Choose a route
+
+Start where you need help. Each skill works independently; a small fix does not require a full lifecycle or audit.
+
+| Your problem | Plugin to install | Useful result |
+|---|---|---|
+| Is this idea worth building? | `product-discovery-suite` | A reasoned opportunity decision, clear requirements, or a usable interaction design. |
+| How should this system change? | `architecture-suite` | An evidence-backed system map, design decision, or migration approach. |
+| Is this plan ready to implement? | `delivery-planning-suite` | Missing decisions exposed, work sequenced, and verification planned. |
+| Fix, upgrade, simplify, or speed up this code. | `implementation-suite` | A bounded change checked against the intended behavior and benefit. |
+| What could go wrong with this delivery or codebase? | `quality-assurance-suite` | Prioritized findings tied to evidence, or acceptance tests for the agreed scope. |
+| Get this change published or deployed. | `delivery-suite` | The authorized destination updated and the observed result checked. |
+| Why did this fail, or did the feature help? | `operations-suite` | An evidence-backed diagnosis or product outcome assessment. |
+| Can I trust the instructions in this skill? | `skill-maintenance-suite` | A review of its boundaries, consistency, and distribution readiness. |
+
+For a larger task, combine only the steps needed to resolve decisions and produce evidence. Supplied requirements, existing designs, and current tests are valid starting points. Implementation includes its own verification; a separate test-building or review skill is optional.
+
+## Install
+
+For a feature or fix, start with `implementation-suite`. Replace it with another plugin from [Choose a route](#choose-a-route) for a different task.
+
+Claude Code:
+
+```text
+/plugin marketplace add levnikolaevich/claude-code-skills
+/plugin install implementation-suite@levnikolaevich-skills-marketplace
+/reload-plugins
+```
+
+Codex:
+
+```text
+codex plugin marketplace add levnikolaevich/claude-code-skills
+codex plugin add implementation-suite@levnikolaevich-skills-marketplace
+```
+
+Invoke a skill by its full name: `/implementation-suite:ln-41-surgical-change-implementer` in Claude Code or `$ln-41-surgical-change-implementer` in Codex, followed by your task. For example: “Fix the total calculation when an item has a discount. Preserve the current rounding rules.”
 
 ## Lifecycle and plugins
+
+Standalone skills for Claude Code and Codex, grouped by the work you need to do. Browse the outcomes below to find the right skill for your task.
 
 ```text
 1 Product discovery → 2 Architecture → 3 Delivery planning
@@ -18,11 +65,11 @@ The lifecycle is coordinated by the user or host agent. This repository supplies
 8 Skill maintenance supports the collection itself.
 ```
 
-Numbers indicate the main lifecycle position, not a requirement to run every skill. Audits, benchmarks, diagrams, separate reviews and test work are conditional on the task and missing evidence. Implementation includes its own required verification; a separate acceptance-test skill is optional.
+The numbers group skills by task. Install one family or combine the capabilities you need.
 
 ### Product Discovery Suite
 
-Evaluate opportunities, define product requirements, and design user interaction.
+Decide what is worth building, who it serves, and what a useful first version must do.
 
 | Index | Skill | Purpose |
 |---:|---|---|
@@ -32,7 +79,7 @@ Evaluate opportunities, define product requirements, and design user interaction
 
 ### Architecture Suite
 
-Establish architecture drivers, document current systems, and design decisions and migrations.
+Understand the system you have and choose changes with clear boundaries, tradeoffs, and recovery paths.
 
 | Index | Skill | Purpose |
 |---:|---|---|
@@ -45,7 +92,7 @@ Establish architecture drivers, document current systems, and design decisions a
 
 ### Delivery Planning Suite
 
-Build delivery plans, select risk-based verification, and review readiness before implementation.
+Find missing decisions and risky dependencies before they become implementation rework.
 
 | Index | Skill | Purpose |
 |---:|---|---|
@@ -55,7 +102,7 @@ Build delivery plans, select risk-based verification, and review readiness befor
 
 ### Implementation Suite
 
-Deliver scoped changes, dependency upgrades, modernization, and measured performance improvements.
+Fix the cause, reuse what already works, and keep changes focused on a verified outcome.
 
 | Index | Skill | Purpose |
 |---:|---|---|
@@ -67,7 +114,7 @@ Deliver scoped changes, dependency upgrades, modernization, and measured perform
 
 ### Quality Assurance Suite
 
-Build acceptance tests and review deliveries, documentation, code, tests, architecture, and persistence.
+Find gaps that could break a release, mislead a maintainer, or make a passing test meaningless.
 
 | Index | Skill | Purpose |
 |---:|---|---|
@@ -81,7 +128,7 @@ Build acceptance tests and review deliveries, documentation, code, tests, archit
 
 ### Delivery Suite
 
-Publish repositories and releases, prepare and execute deployments, and announce approved results.
+Publish the intended changes and verify what reached the remote repository or target environment.
 
 | Index | Skill | Purpose |
 |---:|---|---|
@@ -92,7 +139,7 @@ Publish repositories and releases, prepare and execute deployments, and announce
 
 ### Operations Suite
 
-Investigate operational deviations and evaluate observed product outcomes without changing live systems.
+Turn incidents and product signals into evidence for the next recovery or product decision.
 
 | Index | Skill | Purpose |
 |---:|---|---|
@@ -101,121 +148,11 @@ Investigate operational deviations and evaluate observed product outcomes withou
 
 ### Skill Maintenance Suite
 
-Review standalone skills, instruction boundaries, evidence contracts, and distribution integrity.
+Make skills easier to invoke correctly, follow consistently, and verify before distribution.
 
 | Index | Skill | Purpose |
 |---:|---|---|
 | 81 | [Skill Reviewer](plugins/skill-maintenance-suite/skills/ln-81-skill-reviewer/SKILL.md) | Reviews skill instructions, trigger boundaries and distribution contracts; not product code. |
-
-## Choose a route
-
-| Request | Typical work |
-|---|---|
-| Small fix | 41; 52 when separate review provides necessary evidence |
-| Feature | 12 → applicable UX/architecture → 31–33 when a separate plan is needed → 41 → applicable 51–52 |
-| New product | 11 → 12–13 → applicable architecture/planning → implementation/acceptance → authorized delivery → 72 |
-| Architecture migration | 22–23 → 26 → 31–33 → implementation/acceptance → authorized deployment |
-| Incident | 71 → bounded remediation through 41, 44 or 63 → verification of recovery |
-| Dependency update | 42 → affected verification → requested publication/deployment |
-
-Do not run a full audit for every change. Missing optional artifacts do not require their producing skills. Read-only skills return plans/findings without writing task records or applying repairs.
-
-## Compatible results
-
-Preserve requirement and decision identities across artifacts. Reuse the authoritative source rather than copying a second truth. Bind evidence to relevant revisions, dirty changes, configuration, environment and observation windows. A changed input invalidates affected conclusions, not all prior work.
-
-For a long task, an authorized task artifact or response can carry intent, scope, source state, decisions, evidence, gaps and the next action. On continuation, reconcile it with current state. No mandatory state directory or runtime is required.
-
-Readiness is not approval; checked code is not a published release; a published release is not a healthy deployment; healthy deployment is not proof of business impact. Continue already authorized work and prepare concrete artifacts before asking for any missing external authorization.
-
-## Migration from the previous catalog
-
-This is an approved index and plugin migration. Existing invocations must be updated by full skill name; bare numbers have been reassigned. The table below is historical, not a set of aliases. Old site URLs remain redirects to the relevant family; use this table for exact destinations when a former plugin split. No host-specific skill copies or compatibility wrappers are installed.
-
-| Previous invocation | Current invocation |
-|---|---|
-| `product-discovery-suite:ln-51-opportunity-evaluator` | `product-discovery-suite:ln-11-opportunity-evaluator` |
-| `architecture-suite:ln-71-system-design-baseline-builder` | `architecture-suite:ln-21-system-design-baseline-builder` |
-| `architecture-suite:ln-72-current-architecture-documenter` | `architecture-suite:ln-22-current-architecture-documenter` |
-| `architecture-suite:ln-73-system-design-proposal-builder` | `architecture-suite:ln-23-system-design-proposal-builder` |
-| `architecture-suite:ln-74-architecture-decision-recorder` | `architecture-suite:ln-24-architecture-decision-recorder` |
-| `architecture-suite:ln-75-architecture-diagram-builder` | `architecture-suite:ln-25-architecture-diagram-builder` |
-| `architecture-suite:ln-76-architecture-migration-planner` | `architecture-suite:ln-26-architecture-migration-planner` |
-| `testing-suite:ln-41-test-strategy-planner` | `delivery-planning-suite:ln-32-test-strategy-planner` |
-| `review-suite:ln-11-plan-reviewer` | `delivery-planning-suite:ln-33-plan-reviewer` |
-| `optimization-suite:ln-35-surgical-change-implementer` | `implementation-suite:ln-41-surgical-change-implementer` |
-| `optimization-suite:ln-32-dependency-upgrader` | `implementation-suite:ln-42-dependency-upgrader` |
-| `optimization-suite:ln-33-code-modernizer` | `implementation-suite:ln-43-code-modernizer` |
-| `optimization-suite:ln-31-performance-optimizer` | `implementation-suite:ln-44-performance-optimizer` |
-| `optimization-suite:ln-34-benchmark-comparator` | `implementation-suite:ln-45-benchmark-comparator` |
-| `testing-suite:ln-42-acceptance-test-builder` | `quality-assurance-suite:ln-51-acceptance-test-builder` |
-| `review-suite:ln-12-delivery-reviewer` | `quality-assurance-suite:ln-52-delivery-reviewer` |
-| `codebase-audit-suite:ln-21-documentation-auditor` | `quality-assurance-suite:ln-53-documentation-auditor` |
-| `codebase-audit-suite:ln-22-codebase-auditor` | `quality-assurance-suite:ln-54-codebase-auditor` |
-| `codebase-audit-suite:ln-23-test-suite-auditor` | `quality-assurance-suite:ln-55-test-suite-auditor` |
-| `codebase-audit-suite:ln-24-architecture-auditor` | `quality-assurance-suite:ln-56-architecture-auditor` |
-| `codebase-audit-suite:ln-25-persistence-auditor` | `quality-assurance-suite:ln-57-persistence-auditor` |
-| `maintainer-suite:ln-62-repository-publisher` | `delivery-suite:ln-61-repository-publisher` |
-| `maintainer-suite:ln-63-release-publisher` | `delivery-suite:ln-62-release-publisher` |
-| `maintainer-suite:ln-64-community-announcer` | `delivery-suite:ln-64-community-announcer` |
-| `maintainer-suite:ln-61-skill-reviewer` | `skill-maintenance-suite:ln-81-skill-reviewer` |
-
-Install the destination plugins before removing obsolete installations. Update saved prompts, commands and automation references yourself or within separately authorized scope. Previously installed caches are not changed by this repository edit. Start a new agent session after updating installed skills. The migration table is also recorded in [the migration ledger](docs/lifecycle-migration.json).
-
-## Install
-
-Claude Code:
-
-```text
-/plugin marketplace add levnikolaevich/claude-code-skills
-/plugin install product-discovery-suite@levnikolaevich-skills-marketplace
-/plugin install architecture-suite@levnikolaevich-skills-marketplace
-/plugin install delivery-planning-suite@levnikolaevich-skills-marketplace
-/plugin install implementation-suite@levnikolaevich-skills-marketplace
-/plugin install quality-assurance-suite@levnikolaevich-skills-marketplace
-/plugin install delivery-suite@levnikolaevich-skills-marketplace
-/plugin install operations-suite@levnikolaevich-skills-marketplace
-/plugin install skill-maintenance-suite@levnikolaevich-skills-marketplace
-/reload-plugins
-```
-
-Codex:
-
-```text
-codex plugin marketplace add levnikolaevich/claude-code-skills
-codex plugin add product-discovery-suite@levnikolaevich-skills-marketplace
-codex plugin add architecture-suite@levnikolaevich-skills-marketplace
-codex plugin add delivery-planning-suite@levnikolaevich-skills-marketplace
-codex plugin add implementation-suite@levnikolaevich-skills-marketplace
-codex plugin add quality-assurance-suite@levnikolaevich-skills-marketplace
-codex plugin add delivery-suite@levnikolaevich-skills-marketplace
-codex plugin add operations-suite@levnikolaevich-skills-marketplace
-codex plugin add skill-maintenance-suite@levnikolaevich-skills-marketplace
-```
-
-Install commands use the current default branch. Downloaded release archives and previously installed caches can contain an older catalog; compare full skill names when updating. Invoke a skill by its full name, for example `/delivery-planning-suite:ln-33-plan-reviewer` in Claude Code or `$ln-33-plan-reviewer` in Codex. For local Claude Code development use `claude --plugin-dir ./plugins/delivery-planning-suite`.
-
-## Token-efficient use
-
-Install only relevant families and invoke the skill for the actual task. Discovery loads names and short descriptions; the selected entrypoint supplies its complete checklist. Conditional references load only when their trigger applies.
-
-Preserve every domain obligation, self-check and report field. Reuse current evidence, invalidate only affected claims, and link canonical artifacts instead of copying them into each response. Shorter text is useful only if routing and correctness remain intact; fewer tokens alone do not prove better task performance. See [authoring and measurement guidance](docs/token-efficiency.md).
-
-## Repository and authoring
-
-Each plugin contains canonical `skills/<skill>/SKILL.md` entrypoints. Root `plugin.json` owns only the portable schema and stable name; `.codex-plugin/plugin.json` owns host metadata. Claude and Codex catalogs reference the same skill tree. Skill-local references load only for the applicable workflow branch.
-
-[AGENTS.md](AGENTS.md) owns repository boundaries and release policy; [SKILL_TEMPLATE.md](SKILL_TEMPLATE.md) owns the detailed checklist, evidence states, self-check and five-field report. Skills stay in English with two-field frontmatter, descriptions up to 200 characters and entrypoints up to 200 lines. These are local conventions, not model restrictions.
-
-[OpenAI's Astra guidance](https://developers.openai.com/blog/rethinking-skills-and-prompts-for-gpt-6-astra), checked on 2026-09-12, informs precise discovery, contextual reading, preservation of intent, and proportionate verification. The agreed detailed checklists, self-check and report remain intact. No model pin or specific provider is required.
-
-## Validation
-
-Run `pwsh -File scripts/validate-repository.ps1` and `pwsh -File scripts/test-repository-contracts.ps1`, plus installed per-skill/per-plugin validators and `claude plugin validate . --strict` as required by AGENTS.md. The disposable contract fixtures have no production access. Static checks prove structure and consistency; they do not prove agent performance. [Behavioral scenarios](docs/behavioral-validation.md) define separate observed-outcome checks.
-
-Repository publication and Pages deployment do not create a tagged release or bump versions. Historical releases retain the catalog available at their tag.
-
-Repository description, homepage and GitHub topics are maintained in [.github/repository-metadata.json](.github/repository-metadata.json). These are discovery metadata, not Git release tags. Update the GitHub About section from this file when lifecycle coverage changes.
 
 ## License
 

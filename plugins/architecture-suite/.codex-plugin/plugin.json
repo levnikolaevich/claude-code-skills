@@ -1,7 +1,7 @@
 {
   "name": "architecture-suite",
   "version": "1.0.0",
-  "description": "Establish architecture drivers, document current systems, and design decisions and migrations.",
+  "description": "Understand the system you have and choose changes with clear boundaries, tradeoffs, and recovery paths.",
   "author": {
     "name": "Lev Nikolaevich",
     "email": "levnikolaevich.com@gmail.com",
@@ -19,7 +19,7 @@
   "interface": {
     "displayName": "Architecture Suite",
     "shortDescription": "Design systems and transitions",
-    "longDescription": "Establish architecture drivers, document current systems, and design decisions and migrations.",
+    "longDescription": "Understand the system you have and choose changes with clear boundaries, tradeoffs, and recovery paths.",
     "developerName": "Lev Nikolaevich",
     "websiteURL": "https://github.com/levnikolaevich/claude-code-skills",
     "category": "Productivity",

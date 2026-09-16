@@ -7,11 +7,11 @@ description: "Drafts or publishes authorized, fact-checked GitHub Discussions an
 
 **Goal:** Create a source-backed announcement and publish it only after the user approves the full draft.
 
-**Execution contract:** The ordered checkboxes are the Definition of Done. Track every item internally as `PENDING`, `PROVEN` with concrete evidence, `CLEARED` with evidence that its condition is absent, or `UNPROVEN` with a gap; reading, delegation, or tool failure is not proof. Reconcile items after each section. Before returning, resolve all `PENDING` and count only `PROVEN` and `CLEARED`; apply the skill's verdict and approval rules to every gap.
-Preserve user intent, scope, and existing authorization. Continue authorized work; ask only for consequential unresolved choices or required external approval. Scale depth to material risk without silently skipping checks. Preserve dependency and safety ordering; otherwise choose the verification method appropriate to each obligation.
-Treat equivalent user or repository evidence as valid input; another skill, named artifact, or complete lifecycle is not a prerequisite. Preserve source requirement and decision identifiers when available. Bind reused evidence to the relevant source version, dirty changes, configuration, and environment; invalidate only affected claims after a change.
-On continuation, reconcile the task, existing authorization, current state, and unresolved evidence before resuming. For long work, return a compact continuation record or update an already authorized task artifact; read-only skills do not persist it. Distinguish artifact readiness, verified behavior, and authority to perform an external action.
-Prepare authorized work before any required approval. If an instruction prevents progress, identify its exact source and explain the unresolved boundary; do not invent an approval gate from general caution.
+**Execution contract:** The checklist defines completion. Track each item internally as `PENDING`, `PROVEN` with evidence, `CLEARED` with evidence its condition is absent, or `UNPROVEN` with a gap; reading, delegation, or tool failure is not proof. Reconcile after each section. Before returning, resolve all `PENDING`, count only `PROVEN` and `CLEARED`, and apply verdict and approval rules to every gap.
+Preserve intent, scope, and existing authorization. Continue authorized work; ask only for consequential unresolved choices or required external approval. Scale depth to material risk without skipping checks. Preserve dependency and safety order; otherwise choose an appropriate verification method.
+Accept equivalent user or repository evidence; no other skill, named artifact, or complete lifecycle is required. Preserve source requirement and decision IDs. Bind reused evidence to relevant source versions, dirty changes, configuration, and environment; invalidate only affected claims.
+On continuation, reconcile task, authorization, current state, and unresolved evidence. For long work, return a compact continuation record or update an already authorized artifact; read-only skills do not persist it. Distinguish artifact readiness, verified behavior, and external-action authority.
+Prepare authorized work before required approval. If blocked by an instruction, cite its exact source and unresolved boundary; do not invent approval gates from caution.
 
 
 ## Tool Routing
@@ -64,6 +64,7 @@ Do not expose repository tokens, category node IDs, or other credentials in the 
 
 ### Fact Check
 
+- [ ] Verify claims about availability and measured effects against the actual release, deployment, or outcome evidence; distinguish announced plans from available capabilities.
 - [ ] Verify every command against current authoritative documentation and any stable package, plugin, or marketplace identifier it uses.
 - [ ] Verify every named product, package, plugin, skill, component, file path, category, version, tag, and link against the remote repository.
 - [ ] Recompute every count from the target commit; avoid counts when they add no user value.
@@ -92,8 +93,6 @@ Do not expose repository tokens, category node IDs, or other credentials in the 
 - `DRAFT READY` — fact-checked copy is complete; publication is either outside scope or awaiting exact-copy approval.
 - `PUBLISHED` — the approved discussion exists and was read back successfully.
 - `BLOCKED` — source evidence prevents a trustworthy draft, or a requested publication cannot proceed because its permissions, category, or verification is unavailable. Distinguish a completed draft from blocked publication.
-
-- [ ] Verify claims about availability and measured effects against the actual release, deployment, or outcome evidence; distinguish announced plans from available capabilities.
 
 ## Self-Check
 

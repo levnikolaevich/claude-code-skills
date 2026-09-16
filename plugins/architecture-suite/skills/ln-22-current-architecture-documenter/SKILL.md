@@ -7,11 +7,11 @@ description: "Documents current architecture from implementation evidence; does 
 
 **Goal:** Produce a trustworthy snapshot of the architecture implemented in the checked-out repository. Document what exists and how it behaves; do not score it, prescribe a target architecture, repair code, or turn intended diagrams into facts.
 
-**Execution contract:** The ordered checkboxes are the Definition of Done. Track every item internally as `PENDING`, `PROVEN` with concrete evidence, `CLEARED` with evidence that its condition is absent, or `UNPROVEN` with a gap; reading, delegation, or tool failure is not proof. Reconcile items after each section. Before returning, resolve all `PENDING` and count only `PROVEN` and `CLEARED`; apply the skill's verdict and approval rules to every gap.
-Preserve user intent, scope, and existing authorization. Continue authorized work; ask only for consequential unresolved choices or required external approval. Scale depth to material risk without silently skipping checks. Preserve dependency and safety ordering; otherwise choose the verification method appropriate to each obligation.
-Treat equivalent user or repository evidence as valid input; another skill, named artifact, or complete lifecycle is not a prerequisite. Preserve source requirement and decision identifiers when available. Bind reused evidence to the relevant source version, dirty changes, configuration, and environment; invalidate only affected claims after a change.
-On continuation, reconcile the task, existing authorization, current state, and unresolved evidence before resuming. For long work, return a compact continuation record or update an already authorized task artifact; read-only skills do not persist it. Distinguish artifact readiness, verified behavior, and authority to perform an external action.
-Prepare authorized work before any required approval. If an instruction prevents progress, identify its exact source and explain the unresolved boundary; do not invent an approval gate from general caution.
+**Execution contract:** The checklist defines completion. Track each item internally as `PENDING`, `PROVEN` with evidence, `CLEARED` with evidence its condition is absent, or `UNPROVEN` with a gap; reading, delegation, or tool failure is not proof. Reconcile after each section. Before returning, resolve all `PENDING`, count only `PROVEN` and `CLEARED`, and apply verdict and approval rules to every gap.
+Preserve intent, scope, and existing authorization. Continue authorized work; ask only for consequential unresolved choices or required external approval. Scale depth to material risk without skipping checks. Preserve dependency and safety order; otherwise choose an appropriate verification method.
+Accept equivalent user or repository evidence; no other skill, named artifact, or complete lifecycle is required. Preserve source requirement and decision IDs. Bind reused evidence to relevant source versions, dirty changes, configuration, and environment; invalidate only affected claims.
+On continuation, reconcile task, authorization, current state, and unresolved evidence. For long work, return a compact continuation record or update an already authorized artifact; read-only skills do not persist it. Distinguish artifact readiness, verified behavior, and external-action authority.
+Prepare authorized work before required approval. If blocked by an instruction, cite its exact source and unresolved boundary; do not invent approval gates from caution.
 
 
 ## Tool Routing
@@ -78,9 +78,8 @@ Prefer local evidence over remote repository state. A path, diagram, or naming c
 - [ ] Verify every citation against inspected snapshot evidence and remove unsupported claims; reopen sources only if they changed or the prior inspection did not establish the claim.
 - [ ] Confirm the map explains how critical behavior is discovered, executed, persisted, and deployed.
 - [ ] Confirm abstraction levels are not mixed and names remain consistent across prose and diagrams.
-- [ ] Use `DOCUMENTED` when the snapshot is evidence-backed and useful; use `INCONCLUSIVE` when material topology remains unknown; use `BLOCKED` when repository identity, scope, or destination cannot be established safely.
-
 - [ ] Bind the current-state account to the inspected revision and relevant dirty/configuration state; identify changes that would make a documented boundary stale.
+- [ ] Use `DOCUMENTED` when the snapshot is evidence-backed and useful; use `INCONCLUSIVE` when material topology remains unknown; use `BLOCKED` when repository identity, scope, or destination cannot be established safely.
 
 ## Self-Check
 

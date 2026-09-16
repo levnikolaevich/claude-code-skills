@@ -1,7 +1,7 @@
 {
   "name": "delivery-suite",
   "version": "1.0.0",
-  "description": "Publish repositories and releases, prepare and execute deployments, and announce approved results.",
+  "description": "Publish the intended changes and verify what reached the remote repository or target environment.",
   "author": {
     "name": "Lev Nikolaevich",
     "email": "levnikolaevich.com@gmail.com",
@@ -19,7 +19,7 @@
   "interface": {
     "displayName": "Delivery Suite",
     "shortDescription": "Publish and deploy work",
-    "longDescription": "Publish repositories and releases, prepare and execute deployments, and announce approved results.",
+    "longDescription": "Publish the intended changes and verify what reached the remote repository or target environment.",
     "developerName": "Lev Nikolaevich",
     "websiteURL": "https://github.com/levnikolaevich/claude-code-skills",
     "category": "Productivity",

@@ -1,7 +1,7 @@
 {
   "name": "quality-assurance-suite",
   "version": "1.0.0",
-  "description": "Build acceptance tests and review deliveries, documentation, code, tests, architecture, and persistence.",
+  "description": "Find gaps that could break a release, mislead a maintainer, or make a passing test meaningless.",
   "author": {
     "name": "Lev Nikolaevich",
     "email": "levnikolaevich.com@gmail.com",
@@ -19,7 +19,7 @@
   "interface": {
     "displayName": "Quality Assurance Suite",
     "shortDescription": "Verify delivery and quality",
-    "longDescription": "Build acceptance tests and review deliveries, documentation, code, tests, architecture, and persistence.",
+    "longDescription": "Find gaps that could break a release, mislead a maintainer, or make a passing test meaningless.",
     "developerName": "Lev Nikolaevich",
     "websiteURL": "https://github.com/levnikolaevich/claude-code-skills",
     "category": "Productivity",

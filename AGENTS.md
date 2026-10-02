@@ -8,7 +8,8 @@ This repository distributes standalone skills for Claude Code and Codex through 
 plugins/<plugin>/
 ├── plugin.json
 ├── .codex-plugin/plugin.json
-└── skills/<skill>/SKILL.md
+├── skills/<skill>/SKILL.md
+└── evals/<case>/          # maintainer behavioral evals; never loaded by skills
 ```
 
 Root `plugin.json` is the minimal portable Agent Plugins v1 manifest. `.codex-plugin/plugin.json` is the current OpenAI host adapter for richer metadata and component pointers. Claude Code discovers the shared `skills/` directories through `.claude-plugin/marketplace.json`; Codex uses `.agents/plugins/marketplace.json` and the host adapter. Do not add host-specific copies of a skill.
@@ -18,6 +19,7 @@ Keep portable manifests limited to the canonical Agent Plugins schema identifier
 ## Skill rules
 
 - Edit the canonical skill only at `plugins/<plugin>/skills/<skill>/SKILL.md`.
+- Give every skill at least one behavioral eval case in `plugins/<plugin>/evals/<case>/`, in the `claude plugin eval` format, the default location the official evals documentation recommends. A case prompt starts with `Use the <skill> skill.` and its `graders/skill-fired.md` names the same skill. Fixtures are offline and must tempt the boundary they grade; graders prove observable outcomes (files, tool calls, the exact verdict token) rather than self-reported success. Skills never reference eval assets.
 - Keep each skill standalone. It must not require another skill, MCP server, task tracker, separately installed coordinator or worker, or shared runtime. A skill may require host-native independent contexts when that is intrinsic to its outcome and it defines an explicit `BLOCKED` result.
 - Follow [SKILL_TEMPLATE.md](SKILL_TEMPLATE.md), the canonical owner of skill format, detailed checklist accounting, self-check, and common report blocks. Preserve individually verifiable obligations and skill-specific verdicts; validate standalone copies against the template.
 - Preserve evidence rules, tool-selection guidance, safety gates, verdict mapping, output contract, and residual-risk reporting when simplifying.
@@ -88,7 +90,8 @@ Keep checks tied to concrete failures: invalid distribution, contract drift, inc
 3. Run the installed `plugin-creator` `validate_plugin.py` for every plugin directory.
 4. Run `claude plugin validate . --strict` for the Claude marketplace. This validates the catalog, not Claude skill frontmatter in manifest-less plugin directories; the per-skill validator and repository validator cover that known boundary.
 5. Search for unresolved references, MCP coupling, shared registries, drafts, and orchestration harnesses outside the supported standalone skill structure.
-6. Run `pwsh -File scripts/test-repository-contracts.ps1`; its disposable fixtures verify that the validator rejects concrete repository defects. Static checks prove structure and consistency, not agent performance; behavioral evaluation is a separate, scoped activity.
+6. Run `pwsh -File scripts/test-repository-contracts.ps1` and `pwsh -File scripts/test-codex-eval-runner.ps1`; disposable fixtures verify repository rejection and eval evidence mapping. These checks do not prove agent performance; behavioral evaluation is a separate, scoped activity.
+7. When skill behavior or eval cases change, run the affected eval cases as [docs/behavioral-validation.md](docs/behavioral-validation.md) describes. Evals spend model usage, so run them on demand or through the manually triggered `Behavioral evals` workflow, never on every push; an unexecuted case is NOT RUN, not PASS.
 
 If an installed validator is unavailable, manually check the template's format, naming, size, checklist, self-check and report contracts; verify manifest parsing/contracts, catalog and metadata parity, local references, and standalone boundaries.
 

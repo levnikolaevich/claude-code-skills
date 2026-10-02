@@ -7,8 +7,8 @@ description: "Records one architecture decision with alternatives, consequences 
 
 **Goal:** Preserve the context, forces, alternatives, decision, and consequences of one architecturally significant choice in a compact durable record. Change only approved decision documentation; do not design the whole system, approve a decision silently, delete history, audit code, or implement the choice.
 
-**Execution contract:** The checklist defines completion. Track each item internally as `PENDING`, `PROVEN` with evidence, `CLEARED` with evidence its condition is absent, or `UNPROVEN` with a gap; reading, delegation, or tool failure is not proof. Reconcile after each section. Before returning, resolve all `PENDING`, count only `PROVEN` and `CLEARED`, and apply verdict and approval rules to every gap.
-Preserve intent, scope, and existing authorization. Continue authorized work; ask only for consequential unresolved choices or required external approval. Scale depth to material risk without skipping checks. Preserve dependency and safety order; otherwise choose an appropriate verification method.
+**Execution contract:** The checklist defines completion. Track each item internally as `PENDING`, `PROVEN` with evidence, `CLEARED` with evidence its condition is absent, or `UNPROVEN` with a gap; reading, delegation, tool failure, a zero exit status, or a self-reported success is not proof; only the observed outcome is. Reconcile after each section. Before returning, resolve all `PENDING`, count only `PROVEN` and `CLEARED`, and apply verdict and approval rules to every gap.
+Preserve intent, scope, and existing authorization. Continue authorized work; ask only for consequential unresolved choices or required external approval. When no one can answer during the run, state the exact question and apply the skill's verdict for the remaining gap instead of waiting or guessing. Scale depth to material risk without skipping checks. Preserve dependency and safety order; otherwise choose an appropriate verification method.
 Accept equivalent user or repository evidence; no other skill, named artifact, or complete lifecycle is required. Preserve source requirement and decision IDs. Bind reused evidence to relevant source versions, dirty changes, configuration, and environment; invalidate only affected claims.
 On continuation, reconcile task, authorization, current state, and unresolved evidence. For long work, return a compact continuation record or update an already authorized artifact; read-only skills do not persist it. Distinguish artifact readiness, verified behavior, and external-action authority.
 Prepare authorized work before required approval. If blocked by an instruction, cite its exact source and unresolved boundary; do not invent approval gates from caution.
@@ -80,7 +80,7 @@ One record captures one decision. If the request contains independent decisions 
 - [ ] Confirm consequential claims have evidence or labelled assumptions/unknowns with validation actions; never invent historical rationale or rejected alternatives for a retrospective record.
 - [ ] Confirm `Accepted` was not assigned without explicit authority.
 - [ ] Identify the requirements, interfaces, and downstream decisions affected by this decision or its supersession; preserve the accepted/proposed distinction and historical rationale.
-- [ ] Use `RECORDED` when the record and status are valid; use `INCOMPLETE` when material context or required acceptance authority remains unresolved; a complete explicitly Proposed record does not require acceptance to be `RECORDED`; use `BLOCKED` for ambiguous scope, unsafe numbering, conflicting ownership, or no writable destination.
+- [ ] Use `READY` when the record and status are valid; use `INCOMPLETE` when material context or required acceptance authority remains unresolved; a complete explicitly Proposed record does not require acceptance to be `READY`; use `BLOCKED` for ambiguous scope, unsafe numbering, conflicting ownership, or no writable destination.
 
 ## Self-Check
 
@@ -88,9 +88,9 @@ One record captures one decision. If the request contains independent decisions 
 
 ## Output Contract
 
-Report in the user's language, in this order; retain all five fields and state each fact once. Small results may use one line per field; omit empty tables and do not copy linked artifacts:
+Report in the user's language, in this order; label all five fields and state each fact once. Use controlled plain language: one fact per sentence, usually under 20 words, active voice, and one term per concept, with no synonyms for verdicts, IDs, or states. Small results may use one line per field; omit empty tables and do not copy linked artifacts:
 
-1. **Result:** Skill-specific verdict and supported outcome.
+1. **Result:** The exact skill-specific verdict token first, then the supported outcome.
 2. **Scope:** Reviewed/changed scope, exclusions, baseline, and material assumptions.
 3. **Evidence:** Skill-specific fields below; distinguish facts, inferences, and unverified claims. Link artifacts; use tables when useful.
 4. **Verification:** Checks/results, unavailable evidence, and applicable cleanup/external state.

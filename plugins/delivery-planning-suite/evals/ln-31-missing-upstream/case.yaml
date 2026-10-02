@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: ln-31-missing-upstream
+context:
+  scaffold_script: fixture.sh

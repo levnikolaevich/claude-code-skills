@@ -7,8 +7,8 @@ description: "Reviews a concrete implementation plan for missing decisions, feas
 
 **Goal:** Perform a read-only, evidence-first second pass over an implementation plan. Verify the plan; do not execute it. A strong result is decision-complete, grounded in the actual repository, explicit about uncertainty, no more complex than the problem requires, and expressed in the fewest words and execution steps that preserve safety.
 
-**Execution contract:** The checklist defines completion. Track each item internally as `PENDING`, `PROVEN` with evidence, `CLEARED` with evidence its condition is absent, or `UNPROVEN` with a gap; reading, delegation, or tool failure is not proof. Reconcile after each section. Before returning, resolve all `PENDING`, count only `PROVEN` and `CLEARED`, and apply verdict and approval rules to every gap.
-Preserve intent, scope, and existing authorization. Continue authorized work; ask only for consequential unresolved choices or required external approval. Scale depth to material risk without skipping checks. Preserve dependency and safety order; otherwise choose an appropriate verification method.
+**Execution contract:** The checklist defines completion. Track each item internally as `PENDING`, `PROVEN` with evidence, `CLEARED` with evidence its condition is absent, or `UNPROVEN` with a gap; reading, delegation, tool failure, a zero exit status, or a self-reported success is not proof; only the observed outcome is. Reconcile after each section. Before returning, resolve all `PENDING`, count only `PROVEN` and `CLEARED`, and apply verdict and approval rules to every gap.
+Preserve intent, scope, and existing authorization. Continue authorized work; ask only for consequential unresolved choices or required external approval. When no one can answer during the run, state the exact question and apply the skill's verdict for the remaining gap instead of waiting or guessing. Scale depth to material risk without skipping checks. Preserve dependency and safety order; otherwise choose an appropriate verification method.
 Accept equivalent user or repository evidence; no other skill, named artifact, or complete lifecycle is required. Preserve source requirement and decision IDs. Bind reused evidence to relevant source versions, dirty changes, configuration, and environment; invalidate only affected claims.
 On continuation, reconcile task, authorization, current state, and unresolved evidence. For long work, return a compact continuation record or update an already authorized artifact; read-only skills do not persist it. Distinguish artifact readiness, verified behavior, and external-action authority.
 Prepare authorized work before required approval. If blocked by an instruction, cite its exact source and unresolved boundary; do not invent approval gates from caution.
@@ -114,9 +114,9 @@ When sources disagree, prefer the repository for what is installed and implement
 - [ ] Confirm that consequential interfaces, ownership, data flow, failure behavior, compatibility, verification, and rollout are decided or bounded by explicit constraints; leave equivalent implementation details to the implementer.
 - [ ] For every material assumption, record confidence, what breaks if it is false, and who or what step validates it before dependent work begins.
 - [ ] Verify the plan covers complete observable increments, dependency ordering, integration between increments, and required verification; expose consequential decisions deferred to the implementer.
-- [ ] Map findings to verdicts: use `BLOCKED` when a required user choice, access, or authoritative fact is unavailable; use `REVISE` for any correctable `BLOCKER` or `MAJOR`; use `READY WITH CONCERNS` only when the plan is safe and executable with no uncovered requirement or consequential decision, but bounded non-blocking `MINOR` amendments or explicitly accepted residual risks remain; use `READY` only when no corrective finding or blocking evidence gap remains.
-- [ ] For `REVISE`, provide exact local amendments when they make the plan coherent; provide a complete replacement only when changes span its structure or dependencies. Preserve intent, accepted corrections, and required implementation/verification outcomes.
-- [ ] For `READY WITH CONCERNS`, provide only the exact local plan amendments and accepted non-blocking risks; do not restate unchanged sections of the plan.
+- [ ] Map findings to verdicts: use `BLOCKED` when a required user choice, access, or authoritative fact is unavailable; use `FAIL` for any correctable `BLOCKER` or `MAJOR`; use `CONCERNS` only when the plan is safe and executable with no uncovered requirement or consequential decision, but bounded non-blocking `MINOR` amendments or explicitly accepted residual risks remain; use `PASS` only when no corrective finding or blocking evidence gap remains.
+- [ ] For `FAIL`, provide exact local amendments when they make the plan coherent; provide a complete replacement only when changes span its structure or dependencies. Preserve intent, accepted corrections, and required implementation/verification outcomes.
+- [ ] For `CONCERNS`, provide only the exact local plan amendments and accepted non-blocking risks; do not restate unchanged sections of the plan.
 - [ ] For `BLOCKED`, ask only the smallest questions that materially unlock a different plan, and state what was already verified.
 
 ## Self-Check
@@ -125,9 +125,9 @@ When sources disagree, prefer the repository for what is installed and implement
 
 ## Output Contract
 
-Report in the user's language, in this order; retain all five fields and state each fact once. Small results may use one line per field; omit empty tables and do not copy linked artifacts:
+Report in the user's language, in this order; label all five fields and state each fact once. Use controlled plain language: one fact per sentence, usually under 20 words, active voice, and one term per concept, with no synonyms for verdicts, IDs, or states. Small results may use one line per field; omit empty tables and do not copy linked artifacts:
 
-1. **Result:** Skill-specific verdict and supported outcome.
+1. **Result:** The exact skill-specific verdict token first, then the supported outcome.
 2. **Scope:** Reviewed/changed scope, exclusions, baseline, and material assumptions.
 3. **Evidence:** Skill-specific fields below; distinguish facts, inferences, and unverified claims. Link artifacts; use tables when useful.
 4. **Verification:** Checks/results, unavailable evidence, and applicable cleanup/external state.

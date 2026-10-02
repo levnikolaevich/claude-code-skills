@@ -1,0 +1,223 @@
+name: Behavioral evals
+
+on:
+  workflow_dispatch:
+    inputs:
+      host:
+        description: Agent host to evaluate
+        type: choice
+        options: [claude, codex, both]
+        default: claude
+      platforms:
+        description: Claude platforms (Linux and macOS run every case; Windows runs no-shell cases without a shell grant)
+        type: choice
+        options: [linux, linux-macos, all]
+        default: linux
+      plugins:
+        description: Space-separated plugin names; empty runs every plugin with evals
+        type: string
+        default: ""
+      runs:
+        description: Runs per case
+        type: string
+        default: "3"
+      model:
+        description: Pinned model under test
+        type: string
+        default: claude-sonnet-5-5
+      judge_model:
+        description: Pinned judge model for llm graders
+        type: string
+        default: claude-haiku-4-5-20251001
+      codex_model:
+        description: Codex model under test; empty uses the Codex default
+        type: string
+        default: ""
+      threshold:
+        description: Minimum case score
+        type: string
+        default: "1.0"
+      max_cost_usd:
+        description: Claude cost ceiling per plugin job
+        type: string
+        default: "20"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: evals-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  CLAUDE_CODE_VERSION: 2.1.286
+  CODEX_VERSION: 0.153.4
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    outputs:
+      plugins: ${{ steps.plugins.outputs.plugins }}
+      claude_os: ${{ steps.platforms.outputs.claude_os }}
+      windows: ${{ steps.platforms.outputs.windows }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - id: plugins
+        env:
+          REQUESTED: ${{ inputs.plugins }}
+        run: |
+          available=$(find plugins -mindepth 2 -maxdepth 2 -type d -name evals | cut -d/ -f2 | sort)
+          selected=${REQUESTED:-$available}
+          for plugin in $selected; do
+            grep -qx "$plugin" <<<"$available" || { echo "::error::No eval suite for plugin '$plugin'"; exit 1; }
+          done
+          echo "plugins=$(printf '%s\n' $selected | jq -R . | jq -cs .)" >> "$GITHUB_OUTPUT"
+      - id: platforms
+        env:
+          PLATFORMS: ${{ inputs.platforms }}
+        run: |
+          case "$PLATFORMS" in
+            linux) echo 'claude_os=["ubuntu-latest"]' >> "$GITHUB_OUTPUT"; echo 'windows=false' >> "$GITHUB_OUTPUT" ;;
+            linux-macos) echo 'claude_os=["ubuntu-latest","macos-latest"]' >> "$GITHUB_OUTPUT"; echo 'windows=false' >> "$GITHUB_OUTPUT" ;;
+            all) echo 'claude_os=["ubuntu-latest","macos-latest"]' >> "$GITHUB_OUTPUT"; echo 'windows=true' >> "$GITHUB_OUTPUT" ;;
+          esac
+
+  claude:
+    needs: discover
+    if: inputs.host != 'codex'
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ${{ fromJSON(needs.discover.outputs.claude_os) }}
+        plugin: ${{ fromJSON(needs.discover.outputs.plugins) }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+      - name: Install sandbox prerequisites
+        if: runner.os == 'Linux'
+        # Ubuntu 24.04 runners restrict unprivileged user namespaces, which bubblewrap needs.
+        run: |
+          sudo apt-get update && sudo apt-get install -y bubblewrap socat
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - name: Install Claude Code
+        run: npm install --global "@anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}"
+      - name: Run evals
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          PLUGIN: ${{ matrix.plugin }}
+          RUNS: ${{ inputs.runs }}
+          MODEL: ${{ inputs.model }}
+          JUDGE_MODEL: ${{ inputs.judge_model }}
+          THRESHOLD: ${{ inputs.threshold }}
+          MAX_COST: ${{ inputs.max_cost_usd }}
+        run: |
+          claude plugin eval "plugins/$PLUGIN" --scaffold --trust-plugin \
+            --allow-tools Bash Edit Write \
+            --runs "$RUNS" --model "$MODEL" --judge-model "$JUDGE_MODEL" \
+            --threshold "$THRESHOLD" --max-cost-usd "$MAX_COST" --no-publish \
+            --output-dir "eval-output/$PLUGIN" --json "eval-output/$PLUGIN/result.json"
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: claude-${{ runner.os }}-${{ matrix.plugin }}
+          path: eval-output/
+          if-no-files-found: ignore
+
+  claude-windows-no-shell:
+    needs: discover
+    if: inputs.host != 'codex' && needs.discover.outputs.windows == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        plugin: ${{ fromJSON(needs.discover.outputs.plugins) }}
+    runs-on: windows-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+      - name: Install Claude Code
+        shell: bash
+        run: npm install --global "@anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}"
+      - name: Run no-shell evals
+        shell: bash
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          PLUGIN: ${{ matrix.plugin }}
+          RUNS: ${{ inputs.runs }}
+          MODEL: ${{ inputs.model }}
+          JUDGE_MODEL: ${{ inputs.judge_model }}
+          THRESHOLD: ${{ inputs.threshold }}
+          MAX_COST: ${{ inputs.max_cost_usd }}
+        run: |
+          if ! grep -lq 'no-shell' plugins/"$PLUGIN"/evals/*/prompt.md; then
+            echo "No no-shell cases for $PLUGIN"; exit 0
+          fi
+          # Native Windows has no OS sandbox backend, so no shell tool is granted here.
+          claude plugin eval "plugins/$PLUGIN" --tag no-shell --scaffold --trust-plugin \
+            --allow-tools Edit Write \
+            --runs "$RUNS" --model "$MODEL" --judge-model "$JUDGE_MODEL" \
+            --threshold "$THRESHOLD" --max-cost-usd "$MAX_COST" --no-publish \
+            --output-dir "eval-output/$PLUGIN" --json "eval-output/$PLUGIN/result.json"
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: claude-Windows-${{ matrix.plugin }}
+          path: eval-output/
+          if-no-files-found: ignore
+
+  codex:
+    needs: discover
+    if: inputs.host != 'claude'
+    strategy:
+      fail-fast: false
+      matrix:
+        plugin: ${{ fromJSON(needs.discover.outputs.plugins) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+      - name: Install sandbox prerequisites
+        run: |
+          sudo apt-get update && sudo apt-get install -y bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - name: Install Codex
+        run: npm install --global "@openai/codex@${CODEX_VERSION}"
+      - name: Run evals
+        shell: pwsh
+        env:
+          CODEX_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          PLUGIN: ${{ matrix.plugin }}
+          RUNS: ${{ inputs.runs }}
+          CODEX_MODEL: ${{ inputs.codex_model }}
+          THRESHOLD: ${{ inputs.threshold }}
+        run: |
+          $env:CODEX_HOME = Join-Path $env:RUNNER_TEMP 'codex-home'
+          New-Item -ItemType Directory -Path $env:CODEX_HOME -Force | Out-Null
+          ./scripts/run-codex-evals.ps1 -Plugin $env:PLUGIN -Runs ([int]$env:RUNS) -Model $env:CODEX_MODEL `
+            -JudgeModel $env:CODEX_MODEL -Threshold ([double]$env:THRESHOLD) -OutputPath "eval-output/$env:PLUGIN/codex-result.json"
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: codex-${{ matrix.plugin }}
+          path: eval-output/
+          if-no-files-found: ignore

@@ -7,8 +7,8 @@ description: "Drafts or publishes authorized, fact-checked GitHub Discussions an
 
 **Goal:** Create a source-backed announcement and publish it only after the user approves the full draft.
 
-**Execution contract:** The checklist defines completion. Track each item internally as `PENDING`, `PROVEN` with evidence, `CLEARED` with evidence its condition is absent, or `UNPROVEN` with a gap; reading, delegation, or tool failure is not proof. Reconcile after each section. Before returning, resolve all `PENDING`, count only `PROVEN` and `CLEARED`, and apply verdict and approval rules to every gap.
-Preserve intent, scope, and existing authorization. Continue authorized work; ask only for consequential unresolved choices or required external approval. Scale depth to material risk without skipping checks. Preserve dependency and safety order; otherwise choose an appropriate verification method.
+**Execution contract:** The checklist defines completion. Track each item internally as `PENDING`, `PROVEN` with evidence, `CLEARED` with evidence its condition is absent, or `UNPROVEN` with a gap; reading, delegation, tool failure, a zero exit status, or a self-reported success is not proof; only the observed outcome is. Reconcile after each section. Before returning, resolve all `PENDING`, count only `PROVEN` and `CLEARED`, and apply verdict and approval rules to every gap.
+Preserve intent, scope, and existing authorization. Continue authorized work; ask only for consequential unresolved choices or required external approval. When no one can answer during the run, state the exact question and apply the skill's verdict for the remaining gap instead of waiting or guessing. Scale depth to material risk without skipping checks. Preserve dependency and safety order; otherwise choose an appropriate verification method.
 Accept equivalent user or repository evidence; no other skill, named artifact, or complete lifecycle is required. Preserve source requirement and decision IDs. Bind reused evidence to relevant source versions, dirty changes, configuration, and environment; invalidate only affected claims.
 On continuation, reconcile task, authorization, current state, and unresolved evidence. For long work, return a compact continuation record or update an already authorized artifact; read-only skills do not persist it. Distinguish artifact readiness, verified behavior, and external-action authority.
 Prepare authorized work before required approval. If blocked by an instruction, cite its exact source and unresolved boundary; do not invent approval gates from caution.
@@ -79,7 +79,7 @@ Do not expose repository tokens, category node IDs, or other credentials in the 
 
 - [ ] Present the exact title and full Markdown body to the user before creating external state.
 - [ ] Include the evidence range and selected category, or the unresolved destination limitation, with the draft.
-- [ ] For draft-only work, complete the self-check and report `DRAFT READY` without waiting; clear publication-only items with this scope reason. For publication, require explicit approval of the exact copy and destination; reuse unchanged approval already given in the session. A request to announce does not approve unseen final copy.
+- [ ] For draft-only work, complete the self-check and report `PREPARED` without waiting; clear publication-only items with this scope reason. For publication, require explicit approval of the exact copy and destination; reuse unchanged approval already given in the session. A request to announce does not approve unseen final copy.
 - [ ] If the user changes any substantive claim or instruction, fact-check the revised draft again.
 - [ ] Write the approved body to a temporary file to preserve formatting and avoid shell interpolation errors.
 - [ ] Only for authorized publication, verify write access and destination, then publish through the GitHub Discussions GraphQL mutation using discovered repository and category IDs. Clear publication-only criteria when the request ends at a draft.
@@ -90,7 +90,7 @@ Do not expose repository tokens, category node IDs, or other credentials in the 
 
 ## Verdict
 
-- `DRAFT READY` — fact-checked copy is complete; publication is either outside scope or awaiting exact-copy approval.
+- `PREPARED` — fact-checked copy is complete; publication is either outside scope or awaiting exact-copy approval.
 - `PUBLISHED` — the approved discussion exists and was read back successfully.
 - `BLOCKED` — source evidence prevents a trustworthy draft, or a requested publication cannot proceed because its permissions, category, or verification is unavailable. Distinguish a completed draft from blocked publication.
 
@@ -100,9 +100,9 @@ Do not expose repository tokens, category node IDs, or other credentials in the 
 
 ## Output Contract
 
-Report in the user's language, in this order; retain all five fields and state each fact once. Small results may use one line per field; omit empty tables and do not copy linked artifacts:
+Report in the user's language, in this order; label all five fields and state each fact once. Use controlled plain language: one fact per sentence, usually under 20 words, active voice, and one term per concept, with no synonyms for verdicts, IDs, or states. Small results may use one line per field; omit empty tables and do not copy linked artifacts:
 
-1. **Result:** Skill-specific verdict and supported outcome.
+1. **Result:** The exact skill-specific verdict token first, then the supported outcome.
 2. **Scope:** Reviewed/changed scope, exclusions, baseline, and material assumptions.
 3. **Evidence:** Skill-specific fields below; distinguish facts, inferences, and unverified claims. Link artifacts; use tables when useful.
 4. **Verification:** Checks/results, unavailable evidence, and applicable cleanup/external state.

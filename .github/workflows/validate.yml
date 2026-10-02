@@ -38,3 +38,7 @@ jobs:
       - name: Test repository contract regressions
         shell: pwsh
         run: ./scripts/test-repository-contracts.ps1
+
+      - name: Test Codex eval evidence regressions
+        shell: pwsh
+        run: ./scripts/test-codex-eval-runner.ps1

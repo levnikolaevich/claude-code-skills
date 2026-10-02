@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: ln-45-fast-but-incorrect-parser
+context:
+  scaffold_script: fixture.sh

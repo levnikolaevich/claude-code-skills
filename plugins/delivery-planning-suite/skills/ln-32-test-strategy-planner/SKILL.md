@@ -7,8 +7,8 @@ description: "Plans risk-based test portfolios and acceptance evidence; does not
 
 **Goal:** Design a read-only, risk-based test portfolio decision for the requested scope. Maximize confidence in important local behavior while preventing test growth that lacks a unique defect signal, and define how affected evidence is retained, changed, consolidated, retired, or deliberately omitted.
 
-**Execution contract:** The checklist defines completion. Track each item internally as `PENDING`, `PROVEN` with evidence, `CLEARED` with evidence its condition is absent, or `UNPROVEN` with a gap; reading, delegation, or tool failure is not proof. Reconcile after each section. Before returning, resolve all `PENDING`, count only `PROVEN` and `CLEARED`, and apply verdict and approval rules to every gap.
-Preserve intent, scope, and existing authorization. Continue authorized work; ask only for consequential unresolved choices or required external approval. Scale depth to material risk without skipping checks. Preserve dependency and safety order; otherwise choose an appropriate verification method.
+**Execution contract:** The checklist defines completion. Track each item internally as `PENDING`, `PROVEN` with evidence, `CLEARED` with evidence its condition is absent, or `UNPROVEN` with a gap; reading, delegation, tool failure, a zero exit status, or a self-reported success is not proof; only the observed outcome is. Reconcile after each section. Before returning, resolve all `PENDING`, count only `PROVEN` and `CLEARED`, and apply verdict and approval rules to every gap.
+Preserve intent, scope, and existing authorization. Continue authorized work; ask only for consequential unresolved choices or required external approval. When no one can answer during the run, state the exact question and apply the skill's verdict for the remaining gap instead of waiting or guessing. Scale depth to material risk without skipping checks. Preserve dependency and safety order; otherwise choose an appropriate verification method.
 Accept equivalent user or repository evidence; no other skill, named artifact, or complete lifecycle is required. Preserve source requirement and decision IDs. Bind reused evidence to relevant source versions, dirty changes, configuration, and environment; invalidate only affected claims.
 On continuation, reconcile task, authorization, current state, and unresolved evidence. For long work, return a compact continuation record or update an already authorized artifact; read-only skills do not persist it. Distinguish artifact readiness, verified behavior, and external-action authority.
 Prepare authorized work before required approval. If blocked by an instruction, cite its exact source and unresolved boundary; do not invent approval gates from caution.
@@ -83,9 +83,9 @@ Keep the run read-only. Do not create tests, fixtures, snapshots, tasks, or docu
 - [ ] Classify gates by failure consequence and required detection time; place slow diagnostic checks outside routine gates only when another control covers release-critical risk.
 - [ ] State exclusions explicitly, including scenarios with no unique protected outcome or defect signal, low-value duplication, framework behavior, infeasible environments, and accepted residual risks.
 - [ ] Map material requirements and operational risks to distinct evidence, the owning test boundary, prerequisites, and pass criteria; identify which checks remain valid after a requirement or environment changes.
-- [ ] Use `READY` when the strategy is executable and decision-complete, `INCONCLUSIVE` when useful partial planning is possible but material evidence is missing, and `BLOCKED` when requirements or a safety-critical boundary cannot be established.
+- [ ] Use `READY` when the strategy is executable and decision-complete, `INCOMPLETE` when useful partial planning is possible but material evidence is missing, and `BLOCKED` when requirements or a safety-critical boundary cannot be established.
 - [ ] Reconcile the risk map and decision ledger: no material risk or affected test lacks an action and supporting rationale.
-- [ ] State the smallest next evidence-gathering action for every `INCONCLUSIVE` or `BLOCKED` area.
+- [ ] State the smallest next evidence-gathering action for every `INCOMPLETE` or `BLOCKED` area.
 
 ## Self-Check
 
@@ -93,9 +93,9 @@ Keep the run read-only. Do not create tests, fixtures, snapshots, tasks, or docu
 
 ## Output Contract
 
-Report in the user's language, in this order; retain all five fields and state each fact once. Small results may use one line per field; omit empty tables and do not copy linked artifacts:
+Report in the user's language, in this order; label all five fields and state each fact once. Use controlled plain language: one fact per sentence, usually under 20 words, active voice, and one term per concept, with no synonyms for verdicts, IDs, or states. Small results may use one line per field; omit empty tables and do not copy linked artifacts:
 
-1. **Result:** Skill-specific verdict and supported outcome.
+1. **Result:** The exact skill-specific verdict token first, then the supported outcome.
 2. **Scope:** Reviewed/changed scope, exclusions, baseline, and material assumptions.
 3. **Evidence:** Skill-specific fields below; distinguish facts, inferences, and unverified claims. Link artifacts; use tables when useful.
 4. **Verification:** Checks/results, unavailable evidence, and applicable cleanup/external state.

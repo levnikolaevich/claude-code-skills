@@ -40,8 +40,8 @@ description: "State the specific capability and trigger; add exclusions only for
 
 **Goal:** Define the intended outcome, protected behavior, and mutation boundary. State what this skill does not authorize when that boundary matters.
 
-**Execution contract:** The checklist defines completion. Track each item internally as `PENDING`, `PROVEN` with evidence, `CLEARED` with evidence its condition is absent, or `UNPROVEN` with a gap; reading, delegation, or tool failure is not proof. Reconcile after each section. Before returning, resolve all `PENDING`, count only `PROVEN` and `CLEARED`, and apply verdict and approval rules to every gap.
-Preserve intent, scope, and existing authorization. Continue authorized work; ask only for consequential unresolved choices or required external approval. Scale depth to material risk without skipping checks. Preserve dependency and safety order; otherwise choose an appropriate verification method.
+**Execution contract:** The checklist defines completion. Track each item internally as `PENDING`, `PROVEN` with evidence, `CLEARED` with evidence its condition is absent, or `UNPROVEN` with a gap; reading, delegation, tool failure, a zero exit status, or a self-reported success is not proof; only the observed outcome is. Reconcile after each section. Before returning, resolve all `PENDING`, count only `PROVEN` and `CLEARED`, and apply verdict and approval rules to every gap.
+Preserve intent, scope, and existing authorization. Continue authorized work; ask only for consequential unresolved choices or required external approval. When no one can answer during the run, state the exact question and apply the skill's verdict for the remaining gap instead of waiting or guessing. Scale depth to material risk without skipping checks. Preserve dependency and safety order; otherwise choose an appropriate verification method.
 Accept equivalent user or repository evidence; no other skill, named artifact, or complete lifecycle is required. Preserve source requirement and decision IDs. Bind reused evidence to relevant source versions, dirty changes, configuration, and environment; invalidate only affected claims.
 On continuation, reconcile task, authorization, current state, and unresolved evidence. For long work, return a compact continuation record or update an already authorized artifact; read-only skills do not persist it. Distinguish artifact readiness, verified behavior, and external-action authority.
 Prepare authorized work before required approval. If blocked by an instruction, cite its exact source and unresolved boundary; do not invent approval gates from caution.
@@ -82,6 +82,7 @@ Prepare authorized work before required approval. If blocked by an instruction, 
 ## Verdict
 
 - Define each skill-specific verdict once, with its evidence threshold and treatment of incomplete checks.
+- Choose tokens from the shared verdict vocabulary; add a domain token only for a meaning no shared token covers, and never give one token two meanings.
 - Distinguish preparation, implementation, verification, and external publication when the workflow supports those states.
 - State the stopping or approval conditions at the operation they govern; do not introduce additional approvals here.
 
@@ -91,9 +92,9 @@ Prepare authorized work before required approval. If blocked by an instruction, 
 
 ## Output Contract
 
-Report in the user's language, in this order; retain all five fields and state each fact once. Small results may use one line per field; omit empty tables and do not copy linked artifacts:
+Report in the user's language, in this order; label all five fields and state each fact once. Use controlled plain language: one fact per sentence, usually under 20 words, active voice, and one term per concept, with no synonyms for verdicts, IDs, or states. Small results may use one line per field; omit empty tables and do not copy linked artifacts:
 
-1. **Result:** Skill-specific verdict and supported outcome.
+1. **Result:** The exact skill-specific verdict token first, then the supported outcome.
 2. **Scope:** Reviewed/changed scope, exclusions, baseline, and material assumptions.
 3. **Evidence:** Skill-specific fields below; distinguish facts, inferences, and unverified claims. Link artifacts; use tables when useful.
 4. **Verification:** Checks/results, unavailable evidence, and applicable cleanup/external state.
@@ -120,6 +121,32 @@ Copy these checks only into workflows that need the obligation. Their marked wor
 - [ ] **Run-owned cleanup:** Remove only run-owned ledger entries: verify absolute paths remain inside approved temporary roots, stop exact recorded process IDs, preserve dirty or pre-existing worktrees, and retain evidence artifacts intentionally reported.
 - [ ] **Run-owned resources:** Start a run-owned resource ledger with every created absolute path, worktree, process ID, cache, report, and temporary artifact; never register pre-existing resources as cleanup targets.
 ```
+
+## Verdict vocabulary
+
+This is the canonical verdict dictionary: one token, one meaning, as in a controlled language. Each skill copies only the tokens it uses into its own verdict definition, with its domain threshold. Eval verdict graders may use only tokens listed here, and the repository validator checks that each grader token appears in its skill.
+
+| Token | Meaning | Skill family |
+|---|---|---|
+| `READY` | The produced artifact is usable for its next decision; no consequential gap remains. | Artifact builders |
+| `INCOMPLETE` | A useful artifact exists, but named gaps prevent `READY`. | Artifact builders |
+| `PASS` | The assessed subject meets every required check. | Reviews and audits |
+| `CONCERNS` | The assessed subject is acceptable, with bounded non-blocking issues stated. | Reviews and audits |
+| `FAIL` | Evidence shows the assessed subject must change before use. | Reviews and audits |
+| `DELIVERED` | The requested change is kept and verified. | Changes |
+| `PARTIAL` | A safe part of the requested outcome is kept or published; the rest is stated as unresolved. | Changes and external actions |
+| `NO_CHANGE` | The outcome already holds, or every attempt was discarded and the baseline restored. | Changes |
+| `PREPARED` | The external action is validated and ready, but not executed. | External actions |
+| `PUBLISHED` | The repository change or announcement is observed at its remote destination. | External actions |
+| `RELEASED` | The tag and release point to the verified commit. | External actions |
+| `DEPLOYED` | The authorized artifact is observed healthy in the target environment. | External actions |
+| `FAILED` | An attempted external action did not reach its target; the actual state is reported. | External actions |
+| `INCONCLUSIVE` | Collected evidence cannot select an answer. | Investigation and analysis |
+| `BLOCKED` | Required intent, authority, evidence, or safe capability is unavailable. | All |
+| `DIAGNOSED` | Evidence supports a causal explanation and bounded action options. | Operations investigation |
+| `SUPPORTED` / `NOT_SUPPORTED` | Valid evidence supports or contradicts the declared product outcome. | Product outcome evaluation |
+| `WIN` / `TIE` | A candidate wins, or the difference is within the predeclared margin. | Benchmark comparison |
+| `RECOMMEND <candidate>` / `DO_NOT_PURSUE` | Evidence selects one opportunity, or eliminates every candidate. | Opportunity evaluation |
 
 ## Change control and validation
 

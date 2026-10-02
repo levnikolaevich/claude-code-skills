@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: ln-64-draft-from-changelog
+context:
+  scaffold_script: fixture.sh

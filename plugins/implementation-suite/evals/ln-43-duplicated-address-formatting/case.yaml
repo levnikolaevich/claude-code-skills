@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: ln-43-duplicated-address-formatting
+context:
+  scaffold_script: fixture.sh

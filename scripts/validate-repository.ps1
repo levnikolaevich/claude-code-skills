@@ -173,6 +173,45 @@ try {
         }
     }
 
+    $vocabularySection = [regex]::Match($templateText, '(?s)\n## Verdict vocabulary\n(.*?)\n## ').Groups[1].Value
+    $verdictVocabulary = @([regex]::Matches($vocabularySection, '`([A-Z][A-Z_]+)[ `]') | ForEach-Object { $_.Groups[1].Value })
+    Assert-Condition ($verdictVocabulary.Count -gt 0) 'Skill template is missing the verdict vocabulary.'
+    $evalCaseCount = 0
+    foreach ($pluginName in $claudeNames) {
+        $pluginSkills = @($skillMetadata.Keys | Where-Object { $skillMetadata[$_].Plugin -ceq $pluginName })
+        $coveredSkills = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+        $evalRoot = Join-Path $repositoryRoot "plugins/$pluginName/evals"
+        $caseDirectories = if (Test-Path -LiteralPath $evalRoot -PathType Container) { @(Get-ChildItem -LiteralPath $evalRoot -Directory | Where-Object Name -cne 'results' | Sort-Object Name) } else { @() }
+        foreach ($caseDirectory in $caseDirectories) {
+            $caseId = "$pluginName/$($caseDirectory.Name)"
+            $promptPath = Join-Path $caseDirectory.FullName 'prompt.md'
+            $firedPath = Join-Path $caseDirectory.FullName 'graders/skill-fired.md'
+            Assert-Condition ((Test-Path -LiteralPath $promptPath -PathType Leaf) -and (Test-Path -LiteralPath $firedPath -PathType Leaf)) "Eval case $caseId needs prompt.md and graders/skill-fired.md."
+            $prompt = [IO.File]::ReadAllText($promptPath).Replace("`r`n", "`n")
+            $invoked = [regex]::Match($prompt, '(?s)\A---\n.*?\n---\n\s*Use the (ln-\d{2}-[a-z0-9-]+) skill\.').Groups[1].Value
+            $fired = [regex]::Match([IO.File]::ReadAllText($firedPath), 'ln-\d{2}-[a-z0-9-]+').Value
+            Assert-Condition ($invoked -ceq $fired -and $pluginSkills -ccontains $invoked) "Eval case $caseId must invoke and grade the same skill of its plugin."
+            $verdictPath = Join-Path $caseDirectory.FullName 'graders/verdict.md'
+            $verdictPattern = if (Test-Path -LiteralPath $verdictPath -PathType Leaf) { [regex]::Match([IO.File]::ReadAllText($verdictPath), "(?m)^pattern:\s*'Result:(.*)'\s*$").Groups[1].Value } else { '' }
+            $verdictTokens = @([regex]::Matches($verdictPattern, '\b[A-Z][A-Z_]+\b') | ForEach-Object { $_.Value })
+            Assert-Condition ($verdictTokens.Count -gt 0) "Eval case $caseId needs graders/verdict.md matching the Result verdict token."
+            $invokedText = [IO.File]::ReadAllText((Join-Path $repositoryRoot "plugins/$pluginName/skills/$invoked/SKILL.md"))
+            foreach ($token in $verdictTokens) {
+                Assert-Condition ($verdictVocabulary -ccontains $token -and $invokedText.Contains("``$token")) "Eval case $caseId verdict grader token $token is not a shared vocabulary verdict of $invoked."
+            }
+            $expectedOutcome = [regex]::Match($prompt, '(?m)^expected_outcome:\s*(.+)$').Groups[1].Value
+            foreach ($expectedVerdict in [regex]::Matches($expectedOutcome, '\b(?:[Rr]esult|verdict)(?:\s+is)?\s+([A-Z][A-Z_]+)\b')) {
+                $token = $expectedVerdict.Groups[1].Value
+                Assert-Condition ($verdictTokens -ccontains $token) "Eval case $caseId expected_outcome verdict $token differs from its verdict grader."
+            }
+            [void] $coveredSkills.Add($invoked)
+            $evalCaseCount++
+        }
+        foreach ($skill in $pluginSkills) {
+            Assert-Condition ($coveredSkills.Contains($skill)) "$skill has no eval case."
+        }
+    }
+
     $readme = Get-Content -LiteralPath "README.md" -Raw
     $readmeSkillPaths = @([regex]::Matches($readme, 'plugins/[^/)]+/skills/[^/)]+/SKILL\.md') | ForEach-Object { $_.Value } | Sort-Object -Unique)
     Assert-SequenceEqual $readmeSkillPaths @($canonicalSkillPaths | Sort-Object) "README skill catalog differs from canonical skill directories."
@@ -209,7 +248,7 @@ try {
         Assert-Condition ($topic -cmatch '^[a-z0-9-]{1,50}$') "Invalid repository topic: $topic"
     }
 
-    Write-Host "Validated $($claudeNames.Count) plugins, $($skillNames.Count) standalone skills, both catalogs, README, and repository metadata."
+    Write-Host "Validated $($claudeNames.Count) plugins, $($skillNames.Count) standalone skills, $evalCaseCount eval cases, both catalogs, README, and repository metadata."
 } finally {
     Pop-Location
 }

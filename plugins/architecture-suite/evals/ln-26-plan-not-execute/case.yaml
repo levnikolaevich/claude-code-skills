@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: ln-26-plan-not-execute
+context:
+  scaffold_script: fixture.sh

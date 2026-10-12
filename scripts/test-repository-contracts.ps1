@@ -24,7 +24,7 @@ $fixtureName = ''
 
 # Copy the repository once; every case then mutates this copy and the next case restores it from memory.
 function Initialize-RepositoryFixture {
-    foreach ($path in @('plugins', '.claude-plugin', '.agents', 'docs', '.github', 'scripts', 'README.md', 'SKILL_TEMPLATE.md', 'AGENTS.md', 'CLAUDE.md', 'LICENSE')) {
+    foreach ($path in @('plugins', '.claude-plugin', '.agents', 'docs', 'templates', '.github', 'scripts', 'README.md', 'SKILL_TEMPLATE.md', 'AGENTS.md', 'CLAUDE.md', 'LICENSE')) {
         $source = Join-Path $repositoryRoot $path
         $files = if (Test-Path -LiteralPath $source -PathType Container) { Get-ChildItem -LiteralPath $source -Recurse -File -Force } else { Get-Item -LiteralPath $source }
         foreach ($file in $files) {

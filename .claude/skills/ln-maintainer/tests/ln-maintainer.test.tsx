@@ -1,14 +1,14 @@
 import { describe, expect, mock, test } from 'claude-code/testing'
 import type { On } from 'claude-code'
 
-const ROOT = 'D:/repo'
+const ROOT = '/repo'
 const SESSION = { cwd: ROOT, surface: null, isInteractive: true }
 const SKILL_FILE = `${ROOT}/plugins/implementation-suite/skills/ln-41-surgical-change-implementer/SKILL.md`
 const TEMPLATE = '# Template\n\n## Verdict vocabulary\n\n| Token |\n|---|\n| `DELIVERED` | x |\n| `FAIL` | x |\n\n## Change control\n'
 
-/** The repository-relative key of a path the plugin built from the session root; other paths stay as they are. */
+/** Match the in-memory root even when the Windows engine adds the current drive. */
 function inRepository(path: string): string {
-  const normalized = path.replace(/\\/g, '/')
+  const normalized = path.replace(/\\/g, '/').replace(/^[A-Za-z]:/, '')
   return normalized.startsWith(`${ROOT}/`) ? normalized.slice(ROOT.length + 1) : `outside:${normalized}`
 }
 

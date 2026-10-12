@@ -46,6 +46,9 @@ function New-RepositoryFixture {
             Remove-Item -LiteralPath $file.FullName -Force
         }
     }
+    foreach ($directory in @([IO.Directory]::EnumerateDirectories($fixtureRoot, '*', [IO.SearchOption]::AllDirectories) | Sort-Object Length -Descending)) {
+        if (-not [IO.Directory]::EnumerateFileSystemEntries($directory).GetEnumerator().MoveNext()) { [IO.Directory]::Delete($directory) }
+    }
     foreach ($relative in $fixtureSnapshot.Keys) {
         $target = Join-Path $fixtureRoot $relative
         $expected = [byte[]] $fixtureSnapshot[$relative]
@@ -181,6 +184,27 @@ try {
     Assert-Condition ($expectedPromptText.Contains('Result INCOMPLETE')) 'Fixture source is missing its expected Result verdict.'
     [IO.File]::WriteAllText($expectedPromptPath, $expectedPromptText.Replace('Result INCOMPLETE', 'Result READY'))
     Assert-ValidatorFailure $expectedVerdictFixture 'expected_outcome verdict READY differs from its verdict grader'
+
+    $discoveryFixture = New-RepositoryFixture 'prompted-discovery'
+    $discoveryPromptPath = Join-Path $discoveryFixture 'plugins/engineering-foundation-suite/evals/ln-92-discover-container/prompt.md'
+    Add-Content -LiteralPath $discoveryPromptPath -Value 'Use the ln-92-container-engineer skill.'
+    Assert-ValidatorFailure $discoveryFixture 'must use natural wording'
+
+    $negativeFixture = New-RepositoryFixture 'negative-discovery-allows-activation'
+    $negativeGrader = Join-Path $negativeFixture 'plugins/engineering-foundation-suite/evals/ln-92-discovery-unrelated-copy/graders/skill-fired.md'
+    [IO.File]::WriteAllText($negativeGrader, [IO.File]::ReadAllText($negativeGrader).Replace('max: 0', 'max: 1'))
+    Assert-ValidatorFailure $negativeFixture 'must forbid skill activation'
+
+    $positiveFixture = New-RepositoryFixture 'positive-discovery-optional-activation'
+    $positiveGrader = Join-Path $positiveFixture 'plugins/engineering-foundation-suite/evals/ln-92-discover-container/graders/skill-fired.md'
+    Add-Content -LiteralPath $positiveGrader -Value 'min: 0'
+    Assert-ValidatorFailure $positiveFixture 'must require skill activation'
+
+    $hooksFixture = New-RepositoryFixture 'hooks-in-skill-plugin'
+    $hooksPath = Join-Path $hooksFixture 'plugins/implementation-suite/hooks/hooks.json'
+    [void] [IO.Directory]::CreateDirectory((Split-Path -Parent $hooksPath))
+    [IO.File]::WriteAllText($hooksPath, '{ "modules": ["./register.ts"] }')
+    Assert-ValidatorFailure $hooksFixture 'must not ship hooks or mods'
 
     $linkFixture = New-RepositoryFixture 'broken-documentation-link'
     Add-Content -LiteralPath (Join-Path $linkFixture 'docs/token-efficiency.md') -Value '[Missing evidence](missing-evidence.md)'

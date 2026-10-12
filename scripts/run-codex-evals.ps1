@@ -10,6 +10,10 @@ param(
     [double] $Threshold = 1.0,
     [string] $OutputPath = '',
     [string] $BashPath = '',
+    [ValidateSet('native', 'wsl')] [string] $Backend = 'native',
+    [string] $WslDistribution = '',
+    [string] $AgentHome = '',
+    [ValidateSet('plugin', 'repository')] [string] $CatalogScope = 'plugin',
     [switch] $KeepTemp
 )
 
@@ -23,6 +27,15 @@ $temporaryParent = [IO.Path]::GetTempPath().TrimEnd([IO.Path]::DirectorySeparato
 $runRoot = Join-Path $temporaryParent ('codex-eval-' + [guid]::NewGuid().ToString('N'))
 # Locally CODEX_HOME supplies authentication plus any global AGENTS.md or user-level skills; CI uses a fresh CODEX_HOME with CODEX_API_KEY.
 $codexHome = if ($env:CODEX_HOME) { $env:CODEX_HOME } else { Join-Path ([Environment]::GetFolderPath('UserProfile')) '.codex' }
+if ($AgentHome) { $codexHome = $AgentHome }
+
+function ConvertTo-WslPath {
+    param([string] $Path)
+    if ($Path -match '^([A-Za-z]):[\\/](.*)$') {
+        return '/mnt/' + $Matches[1].ToLowerInvariant() + '/' + $Matches[2].Replace('\', '/')
+    }
+    return $Path
+}
 
 function Read-Frontmatter {
     param([Parameter(Mandatory)] [string] $Path)
@@ -85,6 +98,8 @@ function Get-ObservedChanges {
     foreach ($event in $Events) {
         $path = $event.path.Replace('\', '/')
         $comparison = if ($IsWindows) { [StringComparison]::OrdinalIgnoreCase } else { [StringComparison]::Ordinal }
+        $wslPrefix = (ConvertTo-WslPath $Workspace).TrimEnd('/') + '/'
+        if ($path.StartsWith($wslPrefix, $comparison)) { $path = $path.Substring($wslPrefix.Length) }
         if ($path.StartsWith($prefix, $comparison)) { $path = $path.Substring($prefix.Length) }
         $path = $path -replace '^(\./)+', ''
         $changes["$($event.kind):$path"] = @{ kind = $event.kind; path = $path }
@@ -139,12 +154,23 @@ function Invoke-Codex {
         [Parameter(Mandatory)] [int] $TimeoutSeconds
     )
 
-    $start = [Diagnostics.ProcessStartInfo]::new((Get-Command codex -CommandType Application | Select-Object -First 1).Source)
-    foreach ($argument in $Arguments) { $start.ArgumentList.Add($argument) }
+    if ($Backend -eq 'wsl') {
+        $start = [Diagnostics.ProcessStartInfo]::new((Get-Command wsl -CommandType Application | Select-Object -First 1).Source)
+        if ($WslDistribution) { $start.ArgumentList.Add('-d'); $start.ArgumentList.Add($WslDistribution) }
+        foreach ($argument in @('--exec', 'env', "CODEX_HOME=$(ConvertTo-WslPath $Environment.CODEX_HOME)", 'codex')) { $start.ArgumentList.Add($argument) }
+        foreach ($argument in $Arguments) { $start.ArgumentList.Add((ConvertTo-WslPath $argument)) }
+    } else {
+        $start = [Diagnostics.ProcessStartInfo]::new((Get-Command codex -CommandType Application | Select-Object -First 1).Source)
+        foreach ($argument in $Arguments) { $start.ArgumentList.Add($argument) }
+    }
     $start.RedirectStandardInput = $true
     $start.RedirectStandardOutput = $true
     $start.RedirectStandardError = $true
     $start.UseShellExecute = $false
+    # A fresh eval must not inherit desktop IPC/session/sandbox internals.
+    foreach ($key in @($start.Environment.Keys)) {
+        if ($key -like 'CODEX_*' -and $key -notin @('CODEX_HOME', 'CODEX_API_KEY')) { [void]$start.Environment.Remove($key) }
+    }
     foreach ($key in $Environment.Keys) { $start.Environment[$key] = $Environment[$key] }
     $process = [Diagnostics.Process]::Start($start)
     $stdout = $process.StandardOutput.ReadToEndAsync()
@@ -177,7 +203,7 @@ function Get-Target {
         return $(if (Test-Path -LiteralPath $path -PathType Leaf) { [IO.File]::ReadAllText($path) } else { '' })
     }
     switch ($(if ($Target) { $Target } else { 'last_message' })) {
-        'trace' { return $Evidence.Trace }
+        'trace' { return $Evidence.Trace + "`nIndependent final workspace observations:`n" + $Evidence.Artifacts }
         'files' { return ($Evidence.Created -join "`n") }
         'last_message' { return $Evidence.LastMessage }
         default { return $null }
@@ -197,6 +223,7 @@ function Invoke-Judge {
     if ($JudgeModel) { $arguments += @('-m', $JudgeModel) }
     $votes = 0
     $errors = @()
+    $reasons = @()
     for ($vote = 0; $vote -lt $JudgeVotes; $vote++) {
         if (Test-Path -LiteralPath $verdictPath) { Remove-Item -LiteralPath $verdictPath }
         $result = Invoke-Codex -Arguments ($arguments + '-') -Prompt $prompt -Environment $Environment -TimeoutSeconds 300
@@ -205,11 +232,12 @@ function Invoke-Judge {
             $verdict = Get-Content -LiteralPath $verdictPath -Raw | ConvertFrom-Json
             if ($verdict.pass -isnot [bool] -or $verdict.reason -isnot [string]) { throw 'Invalid verdict fields.' }
             if ($verdict.pass) { $votes++ }
+            $reasons += $verdict.reason
         } catch {
             $errors += "judge vote $($vote + 1): missing or invalid verdict"
         }
     }
-    return @{ Passed = (-not $errors.Count -and $votes * 2 -gt $JudgeVotes); Error = ($errors -join '; ') }
+    return @{ Passed = (-not $errors.Count -and $votes * 2 -gt $JudgeVotes); Error = ($errors -join '; '); Reasons = $reasons }
 }
 
 function Test-Grader {
@@ -235,9 +263,12 @@ function Test-Grader {
             if ($f.tool -eq 'Write') { $calls = @($Evidence.Changes | Where-Object { $_.kind -eq 'add' } | ForEach-Object { @{ file_path = $_.path } | ConvertTo-Json -Compress }) }
             if ($f.tool -eq 'Skill') {
                 $skill = [regex]::Match($f.input_match, 'ln-\d{2}-[a-z0-9-]+').Value
-                $result.scored = $false
-                $result.passed = $Evidence.Trace -match ([regex]::Escape("$skill") + '[\\/]+SKILL\.md')
-                $result.detail = 'indicator: SKILL.md read'
+                $result.scored = [bool]$Evidence.Discovery
+                $readCount = @($Evidence.SkillReads | Where-Object { $_ -ceq $skill }).Count
+                $min = if ($null -ne $f.min -and $f.min -ne '') { [int]$f.min } else { 1 }
+                $max = if ($null -ne $f.max -and $f.max -ne '') { [int]$f.max } else { [int]::MaxValue }
+                $result.passed = $readCount -ge $min -and $readCount -le $max
+                $result.detail = "indicator: SKILL.md observed $($readCount)x"
                 break
             }
             if ($null -eq $calls) { $result.scored = $false; $result.detail = "tool $($f.tool) has no Codex equivalent"; break }
@@ -261,7 +292,7 @@ function Test-Grader {
             $judgment = Invoke-Judge -Criteria $criteria -Subject $subject -Environment $Environment
             $result.passed = $judgment.Passed
             $result.error = $judgment.Error
-            $result.detail = "judge votes: $JudgeVotes"
+            $result.detail = "judge votes: $JudgeVotes; " + ($judgment.Reasons -join '; ')
         }
         default { $result.scored = $false; $result.detail = "grader type $($f.type) has no Codex equivalent" }
     }
@@ -269,11 +300,23 @@ function Test-Grader {
     return [pscustomobject]$result
 }
 
+function Resolve-BashPath {
+    # Git for Windows ships bash in <git root>/bin; git.exe may sit in cmd/ or mingw64/bin/ depending on the calling shell.
+    if (-not $IsWindows) { return (Get-Command bash).Source }
+    $directory = Split-Path -Parent (Get-Command git -CommandType Application | Select-Object -First 1).Source
+    while ($directory) {
+        $candidate = Join-Path $directory 'bin/bash.exe'
+        if (Test-Path -LiteralPath $candidate -PathType Leaf) { return $candidate }
+        $directory = Split-Path -Parent $directory
+    }
+    throw 'Git Bash was not found; pass -BashPath.'
+}
+
 # Dot-sourcing exposes the production grader functions to offline regression checks without launching models.
 if ($MyInvocation.InvocationName -eq '.') { return }
 
 if (-not $BashPath) {
-    $BashPath = if ($IsWindows) { Join-Path (Split-Path (Split-Path (Get-Command git).Source)) 'bin/bash.exe' } else { (Get-Command bash).Source }
+    $BashPath = Resolve-BashPath
 }
 $cases = foreach ($pluginDirectory in Get-ChildItem -LiteralPath (Join-Path $repositoryRoot 'plugins') -Directory | Sort-Object Name) {
     if ($Plugin.Count -and $Plugin -notcontains $pluginDirectory.Name) { continue }
@@ -288,14 +331,16 @@ $cases = foreach ($pluginDirectory in Get-ChildItem -LiteralPath (Join-Path $rep
 
 $commit = (git -C $repositoryRoot rev-parse HEAD).Trim()
 $dirty = [bool](git -C $repositoryRoot status --porcelain -- plugins)
-$report = [ordered]@{ schemaVersion = 1; host = 'codex'; codexVersion = (codex --version).Trim(); model = $Model; judgeModel = $JudgeModel; skillsCommit = $commit; skillsDirty = $dirty; threshold = $Threshold; cases = @() }
+$cliVersion = if ($Backend -eq 'wsl') { if ($WslDistribution) { wsl -d $WslDistribution --exec codex --version } else { wsl --exec codex --version } } else { codex --version }
+$report = [ordered]@{ schemaVersion = 1; host = 'codex'; backend = $Backend; distribution = $WslDistribution; catalogScope = $CatalogScope; codexVersion = ($cliVersion -join '').Trim(); model = $Model; judgeModel = $JudgeModel; skillsCommit = $commit; skillsDirty = $dirty; threshold = $Threshold; cases = @() }
 New-Item -ItemType Directory -Path $runRoot | Out-Null
 try {
     foreach ($evalCase in $cases) {
         $fields = $evalCase.Prompt.Fields
         $runCount = if ($Runs -gt 0) { $Runs } elseif ($fields.runs) { [int]$fields.runs } else { 3 }
         $timeout = if ($fields.timeout_seconds) { [int]$fields.timeout_seconds } else { 300 }
-        $caseResult = [ordered]@{ plugin = $evalCase.Plugin.Name; name = $evalCase.Directory.Name; runs = @(); score = 0.0 }
+        $caseProvenance = (& (Join-Path $PSScriptRoot 'get-eval-provenance.ps1') -CaseDirectory $evalCase.Directory.FullName -CatalogScope $CatalogScope | ConvertFrom-Json -AsHashtable)[$evalCase.Directory.Name]
+        $caseResult = [ordered]@{ plugin = $evalCase.Plugin.Name; name = $evalCase.Directory.Name; provenance = $caseProvenance; runs = @(); score = 0.0 }
         for ($run = 1; $run -le $runCount; $run++) {
             $runDirectory = Join-Path $runRoot "$($evalCase.Directory.Name)-$run"
             $workspace = Join-Path $runDirectory 'workspace'
@@ -314,7 +359,12 @@ try {
             # Repository-scoped skill discovery works on every platform; Git ignores the copy so dirty-tree cases stay intact.
             $skillsTarget = Join-Path $workspace '.agents/skills'
             New-Item -ItemType Directory -Path $skillsTarget -Force | Out-Null
-            Copy-Item -Path (Join-Path $evalCase.Plugin.FullName 'skills/*') -Destination $skillsTarget -Recurse
+            $skillSource = if ($CatalogScope -eq 'repository') {
+                Join-Path $repositoryRoot 'plugins/*/skills/*'
+            } elseif (@($fields.tags) -contains 'standalone') {
+                Join-Path $evalCase.Plugin.FullName "skills/$($caseProvenance.skill)"
+            } else { Join-Path $evalCase.Plugin.FullName 'skills/*' }
+            Copy-Item -Path $skillSource -Destination $skillsTarget -Recurse
             $exclude = Join-Path $workspace '.git/info/exclude'
             if (Test-Path -LiteralPath (Split-Path -Parent $exclude)) { Add-Content -LiteralPath $exclude -Value '.agents/' }
             $before = Get-WorkspaceSnapshot $workspace
@@ -326,7 +376,7 @@ try {
                 if (@($fields.tags) -contains 'git' -and (Test-Path -LiteralPath (Join-Path $workspace '.git') -PathType Container)) {
                     $arguments += @('--add-dir', (Join-Path $workspace '.git'))
                 }
-                if ($IsWindows) { $arguments += @('-c', 'windows.sandbox="unelevated"') }
+                if ($IsWindows -and $Backend -eq 'native') { $arguments += @('-c', 'windows.sandbox="unelevated"') }
                 if ($Model) { $arguments += @('-m', $Model) }
                 $execution = Invoke-Codex -Arguments ($arguments + '-') -Prompt $taskPrompt -Environment $environment -TimeoutSeconds $timeout
                 $runError = $execution.Error
@@ -335,13 +385,26 @@ try {
             }
             $items = @($trace -split "`n" | Where-Object { $_.Trim() } | ForEach-Object { try { $_ | ConvertFrom-Json } catch { $null } } | Where-Object { $_.type -eq 'item.completed' } | ForEach-Object { $_.item })
             $after = Get-WorkspaceSnapshot $workspace
+            # CLI event output can omit earlier stdout chunks. Supply the actual final
+            # fixture/artifact contents independently, never infer them from the reply.
+            $artifactEvidence = foreach ($relative in @(@($before.Keys) + @($after.Keys) | Sort-Object -Unique)) {
+                if ($relative -match '(^\.agents/|^\.codex/|__pycache__/|\.pyc$)') { continue }
+                $artifactPath = Join-Path $workspace $relative
+                if (-not (Test-Path -LiteralPath $artifactPath -PathType Leaf)) { "FILE $relative [deleted]"; continue }
+                $artifactBytes = [IO.File]::ReadAllBytes($artifactPath)
+                if ($artifactBytes.Length -gt 65536 -or $artifactBytes -contains 0) { "FILE $relative [binary or over 64 KiB; content unavailable to judge]"; continue }
+                "FILE $relative`n" + [Text.Encoding]::UTF8.GetString($artifactBytes)
+            }
             $evidence = @{
                 Workspace = $workspace
                 RunError = $runError
                 Trace = $trace
+                Artifacts = $artifactEvidence -join "`n"
                 LastMessage = $(if (Test-Path -LiteralPath $lastMessagePath) { [IO.File]::ReadAllText($lastMessagePath) } else { '' })
                 Created = @($after.Keys | Where-Object { -not $before.ContainsKey($_) } | Sort-Object)
                 Commands = @($items | Where-Object type -eq 'command_execution' | ForEach-Object { $_.command })
+                Discovery = @($fields.tags) -contains 'discovery'
+                SkillReads = @($items | Where-Object { $_.type -eq 'command_execution' -and $_.exit_code -eq 0 -and $_.command -match 'SKILL\.md' -and $_.aggregated_output -match '\*\*Goal:\*\*' } | ForEach-Object { [regex]::Matches($_.aggregated_output, '(?m)^name:\s*(ln-\d{2}-[a-z0-9-]+)\s*$') } | ForEach-Object { $_.Groups[1].Value })
                 Changes = @(Get-ObservedChanges -Workspace $workspace -Before $before -After $after -Events @($items | Where-Object type -eq 'file_change' | ForEach-Object { $_.changes }))
             }
             $graders = @(Get-ChildItem -LiteralPath (Join-Path $evalCase.Directory.FullName 'graders') -Filter '*.md' | Sort-Object Name | ForEach-Object { Test-Grader $_.FullName $evidence $environment })

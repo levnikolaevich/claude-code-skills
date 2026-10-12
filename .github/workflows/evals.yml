@@ -124,6 +124,16 @@ jobs:
             --runs "$RUNS" --model "$MODEL" --judge-model "$JUDGE_MODEL" \
             --threshold "$THRESHOLD" --max-cost-usd "$MAX_COST" --no-publish \
             --output-dir "eval-output/$PLUGIN" --json "eval-output/$PLUGIN/result.json"
+      - name: Record provenance
+        if: always()
+        shell: pwsh
+        env:
+          PLUGIN: ${{ matrix.plugin }}
+        run: |
+          New-Item -ItemType Directory -Path "eval-output/$env:PLUGIN" -Force | Out-Null
+          $cases = @(Get-ChildItem -LiteralPath "plugins/$env:PLUGIN/evals" -Directory | Where-Object Name -ne 'results' | ForEach-Object FullName)
+          $record = [ordered]@{ schemaVersion = 1; host = 'claude'; commit = $env:GITHUB_SHA; cases = (./scripts/get-eval-provenance.ps1 -CaseDirectory $cases | ConvertFrom-Json) }
+          $record | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath "eval-output/$env:PLUGIN/provenance.json" -Encoding utf8
       - name: Upload results
         if: always()
         uses: actions/upload-artifact@v4
@@ -171,6 +181,16 @@ jobs:
             --runs "$RUNS" --model "$MODEL" --judge-model "$JUDGE_MODEL" \
             --threshold "$THRESHOLD" --max-cost-usd "$MAX_COST" --no-publish \
             --output-dir "eval-output/$PLUGIN" --json "eval-output/$PLUGIN/result.json"
+      - name: Record provenance
+        if: always()
+        shell: pwsh
+        env:
+          PLUGIN: ${{ matrix.plugin }}
+        run: |
+          New-Item -ItemType Directory -Path "eval-output/$env:PLUGIN" -Force | Out-Null
+          $cases = @(Get-ChildItem -LiteralPath "plugins/$env:PLUGIN/evals" -Directory | Where-Object Name -ne 'results' | ForEach-Object FullName)
+          $record = [ordered]@{ schemaVersion = 1; host = 'claude'; commit = $env:GITHUB_SHA; cases = (./scripts/get-eval-provenance.ps1 -CaseDirectory $cases | ConvertFrom-Json) }
+          $record | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath "eval-output/$env:PLUGIN/provenance.json" -Encoding utf8
       - name: Upload results
         if: always()
         uses: actions/upload-artifact@v4

@@ -1,5 +1,5 @@
 {
-  "description": "Help your AI agent finish the job: solve the right problem, keep changes focused, and show what was verified. For Claude Code and Codex.",
+  "description": "Standalone skills for Claude Code and Codex: product discovery, architecture, implementation, technical foundations, reviews and delivery, with explicit scope and verification.",
   "homepage": "https://levnikolaevich.com/projects/claude-code-skills",
   "topics": [
     "agent-skills",

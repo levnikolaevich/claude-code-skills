@@ -1,0 +1,35 @@
+{
+  "name": "engineering-foundation-suite",
+  "version": "1.0.0",
+  "description": "Establish and verify project technical foundations using native stack mechanisms, explicit contracts and safe recovery.",
+  "author": {
+    "name": "Lev Nikolaevich",
+    "email": "levnikolaevich.com@gmail.com",
+    "url": "https://github.com/levnikolaevich"
+  },
+  "homepage": "https://levnikolaevich.com/projects/claude-code-skills",
+  "repository": "https://github.com/levnikolaevich/claude-code-skills",
+  "license": "MIT",
+  "keywords": [
+    "engineering",
+    "security",
+    "reliability"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Engineering Foundation Suite",
+    "shortDescription": "Build reliable foundations",
+    "longDescription": "Establish and verify project technical foundations using native stack mechanisms, explicit contracts and safe recovery.",
+    "developerName": "Lev Nikolaevich",
+    "websiteURL": "https://github.com/levnikolaevich/claude-code-skills",
+    "category": "Productivity",
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Prepare this project technical foundation using its actual stack and existing contracts."
+    ]
+  }
+}

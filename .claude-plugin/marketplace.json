@@ -4,7 +4,7 @@
     "name": "Lev Nikolaevich",
     "email": "levnikolaevich.com@gmail.com"
   },
-  "description": "Help your AI agent finish the job: solve the right problem, keep changes focused, and show what was verified. For Claude Code and Codex.",
+  "description": "Standalone skills for Claude Code and Codex: product discovery, architecture, implementation, technical foundations, reviews and delivery, with explicit scope and verification.",
   "plugins": [
     {
       "name": "product-discovery-suite",
@@ -52,6 +52,12 @@
       "name": "skill-maintenance-suite",
       "description": "Make skills easier to invoke correctly, follow consistently, and verify before distribution.",
       "source": "./plugins/skill-maintenance-suite",
+      "strict": false
+    },
+    {
+      "name": "engineering-foundation-suite",
+      "description": "Establish and verify project technical foundations using native stack mechanisms, explicit contracts and safe recovery.",
+      "source": "./plugins/engineering-foundation-suite",
       "strict": false
     }
   ]

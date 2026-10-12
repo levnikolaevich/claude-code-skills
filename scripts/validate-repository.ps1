@@ -39,6 +39,10 @@ try {
 
     $pluginDirectories = @(Get-ChildItem -LiteralPath "plugins" -Directory | Sort-Object Name)
     Assert-SequenceEqual @($pluginDirectories.Name) @($claudeNames | Sort-Object) "Catalog and plugin directories differ."
+    foreach ($pluginDirectory in $pluginDirectories) {
+        $executableHooks = @([IO.Directory]::EnumerateFileSystemEntries($pluginDirectory.FullName, '*', [IO.SearchOption]::AllDirectories) | Where-Object { [IO.Path]::GetFileName($_) -cin @('hooks', 'hooks.json') })
+        Assert-Condition ($executableHooks.Count -eq 0) "Skill plugin $($pluginDirectory.Name) must not ship hooks or mods: $($executableHooks[0])"
+    }
 
     $codexEntries = @{}
     foreach ($entry in $codexCatalog.plugins) {
@@ -190,11 +194,28 @@ try {
             $prompt = [IO.File]::ReadAllText($promptPath).Replace("`r`n", "`n")
             $invoked = [regex]::Match($prompt, '(?s)\A---\n.*?\n---\n\s*Use the (ln-\d{2}-[a-z0-9-]+) skill\.').Groups[1].Value
             $fired = [regex]::Match([IO.File]::ReadAllText($firedPath), 'ln-\d{2}-[a-z0-9-]+').Value
-            Assert-Condition ($invoked -ceq $fired -and $pluginSkills -ccontains $invoked) "Eval case $caseId must invoke and grade the same skill of its plugin."
+            $tags = [regex]::Match($prompt, '(?m)^tags:\s*\[([^\]]*)\]').Groups[1].Value -split ',' | ForEach-Object { $_.Trim() }
+            $discovery = $tags -ccontains 'discovery'
+            $negative = $tags -ccontains 'negative'
+            Assert-Condition (-not $negative -or $discovery) "Eval case $caseId negative selection requires discovery."
+            if ($discovery) {
+                $body = [regex]::Replace($prompt, '(?s)\A---\n.*?\n---\n', '')
+                Assert-Condition ($body -cnotmatch 'ln-\d{2}-[a-z0-9-]+' -and $pluginSkills -ccontains $fired) "Discovery case $caseId must use natural wording and grade a skill of its plugin."
+                $firedText = [IO.File]::ReadAllText($firedPath)
+                if ($negative) {
+                    Assert-Condition ($firedText -match '(?m)^min:\s*0\s*$' -and $firedText -match '(?m)^max:\s*0\s*$') "Negative discovery case $caseId must forbid skill activation."
+                } else {
+                    Assert-Condition ($firedText -notmatch '(?m)^(?:min|max):\s*0\s*$') "Positive discovery case $caseId must require skill activation."
+                }
+                Assert-Condition (@(Get-ChildItem -LiteralPath (Join-Path $caseDirectory.FullName 'graders') -Filter '*.md' | Where-Object Name -notin @('skill-fired.md', 'verdict.md')).Count -gt 0) "Discovery case $caseId needs an observable outcome grader."
+                $invoked = $fired
+            } else {
+                Assert-Condition ($invoked -ceq $fired -and $pluginSkills -ccontains $invoked) "Eval case $caseId must invoke and grade the same skill of its plugin."
+            }
             $verdictPath = Join-Path $caseDirectory.FullName 'graders/verdict.md'
             $verdictPattern = if (Test-Path -LiteralPath $verdictPath -PathType Leaf) { [regex]::Match([IO.File]::ReadAllText($verdictPath), "(?m)^pattern:\s*'Result:(.*)'\s*$").Groups[1].Value } else { '' }
             $verdictTokens = @([regex]::Matches($verdictPattern, '\b[A-Z][A-Z_]+\b') | ForEach-Object { $_.Value })
-            Assert-Condition ($verdictTokens.Count -gt 0) "Eval case $caseId needs graders/verdict.md matching the Result verdict token."
+            Assert-Condition ($negative -or $verdictTokens.Count -gt 0) "Eval case $caseId needs graders/verdict.md matching the Result verdict token."
             $invokedText = [IO.File]::ReadAllText((Join-Path $repositoryRoot "plugins/$pluginName/skills/$invoked/SKILL.md"))
             foreach ($token in $verdictTokens) {
                 Assert-Condition ($verdictVocabulary -ccontains $token -and $invokedText.Contains("``$token")) "Eval case $caseId verdict grader token $token is not a shared vocabulary verdict of $invoked."
@@ -204,7 +225,7 @@ try {
                 $token = $expectedVerdict.Groups[1].Value
                 Assert-Condition ($verdictTokens -ccontains $token) "Eval case $caseId expected_outcome verdict $token differs from its verdict grader."
             }
-            [void] $coveredSkills.Add($invoked)
+            if (-not $discovery) { [void] $coveredSkills.Add($invoked) }
             $evalCaseCount++
         }
         foreach ($skill in $pluginSkills) {

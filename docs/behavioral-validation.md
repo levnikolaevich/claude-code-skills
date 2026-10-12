@@ -4,7 +4,7 @@ Behavioral evals measure observed agent behavior separately from repository-form
 
 ## Case rules
 
-- The prompt starts with `Use the <skill> skill.`, then states the task as a user would, with only the authorization the task needs. It never reveals the expected answer, the trap or the graders.
+- An explicit-case prompt starts with `Use the <skill> skill.`, then states the task as a user would, with only the authorization the task needs. It never reveals the expected answer, the trap or the graders.
 - `fixture.sh` builds the workspace offline (Git, Python standard library, local fake CLIs and bare remotes inside the workspace) in under 120 seconds.
 - Each case grades the exact verdict token at the start of the **Result** field and at least one observable outcome: file contents, created files, or tool calls such as forbidden commands and executed checks. Any Result/verdict named in `expected_outcome` must match its verdict grader. Use an `llm` grader only for a short domain-quality rubric. A zero exit status or the model's own success claim is never the oracle.
 - `graders/skill-fired.md` is an indicator that the skill loaded; it is excluded from the score in two-arm runs, so the no-plugin baseline shows what the skill contributes.
@@ -30,6 +30,10 @@ pwsh -File scripts/run-codex-evals.ps1 -Plugin <plugin> -Runs 3 -Model <pinned-m
 
 The manually triggered `Behavioral evals` GitHub workflow uploads reports for either host; it needs the `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` repository secret. Claude has explicit model/judge inputs and a per-plugin cost ceiling. Codex has an optional model input, uses that model for judging too, and has no monetary cost ceiling; an empty input selects the CLI default and is not a pinned-model comparison. Local Codex runs inherit global instructions and skills from `CODEX_HOME`; CI uses a fresh home. Record host, explicit model or default-model limitation, skill revision including dirty content, case, score, available baseline delta and isolation limitations. Repeat runs for a failure or unresolved variability, not an arbitrary quota.
 
+## Evidence freshness
+
+Every result binds to content, not to a branch name. The Codex runner records each case's `provenance`: Git blob hashes of the graded skill, its references and the case files, computed by [get-eval-provenance.ps1](../scripts/get-eval-provenance.ps1). The `Behavioral evals` workflow writes the same map to `provenance.json` beside each Claude result. A result is current only while every recorded hash still matches the repository file. A changed file makes it stale, and a result without provenance is unbound: neither supports a claim about the current skills.
+
 ## Scenarios
 
 | Scenario | Required observable evidence | Case |
@@ -49,3 +53,17 @@ The manually triggered `Behavioral evals` GitHub workflow uploads reports for ei
 | Requirements authority | Requirements preserve the committed scope and label the recommendation as optional rather than adding features | [ln-12-requirements-authority](../plugins/product-discovery-suite/evals/ln-12-requirements-authority/prompt.md) |
 
 Every other skill has a `boundary` case that tempts its mutation boundary or evidence threshold. Judge correctness, traceability and side effects from the actual run, not from word count, keywords alone or self-reported success. Preserve the five report fields and the domain checklist; report deviations with the exact prompt, action and violated obligation before changing instructions.
+
+## Discovery and standalone boundaries
+
+Additional cases tagged `discovery` use natural task wording without a skill name. Keep `graders/skill-fired.md` as the expected selection indicator and grade a concrete task outcome separately. Positive discovery requires activation and the applicable Result verdict. A case also tagged `negative` requires `min: 0` and `max: 0` on that indicator; it grades the ordinary requested task without requiring a skill report. Discovery never substitutes for each skill's explicit behavioral case.
+
+For Claude selection checks, use `--ablation none`; two-arm scores exclude the skill-fired indicator and cannot alone establish discovery. Inspect the activation grader for both positive and negative cases. Codex scores the mapped read indicator for discovery cases; explicit-case indicators remain unscored. Successful command output must contain the skill frontmatter and Goal while the command targets SKILL.md; reading a skill is evidence of loading, not proof of following it. Run discovery with the plugin available and record other installed skill/global-instruction contamination. The discovery provenance includes all candidate skill bodies and references in that plugin, since a neighboring description change can affect selection. This is a within-plugin selection check, not proof against every possible installed catalog.
+
+The `standalone` tag makes the Codex runner expose only the explicitly tested skill in the disposable workspace. Claude's standard plugin eval loads the whole plugin; its results alone do not prove singleton installation. Never claim host-independent isolation from a run with other global skills available.
+
+For Codex cross-plugin selection, `-CatalogScope repository` exposes every canonical skill and overrides singleton exposure; provenance then includes every candidate skill file. This remains limited to the repository catalog. `-Backend wsl -WslDistribution <distribution>` runs the installed Linux Codex CLI with the same workspace-write sandbox when the native Windows shell cannot execute. `-AgentHome <path>` selects an independently prepared authentication/configuration home; it does not provision credentials. Reports record backend, CLI version and catalog scope. Trace-based judges also receive final workspace artifact contents, with unavailable large or binary contents explicitly marked; these are observed files, not model assertions. These options do not establish successful behavior without a completed run.
+
+The engineering foundation cases cover project-owner reconciliation across Node.js, Python, .NET and a static site; packaging versus deployment; configuration target rejection; credential precedence; tenant detail and list authorization; safe Node error responses; diagnostic versus durable audit guarantees; replay after a lost response; ambiguous migration targets, version-specific .NET diagnostics and unavailable private-runtime documentation. These are scoped behavioral cases, not a claim that real containers, providers or production recovery were exercised.
+
+Keep source authorship, installed revision and active-session discovery distinct. Before evaluating an installed plugin, inspect its effective source path and content against the intended revision; refresh through the host-supported mechanism only when installation changes are authorized. This repository's development checks do not publish or update either client's installed copy.

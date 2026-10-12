@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: ln-98-lost-response-replay
+context:
+  scaffold_script: fixture.sh

@@ -19,7 +19,7 @@ Keep portable manifests limited to the canonical Agent Plugins schema identifier
 ## Skill rules
 
 - Edit the canonical skill only at `plugins/<plugin>/skills/<skill>/SKILL.md`.
-- Give every skill at least one behavioral eval case in `plugins/<plugin>/evals/<case>/`, in the `claude plugin eval` format, the default location the official evals documentation recommends. A case prompt starts with `Use the <skill> skill.` and its `graders/skill-fired.md` names the same skill. Fixtures are offline and must tempt the boundary they grade; graders prove observable outcomes (files, tool calls, the exact verdict token) rather than self-reported success. Skills never reference eval assets.
+- Give every skill at least one behavioral eval case in `plugins/<plugin>/evals/<case>/`, in the `claude plugin eval` format, the default location the official evals documentation recommends. An explicit case prompt starts with `Use the <skill> skill.` and its `graders/skill-fired.md` names the same skill. Additional `discovery` cases use natural wording without a skill identifier and do not replace explicit coverage; `negative` discovery forbids activation and does not require a skill report verdict. Fixtures are offline and must tempt the boundary they grade; graders prove observable outcomes (files, tool calls, the exact verdict token) rather than self-reported success. Skills never reference eval assets.
 - Keep each skill standalone. It must not require another skill, MCP server, task tracker, separately installed coordinator or worker, or shared runtime. A skill may require host-native independent contexts when that is intrinsic to its outcome and it defines an explicit `BLOCKED` result.
 - Follow [SKILL_TEMPLATE.md](SKILL_TEMPLATE.md), the canonical owner of skill format, detailed checklist accounting, self-check, and common report blocks. Preserve individually verifiable obligations and skill-specific verdicts; validate standalone copies against the template.
 - Preserve evidence rules, tool-selection guidance, safety gates, verdict mapping, output contract, and residual-risk reporting when simplifying.
@@ -74,6 +74,7 @@ The first digit identifies the plugin; the second identifies the skill inside it
 - `6x` — delivery suite
 - `7x` — operations suite
 - `8x` — skill maintenance suite
+- `9x` — engineering foundation suite
 
 Allocate the next unused index inside the relevant plugin. A new plugin receives the next unused leading digit.
 

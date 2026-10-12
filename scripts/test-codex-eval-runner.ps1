@@ -145,7 +145,7 @@ try {
     # Execute the actual changed fixture and its independent oracle; a removed '+' alone is insufficient.
     $checkoutRoot = Join-Path $testRoot 'checkout'
     New-Item -ItemType Directory -Path $checkoutRoot | Out-Null
-    $fixtureShell = if ($IsWindows) { Join-Path (Split-Path (Split-Path (Get-Command git).Source)) 'bin/bash.exe' } else { (Get-Command bash).Source }
+    $fixtureShell = Resolve-BashPath
     $python = if ($IsWindows) { (Get-Command python).Source } else { (Get-Command python3).Source }
     Push-Location $checkoutRoot
     try {
@@ -200,6 +200,44 @@ def export_catalog(store, skus):
         & $python -m unittest *> $null
         Assert-Condition ($LASTEXITCODE -eq 0) 'The retained partial gain must preserve catalog behavior.'
     } finally { Pop-Location }
+
+    # Each foundation oracle must reject the real defect supplied in its fixture.
+    foreach ($foundationCase in @('ln-93-reject-shared-fallback', 'ln-95-tenant-detail-and-list', 'ln-96-safe-node-error', 'ln-98-lost-response-replay')) {
+        $foundationRoot = Join-Path $testRoot $foundationCase
+        New-Item -ItemType Directory -Path $foundationRoot | Out-Null
+        Push-Location $foundationRoot
+        try {
+            $caseRoot = Join-Path $repositoryRoot "plugins/engineering-foundation-suite/evals/$foundationCase"
+            & $fixtureShell ((Join-Path $caseRoot 'fixture.sh').Replace('\', '/')) *> $null
+            Assert-Condition ($LASTEXITCODE -eq 0) "Foundation fixture must scaffold: $foundationCase"
+            & $python 'checks/verify.py' *> (Join-Path $foundationRoot 'baseline-check.log')
+            Assert-Condition ($LASTEXITCODE -ne 0 -and (Test-Path -LiteralPath 'results/acceptance.json')) "Foundation oracle must observe and reject the supplied defect: $foundationCase"
+            $foundationEvidence = @{ Workspace = $foundationRoot; Trace = ''; LastMessage = ''; Created = @(); Commands = @(); Changes = @() }
+            $grader = Test-Grader (Join-Path $caseRoot 'graders/acceptance-result.md') $foundationEvidence @{}
+            Assert-Condition (-not $grader.passed) "A baseline defect must not pass its result grader: $foundationCase"
+            $preserved = @(Get-ChildItem -LiteralPath (Join-Path $caseRoot 'graders') -Filter 'preserve-*.md')
+            foreach ($preserve in $preserved) {
+                Assert-Condition (Test-Grader $preserve.FullName $foundationEvidence @{}).passed "Unchanged oracle and policy files must satisfy preservation: $foundationCase"
+            }
+        } finally { Pop-Location }
+    }
+
+    # Evidence binds to content: the graded skill and every case file, by Git blob hash.
+    $provenance = (& (Join-Path $PSScriptRoot 'get-eval-provenance.ps1') -CaseDirectory (Join-Path $repositoryRoot 'plugins/implementation-suite/evals/ln-41-small-fix') | ConvertFrom-Json -AsHashtable)['ln-41-small-fix']
+    $skillPath = 'plugins/implementation-suite/skills/ln-41-surgical-change-implementer/SKILL.md'
+    Assert-Condition ($provenance.skill -ceq 'ln-41-surgical-change-implementer' -and $provenance.files.Contains('plugins/implementation-suite/evals/ln-41-small-fix/fixture.sh')) 'Provenance must name the graded skill and the case files.'
+    Assert-Condition ($provenance.files[$skillPath] -ceq (git -C $repositoryRoot hash-object $skillPath).Trim()) 'Provenance must record the Git blob hash of the graded skill.'
+
+    $discoveryProvenance = (& (Join-Path $PSScriptRoot 'get-eval-provenance.ps1') -CaseDirectory (Join-Path $repositoryRoot 'plugins/engineering-foundation-suite/evals/ln-92-discover-container') | ConvertFrom-Json -AsHashtable)['ln-92-discover-container']
+    Assert-Condition ($discoveryProvenance.files.Contains('plugins/engineering-foundation-suite/skills/ln-93-configuration-engineer/SKILL.md')) 'Discovery freshness must bind neighboring skill descriptions.'
+    $catalogProvenance = (& (Join-Path $PSScriptRoot 'get-eval-provenance.ps1') -CaseDirectory (Join-Path $repositoryRoot 'plugins/engineering-foundation-suite/evals/ln-92-discover-container') -CatalogScope repository | ConvertFrom-Json -AsHashtable)['ln-92-discover-container']
+    Assert-Condition ($catalogProvenance.files.Contains($skillPath)) 'Repository selection freshness must include competing skills from other plugins.'
+    $negativeGrader = 'plugins/engineering-foundation-suite/evals/ln-92-discovery-unrelated-copy/graders/skill-fired.md'
+    $evidence.Discovery = $true
+    $evidence.SkillReads = @('ln-92-container-engineer')
+    Assert-Condition (-not (Test-CaseGrader $negativeGrader $evidence).passed) 'Unwanted container skill loading must fail negative discovery.'
+    $evidence.SkillReads = @()
+    Assert-Condition (Test-CaseGrader $negativeGrader $evidence).passed 'Ordinary file reading must not count as skill activation.'
 
     Write-Host "Codex eval runner regression checks passed ($regexCount grader patterns, real graders, file mutations, paths and run errors; no model calls)."
 } finally {

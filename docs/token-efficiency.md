@@ -14,11 +14,15 @@ Token efficiency means spending context on decisions and evidence that improve t
 
 The common contract is intentionally copied into each standalone skill. Extracting it into a shared runtime would save source bytes while breaking independent installation. README and the website serve discovery; they are not mandatory inputs to every skill run. Do not split a coherent mandatory checklist into references just to reduce its apparent size.
 
+Select context for the current question: use tool-side filtering, extraction, comparison, and summaries for mechanical processing. Preserve source locations, material exceptions, errors, and evidence completeness; smaller tool output must not conceal relevant findings. Conditional references retain each independent obligation and join completion accounting when loaded. The entrypoint must explicitly clear inapplicable items with a scope reason without requiring that reference to be read.
+
 ## Verification
 
 Compare the same set of names/descriptions before and after an edit with one named tokenizer. Separate discovery metadata from selected skill bodies and conditional resources. Report the encoding and scope: a reference tokenizer count is not an Astra-specific billing estimate, actual host context measurement, or behavioral-quality result.
 
 Check that every body obligation remains intact, that neighboring skills still route distinctly, and that local catalogs agree. Required validation remains mandatory. Rerun successful checks only for relevant changes, failures or unresolved evidence.
+
+Choose local check scope using the [repository validation policy](../AGENTS.md#validation). Focused changes use affected skill and plugin validators; common contracts and distribution-wide changes need broader coverage. Reuse passing evidence only for matching state. These local scopes do not reduce mandatory CI coverage.
 
 Behavioral evaluation is separate: use the [isolated scenarios](behavioral-validation.md) to test task completion, misrouting, unnecessary work and side effects. Do not claim behavioral improvement from smaller descriptions alone.
 

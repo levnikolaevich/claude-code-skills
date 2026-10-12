@@ -7,13 +7,13 @@ description: "Reviews skill instructions, trigger boundaries and distribution co
 
 **Goal:** Review skill quality and configured distribution surfaces without modifying reviewed source or external systems. Distinguish static contract assurance from observed execution behavior.
 
-**Execution contract:** The checklist defines completion. Track each item internally as `PENDING`, `PROVEN` with evidence, `CLEARED` with evidence its condition is absent, or `UNPROVEN` with a gap; reading, delegation, tool failure, a zero exit status, or a self-reported success is not proof; only the observed outcome is. Reconcile after each section. Before returning, resolve all `PENDING`, count only `PROVEN` and `CLEARED`, and apply verdict and approval rules to every gap.
-Preserve intent, scope, and existing authorization. Continue authorized work; ask only for consequential unresolved choices or required external approval. When no one can answer during the run, state the exact question and apply the skill's verdict for the remaining gap instead of waiting or guessing. Scale depth to material risk without skipping checks. Preserve dependency and safety order; otherwise choose an appropriate verification method.
-Accept equivalent user or repository evidence; no other skill, named artifact, or complete lifecycle is required. Preserve source requirement and decision IDs. Bind reused evidence to relevant source versions, dirty changes, configuration, and environment; invalidate only affected claims.
-Choose one primary workflow by the requested outcome, honoring explicit selection. Consume neighboring contracts and valid evidence without duplicating ownership or restarting a full audit. Split genuinely distinct deliverables by scope, not by mandatory skill invocation. Broad independent assessments belong to audit workflows; focused reviews may stay with the domain workflow but remain read-only.
-On continuation, reconcile task, authorization, current state, and unresolved evidence. For long work, return a compact continuation record or update an already authorized artifact; read-only skills do not persist it. Distinguish artifact readiness, verified behavior, and external-action authority.
-Prepare authorized work before required approval. If blocked by an instruction, cite its exact source and unresolved boundary; do not invent approval gates from caution.
-Before a new or changed technical decision, establish applicability and actual technology versions, then verify version-dependent assumptions against official documentation or specifications even when confident. Search and read primary pages for current external recommendations; search snippets are not evidence. Version-matched bundled documentation or still-valid prior evidence can suffice. Record the decision, applicable version, source and limitations. If evidence is unavailable, mark the affected conclusion UNVERIFIED and block only dependent work when essential. Prefer native mechanisms; add tools or abstractions only for an evidenced requirement. Reuse the existing project rule owner instead of creating parallel policy.
+**Execution contract:** Track every checklist item as `PENDING`, `PROVEN` with observed outcome evidence, `CLEARED` with evidence its condition is absent, or `UNPROVEN` with a gap. Reading, delegation, tool failure, zero exit status, and self-reported success are not proof. Reconcile after each section; before returning, resolve all `PENDING`, count only `PROVEN` and `CLEARED`, and apply verdict and approval rules to every gap.
+Preserve intent, scope, mode, and existing authorization. Complete authorized work before required external approval; ask only consequential unresolved choices. If nobody can answer, report the exact question and apply the skill's gap verdict without waiting or guessing. Cite any blocking instruction and unresolved boundary; never invent approval gates. Scale depth to material risk; preserve mandatory checks, dependencies, and safety order while choosing verification methods.
+Accept equivalent user or repository evidence without requiring another skill, named artifact, or full lifecycle. Preserve source requirement and decision IDs. Bind reused evidence to relevant versions, dirty changes, configuration, environment, and observation windows; invalidate only affected claims.
+Choose the primary workflow by outcome and explicit selection. Consume neighboring contracts and valid evidence without duplicating ownership or restarting audits. Split distinct deliverables by scope, not mandatory skill invocation. Broad independent assessments use audit workflows; focused domain reviews remain read-only.
+On continuation, reconcile task, authorization, state, and gaps. Return a compact continuation record for long work or update an already authorized artifact; read-only skills do not persist it. Distinguish artifact readiness, verified behavior, and external-action authority.
+Before retrieval, define the evidence question; read selectively without skipping applicable instructions. Use tools for mechanical processing; summarize bounded results, errors, coverage, and source paths, keeping full output outside context.
+Before technical decisions, establish applicability and actual versions; verify version-dependent assumptions against official documentation or specifications. Search and read primary pages for current external recommendations; snippets are not evidence. Version-matched bundled documentation or valid prior evidence suffices. Record decision, version, source, and limitations. Mark unavailable evidence UNVERIFIED; block only essential dependent work. Prefer native mechanisms, justify added tools or abstractions with evidence, and reuse the existing rule owner.
 
 
 ## Tool Routing
@@ -66,7 +66,7 @@ This workflow reviews skill behavior and distribution read-only. Creating projec
 - [ ] Discover and run every repository-required skill validator for the changed skill directories; do not assume a validator name or location absent from repository evidence.
 - [ ] If a required validator is unavailable, manually validate YAML parsing, naming, description constraints, and required file layout against the repository and host contracts.
 - [ ] Run every repository-required plugin or package validator for affected distribution units.
-- [ ] Run each host-native strict validator when its corresponding catalog or manifest exists; record its actual coverage and do not treat marketplace validation as skill-frontmatter validation unless the host demonstrably traverses those skills.
+- [ ] Run host-native strict validators for affected catalogs or manifests, plus any wider checks required by repository policy. Reuse valid passing evidence without rerunning unchanged checks; record actual coverage and do not treat marketplace validation as skill-frontmatter validation unless the host demonstrably traverses those skills.
 - [ ] Parse all configured catalogs; compare plugin names and ordering only when repository policy requires cross-host parity.
 - [ ] Confirm every declared catalog source, manifest path, and skill path exists.
 - [ ] Confirm duplicated metadata such as plugin descriptions agree wherever the repository requires parity.
@@ -76,20 +76,7 @@ This workflow reviews skill behavior and distribution read-only. Creating projec
 
 ### Behavioral Review When In Scope
 
-- [ ] Apply this phase only when behavioral execution is in scope and authorized; otherwise mark its execution-only items `CLEARED` with the scope reason and state that behavior was not tested. Static inspection does not prove activation or execution quality.
-- [ ] Derive representative positive prompts from the stated trigger rather than from the skill title alone.
-- [ ] Derive close negative prompts from adjacent capabilities and likely ambiguous user wording.
-- [ ] Verify the skill would activate for the positive prompts and remain inactive for close negatives.
-- [ ] Walk at least one normal scenario, one missing-evidence scenario, and one safety-boundary scenario.
-- [ ] When the skill writes code or other artifacts, evaluate a real agent-produced result and diff against an independent task contract; do not substitute prose review, answer brevity, or static inspection for execution behavior.
-- [ ] For skills that implement bug fixes, test a report naming one caller while a sibling shares the faulty logic. Verify the shared invariant and valid behavior through both entrypoints; reject symptom-only repair. Keep the sibling oracle out of the task prompt.
-- [ ] For code-writing skills that promise reuse, provide a canonical helper whose required edge behavior differs from a plausible reimplementation. Verify reuse in the produced code and preservation of that behavior; happy-path output is insufficient. Keep the helper discoverable without naming its location in the task prompt.
-- [ ] Grade task completeness, correctness, safety, scope containment, and cleanup independently; treat code or token reduction as supporting evidence only after the required outcome passes.
-- [ ] For complex or high-risk changes, use available fresh independent contexts with only the skill and raw task artifacts.
-- [ ] Keep expected findings, intended fixes, and prior conclusions out of independent evaluation inputs.
-- [ ] Treat a forward test that succeeds only with leaked context as a skill defect.
-- [ ] Check independent contexts for contamination from globally installed skills, hooks, plugins, user instructions, environment settings, caches, or artifacts; prove target-skill activation and invalidate an arm whose behavior cannot be attributed reliably.
-- [ ] Do not create or retain an evaluation harness unless a concrete recurring failure proves it necessary.
+- [ ] Load [behavioral-review.md](references/behavioral-review.md) only when behavioral execution is in scope and authorized. Its 13 independent checklist items join this checklist's completion accounting after loading. In static-only mode, do not read the reference; mark its 13 execution-only items `CLEARED` with the scope reason, include them in the completion total, and state that behavior was not tested. Static inspection does not prove activation or execution quality.
 
 ### Evidence Rules
 

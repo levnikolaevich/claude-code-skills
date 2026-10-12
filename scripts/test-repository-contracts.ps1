@@ -92,7 +92,11 @@ try {
     $contractFixture = New-RepositoryFixture "changed-execution-contract"
     $contractPath = Join-Path $contractFixture "plugins/implementation-suite/skills/ln-41-surgical-change-implementer/SKILL.md"
     $contractText = [IO.File]::ReadAllText($contractPath)
-    $contractText = $contractText.Replace('reading, delegation, tool failure, a zero exit status, or a self-reported success is not proof', 'reading alone is proof')
+    $contractMarker = '**Execution contract:**'
+    Assert-Condition ($contractText.Contains($contractMarker)) 'Fixture source is missing the execution contract marker.'
+    $originalContractText = $contractText
+    $contractText = $contractText.Replace($contractMarker, "$contractMarker Fixture-only contract divergence.")
+    Assert-Condition ($contractText -cne $originalContractText) 'Execution contract fixture mutation did not change the source.'
     [IO.File]::WriteAllText($contractPath, $contractText)
     Assert-ValidatorFailure $contractFixture "differs from SKILL_TEMPLATE.md"
 

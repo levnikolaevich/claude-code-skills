@@ -2,6 +2,8 @@
 
 Use the [general working rules template](AGENTS.md) to set personal defaults across projects: autonomous work within scope, evidence before technical decisions, proportionate verification, and clear completion reports. This is an optional user configuration, separate from the skill plugins. Installing a plugin does not install or modify these instructions.
 
+Its model and workflow efficiency section helps focus context on the current question, use tools for mechanical processing, bound work after sample acceptance, and coordinate through evidence and checkpoints.
+
 The repository template is the source for your initial copy. After personalization, your local copy owns your preferences; later template changes should be reviewed and merged deliberately.
 
 ## Personalize and connect

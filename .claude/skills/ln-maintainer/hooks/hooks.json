@@ -1,0 +1,4 @@
+{
+  "description": "Repository maintainer mod: contract validation after edits, ln skill verdict status and eval freshness pane",
+  "modules": ["./register.tsx"]
+}

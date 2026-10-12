@@ -42,3 +42,17 @@ jobs:
       - name: Test Codex eval evidence regressions
         shell: pwsh
         run: ./scripts/test-codex-eval-runner.ps1
+
+      - name: Validate maintainer mod and its allowed calls
+        run: |
+          report=$(claude plugin validate .claude/skills/ln-maintainer --strict)
+          echo "$report"
+          calls=$(grep -E 'register\.tsx calls:' <<<"$report" || true)
+          [ -n "$calls" ] || { echo "::error::The validator did not list the maintainer mod's calls."; exit 1; }
+          if grep -Eq '\$\.(agent|model|prompt)\.|\$\.tool\.register' <<<"$calls"; then
+            echo "::error::The maintainer mod may not orchestrate agents, submit prompts, call models or register tools."
+            exit 1
+          fi
+
+      - name: Test maintainer mod
+        run: claude plugin test .claude/skills/ln-maintainer

@@ -1,0 +1,23 @@
+{
+  "name": "ln-maintainer",
+  "version": "0.1.0",
+  "description": "Maintainer tooling for this skills repository: validates contracts after edits, shows each ln skill's verdict, and lists eval freshness in /ln-evals.",
+  "author": {
+    "name": "Lev Nikolaevich"
+  },
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "pwshPath": {
+      "type": "string",
+      "title": "PowerShell 7 executable",
+      "description": "Command or absolute path that runs scripts/validate-repository.ps1",
+      "default": "pwsh"
+    },
+    "validateOnEdit": {
+      "type": "boolean",
+      "title": "Validate after edits",
+      "description": "Run the repository validator after edits to skills, templates, catalogs and maintainer documents",
+      "default": true
+    }
+  }
+}

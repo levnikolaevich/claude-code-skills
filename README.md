@@ -1,38 +1,24 @@
 # Claude-Codex Skills
 
-**Give your AI agent a clear finish line.**
-
-You ask for a fix and get a new abstraction. A review lists generic advice. The agent says “done,” but you still have to work out what it checked.
-
-These skills give Claude Code and Codex a concrete way to finish the task: establish the intended outcome, work within scope, verify the result, and make remaining gaps explicit. Choose the skill for the problem in front of you.
+Open-source standalone agent skills, distributed as plugins for Claude Code and OpenAI Codex, help turn product ideas, code fixes, architecture reviews and deployments into scoped work with a verifiable result. Each workflow defines what to check, what it may change, and how to report evidence and remaining gaps.
 
 [Project page](https://levnikolaevich.com/projects/claude-code-skills) · [Install](#install) · [Full catalog](#lifecycle-and-plugins)
 
-## What changes in your workflow
-
-- **A clearer target.** Turn an idea, bug report, or incident into an outcome the agent can check.
-- **Focused work.** Reuse existing capabilities, fix the owning cause, and remove what the change makes obsolete.
-- **Reusable technical rules.** Establish project-specific container, configuration, access, error, logging and recovery contracts from the actual stack and applicable official documentation.
-- **A result you can assess.** See the evidence, failed or unavailable checks, and remaining risks behind the verdict.
-- **Control over consequential actions.** Reviews report findings; implementation stays within the agreed scope; publication and deployment follow their authorization boundaries.
-
 ## Choose a route
 
-Start where you need help. Each skill works independently; a small fix does not require a full lifecycle or audit.
+Choose by the result you need. Each skill works independently.
 
-| Your problem | Plugin to install | Useful result |
+| Your task | Plugin | Result |
 |---|---|---|
-| Is this idea worth building? | `product-discovery-suite` | A reasoned opportunity decision, clear requirements, or a usable interaction design. |
-| How should this system change? | `architecture-suite` | An evidence-backed system map, design decision, or migration approach. |
-| Is this plan ready to implement? | `delivery-planning-suite` | Missing decisions exposed, work sequenced, and verification planned. |
-| Fix, upgrade, simplify, or speed up this code. | `implementation-suite` | A bounded change checked against the intended behavior and benefit. |
-| What could go wrong with this delivery or codebase? | `quality-assurance-suite` | Prioritized findings tied to evidence, or acceptance tests for the agreed scope. |
-| Get this change published or deployed. | `delivery-suite` | The authorized destination updated and the observed result checked. |
-| Why did this fail, or did the feature help? | `operations-suite` | An evidence-backed diagnosis or product outcome assessment. |
-| Can I trust the instructions in this skill? | `skill-maintenance-suite` | A review of its boundaries, consistency, and distribution readiness. |
-| Prepare containers, configuration, access control or recovery. | `engineering-foundation-suite` | Native technical contracts and verified changes. |
-
-For a larger task, combine only the steps needed to resolve decisions and produce evidence. Supplied requirements, existing designs, and current tests are valid starting points. Implementation includes its own verification; a separate test-building or review skill is optional.
+| Is this idea worth building? | `product-discovery-suite` | Opportunity assessment, requirements, or interaction design. |
+| How should this system change? | `architecture-suite` | System map, design decision, or migration plan. |
+| Is this plan ready to implement? | `delivery-planning-suite` | Reviewed plan, ordered work, and test strategy. |
+| Fix, upgrade, simplify, or speed up this code. | `implementation-suite` | Scoped change with behavior and benefit checks. |
+| What could go wrong with this delivery or codebase? | `quality-assurance-suite` | Evidence-backed findings or scoped acceptance tests. |
+| Get this change published or deployed. | `delivery-suite` | Authorized publication or deployment, verified at its destination. |
+| Why did this fail, or did the feature help? | `operations-suite` | Incident diagnosis or product outcome assessment. |
+| Can I trust the instructions in this skill? | `skill-maintenance-suite` | Skill boundaries, consistency, and distribution review. |
+| Prepare Docker containers, configuration, access control or recovery. | `engineering-foundation-suite` | Native technical contracts and verified changes. |
 
 ## Install
 
@@ -55,38 +41,9 @@ codex plugin add implementation-suite@levnikolaevich-skills-marketplace
 
 Invoke a skill by its full name: `/implementation-suite:ln-41-surgical-change-implementer` in Claude Code or `$ln-41-surgical-change-implementer` in Codex, followed by your task. For example: “Fix the total calculation when an item has a discount. Preserve the current rounding rules.”
 
-For the technical foundation skills, install `engineering-foundation-suite` with the same commands. Use `ln-91-engineering-baseline-builder` to establish project guidance, or select a specialist directly for an authorized technical change. Neither requires running the entire suite.
-
 For personal defaults shared by Claude Code and Codex, use the optional [user instructions template and connection guide](templates/user-instructions/README.md). Personalize and merge it into your existing configuration; plugin installation does not change global instructions.
 
-### Update an installed plugin
-
-For a Git-backed marketplace, refresh the catalog first, then update the plugin you use:
-
-```text
-claude plugin marketplace update levnikolaevich-skills-marketplace
-claude plugin update engineering-foundation-suite@levnikolaevich-skills-marketplace
-
-codex plugin marketplace upgrade levnikolaevich-skills-marketplace
-codex plugin add engineering-foundation-suite@levnikolaevich-skills-marketplace
-```
-
-For a local-directory marketplace, update that checkout first; Codex marketplace upgrade applies only to Git sources. Refresh the installed plugin afterward. Follow Claude's reload/restart instruction and start a new Codex session to use the updated skills. Editing a source checkout alone does not establish that the installed cache or an existing session has refreshed.
-
 ## Lifecycle and plugins
-
-Standalone skills for Claude Code and Codex, grouped by the work you need to do. Browse the outcomes below to find the right skill for your task.
-
-```text
-1 Product discovery → 2 Architecture → 3 Delivery planning
- → 4 Implementation → 5 Quality assurance → 6 Delivery → 7 Operations
- ↑ Product feedback / architecture changes / operational remediation ↵
-
-8 Skill maintenance supports the collection itself.
-9 Engineering foundation supports technical contracts and implementation.
-```
-
-The numbers group skills by task. Install one family or combine the capabilities you need.
 
 ### Product Discovery Suite
 
@@ -191,31 +148,19 @@ Establish and verify project technical foundations using native stack mechanisms
 | 98 | [Mutation Reliability Engineer](plugins/engineering-foundation-suite/skills/ln-98-mutation-reliability-engineer/SKILL.md) | Implements transactions, idempotency and interrupted-operation recovery; not schema migration or a mandatory background-job platform. |
 | 99 | [Database Lifecycle Engineer](plugins/engineering-foundation-suite/skills/ln-99-database-lifecycle-engineer/SKILL.md) | Prepares and verifies schema migrations, database roles and isolated recovery or test resources; not query tuning or runtime mutation orchestration. |
 
-## Choosing between adjacent workflows
+## Update an installed plugin
 
-Choose by the requested result. Mentioning Docker, a database or permissions in a small bug fix does not require a foundation overhaul. These distinctions summarize the skills; each linked skill remains the owner of its workflow.
+For a Git-backed marketplace, refresh the catalog, then update your plugin:
 
-Use one primary workflow for the requested outcome, honoring an explicit choice. Reuse neighboring contracts and evidence; separate distinct deliverables without making a chain of skill calls mandatory. A focused domain review remains read-only; a broad independent assessment belongs to an auditor.
+```text
+claude plugin marketplace update levnikolaevich-skills-marketplace
+claude plugin update implementation-suite@levnikolaevich-skills-marketplace
 
-| Requested result | Choose | Boundary |
-|---|---|---|
-| Measurable architecture requirements | `ln-21` | Defines drivers and targets; `ln-91` translates accepted decisions into project technical guidance. |
-| Project rules and recurring procedures | `ln-91` | Changes guidance only; implementation remains a separately scoped outcome. |
-| One product fix or feature | `ln-41` | Applies existing contracts; `9x` establishes or repairs a technical contract when that is the primary task. |
-| Reduced maintenance cost | `ln-43` | Requires demonstrated modernization value; technical guarantees belong to the applicable foundation skill. |
-| Findings without repairs | `ln-54`, `ln-56`, `ln-57` | Audits remain read-only, including when they identify foundation defects. |
-| Image and local packaging | `ln-92` | Remote rollout and health belong to `ln-63`; configuration semantics belong to `ln-93`. |
-| Base-image or runtime version upgrade | `ln-42` | Owns version compatibility; packaging redesign remains with `ln-92`. |
-| Identity, permission or resource scope | `ln-94`, `ln-95` | Authentication establishes an actor; authorization evaluates actions and resources. |
-| Consumer errors, diagnostics or durable effects | `ln-96`, `ln-97`, `ln-98` | Separate public outcome, diagnostic emission and authoritative effect/recovery state. |
-| Schema delivery or database recovery | `ln-99` | Runtime replay belongs to `ln-98`; read-only persistence findings belong to `ln-57`. |
-| Focused migration review | `ln-99` in read-only mode | A broad independent persistence assessment belongs to `ln-57`; do not duplicate the review. |
-| Durable audit-ledger feature | `ln-41` | Implements approved record, access, retention and integrity requirements; `ln-98` owns effect consistency. `ln-97` owns operational diagnostics. |
-| Incident diagnosis or instruction review | `ln-71`, `ln-81` | Neither authorizes implementing remediation. |
+codex plugin marketplace upgrade levnikolaevich-skills-marketplace
+codex plugin add implementation-suite@levnikolaevich-skills-marketplace
+```
 
-For a new technical baseline, use the existing project documents as canonical owners. Keep short constraints and conditional routing in agent instructions; create local skills only for recurring procedures. Preserve exact mutable values in executable configuration. Supported host imports should reference the same rules rather than maintain independent copies. Existing checks enforce suitable invariants; prose alone does not guarantee compliance.
-
-Technical decisions require applicable official evidence, including version-matched bundled documentation or valid prior research. Natural-language discovery can be evaluated separately from explicit invocation; available scenarios and static validation do not prove successful selection. Installed plugin revisions and client context can affect selection. Source edits do not update already installed copies.
+For a local-directory marketplace, update its checkout first, then refresh the installed plugin; Codex marketplace upgrade supports Git sources only. Follow Claude's reload/restart instruction and start a new Codex session. Source edits alone do not refresh the installed cache or an existing session.
 
 ## License
 

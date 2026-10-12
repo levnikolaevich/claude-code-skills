@@ -34,6 +34,8 @@ The manually triggered `Behavioral evals` GitHub workflow uploads reports for ei
 
 Every result binds to content, not to a branch name. The Codex runner records each case's `provenance`: Git blob hashes of the graded skill, its references and the case files, computed by [get-eval-provenance.ps1](../scripts/get-eval-provenance.ps1). The `Behavioral evals` workflow writes the same map to `provenance.json` beside each Claude result. A result is current only while every recorded hash still matches the repository file. A changed file makes it stale, and a result without provenance is unbound: neither supports a claim about the current skills.
 
+In Claude Code, the repository mod's `/ln-evals` command lists every case as current, STALE, unbound or NOT RUN from `.eval-results/`. Download CI results there first, for example `gh run download <run-id> -D .eval-results/ci/<run-id>`.
+
 ## Scenarios
 
 | Scenario | Required observable evidence | Case |

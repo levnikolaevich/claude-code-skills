@@ -57,6 +57,8 @@ Invoke a skill by its full name: `/implementation-suite:ln-41-surgical-change-im
 
 For the technical foundation skills, install `engineering-foundation-suite` with the same commands. Use `ln-91-engineering-baseline-builder` to establish project guidance, or select a specialist directly for an authorized technical change. Neither requires running the entire suite.
 
+For personal defaults shared by Claude Code and Codex, use the optional [user instructions template and connection guide](templates/user-instructions/README.md). Personalize and merge it into your existing configuration; plugin installation does not change global instructions.
+
 ### Update an installed plugin
 
 For a Git-backed marketplace, refresh the catalog first, then update the plugin you use:

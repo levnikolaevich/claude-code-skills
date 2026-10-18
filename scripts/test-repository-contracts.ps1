@@ -153,6 +153,13 @@ try {
     [IO.File]::WriteAllText($policyPath, $policyText)
     Assert-ValidatorFailure $policyFixture 'shared rule differs from SKILL_TEMPLATE.md: Test value and boundary'
 
+    $enforcementFixture = New-RepositoryFixture 'weakened-engineering-enforcement'
+    $enforcementPath = Join-Path $enforcementFixture 'plugins/implementation-suite/skills/ln-46-quality-gate-engineer/SKILL.md'
+    $enforcementText = [IO.File]::ReadAllText($enforcementPath)
+    Assert-Condition ($enforcementText.Contains('preserve mandated presets and warning policy', [StringComparison]::OrdinalIgnoreCase)) 'Fixture source is missing engineering enforcement.'
+    [IO.File]::WriteAllText($enforcementPath, $enforcementText.Replace('preserve mandated presets and warning policy', 'disable mandatory rules for a green result', [StringComparison]::OrdinalIgnoreCase))
+    Assert-ValidatorFailure $enforcementFixture 'shared rule differs from SKILL_TEMPLATE.md: Engineering enforcement'
+
     $policyPlacementFixture = New-RepositoryFixture 'misplaced-test-policy'
     $policyPlacementPath = Join-Path $policyPlacementFixture 'plugins/delivery-planning-suite/skills/ln-31-delivery-plan-builder/SKILL.md'
     $policyPlacementText = [IO.File]::ReadAllText($policyPlacementPath)

@@ -12,6 +12,8 @@ Preserve intent, scope, mode, and existing authorization. Complete authorized wo
 Accept equivalent user or repository evidence without requiring another skill, named artifact, or full lifecycle. Preserve source requirement and decision IDs. Bind reused evidence to relevant versions, dirty changes, configuration, environment, and observation windows; invalidate only affected claims.
 Choose the primary workflow by outcome and explicit selection. Consume neighboring contracts and valid evidence without duplicating ownership or restarting audits. Split distinct deliverables by scope, not mandatory skill invocation. Broad independent assessments use audit workflows; focused domain reviews remain read-only.
 On continuation, reconcile task, authorization, state, and gaps. Return a compact continuation record for long work or update an already authorized artifact; read-only skills do not persist it. Distinguish artifact readiness, verified behavior, and external-action authority.
+Trace applicable requirements to their authoritative owner, planned or implemented change, acceptance evidence and status in the existing artifact or response; no new registry is required. Explicit constraints remain binding until an authorized deviation; risk determines priority, not permission to ignore them.
+Investigate the causal flow beyond initially named files. Within implementation authority, include structural repair needed for the outcome; minimize total complexity and risk, not changed lines. This does not authorize unrelated cleanup or mutation during review.
 Before retrieval, define the evidence question; read selectively without skipping applicable instructions. Use tools for mechanical processing; summarize bounded results, errors, coverage, and source paths, keeping full output outside context.
 Before technical decisions, establish applicability and actual versions; verify version-dependent assumptions against official documentation or specifications. Search and read primary pages for current external recommendations; snippets are not evidence. Version-matched bundled documentation or valid prior evidence suffices. Record decision, version, source, and limitations. Mark unavailable evidence UNVERIFIED; block only essential dependent work. Prefer native mechanisms, justify added tools or abstractions with evidence, and reuse the existing rule owner.
 
@@ -67,6 +69,8 @@ This workflow owns read-only cross-cutting findings. Foundation engineering owns
 - [ ] Find stale skip, quarantine, allow-failure, continue-on-error, and warning-suppression paths that make required signals appear green.
 - [ ] Check configuration completeness, required environment validation, unsafe fallbacks, missing examples, and differences between local, CI, and deployment settings.
 
+- [ ] **Engineering enforcement:** Map applicable technical rules to executable checks, covered technologies/files, strictness and documented exceptions. Identify missing or ineffective checks and their implementation owner; preserve mandated presets and warning policy. Bind evidence to the actual command and supported environment, not configuration presence. Read-only workflows report gaps without repairing them; guidance-only workflows describe controls without executing or implementing them.
+
 ### 3. Audit Maintainability and Dependencies
 
 - [ ] Find evidence-backed duplication across functions, handlers, modules, configuration, and integration code; distinguish shared domain concepts from coincidental similarity.
@@ -99,7 +103,7 @@ This workflow owns read-only cross-cutting findings. Foundation engineering owns
 - [ ] Research external APIs, standards, vulnerabilities, and runtime behavior only when they can change a finding, using official sources matching the relevant version.
 - [ ] Filter framework conventions, generated code, bounded administrative paths, tests, examples, and documented tradeoffs before confirming a candidate.
 - [ ] Reproduce high-severity issues with a safe command, test, minimal call trace, or complete static failure path whenever possible.
-- [ ] Apply the materiality gate: require concrete failure, security, delivery, operability, or recurring maintenance impact at evidenced scale. Reject taste, theoretical purity, generic practice, hypothetical scale, and reasonable alternatives; require the outcome or constraint, not a preferred implementation.
+- [ ] Apply the materiality gate: require a proven violation of an applicable accepted rule or concrete failure, security, delivery, operability, or recurring maintenance impact at evidenced scale. Reject taste, theoretical purity, generic practice, hypothetical scale, and reasonable alternatives; require the outcome or constraint, not a preferred implementation.
 - [ ] **External correction evidence:** Ground external corrections in version-matched official contracts, using primary engineering sources for unresolved tradeoffs. Cite the supported mechanism; local evidence suffices for local defects.
 - [ ] For each accepted finding, identify the bounded owning capability and observable correction evidence so remediation can proceed without repeating the audit or authorizing unrelated cleanup.
 - [ ] Classify findings as `P0`-`P3` based on exploitability, data or availability impact, delivery blockage, recurrence, and remediation urgency.

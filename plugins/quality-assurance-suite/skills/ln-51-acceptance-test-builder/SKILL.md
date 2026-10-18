@@ -12,6 +12,8 @@ Preserve intent, scope, mode, and existing authorization. Complete authorized wo
 Accept equivalent user or repository evidence without requiring another skill, named artifact, or full lifecycle. Preserve source requirement and decision IDs. Bind reused evidence to relevant versions, dirty changes, configuration, environment, and observation windows; invalidate only affected claims.
 Choose the primary workflow by outcome and explicit selection. Consume neighboring contracts and valid evidence without duplicating ownership or restarting audits. Split distinct deliverables by scope, not mandatory skill invocation. Broad independent assessments use audit workflows; focused domain reviews remain read-only.
 On continuation, reconcile task, authorization, state, and gaps. Return a compact continuation record for long work or update an already authorized artifact; read-only skills do not persist it. Distinguish artifact readiness, verified behavior, and external-action authority.
+Trace applicable requirements to their authoritative owner, planned or implemented change, acceptance evidence and status in the existing artifact or response; no new registry is required. Explicit constraints remain binding until an authorized deviation; risk determines priority, not permission to ignore them.
+Investigate the causal flow beyond initially named files. Within implementation authority, include structural repair needed for the outcome; minimize total complexity and risk, not changed lines. This does not authorize unrelated cleanup or mutation during review.
 Before retrieval, define the evidence question; read selectively without skipping applicable instructions. Use tools for mechanical processing; summarize bounded results, errors, coverage, and source paths, keeping full output outside context.
 Before technical decisions, establish applicability and actual versions; verify version-dependent assumptions against official documentation or specifications. Search and read primary pages for current external recommendations; snippets are not evidence. Version-matched bundled documentation or valid prior evidence suffices. Record decision, version, source, and limitations. Mark unavailable evidence UNVERIFIED; block only essential dependent work. Prefer native mechanisms, justify added tools or abstractions with evidence, and reuse the existing rule owner.
 
@@ -44,6 +46,8 @@ This workflow owns acceptance evidence and approved test artifacts, not product 
 - Treat `KEEP`, `ADD`, `UPDATE`, `MERGE`, `DELETE`, and `NO_TEST` as portfolio decisions, distinct from execution results. Do not default to `ADD` when existing evidence, consolidation, retirement, or accepted residual risk is the better answer.
 - Delete or merge only when the test basis is obsolete or evidence shows that all still-required unique material behavior, failure modes, oracle strength, and useful failure localization remain covered.
 
+Product acceptance remains this workflow's outcome. Tests of custom analyzers or check launchers belong to the authorized engineering-tooling change; do not reject those controls merely because they are not business scenarios.
+
 ## Checklist
 
 ### 1. Establish the Change Boundary
@@ -60,7 +64,7 @@ This workflow owns acceptance evidence and approved test artifacts, not product 
 
 - [ ] Define the protected outcome, defect class, setup, action, terminal outcome, independent oracle, expected evidence, and cleanup for every requirement.
 - [ ] Confirm or derive one portfolio action per affected test and material risk. When no approved strategy exists, justify the action from impact, plausible failure, uniqueness, trust, and maintenance cost; record `NO_TEST` with existing proof, another control, or accepted residual risk.
-- [ ] **Test value and boundary:** Require every test to detect a concrete defect in this product's business logic and name the protected business outcome. Prefer E2E through user or external-system boundaries; use integration or unit tests only for business scenarios difficult to exercise reliably through E2E. Reject platform, trivial-wiring, implementation-detail, and duplicate proof with no distinct business failure signal.
+- [ ] **Test value and boundary:** For product tests, require every test to detect a concrete defect in this product's business logic and name the protected business outcome. Prefer E2E through user or external-system boundaries; use integration or unit tests only for business scenarios difficult to exercise reliably through E2E. Reject platform, trivial-wiring, implementation-detail, and duplicate proof with no distinct business failure signal. Engineering checks separately prove declared type, architecture, tooling or delivery constraints; validate their rejection and acceptance behavior without inventing a business-test rationale.
 - [ ] Include invalid, authorization, boundary, partial-failure, retry, idempotency, recovery, and compatibility behavior only when it can materially change the protected outcome.
 - [ ] Allocate unique or namespaced test data and control clock, randomness, locale, ordering, and concurrency where they affect reproducibility.
 - [ ] Use real dependencies or approved emulators when mocks would bypass the behavior under acceptance; pin versions and verify readiness and reset behavior.

@@ -59,7 +59,12 @@ Keep portable manifests limited to the canonical Agent Plugins schema identifier
 | Plugin identity and membership | Canonical plugin/skill directories and the index rules below | Both catalogs and plugin manifests |
 | Plugin display metadata and version | `.codex-plugin/plugin.json`; `description` owns its long form | `interface.longDescription`, Claude catalog and README |
 | Repository description, homepage and topics | `.github/repository-metadata.json` | README project link, plugin homepages, applicable marketplace metadata and remote GitHub About |
+| Reusable personal defaults | `templates/user-instructions/AGENTS.md` | Optional initial copy; the personalized global file owns subsequent preferences |
+| Target-project requirements, engineering policy and decisions | The target project's accepted requirements, standards and ADRs | Skills consume constraints; they do not replace policy with examples |
+| Target-project mutable settings and commands | Executable configuration and native command definitions | Guidance links owners; checks prove enforcement |
 | Repository maintenance and publication rules | `AGENTS.md` | `CLAUDE.md` imports it |
+
+The [engineering contract map](docs/engineering-contracts.md) explains outcome routing and applicability as a projection of these owners; it is maintainer guidance, not a runtime registry or a skill dependency. Historical memory is context, not normative project policy.
 
 Within a skill, keep each rule at its narrowest operational owner. Required standalone copies are distribution copies, not independent authorities; references own conditional procedures and entrypoints specify when to load them.
 

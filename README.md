@@ -14,6 +14,7 @@ Choose by the result you need. Each skill works independently.
 | How should this system change? | `architecture-suite` | System map, design decision, or migration plan. |
 | Is this plan ready to implement? | `delivery-planning-suite` | Reviewed plan, ordered work, and test strategy. |
 | Fix, upgrade, simplify, or speed up this code. | `implementation-suite` | Scoped change with behavior and benefit checks. |
+| Set up lint, type or architecture checks that enforce project rules. | `implementation-suite` | Verified quality gates, with project compliance reported separately. |
 | What could go wrong with this delivery or codebase? | `quality-assurance-suite` | Evidence-backed findings or scoped acceptance tests. |
 | Get this change published or deployed. | `delivery-suite` | Authorized publication or deployment, verified at its destination. |
 | Why did this fail, or did the feature help? | `operations-suite` | Incident diagnosis or product outcome assessment. |
@@ -89,6 +90,7 @@ Fix the cause, reuse what already works, and keep changes focused on a verified 
 | 43 | [Code Modernizer](plugins/implementation-suite/skills/ln-43-code-modernizer/SKILL.md) | Modernizes a bounded capability to reduce demonstrated maintenance cost; not routine upgrades or performance tuning. |
 | 44 | [Performance Optimizer](plugins/implementation-suite/skills/ln-44-performance-optimizer/SKILL.md) | Profiles and improves a measured performance bottleneck; retains only verified improvements. |
 | 45 | [Benchmark Comparator](plugins/implementation-suite/skills/ln-45-benchmark-comparator/SKILL.md) | Compares tools or implementations through controlled benchmarks and independent correctness checks. |
+| 46 | [Quality Gate Engineer](plugins/implementation-suite/skills/ln-46-quality-gate-engineer/SKILL.md) | Configures and verifies lint, type, architecture and other engineering checks; not product cleanup, policy invention or deployment redesign. |
 
 ### Quality Assurance Suite
 
@@ -112,7 +114,7 @@ Publish the intended changes and verify what reached the remote repository or ta
 |---:|---|---|
 | 61 | [Repository Publisher](plugins/delivery-suite/skills/ln-61-repository-publisher/SKILL.md) | Commits, pushes and remotely verifies authorized repository changes; does not create releases. |
 | 62 | [Release Publisher](plugins/delivery-suite/skills/ln-62-release-publisher/SKILL.md) | Prepares and publishes an explicitly requested tagged GitHub release; does not deploy applications. |
-| 63 | [Deployment Engineer](plugins/delivery-suite/skills/ln-63-deployment-engineer/SKILL.md) | Prepares CI/CD and remote infrastructure, then executes authorized rollouts with health and recovery checks; not standalone local container packaging. |
+| 63 | [Deployment Engineer](plugins/delivery-suite/skills/ln-63-deployment-engineer/SKILL.md) | Prepares delivery pipelines and remote infrastructure, then executes authorized rollouts; not standalone quality-gate setup or local container packaging. |
 | 64 | [Community Announcer](plugins/delivery-suite/skills/ln-64-community-announcer/SKILL.md) | Drafts or publishes authorized, fact-checked GitHub Discussions announcements; does not create releases. |
 
 ### Operations Suite

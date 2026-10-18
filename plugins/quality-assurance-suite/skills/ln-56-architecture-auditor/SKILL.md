@@ -12,6 +12,8 @@ Preserve intent, scope, mode, and existing authorization. Complete authorized wo
 Accept equivalent user or repository evidence without requiring another skill, named artifact, or full lifecycle. Preserve source requirement and decision IDs. Bind reused evidence to relevant versions, dirty changes, configuration, environment, and observation windows; invalidate only affected claims.
 Choose the primary workflow by outcome and explicit selection. Consume neighboring contracts and valid evidence without duplicating ownership or restarting audits. Split distinct deliverables by scope, not mandatory skill invocation. Broad independent assessments use audit workflows; focused domain reviews remain read-only.
 On continuation, reconcile task, authorization, state, and gaps. Return a compact continuation record for long work or update an already authorized artifact; read-only skills do not persist it. Distinguish artifact readiness, verified behavior, and external-action authority.
+Trace applicable requirements to their authoritative owner, planned or implemented change, acceptance evidence and status in the existing artifact or response; no new registry is required. Explicit constraints remain binding until an authorized deviation; risk determines priority, not permission to ignore them.
+Investigate the causal flow beyond initially named files. Within implementation authority, include structural repair needed for the outcome; minimize total complexity and risk, not changed lines. This does not authorize unrelated cleanup or mutation during review.
 Before retrieval, define the evidence question; read selectively without skipping applicable instructions. Use tools for mechanical processing; summarize bounded results, errors, coverage, and source paths, keeping full output outside context.
 Before technical decisions, establish applicability and actual versions; verify version-dependent assumptions against official documentation or specifications. Search and read primary pages for current external recommendations; snippets are not evidence. Version-matched bundled documentation or valid prior evidence suffices. Record decision, version, source, and limitations. Mark unavailable evidence UNVERIFIED; block only essential dependent work. Prefer native mechanisms, justify added tools or abstractions with evidence, and reuse the existing rule owner.
 
@@ -36,7 +38,7 @@ This workflow assesses implemented architecture read-only. Architecture decision
 ## Evidence Rules
 
 - Executable dependencies, runtime wiring, and public contracts outweigh intended diagrams or folder names.
-- A cycle or cross-layer call is a finding only when it creates a concrete change, ownership, testing, deployment, or failure cost.
+- A proven violation of an explicit accepted boundary is a finding even before an incident; consequences determine priority. For inferred boundaries, require concrete change, ownership, testing, deployment, or failure cost.
 - Pattern compliance is not a goal by itself; evaluate fitness against product complexity, team workflow, and operational constraints.
 - Framework convention and generated wiring require framework-aware verification before being labeled leakage or dead code.
 - Modernization is justified only by a present defect or measurable simplification, not novelty.
@@ -97,12 +99,12 @@ This workflow assesses implemented architecture read-only. Architecture decision
 
 - [ ] Verify structural findings through at least one dependency path, call path, registration path, public contract, or reproducible analysis result.
 - [ ] Filter generated code, framework conventions, deliberate adapters, test-only architecture, and documented exceptions before confirming a violation.
-- [ ] Apply the materiality gate: require concrete correctness, security, ownership, deployment, change amplification, or recurring maintenance impact at evidenced scale. Reject taste, theoretical purity, generic practice, hypothetical scale, and reasonable alternatives; require the outcome or constraint, not a preferred implementation.
+- [ ] Apply the materiality gate: require a proven violation of an applicable accepted constraint or concrete correctness, security, ownership, deployment, change amplification, or recurring maintenance impact at evidenced scale. Reject taste, theoretical purity, generic practice, hypothetical scale, and reasonable alternatives; require the outcome or constraint, not a preferred implementation.
 - [ ] **External correction evidence:** Ground external corrections in version-matched official contracts, using primary engineering sources for unresolved tradeoffs. Cite the supported mechanism; local evidence suffices for local defects.
 - [ ] Link each accepted boundary finding to the violated driver or contract and the smallest independently verifiable remediation scope; distinguish architectural proposals from accepted decisions.
 - [ ] Classify findings as `P0`-`P3` based on correctness, security, change amplification, deployment coupling, and recurring maintenance cost.
 - [ ] Order recommendations by prerequisite and risk reduction, separating immediate correctness fixes from optional evolution.
-- [ ] Use `BLOCKED` when required runtime wiring, boundary evidence, or an authoritative contract cannot be verified without a credible fallback; use `FAIL` for an evidenced unresolved correctness or security boundary defect, unsafe ownership ambiguity, or `P0/P1` structural risk; use `CONCERNS` only for material non-blocking change amplification, and `PASS` only when no evidenced architecture defect creates material cost or risk.
+- [ ] Use `BLOCKED` when required runtime wiring, boundary evidence, or an authoritative contract cannot be verified without a credible fallback; use `FAIL` for an evidenced unresolved correctness or security boundary defect, unsafe ownership ambiguity, or `P0/P1` structural risk; use `CONCERNS` for non-blocking accepted-constraint violations or material change amplification, and `PASS` only when no applicable accepted constraint is violated and no evidenced architecture defect creates material cost or risk.
 
 ## Self-Check
 

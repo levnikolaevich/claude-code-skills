@@ -12,6 +12,8 @@ Preserve intent, scope, mode, and existing authorization. Complete authorized wo
 Accept equivalent user or repository evidence without requiring another skill, named artifact, or full lifecycle. Preserve source requirement and decision IDs. Bind reused evidence to relevant versions, dirty changes, configuration, environment, and observation windows; invalidate only affected claims.
 Choose the primary workflow by outcome and explicit selection. Consume neighboring contracts and valid evidence without duplicating ownership or restarting audits. Split distinct deliverables by scope, not mandatory skill invocation. Broad independent assessments use audit workflows; focused domain reviews remain read-only.
 On continuation, reconcile task, authorization, state, and gaps. Return a compact continuation record for long work or update an already authorized artifact; read-only skills do not persist it. Distinguish artifact readiness, verified behavior, and external-action authority.
+Trace applicable requirements to their authoritative owner, planned or implemented change, acceptance evidence and status in the existing artifact or response; no new registry is required. Explicit constraints remain binding until an authorized deviation; risk determines priority, not permission to ignore them.
+Investigate the causal flow beyond initially named files. Within implementation authority, include structural repair needed for the outcome; minimize total complexity and risk, not changed lines. This does not authorize unrelated cleanup or mutation during review.
 Before retrieval, define the evidence question; read selectively without skipping applicable instructions. Use tools for mechanical processing; summarize bounded results, errors, coverage, and source paths, keeping full output outside context.
 Before technical decisions, establish applicability and actual versions; verify version-dependent assumptions against official documentation or specifications. Search and read primary pages for current external recommendations; snippets are not evidence. Version-matched bundled documentation or valid prior evidence suffices. Record decision, version, source, and limitations. Mark unavailable evidence UNVERIFIED; block only essential dependent work. Prefer native mechanisms, justify added tools or abstractions with evidence, and reuse the existing rule owner.
 
@@ -39,6 +41,8 @@ Version upgrades include container base images and runtimes when version transit
 - A breaking-change claim requires release or migration evidence matching the exact version transition.
 - Keep generated lockfile changes only when produced by the selected native package manager and expected repository version.
 - Upgrade success requires repository verification, not only a successful install or restore.
+
+Honor accepted version, license, attribution and pinning policy, including documented exceptions; do not replace it with an automatic latest-version or package-adoption rule.
 
 ## Checklist
 
@@ -79,7 +83,7 @@ Version upgrades include container base images and runtimes when version transit
 
 ### 4. Verify and Keep or Revert
 
-- [ ] **Test value and boundary:** Require every test to detect a concrete defect in this product's business logic and name the protected business outcome. Prefer E2E through user or external-system boundaries; use integration or unit tests only for business scenarios difficult to exercise reliably through E2E. Reject platform, trivial-wiring, implementation-detail, and duplicate proof with no distinct business failure signal.
+- [ ] **Test value and boundary:** For product tests, require every test to detect a concrete defect in this product's business logic and name the protected business outcome. Prefer E2E through user or external-system boundaries; use integration or unit tests only for business scenarios difficult to exercise reliably through E2E. Reject platform, trivial-wiring, implementation-detail, and duplicate proof with no distinct business failure signal. Engineering checks separately prove declared type, architecture, tooling or delivery constraints; validate their rejection and acceptance behavior without inventing a business-test rationale.
 - [ ] Run install or restore from a clean-enough state to prove lockfile reproducibility.
 - [ ] Run the relevant build, lint, type, unit, integration, smoke, packaging, migration, and application-start checks after each batch.
 - [ ] Classify affected runtime, target-framework, OS, architecture, and feature combinations as required or optional; retain a batch only with local or trusted CI evidence for every required cell, and return `BLOCKED` when required coverage has no credible fallback.

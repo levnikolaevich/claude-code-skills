@@ -12,6 +12,8 @@ Preserve intent, scope, mode, and existing authorization. Complete authorized wo
 Accept equivalent user or repository evidence without requiring another skill, named artifact, or full lifecycle. Preserve source requirement and decision IDs. Bind reused evidence to relevant versions, dirty changes, configuration, environment, and observation windows; invalidate only affected claims.
 Choose the primary workflow by outcome and explicit selection. Consume neighboring contracts and valid evidence without duplicating ownership or restarting audits. Split distinct deliverables by scope, not mandatory skill invocation. Broad independent assessments use audit workflows; focused domain reviews remain read-only.
 On continuation, reconcile task, authorization, state, and gaps. Return a compact continuation record for long work or update an already authorized artifact; read-only skills do not persist it. Distinguish artifact readiness, verified behavior, and external-action authority.
+Trace applicable requirements to their authoritative owner, planned or implemented change, acceptance evidence and status in the existing artifact or response; no new registry is required. Explicit constraints remain binding until an authorized deviation; risk determines priority, not permission to ignore them.
+Investigate the causal flow beyond initially named files. Within implementation authority, include structural repair needed for the outcome; minimize total complexity and risk, not changed lines. This does not authorize unrelated cleanup or mutation during review.
 Before retrieval, define the evidence question; read selectively without skipping applicable instructions. Use tools for mechanical processing; summarize bounded results, errors, coverage, and source paths, keeping full output outside context.
 Before technical decisions, establish applicability and actual versions; verify version-dependent assumptions against official documentation or specifications. Search and read primary pages for current external recommendations; snippets are not evidence. Version-matched bundled documentation or valid prior evidence suffices. Record decision, version, source, and limitations. Mark unavailable evidence UNVERIFIED; block only essential dependent work. Prefer native mechanisms, justify added tools or abstractions with evidence, and reuse the existing rule owner.
 
@@ -27,7 +29,7 @@ Before technical decisions, establish applicability and actual versions; verify 
 | Verification | Repository-defined build, lint, type, test, smoke, and runtime checks | Smallest reproducible check that proves the protected contract; disclose coverage gaps |
 | External semantics | Official documentation, specifications, security advisories, registries, and upstream source | Primary-source technical material; use secondary expert guidance only for tradeoffs |
 
-Do not expand the task into repository-wide cleanup, redesign, dependency work, or performance tuning. Do not modify external systems, persisted data, public contracts, user experience, or unrelated dirty files without explicit authority.
+Do not add unrelated repository-wide cleanup, redesign, dependency work, or performance tuning. Structural changes required to fix the owning cause belong to the approved outcome, including internal interfaces and all affected consumers; an initial file list is not an architectural boundary unless explicitly constrained. Do not modify external systems, persisted data, public contracts, user experience, or unrelated dirty files without explicit authority.
 
 ## Workflow Boundary
 
@@ -58,6 +60,7 @@ An approved durable audit-ledger feature is product implementation: consume its 
 
 ### 2. Choose the Smallest Complete Solution
 
+- [ ] Before selecting an implementation mechanism, verify that current responsibility, state ownership and dependency direction fit the required behavior; reuse must not preserve a defective boundary.
 - [ ] Test `NO_CHANGE`: verify whether the outcome already holds without edits; a usage explanation may suffice. Documentation or configuration edits belong to `DELETE_OR_CONFIGURE` and require verification as changes.
 - [ ] Test `DELETE_OR_CONFIGURE`: identify an obsolete path, wrong default, redundant state, feature flag, registration, or configuration that can be removed or corrected directly.
 - [ ] Test `REUSE_LOCAL`: search for the repository's canonical helper, component, service, policy, type, enum, constant, error, or integration before adding another concept.
@@ -71,7 +74,7 @@ An approved durable audit-ledger feature is product implementation: consume its 
 
 ### 3. Implement Surgically
 
-- [ ] Change the canonical owning boundary once and update only the consumers required for a complete end-to-end result.
+- [ ] Establish the correct owning boundary, moving responsibilities or consolidating state when the cause requires it; update every affected consumer needed for a complete end-to-end result.
 - [ ] Follow repository conventions for naming, types, constants, enums, configuration, errors, logging, security, accessibility, concurrency, transactions, and resource lifecycle.
 - [ ] Keep product policy explicit and centralized; do not scatter magic values, duplicated route or event keys, parallel allowlists, or derived state with multiple owners.
 - [ ] Use existing dependency and generation workflows; do not hand-edit lockfiles or generated artifacts, add convenience wrappers around already clear APIs, or copy third-party implementation code.
@@ -81,16 +84,20 @@ An approved durable audit-ledger feature is product implementation: consume its 
 - [ ] For deliberate simplifications with material, non-obvious limits, record current contract fit, supported bounds, an observable revisit trigger, and what to reconsider in a local comment or existing decision record within scope. Do not invent thresholds, mandate markers or registries, or document routine simplicity.
 - [ ] Inspect the diff during implementation for unrelated formatting, opportunistic refactoring, accidental UX or contract changes, debug artifacts, and net-new code unsupported by the change contract.
 
+- [ ] When local fixes stop producing progress, revisit the causal model and owning design before adding another patch; retain only changes supported by the revised evidence.
+
 ### 4. Build Proportionate Evidence
 
 - [ ] Map each acceptance row and material regression risk to existing evidence before adding tests; assess likelihood, impact, detectability, and blast radius.
 - [ ] Choose exactly one portfolio action per affected test or gap: `KEEP`, `ADD`, `UPDATE`, `MERGE`, `DELETE`, or justified `NO_TEST`; remove superseded and low-value testware in the approved scope.
-- [ ] **Test value and boundary:** Require every test to detect a concrete defect in this product's business logic and name the protected business outcome. Prefer E2E through user or external-system boundaries; use integration or unit tests only for business scenarios difficult to exercise reliably through E2E. Reject platform, trivial-wiring, implementation-detail, and duplicate proof with no distinct business failure signal.
+- [ ] **Test value and boundary:** For product tests, require every test to detect a concrete defect in this product's business logic and name the protected business outcome. Prefer E2E through user or external-system boundaries; use integration or unit tests only for business scenarios difficult to exercise reliably through E2E. Reject platform, trivial-wiring, implementation-detail, and duplicate proof with no distinct business failure signal. Engineering checks separately prove declared type, architecture, tooling or delivery constraints; validate their rejection and acceptance behavior without inventing a business-test rationale.
 
 - [ ] **UI test locators:** Use stable project-native semantic locators (roles, accessible names, labels) or explicit IDs/test hooks according to the observable contract and locale strategy. Avoid styling, position, timing, and incidental structure. Treat exact-copy assertions separately when copy is a requirement; do not require product edits solely to add hooks when a robust semantic locator exists.
 - [ ] Give temporary characterization or migration tests an owner and retirement trigger; keep quarantine explicit and never count skipped, flaky, or unproven evidence as passing.
 - [ ] Run focused checks after the coherent edit, then the repository-required build, lint, type, test, smoke, packaging, and application-start gates relevant to the affected path.
 - [ ] Exercise meaningful failure, boundary, authorization, transaction, concurrency, or rollback behavior when the change contract makes it material.
+
+- [ ] **Engineering enforcement:** Map applicable technical rules to executable checks, covered technologies/files, strictness and documented exceptions. Identify missing or ineffective checks and their implementation owner; preserve mandated presets and warning policy. Bind evidence to the actual command and supported environment, not configuration presence. Read-only workflows report gaps without repairing them; guidance-only workflows describe controls without executing or implementing them.
 
 ### 5. Prove Completeness and Finalize
 

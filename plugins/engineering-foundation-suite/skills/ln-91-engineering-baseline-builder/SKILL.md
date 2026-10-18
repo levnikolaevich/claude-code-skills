@@ -12,6 +12,8 @@ Preserve intent, scope, mode, and existing authorization. Complete authorized wo
 Accept equivalent user or repository evidence without requiring another skill, named artifact, or full lifecycle. Preserve source requirement and decision IDs. Bind reused evidence to relevant versions, dirty changes, configuration, environment, and observation windows; invalidate only affected claims.
 Choose the primary workflow by outcome and explicit selection. Consume neighboring contracts and valid evidence without duplicating ownership or restarting audits. Split distinct deliverables by scope, not mandatory skill invocation. Broad independent assessments use audit workflows; focused domain reviews remain read-only.
 On continuation, reconcile task, authorization, state, and gaps. Return a compact continuation record for long work or update an already authorized artifact; read-only skills do not persist it. Distinguish artifact readiness, verified behavior, and external-action authority.
+Trace applicable requirements to their authoritative owner, planned or implemented change, acceptance evidence and status in the existing artifact or response; no new registry is required. Explicit constraints remain binding until an authorized deviation; risk determines priority, not permission to ignore them.
+Investigate the causal flow beyond initially named files. Within implementation authority, include structural repair needed for the outcome; minimize total complexity and risk, not changed lines. This does not authorize unrelated cleanup or mutation during review.
 Before retrieval, define the evidence question; read selectively without skipping applicable instructions. Use tools for mechanical processing; summarize bounded results, errors, coverage, and source paths, keeping full output outside context.
 Before technical decisions, establish applicability and actual versions; verify version-dependent assumptions against official documentation or specifications. Search and read primary pages for current external recommendations; snippets are not evidence. Version-matched bundled documentation or valid prior evidence suffices. Record decision, version, source, and limitations. Mark unavailable evidence UNVERIFIED; block only essential dependent work. Prefer native mechanisms, justify added tools or abstractions with evidence, and reuse the existing rule owner.
 
@@ -35,9 +37,11 @@ Architecture requirements own quality targets; architecture decisions own struct
 
 - [ ] Inspect requested artifacts, Git state and existing instructions; preserve unrelated and interrupted work.
 - [ ] Identify project type, runtimes/versions, deployment topology, trust boundaries and operational constraints from executable sources.
-- [ ] Assess containers, configuration, authentication, authorization, errors, observability, mutation recovery and database lifecycle separately; record applicability and evidence for exclusions.
+- [ ] Assess static analysis and type safety, architecture enforcement, dependencies/licenses, containers, configuration, authentication, authorization, errors, observability, mutation recovery and database lifecycle separately; record applicability and evidence for exclusions.
 - [ ] Read existing requirements and contracts; distinguish accepted current behavior, desired changes and unverified historical claims.
 - [ ] Locate each normative rule owner and executable owner of mutable values; resolve material conflicts without replacing business intent.
+
+- [ ] Classify supplied standards as general principles, conditional technical obligations, project-specific decisions or unresolved conflicts. Preserve strictness, warning, compatibility and licensing choices; do not promote sample-project topology, devices, languages, Git or CI policy into universal defaults.
 
 ### 2. Build project guidance
 
@@ -47,6 +51,8 @@ Architecture requirements own quality targets; architecture decisions own struct
 - [ ] Create a local skill only for an evidenced recurring procedure. Derive commands from the project; include inputs, target identity, side effects, verification, recovery and continuation.
 - [ ] Keep local procedures independently usable without this plugin or another skill; do not duplicate the specialist catalog or invent a mandatory state directory.
 - [ ] For mechanically enforceable invariants, identify an existing check or exact missing verification; implementing product/CI checks is outside this artifact-only scope.
+
+- [ ] **Engineering enforcement:** Map applicable technical rules to executable checks, covered technologies/files, strictness and documented exceptions. Identify missing or ineffective checks and their implementation owner; preserve mandated presets and warning policy. Bind evidence to the actual command and supported environment, not configuration presence. Read-only workflows report gaps without repairing them; guidance-only workflows describe controls without executing or implementing them.
 
 ### 3. Verify ownership and usability
 

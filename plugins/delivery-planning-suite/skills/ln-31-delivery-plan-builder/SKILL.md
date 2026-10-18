@@ -12,6 +12,8 @@ Preserve intent, scope, mode, and existing authorization. Complete authorized wo
 Accept equivalent user or repository evidence without requiring another skill, named artifact, or full lifecycle. Preserve source requirement and decision IDs. Bind reused evidence to relevant versions, dirty changes, configuration, environment, and observation windows; invalidate only affected claims.
 Choose the primary workflow by outcome and explicit selection. Consume neighboring contracts and valid evidence without duplicating ownership or restarting audits. Split distinct deliverables by scope, not mandatory skill invocation. Broad independent assessments use audit workflows; focused domain reviews remain read-only.
 On continuation, reconcile task, authorization, state, and gaps. Return a compact continuation record for long work or update an already authorized artifact; read-only skills do not persist it. Distinguish artifact readiness, verified behavior, and external-action authority.
+Trace applicable requirements to their authoritative owner, planned or implemented change, acceptance evidence and status in the existing artifact or response; no new registry is required. Explicit constraints remain binding until an authorized deviation; risk determines priority, not permission to ignore them.
+Investigate the causal flow beyond initially named files. Within implementation authority, include structural repair needed for the outcome; minimize total complexity and risk, not changed lines. This does not authorize unrelated cleanup or mutation during review.
 Before retrieval, define the evidence question; read selectively without skipping applicable instructions. Use tools for mechanical processing; summarize bounded results, errors, coverage, and source paths, keeping full output outside context.
 Before technical decisions, establish applicability and actual versions; verify version-dependent assumptions against official documentation or specifications. Search and read primary pages for current external recommendations; snippets are not evidence. Version-matched bundled documentation or valid prior evidence suffices. Record decision, version, source, and limitations. Mark unavailable evidence UNVERIFIED; block only essential dependent work. Prefer native mechanisms, justify added tools or abstractions with evidence, and reuse the existing rule owner.
 
@@ -43,19 +45,23 @@ Before technical decisions, establish applicability and actual versions; verify 
 
 - [ ] Identify the smallest complete approach, including no change, configuration, deletion or reuse where it satisfies acceptance.
 - [ ] Divide necessary work into independently verifiable outcomes with explicit inputs, owning boundaries and completion evidence.
-- [ ] Map every material requirement and protected invariant to at least one work unit and acceptance check.
+- [ ] Map every applicable mandatory requirement and protected invariant to an owning work unit and acceptance check; include technical-policy gaps rather than assuming existing commands enforce them.
 - [ ] Identify dependencies from contracts, data, deployment order and shared state; remove cycles or expose the required decision.
 - [ ] Allow parallel work only where interfaces and mutation ownership are independent; do not mandate agent delegation.
 - [ ] Specify integration checks between units and the final observable journey; local unit completion alone is insufficient.
 
+- [ ] Include necessary boundary, state and consumer refactoring in the complete outcome; separate it from optional modernization. Name the missing check implementation, target environments and integration prerequisites without requiring another skill.
+
 ### 3. Plan Verification and Recovery
 
-- [ ] **Test value and boundary:** Require every test to detect a concrete defect in this product's business logic and name the protected business outcome. Prefer E2E through user or external-system boundaries; use integration or unit tests only for business scenarios difficult to exercise reliably through E2E. Reject platform, trivial-wiring, implementation-detail, and duplicate proof with no distinct business failure signal.
+- [ ] **Test value and boundary:** For product tests, require every test to detect a concrete defect in this product's business logic and name the protected business outcome. Prefer E2E through user or external-system boundaries; use integration or unit tests only for business scenarios difficult to exercise reliably through E2E. Reject platform, trivial-wiring, implementation-detail, and duplicate proof with no distinct business failure signal. Engineering checks separately prove declared type, architecture, tooling or delivery constraints; validate their rejection and acceptance behavior without inventing a business-test rationale.
 - [ ] Map material failure and regression risks to the smallest reliable checks, their prerequisites and pass criteria.
 - [ ] Reuse valid existing test evidence and strategy; identify needed additions, updates, retirements or justified no-test decisions.
 - [ ] Identify migration, feature-flag, compatibility and rollout dependencies with abort and recovery conditions where applicable.
 - [ ] State any irreversible step and authorized external boundary; never promise rollback where only roll-forward is viable.
 - [ ] Distinguish local implementation, release publication, deployment and product-outcome verification.
+
+- [ ] **Engineering enforcement:** Map applicable technical rules to executable checks, covered technologies/files, strictness and documented exceptions. Identify missing or ineffective checks and their implementation owner; preserve mandated presets and warning policy. Bind evidence to the actual command and supported environment, not configuration presence. Read-only workflows report gaps without repairing them; guidance-only workflows describe controls without executing or implementing them.
 
 ### 4. Review Plan Completeness
 

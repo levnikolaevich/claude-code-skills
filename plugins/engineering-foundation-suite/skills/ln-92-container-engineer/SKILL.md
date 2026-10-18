@@ -12,6 +12,8 @@ Preserve intent, scope, mode, and existing authorization. Complete authorized wo
 Accept equivalent user or repository evidence without requiring another skill, named artifact, or full lifecycle. Preserve source requirement and decision IDs. Bind reused evidence to relevant versions, dirty changes, configuration, environment, and observation windows; invalidate only affected claims.
 Choose the primary workflow by outcome and explicit selection. Consume neighboring contracts and valid evidence without duplicating ownership or restarting audits. Split distinct deliverables by scope, not mandatory skill invocation. Broad independent assessments use audit workflows; focused domain reviews remain read-only.
 On continuation, reconcile task, authorization, state, and gaps. Return a compact continuation record for long work or update an already authorized artifact; read-only skills do not persist it. Distinguish artifact readiness, verified behavior, and external-action authority.
+Trace applicable requirements to their authoritative owner, planned or implemented change, acceptance evidence and status in the existing artifact or response; no new registry is required. Explicit constraints remain binding until an authorized deviation; risk determines priority, not permission to ignore them.
+Investigate the causal flow beyond initially named files. Within implementation authority, include structural repair needed for the outcome; minimize total complexity and risk, not changed lines. This does not authorize unrelated cleanup or mutation during review.
 Before retrieval, define the evidence question; read selectively without skipping applicable instructions. Use tools for mechanical processing; summarize bounded results, errors, coverage, and source paths, keeping full output outside context.
 Before technical decisions, establish applicability and actual versions; verify version-dependent assumptions against official documentation or specifications. Search and read primary pages for current external recommendations; snippets are not evidence. Version-matched bundled documentation or valid prior evidence suffices. Record decision, version, source, and limitations. Mark unavailable evidence UNVERIFIED; block only essential dependent work. Prefer native mechanisms, justify added tools or abstractions with evidence, and reuse the existing rule owner.
 
@@ -27,7 +29,7 @@ Before technical decisions, establish applicability and actual versions; verify 
 
 ## Boundaries
 
-Packaging owns image contents, process lifecycle and local composition. Deployment owns remote topology, rollout and operational health. Configuration owns value semantics; consume its contract instead of adding alternate environment selectors. Docker-specific practices apply only when Docker is selected.
+Packaging owns image contents, process lifecycle and local composition. Deployment owns remote topology, rollout and operational health. Configuration owns value semantics; consume its contract instead of adding alternate environment selectors. Docker-specific practices apply only when Docker is selected. Honor accepted digest, checksum and licensing policy; prove clean-input build and real startup on required targets rather than accepting local cache or host tooling as dependencies.
 
 When the primary outcome is a base-image or runtime version upgrade, dependency upgrading owns compatibility and regression evidence. Packaging work may include a necessary compatible image change within its approved scope; it does not authorize a broader dependency upgrade.
 
@@ -61,7 +63,7 @@ For a source-only review, assess applicable packaging requirements without build
 - [ ] Observe stop/restart, process exit and persistence; check permissions and absence of synthetic test secrets in image metadata/layers.
 - [ ] Clean only run-owned containers, networks and volumes by verified identity; disclose unavailable runtime/platform evidence.
 
-- [ ] Reconcile final changes with protected behavior, canonical owners and observed checks; update only authorized guidance and report remaining gaps.
+- [ ] Reconcile final changes with protected behavior, canonical owners and observed checks; update affected guidance within the authorized change and report remaining gaps.
 
 ## Verdict
 

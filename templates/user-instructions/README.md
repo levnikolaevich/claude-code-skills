@@ -4,6 +4,8 @@ Use the [general working rules template](AGENTS.md) to set personal defaults acr
 
 Its model and workflow efficiency section helps focus context on the current question, use tools for mechanical processing, bound work after sample acceptance, and coordinate through evidence and checkpoints.
 
+The template separates product tests from engineering controls and measures minimality by system complexity, not diff size. When merging personal rules, reconcile unconditional repair, test-count or compatibility preferences with task mode, mandatory evidence and supported contracts; preserve unique choices rather than replacing the personal section.
+
 The repository template is the source for your initial copy. After personalization, your local copy owns your preferences; later template changes should be reviewed and merged deliberately.
 
 ## Personalize and connect

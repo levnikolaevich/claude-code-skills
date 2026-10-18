@@ -1,6 +1,6 @@
 {
   "name": "quality-assurance-suite",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Find gaps that could break a release, mislead a maintainer, or make a passing test meaningless.",
   "author": {
     "name": "Lev Nikolaevich",

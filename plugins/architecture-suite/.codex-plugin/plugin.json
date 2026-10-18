@@ -1,6 +1,6 @@
 {
   "name": "architecture-suite",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Understand the system you have and choose changes with clear boundaries, tradeoffs, and recovery paths.",
   "author": {
     "name": "Lev Nikolaevich",

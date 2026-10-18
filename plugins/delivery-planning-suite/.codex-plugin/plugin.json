@@ -1,6 +1,6 @@
 {
   "name": "delivery-planning-suite",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Find missing decisions and risky dependencies before they become implementation rework.",
   "author": {
     "name": "Lev Nikolaevich",

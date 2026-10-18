@@ -1,6 +1,6 @@
 {
   "name": "implementation-suite",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Fix the cause, reuse what already works, and keep changes focused on a verified outcome.",
   "author": {
     "name": "Lev Nikolaevich",

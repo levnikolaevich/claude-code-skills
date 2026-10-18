@@ -1,6 +1,6 @@
 {
   "name": "delivery-suite",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Publish the intended changes and verify what reached the remote repository or target environment.",
   "author": {
     "name": "Lev Nikolaevich",

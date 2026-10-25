@@ -106,6 +106,8 @@ Find gaps that could break a release, mislead a maintainer, or make a passing te
 | 56 | [Architecture Auditor](plugins/quality-assurance-suite/skills/ln-56-architecture-auditor/SKILL.md) | Audits implemented architecture boundaries, dependencies and ownership; not target design or plan review. |
 | 57 | [Persistence Auditor](plugins/quality-assurance-suite/skills/ln-57-persistence-auditor/SKILL.md) | Audits queries, transactions, consistency and persistence resource lifetimes; read-only. |
 
+Already using [agent-qa](https://github.com/vostride/agent-qa)? Acceptance Test Builder includes [runner-specific guidance](plugins/quality-assurance-suite/skills/ln-51-acceptance-test-builder/references/agent-qa.md) for natural-language web/mobile tests with advanced memidex memory and self-improvement. It separates test selection from execution and preserves incomplete run evidence.
+
 ### Delivery Suite
 
 Publish the intended changes and verify what reached the remote repository or target environment.

@@ -35,6 +35,8 @@ Never run acceptance tests against production or an unapproved external target. 
 
 This workflow owns acceptance evidence and approved test artifacts, not product remediation. Consume the existing authorization, error, lifecycle and configuration contracts as test oracles; do not invent grants or weaken contracts to make checks pass.
 
+When the project already uses agent-qa or the user explicitly selects it, read [agent-qa acceptance evidence](references/agent-qa.md) before validation or execution. It covers selected YAML tests, run verdicts, and memidex evidence. Otherwise retain the project-native runner; this reference adds no required tool or skill dependency.
+
 ## Evidence Rules
 
 - Derive expected behavior from requirements, public contracts, examples, invariants, or an independent reference; never from the implementation calculation being tested.

@@ -25,7 +25,7 @@ Before technical decisions, establish applicability and actual versions; verify 
 | Actual stack and owners | Instructions, manifests, lockfiles, focused source/configuration reads and Git state | Supplied artifacts with explicit gaps; never infer versions from examples |
 | External semantics | Version-matched official documentation, specifications and maintained upstream source | Bundled official docs or valid prior evidence; mark unsupported conclusions UNVERIFIED |
 | Authorized changes | Project-native editor, configuration and maintained runtime tooling | Minimal scoped patch; BLOCKED when no safe mutation capability exists |
-| Observable verification | Existing checks and isolated runtime/consumer exercises | Static evidence labeled as such; BLOCKED when essential behavior cannot be established |
+| Guidance verification | Source comparison, link/format checks and supported host loading of authorized instructions | Static resolution evidence with loading limits; do not execute product/runtime controls to claim implementation readiness |
 
 ## Boundaries
 

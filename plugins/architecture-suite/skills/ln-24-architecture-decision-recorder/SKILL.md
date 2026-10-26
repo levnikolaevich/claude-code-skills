@@ -68,7 +68,7 @@ An ADR owns one accepted or proposed decision and its rationale. Operational pro
 
 ### 3. Evaluate Alternatives
 
-- [ ] Include the status quo and the simplest credible option unless they are demonstrably infeasible.
+- [ ] For an open choice, include the status quo and the simplest credible option unless they are demonstrably infeasible.
 - [ ] For an open choice, compare materially different credible alternatives; for retrospective records, include only evidenced historical options and mark missing rationale unknown.
 - [ ] Compare options against the same drivers: correctness, quality targets, complexity, reversibility, cost, operations, team fit, and evolution.
 - [ ] State why each rejected alternative loses in this context without claiming universal inferiority.

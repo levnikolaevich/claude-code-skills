@@ -70,7 +70,7 @@ Necessary refactoring to complete a feature or fix stays with that outcome; this
 - [ ] Estimate workflow steps and concepts removed, time-to-result and recovery delta, code removed, adapters added, dependency and bundle delta, migration effort, operational change, rollback difficulty, and residual lock-in where each is relevant.
 - [ ] Select the option with the best evidence-backed value-to-risk ratio, not the newest or most popular option.
 - [ ] Mark the chosen option `SELECTED` and every considered but non-chosen option `REJECTED`, recording the evidence or tradeoff that determined each decision.
-- [ ] Request user direction when licensing, public contract, persisted-data migration, vendor commitment, or irreversible operational tradeoffs change product intent; applying a migration outside a disposable environment always requires explicit authorization.
+- [ ] Request user direction for unresolved licensing, public-contract, persisted-data, vendor or irreversible operational choices that change product intent; reuse decisions already authorized for this scope.
 
 ### 3. Execute a Bounded Migration
 

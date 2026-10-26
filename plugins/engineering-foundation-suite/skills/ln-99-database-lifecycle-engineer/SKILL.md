@@ -50,14 +50,14 @@ Review and explanation requests are read-only. Preparation does not authorize re
 - [ ] Use compatible transitions where rolling versions require them; do not promise rollback of irreversible data loss.
 - [ ] Make backfills/nontransactional steps resumable with observable progress and applicable native lock/time limits.
 - [ ] Provision isolated disposable resources with unique run ownership and synthetic/approved sanitized data; never reuse/delete shared databases by guessed names.
-- [ ] Before shared apply/restore, verify explicit target authority, actual identity, required backup/recovery evidence, write window and compatibility.
-- [ ] Execute only the authorized phase; preserve failure state and establish native retry/repair semantics before another attempt.
 
-### 3. Prove lifecycle safety
+### 3. Verify and apply the authorized phase
 
 - [ ] Exercise supported predecessor-to-target migration on isolated data; check schema/grants, preserved rows and application compatibility.
 - [ ] Verify rerun, interrupted backfill and applicable concurrent/nontransactional recovery; bind evidence to exact checksums.
 - [ ] For backup/restore scope, demonstrate restoration and usable data in isolation; backup command success alone proves no recovery.
+- [ ] Before shared apply/restore, verify explicit target authority, actual identity, required backup/recovery evidence, write window and compatibility; require the preceding isolated verification for the exact proposed operation.
+- [ ] Execute only the authorized phase; preserve failure state and establish native retry/repair semantics before another attempt.
 - [ ] Reconcile actual catalog/target after failure; remove only identified run-owned resources and disclose cleanup/application gaps.
 
 - [ ] Reconcile final changes with protected behavior, canonical owners and observed checks; update affected guidance within the authorized change and report remaining gaps.

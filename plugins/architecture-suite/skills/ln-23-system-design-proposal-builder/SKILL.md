@@ -39,7 +39,6 @@ This workflow owns structural alternatives and target system boundaries. Technic
 - Reuse a clear target-design document; otherwise use `docs/architecture/target-design.md`.
 - Read available baseline, current-state, decision, interface, diagram, and migration artifacts by path; none is mandatory.
 - Label facts, assumptions, estimates, proposed decisions, and unresolved choices separately.
-- Compare credible alternatives for consequential decisions, including the simplest feasible option; when constraints permit only one, document why rather than inventing another.
 - Prefer reversible choices and the simplest topology fitting the system. For a new application, consider a modular monolith before independent services; do not force that shape onto libraries, plugins, or an established topology.
 - Do not silently change an accepted decision; record the conflict and required governance action.
 
@@ -79,7 +78,8 @@ This workflow owns structural alternatives and target system boundaries. Technic
 
 ### 5. Decide and Validate
 
-- [ ] Compare credible alternatives against requirements, estimates, failure behavior, complexity, cost, migration, and future triggers.
+- [ ] Compare credible alternatives, including the simplest feasible option, against requirements, estimates, failure behavior, complexity, cost, migration, and future triggers. If constraints permit only one, explain why instead of inventing alternatives.
+- [ ] Trace the design without each disputed mechanism, including indirect consumers: identify required behavior or justified risk coverage lost versus upkeep removed. Propose removal when only upkeep disappears; present any loss of a required guarantee as a separate decision under the accepted-decision rule.
 - [ ] State selected and rejected options with consequences, sensitivity points, and assumptions that would reopen the decision.
 - [ ] Identify significant decisions that deserve their own compact decision records without requiring another workflow.
 - [ ] Define architecture acceptance evidence appropriate to each material driver: contract checks, load/failure experiments, security validation, recovery proof, or observability signals. Specify prerequisites and pass criteria; do not execute them during design.

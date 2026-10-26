@@ -13,7 +13,7 @@ This maintainer map explains the contracts owned by [AGENTS.md](../AGENTS.md), [
 | Exact limits, settings and commands | Project executable configuration | Reference the owner rather than maintaining another inventory |
 | Historical experience | Memory and history | Verify current state; history cannot supersede accepted policy |
 
-Trace applicable requirements through owner, change, evidence and status in an existing artifact or response. Broad causal investigation and necessary structural implementation do not grant unrelated mutation authority. A proven violation of an accepted rule is not dismissed as taste; consequences determine severity. Small diffs are not an architecture objective.
+The [template's execution contract](../SKILL_TEMPLATE.md#skillmd-template) owns requirement traceability, causal scope and evidence reuse. Each review skill owns its finding thresholds; this map only identifies the responsible workflow.
 
 ## Applying supplied engineering standards
 
@@ -53,36 +53,36 @@ General principles apply across appropriate workflows. Conditional obligations a
 | Windows, portable launchers, EOL, tracked inputs and privileges | Conditional on supported environments: 46/92 and implementation checks | Commands run on required OS; exclusions/skips explicit; identity-sensitive bytes preserved |
 | Piano gestures, MusicXML verification, branding and licensed visual assets | Project-only: product requirements and scoped implementation | Product-specific acceptance; do not copy device/brand defaults into general skills |
 
-An explicit strict-preset or warnings-as-errors policy stays binding. Without a policy, choose and justify a supported preset against the actual stack. Compatibility and data-preservation exceptions require authority; neither a target-only preference nor generic best practice grants deletion rights.
+For strictness, preset selection and policy exceptions, use the [quality-gate design checklist](../plugins/implementation-suite/skills/ln-46-quality-gate-engineer/SKILL.md#2-design-the-smallest-enforceable-control). Compatibility and data transitions follow the accepted target-project decisions and the owning architecture or implementation skill.
 
 ## Outcome routing and domain treatment
 
-All skills consume the common contract. The table records which domain responsibilities are clarified and which remain unchanged; it is not an ordered lifecycle.
+All skills consume the common contract. This table maps current responsibilities; it is not an ordered lifecycle.
 
-| Skills | Domain treatment | Primary responsibility |
-|---|---|---|
-| 11 | Retained | Opportunity evidence, not engineering setup |
-| 12, 13 | Clarified | Product and interaction acceptance, including applicable mandatory standards |
-| 21 | Clarified | Mandatory constraints distinguished from assumptions/preferences |
-| 22, 24, 25 | Retained | Current architecture, individual decisions and diagrams; consume original requirements |
-| 23, 26 | Clarified | Verifiable target boundaries and authorized compatibility/data transitions |
-| 31, 33 | Clarified | Complete work units and read-only plan review, including necessary refactoring and missing checks |
-| 32 | Clarified | Product-test strategy distinct from engineering-control evidence |
-| 41 | Clarified | Feature/fix including causal structural repair and all affected consumers |
-| 42, 43 | Clarified | Accepted dependency policy; modernization as its own requested outcome |
-| 44, 45 | Retained | Measured optimization and controlled comparison; no static speed claims |
-| 46 | Added | Executable engineering checks and their acceptance/rejection behavior |
-| 51, 55 | Clarified | Product-test creation/audit; no product repair or rejection of useful engineering controls |
-| 52, 54, 56 | Clarified | Change, codebase and architecture reviews; explicit constraints and effective enforcement |
-| 53 | Clarified | Documentation ownership, freshness and valid references |
-| 57 | Retained | Query, transaction, cache and resource correctness |
-| 61, 62, 64 | Retained | Authorized publication, tagged release and announcement; consume valid evidence |
-| 63 | Clarified | Delivery topology, permissions, credentials, publication, rollout and health |
-| 71, 72 | Retained | Read-only incident diagnosis and product-outcome assessment |
-| 81 | Clarified | Skill ownership, standalone contracts and discovery versus execution evidence |
-| 91 | Clarified | Guidance and missing-control identification; never tooling implementation |
-| 92, 93 | Clarified | Local packaging and application configuration, separate from check configuration |
-| 94, 95, 96, 97, 98, 99 | Retained | Identity, grants, errors, diagnostics, reliable effects and database lifecycle; incidental work stays with its requested outcome |
+| Skills | Primary responsibility |
+|---|---|
+| 11 | Opportunity evidence, not engineering setup |
+| 12, 13 | Product and interaction acceptance, including applicable mandatory standards |
+| 21 | Mandatory constraints distinguished from assumptions/preferences |
+| 22, 24, 25 | Current architecture, individual decisions and diagrams; consume original requirements |
+| 23, 26 | Verifiable target boundaries and authorized compatibility/data transitions |
+| 31, 33 | Complete work units and read-only plan review, including necessary refactoring and missing checks |
+| 32 | Product-test strategy distinct from engineering-control evidence |
+| 41 | Feature/fix including causal structural repair and all affected consumers |
+| 42, 43 | Accepted dependency policy; modernization as its own requested outcome |
+| 44, 45 | Measured optimization and controlled comparison; no static speed claims |
+| 46 | Executable engineering checks and their acceptance/rejection behavior |
+| 51, 55 | Product-test creation/audit; no product repair or rejection of useful engineering controls |
+| 52, 54, 56 | Change, codebase and architecture reviews; explicit constraints and effective enforcement |
+| 53 | Documentation ownership, freshness and valid references |
+| 57 | Query, transaction, cache and resource correctness |
+| 61, 62, 64 | Authorized publication, tagged release and announcement; consume valid evidence |
+| 63 | Delivery topology, permissions, credentials, publication, rollout and health |
+| 71, 72 | Read-only incident diagnosis and product-outcome assessment |
+| 81 | Skill ownership, standalone contracts and discovery versus execution evidence |
+| 91 | Guidance and missing-control identification; never tooling implementation |
+| 92, 93 | Local packaging and application configuration, separate from check configuration |
+| 94, 95, 96, 97, 98, 99 | Identity, grants, errors, diagnostics, reliable effects and database lifecycle; incidental work stays with its requested outcome |
 
 ### Quality gates versus delivery
 
@@ -95,7 +95,7 @@ All skills consume the common contract. The table records which domain responsib
 | Change delivery pipeline or remote rollout | 63 | Consume check commands rather than own duplicate rule semantics |
 | Assess an existing change, codebase or architecture | 52/54/56 | Read-only findings, not repairs |
 
-Check setup can expose existing noncompliance. A setup-only delivery must report project failures separately. A request for a passing project remains incomplete until its required gates pass. Hook installation, product cleanup and publication require their own applicable scope.
+The [quality-gate boundaries](../plugins/implementation-suite/skills/ln-46-quality-gate-engineer/SKILL.md#boundaries) and [verdicts](../plugins/implementation-suite/skills/ln-46-quality-gate-engineer/SKILL.md#verdict) define setup versus project compliance, read-only assessment and authorized mutations.
 
 ## Validation coverage
 

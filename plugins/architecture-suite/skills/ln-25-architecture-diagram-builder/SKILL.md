@@ -80,7 +80,7 @@ Diagrams communicate a model; executable behavior remains authoritative for curr
 ### 5. Verify and Report
 
 - [ ] Validate syntax with the repository renderer or perform a complete manual syntax inspection.
-- [ ] Inspect rendered readability when a preview is available and split overloaded views rather than shrinking labels. Without a renderer, record visual readability as `UNPROVEN`; manual syntax inspection is not render proof.
+- [ ] Inspect readability in the chosen output: render graphical notation when possible and inspect plain ASCII directly. Split overloaded views rather than shrinking labels. Without a graphical renderer, mark that output's visual readability `UNPROVEN`; syntax inspection is not render proof.
 - [ ] Verify current-state elements and relationships against implementation evidence, and target-state elements against the declared proposal or explicitly labelled assumptions.
 - [ ] Bind each view to current or proposed architecture and its authoritative source; expose contradictions rather than resolving them silently in a diagram.
 - [ ] Use `READY` when diagrams are valid, scoped, evidenced, and readable at the requested fidelity; use `INCOMPLETE` for material unknown relationships or missing required render evidence; use `BLOCKED` when scope, evidence, format, or destination prevents a trustworthy diagram.

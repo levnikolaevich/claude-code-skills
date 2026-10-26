@@ -28,7 +28,7 @@ Before technical decisions, establish applicability and actual versions; verify 
 | External migration constraints | Official vendor migration and compatibility guidance | Mark dependent phases `BLOCKED` or `UNVERIFIED` |
 | Document mutation | Minimal patch to the approved migration-plan artifact | Return `BLOCKED` when authority or path is unclear |
 
-A migration phase must leave the system in a supported state. Additive and reversible steps precede cutover; destructive cleanup follows verified zero use.
+A migration phase must leave the system in a supported state. When versions coexist, additive and reversible steps precede cutover; an approved offline atomic transition follows its explicit compatibility and recovery contract. Destructive cleanup follows verified zero use.
 
 ## Workflow Boundary
 

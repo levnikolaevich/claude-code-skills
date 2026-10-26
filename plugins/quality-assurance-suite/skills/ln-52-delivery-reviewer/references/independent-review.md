@@ -12,7 +12,7 @@ For the single optional follow-up of the same task and scope, no hat or speciali
 | Red — human response | What will surprise or mislead a user, developer, reviewer, or operator? Treat intuition as a hypothesis. |
 | Black — caution | How can the change regress, corrupt state, breach trust, or fail at edges and partial failure? |
 | Yellow — value | Which intended value, compatibility, and sound tradeoffs must be preserved; which concerns are false positives? |
-| Green — surgical simplicity | Is this the smallest sufficient diff and simplest efficient algorithm for the evidenced need without sacrificing safety, clarity, testability, or operability? |
+| Green — surgical simplicity | Is this the smallest complete solution by total complexity and lifecycle risk, with an appropriate algorithm and preserved safety, clarity, testability and operability? |
 
 | Specialist | Trigger | Focus |
 |---|---|---|

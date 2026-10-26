@@ -39,7 +39,7 @@ This workflow owns acceptance evidence and approved test artifacts, not product 
 
 - Derive expected behavior from requirements, public contracts, examples, invariants, or an independent reference; never from the implementation calculation being tested.
 - Prefer a terminal durable or user-visible outcome over an intermediate status, mock call, log line, or internal method result.
-- Use golden files or snapshots only for deterministic, reviewable contracts. Updating expected output is a specification change, not test verification.
+- Use golden files or snapshots only for deterministic, reviewable contracts. Correct stale expectations against independent accepted requirements; changing required behavior needs authorization. Regenerating output from the implementation does not verify it.
 - Make setup, data allocation, execution, cleanup, and rerun behavior reproducible; preserve the first failure before retries or cleanup obscure it.
 - A passing command proves only the environment and scenarios it actually exercised. State every excluded cell and unavailable boundary.
 
@@ -81,7 +81,7 @@ Product acceptance remains this workflow's outcome. Tests of custom analyzers or
 - [ ] Make setup fail fast on missing prerequisites and make cleanup safe after success, assertion failure, timeout, cancellation, or partial setup.
 - [ ] Keep tests rerunnable and idempotent; do not depend on execution order or silently reuse state from a previous run.
 - [ ] Add the narrowest required test documentation only when contributors otherwise cannot configure, run, interpret, or clean up the new evidence.
-- [ ] Do not edit production code, weaken assertions, broaden timeouts without evidence, skip failing cases, or regenerate expected artifacts to obtain a pass.
+- [ ] Do not edit production code, weaken assertions, broaden timeouts without evidence, skip failing cases, or regenerate expected artifacts merely to obtain a pass.
 - [ ] Inspect the diff for unrelated formatting, generated churn, secrets, environment-specific paths, and changes outside the approved scope.
 
 ### 4. Execute and Preserve Evidence

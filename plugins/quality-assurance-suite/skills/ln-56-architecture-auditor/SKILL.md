@@ -37,14 +37,12 @@ This workflow assesses implemented architecture read-only. Architecture decision
 
 ## Evidence Rules
 
-- Executable dependencies, runtime wiring, and public contracts outweigh intended diagrams or folder names.
-- A proven violation of an explicit accepted boundary is a finding even before an incident; consequences determine priority. For inferred boundaries, require concrete change, ownership, testing, deployment, or failure cost.
-- Pattern compliance is not a goal by itself; evaluate fitness against product complexity, team workflow, and operational constraints.
+- Executable dependencies and runtime wiring establish implemented structure; accepted boundary rules and public contracts establish obligations. Folder names alone establish neither.
+- A proven violation of an accepted boundary is a finding even before an incident; consequences determine priority. Inferred boundaries need concrete change, ownership, testing, deployment, or failure cost, not folder-name assumptions.
 - Framework convention and generated wiring require framework-aware verification before being labeled leakage or dead code.
 - Modernization is justified only by a present defect or measurable simplification, not novelty.
-- Explicit repository boundary rules define intended constraints; documentation explains them; inference from folder names is low-confidence evidence and must not create a violation by itself.
 - A prior audit baseline separates new, resolved, and accepted debt. It does not make an active correctness or security risk disappear.
-- Shared system-design baseline, current-state, target-design, decision, diagram, and migration artifacts are optional intent evidence. Their absence is not a defect by itself, and their presence never outranks executable behavior for the implemented state.
+- Shared system-design baseline, current-state, target-design, decision, diagram, and migration artifacts are optional intent evidence. Their absence is not a defect by itself.
 
 ## Checklist
 
@@ -62,8 +60,9 @@ This workflow assesses implemented architecture read-only. Architecture decision
 
 ### 2. Audit Pattern Fitness and Ownership
 
-- [ ] Identify major patterns from behavior and assess problem fit, completeness, consistency, and evidenced maintenance cost; avoid invented numeric scores.
+- [ ] Identify major patterns from behavior and assess completeness, consistency, maintenance cost, and fit to product complexity, team workflow, and operational constraints; avoid invented numeric scores.
 - [ ] Check whether abstractions remove real volatility or merely move straightforward code behind interfaces, factories, registries, or generic layers.
+- [ ] Before recommending removal of a suspected redundant mechanism, trace consumers and failure paths; distinguish lost required guarantees from upkeep removed. Present any contract change as a proposal requiring approval, not an equivalent simplification.
 - [ ] Check layer direction, domain ownership, orchestration depth, side-effect boundaries, and whether policy remains separated from infrastructure detail.
 - [ ] Trace where cross-component transactions, sessions, connections, streams, processes, subscriptions, and background work are owned; report boundary ambiguity without duplicating local lifecycle or transaction-correctness analysis.
 - [ ] For each state-changing critical flow, identify the atomicity owner and how partial failure is prevented, retried idempotently, or compensated across stores and messages.
@@ -92,7 +91,7 @@ This workflow assesses implemented architecture read-only. Architecture decision
 - [ ] Research external pattern or framework behavior only when it can confirm a capability, limitation, lifecycle rule, or supported simplification.
 - [ ] Compare the current shape with the simplest credible alternative, including migration risk, compatibility, rollback, team impact, and operational cost.
 - [ ] Prefer incremental boundary repair when a rewrite or new pattern would create more transitional complexity than it removes.
-- [ ] Reject recommendations that require speculative scale, unsupported future variants, or replacement of working conventions without a demonstrated defect.
+- [ ] Reject recommendations justified only by speculative scale, unsupported future variants, or preference for a different working convention.
 - [ ] Include a migration sequence only when the recommendation cannot be applied safely as one bounded change.
 
 ### 5. Validate Findings and Report

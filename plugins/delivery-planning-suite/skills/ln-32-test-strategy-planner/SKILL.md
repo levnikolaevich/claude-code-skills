@@ -38,7 +38,7 @@ Keep the run read-only. Do not create tests, fixtures, snapshots, tasks, or docu
 
 - Keep portfolio action separate from execution status. Use `KEEP`, `ADD`, `UPDATE`, `MERGE`, `DELETE`, or `NO_TEST` for the decision and `PASS`, `FAIL`, `BLOCKED`, or `UNPROVEN` only for evidence state.
 - `NO_TEST` is an explicit risk decision, not missing work. Name the existing proof, alternative control, or accepted residual risk.
-- A persistent test register is optional. Prefer repository-native test names, paths, tags, CI configuration, and task output unless scale or governance requires another maintained artifact.
+- Reuse repository-native test names, paths, tags, CI configuration and any existing governance register for traceability. Return new strategy and register recommendations in the response; this read-only workflow does not create or update a register.
 - External research is actionable only when it adds a concrete failure mode, boundary, or oracle to this plan.
 
 ## Checklist

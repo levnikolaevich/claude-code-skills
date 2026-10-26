@@ -50,7 +50,6 @@ Do not tune the scenario after observing a preferred candidate, mix measurements
 - [ ] Define primary and secondary metrics, units, measurement point, acceptance threshold, allowed tradeoffs, and tie or inconclusive rules.
 - [ ] Define the treatment variable, then hold other relevant variables fixed: revision, model, prompts, permissions, runtime, hardware, data, caches, and network. A variable being compared cannot also be declared fixed.
 - [ ] Predeclare repetitions using existing variability evidence or a bounded pilot, or a bounded sequential rule with fixed error tolerance and maximum runs. Before large-scale, long-running, or model-cost comparisons, agree the outcome, scope, quality criteria, and acceptable costs; prepare a small representative sample within authorized scope and scale only after its acceptance. Reuse unchanged authorization; ordinary necessary checks need no new approval. Preserve the repetition rule and return `INCONCLUSIVE` if the budget cannot resolve the meaningful effect.
-- [ ] Freeze and hash the scenario text, fixtures, expectations, runner, parser, and decision rule before the first candidate result is inspected.
 - [ ] Read repository instructions and inspect Git state before creating worktrees, temporary data, or runners.
 - [ ] Start a run-owned resource ledger with every created absolute path, worktree, process ID, cache, account, dataset, report, and temporary artifact; never register pre-existing resources or credentials as cleanup targets.
 - [ ] Require side-effect-free or idempotent scenarios and disposable accounts or datasets; define external-write authorization, cost and rate budgets, cleanup, and rollback evidence before execution.
@@ -68,6 +67,7 @@ Do not tune the scenario after observing a preferred candidate, mix measurements
 - [ ] Validate the output parser, diff rules, test oracle, and metric collector on known pass and fail fixtures before benchmarking.
 - [ ] Separate one-time setup, indexing, compilation, or download cost from steady-state execution and amortized cost.
 - [ ] Define cleanup and failure recovery from the resource ledger so a crashed or timed-out run cannot contaminate later runs.
+- [ ] Freeze and hash the scenario text, fixtures, expectations, runner, parser, and decision rule before comparative execution. Keep an authorized calibration pilot separate: it may inform the repetition budget, never outcome-favoring criteria.
 
 ### 3. Execute and Capture Evidence
 

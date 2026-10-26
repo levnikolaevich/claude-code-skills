@@ -36,6 +36,8 @@ Connect checks to existing local/CI entrypoints only within scope. Do not change
 
 Review/explanation requests are read-only. Setting up checks does not authorize product cleanup, mass formatting, changing public types or suppressing existing defects. Preserve required strictness and warning policy; propose justified exceptions for approval instead of weakening gates for a green result.
 
+In read-only mode, clear implementation steps as inapplicable. Assess the remaining checks from existing evidence or permitted non-mutating diagnostics; do not create fixtures or edit configuration. Report missing execution evidence without claiming enforcement is proven.
+
 ## Checklist
 
 ### 1. Establish Policy and Coverage
@@ -48,7 +50,8 @@ Review/explanation requests are read-only. Setting up checks does not authorize 
 
 ### 2. Design the Smallest Enforceable Control
 
-- [ ] Map each obligation to its existing rule or exact missing control, owning configuration, input set and positive/negative oracle; reuse the project command surface.
+- [ ] For each mapped obligation, identify the owning configuration, exact input set and positive/negative oracle; reuse the project command surface.
+- [ ] For a disputed control, distinguish the required property from its proxy and supporting machinery. If the proxy rejects valid work, correct the check rather than add isolation or tracking solely to sustain an unnecessary condition.
 - [ ] Choose supported version-matched presets that meet policy; when policy is unspecified, explain fit rather than enabling every rule. Document exceptions, scope and revisit triggers without silently relaxing mandatory settings.
 - [ ] Prefer native rules/plugins; use a custom rule or small script only for a concrete gap, with useful diagnostics and remediation guidance.
 - [ ] Keep performance-sensitive constraints tied to measured runtime behavior; static patterns do not prove speed, and complexity limits must not force unmeasured hot-path regressions.
@@ -65,6 +68,7 @@ Review/explanation requests are read-only. Setting up checks does not authorize 
 ### 4. Prove Enforcement and Report Product State
 
 - [ ] Run representative allowed and forbidden fixtures through the real entrypoint in isolation; prove diagnostics, nonzero rejection and successful valid input without modifying product behavior.
+- [ ] Where false rejection is plausible, exercise a realistic permitted boundary case, such as an unrelated concurrent change, using evidence valid for the relevant inputs.
 - [ ] Exercise relevant selection boundaries, configuration discovery and command failure propagation; a direct tool pass does not prove the wrapper runs it.
 - [ ] Run the intended project checks on the final configuration in each required available environment; report unavailable OS/tool evidence without claiming portability.
 - [ ] Record check implementation status separately from project compliance, including existing violations, ignored/skipped scope and unverified gates.

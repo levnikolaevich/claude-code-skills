@@ -40,6 +40,8 @@ This workflow owns delivery topology, pipeline triggers, permissions, credential
 
 ## Checklist
 
+Select the delivery mode from the current request and project configuration. Use the established pipeline when authorized. For an authorized manual rollout, including requests to avoid paid CI, read [Manual rollout](references/manual-rollout.md). Manual delivery does not require a push, pipeline run, registry publication or a new deployment platform. Preserve required local verification in either mode.
+
 ### 1. Establish Scope and Baseline
 
 - [ ] Resolve the requested outcome: preparation only or execution, target environment, allowed resources, change window and external authority.
@@ -52,7 +54,7 @@ This workflow owns delivery topology, pipeline triggers, permissions, credential
 - [ ] Identify necessary CI/CD, IaC and configuration changes and reuse the existing platform mechanisms.
 - [ ] Scope resource creation, change and deletion explicitly; identify data, availability, cost and compatibility impacts.
 - [ ] Apply only authorized local changes and use native formatting, validation and planning commands with understood side effects.
-- [ ] Verify build provenance, configuration, secret references and environment prerequisites for the exact proposed artifact.
+- [ ] Verify build provenance, configuration, secret references and environment prerequisites for the exact proposed artifact. Where the application exposes a version, verify its value is derived from this build rather than a stale default; record its mapping to the source revision and artifact identity.
 - [ ] Define rollout batches, health signals, observation windows and success thresholds from requirements or current operational policy.
 - [ ] Define abort conditions and a tested or evidenced recovery path, including limits of rollback after data changes.
 - [ ] Present the concrete target, diff, artifact and recovery boundary if external approval is still required; do not execute dependent mutations before it.
@@ -68,7 +70,7 @@ This workflow owns delivery topology, pipeline triggers, permissions, credential
 
 ### 4. Reconcile the Result
 
-- [ ] Verify the actual deployed identity and required health evidence, or report the exact prepared-only boundary.
+- [ ] Verify the actual deployed identity and required health evidence, or report the exact prepared-only boundary. Treat a version from logs or an endpoint as identity proof only when its uniqueness and mapping to the artifact are established; otherwise report it as a supporting signal.
 - [ ] Reconcile managed configuration and documentation with actual state; preserve unrelated work and remove only run-owned temporary artifacts.
 - [ ] Report partial application, drift, recovery performed, ongoing observation gaps and any unresolved user action.
 

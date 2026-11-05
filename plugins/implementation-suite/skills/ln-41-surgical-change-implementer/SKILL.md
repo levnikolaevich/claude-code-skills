@@ -82,6 +82,7 @@ An approved durable audit-ledger feature is product implementation: consume its 
 - [ ] Remove obsolete branches, helpers, adapters, aliases, flags, exports, configuration, dependencies, documentation, and tests made unnecessary by the retained design.
 - [ ] Preserve compatibility only for a verified consumer; make every temporary bridge narrow, observable, owned, time-bounded by a removal trigger, and explicit in the report.
 - [ ] For deliberate simplifications with material, non-obvious limits, record current contract fit, supported bounds, an observable revisit trigger, and what to reconsider in a local comment or existing decision record within scope. Do not invent thresholds, mandate markers or registries, or document routine simplicity.
+- [ ] For new or changed interfaces whose names and types do not express the contract, document side effects, invariants, error behavior, lifecycle obligations, and non-obvious rationale at the interface; do not narrate implementation.
 - [ ] Inspect the diff during implementation for unrelated formatting, opportunistic refactoring, accidental UX or contract changes, debug artifacts, and net-new code unsupported by the change contract.
 
 - [ ] When local fixes stop producing progress, revisit the causal model and owning design before adding another patch; retain only changes supported by the revised evidence.
@@ -90,6 +91,7 @@ An approved durable audit-ledger feature is product implementation: consume its 
 
 - [ ] Map each acceptance row and material regression risk to existing evidence before adding tests; assess likelihood, impact, detectability, and blast radius.
 - [ ] Choose exactly one portfolio action per affected test or gap: `KEEP`, `ADD`, `UPDATE`, `MERGE`, `DELETE`, or justified `NO_TEST`; remove superseded and low-value testware in the approved scope.
+- [ ] For each regression test used to verify a defect fix, show that the same assertions fail because of the original defect and pass with the fix; if either result is unavailable, record why and mark that proof `UNPROVEN`.
 - [ ] **Test value and boundary:** For product tests, require every test to detect a concrete defect in this product's business logic and name the protected business outcome. Prefer E2E through user or external-system boundaries; use integration or unit tests only for business scenarios difficult to exercise reliably through E2E. Reject platform, trivial-wiring, implementation-detail, and duplicate proof with no distinct business failure signal. Engineering checks separately prove declared type, architecture, tooling or delivery constraints; validate their rejection and acceptance behavior without inventing a business-test rationale.
 
 - [ ] **UI test locators:** Use stable project-native semantic locators (roles, accessible names, labels) or explicit IDs/test hooks according to the observable contract and locale strategy. Avoid styling, position, timing, and incidental structure. Treat exact-copy assertions separately when copy is a requirement; do not require product edits solely to add hooks when a robust semantic locator exists.

@@ -74,9 +74,9 @@ This workflow owns read-only cross-cutting findings. Foundation engineering owns
 ### 3. Audit Maintainability and Dependencies
 
 - [ ] Find evidence-backed duplication across functions, handlers, modules, configuration, and integration code; distinguish shared domain concepts from coincidental similarity.
-- [ ] Identify over-abstraction, unused extension points, excessive factories or wrappers, parallel mechanisms, and custom utilities that duplicate declared platform capabilities.
+- [ ] Identify over-abstraction, unused extension points, excessive factories or wrappers, shallow modules whose interface costs callers about as much as the implementation it hides, parallel mechanisms, and custom utilities that duplicate declared platform capabilities.
 - [ ] Before merging duplication or removing an abstraction, check lifecycle and ownership boundaries, intentional decoupling, dependency injection or test seams, framework requirements, public extension contracts, and expected independent evolution.
-- [ ] Inspect complexity hotspots, long methods, god modules, deep nesting, excessive parameters, boolean-mode APIs, misleading names, and mixed responsibilities.
+- [ ] Inspect complexity hotspots by cognitive load, not length: god modules, deep nesting, excessive parameters, boolean-mode APIs, misleading names, mixed responsibilities, and over-decomposition where one behavior is understood only by reading several thin neighbors or pass-through methods. Long cohesive code is not a finding by itself.
 - [ ] Check algorithms for early-exit mistakes, duplicate-key loss, boundary errors, unbounded work, repeated scans, mutation during iteration, and hidden shared state.
 - [ ] Check hardcoded operational values, URLs, timeouts, limits, identifiers, and environment-specific behavior that should be explicit configuration or named policy.
 - [ ] Trace one concept across external contracts, DTOs, services, persistence, and storage; flag synonym or casing drift only when no explicit serializer, code-generation, or ORM boundary mapping explains it.

@@ -47,6 +47,7 @@ Review and explanation requests are read-only. Preparation does not authorize re
 
 - [ ] Use native exception/response mechanisms; consider Problem Details for HTTP without breaking clients, and native contracts for other transports.
 - [ ] Expose stable safe codes/messages and allowed details; do not serialize arbitrary exceptions, secrets or internal topology.
+- [ ] Shape error kinds by consumer handling: merge kinds every consumer handles identically; define cases out of existence where semantics allow, such as idempotent removal of an absent resource. Never hide real faults or unknown outcomes; changing public codes or statuses needs contract authority.
 - [ ] Keep transport mapping at the boundary, not infrastructure primitives; unknown failures produce safe generic responses.
 - [ ] Prevent cleanup failure replacing the primary failure; preserve cancellation and runtime-appropriate fatal-process behavior.
 - [ ] Handle streaming failures after headers in the stream owner; do not claim the original status can still be replaced.

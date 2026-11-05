@@ -61,7 +61,8 @@ This workflow assesses implemented architecture read-only. Architecture decision
 ### 2. Audit Pattern Fitness and Ownership
 
 - [ ] Identify major patterns from behavior and assess completeness, consistency, maintenance cost, and fit to product complexity, team workflow, and operational constraints; avoid invented numeric scores.
-- [ ] Check whether abstractions remove real volatility or merely move straightforward code behind interfaces, factories, registries, or generic layers.
+- [ ] Check module depth: whether abstractions hide real volatility and complexity behind interfaces simpler than their implementation, or merely move straightforward code behind interfaces, factories, registries, generic layers, or pass-through methods.
+- [ ] Find information leakage: one design decision, such as a format, protocol, ordering, or policy, encoded in several modules so one change requires coordinated edits; name the change it amplifies.
 - [ ] Before recommending removal of a suspected redundant mechanism, trace consumers and failure paths; distinguish lost required guarantees from upkeep removed. Present any contract change as a proposal requiring approval, not an equivalent simplification.
 - [ ] Check layer direction, domain ownership, orchestration depth, side-effect boundaries, and whether policy remains separated from infrastructure detail.
 - [ ] Trace where cross-component transactions, sessions, connections, streams, processes, subscriptions, and background work are owned; report boundary ambiguity without duplicating local lifecycle or transaction-correctness analysis.

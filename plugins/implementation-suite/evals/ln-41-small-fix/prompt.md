@@ -1,6 +1,6 @@
 ---
 description: "Scenario: Small fix. A bounded calculation defect with existing tests."
-expected_outcome: "Owning calculation corrected; supplied acceptance writes exact discount, quantity, order and rounding totals to results/discount.json; check script unchanged; no lifecycle artifacts, architecture documents or unrelated cleanup."
+expected_outcome: "Defect shown failing before the fix; owning calculation corrected; supplied acceptance writes exact discount, quantity, order and rounding totals to results/discount.json; check script unchanged; no lifecycle artifacts, architecture documents or unrelated cleanup."
 tags: [scenario, shell]
 max_turns: 40
 timeout_seconds: 900

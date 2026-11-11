@@ -103,7 +103,7 @@ Find gaps that could break a release, mislead a maintainer, or make a passing te
 | 53 | [Documentation Auditor](plugins/quality-assurance-suite/skills/ln-53-documentation-auditor/SKILL.md) | Audits documentation and comments for trust, coverage, consistency and freshness; read-only. |
 | 54 | [Codebase Auditor](plugins/quality-assurance-suite/skills/ln-54-codebase-auditor/SKILL.md) | Audits cross-cutting codebase health, security and maintainability; not a single-change review or specialist audit. |
 | 55 | [Test Suite Auditor](plugins/quality-assurance-suite/skills/ln-55-test-suite-auditor/SKILL.md) | Audits existing tests for risk coverage, reliable oracles and maintenance value; does not edit tests. |
-| 56 | [Architecture Auditor](plugins/quality-assurance-suite/skills/ln-56-architecture-auditor/SKILL.md) | Audits implemented architecture boundaries, dependencies and ownership; not target design or plan review. |
+| 56 | [Architecture Auditor](plugins/quality-assurance-suite/skills/ln-56-architecture-auditor/SKILL.md) | Audits implemented architecture boundaries, dependencies, ownership and state lifecycles; not target design or plan review. |
 | 57 | [Persistence Auditor](plugins/quality-assurance-suite/skills/ln-57-persistence-auditor/SKILL.md) | Audits queries, transactions, consistency and persistence resource lifetimes; read-only. |
 
 ### Delivery Suite

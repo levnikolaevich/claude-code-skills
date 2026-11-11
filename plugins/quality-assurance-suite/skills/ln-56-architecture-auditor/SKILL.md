@@ -1,6 +1,6 @@
 ---
 name: ln-56-architecture-auditor
-description: "Audits implemented architecture boundaries, dependencies and ownership; not target design or plan review."
+description: "Audits implemented architecture boundaries, dependencies, ownership and state lifecycles; not target design or plan review."
 ---
 
 # Architecture Auditor
@@ -67,6 +67,7 @@ This workflow assesses implemented architecture read-only. Architecture decision
 - [ ] Check layer direction, domain ownership, orchestration depth, side-effect boundaries, and whether policy remains separated from infrastructure detail.
 - [ ] Trace where cross-component transactions, sessions, connections, streams, processes, subscriptions, and background work are owned; report boundary ambiguity without duplicating local lifecycle or transaction-correctness analysis.
 - [ ] For each state-changing critical flow, identify the atomicity owner and how partial failure is prevented, retried idempotently, or compensated across stores and messages.
+- [ ] Trace material lifecycle states and their writers, including implicit states in strings, flags, nullable fields, or serialized values. Report evidenced invalid or undeclared transitions, impossible combinations, unintended unreachable or dead-end states, and divergent state definitions.
 - [ ] Check read-named or pure-looking interfaces for hidden writes, broad side effects, network calls, or lifecycle ownership that violates their contract.
 - [ ] Find parallel architectural mechanisms, partially completed migrations, compatibility paths with no consumer, and extension points with no credible variation.
 - [ ] Check whether failure handling and retries sit at the layer that owns the operation rather than being duplicated or swallowed across layers.

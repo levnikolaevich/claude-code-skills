@@ -76,6 +76,7 @@ Keep the run read-only. Do not create tests, fixtures, snapshots, tasks, or docu
 - [ ] Specify non-default configuration, time, locale, randomness, ordering, or data scale when defaults could conceal hard-coded behavior.
 - [ ] Add browser, device, operating-system, runtime, or version cells only when the supported contract or a known risk makes them decision-relevant.
 - [ ] Prefer deterministic setup and bounded data; identify where real dependencies, emulators, disposable environments, or production-like topology are necessary.
+- [ ] For material ordering or failure-point risks, specify evidence that exercises the relevant interleavings and observes the invariant; low-load E2E alone is insufficient. If using a model, align its steps with real commit and failure points, confirm it rejects a known-wrong variant where feasible, and separately establish correspondence with the implementation.
 - [ ] Define the repository gate or diagnostic role, entry prerequisites, and evidence-based completion criteria for each portfolio action; do not use test count or raw coverage as completion.
 
 - [ ] Keep product-test portfolio decisions separate from compiler, linter, architecture and packaging controls; name the rule, positive/negative oracle and owning verification command for engineering checks.

@@ -72,6 +72,7 @@ This workflow owns structural alternatives and target system boundaries. Technic
 
 - [ ] Describe system context, deployable units, stores, queues, external systems, responsibilities, and labeled data flows.
 - [ ] Trace success, overload, dependency failure, partial failure, retry, timeout, degradation, recovery, and cancellation for critical journeys.
+- [ ] Where a material correctness risk depends on concurrent transitions or failure points, define the protocol invariants and proportionate evidence for relevant event orderings, checked at design level before implementation where feasible. For such risks, describe a transition table where the relevant lifecycle is part of the design.
 - [ ] Deep-dive only components whose correctness, scale, security, or reversibility risk warrants implementation-level detail.
 - [ ] Define observability, SLI measurement points, health, deployment strategy, rollback, backup, and operator actions.
 - [ ] Define ownership, team impact, cost drivers, and operational burden for the proposed topology.

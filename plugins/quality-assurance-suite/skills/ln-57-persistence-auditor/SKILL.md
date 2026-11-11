@@ -73,7 +73,7 @@ Use this workflow for an independent assessment across persistence paths. A focu
 - [ ] Identify who begins, commits, rolls back, retries, and disposes each transaction and whether ownership matches the business operation.
 - [ ] Check atomicity across related writes, early commits, missing rollback, swallowed exceptions, nested transaction behavior, and partial-success states.
 - [ ] Find long-held transactions, network or file calls inside transactions, user interaction during locks, and transactions spanning unnecessary computation.
-- [ ] Check isolation assumptions, lost updates, write skew, duplicate processing, optimistic or pessimistic locking, and retry safety.
+- [ ] Check isolation assumptions, lost updates, write skew, duplicate processing, optimistic or pessimistic locking, and retry safety. For material state transitions, check that allowed values and concurrent changes are protected by the applicable contract and transaction or concurrency mechanism; where conditional writes are used, verify their results are handled.
 - [ ] Verify idempotency keys, unique constraints, deduplication, outbox or inbox behavior, and at-least-once delivery paths where applicable.
 - [ ] Check triggers, notifications, events, and subscribers for naming, commit-time visibility, payload compatibility, ordering, duplicate delivery, and orphan consumers; do not add intermediate commits merely to expose progress if that breaks business atomicity.
 - [ ] Check migrations and backfills for transactional behavior, lock duration, mixed-version compatibility, resumability, and failure recovery.
